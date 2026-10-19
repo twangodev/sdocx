@@ -471,7 +471,7 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
     if context.screen_width > i32::MAX as u32
         || context.screen_height > i32::MAX as u32
         || r.pen_name.as_deref() != Some(PEN)
-        || r.advanced_settings.as_deref() != Some("4;")
+        || !matches!(r.advanced_settings.as_deref(), Some("") | Some("4;"))
         || !(1..=3).contains(&r.tool_type_raw)
         || r.properties.eraser
         || (r.properties.fixed_width
@@ -857,6 +857,150 @@ mod tests {
 
     fn bits(s: &str) -> u32 {
         u32::from_str_radix(s.strip_prefix("0x").unwrap(), 16).unwrap()
+    }
+
+    fn native_f32(s: &str) -> f32 {
+        let bytes: [u8; 4] =
+            std::array::from_fn(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap());
+        f32::from_le_bytes(bytes)
+    }
+
+    fn native_caller_stroke(input: &Value) -> Stroke {
+        let properties = StrokeProperties {
+            compressed: input["curve_enabled"].as_bool().unwrap(),
+            replay_only: false,
+            stylus_channels: false,
+            eraser: false,
+            fixed_width: false,
+            millisecond_timestamps: false,
+            top_layer_pen: false,
+            alpha_lock: false,
+            binary_added: false,
+            generated: false,
+            fixed_opacity: false,
+            rainbow_effect: false,
+            straighten: false,
+            reveal_mode: false,
+        };
+        let floats = |key: &str| {
+            input[key]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| native_f32(v.as_str().unwrap()))
+                .collect::<Vec<_>>()
+        };
+        let xy = input["points_f32_bits"].as_array().unwrap();
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some(input["pen_name"].as_str().unwrap().to_string()),
+                advanced_settings: input["advanced_getter_utf8"].as_str().map(str::to_string),
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties,
+                style: StrokeStyle {
+                    pen_size: Some(native_f32(input["pen_size_f32_bits"].as_str().unwrap())),
+                    stroke_type_raw: Some(input["stroke_type"].as_u64().unwrap() as u16),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: xy
+                .iter()
+                .map(|p| Point {
+                    x: native_f32(p[0].as_str().unwrap()) as f64,
+                    y: native_f32(p[1].as_str().unwrap()) as f64,
+                })
+                .collect(),
+            pressures: floats("pressure_f32_bits")
+                .into_iter()
+                .map(f64::from)
+                .collect(),
+            timestamps: input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_i64().unwrap())
+                .collect(),
+            tilts: floats("tilt_f32_bits").into_iter().map(f64::from).collect(),
+            orientations: floats("orientation_f32_bits")
+                .into_iter()
+                .map(f64::from)
+                .collect(),
+            color: None,
+            pen_width: native_f32(input["pen_size_f32_bits"].as_str().unwrap()),
+        }
+    }
+
+    #[test]
+    fn matches_drawing_selected_v4_empty_setting_full_callback_bits() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["straight_curve_tool1_empty"];
+        assert_eq!(case["input"]["advanced_setting_state"], "empty");
+        assert_eq!(case["route"]["selected_drawable_vtable_id"], "v4");
+
+        let input = native_caller_stroke(&case["input"]);
+        let resolution = &case["screen_resolution"][0];
+        let ink = prepare(
+            &input,
+            RuntimeContext {
+                curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                screen_width: resolution["width"].as_u64().unwrap() as u32,
+                screen_height: resolution["height"].as_u64().unwrap() as u32,
+            },
+        )
+        .expect("the actual empty-setting V4 input must be admitted by the test sampler");
+        let stream = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+            .as_array()
+            .unwrap();
+        assert_eq!(stream.len(), ink.points.len() * 3);
+        for (i, point) in ink.points.iter().enumerate() {
+            assert_eq!(
+                (point.x as f32).to_bits(),
+                native_f32(stream[i * 3].as_str().unwrap()).to_bits(),
+                "callback {i} x"
+            );
+            assert_eq!(
+                (point.y as f32).to_bits(),
+                native_f32(stream[i * 3 + 1].as_str().unwrap()).to_bits(),
+                "callback {i} y"
+            );
+            assert_eq!(
+                ink.radii[i].to_bits(),
+                native_f32(stream[i * 3 + 2].as_str().unwrap()).to_bits(),
+                "callback {i} radius"
+            );
+        }
+        assert_eq!(
+            case["streams"]["draw_object_stroke"]["sha256"],
+            "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+        );
+        assert_eq!(
+            case["streams"]["saved_redraw"]["same_bytes_as_drawing_phase"],
+            true
+        );
+
+        let null_case = &fixture["cases"]["straight_curve_tool1_null"];
+        assert_eq!(null_case["route"]["selected_drawable_vtable_id"], "v1");
+        assert_eq!(null_case["input"]["advanced_setting_state"], "null");
+        let null_setting = native_caller_stroke(&null_case["input"]);
+        assert!(
+            prepare(
+                &null_setting,
+                RuntimeContext {
+                    curve_enabled: null_case["input"]["curve_enabled"].as_bool().unwrap(),
+                    screen_width: null_case["screen_resolution"][0]["width"].as_u64().unwrap()
+                        as u32,
+                    screen_height: null_case["screen_resolution"][0]["height"]
+                        .as_u64()
+                        .unwrap() as u32,
+                }
+            )
+            .is_none()
+        );
     }
 
     #[test]
