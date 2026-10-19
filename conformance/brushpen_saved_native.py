@@ -96,6 +96,10 @@ class NativeBrush(NativeFountain):
         self.host_boundary_calls = {}
         self.callback_records = []
         self.buffer_records = []
+        self.draw_line_gate_records = []
+        self.active_draw_line_gate_record = None
+        self.active_draw_line_drawable = 0
+        self.capture_draw_line_path_calls = False
         self.last_vector_bytes = {}
         self.object_line_records = []
         self.pending_returns = {}
@@ -389,6 +393,85 @@ class NativeBrush(NativeFountain):
         return self.current_motion[aliases.get(key, key)]
 
     def hook(self, u, address, size, data):
+        if self.current_draw_line and self.current_motion is not None:
+            draw_pc = address - 3 * 0x1000000
+            if address == self.current_draw_line:
+                drawable = self.x(0)
+                self.active_draw_line_drawable = drawable
+                state_fields = self.get(drawable + 232, '9f')
+                flags = [self.get(drawable + offset, 'B')[0] for offset in (225, 226, 227)]
+                self.active_draw_line_gate_record = {
+                    'index': len(self.draw_line_gate_records),
+                    'input_xy_bits_le': [fbits(self.f(0)), fbits(self.f(1))],
+                    'state_before': {
+                        'minimum_distance_44_bits_le': fbits(self.get(drawable + 44, 'f')[0]),
+                        'alternating_distance_336_bits_le': fbits(self.get(drawable + 336, 'f')[0]),
+                        'flags_225_226_227': flags,
+                        'point_state_232_264_bits_le': [fbits(value) for value in state_fields],
+                    },
+                    'gate_steps': [],
+                    'outcome': None,
+                    'state_after': None,
+                }
+                self.capture_draw_line_path_calls = True
+                self.draw_line_gate_records.append(self.active_draw_line_gate_record)
+            record = self.active_draw_line_gate_record
+            if record is not None and draw_pc in (0x5c380, 0x5c39c, 0x5c3a8, 0x5c3ac, 0x5c3b0, 0x5c3d8, 0x5c3dc, 0x5c3e0, 0x5c640, 0x5cfb4):
+                drawable = self.active_draw_line_drawable
+                step = {'pc': hex(draw_pc),
+                        's8_bits_le': fbits(self.f(8)),
+                        'minimum_distance_44_bits_le': fbits(self.get(drawable + 44, 'f')[0]),
+                        'alternating_distance_336_bits_le': fbits(self.get(drawable + 336, 'f')[0]),
+                        'flags_225_226_227': [self.get(drawable + offset, 'B')[0] for offset in (225, 226, 227)],
+                        'nzcv': (u.reg_read(R.UC_ARM64_REG_PSTATE) >> 28) & 0xf}
+                if draw_pc <= 0x5c3e0:
+                    step['distance_bits_le'] = step['s8_bits_le']
+                if draw_pc == 0x5c380:
+                    step['first_gate_threshold_bits_le'] = step['minimum_distance_44_bits_le']
+                elif draw_pc == 0x5c39c:
+                    step['second_gate_threshold_bits_le'] = fbits(self.f(0))
+                if draw_pc in (0x5c3a8, 0x5c3ac):
+                    step['old_flag_226'] = self.x(10)
+                    step['toggled_flag_226'] = self.x(11)
+                record['gate_steps'].append(step)
+                if draw_pc == 0x5c380:
+                    record['first_gate_passed'] = bool(step['nzcv'] & 0x4)
+                elif draw_pc == 0x5c39c:
+                    record['second_gate_pl_taken'] = not bool(step['nzcv'] & 0x8)
+                elif draw_pc == 0x5c3ac:
+                    record['second_gate_passed'] = self.x(10) == 0
+                elif draw_pc == 0x5c3b0:
+                    record['outcome'] = 'rejected-first-gate' if record.get('first_gate_passed') is False else 'rejected-alternating-gate'
+                    record['state_after'] = self._draw_line_state(drawable)
+                    self.capture_draw_line_path_calls = False
+                    self.active_draw_line_gate_record = None
+                elif draw_pc == 0x5c3d8:
+                    record['second_gate_passed'] = True
+                elif draw_pc == 0x5c3e0:
+                    record['outcome'] = 'accepted'
+                elif draw_pc == 0x5c640:
+                    record['state_before_sampling'] = self._draw_line_state(drawable)
+                elif draw_pc == 0x5cfb4:
+                    if self.x(19) != drawable:
+                        raise AssertionError('makeDrawPoint final state belongs to another drawable')
+                    record['state_after'] = self._draw_line_state(drawable)
+                    self.capture_draw_line_path_calls = False
+                    self.active_draw_line_gate_record = None
+            if record is not None and draw_pc == 0x5cd28:
+                record.setdefault('make_draw_point_path_lengths_bits_le', []).append(fbits(self.f(0)))
+            if record is not None and draw_pc == 0x5c664:
+                self.capture_draw_line_path_calls = False
+        if self.current_draw_line and self.current_motion is not None and address in self.plt:
+            record = self.active_draw_line_gate_record
+            name = self.plt[address]
+            if record is not None and self.capture_draw_line_path_calls and name in ('SPen::SmPath::moveTo(float, float)',
+                                               'SPen::SmPath::quadTo(float, float, float, float)',
+                                               'SPen::SmPath::lineTo(float, float)'):
+                arity = 4 if 'quadTo' in name else 2
+                record.setdefault('path_calls', []).append({
+                    'method': name.rsplit('::', 1)[1].split('(')[0],
+                    'arguments_bits_le': [fbits(self.f(i)) for i in range(arity)],
+                })
         if address == self.matrix_stub:
             u.mem_write(u.reg_read(R.UC_ARM64_REG_X8), struct.pack('<9f', 1, 0, 0, 0, 1, 0, 0, 0, 1))
             u.reg_write(R.UC_ARM64_REG_PC, u.reg_read(R.UC_ARM64_REG_LR))
@@ -451,6 +534,14 @@ class NativeBrush(NativeFountain):
             self.active_import = self.plt[address]
             self.import_calls[self.active_import] = self.import_calls.get(self.active_import, 0) + 1
         super().hook(u, address, size, data)
+
+    def _draw_line_state(self, drawable):
+        return {
+            'minimum_distance_44_bits_le': fbits(self.get(drawable + 44, 'f')[0]),
+            'alternating_distance_336_bits_le': fbits(self.get(drawable + 336, 'f')[0]),
+            'flags_225_226_227': [self.get(drawable + offset, 'B')[0] for offset in (225, 226, 227)],
+            'point_state_232_264_bits_le': [fbits(value) for value in self.get(drawable + 232, '9f')],
+        }
 
     def setup_native_pen(self):
         pen, manager = self.alloc(256), self.alloc(128)
@@ -515,6 +606,9 @@ class NativeBrush(NativeFountain):
     def run_motion(self, case):
         state = self.setup_native_pen()
         self.current_draw_line = self.syms[DRAW_LINE.format(version=state['native_version'])]
+        profile = self._draw_line_state(state['drawable'])
+        pen_settings = self.get(self.get(state['drawable'] + 72, 'Q')[0], 'Q')[0]
+        profile['settings_count_limits'] = list(self.get(pen_settings + 32, '2I'))
         event, rect = self.make_motion(case)
         begin_calls, begin_records = len(self.callback_records), len(self.buffer_records)
         self.call(MOTION_REDRAW.format(version=state['native_version']),
@@ -523,10 +617,15 @@ class NativeBrush(NativeFountain):
         records = self.buffer_records[begin_records:]
         if not new_calls or any(r['count_f32'] != 11 * i for i, r in enumerate(records, 1)):
             raise AssertionError('MotionEvent redraw did not emit 11-float per-instance records')
+        if any(not r.get('outcome') or not isinstance(r.get('state_after'), dict)
+               for r in self.draw_line_gate_records):
+            raise AssertionError('MotionEvent drawLine gate trace is missing an outcome or state snapshot')
         rect_values = list(self.get(rect, '4f'))
         return {'label': case['name'], 'path': f'native MotionEvent constructor/getters -> factory-selected GLV{state["native_version"]} RedrawPen -> native drawPattern -> RTV1::AddPoint',
                 'synthetic_input': {k: case[k] for k in ('points', 'pressures', 'times', 'tilts', 'orientations', 'tool_type')},
                 'admission': self.admission(state), 'bounds_f32': rect_values,
+                'draw_line_gate_profile_before_redraw': profile,
+                'draw_line_gate_records': self.draw_line_gate_records,
                 'callback_arguments': new_calls, 'buffer_records': records,
                 'native_host_boundaries': self.boundaries()}
 
@@ -634,6 +733,11 @@ MOTION_CASES = [
      'pressures': [0.2, 0.3, 0.4, 0.5, 0.6],
      'times': [100, 101, 120, 121, 160], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
      'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool1-alternating-distance-gate', 'tool_type': 1,
+     'points': [[0, 0], [4, 0], [8, 0], [12, 0], [16, 0]],
+     'pressures': [0.5, 0.5, 0.5, 0.5, 0.5],
+     'times': [0, 10, 20, 30, 40], 'tilts': [0, 0, 0, 0, 0],
+     'orientations': [0, 0, 0, 0, 0]},
 ]
 
 OBJECT_CASE = {
