@@ -121,7 +121,10 @@ The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
 A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
-redraw cases; shape modes, caller admission and paint integration remain open.
+redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
+checks null settings selecting V1, empty/explicit settings selecting V9, and a
+25-record V9 buffer match. General caller/runtime state, shape modes and paint
+integration remain open.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
