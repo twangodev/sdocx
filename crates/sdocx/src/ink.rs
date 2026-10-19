@@ -7,6 +7,8 @@ mod airbrush;
 mod brushpen;
 #[cfg(test)]
 mod calligraphy;
+#[cfg(test)]
+mod defaultpen;
 mod fountain;
 mod fountain_v14;
 // Native numeric regression only until caller context and RTV1 paint transport
