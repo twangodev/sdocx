@@ -204,3 +204,10 @@ Other versions, no-curve, StrokeTip, clean-cache reuse, live input and full
 shader behavior are separate. [Opacity](pen-opacity-findings.md) and
 [native PDF transport](native-pdf-stroke-findings.md) do not certify vector
 outlines or complete visual parity for this source trace.
+
+The [Drawing caller fixture](../../conformance/inkpen-saved-caller-native.json)
+also captures null settings selecting V1: the same synthetic four-point input
+emits 25 triples, versus V4's 26. V1 `reDrawLine` (`0x26fa8`) derives movement
+from distance; V4 (`0x30a38`) additionally uses elapsed time and display scale.
+The V4 numeric core therefore cannot serve V1 unchanged. V1 start/terminal
+state and a broader input matrix remain to be reconstructed before admission.
