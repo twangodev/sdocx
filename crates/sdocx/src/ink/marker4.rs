@@ -16,26 +16,35 @@ pub(super) struct Ink {
 
 pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
+    // Drawing reads the saved Model style size, then Pen::SetSize clamps it.
+    // The decoder's public width may carry a separate presentation default.
+    let requested_size = r.style.pen_size.unwrap_or(0.0);
+    if !requested_size.is_finite() || requested_size < 0.0 {
+        return None;
+    }
+    let size = requested_size.clamp(0.4, 800.0);
     let v7 = r.advanced_settings.as_deref() == Some("7;");
     if v7
         && (r.tool_type_raw != 2
             || r.properties.straighten
             || r.properties.fixed_width
-            || !(0.4..=800.).contains(&s.pen_width)
             || s.pressures.len() != s.points.len()
             || s.timestamps.len() != s.points.len())
     {
         return None;
     }
-    if r.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker4")
-        || !matches!(r.advanced_settings.as_deref(), Some("7;" | "8;"))
+    if !matches!(
+        r.pen_name.as_deref(),
+        Some(
+            "com.samsung.android.sdk.pen.pen.preload.Marker4"
+                | "com.samsung.android.sdk.pen.pen.preload.StraightHighlighter"
+        )
+    ) || !matches!(r.advanced_settings.as_deref(), Some("7;" | "8;"))
         || r.properties.eraser
         || r.properties.rainbow_effect
         || !matches!(r.tool_type_raw, 0 | 2)
         || s.points.is_empty()
         || s.points.len() > 100_000
-        || !s.pen_width.is_finite()
-        || s.pen_width <= 0.
         || s.points
             .iter()
             .any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7)
@@ -112,7 +121,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
         sample_ends[0] = 1;
     }
     if v7 {
-        let diameter = f64::from((s.pen_width * 0.5).max(1.) + 0.5) * 2.;
+        let diameter = f64::from((size * 0.5).max(1.) + 0.5) * 2.;
         for p in &mut points {
             p.x = f64::from(p.x as f32);
             p.y = f64::from(p.y as f32);
@@ -128,7 +137,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
             opacity: r.style.color_argb.map_or(1., |c| f64::from(c >> 24) / 255.),
         });
     }
-    let size = f64::from(s.pen_width.clamp(0.4, 800.).trunc());
+    let size = f64::from(size.trunc());
     // RTV4 quad: x = ±0.77*(size/2+0.5), y = 0.5 ± size/2.
     // Its 200px mask covers [1,199] with elliptical corner radii 50.
     let angle = angle.unwrap_or(0.);
@@ -180,6 +189,7 @@ mod tests {
         for case in reference.cases {
             let mut stroke = reference.stroke.clone();
             stroke.pen_width = case.size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(case.size);
             for [x, y, pressure, tilt] in case.samples {
                 stroke.points.push(Point { x, y });
                 stroke.pressures.push(pressure);
@@ -197,6 +207,155 @@ mod tests {
             let [left, top, right, bottom] = case.tip_bounds;
             assert!((actual.stamp.width - (right - left) * 0.99).abs() < 1e-4);
             assert!((actual.stamp.height - (bottom - top) * 0.99).abs() < 1e-4);
+        }
+    }
+
+    #[test]
+    fn production_geometry_matches_drawing_size_and_alias_matrix() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-saved-caller-native.json"
+        ))
+        .unwrap();
+        let source_float = |v: &serde_json::Value| {
+            f32::from_bits(
+                u32::from_str_radix(v.as_str().unwrap(), 16)
+                    .unwrap()
+                    .swap_bytes(),
+            )
+        };
+        let register_float = |v: &serde_json::Value| {
+            f32::from_bits(
+                u32::from_str_radix(v.as_str().unwrap().trim_start_matches("0x"), 16).unwrap(),
+            )
+        };
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 14);
+        for case in cases {
+            let input = &case["input"];
+            let mut stroke = reference().stroke;
+            stroke.pen_width = 99.;
+            stroke.points = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: f64::from(source_float(&p[0])),
+                    y: f64::from(source_float(&p[1])),
+                })
+                .collect();
+            stroke.pressures = input["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| f64::from(source_float(v)))
+                .collect();
+            stroke.tilts = input["tilt_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| f64::from(source_float(v)))
+                .collect();
+            stroke.orientations = input["orientation_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| f64::from(source_float(v)))
+                .collect();
+            stroke.timestamps = input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_i64().unwrap())
+                .collect();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some(input["pen_name"].as_str().unwrap().into());
+            rendering.advanced_settings = Some(input["advanced_setting"].as_str().unwrap().into());
+            rendering.tool_type_raw = input["tool_type"].as_u64().unwrap() as u16;
+            rendering.style.pen_size = input["size_setter_called"]
+                .as_bool()
+                .unwrap()
+                .then(|| input["requested_size"].as_f64().unwrap() as f32);
+            let is_v7 = input["advanced_setting"] == "7;";
+            let actual = prepare(&stroke).unwrap();
+            let native = case["streams"]["saved_RedrawPen_addpoint_registers"]
+                .as_array()
+                .unwrap();
+            assert_eq!(actual.points.len(), native.len(), "{}", case["case_id"]);
+            for (point, record) in actual.points.iter().zip(native) {
+                let registers = &record["float_registers"];
+                let angle = if is_v7 {
+                    register_float(&registers[3])
+                } else {
+                    register_float(&registers[2])
+                } as f64;
+                let (sin, cos) = angle.sin_cos();
+                let x =
+                    f64::from(register_float(&registers[0])) - if is_v7 { 0. } else { sin * 0.5 };
+                let y =
+                    f64::from(register_float(&registers[1])) + if is_v7 { 0. } else { cos * 0.5 };
+                assert!(
+                    (point.x - x).abs() < 1e-4 && (point.y - y).abs() < 1e-4,
+                    "{} point {point:?} vs ({x},{y})",
+                    case["case_id"]
+                );
+                assert!((actual.stamp.angle - angle).abs() < 1e-6);
+                if is_v7 {
+                    let diameter = (f64::from(register_float(&registers[2])) + 0.5) * 2.;
+                    assert!((actual.stamp.height - diameter * 0.99).abs() < 1e-5);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn saved_style_size_and_alias_match_native_caller_controls() {
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 20., y: 20. }, Point { x: 40., y: 20. }];
+        stroke.pressures = vec![0.5; 2];
+        stroke.timestamps = vec![0, 10];
+        stroke.pen_width = 99.; // Presentation width must not replace saved size.
+        for (settings, controls) in [
+            (
+                "7;",
+                [
+                    (None, 2.97),
+                    (Some(0.), 2.97),
+                    (Some(0.1), 2.97),
+                    (Some(2.), 2.97),
+                    (Some(10.), 10.89),
+                ],
+            ),
+            (
+                "8;",
+                [
+                    (None, 0.),
+                    (Some(0.), 0.),
+                    (Some(0.1), 0.),
+                    (Some(2.), 1.98),
+                    (Some(10.), 9.9),
+                ],
+            ),
+        ] {
+            stroke.rendering.as_mut().unwrap().advanced_settings = Some(settings.into());
+            for (size, height) in controls {
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.style.pen_size = size;
+                rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker4".into());
+                let native = prepare(&stroke).unwrap();
+                assert!(
+                    (native.stamp.height - height).abs() < 1e-5,
+                    "{settings} {size:?}"
+                );
+                stroke.rendering.as_mut().unwrap().pen_name =
+                    Some("com.samsung.android.sdk.pen.pen.preload.StraightHighlighter".into());
+                let alias = prepare(&stroke).unwrap();
+                assert_eq!(alias.points, native.points);
+                assert_eq!(alias.sample_ends, native.sample_ends);
+                assert_eq!(alias.stamp.width, native.stamp.width);
+                assert_eq!(alias.stamp.height, native.stamp.height);
+                assert_eq!(alias.stamp.angle, native.stamp.angle);
+                assert_eq!(alias.opacity, native.opacity);
+            }
         }
     }
 

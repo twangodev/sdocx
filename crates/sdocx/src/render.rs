@@ -5524,6 +5524,7 @@ mod tests {
             let rendering = stroke.rendering.as_mut().unwrap();
             rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker4".into());
             rendering.advanced_settings = Some(settings.into());
+            rendering.style.pen_size = Some(36.2);
             let ink = crate::prepare_stroke(&stroke, false);
             let stamp = ink.rect_stamp.unwrap();
             assert!((stamp.height - height).abs() < 1e-4);
