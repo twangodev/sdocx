@@ -185,7 +185,11 @@ buffer uploads, attributes and blend calls with a separately captured stamp
 stream injected by the host. Rendered compositing, caller admission and vector
 paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
-default GLV10 selection and 11-float instance records. Its
+default GLV10 selection and 11-float instance records. The separate
+[Drawing caller](../conformance/brushpen-saved-caller-native.json) selects GLV10
+with an explicitly empty saved setting and captures 26 records under a
+1920×1080 context. Its stream differs from the matched direct-wrapper control;
+that caller/runtime difference remains outside the numeric model’s verified profile. A
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
 native texture/instance uploads, attribute setup, blend mapping and Draw-binding
 calls. A test-only source sampler matches
