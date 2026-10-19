@@ -455,8 +455,7 @@ fn prepare_oblique_stroke(
     let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     let tool_type = u32::from(rendering.tool_type_raw);
     if version == 1
-        && (tool_type != 0
-            && tool_type != 2
+        && (tool_type != 0 && tool_type != 1 && tool_type != 2
             || rendering.properties.top_layer_pen
             || rendering.style.fixed_width.is_some())
     {
@@ -476,6 +475,7 @@ fn prepare_oblique_stroke(
             &stroke.points,
             size,
             rendering.properties.compressed,
+            tool_type,
         )?,
         _ => return None,
     };
@@ -496,6 +496,7 @@ fn prepare_oblique_v1_mesh(
     points: &[crate::Point],
     size: f32,
     curve_enabled: bool,
+    tool_type: u32,
 ) -> Option<CoverageMesh> {
     if points.len() > 65_536
         || points
@@ -508,10 +509,14 @@ fn prepare_oblique_v1_mesh(
         .iter()
         .map(|point| path::P::from(*point))
         .collect::<Vec<_>>();
-    if input_points.iter().any(|point| !point.x.is_finite() || !point.y.is_finite()) {
+    if input_points
+        .iter()
+        .any(|point| !point.x.is_finite() || !point.y.is_finite())
+    {
         return None;
     }
-    let callbacks = oblique_v1::prepare_selected_v1_stream(&input_points, size, curve_enabled)?;
+    let callbacks =
+        oblique_v1::prepare_selected_v1_stream(&input_points, size, curve_enabled, tool_type)?;
     let runtime = oblique::ObliqueRuntime {
         k: oblique::DEFAULT_K,
         inverse_scale: [1.0, 1.0],
@@ -902,8 +907,8 @@ mod tests {
         assert!(
             prepare_stroke_for_context(&v1_tool, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
-                .is_none(),
-            "V1 tool 1 is outside the captured profile"
+                .is_some(),
+            "V1 tool 1 uses the captured 50-unit short-path threshold"
         );
         {
             let rendering = v1_tool.rendering.as_mut().unwrap();
@@ -1026,6 +1031,94 @@ mod tests {
             .as_str()
             .unwrap();
         assert_eq!(actual, expected, "full V1 native AddPoint vector");
+    }
+
+    #[test]
+    fn canonical_v1_tool1_adapter_matches_native_mesh_and_keeps_gates() {
+        use sha2::Digest;
+
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique-v1-tool1-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["tool1_curve_alternating_short_long"];
+        let input = &case["input"];
+        let bits = |value: &serde_json::Value| {
+            let hex = value.as_str().unwrap().trim_start_matches("0x");
+            u32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| {
+                let pair = pair.as_array().unwrap();
+                crate::Point {
+                    x: f64::from(f32::from_bits(bits(&pair[0]))),
+                    y: f64::from(f32::from_bits(bits(&pair[1]))),
+                }
+            })
+            .collect::<Vec<_>>();
+        let size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
+        let mut stroke = oblique_stroke();
+        stroke.points = points;
+        stroke.pen_width = size;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.tool_type_raw = 1;
+        rendering.properties.compressed = input["curve_enabled"].as_bool().unwrap();
+        rendering.style.pen_size = Some(size);
+
+        let prepared = prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+        assert!(prepare_stroke(&stroke, false).coverage_mesh.is_none());
+        let mesh = prepared.coverage_mesh.expect("captured tool1 V1 mesh");
+        assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
+        assert_eq!(mesh.terminal_end, mesh.triangles.len());
+        let actual: Vec<u8> = mesh
+            .triangles
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        let expected = &case["phase_final_vectors"]["draw_object_stroke"];
+        assert_eq!(
+            actual.len(),
+            expected["raw_byte_count"].as_u64().unwrap() as usize
+        );
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(&actual)),
+            expected["sha256"].as_str().unwrap(),
+            "complete tool1 native mesh"
+        );
+
+        let mut unsupported_tool = stroke.clone();
+        unsupported_tool.rendering.as_mut().unwrap().tool_type_raw = 3;
+        assert!(
+            prepare_stroke_for_context(&unsupported_tool, false, InkRenderContext::CanonicalPage)
+                .coverage_mesh
+                .is_none()
+        );
+        for gate in 0..3 {
+            let mut unsupported = stroke.clone();
+            let rendering = unsupported.rendering.as_mut().unwrap();
+            match gate {
+                0 => rendering.properties.top_layer_pen = true,
+                1 => {
+                    rendering.properties.fixed_width = true;
+                    rendering.style.fixed_width = Some(size);
+                }
+                _ => rendering.properties.eraser = true,
+            }
+            assert!(
+                prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
+                    .coverage_mesh
+                    .is_none(),
+                "unsupported tool1 drawing gate {gate}"
+            );
+        }
     }
 
     #[test]

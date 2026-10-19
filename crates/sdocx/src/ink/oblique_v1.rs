@@ -1,16 +1,17 @@
 //! Bounded model of the selected Oblique GLV1 saved sampler.
 //!
-//! This covers selected synthetic saved-caller and edge witnesses with tool 0
-//! or 2, including curve-disabled, duplicate, alternating, and stress paths.
-//! It does not establish other tool settings, arbitrary stroke histories, input
-//! decoding, or renderer state.
+//! This covers selected synthetic saved-caller and edge witnesses with the
+//! native short-path threshold for each tool type, including curve-disabled,
+//! duplicate, alternating, and stress paths. It does not establish arbitrary
+//! stroke histories, input decoding, or renderer state.
 
 use super::path::{P, Quad};
 
 const MAX_SAMPLES: usize = 1_000_000;
 const MAX_INPUT_POINTS: usize = 65_536;
 const MIN_DELTA: f32 = 1.5;
-const SHORT_PATH: f32 = 5.0;
+const SHORT_PATH_DEFAULT: f32 = 5.0;
+const TOOL1_SHORT_PATH: f32 = 50.0;
 
 fn repeat_count(size: f32, length: f32) -> Option<usize> {
     if !size.is_finite() || !length.is_finite() || size < 0.0 || length < 0.0 {
@@ -267,12 +268,14 @@ pub(super) struct V1CallbackStream {
     pub(super) final_rt_previous: P,
 }
 
-/// Model the traced redrawLine/endPen state transitions for the narrow
-/// selected V1 profile represented by the saved-caller and stress cases.
+/// Model the traced redrawLine/endPen state transitions for the selected V1
+/// profile. Tool 1 uses the separately captured 50-unit short-path threshold;
+/// the remaining native tool types use 5 units.
 pub(super) fn prepare_selected_v1_stream(
     points: &[P],
     size: f32,
     curve_enabled: bool,
+    tool_type: u32,
 ) -> Option<V1CallbackStream> {
     if points.len() < 2
         || points.len() > MAX_INPUT_POINTS
@@ -331,6 +334,11 @@ pub(super) fn prepare_selected_v1_stream(
     let mut needs_control = true;
     let mut alternate = true;
     let mut last_accepted = points[0];
+    let short_path = if tool_type == 1 {
+        TOOL1_SHORT_PATH
+    } else {
+        SHORT_PATH_DEFAULT
+    };
 
     for &current in points.iter().skip(1) {
         let delta = P {
@@ -344,7 +352,7 @@ pub(super) fn prepare_selected_v1_stream(
             continue;
         }
         let distance = current.sub(previous).len();
-        if distance < SHORT_PATH {
+        if distance < short_path {
             let was_alternate = alternate;
             alternate = !alternate;
             if was_alternate {
@@ -458,6 +466,7 @@ mod tests {
             include_str!("../../../../conformance/oblique-saved-caller-selected-native.json"),
             include_str!("../../../../conformance/oblique-v1-stress-native.json"),
             include_str!("../../../../conformance/oblique-v1-edge-native.json"),
+            include_str!("../../../../conformance/oblique-v1-tool1-native.json"),
         ]
         .into_iter()
         .flat_map(|json| {
@@ -650,11 +659,6 @@ mod tests {
                 continue;
             };
             let source = &case["input"];
-            if source["tool_type"].as_u64() == Some(1) {
-                // Tool 1 uses a distinct native sampler and is deliberately
-                // outside this source-derived V1 model.
-                continue;
-            }
             assert_eq!(source["advanced_setting"], Value::Null, "{case_name}");
             let points = fixture_points(source);
             let size = f32::from_bits(bits(&source["pen_size_f32_bits"]));
@@ -662,6 +666,7 @@ mod tests {
                 &points,
                 size,
                 source["curve_enabled"].as_bool().unwrap(),
+                source["tool_type"].as_u64().unwrap() as u32,
             )
             .unwrap_or_else(|| panic!("unsupported saved V1 case {case_name}"));
             assert_eq!(
@@ -716,14 +721,12 @@ mod tests {
                 continue;
             };
             let source = &case["input"];
-            if source["tool_type"].as_u64() == Some(1) {
-                continue;
-            }
             let points = fixture_points(source);
             let stream = prepare_selected_v1_stream(
                 &points,
                 f32::from_bits(bits(&source["pen_size_f32_bits"])),
                 source["curve_enabled"].as_bool().unwrap(),
+                source["tool_type"].as_u64().unwrap() as u32,
             )
             .unwrap();
             for phase in ["draw_object_stroke", "saved_redraw"] {
@@ -795,29 +798,27 @@ mod tests {
     }
 
     #[test]
-    fn native_tool1_edge_is_outside_the_selected_v1_sampler() {
+    fn native_tool1_threshold_accepts_exact_fifty() {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/oblique-v1-edge-native.json"
+            "../../../../conformance/oblique-v1-tool1-native.json"
         ))
         .unwrap();
-        let case = &fixture["cases"]["edge_tool1_same_mesh"];
-        let points = fixture_points(&case["input"]);
-        let modeled = prepare_selected_v1_stream(
-            &points,
-            f32::from_bits(bits(&case["input"]["pen_size_f32_bits"])),
-            case["input"]["curve_enabled"].as_bool().unwrap(),
-        )
-        .unwrap();
-        let native_count = case["callback_add_point_calls"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter(|call| call["phase"] == "draw_object_stroke")
-            .count();
-        assert_eq!(case["input"]["tool_type"], 1);
-        assert_eq!(native_count, 23);
-        assert_eq!(modeled.pairs.len(), 45);
-        assert_ne!(modeled.pairs.len(), native_count);
+        for (case_name, expected_count) in [
+            ("tool1_curve_49_999", 1),
+            ("tool1_curve_50_000", 36),
+            ("tool1_curve_50_001", 36),
+        ] {
+            let case = &fixture["cases"][case_name];
+            let source = &case["input"];
+            let modeled = prepare_selected_v1_stream(
+                &fixture_points(source),
+                f32::from_bits(bits(&source["pen_size_f32_bits"])),
+                source["curve_enabled"].as_bool().unwrap(),
+                source["tool_type"].as_u64().unwrap() as u32,
+            )
+            .unwrap();
+            assert_eq!(modeled.pairs.len(), expected_count, "{case_name}");
+        }
     }
 
     #[test]
