@@ -558,6 +558,148 @@ mod tests {
         [a[0].as_f64().unwrap() as f32, a[1].as_f64().unwrap() as f32]
     }
 
+    fn caller_input<'a>(source: &Value, vectors: &Value, points: &'a [P]) -> ObliqueInput<'a> {
+        let inverse = vectors["inverse_scale_bits"].as_array().unwrap();
+        ObliqueInput::new(
+            points,
+            f32::from_bits(bits(&source["pen_size_f32_bits"])),
+            source["curve_enabled"].as_bool().unwrap(),
+            source["tool_type"].as_u64().unwrap() as u32,
+            ObliqueRuntime {
+                k: f32::from_bits(bits(&vectors["k_bits"])),
+                inverse_scale: [
+                    f32::from_bits(bits(&inverse[0])),
+                    f32::from_bits(bits(&inverse[1])),
+                ],
+            },
+        )
+    }
+
+    fn caller_points(source: &Value) -> Vec<P> {
+        source["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| {
+                let xy = point.as_array().unwrap();
+                P {
+                    x: f32::from_bits(bits(&xy[0])),
+                    y: f32::from_bits(bits(&xy[1])),
+                }
+            })
+            .collect()
+    }
+
+    fn prepared_bits(prepared: &PreparedOblique) -> Vec<u32> {
+        prepared
+            .triangles
+            .iter()
+            .flat_map(|triangle| {
+                triangle.0.iter().flat_map(|vertex| {
+                    [
+                        vertex.position.x.to_bits(),
+                        vertex.position.y.to_bits(),
+                        vertex.coverage.to_bits(),
+                    ]
+                })
+            })
+            .collect()
+    }
+
+    fn callback_sample_bits(capture: &Value, phase: &str) -> Vec<[u32; 2]> {
+        capture["callback_add_point_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|call| call["phase"] == phase)
+            .map(|call| {
+                let xy = call["xy_bits"].as_array().unwrap();
+                [
+                    u32::from_str_radix(xy[0].as_str().unwrap().trim_start_matches("0x"), 16)
+                        .unwrap(),
+                    u32::from_str_radix(xy[1].as_str().unwrap().trim_start_matches("0x"), 16)
+                        .unwrap(),
+                ]
+            })
+            .collect()
+    }
+
+    fn assert_caller_phase(
+        input: ObliqueInput<'_>,
+        capture: &Value,
+        phase: &str,
+        id: &str,
+    ) -> PreparedOblique {
+        let prepared = prepare(input).unwrap();
+        let actual = prepared_bits(&prepared);
+        let native_hex = capture["phase_final_vectors"][phase]["vector_bytes"]
+            .as_str()
+            .unwrap();
+        assert_eq!(
+            actual.len() * 8,
+            native_hex.len(),
+            "{id} {phase} byte length"
+        );
+        for (index, value) in actual.iter().enumerate() {
+            let offset = index * 8;
+            let native = u32::from_le_bytes(std::array::from_fn(|byte| {
+                u8::from_str_radix(&native_hex[offset + byte * 2..offset + byte * 2 + 2], 16)
+                    .unwrap()
+            }));
+            assert_eq!(*value, native, "{id} {phase} float {index}");
+        }
+
+        let (saved_paths, terminal) = saved_redraw_paths(input).unwrap();
+        let mut samples: Vec<P> = saved_paths.iter().flatten().copied().collect();
+        samples.extend(terminal);
+        let native_samples = callback_sample_bits(capture, phase);
+        assert_eq!(
+            samples.len(),
+            native_samples.len(),
+            "{id} {phase} AddPoint count"
+        );
+        for (index, (sample, native)) in samples.iter().zip(native_samples).enumerate() {
+            assert_eq!(
+                sample.x.to_bits(),
+                native[0],
+                "{id} {phase} AddPoint {index} x"
+            );
+            assert_eq!(
+                sample.y.to_bits(),
+                native[1],
+                "{id} {phase} AddPoint {index} y"
+            );
+        }
+
+        let mut delta_index = 0;
+        for call in capture["callback_add_point_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|call| call["phase"] == phase)
+        {
+            let delta = call["vector_delta_bytes"].as_str().unwrap();
+            assert_eq!(delta.len() % 24, 0, "{id} {phase} callback delta triples");
+            for offset in (0..delta.len()).step_by(8) {
+                let native = u32::from_le_bytes(std::array::from_fn(|byte| {
+                    u8::from_str_radix(&delta[offset + byte * 2..offset + byte * 2 + 2], 16)
+                        .unwrap()
+                }));
+                assert_eq!(
+                    actual[delta_index], native,
+                    "{id} {phase} callback delta float {delta_index}"
+                );
+                delta_index += 1;
+            }
+        }
+        assert_eq!(
+            delta_index,
+            actual.len(),
+            "{id} {phase} callback delta coverage"
+        );
+        prepared
+    }
+
     fn input<'a>(case: &'a Value, points: &'a [P]) -> ObliqueInput<'a> {
         let native = &case["native"];
         ObliqueInput::new(
@@ -870,6 +1012,85 @@ mod tests {
                 }
                 assert_eq!(callback_bytes, expected, "{id} {phase} callback deltas");
             }
+        }
+    }
+
+    #[test]
+    fn typed_v4_cached_drawing_reuse_matches_first_second_and_fresh_native_streams() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/oblique-saved-caller-reuse-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-oblique-saved-caller-reuse-native-v1"
+        );
+        let reused = &fixture["reused"];
+        let fresh = &fixture["fresh_reference"];
+        assert_eq!(reused["native_calls"]["first_drawable_version"], "4");
+        assert_eq!(reused["native_calls"]["second_input"]["size"], 4.25);
+        assert_eq!(
+            reused["native_calls"]["second_input"]["points"][0],
+            serde_json::json!([30.0, 2.0])
+        );
+        assert_eq!(
+            reused["native_calls"]["second_source_ObjectStroke_arrays"],
+            fresh["native_calls"]["source_ObjectStroke_arrays"],
+            "reused and fresh native ObjectStroke arrays"
+        );
+        let snapshots = reused["native_calls"]["lifecycle_snapshots"]
+            .as_array()
+            .unwrap();
+        assert_eq!(snapshots.len(), 3);
+        assert_eq!(snapshots[0]["drawable"], snapshots[2]["drawable"]);
+        assert_eq!(snapshots[0]["rt"], snapshots[2]["rt"]);
+        assert_eq!(
+            &snapshots[0]["rt_previous_xy_344_356"].as_str().unwrap()[..16],
+            "0000d0410000a041",
+            "first stroke left 26,20 in the cached RT"
+        );
+        assert_eq!(
+            &snapshots[2]["rt_previous_xy_344_356"].as_str().unwrap()[..16],
+            "0000f04100000040",
+            "two-point reused stroke retained 30,2 as previous XY"
+        );
+
+        let first_source = &reused["input"];
+        let first_vectors = &reused["phase_final_vectors"]["draw_object_stroke"];
+        let first_points = caller_points(first_source);
+        let first_input = caller_input(first_source, first_vectors, &first_points);
+        assert_caller_phase(
+            first_input,
+            reused,
+            "draw_object_stroke",
+            "reused first stroke",
+        );
+
+        let second_source = &fresh["input"];
+        let second_vectors = &fresh["phase_final_vectors"]["draw_object_stroke"];
+        let second_points = caller_points(second_source);
+        let second_input = caller_input(second_source, second_vectors, &second_points);
+        assert_caller_phase(
+            second_input,
+            reused,
+            "second_draw_object_stroke",
+            "reused second stroke",
+        );
+        assert_caller_phase(second_input, reused, "saved_redraw", "reused saved redraw");
+        assert_caller_phase(
+            second_input,
+            fresh,
+            "draw_object_stroke",
+            "fresh second stroke",
+        );
+        assert_caller_phase(second_input, fresh, "saved_redraw", "fresh saved redraw");
+
+        for phase in ["second_draw_object_stroke", "saved_redraw"] {
+            assert_eq!(
+                reused["phase_final_vectors"][phase]["vector_bytes"],
+                fresh["phase_final_vectors"]["draw_object_stroke"]["vector_bytes"],
+                "reused second stroke versus fresh Drawing {phase}"
+            );
         }
     }
 
