@@ -25,7 +25,9 @@
       "__strlen_chk@LIBC",
       "__system_property_get@LIBC",
       "__vsnprintf_chk@LIBC",
+      "calloc@LIBC",
       "compress",
+      "free@LIBC",
       "frexpf@LIBC",
       "getauxval@LIBC",
       "hypotf@LIBC",
@@ -57,7 +59,7 @@
       "time:epoch-zero"
     ]
   },
-  "serialized_pdf_sha256": "70b75e9ff2c31dedbeb2320cb4300c62b4d73f8740ee4f8afd97e27e0b2ff083",
+  "serialized_pdf_sha256": "9cc1886123785caaf76fa3816e3d01f422bb1a6ef81de0751d89dc90913e9b59",
   "pdf_geometry": {
     "page_media_box": [
       0,

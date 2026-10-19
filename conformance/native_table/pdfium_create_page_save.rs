@@ -544,6 +544,21 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
         "pthread_setspecific" => {
             external.tls.insert(x0, x1);
         }
+        "calloc" => {
+            let size = x0.checked_mul(x1).expect("calloc size overflow").max(1);
+            assert!(size < 16 * 1024 * 1024, "bounded calloc size exceeded");
+            let pointer = external.posix_cursor.checked_add(15).unwrap() & !15;
+            external.posix_cursor = pointer.checked_add(size).unwrap();
+            assert!(external.posix_cursor < 0x4100_0000, "bounded calloc arena exhausted");
+            write(engine, pointer, &vec![0; size as usize]);
+            external.host_allocs.insert(pointer, size);
+            result = pointer;
+        }
+        "free" => {
+            if x0 != 0 && external.host_allocs.remove(&x0).is_none() {
+                assert!((HEAP..0x11f0_0000).contains(&x0) || (PDF_HEAP_BASE..PDF_HEAP_BASE + PDF_HEAP_SIZE).contains(&x0), "free of pointer outside bounded guest/host allocators: {x0:#x}");
+            }
+        }
         "frexpf" => {
             let value = f32::from_bits(read_register(engine, 136) as u32);
             let mut exponent = 0_i32;
@@ -1134,6 +1149,7 @@ fn bind_extra_dso(engine: Engine, path: &Path, base: u64, providers: &HashMap<St
         let jump_slot = kind.contains("JUMP_SLOT");
         let mut target = if symbol_value != 0 { base + symbol_value }
         else if let Some(address) = providers.get(name) { *address }
+        else if matches!(name, "calloc" | "free") { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
         else if name == "__sF" { STUB + 0x9000 }
         else if name == "stdout" { STUB + 0x9010 }
         else if jump_slot || function_imports.contains(name) { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
@@ -1307,8 +1323,9 @@ pub(super) fn capture(
             PDFIUM_BASE + local[name]
         } else {
             match name {
-                "_Znwm" | "_ZnwmRKSt9nothrow_t" | "malloc" | "calloc" => NEW,
-                "_ZdlPv" | "_ZdaPv" | "_ZdlPvm" | "_ZdaPvm" | "free" => DELETE,
+                "_Znwm" | "_ZnwmRKSt9nothrow_t" | "malloc" => NEW,
+                "calloc" | "free" => install_unresolved_host_stub(machine.engine, f[4], external.as_mut(), &mut next_stub),
+                "_ZdlPv" | "_ZdaPv" | "_ZdlPvm" | "_ZdaPvm" => DELETE,
                 "pthread_once" => STUB + 0x80,
                 _ if cpp_local.contains_key(name) => LIBCPP_BASE + cpp_local[name],
                 _ => {
@@ -1357,8 +1374,9 @@ pub(super) fn capture(
             LIBCPP_BASE + cpp_local[name]
         } else {
             match name {
-                "malloc" | "calloc" | "_Znwm" | "_ZnwmRKSt9nothrow_t" => NEW,
-                "free" | "_ZdlPv" | "_ZdaPv" => DELETE,
+                "malloc" | "_Znwm" | "_ZnwmRKSt9nothrow_t" => NEW,
+                "calloc" | "free" => install_unresolved_host_stub(machine.engine, f[4], external.as_mut(), &mut next_stub),
+                "_ZdlPv" | "_ZdaPv" => DELETE,
                 "pthread_once" => STUB + 0x80,
                 _ => {
                     let addr = next_stub;
@@ -1414,7 +1432,7 @@ pub(super) fn capture(
                 LIBCPP_BASE + cpp_local[name]
             } else {
                 match name {
-                    "free" => DELETE,
+                    "calloc" | "free" => install_unresolved_host_stub(machine.engine, f[4], external.as_mut(), &mut next_stub),
                     "__sF" => STUB + 0x9000,
                     "stdout" => STUB + 0x9010,
                     _ => external

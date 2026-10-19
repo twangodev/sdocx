@@ -11,7 +11,7 @@
     {
       "source_rotation_degrees": 0,
       "input_pdf_sha256": "e7a9cdb5c17611bf7ee4be604ad90e984d4bd435a9aa0f3a22362197c0508db6",
-      "serialized_pdf_sha256": "b5f081583bcb43177b9d1c9553c8b47ddad4c76121ec7a127a47be825273e978",
+      "serialized_pdf_sha256": "2d8a29adc9d69eaf50eb7bbf51ffa3eda2b29f015304ab582dd539173dd4d419",
       "serialized_pdf_bytes": 1517,
       "pdfium_native": {
         "loaded_width": 150,
@@ -31,7 +31,9 @@
           "__strlen_chk@LIBC",
           "__system_property_get@LIBC",
           "__vsnprintf_chk@LIBC",
+          "calloc@LIBC",
           "compress",
+          "free@LIBC",
           "frexpf@LIBC",
           "getauxval@LIBC",
           "hypotf@LIBC",
@@ -111,7 +113,7 @@
     {
       "source_rotation_degrees": 90,
       "input_pdf_sha256": "6e92278832402105779fe6a765dee53c9cd3a680c09e3926617da9b8b5530ef2",
-      "serialized_pdf_sha256": "fd4b400a6996070a2ac2288216c77fe1e8a1cebe622f9e540cc589f559311d18",
+      "serialized_pdf_sha256": "300de4d439d0249b16fd5202c044fed32c1b3adc0554f30fa4322d89c5d36f21",
       "serialized_pdf_bytes": 1524,
       "pdfium_native": {
         "loaded_width": 115,
@@ -131,7 +133,9 @@
           "__strlen_chk@LIBC",
           "__system_property_get@LIBC",
           "__vsnprintf_chk@LIBC",
+          "calloc@LIBC",
           "compress",
+          "free@LIBC",
           "frexpf@LIBC",
           "getauxval@LIBC",
           "hypotf@LIBC",
@@ -211,7 +215,7 @@
     {
       "source_rotation_degrees": 180,
       "input_pdf_sha256": "ab055765faa07d5e1885eab0b436afb3a768d180a043f79fef040c29f092f329",
-      "serialized_pdf_sha256": "68365f5a1ebf4512e712249c0a2287ca1ec08a07166f223493dbaf3fed628717",
+      "serialized_pdf_sha256": "30b931e069380deb6205acd9681144acf6251e2f79a2bfafce1091bda5cb2d8b",
       "serialized_pdf_bytes": 1526,
       "pdfium_native": {
         "loaded_width": 150,
@@ -231,7 +235,9 @@
           "__strlen_chk@LIBC",
           "__system_property_get@LIBC",
           "__vsnprintf_chk@LIBC",
+          "calloc@LIBC",
           "compress",
+          "free@LIBC",
           "frexpf@LIBC",
           "getauxval@LIBC",
           "hypotf@LIBC",
@@ -311,7 +317,7 @@
     {
       "source_rotation_degrees": 270,
       "input_pdf_sha256": "5561da86a2d266062feb9e79fec35282af2445206debf0abc1a1d950f34aa74f",
-      "serialized_pdf_sha256": "566d907430ea97df8a9ff6318edef5b8e4d3529e5e723546b3ea1be57956a06f",
+      "serialized_pdf_sha256": "e4c2f0c3f720e2273dcc0b1ec2907f7c3c1163f0aae3ad56476fef428ca72137",
       "serialized_pdf_bytes": 1523,
       "pdfium_native": {
         "loaded_width": 115,
@@ -331,7 +337,9 @@
           "__strlen_chk@LIBC",
           "__system_property_get@LIBC",
           "__vsnprintf_chk@LIBC",
+          "calloc@LIBC",
           "compress",
+          "free@LIBC",
           "frexpf@LIBC",
           "getauxval@LIBC",
           "hypotf@LIBC",
