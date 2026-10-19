@@ -432,6 +432,8 @@ class NativeBrush(NativeFountain):
                 self.active_draw_line_gate_record = {
                     'index': len(self.draw_line_gate_records),
                     'input_xy_bits_le': [fbits(self.f(0)), fbits(self.f(1))],
+                    'stored_time_before_i64': self.get(drawable + 288, 'q')[0],
+                    'fallback_counter_before_bits_le': fbits(self.get(drawable + 308, 'f')[0]),
                     'state_before': {
                         'minimum_distance_44_bits_le': fbits(self.get(drawable + 44, 'f')[0]),
                         'alternating_distance_336_bits_le': fbits(self.get(drawable + 336, 'f')[0]),
@@ -445,6 +447,17 @@ class NativeBrush(NativeFountain):
                 self.capture_draw_line_path_calls = True
                 self.draw_line_gate_records.append(self.active_draw_line_gate_record)
             record = self.active_draw_line_gate_record
+            if record is not None and draw_pc == 0x5c420:
+                drawable = self.active_draw_line_drawable
+                record['accepted_timing'] = {
+                    'delta_microseconds_i64': u.reg_read(R.UC_ARM64_REG_X10),
+                    'fallback_counter_bits_le': fbits(self.get(drawable + 308, 'f')[0]),
+                    'distance_bits_le': fbits(self.f(8)),
+                    'previous_speed_bits_le': fbits(self.get(drawable + 296, 'f')[0]),
+                }
+            if record is not None and draw_pc == 0x5c4c4:
+                record['accepted_timing']['next_speed_bits_le'] = fbits(self.f(1))
+                record['accepted_timing']['smoothed_speed_bits_le'] = fbits(self.f(9))
             if record is not None and draw_pc in (0x5c380, 0x5c39c, 0x5c3a8, 0x5c3ac, 0x5c3b0, 0x5c3d8, 0x5c3dc, 0x5c3e0, 0x5c640, 0x5cfb4):
                 drawable = self.active_draw_line_drawable
                 step = {'pc': hex(draw_pc),
@@ -649,6 +662,13 @@ class NativeBrush(NativeFountain):
         if any(not r.get('outcome') or not isinstance(r.get('state_after'), dict)
                for r in self.draw_line_gate_records):
             raise AssertionError('MotionEvent drawLine gate trace is missing an outcome or state snapshot')
+        for record in self.draw_line_gate_records:
+            timing = record.get('accepted_timing')
+            if record['outcome'] == 'accepted':
+                if not timing or timing['delta_microseconds_i64'] <= 0 or 'smoothed_speed_bits_le' not in timing:
+                    raise AssertionError('accepted drawLine lacks complete positive native timing')
+            elif timing is not None:
+                raise AssertionError('rejected drawLine unexpectedly reached the timing update')
         rect_values = list(self.get(rect, '4f'))
         return {'label': case['name'], 'path': f'native MotionEvent constructor/getters -> factory-selected GLV{state["native_version"]} RedrawPen -> native drawPattern -> RTV1::AddPoint',
                 'synthetic_input': {k: case[k] for k in ('points', 'pressures', 'times', 'tilts', 'orientations', 'tool_type')},

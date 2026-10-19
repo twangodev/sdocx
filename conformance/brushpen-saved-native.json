@@ -999,6 +999,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 10000,
+            "distance_bits_le": "bd1b8f40",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "bd1b0f40",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "bd1b8f3f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -1185,7 +1194,8 @@
               "00008040",
               "00000040"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         }
       ],
       "label": "synthetic-motion-neutral-tool2",
@@ -4864,6 +4874,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 12000,
+            "distance_bits_le": "b6c38740",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "3046e23f",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "3046623f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -5050,9 +5069,19 @@
               "0000a040",
               "00008040"
             ]
-          }
+          },
+          "stored_time_before_i64": 100
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 17000,
+            "distance_bits_le": "b6c38740",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "13b99f3f",
+            "previous_speed_bits_le": "3046e23f",
+            "smoothed_speed_bits_le": "a2ffc03f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -5239,7 +5268,8 @@
               "bab85640",
               "bab81640"
             ]
-          }
+          },
+          "stored_time_before_i64": 112
         }
       ],
       "label": "synthetic-motion-tool1-pressure-tilt-orientation",
@@ -8031,6 +8061,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 20000,
+            "distance_bits_le": "bd1b8f40",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "bd1b8f3f",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "bd1b0f3f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -8217,7 +8256,8 @@
               "000080bf",
               "0000c040"
             ]
-          }
+          },
+          "stored_time_before_i64": 200
         }
       ],
       "label": "synthetic-motion-tool3-pressure-orientation",
@@ -9822,6 +9862,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 40650,
+            "distance_bits_le": "0000803f",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "12e8fb3d",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "12e87b3d"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -10008,9 +10057,11 @@
               "0000803f",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 0
         },
         {
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -10086,9 +10137,19 @@
               "f4ffff3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 20000,
+            "distance_bits_le": "4553ac40",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "4553ac3f",
+            "previous_speed_bits_le": "12e8fb3d",
+            "smoothed_speed_bits_le": "c6113c3f"
+          },
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -10275,7 +10336,8 @@
               "f4ffff3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         }
       ],
       "label": "synthetic-motion-tool2-pressure-low",
@@ -11284,6 +11346,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 40650,
+            "distance_bits_le": "0000803f",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "12e8fb3d",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "12e87b3d"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -11470,9 +11541,11 @@
               "0000803f",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 0
         },
         {
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -11548,9 +11621,19 @@
               "117d803e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 2
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 7000,
+            "distance_bits_le": "4553ac40",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "d12d7640",
+            "previous_speed_bits_le": "12e8fb3d",
+            "smoothed_speed_bits_le": "120dfe3f"
+          },
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -11737,7 +11820,8 @@
               "117d803e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 2
         }
       ],
       "label": "synthetic-motion-tool2-pressure-above-one",
@@ -14594,6 +14678,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 5000,
+            "distance_bits_le": "0000803f",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "0000803f",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "0000003f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -14780,9 +14873,11 @@
               "0000803f",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         },
         {
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -14858,9 +14953,19 @@
               "bc1fee3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 15
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 45000,
+            "distance_bits_le": "4553ac40",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "932d193f",
+            "previous_speed_bits_le": "0000803f",
+            "smoothed_speed_bits_le": "ca964c3f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -15047,7 +15152,8 @@
               "bc1fee3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 15
         }
       ],
       "label": "synthetic-motion-tool1-pressure-insensitive-multisegment",
@@ -17958,6 +18064,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 3000,
+            "distance_bits_le": "0000803f",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "5555d53f",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "5555553f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -18144,9 +18259,11 @@
               "0000803f",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         },
         {
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -18222,9 +18339,19 @@
               "a1b2ed3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 13
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 15000,
+            "distance_bits_le": "4553ac40",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "5cc4e53f",
+            "previous_speed_bits_le": "5555d53f",
+            "smoothed_speed_bits_le": "d88cdd3f"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -18411,7 +18538,8 @@
               "a1b2ed3e",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 13
         }
       ],
       "label": "synthetic-motion-tool3-pressure-insensitive-multisegment",
@@ -18690,6 +18818,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 1000,
+            "distance_bits_le": "cdcccc3d",
+            "fallback_counter_bits_le": "0000803f",
+            "next_speed_bits_le": "0000003f",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "0000803e"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -18876,9 +19013,11 @@
               "cdcccc3d",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 100
         },
         {
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -18954,9 +19093,11 @@
               "cbae193d",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 101
         },
         {
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": false,
           "gate_steps": [
             {
@@ -19032,7 +19173,8 @@
               "cbae193d",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 101
         }
       ],
       "label": "synthetic-motion-tool2-uneven-fast-slow-movement-gate",
@@ -23399,6 +23541,15 @@
       },
       "draw_line_gate_records": [
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 40650,
+            "distance_bits_le": "00008040",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "12e8fb3e",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "12e87b3e"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -23585,9 +23736,19 @@
               "00008040",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 0
         },
         {
+          "accepted_timing": {
+            "delta_microseconds_i64": 10000,
+            "distance_bits_le": "00008040",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "00000040",
+            "previous_speed_bits_le": "12e8fb3e",
+            "smoothed_speed_bits_le": "027d9f3f"
+          },
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -23774,9 +23935,11 @@
               "6d41de3f",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 10
         },
         {
+          "fallback_counter_before_bits_le": "a4709d3f",
           "first_gate_passed": true,
           "gate_steps": [
             {
@@ -23898,7 +24061,8 @@
               "bbacbd40",
               "00000000"
             ]
-          }
+          },
+          "stored_time_before_i64": 20
         }
       ],
       "label": "synthetic-motion-tool1-alternating-distance-gate",
