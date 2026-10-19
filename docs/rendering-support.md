@@ -338,7 +338,10 @@ It also checks target preclear and deferred deletion; production vector paint re
 The [MagicPen Drawing caller](../conformance/magicpen-saved-caller-native.json)
 checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
 RTV1 vectors separately from callback arguments for synthetic Model inputs;
-texture paint and production vector integration remain unverified.
+the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json)
+joins native color, the unchanged upload and interior partial-alpha paint on
+transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
+initialization is host-supplied; production vector paint and device parity remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. Version dispatch is observed; sampler reconstruction, paint and
