@@ -101,7 +101,7 @@
     "RendererFactory::GetRendererDeviceCaps": "synthetic caps object with maximum dimension 4096",
     "clock_gettime and strncpy": "deterministic bounded host shims",
     "pattern allocator": "diagnostic 0xcd poison distinguishes writes; it is not an assertion about production heap contents",
-    "skipped Init siblings": "explicit unmapped nonnull placeholders for existing graphics/blend/shader fields"
+    "skipped Init siblings": "explicit unmapped nonnull placeholders for existing graphics and shader fields"
   },
   "init_path": {
     "buildTextures_setTextures_args": [
@@ -115,7 +115,9 @@
       ]
     ],
     "native_function_entries": {
+      "SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::Init()": 1,
+      "SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::setTextures(int, int)": 1,
       "SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
@@ -130,7 +132,6 @@
     "skipped_sibling_pointer_dereference_guard": "unmapped addresses; execution faults if read",
     "synthetic_preinitialized_sibling_fields": [
       200,
-      208,
       216
     ]
   },
@@ -142,6 +143,239 @@
     "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
     "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
     "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+  },
+  "native_draw": {
+    "blend_descriptor_note": "actual native Init input to intercepted CreateBlendStateObject; raw bytes only, not a GLES blend-state mapping",
+    "entry_count": 1,
+    "init_blend_descriptor_raw_32_bytes": "0101000000000000000000000600000007000000010000000700000000000000",
+    "synthetic_inputs_and_native_bindings": {
+      "bindings": {
+        "ProjectionMatrix": {
+          "binding_offset": 0,
+          "bytes": "2db25d3fdace973e000000006f12833aca5481be840d873f00000000c0cf38bb00000000000000000000803f00000000cdccfc40d0cccc3e00000000fca9813f",
+          "f32": [
+            0.8659999966621399,
+            0.296500027179718,
+            0.0,
+            0.0010000000474974513,
+            -0.2526000142097473,
+            1.0550999641418457,
+            0.0,
+            -0.0028200000524520874,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            7.900000095367432,
+            0.40000009536743164,
+            0.0,
+            1.0130000114440918
+          ],
+          "value_type": "f32"
+        },
+        "grain": {
+          "binding_offset": 32,
+          "bytes": "43ab5143037a9343",
+          "f32": [
+            209.6689910888672,
+            294.9532165527344
+          ],
+          "value_type": "f32"
+        },
+        "grainOffset": {
+          "binding_offset": 40,
+          "bytes": "dc063c455eb85e45",
+          "f32": [
+            3008.4287109375,
+            3563.52294921875
+          ],
+          "value_type": "f32"
+        },
+        "inputColor": {
+          "binding_offset": 24,
+          "bytes": "0000803e0000003f0000403fcdcc4c3f",
+          "f32": [
+            0.25,
+            0.5,
+            0.75,
+            0.800000011920929
+          ],
+          "value_type": "f32"
+        },
+        "numTiles": {
+          "binding_offset": 48,
+          "bytes": "00004040",
+          "f32": [
+            3.0
+          ],
+          "value_type": "f32"
+        },
+        "sampler0": {
+          "binding_offset": 8,
+          "bytes": "00000000",
+          "u32": [
+            0
+          ],
+          "value_type": "u32"
+        },
+        "sampler1": {
+          "binding_offset": 16,
+          "bytes": "01000000",
+          "u32": [
+            1
+          ],
+          "value_type": "u32"
+        }
+      },
+      "bitmap_matrix_bytes_hex": "cdcc8c3fcdcc4c3e000000006f12833acdccccbd6666663f000000006f1203bb00000000000000000000803f000000000000004000004040000000000000803f",
+      "bitmap_matrix_f32": [
+        1.1,
+        0.2,
+        0.0,
+        0.001,
+        -0.1,
+        0.9,
+        0.0,
+        -0.002,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        2.0,
+        3.0,
+        0.0,
+        1.0
+      ],
+      "bitmap_size": [
+        321,
+        228
+      ],
+      "caller_matrix_f32": [
+        0.8,
+        0.15,
+        0.0,
+        0.0005,
+        -0.12,
+        1.2,
+        0.0,
+        -0.0003,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        5.0,
+        -4.0,
+        0.0,
+        1.0
+      ],
+      "events": [
+        {
+          "arg1": 0,
+          "call": "bitmap_start_probe"
+        },
+        {
+          "call": "bitmap_matrix",
+          "x8_output": true
+        },
+        {
+          "call": "bitmap_width",
+          "result": 321
+        },
+        {
+          "call": "bitmap_height",
+          "result": 228
+        },
+        {
+          "call": "blend_activate"
+        },
+        {
+          "call": "program_activate"
+        },
+        {
+          "call": "bitmap_matrix",
+          "x8_output": true
+        },
+        {
+          "byte_count": 64,
+          "call": "binding_set",
+          "name": "ProjectionMatrix"
+        },
+        {
+          "byte_count": 16,
+          "call": "binding_set",
+          "name": "inputColor"
+        },
+        {
+          "byte_count": 8,
+          "call": "binding_set",
+          "name": "grain"
+        },
+        {
+          "byte_count": 8,
+          "call": "binding_set",
+          "name": "grainOffset"
+        },
+        {
+          "byte_count": 4,
+          "call": "binding_set",
+          "name": "numTiles"
+        },
+        {
+          "byte_count": 4,
+          "call": "binding_set",
+          "name": "sampler0"
+        },
+        {
+          "byte_count": 4,
+          "call": "binding_set",
+          "name": "sampler1"
+        },
+        {
+          "call": "graphics_draw",
+          "stack32_hex": "010000005eb85e4500000000efc98b3f43ab5643037a9143000000000000803f",
+          "x1_x7": [
+            0,
+            4,
+            0,
+            321,
+            228,
+            268475040,
+            268558320
+          ]
+        },
+        {
+          "call": "bitmap_finish",
+          "x1_x2": [
+            0,
+            0
+          ]
+        }
+      ],
+      "host_boundary": "synthetic ISPSubBitmap matrix/dimensions, shader bindings/program, GraphicsObject, blend-state factory/activation; actual RTV1::Draw and SetStartPoint execute, binding dispatches are intercepted",
+      "input_color_f32": [
+        0.25,
+        0.5,
+        0.75,
+        0.8
+      ],
+      "input_instance_bits_le": [
+        "2a490240",
+        "1227d73f",
+        "0000803f",
+        "d7a3a03f",
+        "bb340b3d",
+        "c9dc2d3f",
+        "f404353f",
+        "f404353f",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "set_start_point_f32": [
+        17.25,
+        22.5
+      ]
+    }
   },
   "texture_descriptors": [
     {

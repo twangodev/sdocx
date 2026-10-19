@@ -1,14 +1,14 @@
-"""Hash-pinned BrushPen RTV1 texture upload ABI oracle.
+"""Hash-pinned BrushPen RTV1 texture upload and Draw-binding ABI oracle.
 
-This executes the native GLV10 constructor, RTV1::Init texture branch, bitmap
-factory/RT wrappers, and Renderer::TextureObject::Update. The three already
-initialized render siblings and the final GL driver are explicit host
-boundaries; intercepted GL calls establish upload arguments, not rendered
-pixels or device heap contents.
+This executes the native GLV10 constructor, RTV1::Init texture branch,
+Renderer::TextureObject::Update, and RTV1::Draw math. Renderer objects and
+shader binding dispatch remain explicit host boundaries; intercepted GL calls
+establish upload arguments, not rendered pixels or device heap contents.
 """
 import argparse
 import hashlib
 import json
+import math
 import struct
 import sys
 from pathlib import Path
@@ -54,6 +54,9 @@ class TextureProbe(NativeBrush):
         self.gl_calls = []
         self.upload_records = []
         self.grain_source = None
+        self.draw_stubs = {}
+        self.draw_capture = {'bindings': {}, 'events': []}
+        self.blend_descriptor = None
         self.state_stub = 0x20001160
         self.state_default_stub = 0x20001140
         self.device_caps = self.alloc(16)
@@ -82,6 +85,179 @@ class TextureProbe(NativeBrush):
         self.callbacks['glBindTexture'] = self.gl_bind_texture
         self.callbacks['glPixelStorei'] = self.gl_pixel_store
         self.callbacks['glTexSubImage2D'] = self.gl_tex_sub_image_2d
+        self.callbacks['SPen::RendererFactory::CreateBlendStateObject(SPen::BlendStateDescriptor const&)'] = self.create_blend_state
+
+    def create_blend_state(self):
+        descriptor = self.x(0)
+        self.blend_descriptor = bytes(self.u.mem_read(descriptor, 32)).hex()
+        obj = self.alloc(16)
+        vtable = self.alloc(64)
+        self.put(obj, 'Q', vtable)
+        self.put(vtable + 24, 'Q', self.new_draw_stub('blend_activate'))
+        self.x(0, obj)
+
+    def new_draw_stub(self, kind, **fields):
+        address = self.alloc(8)
+        self.u.mem_write(address, struct.pack('<II', 0xd503201f, 0xd65f03c0))
+        self.draw_stubs[address] = {'kind': kind, **fields}
+        return address
+
+    def draw_bitmap_callback(self, kind):
+        if kind == 'bitmap_matrix':
+            self.u.mem_write(self.x(8), bytes.fromhex(self.draw_capture['bitmap_matrix_bytes_hex']))
+            self.x(0, self.x(8))
+            self.draw_capture['events'].append({'call': kind, 'x8_output': True})
+        elif kind in ('bitmap_width', 'bitmap_height'):
+            self.x(0, self.draw_capture['bitmap_size'][0 if kind.endswith('width') else 1])
+            self.draw_capture['events'].append({'call': kind, 'result': self.x(0)})
+        elif kind == 'bitmap_start_probe':
+            self.x(0, 0)
+            self.draw_capture['events'].append({'call': kind, 'arg1': self.x(1)})
+        else:
+            self.x(0, 0)
+            self.draw_capture['events'].append({'call': kind, 'x1_x2': [self.x(1), self.x(2)]})
+
+    def dispatch_draw_stub(self, address):
+        stub = self.draw_stubs[address]
+        kind = stub['kind']
+        if kind == 'binding_set':
+            name = stub['name']
+            length = stub['bytes']
+            raw = bytes(self.u.mem_read(self.x(1), length))
+            entry = {
+                'binding_offset': stub['offset'], 'bytes': raw.hex(),
+                'value_type': stub['value_type'],
+            }
+            if stub['value_type'] == 'f32':
+                entry['f32'] = list(struct.unpack('<' + 'f' * (length // 4), raw))
+            else:
+                entry['u32'] = list(struct.unpack('<' + 'I' * (length // 4), raw))
+            self.draw_capture['bindings'][name] = entry
+            self.draw_capture['events'].append({'call': 'binding_set', 'name': name,
+                                                 'byte_count': length})
+        elif kind == 'texture_activate':
+            self.draw_capture['events'].append({'call': kind, 'texture_object': hex(self.x(0)),
+                                                 'unit_args': [self.x(1), self.x(2)]})
+        elif kind == 'program_activate':
+            self.draw_capture['events'].append({'call': kind})
+        elif kind == 'blend_activate':
+            self.draw_capture['events'].append({'call': kind})
+        elif kind == 'graphics_update':
+            sp = self.u.reg_read(R.UC_ARM64_REG_SP)
+            self.draw_capture['events'].append({'call': kind,
+                                                 'x1_x4': [self.x(i) for i in range(1, 5)],
+                                                 'stack32_hex': bytes(self.u.mem_read(sp, 32)).hex()})
+        elif kind == 'graphics_draw':
+            sp = self.u.reg_read(R.UC_ARM64_REG_SP)
+            self.draw_capture['events'].append({'call': kind, 'x1_x7': [self.x(i) for i in range(1, 8)],
+                                                 'stack32_hex': bytes(self.u.mem_read(sp, 32)).hex()})
+        elif kind.startswith('bitmap_'):
+            self.draw_bitmap_callback(kind)
+        else:
+            raise RuntimeError(f'unknown native Draw stub {kind}')
+        self.u.reg_write(R.UC_ARM64_REG_PC, self.u.reg_read(R.UC_ARM64_REG_LR))
+
+    def capture_native_draw(self, rt):
+        # The lower renderer/GLES interfaces are explicit host boundaries. The
+        # native RTV1::Draw method and its parameter-binding calls remain real.
+        shader = self.alloc(64)
+        binding_sizes = {
+            'ProjectionMatrix': (64, 0, 'f32'), 'sampler0': (4, 8, 'u32'),
+            'sampler1': (4, 16, 'u32'), 'inputColor': (16, 24, 'f32'),
+            'grain': (8, 32, 'f32'), 'grainOffset': (8, 40, 'f32'),
+            'numTiles': (4, 48, 'f32'),
+        }
+        for name, (size, offset, value_type) in binding_sizes.items():
+            binding = self.alloc(16)
+            table = self.alloc(8)
+            self.put(binding, 'Q', table)
+            self.put(table, 'Q', self.new_draw_stub('binding_set', name=name, bytes=size,
+                                                    offset=offset, value_type=value_type))
+            self.put(shader + offset, 'Q', binding)
+        program, program_table = self.alloc(16), self.alloc(24)
+        self.put(program, 'Q', program_table)
+        self.put(program_table + 16, 'Q', self.new_draw_stub('program_activate'))
+        self.put(shader + 56, 'Q', program)
+        self.put(rt + 216, 'Q', shader)
+
+        graphics, graphics_table = self.alloc(16), self.alloc(64)
+        self.put(graphics, 'Q', graphics_table)
+        self.put(graphics_table + 16, 'Q', self.new_draw_stub('graphics_update'))
+        self.put(graphics_table + 56, 'Q', self.new_draw_stub('graphics_draw'))
+        self.put(rt + 200, 'Q', graphics)
+        blend = self.get(rt + 208, 'Q')[0]
+        if not blend:
+            raise RuntimeError('native Init did not create a blend state object')
+        blend_table = self.get(blend, 'Q')[0]
+        self.put(blend_table + 24, 'Q', self.new_draw_stub('blend_activate'))
+
+        texture_table = self.texture_vtable
+        self.put(texture_table + 16, 'Q', self.new_draw_stub('texture_activate'))
+
+        bitmap, bitmap_table = self.alloc(16), self.alloc(160)
+        self.put(bitmap, 'Q', bitmap_table)
+        self.draw_capture['bitmap_size'] = [321, 228]
+        bitmap_matrix = [1.1, 0.2, 0.0, 0.001, -0.1, 0.9, 0.0, -0.002,
+                         0.0, 0.0, 1.0, 0.0, 2.0, 3.0, 0.0, 1.0]
+        self.draw_capture['bitmap_matrix_bytes_hex'] = struct.pack('<16f', *bitmap_matrix).hex()
+        for offset, kind in ((16, 'bitmap_matrix'), (40, 'bitmap_start_probe'),
+                             (48, 'bitmap_finish'), (96, 'bitmap_width'),
+                             (104, 'bitmap_height')):
+            self.put(bitmap_table + offset, 'Q', self.new_draw_stub(kind))
+
+        # One exact native 11-word instance is enough to reach the real Draw
+        # method. The native RT list itself is supplied as an explicit fixture
+        # input; downstream VBO submission is intercepted.
+        geometry_fixture = json.loads((ROOT / 'conformance/brushpen-saved-native.json').read_text())
+        case = next(c for c in geometry_fixture['synthetic_cases']
+                    if c['label'] == 'synthetic-motion-tool1-pressure-tilt-orientation')
+        record = case['buffer_records'][1]['instance_bits_le']
+        vector, data = self.alloc(24), self.alloc(44)
+        self.u.mem_write(data, b''.join(bytes.fromhex(word) for word in record))
+        self.put(vector, 'QQQ', data, data + 44, data + 44)
+        self.put(rt + 88, 'Q', vector)
+        self.put(rt + 44, '4f', 0.25, 0.5, 0.75, 0.8)
+        self.call('SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)', [rt], [17.25, 22.5])
+
+        caller_matrix = [0.8, 0.15, 0.0, 0.0005, -0.12, 1.2, 0.0, -0.0003,
+                         0.0, 0.0, 1.0, 0.0, 5.0, -4.0, 0.0, 1.0]
+        matrix_address = self.alloc(64)
+        self.put(matrix_address, '16f', *caller_matrix)
+        self.draw_capture.update({'caller_matrix_f32': caller_matrix,
+                                  'bitmap_matrix_f32': bitmap_matrix,
+                                  'set_start_point_f32': [17.25, 22.5],
+                                  'input_color_f32': [0.25, 0.5, 0.75, 0.8],
+                                  'input_instance_bits_le': record,
+                                  'host_boundary': 'synthetic ISPSubBitmap matrix/dimensions, shader bindings/program, GraphicsObject, blend-state factory/activation; actual RTV1::Draw and SetStartPoint execute, binding dispatches are intercepted'})
+        self.call('SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',
+                  [rt, bitmap, matrix_address], instruction_limit=2_000_000)
+        return self.draw_capture
+
+    @staticmethod
+    def matrix_product_col_major(left, right):
+        return [sum(left[k * 4 + row] * right[col * 4 + k] for k in range(4))
+                for col in range(4) for row in range(4)]
+
+    @staticmethod
+    def transform_col_major(matrix, point):
+        return [sum(matrix[col * 4 + row] * point[col] for col in range(4))
+                for row in range(4)]
+
+    @classmethod
+    def expected_draw_uniforms(cls, capture):
+        bitmap = capture['bitmap_matrix_f32']
+        caller = capture['caller_matrix_f32']
+        projection = cls.matrix_product_col_major(bitmap, caller)
+        px, py = capture['set_start_point_f32']
+        point = cls.transform_col_major(projection, [px, py, 0.0, 1.0])
+        offset = [(point[i] / point[3] + 1.0) * capture['bitmap_size'][i] / 2.0
+                  for i in range(2)]
+        corners = []
+        for xy in ((321.0, 228.0), (0.0, 0.0)):
+            transformed = cls.transform_col_major(caller, [xy[0], xy[1], 0.0, 1.0])
+            corners.append([transformed[i] / transformed[3] for i in range(2)])
+        grain = [corners[0][i] - corners[1][i] for i in range(2)]
+        return projection, grain, offset
 
     def alloc_array(self):
         size = self.x(0)
@@ -191,8 +367,13 @@ class TextureProbe(NativeBrush):
         self.x(0, texture)
 
     def hook(self, u, address, size, data):
+        if address in self.draw_stubs:
+            self.dispatch_draw_stub(address)
+            return
         entries = (
             'SPen::BrushPenStrokeDrawableRTV1::Init()',
+            'SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',
+            'SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)',
             'SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)',
             'SPen::BrushPenStrokeDrawableRTV1::setTextures(int, int)',
             CREATE_BITMAP,
@@ -242,11 +423,11 @@ class TextureProbe(NativeBrush):
         grain_dims = list(self.get(rt + 240, '2f'))
         if state['native_version'] != 10 or grain_dims != [321.0, 228.0]:
             raise RuntimeError(f'constructor profile mismatch: GLV{state["native_version"]} grain={grain_dims}')
-        # Init sees nonnull sibling resources and skips only their unrelated
-        # graphics, blend, and shader construction branches. These addresses
+        # Init sees nonnull sibling resources and skips the unrelated graphics
+        # and shader construction branches. These addresses
         # are deliberately unmapped, so any unexpected dereference faults.
         skipped_resources = {field: 0x13000000 + index * 0x1000
-                             for index, field in enumerate((200, 208, 216))}
+                             for index, field in enumerate((200, 216))}
         for field, pointer in skipped_resources.items():
             self.put(rt + field, 'Q', pointer)
         regions = self.u.mem_regions()
@@ -254,6 +435,9 @@ class TextureProbe(NativeBrush):
                for start, end, _permissions in regions):
             raise AssertionError('synthetic skip pointer unexpectedly overlaps mapped memory')
         self.call('SPen::BrushPenStrokeDrawableRTV1::Init()', [rt], instruction_limit=5_000_000)
+        blend_factory = 'SPen::RendererFactory::CreateBlendStateObject(SPen::BlendStateDescriptor const&)'
+        if self.import_calls.get(blend_factory) != 1:
+            raise RuntimeError(f'native Init blend factory count mismatch: {self.import_calls.get(blend_factory)}')
         expected_counts = {
             'SPen::BrushPenStrokeDrawableRTV1::Init()': 1,
             'SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)': 1,
@@ -269,7 +453,7 @@ class TextureProbe(NativeBrush):
         if self.native_entries.get('texture_wrapper_args') != [[48, 48], [48, 48]]:
             raise RuntimeError(
                 f'Init texture wrapper args mismatch: {self.native_entries.get("texture_wrapper_args")}')
-        forbidden = ('RendererFactory::CreateGraphicsObject', 'CreateBlendStateObject',
+        forbidden = ('RendererFactory::CreateGraphicsObject',
                      'ShaderManager::GetInstance', 'BrushPenStrokeShaderV1::BrushPenStrokeShaderV1')
         reached_forbidden = {name: count for name, count in self.import_calls.items()
                              if count and any(token in name for token in forbidden)}
@@ -280,6 +464,48 @@ class TextureProbe(NativeBrush):
         if self.grain_source != {'bytes': 73188,
                                  'sha256': 'd6e0743f9343efac472d3d00ba44f4138572620b376fe6fd74d9b5ebf1aad2aa'}:
             raise RuntimeError(f'embedded grain source changed: {self.grain_source}')
+        draw_capture = self.capture_native_draw(rt)
+        expected_draw_entries = {
+            'SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)': 1,
+            'SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)': 1,
+        }
+        for name, count in expected_draw_entries.items():
+            if self.native_entries.get(name) != count:
+                raise RuntimeError(f'native Draw entry mismatch for {name}: {self.native_entries.get(name)}')
+        if set(draw_capture['bindings']) != {'ProjectionMatrix', 'sampler0', 'sampler1',
+                                             'inputColor', 'grain', 'grainOffset', 'numTiles'}:
+            raise RuntimeError(f'native Draw binding capture incomplete: {sorted(draw_capture["bindings"])}')
+        byte_sizes = {'ProjectionMatrix': 64, 'sampler0': 4, 'sampler1': 4,
+                      'inputColor': 16, 'grain': 8, 'grainOffset': 8, 'numTiles': 4}
+        offsets = {'ProjectionMatrix': 0, 'sampler0': 8, 'sampler1': 16,
+                   'inputColor': 24, 'grain': 32, 'grainOffset': 40, 'numTiles': 48}
+        for name, size in byte_sizes.items():
+            entry = draw_capture['bindings'][name]
+            if len(bytes.fromhex(entry['bytes'])) != size or entry['binding_offset'] != offsets[name]:
+                raise RuntimeError(f'native Draw binding ABI mismatch for {name}: {entry}')
+        binding_events = [e for e in draw_capture['events'] if e['call'] == 'binding_set']
+        if sorted((e['name'], e['byte_count']) for e in binding_events) != sorted(byte_sizes.items()):
+            raise RuntimeError(f'native Draw binding dispatch mismatch: {binding_events}')
+        if draw_capture['bindings']['sampler0']['u32'] != [0] or \
+                draw_capture['bindings']['sampler1']['u32'] != [1]:
+            raise RuntimeError('native Draw sampler unit mismatch')
+        if draw_capture['bindings']['numTiles']['f32'] != [3.0]:
+            raise RuntimeError(f'native numTiles binding mismatch: {draw_capture["bindings"]["numTiles"]}')
+        expected_color = list(struct.unpack('<4f', struct.pack('<4f', 0.25, 0.5, 0.75, 0.8)))
+        if draw_capture['bindings']['inputColor']['f32'] != expected_color:
+            raise RuntimeError(f'native inputColor binding mismatch: {draw_capture["bindings"]["inputColor"]}')
+        expected_projection, expected_grain, expected_offset = self.expected_draw_uniforms(draw_capture)
+        for binding, expected in (('ProjectionMatrix', expected_projection),
+                                  ('grain', expected_grain), ('grainOffset', expected_offset)):
+            observed = draw_capture['bindings'][binding]['f32']
+            if len(observed) != len(expected) or any(
+                    not math.isfinite(a) or not math.isfinite(b) or abs(a - b) > 0.002
+                    for a, b in zip(observed, expected)):
+                raise RuntimeError(f'native Draw {binding} differs from independent transform: {observed} != {expected}')
+        if self.blend_descriptor is None:
+            raise RuntimeError('native Init did not create the blend-state descriptor')
+        if self.blend_descriptor != '0101000000000000000000000600000007000000010000000700000000000000':
+            raise RuntimeError(f'native Init blend descriptor changed: {self.blend_descriptor}')
         return {
             'artifact': 'Samsung Notes 4.4.45.37 native BrushPen',
             'library_sha256': self.native_hashes,
@@ -297,6 +523,11 @@ class TextureProbe(NativeBrush):
             'texture_descriptors': self.texture_descriptors,
             'texture_state_calls': self.texture_state_calls,
             'embedded_grain_source': self.grain_source,
+            'native_draw': {'entry_count': self.native_entries[
+                                'SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)'],
+                            'synthetic_inputs_and_native_bindings': draw_capture,
+                            'init_blend_descriptor_raw_32_bytes': self.blend_descriptor,
+                            'blend_descriptor_note': 'actual native Init input to intercepted CreateBlendStateObject; raw bytes only, not a GLES blend-state mapping'},
             'uploads': self.upload_records,
             'gl_calls': self.gl_calls,
             'host_boundaries': {
@@ -305,7 +536,7 @@ class TextureProbe(NativeBrush):
                 'GLES imports': 'arguments intercepted; no driver/context, native GPU allocation, shader execution, or pixel rendering',
                 'pattern allocator': 'diagnostic 0xcd poison distinguishes writes; it is not an assertion about production heap contents',
                 'clock_gettime and strncpy': 'deterministic bounded host shims',
-                'skipped Init siblings': 'explicit unmapped nonnull placeholders for existing graphics/blend/shader fields',
+                'skipped Init siblings': 'explicit unmapped nonnull placeholders for existing graphics and shader fields',
             },
         }
 
@@ -327,7 +558,7 @@ def main():
     expected = json.loads(OUT.read_text())
     if json.dumps(result, sort_keys=True) != json.dumps(expected, sort_keys=True):
         raise AssertionError('native BrushPen texture upload differs from the reviewed fixture')
-    print('BrushPen native RTV1 texture upload oracle passed: actual Init/factory/update path')
+    print('BrushPen native RTV1 texture and Draw-binding oracle passed')
 
 
 if __name__ == '__main__':
