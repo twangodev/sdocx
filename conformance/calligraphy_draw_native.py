@@ -827,10 +827,15 @@ def f32bits(values):
     return [struct.pack("<f", value).hex() for value in values]
 
 
-def capture_one(color):
-    case = {"id": f"saved_draw_{color:08x}",
-            "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]],
-            "size": 6.0, "color": color}
+def capture_one(color, history=None, size=6.0, terminal_event=False,
+                saved_wrapper_case=None):
+    history = history or [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]]
+    full_history = [list(row) for row in history]
+    case_history = full_history[:-1] if terminal_event else full_history
+    case = {"id": f"saved_draw_{color:08x}", "history": case_history,
+            "size": size, "color": color}
+    if terminal_event:
+        case["end"] = full_history[-1]
     native = NativeDrawCalligraphy(LIBDIR, OBJDUMP)
     native.execute_move_pen = True
     update_entries = []
@@ -1051,12 +1056,22 @@ def capture_one(color):
         elif entry["name"] == "glColorMask":
             blend.append({"call": entry["name"], "values": entry["args"][:4]})
 
-    return {"input": {"history_xy_orientation": case["history"],
+    return {"input": {"history_xy_orientation": full_history,
                       "pen_size": case["size"],
-                      "argb": f"0x{color:08x}"},
+                      "argb": f"0x{color:08x}",
+                      **({"saved_wrapper_case": saved_wrapper_case} if saved_wrapper_case else {})},
             "saved_redraw": {"native_add_point_count": len(native.add_calls),
                              "native_build_mesh_count": len(native.build_calls),
-                             "orientation_reads": len(native.orientation_reads)},
+                             "orientation_reads": len(native.orientation_reads),
+                             **({"native_add_points": [
+                                 {"vector_bits": entry["vector_bits"],
+                                  "extent_bits": entry["extent_bits"],
+                                  "pre_state": entry["pre_state"],
+                                  "build_calls": entry.get("build_calls", 0)}
+                                 for entry in native.add_calls
+                             ],
+                                "native_build_rectangles": native.build_calls}
+                                if saved_wrapper_case else {})},
             "set_pen_data": {"native_argb": f"0x{color_call['argb']:08x}",
                              "size_f32_bits": color_call["size_bits"],
                              "rgba_f32_bits": f32bits(native.get(rt + 44, "4f"))},
@@ -1081,6 +1096,14 @@ def capture_one(color):
 def capture():
     colors = (0x80112233, 0x4044AAEE)
     results = [capture_one(color) for color in colors]
+    wrapper_fixture = json.loads((ROOT / "conformance/calligraphy-saved-wrapper-native.json").read_text())
+    wrapper = next(case for case in wrapper_fixture["cases"] if case["id"] == "three-samples")
+    wrapper_history = [
+        [row[0], row[1], wrapper["orientation"][index]]
+        for index, row in enumerate(wrapper["rows"])
+    ]
+    results.append(capture_one(0x80112233, wrapper_history, 6.0,
+                               terminal_event=True, saved_wrapper_case=wrapper["id"]))
     return {"schema": "sdocx-calligraphy-v1-native-queued-draw-host-gles-v1",
             "evidence": {"calligraphy_library_sha256": LIB_SHA,
                          "renderer_library_sha256": fountain_native.HASHES["Renderer"],

@@ -722,6 +722,2992 @@
         "build_meshes": 130,
         "orientation_reads": 4
       }
+    },
+    {
+      "input": {
+        "history_xy_orientation": [
+          [
+            0.0,
+            0.0,
+            0.1
+          ],
+          [
+            4.5,
+            1.5,
+            0.35
+          ],
+          [
+            9.0,
+            4.0,
+            0.7
+          ]
+        ],
+        "pen_size": 6.0,
+        "argb": "0x80112233",
+        "saved_wrapper_case": "three-samples"
+      },
+      "saved_redraw": {
+        "native_add_point_count": 26,
+        "native_build_mesh_count": 130,
+        "orientation_reads": 2,
+        "native_add_points": [
+          {
+            "vector_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "initial_flag": 1,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "initial_flag": 1,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000",
+                "00000000"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "103b313f",
+              "e55d723e",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "00000000",
+                "00004040",
+                "00000000",
+                "000040c0",
+                "67d010c0",
+                "3468a8c0",
+                "67d01040",
+                "64be3cbf",
+                "67d01040",
+                "3468a840",
+                "67d010c0",
+                "64be3c3f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "103b313f",
+              "e55d723e",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "00000000",
+                "00004040",
+                "00000000",
+                "000040c0",
+                "67d010c0",
+                "3468a8c0",
+                "67d01040",
+                "64be3cbf",
+                "67d01040",
+                "3468a840",
+                "67d010c0",
+                "64be3c3f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "103bb13f",
+              "0b6df83e",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103b313f",
+                "e55d723e"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103b313f",
+                "de254f40",
+                "103b313f",
+                "22da30c0",
+                "aa1edd3f",
+                "e651b9c0",
+                "688eafbe",
+                "387c873e",
+                "688eafbe",
+                "c477c840",
+                "aa1edd3f",
+                "50c3553e"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "103bb13f",
+              "0b6df83e",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103b313f",
+                "e55d723e"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103b313f",
+                "de254f40",
+                "103b313f",
+                "22da30c0",
+                "aa1edd3f",
+                "e651b9c0",
+                "688eafbe",
+                "387c873e",
+                "688eafbe",
+                "c477c840",
+                "aa1edd3f",
+                "50c3553e"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "4cec0440",
+              "25dd3e3f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103bb13f",
+                "0b6df83e"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103bb13f",
+                "a10d5f40",
+                "103bb13f",
+                "5ff220c0",
+                "60cf1d40",
+                "0adab0c0",
+                "845d9b3e",
+                "a87afe3e",
+                "845d9b3e",
+                "aae7cf40",
+                "60cf1d40",
+                "685ff23e"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "4cec0440",
+              "25dd3e3f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103bb13f",
+                "0b6df83e"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103bb13f",
+                "a10d5f40",
+                "103bb13f",
+                "5ff220c0",
+                "60cf1d40",
+                "0adab0c0",
+                "845d9b3e",
+                "a87afe3e",
+                "845d9b3e",
+                "aae7cf40",
+                "60cf1d40",
+                "685ff23e"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "103b3140",
+              "ab45823f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "4cec0440",
+                "25dd3e3f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "4cec0440",
+                "49b76f40",
+                "4cec0440",
+                "b74810c0",
+                "3c034d40",
+                "09fda7c0",
+                "7055733f",
+                "90a23d3f",
+                "7055733f",
+                "52b4d740",
+                "3c034d40",
+                "b817403f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "103b3140",
+              "ab45823f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "4cec0440",
+                "25dd3e3f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "4cec0440",
+                "49b76f40",
+                "4cec0440",
+                "b74810c0",
+                "3c034d40",
+                "09fda7c0",
+                "7055733f",
+                "90a23d3f",
+                "7055733f",
+                "52b4d740",
+                "3c034d40",
+                "b817403f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "d4895d40",
+              "8da0a63f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103b3140",
+                "ab45823f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103b3140",
+                "6b918040",
+                "103b3140",
+                "55bafdbf",
+                "ad2a7c40",
+                "24bb9ec0",
+                "e696cc3f",
+                "caef7e3f",
+                "e696cc3f",
+                "fadddf40",
+                "ad2a7c40",
+                "7213853f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "d4895d40",
+              "8da0a63f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "103b3140",
+                "ab45823f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "103b3140",
+                "6b918040",
+                "103b3140",
+                "55bafdbf",
+                "ad2a7c40",
+                "24bb9ec0",
+                "e696cc3f",
+                "caef7e3f",
+                "e696cc3f",
+                "fadddf40",
+                "ad2a7c40",
+                "7213853f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "4dec8440",
+              "3a7fcc3f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "d4895d40",
+                "8da0a63f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "d4895d40",
+                "23a88940",
+                "d4895d40",
+                "735fd9bf",
+                "c2a29540",
+                "9b1495c0",
+                "25ce0f40",
+                "8593a13f",
+                "25ce0f40",
+                "e164e840",
+                "c2a29540",
+                "94adab3f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "4dec8440",
+              "3a7fcc3f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "d4895d40",
+                "8da0a63f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "d4895d40",
+                "23a88940",
+                "d4895d40",
+                "735fd9bf",
+                "c2a29540",
+                "9b1495c0",
+                "25ce0f40",
+                "8593a13f",
+                "25ce0f40",
+                "e164e840",
+                "c2a29540",
+                "94adab3f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "ae139b40",
+              "afe1f33f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "4dec8440",
+                "3a7fcc3f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "4dec8440",
+                "ce1f9340",
+                "4dec8440",
+                "c680b3bf",
+                "c929ad40",
+                "ad098bc0",
+                "a25d3940",
+                "2825c53f",
+                "a25d3940",
+                "4a49f140",
+                "c929ad40",
+                "4ad9d33f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "ae139b40",
+              "afe1f33f",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "4dec8440",
+                "3a7fcc3f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "4dec8440",
+                "ce1f9340",
+                "4dec8440",
+                "c680b3bf",
+                "c929ad40",
+                "ad098bc0",
+                "a25d3940",
+                "2825c53f",
+                "a25d3940",
+                "4a49f140",
+                "c929ad40",
+                "4ad9d33f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "113bb140",
+              "f7630e40",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "ae139b40",
+                "afe1f33f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "ae139b40",
+                "6cf89c40",
+                "ae139b40",
+                "511e8cbf",
+                "5caac440",
+                "999a80c0",
+                "00fa6240",
+                "c32dea3f",
+                "00fa6240",
+                "718bfa40",
+                "5caac440",
+                "9c95fd3f"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "113bb140",
+              "f7630e40",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "ae139b40",
+                "afe1f33f"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "ae139b40",
+                "6cf89c40",
+                "ae139b40",
+                "511e8cbf",
+                "5caac440",
+                "999a80c0",
+                "00fa6240",
+                "c32dea3f",
+                "00fa6240",
+                "718bfa40",
+                "5caac440",
+                "9c95fd3f"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "7362c740",
+              "fb982340",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "113bb140",
+                "f7630e40"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "113bb140",
+                "fc31a740",
+                "113bb140",
+                "247046bf",
+                "6c24dc40",
+                "438f6bc0",
+                "b6518640",
+                "31570840",
+                "b6518640",
+                "cc150241",
+                "6c24dc40",
+                "be701440"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "7362c740",
+              "fb982340",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "113bb140",
+                "f7630e40"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "113bb140",
+                "fc31a740",
+                "113bb140",
+                "247046bf",
+                "6c24dc40",
+                "438f6bc0",
+                "b6518640",
+                "31570840",
+                "b6518640",
+                "cc150241",
+                "6c24dc40",
+                "be701440"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "d689dd40",
+              "e58f3940",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "7362c740",
+                "fb982340"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "7362c740",
+                "7eccb140",
+                "7362c740",
+                "2838e3be",
+                "f297f340",
+                "ff2155c0",
+                "f42c9b40",
+                "f5531c40",
+                "f42c9b40",
+                "fe140741",
+                "f297f340",
+                "02de2a40"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "d689dd40",
+              "e58f3940",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "7362c740",
+                "fb982340"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "7362c740",
+                "7eccb140",
+                "7362c740",
+                "2838e3be",
+                "f297f340",
+                "ff2155c0",
+                "f42c9b40",
+                "f5531c40",
+                "f42c9b40",
+                "fe140741",
+                "f297f340",
+                "02de2a40"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "37b1f340",
+              "b1485040",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "d689dd40",
+                "e58f3940"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "d689dd40",
+                "f2c7bc40",
+                "d689dd40",
+                "6003cebd",
+                "74820541",
+                "dfed3dc0",
+                "c40eb040",
+                "a90d3140",
+                "c40eb040",
+                "6a430c41",
+                "74820541",
+                "20124240"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "37b1f340",
+              "b1485040",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "d689dd40",
+                "e58f3940"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "d689dd40",
+                "f2c7bc40",
+                "d689dd40",
+                "6003cebd",
+                "74820541",
+                "dfed3dc0",
+                "c40eb040",
+                "a90d3140",
+                "c40eb040",
+                "6a430c41",
+                "74820541",
+                "20124240"
+              ]
+            },
+            "build_calls": 10
+          },
+          {
+            "vector_bits": [
+              "4cec0441",
+              "64c36740",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "37b1f340",
+                "b1485040"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "37b1f340",
+                "5824c840",
+                "37b1f340",
+                "8845823e",
+                "a4351141",
+                "61f325c0",
+                "26f7c440",
+                "c3844640",
+                "26f7c440",
+                "30a11141",
+                "a4351141",
+                "9e0c5a40"
+              ]
+            },
+            "build_calls": 0
+          },
+          {
+            "vector_bits": [
+              "4cec0441",
+              "64c36740",
+              "00000000",
+              "0000803f"
+            ],
+            "extent_bits": "00004040",
+            "pre_state": {
+              "center_bits": [
+                "37b1f340",
+                "b1485040"
+              ],
+              "initial_flag": 0,
+              "nib_bits": [
+                "0000803f",
+                "00000000",
+                "99e48b42"
+              ],
+              "edge_state_bits": [
+                "37b1f340",
+                "5824c840",
+                "37b1f340",
+                "8845823e",
+                "a4351141",
+                "61f325c0",
+                "26f7c440",
+                "c3844640",
+                "26f7c440",
+                "30a11141",
+                "a4351141",
+                "9e0c5a40"
+              ]
+            },
+            "build_calls": 0
+          }
+        ],
+        "native_build_rectangles": [
+          {
+            "rect_bits": [
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0",
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0",
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "64be3c3f",
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0",
+              "103b313f",
+              "de254f40",
+              "103b313f",
+              "22da30c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "00000000",
+              "00004040",
+              "00000000",
+              "000040c0",
+              "103b313f",
+              "de254f40",
+              "103b313f",
+              "22da30c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f",
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "50c3553e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d01040",
+              "3468a840",
+              "67d010c0",
+              "64be3c3f",
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "50c3553e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf",
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "67d010c0",
+              "3468a8c0",
+              "67d01040",
+              "64be3cbf",
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "aa1edd3f",
+              "50c3553e",
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "aa1edd3f",
+              "50c3553e",
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "6d186e40",
+              "38b38840",
+              "e57a15c0",
+              "4de50c40",
+              "6d186e40",
+              "2233ddbf",
+              "e57a15c0",
+              "b31a73c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "6d186e40",
+              "38b38840",
+              "e57a15c0",
+              "4de50c40",
+              "6d186e40",
+              "2233ddbf",
+              "e57a15c0",
+              "b31a73c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "103b313f",
+              "de254f40",
+              "103b313f",
+              "22da30c0",
+              "103bb13f",
+              "a10d5f40",
+              "103bb13f",
+              "5ff220c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "103b313f",
+              "de254f40",
+              "103b313f",
+              "22da30c0",
+              "103bb13f",
+              "a10d5f40",
+              "103bb13f",
+              "5ff220c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "50c3553e",
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "685ff23e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "688eafbe",
+              "c477c840",
+              "aa1edd3f",
+              "50c3553e",
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "685ff23e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e",
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "aa1edd3f",
+              "e651b9c0",
+              "688eafbe",
+              "387c873e",
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "60cf1d40",
+              "685ff23e",
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "60cf1d40",
+              "685ff23e",
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "9eaf8c40",
+              "bc1f9240",
+              "5848d0bf",
+              "cadb1940",
+              "9eaf8c40",
+              "0f81b7bf",
+              "5848d0bf",
+              "362466c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "9eaf8c40",
+              "bc1f9240",
+              "5848d0bf",
+              "cadb1940",
+              "9eaf8c40",
+              "0f81b7bf",
+              "5848d0bf",
+              "362466c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "103bb13f",
+              "a10d5f40",
+              "103bb13f",
+              "5ff220c0",
+              "4cec0440",
+              "49b76f40",
+              "4cec0440",
+              "b74810c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "103bb13f",
+              "a10d5f40",
+              "103bb13f",
+              "5ff220c0",
+              "4cec0440",
+              "49b76f40",
+              "4cec0440",
+              "b74810c0"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "685ff23e",
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "b817403f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "845d9b3e",
+              "aae7cf40",
+              "60cf1d40",
+              "685ff23e",
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "b817403f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e",
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "60cf1d40",
+              "0adab0c0",
+              "845d9b3e",
+              "a87afe3e",
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "3c034d40",
+              "b817403f",
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "3c034d40",
+              "b817403f",
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "d44ea240",
+              "1ce79b40",
+              "3c146bbf",
+              "59a02740",
+              "d44ea240",
+              "8e6390bf",
+              "3c146bbf",
+              "a75f58c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "d44ea240",
+              "1ce79b40",
+              "3c146bbf",
+              "59a02740",
+              "d44ea240",
+              "8e6390bf",
+              "3c146bbf",
+              "a75f58c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "4cec0440",
+              "49b76f40",
+              "4cec0440",
+              "b74810c0",
+              "103b3140",
+              "6b918040",
+              "103b3140",
+              "55bafdbf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "4cec0440",
+              "49b76f40",
+              "4cec0440",
+              "b74810c0",
+              "103b3140",
+              "6b918040",
+              "103b3140",
+              "55bafdbf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "b817403f",
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "7213853f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "7055733f",
+              "52b4d740",
+              "3c034d40",
+              "b817403f",
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "7213853f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f",
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "3c034d40",
+              "09fda7c0",
+              "7055733f",
+              "90a23d3f",
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "ad2a7c40",
+              "7213853f",
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "ad2a7c40",
+              "7213853f",
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "16eab740",
+              "3a09a640",
+              "d0e055be",
+              "39333640",
+              "16eab740",
+              "36b64fbf",
+              "d0e055be",
+              "c8cc49c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "16eab740",
+              "3a09a640",
+              "d0e055be",
+              "39333640",
+              "16eab740",
+              "36b64fbf",
+              "d0e055be",
+              "c8cc49c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "103b3140",
+              "6b918040",
+              "103b3140",
+              "55bafdbf",
+              "d4895d40",
+              "23a88940",
+              "d4895d40",
+              "735fd9bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "103b3140",
+              "6b918040",
+              "103b3140",
+              "55bafdbf",
+              "d4895d40",
+              "23a88940",
+              "d4895d40",
+              "735fd9bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "7213853f",
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "94adab3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "e696cc3f",
+              "fadddf40",
+              "ad2a7c40",
+              "7213853f",
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "94adab3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f",
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "ad2a7c40",
+              "24bb9ec0",
+              "e696cc3f",
+              "caef7e3f",
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c2a29540",
+              "94adab3f",
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "c2a29540",
+              "94adab3f",
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "a881cd40",
+              "fa85b040",
+              "6041003f",
+              "97944540",
+              "a881cd40",
+              "54a0f7be",
+              "6041003f",
+              "686b3ac0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "a881cd40",
+              "fa85b040",
+              "6041003f",
+              "97944540",
+              "a881cd40",
+              "54a0f7be",
+              "6041003f",
+              "686b3ac0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "d4895d40",
+              "23a88940",
+              "d4895d40",
+              "735fd9bf",
+              "4dec8440",
+              "ce1f9340",
+              "4dec8440",
+              "c680b3bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "d4895d40",
+              "23a88940",
+              "d4895d40",
+              "735fd9bf",
+              "4dec8440",
+              "ce1f9340",
+              "4dec8440",
+              "c680b3bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "94adab3f",
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "4ad9d33f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "25ce0f40",
+              "e164e840",
+              "c2a29540",
+              "94adab3f",
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "4ad9d33f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f",
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c2a29540",
+              "9b1495c0",
+              "25ce0f40",
+              "8593a13f",
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c929ad40",
+              "4ad9d33f",
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "c929ad40",
+              "4ad9d33f",
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "c815e340",
+              "4a5dbb40",
+              "460b9b3f",
+              "a4c45540",
+              "c815e340",
+              "a85614be",
+              "460b9b3f",
+              "5c3b2ac0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "c815e340",
+              "4a5dbb40",
+              "460b9b3f",
+              "a4c45540",
+              "c815e340",
+              "a85614be",
+              "460b9b3f",
+              "5c3b2ac0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "4dec8440",
+              "ce1f9340",
+              "4dec8440",
+              "c680b3bf",
+              "ae139b40",
+              "6cf89c40",
+              "ae139b40",
+              "511e8cbf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "4dec8440",
+              "ce1f9340",
+              "4dec8440",
+              "c680b3bf",
+              "ae139b40",
+              "6cf89c40",
+              "ae139b40",
+              "511e8cbf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "4ad9d33f",
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "9c95fd3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "a25d3940",
+              "4a49f140",
+              "c929ad40",
+              "4ad9d33f",
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "9c95fd3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f",
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c929ad40",
+              "ad098bc0",
+              "a25d3940",
+              "2825c53f",
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "5caac440",
+              "9c95fd3f",
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "5caac440",
+              "9c95fd3f",
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "b3a6f840",
+              "1a8fc640",
+              "a402f63f",
+              "7cc36640",
+              "b3a6f840",
+              "40e3513e",
+              "a402f63f",
+              "853c19c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "b3a6f840",
+              "1a8fc640",
+              "a402f63f",
+              "7cc36640",
+              "b3a6f840",
+              "40e3513e",
+              "a402f63f",
+              "853c19c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "ae139b40",
+              "6cf89c40",
+              "ae139b40",
+              "511e8cbf",
+              "113bb140",
+              "fc31a740",
+              "113bb140",
+              "247046bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "ae139b40",
+              "6cf89c40",
+              "ae139b40",
+              "511e8cbf",
+              "113bb140",
+              "fc31a740",
+              "113bb140",
+              "247046bf"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "9c95fd3f",
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "be701440"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "00fa6240",
+              "718bfa40",
+              "5caac440",
+              "9c95fd3f",
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "be701440"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f",
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "5caac440",
+              "999a80c0",
+              "00fa6240",
+              "c32dea3f",
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "6c24dc40",
+              "be701440",
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "6c24dc40",
+              "be701440",
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "571a0741",
+              "561bd240",
+              "e8822840",
+              "43917840",
+              "571a0741",
+              "b0da103f",
+              "e8822840",
+              "be6e07c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "571a0741",
+              "561bd240",
+              "e8822840",
+              "43917840",
+              "571a0741",
+              "b0da103f",
+              "e8822840",
+              "be6e07c0"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "113bb140",
+              "fc31a740",
+              "113bb140",
+              "247046bf",
+              "7362c740",
+              "7eccb140",
+              "7362c740",
+              "2838e3be"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "113bb140",
+              "fc31a740",
+              "113bb140",
+              "247046bf",
+              "7362c740",
+              "7eccb140",
+              "7362c740",
+              "2838e3be"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "be701440",
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "02de2a40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "b6518640",
+              "cc150241",
+              "6c24dc40",
+              "be701440",
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "02de2a40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840",
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "6c24dc40",
+              "438f6bc0",
+              "b6518640",
+              "31570840",
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "f297f340",
+              "02de2a40",
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "f297f340",
+              "02de2a40",
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "f8df1141",
+              "fd01de40",
+              "ec095640",
+              "ff968540",
+              "f8df1141",
+              "e60f703f",
+              "ec095640",
+              "07a4e9bf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "f8df1141",
+              "fd01de40",
+              "ec095640",
+              "ff968540",
+              "f8df1141",
+              "e60f703f",
+              "ec095640",
+              "07a4e9bf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "7362c740",
+              "7eccb140",
+              "7362c740",
+              "2838e3be",
+              "d689dd40",
+              "f2c7bc40",
+              "d689dd40",
+              "6003cebd"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "7362c740",
+              "7eccb140",
+              "7362c740",
+              "2838e3be",
+              "d689dd40",
+              "f2c7bc40",
+              "d689dd40",
+              "6003cebd"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "02de2a40",
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "20124240"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "f42c9b40",
+              "fe140741",
+              "f297f340",
+              "02de2a40",
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "20124240"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40",
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "f297f340",
+              "ff2155c0",
+              "f42c9b40",
+              "f5531c40",
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "74820541",
+              "20124240",
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "74820541",
+              "20124240",
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "5ca41c41",
+              "0443ea40",
+              "f4ca8140",
+              "e04c8f40",
+              "5ca41c41",
+              "130ca93f",
+              "f4ca8140",
+              "7fccc2bf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "5ca41c41",
+              "0443ea40",
+              "f4ca8140",
+              "e04c8f40",
+              "5ca41c41",
+              "130ca93f",
+              "f4ca8140",
+              "7fccc2bf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "d689dd40",
+              "f2c7bc40",
+              "d689dd40",
+              "6003cebd",
+              "37b1f340",
+              "5824c840",
+              "37b1f340",
+              "8845823e"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "d689dd40",
+              "f2c7bc40",
+              "d689dd40",
+              "6003cebd",
+              "37b1f340",
+              "5824c840",
+              "37b1f340",
+              "8845823e"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "20124240",
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "9e0c5a40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "c40eb040",
+              "6a430c41",
+              "74820541",
+              "20124240",
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "9e0c5a40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140",
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "74820541",
+              "dfed3dc0",
+              "c40eb040",
+              "a90d3140",
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "a4351141",
+              "9e0c5a40",
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "a4351141",
+              "9e0c5a40",
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "a0672741",
+              "69def640",
+              "2e939840",
+              "476a9940",
+              "a0672741",
+              "a579db3f",
+              "2e939840",
+              "e1569abf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "a0672741",
+              "69def640",
+              "2e939840",
+              "476a9940",
+              "a0672741",
+              "a579db3f",
+              "2e939840",
+              "e1569abf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "37b1f340",
+              "5824c840",
+              "37b1f340",
+              "8845823e",
+              "4cec0441",
+              "b2e1d340",
+              "4cec0441",
+              "900d1f3f"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "37b1f340",
+              "5824c840",
+              "37b1f340",
+              "8845823e",
+              "4cec0441",
+              "b2e1d340",
+              "4cec0441",
+              "900d1f3f"
+            ],
+            "buffer": "mesh_200"
+          },
+          {
+            "rect_bits": [
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "9e0c5a40",
+              "17e6d940",
+              "6c2e1741",
+              "8ce51c41",
+              "19cd7240"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "26f7c440",
+              "30a11141",
+              "a4351141",
+              "9e0c5a40",
+              "17e6d940",
+              "6c2e1741",
+              "8ce51c41",
+              "19cd7240"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640",
+              "8ce51c41",
+              "e7320dc0",
+              "17e6d940",
+              "afb95c40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "a4351141",
+              "61f325c0",
+              "26f7c440",
+              "c3844640",
+              "8ce51c41",
+              "e7320dc0",
+              "17e6d940",
+              "afb95c40"
+            ],
+            "buffer": "mesh_216"
+          },
+          {
+            "rect_bits": [
+              "8ce51c41",
+              "19cd7240",
+              "17e6d940",
+              "6c2e1741",
+              "8ce51c41",
+              "e7320dc0",
+              "17e6d940",
+              "afb95c40"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "8ce51c41",
+              "19cd7240",
+              "17e6d940",
+              "6c2e1741",
+              "8ce51c41",
+              "e7320dc0",
+              "17e6d940",
+              "afb95c40"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "df293241",
+              "19ea0141",
+              "725daf40",
+              "31efa340",
+              "df293241",
+              "66a80740",
+              "725daf40",
+              "768660bf"
+            ],
+            "buffer": "mesh_208"
+          },
+          {
+            "rect_bits": [
+              "df293241",
+              "19ea0141",
+              "725daf40",
+              "31efa340",
+              "df293241",
+              "66a80740",
+              "725daf40",
+              "768660bf"
+            ],
+            "buffer": "mesh_208"
+          }
+        ]
+      },
+      "set_pen_data": {
+        "native_argb": "0x80112233",
+        "size_f32_bits": "0000c040",
+        "rgba_f32_bits": [
+          "8988883d",
+          "8988083e",
+          "cdcc4c3e",
+          "8180003f"
+        ]
+      },
+      "queued_update": {
+        "worker_runs": 4,
+        "update_buffer_entries": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "vertex_count": 156,
+            "sha256": "e7ea0effd92c3762be32e4697408ba57a0cf26404a7a8f1e379d4eef61a677d7"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "vertex_count": 156,
+            "sha256": "887ed96ad5ba4addfb7be24ce173e2f22a06bfc0dfd28116bc80d31914968346"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "vertex_count": 78,
+            "sha256": "34b52c1cfe06cd5ceb238224bb24ae7ff05ab8c82f2f3d52a87934988b0cfa13"
+          }
+        ],
+        "uploads": [
+          {
+            "source_vector_slot": 224,
+            "byte_count": 1248,
+            "vertex_count": 78,
+            "sha256": "34b52c1cfe06cd5ceb238224bb24ae7ff05ab8c82f2f3d52a87934988b0cfa13",
+            "vertex_format": "Vector4<f32> little-endian",
+            "bytes_hex": "00000000000040c000000000000000000000000000004040000000000000803f00000000000040c00000803f000000000000000000004040000000000000803f00000000000040c00000803f0000000000000000000040400000803f0000803f00000000000040c000000000000000000000000000004040000000000000803f103b313f22da30c00000803f000000000000000000004040000000000000803f103b313f22da30c00000803f00000000103b313fde254f400000803f0000803f103b313f22da30c00000000000000000103b313fde254f40000000000000803f103bb13f5ff220c00000803f00000000103b313fde254f40000000000000803f103bb13f5ff220c00000803f00000000103bb13fa10d5f400000803f0000803f103bb13f5ff220c00000000000000000103bb13fa10d5f40000000000000803f4cec0440b74810c00000803f00000000103bb13fa10d5f40000000000000803f4cec0440b74810c00000803f000000004cec044049b76f400000803f0000803f4cec0440b74810c000000000000000004cec044049b76f40000000000000803f103b314055bafdbf0000803f000000004cec044049b76f40000000000000803f103b314055bafdbf0000803f00000000103b31406b9180400000803f0000803f103b314055bafdbf0000000000000000103b31406b918040000000000000803fd4895d40735fd9bf0000803f00000000103b31406b918040000000000000803fd4895d40735fd9bf0000803f00000000d4895d4023a889400000803f0000803fd4895d40735fd9bf0000000000000000d4895d4023a88940000000000000803f4dec8440c680b3bf0000803f00000000d4895d4023a88940000000000000803f4dec8440c680b3bf0000803f000000004dec8440ce1f93400000803f0000803f4dec8440c680b3bf00000000000000004dec8440ce1f9340000000000000803fae139b40511e8cbf0000803f000000004dec8440ce1f9340000000000000803fae139b40511e8cbf0000803f00000000ae139b406cf89c400000803f0000803fae139b40511e8cbf0000000000000000ae139b406cf89c40000000000000803f113bb140247046bf0000803f00000000ae139b406cf89c40000000000000803f113bb140247046bf0000803f00000000113bb140fc31a7400000803f0000803f113bb140247046bf0000000000000000113bb140fc31a740000000000000803f7362c7402838e3be0000803f00000000113bb140fc31a740000000000000803f7362c7402838e3be0000803f000000007362c7407eccb1400000803f0000803f7362c7402838e3be00000000000000007362c7407eccb140000000000000803fd689dd406003cebd0000803f000000007362c7407eccb140000000000000803fd689dd406003cebd0000803f00000000d689dd40f2c7bc400000803f0000803fd689dd406003cebd0000000000000000d689dd40f2c7bc40000000000000803f37b1f3408845823e0000803f00000000d689dd40f2c7bc40000000000000803f37b1f3408845823e0000803f0000000037b1f3405824c8400000803f0000803f37b1f3408845823e000000000000000037b1f3405824c840000000000000803f4cec0441900d1f3f0000803f0000000037b1f3405824c840000000000000803f4cec0441900d1f3f0000803f000000004cec0441b2e1d3400000803f0000803f"
+          },
+          {
+            "source_vector_slot": 232,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "e7ea0effd92c3762be32e4697408ba57a0cf26404a7a8f1e379d4eef61a677d7",
+            "vertex_format": "Vector4<f32> little-endian",
+            "bytes_hex": "67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f688eafbec477c8400000000000000000aa1edd3f50c3553e000000000000803f688eafbe387c873e0000803f00000000aa1edd3f50c3553e000000000000803f688eafbe387c873e0000803f00000000aa1edd3fe651b9c00000803f0000803fe57a15c04de50c4000000000000000006d186e4038b38840000000000000803fe57a15c0b31a73c00000803f000000006d186e4038b38840000000000000803fe57a15c0b31a73c00000803f000000006d186e402233ddbf0000803f0000803f845d9b3eaae7cf40000000000000000060cf1d40685ff23e000000000000803f845d9b3ea87afe3e0000803f0000000060cf1d40685ff23e000000000000803f845d9b3ea87afe3e0000803f0000000060cf1d400adab0c00000803f0000803f5848d0bfcadb194000000000000000009eaf8c40bc1f9240000000000000803f5848d0bf362466c00000803f000000009eaf8c40bc1f9240000000000000803f5848d0bf362466c00000803f000000009eaf8c400f81b7bf0000803f0000803f7055733f52b4d74000000000000000003c034d40b817403f000000000000803f7055733f90a23d3f0000803f000000003c034d40b817403f000000000000803f7055733f90a23d3f0000803f000000003c034d4009fda7c00000803f0000803f3c146bbf59a027400000000000000000d44ea2401ce79b40000000000000803f3c146bbfa75f58c00000803f00000000d44ea2401ce79b40000000000000803f3c146bbfa75f58c00000803f00000000d44ea2408e6390bf0000803f0000803fe696cc3ffadddf400000000000000000ad2a7c407213853f000000000000803fe696cc3fcaef7e3f0000803f00000000ad2a7c407213853f000000000000803fe696cc3fcaef7e3f0000803f00000000ad2a7c4024bb9ec00000803f0000803fd0e055be39333640000000000000000016eab7403a09a640000000000000803fd0e055bec8cc49c00000803f0000000016eab7403a09a640000000000000803fd0e055bec8cc49c00000803f0000000016eab74036b64fbf0000803f0000803f25ce0f40e164e8400000000000000000c2a2954094adab3f000000000000803f25ce0f408593a13f0000803f00000000c2a2954094adab3f000000000000803f25ce0f408593a13f0000803f00000000c2a295409b1495c00000803f0000803f6041003f979445400000000000000000a881cd40fa85b040000000000000803f6041003f686b3ac00000803f00000000a881cd40fa85b040000000000000803f6041003f686b3ac00000803f00000000a881cd4054a0f7be0000803f0000803fa25d39404a49f1400000000000000000c929ad404ad9d33f000000000000803fa25d39402825c53f0000803f00000000c929ad404ad9d33f000000000000803fa25d39402825c53f0000803f00000000c929ad40ad098bc00000803f0000803f460b9b3fa4c455400000000000000000c815e3404a5dbb40000000000000803f460b9b3f5c3b2ac00000803f00000000c815e3404a5dbb40000000000000803f460b9b3f5c3b2ac00000803f00000000c815e340a85614be0000803f0000803f00fa6240718bfa4000000000000000005caac4409c95fd3f000000000000803f00fa6240c32dea3f0000803f000000005caac4409c95fd3f000000000000803f00fa6240c32dea3f0000803f000000005caac440999a80c00000803f0000803fa402f63f7cc366400000000000000000b3a6f8401a8fc640000000000000803fa402f63f853c19c00000803f00000000b3a6f8401a8fc640000000000000803fa402f63f853c19c00000803f00000000b3a6f84040e3513e0000803f0000803fb6518640cc15024100000000000000006c24dc40be701440000000000000803fb6518640315708400000803f000000006c24dc40be701440000000000000803fb6518640315708400000803f000000006c24dc40438f6bc00000803f0000803fe8822840439178400000000000000000571a0741561bd240000000000000803fe8822840be6e07c00000803f00000000571a0741561bd240000000000000803fe8822840be6e07c00000803f00000000571a0741b0da103f0000803f0000803ff42c9b40fe1407410000000000000000f297f34002de2a40000000000000803ff42c9b40f5531c400000803f00000000f297f34002de2a40000000000000803ff42c9b40f5531c400000803f00000000f297f340ff2155c00000803f0000803fec095640ff9685400000000000000000f8df1141fd01de40000000000000803fec09564007a4e9bf0000803f00000000f8df1141fd01de40000000000000803fec09564007a4e9bf0000803f00000000f8df1141e60f703f0000803f0000803fc40eb0406a430c4100000000000000007482054120124240000000000000803fc40eb040a90d31400000803f000000007482054120124240000000000000803fc40eb040a90d31400000803f0000000074820541dfed3dc00000803f0000803ff4ca8140e04c8f4000000000000000005ca41c410443ea40000000000000803ff4ca81407fccc2bf0000803f000000005ca41c410443ea40000000000000803ff4ca81407fccc2bf0000803f000000005ca41c41130ca93f0000803f0000803f26f7c44030a111410000000000000000a43511419e0c5a40000000000000803f26f7c440c38446400000803f00000000a43511419e0c5a40000000000000803f26f7c440c38446400000803f00000000a435114161f325c00000803f0000803f2e939840476a99400000000000000000a067274169def640000000000000803f2e939840e1569abf0000803f00000000a067274169def640000000000000803f2e939840e1569abf0000803f00000000a0672741a579db3f0000803f0000803f17e6d9406c2e174100000000000000008ce51c4119cd7240000000000000803f17e6d940afb95c400000803f000000008ce51c4119cd7240000000000000803f17e6d940afb95c400000803f000000008ce51c41e7320dc00000803f0000803f725daf4031efa3400000000000000000df29324119ea0141000000000000803f725daf40768660bf0000803f00000000df29324119ea0141000000000000803f725daf40768660bf0000803f00000000df29324166a807400000803f0000803f"
+          },
+          {
+            "source_vector_slot": 240,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "887ed96ad5ba4addfb7be24ce173e2f22a06bfc0dfd28116bc80d31914968346",
+            "vertex_format": "Vector4<f32> little-endian",
+            "bytes_hex": "67d010c064be3c3f000000000000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010c064be3c3f000000000000000067d010403468a840000000000000803faa1edd3f50c3553e0000803f0000000067d010403468a840000000000000803faa1edd3f50c3553e0000803f00000000688eafbec477c8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803f688eafbe387c873e0000803f0000000067d010c03468a8c0000000000000803f688eafbe387c873e0000803f00000000aa1edd3fe651b9c00000803f0000803faa1edd3f50c3553e0000000000000000688eafbec477c840000000000000803f60cf1d40685ff23e0000803f00000000688eafbec477c840000000000000803f60cf1d40685ff23e0000803f00000000845d9b3eaae7cf400000803f0000803f688eafbe387c873e0000000000000000aa1edd3fe651b9c0000000000000803f845d9b3ea87afe3e0000803f00000000aa1edd3fe651b9c0000000000000803f845d9b3ea87afe3e0000803f0000000060cf1d400adab0c00000803f0000803f60cf1d40685ff23e0000000000000000845d9b3eaae7cf40000000000000803f3c034d40b817403f0000803f00000000845d9b3eaae7cf40000000000000803f3c034d40b817403f0000803f000000007055733f52b4d7400000803f0000803f845d9b3ea87afe3e000000000000000060cf1d400adab0c0000000000000803f7055733f90a23d3f0000803f0000000060cf1d400adab0c0000000000000803f7055733f90a23d3f0000803f000000003c034d4009fda7c00000803f0000803f3c034d40b817403f00000000000000007055733f52b4d740000000000000803fad2a7c407213853f0000803f000000007055733f52b4d740000000000000803fad2a7c407213853f0000803f00000000e696cc3ffadddf400000803f0000803f7055733f90a23d3f00000000000000003c034d4009fda7c0000000000000803fe696cc3fcaef7e3f0000803f000000003c034d4009fda7c0000000000000803fe696cc3fcaef7e3f0000803f00000000ad2a7c4024bb9ec00000803f0000803fad2a7c407213853f0000000000000000e696cc3ffadddf40000000000000803fc2a2954094adab3f0000803f00000000e696cc3ffadddf40000000000000803fc2a2954094adab3f0000803f0000000025ce0f40e164e8400000803f0000803fe696cc3fcaef7e3f0000000000000000ad2a7c4024bb9ec0000000000000803f25ce0f408593a13f0000803f00000000ad2a7c4024bb9ec0000000000000803f25ce0f408593a13f0000803f00000000c2a295409b1495c00000803f0000803fc2a2954094adab3f000000000000000025ce0f40e164e840000000000000803fc929ad404ad9d33f0000803f0000000025ce0f40e164e840000000000000803fc929ad404ad9d33f0000803f00000000a25d39404a49f1400000803f0000803f25ce0f408593a13f0000000000000000c2a295409b1495c0000000000000803fa25d39402825c53f0000803f00000000c2a295409b1495c0000000000000803fa25d39402825c53f0000803f00000000c929ad40ad098bc00000803f0000803fc929ad404ad9d33f0000000000000000a25d39404a49f140000000000000803f5caac4409c95fd3f0000803f00000000a25d39404a49f140000000000000803f5caac4409c95fd3f0000803f0000000000fa6240718bfa400000803f0000803fa25d39402825c53f0000000000000000c929ad40ad098bc0000000000000803f00fa6240c32dea3f0000803f00000000c929ad40ad098bc0000000000000803f00fa6240c32dea3f0000803f000000005caac440999a80c00000803f0000803f5caac4409c95fd3f000000000000000000fa6240718bfa40000000000000803f6c24dc40be7014400000803f0000000000fa6240718bfa40000000000000803f6c24dc40be7014400000803f00000000b6518640cc1502410000803f0000803f00fa6240c32dea3f00000000000000005caac440999a80c0000000000000803fb6518640315708400000803f000000005caac440999a80c0000000000000803fb6518640315708400000803f000000006c24dc40438f6bc00000803f0000803f6c24dc40be7014400000000000000000b6518640cc150241000000000000803ff297f34002de2a400000803f00000000b6518640cc150241000000000000803ff297f34002de2a400000803f00000000f42c9b40fe1407410000803f0000803fb65186403157084000000000000000006c24dc40438f6bc0000000000000803ff42c9b40f5531c400000803f000000006c24dc40438f6bc0000000000000803ff42c9b40f5531c400000803f00000000f297f340ff2155c00000803f0000803ff297f34002de2a400000000000000000f42c9b40fe140741000000000000803f74820541201242400000803f00000000f42c9b40fe140741000000000000803f74820541201242400000803f00000000c40eb0406a430c410000803f0000803ff42c9b40f5531c400000000000000000f297f340ff2155c0000000000000803fc40eb040a90d31400000803f00000000f297f340ff2155c0000000000000803fc40eb040a90d31400000803f0000000074820541dfed3dc00000803f0000803f74820541201242400000000000000000c40eb0406a430c41000000000000803fa43511419e0c5a400000803f00000000c40eb0406a430c41000000000000803fa43511419e0c5a400000803f0000000026f7c44030a111410000803f0000803fc40eb040a90d3140000000000000000074820541dfed3dc0000000000000803f26f7c440c38446400000803f0000000074820541dfed3dc0000000000000803f26f7c440c38446400000803f00000000a435114161f325c00000803f0000803fa43511419e0c5a40000000000000000026f7c44030a11141000000000000803f8ce51c4119cd72400000803f0000000026f7c44030a11141000000000000803f8ce51c4119cd72400000803f0000000017e6d9406c2e17410000803f0000803f26f7c440c38446400000000000000000a435114161f325c0000000000000803f17e6d940afb95c400000803f00000000a435114161f325c0000000000000803f17e6d940afb95c400000803f000000008ce51c41e7320dc00000803f0000803f"
+          }
+        ]
+      },
+      "draw": {
+        "entry_return_pc": "0x200f1000",
+        "native_graphics_draw_count": 3,
+        "gles_import_count": 32,
+        "draws": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "e7ea0effd92c3762be32e4697408ba57a0cf26404a7a8f1e379d4eef61a677d7"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "887ed96ad5ba4addfb7be24ce173e2f22a06bfc0dfd28116bc80d31914968346"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 78,
+            "source_sha256": "34b52c1cfe06cd5ceb238224bb24ae7ff05ab8c82f2f3d52a87934988b0cfa13"
+          }
+        ],
+        "uniform_bindings": [
+          {
+            "shader_slot": 272,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 272,
+            "uniform": "inputColor",
+            "binding_type": 5
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "inputColor",
+            "binding_type": 5
+          }
+        ],
+        "active_uniform_reflection": {
+          "calligraphy-core": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz * a, a);",
+            "shader_sha256": [
+              "f7f69192f79d2ba2ceb5db81cb5e91cd68ee178242049f7929865ec287868783",
+              "6705c2ff0b27d75c105028b266404243dec829797a125e72a3824248657499a1"
+            ]
+          },
+          "calligraphy-fringe": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz, 1.0);",
+            "shader_sha256": [
+              "1a15105a02d56dcc24a867b66ab9772dace5ea8398dec9020148e4ec570c63ae",
+              "88c17194b87ac2a7087450d61f6b8f979a6f209467720b8e385d556236be97a3"
+            ]
+          }
+        },
+        "uniform_calls": [
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          }
+        ],
+        "blend_calls": [
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771,
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771,
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "host_subbitmap_callbacks": {
+          "matrix": 3,
+          "bind": 1,
+          "unbind": 1
+        }
+      },
+      "native_run_counts": {
+        "queue_runs": 4,
+        "add_points": 26,
+        "build_meshes": 130,
+        "orientation_reads": 2
+      }
     }
   ]
 }
