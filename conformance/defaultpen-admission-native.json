@@ -1,0 +1,4055 @@
+{
+  "cases": {
+    "size_0": {
+      "case_id": "size_0",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "size_0",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10033e90"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10033e90"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
+      "patched_caller_code_sha256": "153d5a2c6ffd330b4e70029151097816aa82ebb0e138869668aa7a8db617d4df",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 16,
+          "float_count": 48,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "e0dfea3f",
+            "a22f9e3d",
+            "0000c03f",
+            "d9c27440",
+            "a22f9e3e",
+            "0000c03f",
+            "69b6bc40",
+            "4d2e2e3f",
+            "0000c03f",
+            "669af640",
+            "80f18b3f",
+            "0000c03f",
+            "67ce1941",
+            "8b45cd3f",
+            "0000c03f",
+            "d3de3941",
+            "a6890d40",
+            "0000c03f",
+            "0feb5741",
+            "f3ae3540",
+            "0000c03f",
+            "5c787441",
+            "e1be5e40",
+            "0000c03f",
+            "95088941",
+            "6efe8540",
+            "0000c03f",
+            "bf5a9841",
+            "73b49e40",
+            "0000c03f",
+            "6bb0a741",
+            "6fa0b840",
+            "0000c03f",
+            "5269b541",
+            "e9bdd040",
+            "0000c03f",
+            "ed80c341",
+            "3256ea40",
+            "0000c03f",
+            "3df7d141",
+            "a5b40241",
+            "0000c03f",
+            "41cce041",
+            "9bfb1041",
+            "0000c03f"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 16,
+          "float_count": 48,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db"
+        }
+      }
+    },
+    "size_0.1": {
+      "case_id": "size_0.1",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "size_0.1",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "cdcccc3d",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "cdcccc3d",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3d",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
+      "patched_caller_code_sha256": "299adca404eab30b0cbaa695b8854ca30df3e0872fa3d9f0a33796f8e98e1a74",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 16,
+          "float_count": 48,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "e0dfea3f",
+            "a22f9e3d",
+            "0000c03f",
+            "d9c27440",
+            "a22f9e3e",
+            "0000c03f",
+            "69b6bc40",
+            "4d2e2e3f",
+            "0000c03f",
+            "669af640",
+            "80f18b3f",
+            "0000c03f",
+            "67ce1941",
+            "8b45cd3f",
+            "0000c03f",
+            "d3de3941",
+            "a6890d40",
+            "0000c03f",
+            "0feb5741",
+            "f3ae3540",
+            "0000c03f",
+            "5c787441",
+            "e1be5e40",
+            "0000c03f",
+            "95088941",
+            "6efe8540",
+            "0000c03f",
+            "bf5a9841",
+            "73b49e40",
+            "0000c03f",
+            "6bb0a741",
+            "6fa0b840",
+            "0000c03f",
+            "5269b541",
+            "e9bdd040",
+            "0000c03f",
+            "ed80c341",
+            "3256ea40",
+            "0000c03f",
+            "3df7d141",
+            "a5b40241",
+            "0000c03f",
+            "41cce041",
+            "9bfb1041",
+            "0000c03f"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 16,
+          "float_count": 48,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db"
+        }
+      }
+    },
+    "size_1000": {
+      "case_id": "size_1000",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "size_1000",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00007a44",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00007a44",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00007a44",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x44480000",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x44480000",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00004844",
+      "patched_caller_code_sha256": "4bc1026e6912b02ef5eeb164b84c3d32552f8b3910a85a59a1758646552dd7f9",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 4,
+          "float_count": 12,
+          "sha256": "82e2ce46cca29b3072db159500dba7f08c9b0fd2e3fb16e9933a9ab2b079c4b6",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0040c843",
+            "669af640",
+            "80f18b3f",
+            "0040c843",
+            "5c787441",
+            "e1be5e40",
+            "0040c843",
+            "5269b541",
+            "e9bdd040",
+            "0040c843"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 4,
+          "float_count": 12,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "82e2ce46cca29b3072db159500dba7f08c9b0fd2e3fb16e9933a9ab2b079c4b6"
+        }
+      }
+    },
+    "size_800": {
+      "case_id": "size_800",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "size_800",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00004844",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00004844",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004844",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x44480000",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x44480000",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00004844",
+      "patched_caller_code_sha256": "0ef1f0da9a5c20615c081736051039fd266cece088f69601e0d4b20368a23fd9",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 4,
+          "float_count": 12,
+          "sha256": "82e2ce46cca29b3072db159500dba7f08c9b0fd2e3fb16e9933a9ab2b079c4b6",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0040c843",
+            "669af640",
+            "80f18b3f",
+            "0040c843",
+            "5c787441",
+            "e1be5e40",
+            "0040c843",
+            "5269b541",
+            "e9bdd040",
+            "0040c843"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 4,
+          "float_count": 12,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "82e2ce46cca29b3072db159500dba7f08c9b0fd2e3fb16e9933a9ab2b079c4b6"
+        }
+      }
+    },
+    "size_omitted": {
+      "case_id": "size_omitted",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "size_omitted",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": false,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10033e90"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x3ecccccd",
+          "this": "0x10033e90"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
+      "patched_caller_code_sha256": "02f67dbe90e87d32eb8889498d1a9c06c1016b25d5392a7b39c481f265907970",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 16,
+          "float_count": 48,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "e0dfea3f",
+            "a22f9e3d",
+            "0000c03f",
+            "d9c27440",
+            "a22f9e3e",
+            "0000c03f",
+            "69b6bc40",
+            "4d2e2e3f",
+            "0000c03f",
+            "669af640",
+            "80f18b3f",
+            "0000c03f",
+            "67ce1941",
+            "8b45cd3f",
+            "0000c03f",
+            "d3de3941",
+            "a6890d40",
+            "0000c03f",
+            "0feb5741",
+            "f3ae3540",
+            "0000c03f",
+            "5c787441",
+            "e1be5e40",
+            "0000c03f",
+            "95088941",
+            "6efe8540",
+            "0000c03f",
+            "bf5a9841",
+            "73b49e40",
+            "0000c03f",
+            "6bb0a741",
+            "6fa0b840",
+            "0000c03f",
+            "5269b541",
+            "e9bdd040",
+            "0000c03f",
+            "ed80c341",
+            "3256ea40",
+            "0000c03f",
+            "3df7d141",
+            "a5b40241",
+            "0000c03f",
+            "41cce041",
+            "9bfb1041",
+            "0000c03f"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 16,
+          "float_count": 48,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "8d28db7434b0129352ae9faf2e344db51af1b72d3a72cf92f7bdae2bd3b505db"
+        }
+      }
+    },
+    "tool_0": {
+      "case_id": "tool_0",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "tool_0",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00002041",
+      "patched_caller_code_sha256": "492b97b487ee8ef435caea46847ce845270e8c03273ae2df5d554f2cc2333cb7",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 13,
+          "float_count": 39,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000b040",
+            "40523040",
+            "00000000",
+            "0000b040",
+            "83caa940",
+            "00000000",
+            "0000b040",
+            "2de4f440",
+            "00000000",
+            "0000b040",
+            "7d322341",
+            "00000000",
+            "0000b040",
+            "7dcc4c41",
+            "00000000",
+            "0000b040",
+            "00007041",
+            "00000000",
+            "0000b040",
+            "977f8c41",
+            "9756d33e",
+            "0000b040",
+            "3ca89f41",
+            "bd97ba3f",
+            "0000b040",
+            "baa8b141",
+            "bb233a40",
+            "0000b040",
+            "dc7cc141",
+            "99448f40",
+            "0000b040",
+            "e5fdd041",
+            "52bac640",
+            "0000b040",
+            "f17ee041",
+            "0e2a0141",
+            "0000b040"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 13,
+          "float_count": 39,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92"
+        }
+      }
+    },
+    "tool_1": {
+      "case_id": "tool_1",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "tool_1",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 1
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 1
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00002041",
+      "patched_caller_code_sha256": "093f38a332452463b2e6c28eb13c9ba927d110e8481d0883310f148300bed25f",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 11,
+          "float_count": 33,
+          "sha256": "671037a8ed962d44401b86915e7a6361cd185db1491eff9e571c53a5c29e2475",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000b040",
+            "0b162e40",
+            "5a56273e",
+            "0000b040",
+            "bb9ab740",
+            "face253f",
+            "0000b040",
+            "b8360641",
+            "7341a23f",
+            "0000b040",
+            "b1ec3341",
+            "2c000640",
+            "0000b040",
+            "f9995f41",
+            "b8774040",
+            "0000b040",
+            "1ff28441",
+            "063c7f40",
+            "0000b040",
+            "3e329b41",
+            "1f6ca340",
+            "0000b040",
+            "f260b041",
+            "2ecdc740",
+            "0000b040",
+            "97cdc441",
+            "a6bcec40",
+            "0000b040",
+            "9902da41",
+            "c8660a41",
+            "0000b040"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 11,
+          "float_count": 33,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "671037a8ed962d44401b86915e7a6361cd185db1491eff9e571c53a5c29e2475"
+        }
+      }
+    },
+    "tool_2": {
+      "case_id": "tool_2",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "tool_2",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10033e90"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10033e90"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00002041",
+      "patched_caller_code_sha256": "7f2b02e775c96449853fad47ef3beeaab5fb4c62a054c0de7f9eb1e40bc3e116",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 13,
+          "float_count": 39,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000b040",
+            "40523040",
+            "00000000",
+            "0000b040",
+            "83caa940",
+            "00000000",
+            "0000b040",
+            "2de4f440",
+            "00000000",
+            "0000b040",
+            "7d322341",
+            "00000000",
+            "0000b040",
+            "7dcc4c41",
+            "00000000",
+            "0000b040",
+            "00007041",
+            "00000000",
+            "0000b040",
+            "977f8c41",
+            "9756d33e",
+            "0000b040",
+            "3ca89f41",
+            "bd97ba3f",
+            "0000b040",
+            "baa8b141",
+            "bb233a40",
+            "0000b040",
+            "dc7cc141",
+            "99448f40",
+            "0000b040",
+            "e5fdd041",
+            "52bac640",
+            "0000b040",
+            "f17ee041",
+            "0e2a0141",
+            "0000b040"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 13,
+          "float_count": 39,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92"
+        }
+      }
+    },
+    "tool_3": {
+      "case_id": "tool_3",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "tool_3",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 3
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 3
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": true,
+        "tool_type": 3
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100330d0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10034060"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00002041",
+      "patched_caller_code_sha256": "031486391384c14c89a0e7192c42d0217845e39a438d2a545e42b31849240c4b",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 13,
+          "float_count": 39,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000b040",
+            "40523040",
+            "00000000",
+            "0000b040",
+            "83caa940",
+            "00000000",
+            "0000b040",
+            "2de4f440",
+            "00000000",
+            "0000b040",
+            "7d322341",
+            "00000000",
+            "0000b040",
+            "7dcc4c41",
+            "00000000",
+            "0000b040",
+            "00007041",
+            "00000000",
+            "0000b040",
+            "977f8c41",
+            "9756d33e",
+            "0000b040",
+            "3ca89f41",
+            "bd97ba3f",
+            "0000b040",
+            "baa8b141",
+            "bb233a40",
+            "0000b040",
+            "dc7cc141",
+            "99448f40",
+            "0000b040",
+            "e5fdd041",
+            "52bac640",
+            "0000b040",
+            "f17ee041",
+            "0e2a0141",
+            "0000b040"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 13,
+          "float_count": 39,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92"
+        }
+      }
+    },
+    "tool_default_unset": {
+      "case_id": "tool_default_unset",
+      "host_boundaries": [
+        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
+        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "case_id": "tool_default_unset",
+        "color_setter_called": false,
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "native_color_argb_getter": 4278190080,
+        "native_getter_rvas": {
+          "SPen::ObjectStroke::GetColor() const": "0x2e0ac0",
+          "SPen::ObjectStroke::GetPenSize() const": "0x2e0d54",
+          "SPen::ObjectStroke::GetToolType() const": "0x2e1550"
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_saved_RedrawPen",
+            "line_type": 0,
+            "point_count": 4,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00002041",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ],
+          [
+            "0000f041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "size_setter_called": true,
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_setter_called": false,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "loader": [
+        {
+          "flags": 2,
+          "fn": "dlopen",
+          "name": "libSPenDefaultPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "name": "createPenInst"
+        }
+      ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "native_paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002ba50"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10032f00"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10033e90"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10033e90"
+        }
+      ],
+      "native_pen_size_after_drawing_f32_bits": "00002041",
+      "patched_caller_code_sha256": "cfbe16f0bb22b806f37ac1198f16a5c6485890eafea71fa5d31e47519ba27775",
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
+        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
+      },
+      "runtime_event_order": [
+        {
+          "event": "Pen::SetScreenResolution",
+          "height": 1080,
+          "phase": "draw_object_stroke",
+          "width": 1920
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "draw_object_stroke"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        },
+        {
+          "event": "AddPoint",
+          "phase": "saved_redraw"
+        }
+      ],
+      "schema": "defaultpen-saved-caller-native-v1",
+      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
+      "screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "streams": {
+        "draw_object_stroke": {
+          "callback_count": 13,
+          "float_count": 39,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92",
+          "values_f32_bits": [
+            "00000000",
+            "00000000",
+            "0000b040",
+            "40523040",
+            "00000000",
+            "0000b040",
+            "83caa940",
+            "00000000",
+            "0000b040",
+            "2de4f440",
+            "00000000",
+            "0000b040",
+            "7d322341",
+            "00000000",
+            "0000b040",
+            "7dcc4c41",
+            "00000000",
+            "0000b040",
+            "00007041",
+            "00000000",
+            "0000b040",
+            "977f8c41",
+            "9756d33e",
+            "0000b040",
+            "3ca89f41",
+            "bd97ba3f",
+            "0000b040",
+            "baa8b141",
+            "bb233a40",
+            "0000b040",
+            "dc7cc141",
+            "99448f40",
+            "0000b040",
+            "e5fdd041",
+            "52bac640",
+            "0000b040",
+            "f17ee041",
+            "0e2a0141",
+            "0000b040"
+          ]
+        },
+        "saved_redraw": {
+          "callback_count": 13,
+          "float_count": 39,
+          "same_bytes_as_drawing_phase": true,
+          "same_rt_as_drawing_phase": true,
+          "sha256": "a3196f40f93b27aa656049afd0b4f50297b5cd278ad3e38d31fd62224824cb92"
+        }
+      }
+    }
+  },
+  "provenance": {
+    "caller_sha256": "14e1b1d85df0aaebdc889871656217b927bedfc45ad1eba309fbe562eedd559a",
+    "dso_sha256": {
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libSPenDefaultPen.so": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "helper_sha256": {
+      "conformance/defaultpen_saved_caller_native.py": "14e1b1d85df0aaebdc889871656217b927bedfc45ad1eba309fbe562eedd559a",
+      "conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+      "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb"
+    },
+    "input_scope": "Synthetic native ObjectStroke setter calls, not serialized SDocx parser input. Color setter is omitted in every case; the wrapper additionally calls native ObjectStroke::GetColor and records Pen::GetSize after Drawing plus PenDrawableRT::SetPenData arguments. In-memory patches alter only the input row, selected size/tool setter calls, fixed-count/source-getter checks, and output metadata.",
+    "model_defaults_fixture_sha256": "b4142701a6e5ffc2c3a87653a4bea167d267279fe26211ee4f5e371442b331dc",
+    "runner_sha256": "c6798e73b2e43fae625723d855a08e62b9565bcec20c4da48958a02d18f57d05",
+    "runtime_scope": "Pinned native Model getters, Drawing caller, DefaultPen drawable and RT AddPoint execute under Unicorn. IContext is a synthetic 1920x1080 host profile; canvas/task queue, identity color conversion and graphics services are bounded host adapters."
+  },
+  "schema": "defaultpen-native-admission-controls-v1"
+}
