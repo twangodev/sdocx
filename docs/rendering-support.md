@@ -91,6 +91,11 @@ outer SDK loading is not exercised.
 | Rainbow, eraser and straighten effects | Metadata retained; native effect semantics not reproduced | Gates vary by profile. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
+A [native RTV4 paint oracle](../conformance/fountain-rtv4-paint-native.json)
+replays three captured V14 tuples and a synthetic control through native
+constructor, upload and Draw code on host Mesa, with color and matrix controls.
+It excludes natural Drawing admission and Samsung-device pixels.
+
 Native [matrix-scale captures](../conformance/fountain-inverse-scale-native.json)
 cover changed and cached V14/V16 getters under five controlled canvas matrices;
 the full zoom-dependent Drawing/RT pipeline remains unverified.

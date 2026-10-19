@@ -1,0 +1,6466 @@
+{
+  "captures": {
+    "saved-caller": {
+      "attribute_state_at_native_mask_draw": [
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        }
+      ],
+      "blend_state_calls": [
+        {
+          "call": "glDisable",
+          "cap": 3089
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 0,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        }
+      ],
+      "draw_program_binding": {
+        "composite_program": 4,
+        "linked_shader_source_hashes": {
+          "3": [
+            "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766",
+            "7a2f3a335d5b8e30cbd905929cbc5cb476c65848a5fb0f695250846b3cac8972"
+          ],
+          "4": [
+            "17b589bfbd8265da0edc5f024bf81fa51da20223ff1460441dc479767675acad",
+            "11fe5116dfa42c5640ae3e55f678bc4f078ffefa6bc2f955af2cf2c87c13a8f6"
+          ]
+        },
+        "mask_program": 3,
+        "use_sequence": [
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4
+        ]
+      },
+      "draw_uniforms": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            0.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -0.75,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        }
+      ],
+      "evidence_boundary": "Actual pinned FountainPen RTV4 constructor, Init, CreatePenCanvas, SetInverseScale, AddPoint, SendDataToGPU, Update, and Draw execute in Unicorn. The saved-caller capture replays the first three native AddPoint tuples from fixture v14_omitted; the separately labeled control uses explicit synthetic tuples. The probe constructs RTV4 directly and does not execute Drawing/Model admission. Color, canvas, queue/context/bitmap, and Draw matrices are explicit host inputs. GLES is Mesa via the existing host adapter. Readback is host-Mesa only, not Samsung device parity.",
+      "framebuffer_events": [
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            1,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 1
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            2,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 2
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        }
+      ],
+      "gl_buffer_data_events": [
+        {
+          "array_buffer_binding": 1,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 2,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "array_buffer_binding": 1,
+          "call": "glBufferData",
+          "dataHex": "000000000000803f00000000000000000000803f0000803f0000803f00000000",
+          "dataSha256": "7ed2cecf4aeed8de10a43c0a00981c5f1c9be7bae582efe91cdb655002f15996",
+          "size": 32,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 2,
+          "call": "glBufferData",
+          "dataHex": "0000803f000080bf000080bf0000803f0000803f0000803f000080bf000080bf",
+          "dataSha256": "c39048b0bf91ff682be213630437510e113c551f252b00483348581fc46beaca",
+          "size": 32,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 5,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glBufferData",
+          "dataHex": "00000000000000000000803f0000803f000000000000803f0000803f00000000cdcc4c3ef3b2093f000000000000803f0000803f0000803f000000000000803f00000000cdcc4c3e3300c33f000000000000803f0000803f0000803f000000000000803f00000000cdcc4c3e",
+          "dataSha256": "4723f2795e99c7b9fc414af9795cea8d4fc3aacc20167671132522620349a71f",
+          "size": 108,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        }
+      ],
+      "gl_errors": [],
+      "helper_sources": {
+        "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "fountain-saved-caller-native.json": "552dbabd5cf1b760cf63c8fba967c7a6fe14ca124155ccc929d0587a7ffa4695",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "host_boundaries": [
+        "Output bitmap comes from native SPGraphicsFactory::CreateBitmap with explicit RGBA8/RGBA target args, then actual SPTextureBitmap::AttachToCanvasRT(true).",
+        "The GL queue executes posted task vtable+16 synchronously in a host callback.",
+        "The Renderer-aware Unicorn loader and all GLES forwarding use host adapters.",
+        "The positive native Draw run replaces only the inherited host glDrawArraysInstanced diagnostic callback because that callback issues an invalid GL_RED read on this RGBA8 target; the replacement forwards the native draw and captures attribute state.",
+        "No Android app GL thread, natural object destruction, full Model/Drawing->RT lifecycle, or device GPU pixels are claimed."
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "input": {
+        "SetPenData_argb_u32": "0xff336699",
+        "SetPenData_size_f32": 2.0,
+        "addpoint_argument_bytes_sha256": "417b5a5c320cd8a56814ef4b4dba9448a29a419cc2affd67528f24b9bd63208b",
+        "addpoint_s0_s5_f32": [
+          [
+            0.0,
+            0.0,
+            0.10000000149011612,
+            0.0,
+            1.0,
+            1.0
+          ],
+          [
+            0.5378867983818054,
+            0.0,
+            0.10000000149011612,
+            1.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.523443579673767,
+            0.0,
+            0.10000000149011612,
+            1.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "canvas": [
+          64,
+          64
+        ],
+        "draw_matrix_f32": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "inverse_scale_f32": [
+          1.0,
+          1.0
+        ],
+        "kind": "exact argument replay from native saved-caller fixture; not a captured device paint",
+        "native_producer_f32": [
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.20000000298023224,
+          0.5378867983818054,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.20000000298023224,
+          1.523443579673767,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.20000000298023224
+        ],
+        "native_producer_float_count": 27,
+        "producer_upload_bytes": 108,
+        "producer_upload_sha256": "4723f2795e99c7b9fc414af9795cea8d4fc3aacc20167671132522620349a71f",
+        "queue": "synchronous explicit host callback dispatching task vtable+16",
+        "source_addpoint_entry_indices": [
+          0,
+          1,
+          2
+        ],
+        "source_case": "v14_omitted",
+        "source_fixture": "conformance/fountain-saved-caller-native.json",
+        "source_fixture_sha256": "552dbabd5cf1b760cf63c8fba967c7a6fe14ca124155ccc929d0587a7ffa4695"
+      },
+      "libcxx_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "native_instance_upload": {
+        "buffer_id": 3,
+        "bytes": 108,
+        "draw_attribute_location_2_buffer_id": 3,
+        "matches_native_producer_bytes": true,
+        "sha256": "4723f2795e99c7b9fc414af9795cea8d4fc3aacc20167671132522620349a71f"
+      },
+      "native_method_entry_trace": [
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9d178",
+          "method": "ctor",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::FountainPenStrokeDrawableRTV4(SPen::PenGLDataManager*)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9d1f0",
+          "method": "init",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Init()"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9dcf4",
+          "method": "create_canvas",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::CreatePenCanvas(int, int, SPen::IGLMsgQueue*)"
+        },
+        {
+          "entry_count": 2,
+          "mapped_va": "0x9e5f8",
+          "method": "set_inverse_scale",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::SetInverseScale(SPen::Vector2<float> const&)"
+        },
+        {
+          "entry_count": 6,
+          "mapped_va": "0x9de50",
+          "method": "add_point",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x104a5c4",
+          "method": "send_data_to_gpu",
+          "symbol": "SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)"
+        },
+        {
+          "entry_count": 7,
+          "mapped_va": "0x104a558",
+          "method": "set_pen_data",
+          "symbol": "SPen::PenDrawableRT::SetPenData(float, int)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9e604",
+          "method": "update",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Update(bool)"
+        },
+        {
+          "entry_count": 8,
+          "mapped_va": "0x9e66c",
+          "method": "draw",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)"
+        }
+      ],
+      "native_sources": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+      },
+      "paint_interpretation": "The captured composite fragment shader writes vec4(uInputColor.rgb * alpha, alpha), so its RGB is premultiplied by the mask and color alpha; native Draw sets GL_BLEND with ONE, ONE_MINUS_SRC_ALPHA. This describes the captured shader and GLES state, not a Samsung device compositing observation.",
+      "program_shader_link_trace": [
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "7a2f3a335d5b8e30cbd905929cbc5cb476c65848a5fb0f695250846b3cac8972"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 3
+        },
+        {
+          "event": "glAttachShader",
+          "program": 3,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 3,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 3
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "17b589bfbd8265da0edc5f024bf81fa51da20223ff1460441dc479767675acad"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "11fe5116dfa42c5640ae3e55f678bc4f078ffefa6bc2f955af2cf2c87c13a8f6"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 4
+        },
+        {
+          "event": "glAttachShader",
+          "program": 4,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 4,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 4
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "b5647ec3dfc2fbbfc66bad0da3de5f063348743be8219470398c476bf77be35a"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 5
+        },
+        {
+          "event": "glAttachShader",
+          "program": 5,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 5,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 5
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 6
+        },
+        {
+          "event": "glAttachShader",
+          "program": 6,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 6,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 6
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        }
+      ],
+      "readback": {
+        "bytes": 16384,
+        "draw_framebuffer_binding": 2,
+        "format": "RGBA/UNSIGNED_BYTE",
+        "gl_error": 0,
+        "height": 64,
+        "max_alpha": 25,
+        "nonzero_alpha_pixels": 2,
+        "nonzero_bytes": 8,
+        "origin": "after actual native RTV4::Draw return, RGBA/UNSIGNED_BYTE read from host Mesa current FBO2; rows are GL bottom-up order",
+        "read_framebuffer_binding": 2,
+        "sha256": "7cbe8d7acaac961cb7ea7afdfcac9363bf81595fc5779e7e39b3bc0d3659a96d",
+        "width": 64,
+        "zlib_base64": "eNrtw6ENAAAIACCLxWL2/0f1CwtsZPXkDQAAAAAAAAAAAAAAAAAAAODNAr/TAG8="
+      },
+      "rt_fields": {
+        "buffers": {
+          "producer_plus80": "0x1002d820",
+          "upload_plus88": "0x1002d840"
+        },
+        "canvas_width_height": [
+          64,
+          64
+        ],
+        "enhanced_antialias": true,
+        "inverse_scale_field_plus264_f32": [
+          0.5,
+          0.25
+        ],
+        "redraw_state": true,
+        "rgba_color_plus44_f32": [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          1.0
+        ]
+      },
+      "scale_controls": {
+        "color_alpha_and_draw_matrix_controls": [
+          {
+            "argb": "0x00336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                0.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_0",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 0,
+              "nonzero_alpha_pixels": 0,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtwTEBAAAAwqD1T20MH6AAAAAAAAAAAAAAAAAAAACAtwFAAAAB",
+              "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe"
+            }
+          },
+          {
+            "argb": "0x80336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                0.501960813999176
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_128",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 13,
+              "nonzero_alpha_pixels": 2,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtw7EJAAAIAKAggpb+f7e+aFEwqydvAAAAAAAAAAAAAAAAAAAAAG8Wv+YAOw==",
+              "sha256": "12a44e25c28e5ecfaf33c9dd1cdb30f8ca1baab886e556817b5025db770bbd4f"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_255",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 25,
+              "nonzero_alpha_pixels": 2,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtw6ENAAAIACCLxWL2/0f1CwtsZPXkDQAAAAAAAAAAAAAAAAAAAODNAr/TAG8=",
+              "sha256": "7cbe8d7acaac961cb7ea7afdfcac9363bf81595fc5779e7e39b3bc0d3659a96d"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_identity",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 25,
+              "nonzero_alpha_pixels": 2,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtw6ENAAAIACCLxWL2/0f1CwtsZPXkDQAAAAAAAAAAAAAAAAAAAODNAr/TAG8=",
+              "sha256": "7cbe8d7acaac961cb7ea7afdfcac9363bf81595fc5779e7e39b3bc0d3659a96d"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              8,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_translate_x8",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -0.75,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 25,
+              "nonzero_alpha_pixels": 3,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtw7EJACAQBLADUdDma/dfVBzA0i6BJG9tzOqr9h0AAAAAAAAAAAAAAAAAAADgmwPuqgCQ",
+              "sha256": "27a39edb52ed1e7d482a466f86625da80700006925e6973f2dab5c8cc36d7605"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_scale_2",
+            "projection_uniform": [
+              0.0625,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0625,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 34,
+              "nonzero_alpha_pixels": 9,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtxUEOQDAQAMCqTTchddEH4P+PFAdvcDBzmezjzG1cre/H8zRHlh+p0ZYaub4XAAAAAAAAAAAAAAAAAAAA+MAN3IgBkQ==",
+              "sha256": "97a76492321478e2acb32cd6d983ed60e2c3d3d8ef0310f3df0d9382fc5600bd"
+            }
+          }
+        ],
+        "draw_matrix_only_changed_projection": {
+          "matrix_f32": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_uploaded_instance_stream_retained": true,
+          "projection_after": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ],
+          "projection_before": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        "inverse_scale_only_changed_addpoint_record_bytes": {
+          "bytes": 108,
+          "draw_replayed_with_this_new_stream": false,
+          "f32": [
+            0.0,
+            0.0,
+            0.5,
+            0.375,
+            0.0,
+            1.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645,
+            0.5378867983818054,
+            0.0,
+            0.5,
+            0.375,
+            1.0,
+            0.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645,
+            1.523443579673767,
+            0.0,
+            0.5,
+            0.375,
+            1.0,
+            0.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645
+          ],
+          "inverse_scale": [
+            0.5,
+            0.25
+          ],
+          "sha256": "6af1d419f9bdcb7280f5a499be1fb6249d883d28668d9ac840fa0214bdf0e63e"
+        }
+      },
+      "schema": "sdocx-fountain-v14-rtv4-native-draw-hostgles-v1",
+      "selected_v14_context": {
+        "caller_selected_rt": "SPen::FountainPenStrokeDrawableRTV4",
+        "case": "v14_omitted",
+        "selection_is_separate_from_direct_construction": true,
+        "source_fixture": "conformance/fountain-saved-caller-native.json"
+      },
+      "shader_sources_from_native_glShaderSource": [
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aRectPoint; layout(location = 1) in vec2 aCalcurateData; layout(location = 2) in vec4 aPointInfo; layout(location = 3) in vec2 aDirection; layout(location = 4) in float transparency; layout(location = 5) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { vec2 normal; normal.x = aDirection.y; normal.y = -aDirection.x; vec2 position = aPointInfo.xy + aCalcurateData.x * (aDirection + normal * aCalcurateData.y) * aPointInfo.zw; gl_Position = ProjectionMatrix * vec4(position, 0.0, 1.0); fragCoord = vec2(aRectPoint.x, aRectPoint.y); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; const float gradLength = 0.25; const float alphaRange = 0.93; out vec4 FragColor; void main(void) { float distY = abs(center.y - fragCoord.y); float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0); float dist = distance(center, fragCoord); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * gradAlpha * alpha; FragColor = vec4(pointAlpha); }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aVertex; out vec2 vUV; void main(void) { vUV = aVertex * 0.5 + 0.5; gl_Position = vec4(aVertex.xy, 0.0, 1.0); }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision highp float; uniform sampler2D uSrcTexture; uniform vec4 uInputColor; in vec2 vUV; out vec4 FragColor; void main(void) { float alpha = texture(uSrcTexture, vUV).a * uInputColor.a; if (alpha > 0.0) FragColor = vec4(uInputColor.rgb * alpha, alpha); else discard; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aRectPoint; layout(location = 1) in vec2 aCalcurateData; layout(location = 2) in vec4 aPointInfo; layout(location = 3) in vec2 aDirection; layout(location = 4) in float transparency; layout(location = 5) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { vec2 normal; normal.x = aDirection.y; normal.y = -aDirection.x; vec2 position = aPointInfo.xy + aCalcurateData.x * (aDirection + normal * aCalcurateData.y) * aPointInfo.zw; gl_Position = ProjectionMatrix * vec4(position, 0.0, 1.0); fragCoord = vec2(aRectPoint.x, aRectPoint.y); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; const float gradLength = 0.25; const float alphaRange = 0.93; out vec4 FragColor; void main(void) { float distY = abs(center.y - fragCoord.y); float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0); float dist = distance(center, fragCoord); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * gradAlpha * alpha; FragColor = vec4(inputColor.rgb, 1.0) * pointAlpha; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        }
+      ],
+      "texture_events": [
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": false,
+          "height": 64,
+          "internalFormat": 32856,
+          "pixelBytes": 0,
+          "pixelsSha256": null,
+          "target": 3553,
+          "type": 5121,
+          "width": 64
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 2,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 64,
+          "internalFormat": 32856,
+          "pixelBytes": 16384,
+          "pixelsSha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+          "target": 3553,
+          "type": 5121,
+          "width": 64
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        }
+      ]
+    },
+    "synthetic-control": {
+      "attribute_state_at_native_mask_draw": [
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 0,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": 1,
+          "index": 1,
+          "size": 2,
+          "stride": 8,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 2,
+          "size": 4,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 3,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 4,
+          "size": 1,
+          "stride": 36,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 1,
+          "enabled": 1,
+          "index": 5,
+          "size": 2,
+          "stride": 36,
+          "type": 5126
+        }
+      ],
+      "blend_state_calls": [
+        {
+          "call": "glDisable",
+          "cap": 3089
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32776,
+            32776
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 0,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            3
+          ]
+        },
+        {
+          "call": "glDrawArrays",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 2,
+            "program": 4,
+            "texture2d": 1,
+            "vao": 0
+          },
+          "values": [
+            4,
+            0,
+            6
+          ]
+        }
+      ],
+      "draw_program_binding": {
+        "composite_program": 4,
+        "linked_shader_source_hashes": {
+          "3": [
+            "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766",
+            "7a2f3a335d5b8e30cbd905929cbc5cb476c65848a5fb0f695250846b3cac8972"
+          ],
+          "4": [
+            "17b589bfbd8265da0edc5f024bf81fa51da20223ff1460441dc479767675acad",
+            "11fe5116dfa42c5640ae3e55f678bc4f078ffefa6bc2f955af2cf2c87c13a8f6"
+          ]
+        },
+        "mask_program": 3,
+        "use_sequence": [
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4
+        ]
+      },
+      "draw_uniforms": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            0.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -0.75,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        }
+      ],
+      "evidence_boundary": "Actual pinned FountainPen RTV4 constructor, Init, CreatePenCanvas, SetInverseScale, AddPoint, SendDataToGPU, Update, and Draw execute in Unicorn. The saved-caller capture replays the first three native AddPoint tuples from fixture v14_omitted; the separately labeled control uses explicit synthetic tuples. The probe constructs RTV4 directly and does not execute Drawing/Model admission. Color, canvas, queue/context/bitmap, and Draw matrices are explicit host inputs. GLES is Mesa via the existing host adapter. Readback is host-Mesa only, not Samsung device parity.",
+      "framebuffer_events": [
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            1,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 1
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            2,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 2
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 2,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 2,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            64,
+            64
+          ]
+        }
+      ],
+      "gl_buffer_data_events": [
+        {
+          "array_buffer_binding": 1,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 2,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "array_buffer_binding": 1,
+          "call": "glBufferData",
+          "dataHex": "000000000000803f00000000000000000000803f0000803f0000803f00000000",
+          "dataSha256": "7ed2cecf4aeed8de10a43c0a00981c5f1c9be7bae582efe91cdb655002f15996",
+          "size": 32,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 2,
+          "call": "glBufferData",
+          "dataHex": "0000803f000080bf000080bf0000803f0000803f0000803f000080bf000080bf",
+          "dataSha256": "c39048b0bf91ff682be213630437510e113c551f252b00483348581fc46beaca",
+          "size": 32,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 5,
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glBufferData",
+          "dataHex": "00000000000000000000803f0000803f000000000000803f0000803f00000000cdcc4c3e00000041000080400000803f0000803f0000803f000000000000803f00000000cdcc4c3e00008041000000410000803f0000803f0000803f000000000000803f00000000cdcc4c3e",
+          "dataSha256": "1cf78b71cca3cf47c74f9c8919ea5c67478c898a7611abefd15e937af627b3b8",
+          "size": 108,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "array_buffer_binding": 4,
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        }
+      ],
+      "gl_errors": [],
+      "helper_sources": {
+        "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "fountain-saved-caller-native.json": "552dbabd5cf1b760cf63c8fba967c7a6fe14ca124155ccc929d0587a7ffa4695",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "host_boundaries": [
+        "Output bitmap comes from native SPGraphicsFactory::CreateBitmap with explicit RGBA8/RGBA target args, then actual SPTextureBitmap::AttachToCanvasRT(true).",
+        "The GL queue executes posted task vtable+16 synchronously in a host callback.",
+        "The Renderer-aware Unicorn loader and all GLES forwarding use host adapters.",
+        "The positive native Draw run replaces only the inherited host glDrawArraysInstanced diagnostic callback because that callback issues an invalid GL_RED read on this RGBA8 target; the replacement forwards the native draw and captures attribute state.",
+        "No Android app GL thread, natural object destruction, full Model/Drawing->RT lifecycle, or device GPU pixels are claimed."
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "input": {
+        "SetPenData_argb_u32": "0xff336699",
+        "SetPenData_size_f32": 2.0,
+        "addpoint_argument_bytes_sha256": "6305b7a31a1093c8b8933868e50643229ac181c8f00d5b5cbd18ed09b430ef2f",
+        "addpoint_s0_s5_f32": [
+          [
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            1.0,
+            1.0
+          ],
+          [
+            8.0,
+            4.0,
+            0.1,
+            1.0,
+            0.0,
+            1.0
+          ],
+          [
+            16.0,
+            8.0,
+            0.1,
+            1.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "canvas": [
+          64,
+          64
+        ],
+        "draw_matrix_f32": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "inverse_scale_f32": [
+          1.0,
+          1.0
+        ],
+        "kind": "explicit synthetic native AddPoint arguments; not captured device data",
+        "native_producer_f32": [
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.20000000298023224,
+          8.0,
+          4.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.20000000298023224,
+          16.0,
+          8.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.20000000298023224
+        ],
+        "native_producer_float_count": 27,
+        "producer_upload_bytes": 108,
+        "producer_upload_sha256": "1cf78b71cca3cf47c74f9c8919ea5c67478c898a7611abefd15e937af627b3b8",
+        "queue": "synchronous explicit host callback dispatching task vtable+16",
+        "source_addpoint_entry_indices": null,
+        "source_case": null,
+        "source_fixture": null,
+        "source_fixture_sha256": null
+      },
+      "libcxx_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "native_instance_upload": {
+        "buffer_id": 3,
+        "bytes": 108,
+        "draw_attribute_location_2_buffer_id": 3,
+        "matches_native_producer_bytes": true,
+        "sha256": "1cf78b71cca3cf47c74f9c8919ea5c67478c898a7611abefd15e937af627b3b8"
+      },
+      "native_method_entry_trace": [
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9d178",
+          "method": "ctor",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::FountainPenStrokeDrawableRTV4(SPen::PenGLDataManager*)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9d1f0",
+          "method": "init",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Init()"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9dcf4",
+          "method": "create_canvas",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::CreatePenCanvas(int, int, SPen::IGLMsgQueue*)"
+        },
+        {
+          "entry_count": 2,
+          "mapped_va": "0x9e5f8",
+          "method": "set_inverse_scale",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::SetInverseScale(SPen::Vector2<float> const&)"
+        },
+        {
+          "entry_count": 6,
+          "mapped_va": "0x9de50",
+          "method": "add_point",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x104a5c4",
+          "method": "send_data_to_gpu",
+          "symbol": "SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)"
+        },
+        {
+          "entry_count": 7,
+          "mapped_va": "0x104a558",
+          "method": "set_pen_data",
+          "symbol": "SPen::PenDrawableRT::SetPenData(float, int)"
+        },
+        {
+          "entry_count": 1,
+          "mapped_va": "0x9e604",
+          "method": "update",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Update(bool)"
+        },
+        {
+          "entry_count": 8,
+          "mapped_va": "0x9e66c",
+          "method": "draw",
+          "symbol": "SPen::FountainPenStrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)"
+        }
+      ],
+      "native_sources": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+      },
+      "paint_interpretation": "The captured composite fragment shader writes vec4(uInputColor.rgb * alpha, alpha), so its RGB is premultiplied by the mask and color alpha; native Draw sets GL_BLEND with ONE, ONE_MINUS_SRC_ALPHA. This describes the captured shader and GLES state, not a Samsung device compositing observation.",
+      "program_shader_link_trace": [
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "7a2f3a335d5b8e30cbd905929cbc5cb476c65848a5fb0f695250846b3cac8972"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 3
+        },
+        {
+          "event": "glAttachShader",
+          "program": 3,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 3,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 3
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "17b589bfbd8265da0edc5f024bf81fa51da20223ff1460441dc479767675acad"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "11fe5116dfa42c5640ae3e55f678bc4f078ffefa6bc2f955af2cf2c87c13a8f6"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 4
+        },
+        {
+          "event": "glAttachShader",
+          "program": 4,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 4,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 4
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "160c16a1dd7ae8287da5fad3a51a4d0dba9a4e3a1eea8d38938aee07c2a67766"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "b5647ec3dfc2fbbfc66bad0da3de5f063348743be8219470398c476bf77be35a"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 5
+        },
+        {
+          "event": "glAttachShader",
+          "program": 5,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 5,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 5
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 1,
+          "shader_type": 35633
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 1,
+          "source_call_count": 1,
+          "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 1
+        },
+        {
+          "event": "glCreateShader",
+          "shader": 2,
+          "shader_type": 35632
+        },
+        {
+          "event": "glShaderSource",
+          "shader": 2,
+          "source_call_count": 1,
+          "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+        },
+        {
+          "event": "glCompileShader",
+          "shader": 2
+        },
+        {
+          "event": "glCreateProgram",
+          "program": 6
+        },
+        {
+          "event": "glAttachShader",
+          "program": 6,
+          "shader": 1
+        },
+        {
+          "event": "glAttachShader",
+          "program": 6,
+          "shader": 2
+        },
+        {
+          "event": "glLinkProgram",
+          "program": 6
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        },
+        {
+          "event": "glUseProgram",
+          "program": 3
+        },
+        {
+          "event": "glUseProgram",
+          "program": 4
+        }
+      ],
+      "readback": {
+        "bytes": 16384,
+        "draw_framebuffer_binding": 2,
+        "format": "RGBA/UNSIGNED_BYTE",
+        "gl_error": 0,
+        "height": 64,
+        "max_alpha": 15,
+        "nonzero_alpha_pixels": 9,
+        "nonzero_bytes": 36,
+        "origin": "after actual native RTV4::Draw return, RGBA/UNSIGNED_BYTE read from host Mesa current FBO2; rows are GL bottom-up order",
+        "read_framebuffer_binding": 2,
+        "sha256": "e830681179d870767dac859e487b914885ee038d188bf6b1a587e21ac42d9998",
+        "width": 64,
+        "zlib_base64": "eNrt07EJACAQBEHhQPjo++9Wc3OTn+lgg82uXsAj940M/mN6P/hDPwAAAAAAAAAAAAAAAAD8dgCmHwEq"
+      },
+      "rt_fields": {
+        "buffers": {
+          "producer_plus80": "0x1002d820",
+          "upload_plus88": "0x1002d840"
+        },
+        "canvas_width_height": [
+          64,
+          64
+        ],
+        "enhanced_antialias": true,
+        "inverse_scale_field_plus264_f32": [
+          0.5,
+          0.25
+        ],
+        "redraw_state": true,
+        "rgba_color_plus44_f32": [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          1.0
+        ]
+      },
+      "scale_controls": {
+        "color_alpha_and_draw_matrix_controls": [
+          {
+            "argb": "0x00336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                0.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_0",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 0,
+              "nonzero_alpha_pixels": 0,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrtwTEBAAAAwqD1T20MH6AAAAAAAAAAAAAAAAAAAACAtwFAAAAB",
+              "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe"
+            }
+          },
+          {
+            "argb": "0x80336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                0.501960813999176
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_128",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 8,
+              "nonzero_alpha_pixels": 9,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrt07ENACAMBDH0KFL2nxh6eprYG1xx2dULeOS+kcF/TO8Hf+gHAAAAAAAAAAAAAAAAgN8Ojv4Aow==",
+              "sha256": "3de67c6869e8197902dd27af6ad1da411a50a6e2bf2d82d24e3cdf2e1fcb1b42"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "color_alpha_255",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 15,
+              "nonzero_alpha_pixels": 9,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrt07EJACAQBEHhQPjo++9Wc3OTn+lgg82uXsAj940M/mN6P/hDPwAAAAAAAAAAAAAAAAD8dgCmHwEq",
+              "sha256": "e830681179d870767dac859e487b914885ee038d188bf6b1a587e21ac42d9998"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_identity",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 15,
+              "nonzero_alpha_pixels": 9,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrt07EJACAQBEHhQPjo++9Wc3OTn+lgg82uXsAj940M/mN6P/hDPwAAAAAAAAAAAAAAAAD8dgCmHwEq",
+              "sha256": "e830681179d870767dac859e487b914885ee038d188bf6b1a587e21ac42d9998"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              8,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_translate_x8",
+            "projection_uniform": [
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.03125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -0.75,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 15,
+              "nonzero_alpha_pixels": 10,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrt07EJADAMA0GBIZAq+29rMoBLd3egAVR8Mqtz318AffgP+vAfAAAAAAAAAAAAAAAAAFY1vZYBSw==",
+              "sha256": "0dd7d7cd5d8fa0f642042846464b31a98e9aed67d4f08d65ac4d1683b41589f8"
+            }
+          },
+          {
+            "argb": "0xff336699",
+            "color_uniform_call": {
+              "call": "glUniform4fv",
+              "location": 1,
+              "values": [
+                0.20000000298023224,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+              ]
+            },
+            "draw_matrix_f32": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "gl_errors": [],
+            "label": "draw_scale_2",
+            "projection_uniform": [
+              0.0625,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0625,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ],
+            "readback": {
+              "bytes": 16384,
+              "draw_framebuffer_binding": 2,
+              "gl_error": 0,
+              "max_alpha": 33,
+              "nonzero_alpha_pixels": 27,
+              "read_framebuffer_binding": 2,
+              "rgba_zlib_base64": "eNrt1cEJgEAMRcF1WcxBvNmA/TepKcGDpz8DKSAQ8uq87rnqGKG2ufYBwCfdjdR2dDfqbWdPYkPS90+/fwD/Uz/t7/4BAAAAAAAAAAAAAPjXA+tzA98=",
+              "sha256": "aab6e296b3b4296801852b52024fd89bdd31b2dd26f3ea44ac8340835496059c"
+            }
+          }
+        ],
+        "draw_matrix_only_changed_projection": {
+          "matrix_f32": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_uploaded_instance_stream_retained": true,
+          "projection_after": [
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ],
+          "projection_before": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        "inverse_scale_only_changed_addpoint_record_bytes": {
+          "bytes": 108,
+          "draw_replayed_with_this_new_stream": false,
+          "f32": [
+            0.0,
+            0.0,
+            0.5,
+            0.375,
+            0.0,
+            1.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645,
+            8.0,
+            4.0,
+            0.5,
+            0.375,
+            1.0,
+            0.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645,
+            16.0,
+            8.0,
+            0.5,
+            0.375,
+            1.0,
+            0.0,
+            1.0,
+            0.1666666716337204,
+            0.4000000059604645
+          ],
+          "inverse_scale": [
+            0.5,
+            0.25
+          ],
+          "sha256": "faea5419d062efc633cbc367d001553f6a5126b933f11f76058ddca14c843563"
+        }
+      },
+      "schema": "sdocx-fountain-v14-rtv4-native-draw-hostgles-v1",
+      "selected_v14_context": {
+        "caller_selected_rt": "SPen::FountainPenStrokeDrawableRTV4",
+        "case": "v14_omitted",
+        "selection_is_separate_from_direct_construction": true,
+        "source_fixture": "conformance/fountain-saved-caller-native.json"
+      },
+      "shader_sources_from_native_glShaderSource": [
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aRectPoint; layout(location = 1) in vec2 aCalcurateData; layout(location = 2) in vec4 aPointInfo; layout(location = 3) in vec2 aDirection; layout(location = 4) in float transparency; layout(location = 5) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { vec2 normal; normal.x = aDirection.y; normal.y = -aDirection.x; vec2 position = aPointInfo.xy + aCalcurateData.x * (aDirection + normal * aCalcurateData.y) * aPointInfo.zw; gl_Position = ProjectionMatrix * vec4(position, 0.0, 1.0); fragCoord = vec2(aRectPoint.x, aRectPoint.y); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; const float gradLength = 0.25; const float alphaRange = 0.93; out vec4 FragColor; void main(void) { float distY = abs(center.y - fragCoord.y); float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0); float dist = distance(center, fragCoord); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * gradAlpha * alpha; FragColor = vec4(pointAlpha); }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aVertex; out vec2 vUV; void main(void) { vUV = aVertex * 0.5 + 0.5; gl_Position = vec4(aVertex.xy, 0.0, 1.0); }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision highp float; uniform sampler2D uSrcTexture; uniform vec4 uInputColor; in vec2 vUV; out vec4 FragColor; void main(void) { float alpha = texture(uSrcTexture, vUV).a * uInputColor.a; if (alpha > 0.0) FragColor = vec4(uInputColor.rgb * alpha, alpha); else discard; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aRectPoint; layout(location = 1) in vec2 aCalcurateData; layout(location = 2) in vec4 aPointInfo; layout(location = 3) in vec2 aDirection; layout(location = 4) in float transparency; layout(location = 5) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { vec2 normal; normal.x = aDirection.y; normal.y = -aDirection.x; vec2 position = aPointInfo.xy + aCalcurateData.x * (aDirection + normal * aCalcurateData.y) * aPointInfo.zw; gl_Position = ProjectionMatrix * vec4(position, 0.0, 1.0); fragCoord = vec2(aRectPoint.x, aRectPoint.y); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; const float gradLength = 0.25; const float alphaRange = 0.93; out vec4 FragColor; void main(void) { float distY = abs(center.y - fragCoord.y); float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0); float dist = distance(center, fragCoord); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * gradAlpha * alpha; FragColor = vec4(inputColor.rgb, 1.0) * pointAlpha; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        }
+      ],
+      "texture_events": [
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": false,
+          "height": 64,
+          "internalFormat": 32856,
+          "pixelBytes": 0,
+          "pixelsSha256": null,
+          "target": 3553,
+          "type": 5121,
+          "width": 64
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 2,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 64,
+          "internalFormat": 32856,
+          "pixelBytes": 16384,
+          "pixelsSha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+          "target": 3553,
+          "type": 5121,
+          "width": 64
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glActiveTexture",
+          "unit": 33984
+        },
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        }
+      ]
+    }
+  },
+  "runner_sha256": "0a74563d47510731adba7387224b4e478617f4c8ec35f1b8546e736b4f6dbff7",
+  "schema": "sdocx-fountain-rtv4-paint-native-v1"
+}
