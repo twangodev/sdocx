@@ -120,8 +120,10 @@ native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. GPU compositing, caller
 admission and vector paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
-default GLV10 selection and 11-float instance records; source-driven sampling,
-material transport and production integration remain outstanding.
+default GLV10 selection and 11-float instance records. Its
+[texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
+native GL upload calls; source-driven sampling, rendered texture/vector paint
+and production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES

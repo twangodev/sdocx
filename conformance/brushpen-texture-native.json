@@ -1,0 +1,334 @@
+{
+  "artifact": "Samsung Notes 4.4.45.37 native BrushPen",
+  "constructor_profile": {
+    "Init_pattern_tile_count": 3,
+    "fresh_grain_dimensions_f32": [
+      321.0,
+      228.0
+    ],
+    "native_rt_vtable_matches_RTV1": true,
+    "selected_native_version": 10
+  },
+  "embedded_grain_source": {
+    "bytes": 73188,
+    "sha256": "d6e0743f9343efac472d3d00ba44f4138572620b376fe6fd74d9b5ebf1aad2aa"
+  },
+  "factory_calls": [
+    {
+      "bool_arg": 0,
+      "bool_arg_2": 0,
+      "height": 144,
+      "int_arg": 0,
+      "resource": "BrushPenStrokeDrawableRTV1::buildTextures mPatternsBitmap",
+      "source_is_null": true,
+      "stack_args": [
+        6,
+        2
+      ],
+      "width": 144
+    },
+    {
+      "bool_arg": 0,
+      "bool_arg_2": 0,
+      "height": 228,
+      "int_arg": 0,
+      "resource": "BrushPenStrokeDrawableRTV1::buildTextures mGrainBitmap",
+      "source_is_null": true,
+      "stack_args": [
+        6,
+        2
+      ],
+      "width": 321
+    }
+  ],
+  "gl_calls": [
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "texture": 1
+    },
+    {
+      "call": "glPixelStorei",
+      "pname": 3316,
+      "value": 0
+    },
+    {
+      "call": "glPixelStorei",
+      "pname": 3315,
+      "value": 0
+    },
+    {
+      "call": "glTexSubImage2D",
+      "format": 6408,
+      "height": 144,
+      "level": 0,
+      "target": 3553,
+      "type": 5121,
+      "width": 144,
+      "xoffset": 0,
+      "yoffset": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "texture": 1
+    },
+    {
+      "call": "glPixelStorei",
+      "pname": 3316,
+      "value": 0
+    },
+    {
+      "call": "glPixelStorei",
+      "pname": 3315,
+      "value": 0
+    },
+    {
+      "call": "glTexSubImage2D",
+      "format": 6408,
+      "height": 228,
+      "level": 0,
+      "target": 3553,
+      "type": 5121,
+      "width": 321,
+      "xoffset": 0,
+      "yoffset": 0
+    }
+  ],
+  "host_boundaries": {
+    "GLES imports": "arguments intercepted; no driver/context, native GPU allocation, shader execution, or pixel rendering",
+    "RendererFactory::CreateTextureObject": "synthetic ITextureObject storage/interface; actual Renderer::TextureObject::Update executes",
+    "RendererFactory::GetRendererDeviceCaps": "synthetic caps object with maximum dimension 4096",
+    "clock_gettime and strncpy": "deterministic bounded host shims",
+    "pattern allocator": "diagnostic 0xcd poison distinguishes writes; it is not an assertion about production heap contents",
+    "skipped Init siblings": "explicit unmapped nonnull placeholders for existing graphics/blend/shader fields"
+  },
+  "init_path": {
+    "buildTextures_setTextures_args": [
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ]
+    ],
+    "native_function_entries": {
+      "SPen::BrushPenStrokeDrawableRTV1::Init()": 1,
+      "SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)": 1,
+      "SPen::BrushPenStrokeDrawableRTV1::setTextures(int, int)": 1,
+      "SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
+      "SPen::SPSubBitmapRT::SPSubBitmapRT(SPen::IGLMsgQueue*, int, SPen::Rect const&, int, int, char const*, void const*, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
+      "SPen::SPTextureBitmap::SPTextureBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, bool, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
+      "SPen::SPTextureBitmap::SetTextureFilter(SPen::TextureParamFiltering, SPen::TextureParamFilteringValue)": 4,
+      "SPen::SPTextureBitmap::SetTextureWrap(SPen::TextureParamWrapping, SPen::TextureParamWrappingValue)": 2,
+      "SPen::SPTextureBitmap::UpdateBitmap(void const*, int)": 2,
+      "non-virtual thunk to SPen::SPSubBitmapRT::UpdateBitmap(void const*, int)": 2
+    },
+    "skipped_branches_reached": false,
+    "skipped_sibling_pointer_dereference_guard": "unmapped addresses; execution faults if read",
+    "synthetic_preinitialized_sibling_fields": [
+      200,
+      208,
+      216
+    ]
+  },
+  "library_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+  },
+  "texture_descriptors": [
+    {
+      "buffer_info_u32": [
+        0,
+        0,
+        144,
+        144
+      ],
+      "descriptor_u32": [
+        144,
+        144,
+        0,
+        2,
+        6,
+        1,
+        0,
+        0
+      ],
+      "initial_source_is_null": true,
+      "pair_count": 2,
+      "resource": "BrushPenStrokeDrawableRTV1::buildTextures mPatternsBitmap",
+      "texture_target_gl_enum": 3553,
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    },
+    {
+      "buffer_info_u32": [
+        0,
+        0,
+        321,
+        321
+      ],
+      "descriptor_u32": [
+        321,
+        228,
+        0,
+        2,
+        6,
+        1,
+        0,
+        0
+      ],
+      "initial_source_is_null": true,
+      "pair_count": 2,
+      "resource": "BrushPenStrokeDrawableRTV1::buildTextures mGrainBitmap",
+      "texture_target_gl_enum": 3553,
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    }
+  ],
+  "texture_state_calls": [
+    {
+      "enum": 4,
+      "value": 0,
+      "wrapper": "SetTextureFilter"
+    },
+    {
+      "enum": 4,
+      "value": 0,
+      "wrapper": "lower ITextureObject state stub"
+    },
+    {
+      "enum": 5,
+      "value": 0,
+      "wrapper": "SetTextureFilter"
+    },
+    {
+      "enum": 5,
+      "value": 0,
+      "wrapper": "lower ITextureObject state stub"
+    },
+    {
+      "enum": 4,
+      "value": 0,
+      "wrapper": "SetTextureFilter"
+    },
+    {
+      "enum": 4,
+      "value": 0,
+      "wrapper": "lower ITextureObject state stub"
+    },
+    {
+      "enum": 5,
+      "value": 0,
+      "wrapper": "SetTextureFilter"
+    },
+    {
+      "enum": 5,
+      "value": 0,
+      "wrapper": "lower ITextureObject state stub"
+    },
+    {
+      "enum": 0,
+      "value": 3,
+      "wrapper": "SetTextureWrap"
+    },
+    {
+      "enum": 0,
+      "value": 3,
+      "wrapper": "lower ITextureObject state stub"
+    },
+    {
+      "enum": 1,
+      "value": 3,
+      "wrapper": "SetTextureWrap"
+    },
+    {
+      "enum": 1,
+      "value": 3,
+      "wrapper": "lower ITextureObject state stub"
+    }
+  ],
+  "uploads": [
+    {
+      "allocation_bytes": 82944,
+      "call": {
+        "call": "glTexSubImage2D",
+        "format": 6408,
+        "height": 144,
+        "level": 0,
+        "target": 3553,
+        "type": 5121,
+        "width": 144,
+        "xoffset": 0,
+        "yoffset": 0
+      },
+      "diagnostic_sentinel_pixels_3x3": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2304,
+          2304
+        ]
+      ],
+      "read_bytes": 82944,
+      "tile_sha256_3x3": [
+        [
+          "ffd57f9ee646f24275657f37c36c110ecd1222057bf8e9be4edc7232d130f797",
+          "e9434ac19612b18993c2ffe9120087439ae71424da634ea3243c1db170987a33",
+          "34da0361a3b5bf7189a56a828cabf516888169453b89b838e42135378bdf01d9"
+        ],
+        [
+          "1ea0f6d77015268626d130f0e1afe0527da1e166a7945ee937dd92f4e16354b7",
+          "548f45eebd8ec2723e847cf1f8d4ac6893be2acae8700c12542b8a1f32153b86",
+          "81c9322348fe6d3a0edf38f98f84460a105b43864b03cceac3763166af0ae097"
+        ],
+        [
+          "8e866e40d2f17f017e61e315e1dcc07c076b9c3963992eb123a847f14ce73b58",
+          "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab",
+          "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab"
+        ]
+      ],
+      "upload_sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2"
+    },
+    {
+      "allocation_bytes": 292752,
+      "call": {
+        "call": "glTexSubImage2D",
+        "format": 6408,
+        "height": 228,
+        "level": 0,
+        "target": 3553,
+        "type": 5121,
+        "width": 321,
+        "xoffset": 0,
+        "yoffset": 0
+      },
+      "read_bytes": 292752,
+      "upload_sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb"
+    }
+  ]
+}
