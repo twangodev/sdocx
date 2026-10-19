@@ -137,7 +137,10 @@ MAX coverage, source-over color and final composition in six synthetic host
 Mesa cases, plus four direct-branch source-over cases. Both include source ARGB
 opacity controls. A test-only paint model matches every full-target readback;
 direct same-color overlap accumulates while the alternate branch preserves
-its MAX result. Saved Drawing-to-paint integration and device parity remain
+its MAX result. The [joined capture](../conformance/inkpen2-joined-paint-native.json)
+passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
+native upload and RGBA paint, with an explicit host canvas/context bridge.
+Natural app canvas setup, production vector admission and device parity remain
 unverified.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
