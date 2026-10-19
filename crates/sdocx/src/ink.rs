@@ -394,7 +394,7 @@ fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
     if name.strip_prefix("com.samsung.android.sdk.pen.pen.preload.") != Some("ObliquePen") {
         return None;
     }
-    if effective_oblique_version(rendering.advanced_settings.as_deref()) != 4
+    if effective_oblique_version(rendering.advanced_settings.as_deref()) != Some(4)
         || effective_oblique_stroke_type(rendering.style.stroke_type_raw) != 0
     {
         return None;
@@ -432,32 +432,51 @@ fn oblique_native_size(size: f32) -> Option<f32> {
 }
 
 #[cfg(test)]
-fn effective_oblique_version(setting: Option<&str>) -> i32 {
-    let Some(setting) = setting else { return 4 };
-    let token = setting.split(';').next().unwrap_or("").trim_start();
-    if token.is_empty() {
-        return 4;
+fn effective_oblique_version(setting: Option<&str>) -> Option<i32> {
+    // Drawing applies the saved setting to the ObliquePen instance before
+    // selecting its drawable. The plugin starts at V4; the inherited setter
+    // resets null to V1, leaves an empty token stream unchanged, and parses
+    // only the first nonempty semicolon token with C atoi semantics.
+    // ObliquePen::GetStrokeDrawableGL clamps the signed version to 1..=4;
+    // Pen::getVersion itself only reads the stored member.
+    let Some(setting) = setting else {
+        return Some(1);
+    };
+    let Some(token) = setting.split(';').find(|token| !token.is_empty()) else {
+        return Some(4);
+    };
+    let parsed = native_atoi(token)?;
+    if parsed == -1 {
+        return Some(4);
     }
+    Some(if parsed == 0 { 1 } else { parsed }.clamp(1, 4))
+}
+
+#[cfg(test)]
+fn native_atoi(token: &str) -> Option<i32> {
     let bytes = token.as_bytes();
-    let digits_start = usize::from(bytes.first().is_some_and(|b| *b == b'+' || *b == b'-'));
-    let digits_end = token[digits_start..]
-        .bytes()
-        .take_while(u8::is_ascii_digit)
-        .count()
-        + digits_start;
-    let parsed = if digits_end > digits_start {
-        token[..digits_end].parse::<i32>().unwrap_or(0)
-    } else {
-        0
-    };
-    let current = if parsed == -1 {
-        4
-    } else if parsed == 0 {
-        1
-    } else {
-        parsed
-    };
-    current.clamp(1, 4)
+    let mut index = 0;
+    while bytes
+        .get(index)
+        .is_some_and(|byte| matches!(byte, b' ' | b'\t' | b'\n' | b'\r' | 0x0b | 0x0c))
+    {
+        index += 1;
+    }
+    let number_start = index;
+    if bytes
+        .get(index)
+        .is_some_and(|byte| matches!(byte, b'+' | b'-'))
+    {
+        index += 1;
+    }
+    let digits_start = index;
+    while bytes.get(index).is_some_and(u8::is_ascii_digit) {
+        index += 1;
+    }
+    if index == digits_start {
+        return Some(0);
+    }
+    token[number_start..index].parse().ok()
 }
 
 #[cfg(test)]
@@ -586,6 +605,24 @@ mod tests {
                 .coverage_mesh
                 .is_none()
         );
+        let mut missing_version = input.clone();
+        missing_version
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = None;
+        assert!(
+            prepare_stroke(&missing_version, false)
+                .coverage_mesh
+                .is_none()
+        );
+        let mut empty_version = input.clone();
+        empty_version.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        assert!(
+            prepare_stroke(&empty_version, false)
+                .coverage_mesh
+                .is_some()
+        );
         let mut clamped_version = input.clone();
         clamped_version
             .rendering
@@ -641,13 +678,37 @@ mod tests {
     }
 
     #[test]
-    fn oblique_advanced_setting_uses_effective_native_version() {
-        assert_eq!(effective_oblique_version(None), 4);
-        assert_eq!(effective_oblique_version(Some("")), 4);
-        assert_eq!(effective_oblique_version(Some("-1;")), 4);
-        assert_eq!(effective_oblique_version(Some("0;")), 1);
-        assert_eq!(effective_oblique_version(Some("2;")), 2);
-        assert_eq!(effective_oblique_version(Some("9;")), 4);
+    fn oblique_advanced_setting_matches_native_drawable_version_selection() {
+        // Executed through Drawing with a synthetic ObjectStroke: absent,
+        // empty, signed, malformed, and boundary-token cases all report the
+        // selected GL drawable vtable before saved redraw.
+        for (setting, expected) in [
+            (None, 1),
+            (Some(""), 4),
+            (Some(";;;"), 4),
+            (Some(";4;"), 4),
+            (Some("0;"), 1),
+            (Some("1;"), 1),
+            (Some("2;"), 2),
+            (Some("3;"), 3),
+            (Some("4;"), 4),
+            (Some("9;"), 4),
+            (Some("-1;"), 4),
+            (Some("-2;"), 1),
+            (Some(" 4;"), 4),
+            (Some("4 ;"), 4),
+            (Some("+4;"), 4),
+            (Some("   "), 1),
+            (Some("oops"), 1),
+            (Some("4;tail"), 4),
+        ] {
+            assert_eq!(
+                effective_oblique_version(setting),
+                Some(expected),
+                "{setting:?}"
+            );
+        }
+        assert_eq!(effective_oblique_version(Some("2147483648;")), None);
     }
     #[cfg(feature = "serde")]
     #[test]
