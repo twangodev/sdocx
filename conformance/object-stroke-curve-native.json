@@ -1,0 +1,116 @@
+{
+  "host_boundaries": {
+    "SPen::ObjectBase::SetChanged()": "void notification suppressed",
+    "SPen::ObjectBase::SetRedrawingCacheDirtyFlag(bool)": "void notification suppressed"
+  },
+  "host_calls": [
+    "SPen::ObjectBase::SetChanged()",
+    "SPen::ObjectBase::SetRedrawingCacheDirtyFlag(bool)",
+    "SPen::ObjectBase::SetChanged()",
+    "SPen::ObjectBase::SetRedrawingCacheDirtyFlag(bool)",
+    "SPen::ObjectBase::SetChanged()",
+    "SPen::ObjectBase::SetRedrawingCacheDirtyFlag(bool)"
+  ],
+  "library": {
+    "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+    "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+  },
+  "native_entries": {
+    "apply_property": {
+      "address": "0x72ed138",
+      "rva": "0x2ed138",
+      "symbol": "SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_Property(int&, bool&)"
+    },
+    "handler_constructor": {
+      "address": "0x72ebbc0",
+      "rva": "0x2ebbc0",
+      "symbol": "SPen::ObjectStrokeBinaryHandler::ObjectStrokeBinaryHandler(SPen::ObjectStrokeImpl*)"
+    },
+    "is_curve_enabled": {
+      "address": "0x72e067c",
+      "rva": "0x2e067c",
+      "symbol": "SPen::ObjectStroke::IsCurveEnabled() const"
+    },
+    "set_curve_enabled": {
+      "address": "0x72e05c4",
+      "rva": "0x2e05c4",
+      "symbol": "SPen::ObjectStroke::SetCurveEnabled(bool)"
+    },
+    "write_property": {
+      "address": "0x72ec080",
+      "rva": "0x2ec080",
+      "symbol": "SPen::ObjectStrokeBinaryHandler::m_GetBinary_Property(unsigned int&) const"
+    }
+  },
+  "property_word_cases": [
+    {
+      "getter_value": 0,
+      "impl_curve_byte": 0,
+      "impl_curve_field_offset": 40,
+      "input_property_bytes_le": "00000000",
+      "input_property_word": 0,
+      "writer_property_bytes_le": "00000000",
+      "writer_property_word": 0
+    },
+    {
+      "getter_value": 1,
+      "impl_curve_byte": 1,
+      "impl_curve_field_offset": 40,
+      "input_property_bytes_le": "01000000",
+      "input_property_word": 1,
+      "writer_property_bytes_le": "01000000",
+      "writer_property_word": 1
+    },
+    {
+      "getter_value": 0,
+      "impl_curve_byte": 0,
+      "impl_curve_field_offset": 40,
+      "input_property_bytes_le": "80000000",
+      "input_property_word": 128,
+      "writer_property_bytes_le": "80000000",
+      "writer_property_word": 128
+    },
+    {
+      "getter_value": 1,
+      "impl_curve_byte": 1,
+      "impl_curve_field_offset": 40,
+      "input_property_bytes_le": "81000000",
+      "input_property_word": 129,
+      "writer_property_bytes_le": "81000000",
+      "writer_property_word": 129
+    }
+  ],
+  "receiver_layout": {
+    "allocation": "host zeroed memory with pointers installed at the recovered offsets; native handler constructor ran",
+    "handler_address": "0x10022000",
+    "handler_impl_pointer_after_constructor": "0x10021000",
+    "handler_impl_pointer_offset": 8,
+    "impl_address": "0x10021000",
+    "impl_curve_byte_offset": 40,
+    "object_stroke_address": "0x10020000",
+    "object_stroke_impl_pointer_offset": 32
+  },
+  "runner": {
+    "path": "conformance/object_stroke_curve_native.py",
+    "sha256": "5c546c4a395fca18efd4e763e102ca99cc768170050fe00c53baf083bd2f9e89"
+  },
+  "schema": "sdocx-object-stroke-curve-native-v1",
+  "scope": "Native helper-level property mapping only. No full binary record roundtrip, SDK deserialization, or Android document loading.",
+  "setter_cases": [
+    {
+      "getter_value": 0,
+      "impl_curve_byte": 0,
+      "setter_input": 0
+    },
+    {
+      "getter_value": 1,
+      "impl_curve_byte": 1,
+      "setter_input": 1
+    },
+    {
+      "getter_value": 0,
+      "impl_curve_byte": 0,
+      "setter_input": 0
+    }
+  ]
+}

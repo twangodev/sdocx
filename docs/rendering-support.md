@@ -134,6 +134,9 @@ curve modes, fixed width and a degenerate curve. The [Drawing caller](../conform
 captures null settings selecting V1 and empty settings selecting V4 under an
 explicit 1920×1080 display profile. The V4 numeric model reproduces the complete
 312-byte Drawing stream bit for bit; null settings remain outside that model.
+The [property helper oracle](../conformance/object-stroke-curve-native.json)
+executes native property read/write and getter/setter controls, confirming
+serialized bit 0 selects curve state; full-record deserialization is not exercised.
 Actual device display values, RTV1 paint and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2

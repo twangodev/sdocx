@@ -21,6 +21,7 @@ pub struct StrokeMetadata {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct StrokeProperties {
+    /// Saved property bit 0; also exposed by native ObjectStroke::IsCurveEnabled.
     pub compressed: bool,
     pub replay_only: bool,
     pub stylus_channels: bool,
@@ -54,6 +55,36 @@ impl StrokeProperties {
             rainbow_effect: mask.contains(12),
             straighten: mask.contains(13),
             reveal_mode: mask.contains(14),
+        }
+    }
+}
+
+#[cfg(test)]
+mod native_property_tests {
+    use super::*;
+
+    #[test]
+    fn saved_curve_flag_matches_native_property_reader_and_writer() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/object-stroke-curve-native.json"
+        ))
+        .unwrap();
+        for case in fixture["property_word_cases"].as_array().unwrap() {
+            let word = case["input_property_word"].as_u64().unwrap() as u32;
+            let mut encoded_mask = vec![4];
+            encoded_mask.extend_from_slice(&word.to_le_bytes());
+            let mut reader = Reader::new(&encoded_mask, "native property control");
+            let mask = Mask::read(&mut reader).unwrap();
+            let properties = StrokeProperties::read(mask);
+            assert_eq!(
+                properties.compressed,
+                case["getter_value"].as_u64().unwrap() != 0,
+                "native property word {word:#x}"
+            );
+            assert_eq!(
+                mask.low_u32(),
+                case["writer_property_word"].as_u64().unwrap() as u32
+            );
         }
     }
 }
