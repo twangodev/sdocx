@@ -58,6 +58,8 @@ pub(super) struct SavedObjectStrokeInput<'a> {
     pub(super) orientation: Option<&'a [f32]>,
     pub(super) tool_type: i32,
     pub(super) pen_size: f32,
+    /// Enabled native fixed-width style value, before RTV1's minimum of 1.
+    pub(super) fixed_width: Option<f32>,
 }
 
 /// Result of adapting one saved Model stroke through the MotionEvent history
@@ -147,6 +149,7 @@ pub(super) fn saved_object_stroke_redraw(
             .is_some_and(|values| values.len() != count)
         || !input.pen_size.is_finite()
         || input.pen_size < 0.0
+        || input.fixed_width.is_some_and(|width| !width.is_finite())
     {
         return None;
     }
@@ -180,7 +183,7 @@ pub(super) fn saved_object_stroke_redraw(
     } else {
         None
     };
-    let terminal = if let Some(history) = &history {
+    let mut terminal = if let Some(history) = &history {
         Some(terminal_end_pen_vectors(
             history.state,
             P {
@@ -192,6 +195,9 @@ pub(super) fn saved_object_stroke_redraw(
     } else {
         None
     };
+    if let (Some(terminal), Some(width)) = (&mut terminal, input.fixed_width) {
+        terminal.point_extent = width.max(1.0);
+    }
     let mut vectors = Vec::new();
     if let Some(history) = &history {
         vectors.extend(history.vectors.iter().copied());
@@ -199,7 +205,9 @@ pub(super) fn saved_object_stroke_redraw(
     if let Some(terminal) = &terminal {
         vectors.extend(terminal.vectors.iter().copied());
     }
-    let extent = (input.pen_size * 0.5).max(1.0);
+    let extent = input
+        .fixed_width
+        .map_or((input.pen_size * 0.5).max(1.0), |width| width.max(1.0));
     let extents = vec![extent; vectors.len()];
     let final_state = terminal
         .as_ref()
@@ -802,6 +810,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             orientation: Some(&orientations),
             tool_type: 2,
             pen_size: case["input"]["pen_size"].as_f64()? as f32,
+            fixed_width: None,
         },
         CalligraphyState::fresh(),
     )?;
@@ -1121,6 +1130,7 @@ mod tests {
         orientation_value: &serde_json::Value,
         retained: SavedHistoryState,
         tool_type: i32,
+        fixed_width: Option<f32>,
     ) -> super::SavedObjectStrokeOutput {
         let rows = rows_value.as_array().unwrap();
         let mut points = Vec::with_capacity(rows.len());
@@ -1162,6 +1172,7 @@ mod tests {
                 // Captured GLV1 PenData settings size; this stays caller data,
                 // never inferred from stroke pressure or coordinates.
                 pen_size: 6.0,
+                fixed_width,
             },
             retained,
         )
@@ -1226,6 +1237,7 @@ mod tests {
             orientation: Some(&orientation),
             tool_type: source["tool_type"].as_i64().unwrap() as i32,
             pen_size: size,
+            fixed_width: None,
         };
         let parse_words = |hex: &str| -> Vec<u32> {
             hex.as_bytes()
@@ -1383,6 +1395,9 @@ mod tests {
         .unwrap();
         for case in fixture["cases"].as_array().unwrap() {
             for (run_name, run) in case["native"].as_object().unwrap() {
+                if run_name == "pen_style" {
+                    continue;
+                }
                 let calls = run["build_calls"].as_array().unwrap();
                 let mut mesh = MeshBuffers::default();
                 for call in calls {
@@ -1437,7 +1452,10 @@ mod tests {
         ))
         .unwrap();
         for case in fixture["cases"].as_array().unwrap() {
-            for (_run_name, run) in case["native"].as_object().unwrap() {
+            for (run_name, run) in case["native"].as_object().unwrap() {
+                if run_name == "pen_style" {
+                    continue;
+                }
                 let stamps = run["add_points"].as_array().unwrap();
                 let all_build_calls = run["build_calls"].as_array().unwrap();
                 let mut build_cursor = 0;
@@ -1486,7 +1504,7 @@ mod tests {
                         expected_builds == 5,
                         "{} {} AddPoint {index} emission gate",
                         case["id"],
-                        _run_name
+                        run_name
                     );
                     if let Some(geometry) = actual {
                         assert_eq!(expected_builds, 5);
@@ -1532,7 +1550,7 @@ mod tests {
                                 expected,
                                 "{} {} AddPoint {index} rect {slot}",
                                 case["id"],
-                                _run_name
+                                run_name
                             );
                         }
                         if let Some(next_stamp) = stamps.get(index + 1) {
@@ -1553,7 +1571,7 @@ mod tests {
                             assert_eq!(
                                 actual_edges, next_edges,
                                 "{} {} AddPoint {index} edge cache",
-                                case["id"], _run_name
+                                case["id"], run_name
                             );
                         }
                     } else {
@@ -1723,6 +1741,9 @@ mod tests {
         .unwrap();
         for case in fixture["cases"].as_array().unwrap() {
             for (run_name, run) in case["native"].as_object().unwrap() {
+                if run_name == "pen_style" {
+                    continue;
+                }
                 let history_key = if run_name == "reused" {
                     "reuse_history"
                 } else {
@@ -2055,6 +2076,36 @@ mod tests {
             let id = case["id"].as_str().unwrap();
             ids.push(id.to_owned());
             let native = &case["native"];
+            let fixed_width = if let Some(style) = case.get("pen_style") {
+                let captured = &case["native_style"];
+                assert_eq!(captured["input"], *style, "{id} native style input");
+                assert_eq!(captured["setter_returns"]["curve_enabled"], 1, "{id}");
+                assert_eq!(captured["setter_returns"]["fixed_width_enabled"], 1, "{id}");
+                assert_eq!(captured["setter_returns"]["fixed_width"], 1, "{id}");
+                assert_eq!(
+                    captured["readback"]["curve_enabled"].as_u64().unwrap(),
+                    u64::from(style["curve_enabled"].as_bool().unwrap()),
+                    "{id} native curve style readback"
+                );
+                assert_eq!(
+                    captured["readback"]["fixed_width_enabled"]
+                        .as_u64()
+                        .unwrap(),
+                    u64::from(style["fixed_width_enabled"].as_bool().unwrap()),
+                    "{id} native fixed-width enable readback"
+                );
+                assert_eq!(
+                    bits(captured["readback"]["fixed_width_bits"].as_str().unwrap()),
+                    (style["fixed_width"].as_f64().unwrap() as f32).to_bits(),
+                    "{id} native fixed-width value readback"
+                );
+                style["fixed_width_enabled"]
+                    .as_bool()
+                    .unwrap()
+                    .then(|| style["fixed_width"].as_f64().unwrap() as f32)
+            } else {
+                None
+            };
             let entry = native["native_drawable_states"]
                 .as_array()
                 .unwrap()
@@ -2068,6 +2119,7 @@ mod tests {
                 &case["orientation"],
                 retained,
                 native["saved_tool_type"].as_i64().unwrap() as i32,
+                fixed_width,
             );
             compare_run(&output, &native["native_add_point_vectors"], native, id);
             let rows = case["rows"].as_array().unwrap();
@@ -2186,6 +2238,7 @@ mod tests {
                     &case["repeat_orientation"],
                     captured_history_state(repeat_entry),
                     native["saved_tool_type"].as_i64().unwrap() as i32,
+                    fixed_width,
                 );
                 assert_eq!(
                     reused.tool_type,
@@ -2256,7 +2309,17 @@ mod tests {
                 );
             }
         }
-        assert_eq!(ids.len(), 9);
+        assert_eq!(ids.len(), 15);
+        for id in [
+            "fixed-width-two",
+            "fixed-width-half",
+            "fixed-width-zero",
+            "fixed-width-negative",
+            "fixed-width-disabled-value-two",
+            "curve-enabled-fixed-width-disabled",
+        ] {
+            assert!(ids.iter().any(|captured| captured == id), "missing {id}");
+        }
     }
 
     #[test]
@@ -2283,6 +2346,7 @@ mod tests {
                     orientation: None,
                     tool_type: 2,
                     pen_size: 6.0,
+                    fixed_width: None,
                 },
                 retained,
             )
@@ -2298,6 +2362,7 @@ mod tests {
                     orientation: None,
                     tool_type: 2,
                     pen_size: 6.0,
+                    fixed_width: None,
                 },
                 retained,
             )
@@ -2313,6 +2378,7 @@ mod tests {
                     orientation: None,
                     tool_type: 2,
                     pen_size: 6.0,
+                    fixed_width: None,
                 },
                 retained,
             )
@@ -2328,6 +2394,7 @@ mod tests {
                     orientation: None,
                     tool_type: 2,
                     pen_size: 6.0,
+                    fixed_width: None,
                 },
                 retained,
             )
@@ -2343,6 +2410,9 @@ mod tests {
         .unwrap();
         for case in fixture["cases"].as_array().unwrap() {
             for (run_name, run) in case["native"].as_object().unwrap() {
+                if run_name == "pen_style" {
+                    continue;
+                }
                 let state = run["drawable_states"]
                     .as_array()
                     .unwrap()
@@ -2426,9 +2496,14 @@ mod tests {
                     .iter()
                     .map(|vector| vector.map(f32::to_bits))
                     .collect();
+                let native_style_extent = case["native"]
+                    .get("pen_style")
+                    .filter(|style| style["input"]["fixed_width_enabled"] == true)
+                    .map(|style| (style["input"]["fixed_width"].as_f64().unwrap() as f32).max(1.0))
+                    .unwrap_or(actual.point_extent);
                 for stamp in terminal {
                     assert_eq!(
-                        actual.point_extent.to_bits(),
+                        native_style_extent.to_bits(),
                         bits(stamp["extent_bits"].as_str().unwrap()),
                         "{} {run_name} endPen half-size extent",
                         case["id"]

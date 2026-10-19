@@ -91,6 +91,28 @@ def run_case(case, obj, impl, rect, stroke_type):
     if not rows: raise ValueError('empty strokes are excluded: saved wrapper dereferences GetTimeStamp()[0] at 0x1ed04 before any zero-count return')
     n.native_motion_calls=[]; n.add_calls=[]; n.build_calls=[]; n.drawable_states=[]; n.orientation_reads=[]; n.sample_ends=[]; n.terminal_start=None; n.position_queries=[]; n.length_queries=[]; n.pending_position_returns={}; n.pending_length_returns={}; n.active_add_index=None; n.output_labels={}; n.current_size=6.0
     pen_data=n.alloc(0x100); settings=n.alloc(0x80); manager=n.alloc(0x80); drawable=n.alloc(0x600); n.drawable=drawable
+    # Match the inherited Pen ABI used by the real Calligraphy style methods:
+    # Pen+120 points to the PenData owned by this drawable. The receiver itself
+    # is host-allocated, while all setters/getters and their data accesses are
+    # native plugin code.
+    style_pen=n.alloc(0x100); n.put(style_pen+120,'Q',pen_data)
+    style=case.get('pen_style', {'curve_enabled':False,'fixed_width_enabled':False,'fixed_width':0.0})
+    setter_returns={}
+    n.call('SPen::MontblancCalligraphyPen::SetCurveEnabled(bool)',[style_pen,int(style['curve_enabled'])]); setter_returns['curve_enabled']=n.x(0)
+    n.call('SPen::MontblancCalligraphyPen::SetFixedWidthEnabled(bool)',[style_pen,int(style['fixed_width_enabled'])]); setter_returns['fixed_width_enabled']=n.x(0)
+    n.call('SPen::MontblancCalligraphyPen::SetFixedWidth(float)',[style_pen],[float(style['fixed_width'])]); setter_returns['fixed_width']=n.x(0)
+    n.call('SPen::MontblancCalligraphyPen::IsCurveEnabled()',[style_pen]); native_curve=n.x(0)
+    n.call('SPen::MontblancCalligraphyPen::IsFixedWidthEnabled()',[style_pen]); native_fixed_enabled=n.x(0)
+    n.call('SPen::MontblancCalligraphyPen::GetFixedWidth()',[style_pen]); native_fixed_width_bits=struct.pack('<f',n.f(0)).hex()
+    if (setter_returns != {'curve_enabled':1,'fixed_width_enabled':1,'fixed_width':1}
+            or native_curve != int(style['curve_enabled'])
+            or native_fixed_enabled != int(style['fixed_width_enabled'])
+            or native_fixed_width_bits != struct.pack('<f',float(style['fixed_width'])).hex()):
+        raise RuntimeError(f"native Calligraphy style setter/getter mismatch for {case['id']}")
+    style_capture={'input':style,'setter_returns':setter_returns,
+                   'readback':{'curve_enabled':native_curve,'fixed_width_enabled':native_fixed_enabled,
+                               'fixed_width_bits':native_fixed_width_bits},
+                   'receiver_boundary':'host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute'}
     n.call('SPen::MontblancCalligraphyPenStrokeDrawableGLV1::MontblancCalligraphyPenStrokeDrawableGLV1(SPen::MontblancCalligraphyPenData*, SPen::PenGLDataManager*)',[drawable,pen_data,manager])
     # Constructor installs native state. Resolve only the relocated primary
     # slot 144 to the real event RedrawPen entry for Unicorn dispatch.
@@ -138,11 +160,12 @@ def run_case(case, obj, impl, rect, stroke_type):
                 'build_call_count':len(n.build_calls),
                 'direction_bits':[n.get(drawable+276+4*i,'I')[0].to_bytes(4,'little').hex() for i in range(2)],
                 'angle_bits':n.get(drawable+284,'I')[0].to_bytes(4,'little').hex(),'state':n.drawable_state(drawable)}
-    return {'case':case['id'],'source_count':count,'stroke_type':stroke_type,'saved_tool_type':saved_tool_type,'wrapper_return':first['wrapper_return'],'same_drawable_repeat':repeat,
+    result={'case':case['id'],'source_count':count,'stroke_type':stroke_type,'saved_tool_type':saved_tool_type,'wrapper_return':first['wrapper_return'],'same_drawable_repeat':repeat,
             'actual_base_model_call_counts':first['motion_event_call_counts'],
             'native_drawable_states':first['drawable_states'],'sample_ends':first['sample_ends'],'orientation_reads':first['orientation_reads'],
             'native_add_point_vectors':first['add_vectors'],'direction_bits':first['direction_bits'],
             'angle_bits':first['angle_bits'],'state':first['state'],'build_call_count':first['build_call_count']}
+    return result,style_capture
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -157,9 +180,12 @@ def main():
     if fixture.get('source')!=expected: raise ValueError('fixture library provenance differs')
     results=[]; mismatches=[]
     for case in fixture['cases']:
-        result=run_case(case,obj,impl,rect,stroke_type)
+        result,style_capture=run_case(case,obj,impl,rect,stroke_type)
         if args.check_fixture and case.get('native')!=result: mismatches.append(case['id'])
-        if args.write_fixture: case['native']=result
+        if args.check_fixture and case.get('native_style')!=style_capture: mismatches.append(case['id']+' style')
+        if args.write_fixture:
+            case['native']=result
+            case['native_style']=style_capture
         results.append(result)
         print(f"{case['id']}: source={result['source_count']} AddPoint={len(result['native_add_point_vectors'])} wrapper={result['wrapper_return']}")
     if args.check_fixture and mismatches: raise SystemExit('native fixture mismatch: '+', '.join(mismatches))

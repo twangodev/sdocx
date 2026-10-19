@@ -243,12 +243,42 @@ class NativeCalligraphy(NativeFountain):
         drawable = self.alloc(512)
         self.drawable = drawable
         self.call(CTOR, [drawable, data, manager])
-        # V1 reads pen size and optional fixed-width state through PenData.
+        # The host settings allocation supplies Pen::getSettingData() and its
+        # size only. Call the real Calligraphy setters for PenData fields +8/+9/+12.
         settings = self.alloc(64)
         self.put(data, "Q", settings)
         self.put(settings, "f", self.current_size)
-        self.put(data + 9, "B", int(case.get("fixed_enabled", False)))
-        self.put(data + 12, "f", case.get("fixed_width", 0.0))
+        style = case.get("pen_style", {"curve_enabled": False,
+                                        "fixed_width_enabled": False,
+                                        "fixed_width": 0.0})
+        style_pen = self.alloc(128)
+        self.put(style_pen + 120, "Q", data)
+        setter_returns = {}
+        self.call("SPen::MontblancCalligraphyPen::SetCurveEnabled(bool)",
+                  [style_pen, int(style["curve_enabled"])])
+        setter_returns["curve_enabled"] = self.x(0)
+        self.call("SPen::MontblancCalligraphyPen::SetFixedWidthEnabled(bool)",
+                  [style_pen, int(style["fixed_width_enabled"])])
+        setter_returns["fixed_width_enabled"] = self.x(0)
+        self.call("SPen::MontblancCalligraphyPen::SetFixedWidth(float)",
+                  [style_pen], [float(style["fixed_width"])])
+        setter_returns["fixed_width"] = self.x(0)
+        self.call("SPen::MontblancCalligraphyPen::IsCurveEnabled()", [style_pen])
+        native_curve = self.x(0)
+        self.call("SPen::MontblancCalligraphyPen::IsFixedWidthEnabled()", [style_pen])
+        native_fixed_enabled = self.x(0)
+        self.call("SPen::MontblancCalligraphyPen::GetFixedWidth()", [style_pen])
+        native_fixed_width_bits = struct.pack("<f", self.f(0)).hex()
+        if (setter_returns != {"curve_enabled": 1, "fixed_width_enabled": 1, "fixed_width": 1}
+                or native_curve != int(style["curve_enabled"])
+                or native_fixed_enabled != int(style["fixed_width_enabled"])
+                or native_fixed_width_bits != struct.pack("<f", float(style["fixed_width"])).hex()):
+            raise RuntimeError("native Calligraphy style setter/getter contract mismatch")
+        style_capture = {"input": style, "setter_returns": setter_returns,
+                         "readback": {"curve_enabled": native_curve,
+                                      "fixed_width_enabled": native_fixed_enabled,
+                                      "fixed_width_bits": native_fixed_width_bits},
+                         "receiver_boundary": "host Pen subobject with +120 pointing to host-allocated MontblancCalligraphyPenData; actual plugin setters/getters execute"}
         event, rect = self.alloc(64), self.alloc(32)
 
         synthetic_state = None
@@ -318,7 +348,7 @@ class NativeCalligraphy(NativeFountain):
                               else len(self.add_calls))
             query["add_points_after"] = next_add_start - query["add_start"]
             query["add_point_start"] = query.pop("add_start")
-        result = {"fresh": first}
+        result = {"fresh": first, "pen_style": style_capture}
         if synthetic_state is not None:
             result["synthetic_state"] = synthetic_state
         if "reuse_history" in case:
@@ -342,11 +372,17 @@ def main():
     objdump = ROOT / "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump"
     native = NativeCalligraphy(library_dir, objdump)
     cases = [
-        {"id": "three_history_samples", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "reuse_history": [[2.0, 3.0, 0.1], [8.0, 7.0, -0.2], [14.0, 9.0, 0.15]], "size": 6.0},
-        {"id": "one_history_initial_end", "history": [[4.0, 5.0, 0.2]], "size": 6.0},
-        {"id": "three_history_zero_orientation", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.0], [9.0, 5.0, 0.0]], "size": 6.0},
-        {"id": "five_history_phase_boundaries", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7], [15.0, 8.0, -0.15], [22.0, 11.0, 0.3]], "size": 6.0},
-        {"id": "subunit_extent_clamp", "history": [[0.0, 0.0, 0.0], [4.0, 2.0, 0.0], [8.0, 5.0, 0.0]], "size": 1.0},
+        {"id": "three_history_samples", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "reuse_history": [[2.0, 3.0, 0.1], [8.0, 7.0, -0.2], [14.0, 9.0, 0.15]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 0.0}},
+        {"id": "one_history_initial_end", "history": [[4.0, 5.0, 0.2]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 0.0}},
+        {"id": "three_history_zero_orientation", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.0], [9.0, 5.0, 0.0]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 0.0}},
+        {"id": "five_history_phase_boundaries", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7], [15.0, 8.0, -0.15], [22.0, 11.0, 0.3]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 0.0}},
+        {"id": "subunit_extent_clamp", "history": [[0.0, 0.0, 0.0], [4.0, 2.0, 0.0], [8.0, 5.0, 0.0]], "size": 1.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 0.0}},
+        {"id": "fixed_width_two", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": True, "fixed_width": 2.0}},
+        {"id": "fixed_width_half", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": True, "fixed_width": 0.5}},
+        {"id": "fixed_width_zero", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": True, "fixed_width": 0.0}},
+        {"id": "fixed_width_negative", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": True, "fixed_width": -2.0}},
+        {"id": "fixed_width_disabled_value_two", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": False, "fixed_width_enabled": False, "fixed_width": 2.0}},
+        {"id": "curve_enabled_fixed_width_disabled", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0, "pen_style": {"curve_enabled": True, "fixed_width_enabled": False, "fixed_width": 0.0}},
     ]
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
@@ -449,7 +485,7 @@ def main():
                "evidence": {"library": "libSPenMontblancCalligraphyPen.so", "sha256": LIB_SHA,
                             "entry": REDRAW, "native_scope": "GLV1 RedrawPen history and endPen; one case invokes it twice on the same constructed drawable, then stops before movePen",
                             "inputs": "Synthetic MotionEvent history arrays supplied by this harness, not captured from an application runtime",
-                            "host_context": "MotionEvent getters return explicit fixture values; MotionEvent constructor/destructor, RectF bounds operations, queue submit, bounded allocation and host math sincos callback are host operations",
+                            "host_context": "MotionEvent getters return explicit fixture values; MotionEvent constructor/destructor, RectF bounds operations, queue submit, bounded allocation and host math sincos callback are host operations. Actual Calligraphy style setters/getters execute against a host Pen receiver whose +120 points at host PenData; the native Pen constructor and ordinary Drawing style transfer are outside this fixture.",
                             "limitations": ["No APK Java callback construction", "No movePen lifecycle", "No GPU rendering or pixels"]},
                "cases": output}
     encoded = json.dumps(output_json, indent=2) + "\n"
