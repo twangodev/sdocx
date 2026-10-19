@@ -898,10 +898,18 @@ def capture_one(color):
                    if vector["payload"] == payload]
         if len(matches) != 1:
             raise AssertionError("queued upload did not exactly match one native RTV1 vector")
+        source_vector = vector_data[matches[0]]
+        if upload["size"] != len(payload) or len(payload) != source_vector["vertices"] * 16:
+            raise AssertionError("queued upload size does not match native Vector4<f32> payload")
+        payload_sha256 = hashlib.sha256(payload).hexdigest()
+        if payload_sha256 != source_vector["sha256"]:
+            raise AssertionError("queued upload hash does not match its native RTV1 source vector")
         upload_records.append({"source_vector_slot": matches[0],
                                "byte_count": upload["size"],
                                "vertex_count": upload["size"] // 16,
-                               "sha256": hashlib.sha256(payload).hexdigest()})
+                               "sha256": payload_sha256,
+                               "vertex_format": "Vector4<f32> little-endian",
+                               "bytes_hex": payload.hex()})
 
     # Actual subbitmap pixels/transform belong to the host canvas. Supply only
     # an explicit identity projection and no-op bind/unbind callbacks.
