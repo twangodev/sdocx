@@ -130,7 +130,10 @@ class Probe(RedrawOracle):
   if w1 is not None:self.u.reg_write(R.UC_ARM64_REG_W1,w1)
   self.u.reg_write(R.UC_ARM64_REG_SP,STACK+0x8000); self.u.reg_write(R.UC_ARM64_REG_LR,SENTINEL)
   try:self.u.emu_start(addr,SENTINEL,count=limit)
-  except Exception as e:raise RuntimeError(f'call fault addr={addr:#x} pc={self.u.reg_read(R.UC_ARM64_REG_PC):#x} lr={self.u.reg_read(R.UC_ARM64_REG_LR):#x} import={self.stub_names.get(self.u.reg_read(R.UC_ARM64_REG_PC))} trace={[hex(a-BASE) for a in self.trace[-20:]]}') from e
+  except Exception as e:
+   pc=self.u.reg_read(R.UC_ARM64_REG_PC)
+   import_name=self.callbacks.get(pc,self.stub_names.get(pc))
+   raise RuntimeError(f'call fault addr={addr:#x} pc={pc:#x} lr={self.u.reg_read(R.UC_ARM64_REG_LR):#x} import={import_name} trace={[hex(a-BASE) for a in self.trace[-20:]]}') from e
   if self.u.reg_read(R.UC_ARM64_REG_PC)!=SENTINEL: raise RuntimeError(f'call did not return addr={addr:#x}, pc={self.u.reg_read(R.UC_ARM64_REG_PC):#x}')
  def _init_draw_hosts(self):
   # Minimal native interface objects to drive the real Draw control flow.
