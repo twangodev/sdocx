@@ -74,6 +74,9 @@ Sample coordinates, pressure, timestamps and optional tilt/orientation are
 decoded and retained. A retained channel is not necessarily used by a pen's
 drawing route. The [pen registry](../crates/sdocx/src/ink.rs) identifies names and
 libraries, not a renderer for every registered pen.
+A [native stroke-frame capture](../conformance/object-stroke-channels-native.json)
+checks a real 204-point frame and three float-delta controls. Compressed float
+channels round each addition to float32; outer SDK loading is not exercised.
 
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |

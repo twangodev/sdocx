@@ -108,15 +108,16 @@ fn signed_delta(raw: u16, divisor: f64) -> f64 {
 fn float_channel(reader: &mut Reader<'_>, count: usize, compressed: bool) -> Result<Vec<f64>> {
     let mut values = Vec::with_capacity(count);
     if count != 0 {
-        let mut value = f64::from(reader.read_f32("first channel value")?);
-        values.push(value);
+        let mut value = reader.read_f32("first channel value")?;
+        values.push(f64::from(value));
         for _ in 1..count {
             value = if compressed {
-                value + signed_delta(reader.read_u16("channel delta")?, 4096.0)
+                // Native NewApplyBinary rounds each channel addition to f32.
+                value + signed_delta(reader.read_u16("channel delta")?, 4096.0) as f32
             } else {
-                f64::from(reader.read_f32("channel value")?)
+                reader.read_f32("channel value")?
             };
-            values.push(value);
+            values.push(f64::from(value));
         }
     }
     if values.iter().any(|value| !value.is_finite()) {
@@ -177,7 +178,84 @@ impl<'a> StrokeChannels<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::signed_delta;
+    use super::*;
+
+    fn bytes(hex: &str) -> Vec<u8> {
+        (0..hex.len())
+            .step_by(2)
+            .map(|index| u8::from_str_radix(&hex[index..index + 2], 16).unwrap())
+            .collect()
+    }
+
+    fn native_floats(hex: &str) -> Vec<f64> {
+        bytes(hex)
+            .chunks_exact(4)
+            .map(|word| f64::from(f32::from_le_bytes(word.try_into().unwrap())))
+            .collect()
+    }
+
+    #[test]
+    fn saved_channels_match_native_real_frame_and_float_delta_controls() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/object-stroke-channels-native.json"
+        ))
+        .unwrap();
+        let payload = bytes(fixture["source"]["payload_hex"].as_str().unwrap());
+        let stroke = decode_stroke(&payload, &ParseLimits::default()).unwrap();
+        let count = fixture["native_getters"]["point_count"].as_u64().unwrap() as usize;
+        assert_eq!(stroke.points.len(), count);
+        let point_bytes: Vec<u8> = stroke
+            .points
+            .iter()
+            .flat_map(|point| [point.x as f32, point.y as f32])
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(
+            point_bytes,
+            bytes(fixture["channels"]["points"]["data_hex"].as_str().unwrap())
+        );
+        for (name, values) in [
+            ("pressures", &stroke.pressures),
+            ("tilts", &stroke.tilts),
+            ("orientations", &stroke.orientations),
+        ] {
+            assert_eq!(
+                values,
+                &native_floats(fixture["channels"][name]["data_hex"].as_str().unwrap()),
+                "native {name}"
+            );
+        }
+        let times: Vec<i64> = bytes(
+            fixture["channels"]["timestamps"]["data_hex"]
+                .as_str()
+                .unwrap(),
+        )
+        .chunks_exact(4)
+        .map(|word| i64::from(i32::from_le_bytes(word.try_into().unwrap())))
+        .collect();
+        assert_eq!(stroke.timestamps, times);
+        let definitions = fixture["synthetic_control_definition"].as_array().unwrap();
+        let controls = fixture["synthetic_pressure_controls"].as_array().unwrap();
+        assert_eq!(definitions.len(), 3);
+        assert_eq!(controls.len(), 3);
+        for (definition, control) in definitions.iter().zip(controls) {
+            assert_eq!(definition["id"], control["id"]);
+            let mut encoded = (definition["initial_f32"].as_f64().unwrap() as f32)
+                .to_le_bytes()
+                .to_vec();
+            let deltas = definition["delta_words_le"].as_array().unwrap();
+            for delta in deltas {
+                encoded.extend_from_slice(&(delta.as_u64().unwrap() as u16).to_le_bytes());
+            }
+            let mut reader = Reader::new(&encoded, "native float channel control");
+            assert_eq!(
+                float_channel(&mut reader, deltas.len() + 1, true).unwrap(),
+                native_floats(control["pressure_data_hex"].as_str().unwrap()),
+                "native control {}",
+                control["id"]
+            );
+        }
+    }
 
     #[test]
     fn packed_deltas_preserve_sign_and_high_magnitude_bits() {
