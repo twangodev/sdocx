@@ -1,0 +1,139 @@
+{
+  "apk_version": "4.4.45.37",
+  "source_note_sha256": "38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a",
+  "source_page_id": "91c795fe-3d67-11ee-8ec8-e76e383a352a",
+  "source_pdf_sha256": "f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279",
+  "composer_sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+  "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+  "native_calls": {
+    "SetDefaultHeight": "0x357678",
+    "buildPageSegments": "0x35db00",
+    "AccumulatePage": "0x35fa0c",
+    "isLastPageBlank": "0x35dee8",
+    "RectF_IsIntersect": "Base+0xb127c"
+  },
+  "retained_quiz_input": {
+    "default_page_dimensions": [
+      1080,
+      1527
+    ],
+    "note_width": 1812,
+    "note_height": 15372,
+    "pdf_record": {
+      "source_page_index": 0,
+      "note_rect": [
+        0.0,
+        0.0,
+        1812.0,
+        1485.0
+      ]
+    },
+    "stroke_bounds": [
+      114.0684814453125,
+      1557.342529296875,
+      1758.197265625,
+      10163.7861328125
+    ]
+  },
+  "native_set_default_height": 1527,
+  "native_segment_count": 2,
+  "last_native_segment_height": 1527,
+  "host_calls": {
+    "pdf_list_count": 11,
+    "pdf_list_get_indices": [
+      0
+    ],
+    "note_height": 22,
+    "body_text_queries": 11,
+    "final_page_object_rects": [
+      [
+        0.0,
+        15228.0,
+        1812.0,
+        16755.0
+      ]
+    ],
+    "native_is_last_blank_results": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "android_log": 12
+  },
+  "segments": [
+    {
+      "output_page_index": 0,
+      "source_record_pointers": [
+        "retained_pdf_record_0"
+      ],
+      "offset_height_pairs": [
+        [
+          0,
+          1485
+        ]
+      ]
+    },
+    {
+      "output_page_index": 1,
+      "source_record_pointers": [],
+      "offset_height_pairs": [
+        [
+          1485,
+          1527
+        ],
+        [
+          3012,
+          1527
+        ],
+        [
+          4539,
+          1527
+        ],
+        [
+          6066,
+          1527
+        ],
+        [
+          7593,
+          1527
+        ],
+        [
+          9120,
+          1527
+        ],
+        [
+          10647,
+          1527
+        ],
+        [
+          12174,
+          1527
+        ],
+        [
+          13701,
+          1527
+        ],
+        [
+          15228,
+          1527
+        ]
+      ]
+    }
+  ],
+  "host_boundaries": [
+    "ArrayList::GetCount/Get return the one frozen retained PDFData record",
+    "WNote::GetHeight returns retained quiz canvas height 15372",
+    "BodyTextContext::HasVisibleText and HasText return false; no BodyText measurement runs",
+    "final-page hasObjectDrawingByRect adapter intersects the retained full-note aggregate stroke bounds, not per-object geometry",
+    "Android log is a no-op diagnostic callback; any unbound reached import fails the emulator run"
+  ],
+  "boundary": "Pinned native PdfPageSegmentBuilder and NotePDFExporterRasterSingleX::buildPageSegments/isLastPageBlank execute over quiz retained record and dimensions. No native exporter construction/initialization, PDF loading/import, capturePages, page writer, emitted PDF, or pixels execute. The final blank-page object query uses aggregate note stroke bounds."
+}
