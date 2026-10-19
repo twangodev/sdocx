@@ -186,9 +186,12 @@ There is also a backend limitation. In pinned `libSPenPdf.so`,
 `PDFEnginePdfium::CreatePDFPath` (`0x73270`) returns null, and its `Circle`
 (`0x73288`) is a bare return. `PDFPath::Circle` (`0x66500`) forwards through
 engine slot `+704`, whose PDFium vtable relocation at `0xb06c0` identifies that
-stub. These generic path-building entrypoints do not establish serialized
-circle geometry; the separate implemented `PdfiumPathHandler` route is not
-exercised by the mocked sink oracle.
+stub. Its generic `DrawPath` (`0x73478`, engine slot `+1032`) is also a bare
+return. A [native path API replay](../../conformance/pdf-writer-path-native.json)
+executes the concrete engine and writer/path/paint methods: path creation and
+construction fail while paint construction succeeds. It opens no document.
+These entrypoints do not serialize the captured circles; the separate
+implemented `PdfiumPathHandler` route is outside this sink contract.
 
 This confirms native command emission, with host context and adapter boundaries
 recorded in the fixture. It does not establish PDFium serialization, device
