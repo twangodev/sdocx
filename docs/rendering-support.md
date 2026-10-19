@@ -220,8 +220,11 @@ is not established by this getter contract. A native
 allocation, nearest/clamped sampling and exact GL upload bytes. An
 [instanced Draw capture](../conformance/airbrush-draw-native.json) checks native
 buffer uploads, attributes and blend calls with a separately captured stamp
-stream injected by the host. Rendered compositing, general caller admission and vector
-paint integration remain outstanding.
+stream injected by the host. A [joined paint capture](../conformance/airbrush-joined-paint-native.json)
+checks the Drawing-produced vector through native task-body publication, upload
+and full RGBA readback for source alpha 0/255. Task scheduling and Renderer
+capabilities are host-supplied; general admission, vector paint and device parity
+remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. The separate
 [Drawing caller](../conformance/brushpen-saved-caller-native.json) selects GLV10

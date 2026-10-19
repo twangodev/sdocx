@@ -1,0 +1,1465 @@
+{
+  "cases": [
+    {
+      "caller_case": {
+        "advanced_setting_ascii": "",
+        "advanced_setting_mode": "explicit-empty",
+        "case_id": "airbrush-explicit-empty-tool2-v2",
+        "factory_symbol": "createPenInst",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1080,
+          "native_drawable_profile_version": 2,
+          "width": 1920
+        },
+        "selected_drawable_constructor_default_version": 2,
+        "source_color_calls": [
+          {
+            "argb_u32": "0x4b000000",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0xff6cdd8f",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x326cdd8f",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c"
+          }
+        ]
+      },
+      "case_id": "airbrush-v2-drawing-to-mesa-source-alpha-ff",
+      "host_boundaries": [
+        "Synthetic Drawing input arrays, IContext and task queue; native Model/Drawing selection and AddPoint-generated vector execute in pinned DSOs.",
+        "The genuine SendDataToGPU WorkerTask body publishes the actual source vector object at selected RT+88 after native RT Init and before Update, but the host schedules that Run body directly; natural queue dispatch is not claimed. No host write changes RT+88. The native PenCacheRedrawCallback is deferred because its synthetic PenCanvas lacks the native bitmap virtual interface.",
+        "The same selected RT runs native Init/Update/Draw. Native graphics bitmap factory and canvas create the RGBA8 target; Mesa GLES host callbacks execute GL. A host adapter bypasses inherited GLES2-incompatible GL_RED debug readback while forwarding glDrawArraysInstanced unchanged.",
+        "The actual native vector Delete WorkerTask body runs only after glFinish and the full RGBA readback have copied the pixels. Host allocator free is a no-op. No Android-device GPU or full Renderer message queue lifecycle is claimed."
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "host_renderer_setup": {
+        "capability_pair_address": "0x9073388",
+        "capability_values_are_mesa_queried": false,
+        "guest_egl_current_context_stub": "0xabc",
+        "host_seeded_capability_pair": [
+          4096,
+          4096
+        ],
+        "host_seeded_flag": 1,
+        "host_seeded_flag_address": "0x90733c0",
+        "renderer_base": "0x9000000",
+        "scope": "Host-initialized Renderer capability globals and EGL identity; native .init_array and factories execute, complete Android Renderer initialization is not claimed."
+      },
+      "message_tasks": [
+        {
+          "native_rt_plus88": "0x10035c70",
+          "native_rt_slots_after_init": [
+            "0x0",
+            "0x0"
+          ],
+          "native_rt_slots_after_send": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "native_rt_slots_after_update": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "native_rt_slots_before_update": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "phase": "host-scheduled_native_task_body_after_rt_init_before_update",
+          "run": "0x10506b4",
+          "task": "0x10036240",
+          "task_bytes_hex": "f87407010000000000000000000000003058031000000000c4a50401000000000000000000000000705c03100000000000000000000000000000000000000000",
+          "task_receiver_matches_rt": true,
+          "task_vector_matches_source_object": true,
+          "task_vtable": "0x10774f8",
+          "vector_object_descriptor_before_update": [
+            "0x10036000",
+            "0x100361a0",
+            "0x10036200"
+          ],
+          "vector_same_object": true
+        },
+        {
+          "phase": "after_gl_finish_and_full_rgba_readback",
+          "rt_slots_after_delete": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "rt_slots_before_delete": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "run": "0x1045e6c",
+          "task": "0x10036310",
+          "task_bytes_hex": "28750701000000000000000000000000705c03100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "task_vector_matches_source_object": true,
+          "task_vtable": "0x1077528",
+          "vector_pointer": "0x10035c70"
+        }
+      ],
+      "native_draw": {
+        "attributes": [
+          {
+            "args": [
+              34962,
+              1
+            ],
+            "call": "glBindBuffer"
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glEnableVertexAttribArray"
+          },
+          {
+            "args": [
+              0,
+              4,
+              5126,
+              0,
+              16,
+              0
+            ],
+            "call": "glVertexAttribPointer"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              34962,
+              2
+            ],
+            "call": "glBindBuffer"
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glEnableVertexAttribArray"
+          },
+          {
+            "args": [
+              1,
+              4,
+              5126,
+              0,
+              16,
+              0
+            ],
+            "call": "glVertexAttribPointer"
+          },
+          {
+            "args": [
+              1,
+              1
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer"
+          }
+        ],
+        "blend_gl_calls": [
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              770,
+              771,
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "cap": 3042
+          }
+        ],
+        "buffer_uploads": [
+          {
+            "data_hex": "0000c0bf0000c0bf000000000000803f0000c0bf0000c03f00000000000000000000c03f0000c0bf0000803f0000803f0000c03f0000c03f0000803f00000000",
+            "sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+            "size": 64
+          },
+          {
+            "data_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
+            "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+            "size": 416
+          },
+          {
+            "data_hex": "4c37c9bf4c37c9bf000000000000803f4c37c9bf4c37c93f00000000000000004c37c93f4c37c9bf0000803f0000803f4c37c93f4c37c93f0000803f00000000",
+            "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4",
+            "size": 64
+          }
+        ],
+        "calls": [
+          {
+            "call": "glDrawArraysInstanced",
+            "state": {
+              "activeTexture": 33984,
+              "framebuffer": 1,
+              "program": 3,
+              "texture2d": 1,
+              "vao": 0
+            },
+            "values": [
+              5,
+              0,
+              4,
+              26
+            ]
+          }
+        ],
+        "gl_errors_after_init_update_target_draw_read": {
+          "after_draw": 0,
+          "after_init": 0,
+          "after_readback": 0,
+          "after_send_data_task": 0,
+          "after_target": 0,
+          "after_update": 0,
+          "before_readback": 0
+        },
+        "rt_rgba_f32": [
+          0.42352941632270813,
+          0.8666666746139526,
+          0.5607843399047852,
+          0.19607843458652496
+        ],
+        "shaders": {
+          "1": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ],
+          "2": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        },
+        "texture_sampled_by_captured_fragment_shader": false,
+        "uniform_calls": [
+          {
+            "call": "glUniformMatrix4fv",
+            "location": 0,
+            "values": [
+              0.0078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "call": "glUniform4fv",
+            "location": 2,
+            "values": [
+              0.42352941632270813,
+              0.8666666746139526,
+              0.5607843399047852,
+              0.19607843458652496
+            ]
+          },
+          {
+            "call": "glUniform1i",
+            "location": 1,
+            "value": 0
+          }
+        ]
+      },
+      "native_route": {
+        "advanced_setting_mode": "explicit-empty",
+        "host_wrote_rt_plus88": false,
+        "native_delete_executed_after_gl_finish_and_readback": true,
+        "native_delete_task_run": "0x1045e6c",
+        "native_send_data_task_run": "0x10506b4",
+        "native_send_task_bytes_hex": "f87407010000000000000000000000003058031000000000c4a50401000000000000000000000000705c03100000000000000000000000000000000000000000",
+        "native_send_task_vtable": "0x10774f8",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "pending_pen_cache_redraw_task_run": "0x104676c",
+        "pending_redraw_reason": "Synthetic PenCanvas bitmap virtual interface is incomplete; the native Redraw callback remains deferred. The same published vector object is consumed by the RT native Update and Draw calls directly.",
+        "rt_slots_after_delete": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_after_init": [
+          "0x0",
+          "0x0"
+        ],
+        "rt_slots_after_send_data": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_after_update": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_before_delete": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_before_update": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "same_vector_object_published_to_rt_plus88": true,
+        "selected_drawable_default_profile_version": 2,
+        "selected_drawable_version_constructor_default": 2,
+        "send_data_execution_phase": "host-scheduled native task body after native RT Init and before Update; natural queue dispatch is not claimed",
+        "send_data_task_ran_before_paint": true,
+        "source_color_call": [
+          {
+            "argb_u32": "0x4b000000",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0xff6cdd8f",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x326cdd8f",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c"
+          }
+        ],
+        "task_receiver_matches_selected_rt": true,
+        "task_vector_matches_source_object": true,
+        "vector_bytes": 416,
+        "vector_bytes_sha256_after_update": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_bytes_sha256_at_update": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_free_host_boundary": "caller allocator free is a host no-op; native vector destruction task executes, but allocator release behavior is not claimed.",
+        "vector_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
+        "vector_object_descriptor_before_delete": [
+          "0x10036000",
+          "0x100361a0",
+          "0x10036200"
+        ],
+        "vector_object_descriptor_before_update": [
+          "0x10036000",
+          "0x100361a0",
+          "0x10036200"
+        ],
+        "vector_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_upload_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+      },
+      "readback_rgba8": {
+        "bytes": 262144,
+        "first_nonzero_pixels": [
+          [
+            1,
+            0,
+            [
+              28,
+              60,
+              39,
+              69
+            ]
+          ],
+          [
+            2,
+            0,
+            [
+              59,
+              121,
+              78,
+              135
+            ]
+          ],
+          [
+            3,
+            0,
+            [
+              35,
+              72,
+              48,
+              83
+            ]
+          ],
+          [
+            4,
+            0,
+            [
+              3,
+              8,
+              6,
+              9
+            ]
+          ],
+          [
+            1,
+            1,
+            [
+              0,
+              2,
+              2,
+              2
+            ]
+          ],
+          [
+            2,
+            1,
+            [
+              23,
+              40,
+              26,
+              45
+            ]
+          ],
+          [
+            3,
+            1,
+            [
+              43,
+              87,
+              57,
+              99
+            ]
+          ],
+          [
+            4,
+            1,
+            [
+              42,
+              85,
+              55,
+              99
+            ]
+          ],
+          [
+            5,
+            1,
+            [
+              5,
+              11,
+              7,
+              12
+            ]
+          ],
+          [
+            3,
+            2,
+            [
+              24,
+              49,
+              30,
+              56
+            ]
+          ],
+          [
+            4,
+            2,
+            [
+              45,
+              91,
+              58,
+              104
+            ]
+          ],
+          [
+            5,
+            2,
+            [
+              24,
+              50,
+              32,
+              57
+            ]
+          ]
+        ],
+        "format": "GL_RGBA",
+        "format_enum": 6408,
+        "gl_error_after": 0,
+        "gl_error_before": 0,
+        "height": 256,
+        "nonzero_pixels": 20,
+        "pack_alignment": 4,
+        "read_buffer": 36064,
+        "read_fbo": 1,
+        "sha256": "f4f3c629dba38fdbd35191960d894127155d1046e014d5f7a19432fba787e4b2",
+        "type": "GL_UNSIGNED_BYTE",
+        "type_enum": 5121,
+        "width": 256,
+        "zlib_base64": "eNrt0DsOAVEAAMBnn/VPaLAREYmCEAka31ai0iAKlWhcwQlc2wXcYGeOMCGE0D+Mj/vP+Ts6LS6xUqoGID+SJOlOevPZffua3tavtF5uSIF8yZaDzfyxe2er4bZQjEUjkB+xnFbas/5yet08691WzwjkSyEmsdZpZjGNJRsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAPz8vHAsc"
+      },
+      "render_target": {
+        "color_attachment": 2,
+        "color_attachment_query_object": 2,
+        "color_write_mask": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "draw_fbo": 1,
+        "format": "RGBA8",
+        "framebuffer": 1,
+        "framebuffer_complete_status": 36053,
+        "gl_tex_image_call": {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 256,
+          "internalFormat": 32856,
+          "pixelBytes": 262144,
+          "pixelsSha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+          "target": 3553,
+          "type": 5121,
+          "width": 256
+        },
+        "initial_rgba_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "pack_alignment": 4,
+        "post_draw_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "raster_enables": {
+            "blend": true,
+            "cull": false,
+            "depth": false,
+            "dither": true,
+            "sample_alpha_to_coverage": false,
+            "sample_coverage": false,
+            "scissor": false,
+            "stencil": false
+          },
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "post_draw_viewport": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "post_read_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "pre_draw_depth_function": 513,
+        "pre_draw_depth_write": true,
+        "pre_draw_raster_state": {
+          "blend": false,
+          "cull": false,
+          "depth": false,
+          "dither": true,
+          "sample_alpha_to_coverage": false,
+          "sample_coverage": false,
+          "scissor": false,
+          "stencil": false
+        },
+        "pre_draw_scissor_box": [
+          0,
+          0,
+          128,
+          32
+        ],
+        "pre_draw_state": {
+          "color_attachment_object": 2,
+          "color_write_mask": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "depth_function": 513,
+          "depth_write": true,
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "raster_enables": {
+            "blend": false,
+            "cull": false,
+            "depth": false,
+            "dither": true,
+            "sample_alpha_to_coverage": false,
+            "sample_coverage": false,
+            "scissor": false,
+            "stencil": false
+          },
+          "read_attachment_object": 2,
+          "read_fbo": 1,
+          "scissor_box": [
+            0,
+            0,
+            128,
+            32
+          ],
+          "viewport": [
+            0,
+            0,
+            128,
+            32
+          ]
+        },
+        "pre_draw_viewport": [
+          0,
+          0,
+          128,
+          32
+        ],
+        "read_fbo": 1,
+        "readback_pre_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "size_px": [
+          256,
+          256
+        ]
+      },
+      "repeated_stability": {
+        "semantic_signature_sha256": "d687d7b6154cdb2185e55dbe4ab3c14eff457aa93973ab9b50adca46a3b553a7",
+        "successful_runs": 2
+      },
+      "source_argb_u32": "0xff6cdd8f",
+      "source_hashes": {
+        "helpers": {
+          "airbrush-saved-caller-native.json": "a24db97a4b24b840bb915424d20e8d0c1684c5a5a74e7c2be47c4925fa894c34",
+          "airbrush_saved_caller_native.py": "c64aa5a51f85ba9abe3755e22ade255dba23f2ef5e24ad82fda4a3c4feeaf5bd",
+          "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+          "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+          "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_libraries": {
+          "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "runner": "bc12f38b52a4ebbc55ab60b2f56e08d202a5e71bedfd80a18f8fcbab96e895c6"
+      }
+    },
+    {
+      "caller_case": {
+        "advanced_setting_ascii": "",
+        "advanced_setting_mode": "explicit-empty",
+        "case_id": "airbrush-explicit-empty-tool2-v2",
+        "factory_symbol": "createPenInst",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1080,
+          "native_drawable_profile_version": 2,
+          "width": 1920
+        },
+        "selected_drawable_constructor_default_version": 2,
+        "source_color_calls": [
+          {
+            "argb_u32": "0x4b000000",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x6cdd8f",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x36cdd8f",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c"
+          }
+        ]
+      },
+      "case_id": "airbrush-v2-drawing-to-mesa-source-alpha-00",
+      "host_boundaries": [
+        "Synthetic Drawing input arrays, IContext and task queue; native Model/Drawing selection and AddPoint-generated vector execute in pinned DSOs.",
+        "The genuine SendDataToGPU WorkerTask body publishes the actual source vector object at selected RT+88 after native RT Init and before Update, but the host schedules that Run body directly; natural queue dispatch is not claimed. No host write changes RT+88. The native PenCacheRedrawCallback is deferred because its synthetic PenCanvas lacks the native bitmap virtual interface.",
+        "The same selected RT runs native Init/Update/Draw. Native graphics bitmap factory and canvas create the RGBA8 target; Mesa GLES host callbacks execute GL. A host adapter bypasses inherited GLES2-incompatible GL_RED debug readback while forwarding glDrawArraysInstanced unchanged.",
+        "The actual native vector Delete WorkerTask body runs only after glFinish and the full RGBA readback have copied the pixels. Host allocator free is a no-op. No Android-device GPU or full Renderer message queue lifecycle is claimed."
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "host_renderer_setup": {
+        "capability_pair_address": "0x9073388",
+        "capability_values_are_mesa_queried": false,
+        "guest_egl_current_context_stub": "0xabc",
+        "host_seeded_capability_pair": [
+          4096,
+          4096
+        ],
+        "host_seeded_flag": 1,
+        "host_seeded_flag_address": "0x90733c0",
+        "renderer_base": "0x9000000",
+        "scope": "Host-initialized Renderer capability globals and EGL identity; native .init_array and factories execute, complete Android Renderer initialization is not claimed."
+      },
+      "message_tasks": [
+        {
+          "native_rt_plus88": "0x10035c70",
+          "native_rt_slots_after_init": [
+            "0x0",
+            "0x0"
+          ],
+          "native_rt_slots_after_send": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "native_rt_slots_after_update": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "native_rt_slots_before_update": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "phase": "host-scheduled_native_task_body_after_rt_init_before_update",
+          "run": "0x10506b4",
+          "task": "0x10036240",
+          "task_bytes_hex": "f87407010000000000000000000000003058031000000000c4a50401000000000000000000000000705c03100000000000000000000000000000000000000000",
+          "task_receiver_matches_rt": true,
+          "task_vector_matches_source_object": true,
+          "task_vtable": "0x10774f8",
+          "vector_object_descriptor_before_update": [
+            "0x10036000",
+            "0x100361a0",
+            "0x10036200"
+          ],
+          "vector_same_object": true
+        },
+        {
+          "phase": "after_gl_finish_and_full_rgba_readback",
+          "rt_slots_after_delete": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "rt_slots_before_delete": [
+            "0x0",
+            "0x10035c70"
+          ],
+          "run": "0x1045e6c",
+          "task": "0x10036310",
+          "task_bytes_hex": "28750701000000000000000000000000705c03100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "task_vector_matches_source_object": true,
+          "task_vtable": "0x1077528",
+          "vector_pointer": "0x10035c70"
+        }
+      ],
+      "native_draw": {
+        "attributes": [
+          {
+            "args": [
+              34962,
+              1
+            ],
+            "call": "glBindBuffer"
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glEnableVertexAttribArray"
+          },
+          {
+            "args": [
+              0,
+              4,
+              5126,
+              0,
+              16,
+              0
+            ],
+            "call": "glVertexAttribPointer"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              34962,
+              2
+            ],
+            "call": "glBindBuffer"
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glEnableVertexAttribArray"
+          },
+          {
+            "args": [
+              1,
+              4,
+              5126,
+              0,
+              16,
+              0
+            ],
+            "call": "glVertexAttribPointer"
+          },
+          {
+            "args": [
+              1,
+              1
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "call": "glVertexAttribDivisor"
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer"
+          }
+        ],
+        "blend_gl_calls": [
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              770,
+              771,
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "cap": 3042
+          }
+        ],
+        "buffer_uploads": [
+          {
+            "data_hex": "0000c0bf0000c0bf000000000000803f0000c0bf0000c03f00000000000000000000c03f0000c0bf0000803f0000803f0000c03f0000c03f0000803f00000000",
+            "sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+            "size": 64
+          },
+          {
+            "data_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
+            "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+            "size": 416
+          },
+          {
+            "data_hex": "4c37c9bf4c37c9bf000000000000803f4c37c9bf4c37c93f00000000000000004c37c93f4c37c9bf0000803f0000803f4c37c93f4c37c93f0000803f00000000",
+            "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4",
+            "size": 64
+          }
+        ],
+        "calls": [
+          {
+            "call": "glDrawArraysInstanced",
+            "state": {
+              "activeTexture": 33984,
+              "framebuffer": 1,
+              "program": 3,
+              "texture2d": 1,
+              "vao": 0
+            },
+            "values": [
+              5,
+              0,
+              4,
+              26
+            ]
+          }
+        ],
+        "gl_errors_after_init_update_target_draw_read": {
+          "after_draw": 0,
+          "after_init": 0,
+          "after_readback": 0,
+          "after_send_data_task": 0,
+          "after_target": 0,
+          "after_update": 0,
+          "before_readback": 0
+        },
+        "rt_rgba_f32": [
+          0.42352941632270813,
+          0.8666666746139526,
+          0.5607843399047852,
+          0.0117647061124444
+        ],
+        "shaders": {
+          "1": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ],
+          "2": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        },
+        "texture_sampled_by_captured_fragment_shader": false,
+        "uniform_calls": [
+          {
+            "call": "glUniformMatrix4fv",
+            "location": 0,
+            "values": [
+              0.0078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -3.0518509447574615e-05,
+              0.0,
+              -1.0,
+              -1.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "call": "glUniform4fv",
+            "location": 2,
+            "values": [
+              0.42352941632270813,
+              0.8666666746139526,
+              0.5607843399047852,
+              0.0117647061124444
+            ]
+          },
+          {
+            "call": "glUniform1i",
+            "location": 1,
+            "value": 0
+          }
+        ]
+      },
+      "native_route": {
+        "advanced_setting_mode": "explicit-empty",
+        "host_wrote_rt_plus88": false,
+        "native_delete_executed_after_gl_finish_and_readback": true,
+        "native_delete_task_run": "0x1045e6c",
+        "native_send_data_task_run": "0x10506b4",
+        "native_send_task_bytes_hex": "f87407010000000000000000000000003058031000000000c4a50401000000000000000000000000705c03100000000000000000000000000000000000000000",
+        "native_send_task_vtable": "0x10774f8",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "pending_pen_cache_redraw_task_run": "0x104676c",
+        "pending_redraw_reason": "Synthetic PenCanvas bitmap virtual interface is incomplete; the native Redraw callback remains deferred. The same published vector object is consumed by the RT native Update and Draw calls directly.",
+        "rt_slots_after_delete": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_after_init": [
+          "0x0",
+          "0x0"
+        ],
+        "rt_slots_after_send_data": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_after_update": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_before_delete": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "rt_slots_before_update": [
+          "0x0",
+          "0x10035c70"
+        ],
+        "same_vector_object_published_to_rt_plus88": true,
+        "selected_drawable_default_profile_version": 2,
+        "selected_drawable_version_constructor_default": 2,
+        "send_data_execution_phase": "host-scheduled native task body after native RT Init and before Update; natural queue dispatch is not claimed",
+        "send_data_task_ran_before_paint": true,
+        "source_color_call": [
+          {
+            "argb_u32": "0x4b000000",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x6cdd8f",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke"
+          },
+          {
+            "argb_u32": "0x36cdd8f",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c"
+          }
+        ],
+        "task_receiver_matches_selected_rt": true,
+        "task_vector_matches_source_object": true,
+        "vector_bytes": 416,
+        "vector_bytes_sha256_after_update": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_bytes_sha256_at_update": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_free_host_boundary": "caller allocator free is a host no-op; native vector destruction task executes, but allocator release behavior is not claimed.",
+        "vector_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
+        "vector_object_descriptor_before_delete": [
+          "0x10036000",
+          "0x100361a0",
+          "0x10036200"
+        ],
+        "vector_object_descriptor_before_update": [
+          "0x10036000",
+          "0x100361a0",
+          "0x10036200"
+        ],
+        "vector_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+        "vector_upload_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+      },
+      "readback_rgba8": {
+        "bytes": 262144,
+        "first_nonzero_pixels": [
+          [
+            1,
+            0,
+            [
+              0,
+              6,
+              6,
+              6
+            ]
+          ],
+          [
+            2,
+            0,
+            [
+              1,
+              9,
+              8,
+              9
+            ]
+          ],
+          [
+            3,
+            0,
+            [
+              0,
+              4,
+              4,
+              4
+            ]
+          ],
+          [
+            2,
+            1,
+            [
+              0,
+              2,
+              2,
+              2
+            ]
+          ],
+          [
+            3,
+            1,
+            [
+              2,
+              7,
+              5,
+              7
+            ]
+          ],
+          [
+            4,
+            1,
+            [
+              1,
+              7,
+              6,
+              7
+            ]
+          ],
+          [
+            3,
+            2,
+            [
+              0,
+              3,
+              3,
+              3
+            ]
+          ],
+          [
+            4,
+            2,
+            [
+              2,
+              7,
+              5,
+              7
+            ]
+          ],
+          [
+            5,
+            2,
+            [
+              1,
+              4,
+              3,
+              4
+            ]
+          ],
+          [
+            4,
+            3,
+            [
+              0,
+              3,
+              3,
+              3
+            ]
+          ],
+          [
+            5,
+            3,
+            [
+              2,
+              7,
+              5,
+              7
+            ]
+          ],
+          [
+            6,
+            3,
+            [
+              0,
+              2,
+              2,
+              2
+            ]
+          ]
+        ],
+        "format": "GL_RGBA",
+        "format_enum": 6408,
+        "gl_error_after": 0,
+        "gl_error_before": 0,
+        "height": 256,
+        "nonzero_pixels": 13,
+        "pack_alignment": 4,
+        "read_buffer": 36064,
+        "read_fbo": 1,
+        "sha256": "29348ec12ee7b7d708e2f6082cca91c4ae6d1358665bb626dbd3bcc96667bc87",
+        "type": "GL_UNSIGNED_BYTE",
+        "type_enum": 5121,
+        "width": 256,
+        "zlib_base64": "eNrt1skRgDAMBEEJGwvnnzDHnwjUHcI8tjbisdbKfe2YcwbQz/Gos7JWiQENjTG+DZjDD4DGG/D+ATGgocwUAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPhzAzBeALs="
+      },
+      "render_target": {
+        "color_attachment": 2,
+        "color_attachment_query_object": 2,
+        "color_write_mask": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "draw_fbo": 1,
+        "format": "RGBA8",
+        "framebuffer": 1,
+        "framebuffer_complete_status": 36053,
+        "gl_tex_image_call": {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 256,
+          "internalFormat": 32856,
+          "pixelBytes": 262144,
+          "pixelsSha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+          "target": 3553,
+          "type": 5121,
+          "width": 256
+        },
+        "initial_rgba_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "pack_alignment": 4,
+        "post_draw_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "raster_enables": {
+            "blend": true,
+            "cull": false,
+            "depth": false,
+            "dither": true,
+            "sample_alpha_to_coverage": false,
+            "sample_coverage": false,
+            "scissor": false,
+            "stencil": false
+          },
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "post_draw_viewport": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "post_read_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "pre_draw_depth_function": 513,
+        "pre_draw_depth_write": true,
+        "pre_draw_raster_state": {
+          "blend": false,
+          "cull": false,
+          "depth": false,
+          "dither": true,
+          "sample_alpha_to_coverage": false,
+          "sample_coverage": false,
+          "scissor": false,
+          "stencil": false
+        },
+        "pre_draw_scissor_box": [
+          0,
+          0,
+          128,
+          32
+        ],
+        "pre_draw_state": {
+          "color_attachment_object": 2,
+          "color_write_mask": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "depth_function": 513,
+          "depth_write": true,
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "raster_enables": {
+            "blend": false,
+            "cull": false,
+            "depth": false,
+            "dither": true,
+            "sample_alpha_to_coverage": false,
+            "sample_coverage": false,
+            "scissor": false,
+            "stencil": false
+          },
+          "read_attachment_object": 2,
+          "read_fbo": 1,
+          "scissor_box": [
+            0,
+            0,
+            128,
+            32
+          ],
+          "viewport": [
+            0,
+            0,
+            128,
+            32
+          ]
+        },
+        "pre_draw_viewport": [
+          0,
+          0,
+          128,
+          32
+        ],
+        "read_fbo": 1,
+        "readback_pre_state": {
+          "draw_attachment_object": 2,
+          "draw_fbo": 1,
+          "pack_alignment": 4,
+          "read_attachment_object": 2,
+          "read_buffer": 36064,
+          "read_fbo": 1,
+          "viewport": [
+            0,
+            0,
+            256,
+            256
+          ]
+        },
+        "size_px": [
+          256,
+          256
+        ]
+      },
+      "repeated_stability": {
+        "semantic_signature_sha256": "b9329263866ac2bd7f6943fbed0e1a3fb1660906a95fcc2ba318fd41b3ea96d6",
+        "successful_runs": 2
+      },
+      "source_argb_u32": "0x006cdd8f",
+      "source_hashes": {
+        "helpers": {
+          "airbrush-saved-caller-native.json": "a24db97a4b24b840bb915424d20e8d0c1684c5a5a74e7c2be47c4925fa894c34",
+          "airbrush_saved_caller_native.py": "c64aa5a51f85ba9abe3755e22ade255dba23f2ef5e24ad82fda4a3c4feeaf5bd",
+          "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+          "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+          "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_libraries": {
+          "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "runner": "bc12f38b52a4ebbc55ab60b2f56e08d202a5e71bedfd80a18f8fcbab96e895c6"
+      }
+    }
+  ],
+  "schema": "airbrush-joined-paint-native-v1"
+}
