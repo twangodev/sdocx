@@ -1,8 +1,7 @@
 //! Fountain V14/V16 coverage using only SVG vector primitives.
 use super::vector::{
-    Blend, Circle, ColorMatrix, ColorValue, Data, Definitions, Filter, Gradient, Group,
-    LinearGradient, Mask, Paint, Path, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter,
-    SvgMask, Transform, coordinate, decimal,
+    Blend, Circle, ColorMatrix, ColorValue, Definitions, Filter, Gradient, Group, LinearGradient,
+    Paint, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter, Transform,
 };
 use crate::PreparedStroke;
 use std::collections::HashMap;
@@ -19,18 +18,15 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     else {
         return false;
     };
+    let Some(color) = parse_rgb(&paint.color) else {
+        return false;
+    };
     let gradient = svg.definition::<Gradient>();
-    let mask = svg.definition::<Mask>();
+    let filter = svg.definition::<Filter>();
     let x = bounds.x_min - 1.;
     let y = bounds.y_min - 1.;
     let width = bounds.x_max - bounds.x_min + 2.;
     let height = bounds.y_max - bounds.y_min + 2.;
-    let rectangle = Data::new()
-        .move_to((coordinate(x, 4), coordinate(y, 4)))
-        .horizontal_line_by(coordinate(width, 4))
-        .vertical_line_by(coordinate(height, 4))
-        .horizontal_line_by(-coordinate(width, 4))
-        .close();
     let ramp = LinearGradient::new(&gradient)
         .x1(-1)
         .x2(1)
@@ -40,48 +36,72 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
         .add(Stop::new(0.25, ColorValue::WHITE))
         .add(Stop::new(0.75, ColorValue::WHITE))
         .add(Stop::new(1, ColorValue::gray(0.07)));
-    svg.scope(Definitions::new().add(ramp), |svg| {
-        svg.scope(
-            SvgMask::luminance(&mask)
-                .x(decimal(x, 4))
-                .y(decimal(y, 4))
-                .width(decimal(width, 4))
-                .height(decimal(height, 4)),
-            |svg| {
-                svg.scope(Group::new().isolated(), |svg| {
-                    svg.push(Path::new().fill(Paint::BLACK).data(rectangle.clone()));
-                    // Opaque Lighten stamps implement maximum coverage without alpha accumulation.
-                    for (index, ((point, radius), direction)) in
-                        paint.points.iter().zip(radii).zip(directions).enumerate()
-                    {
-                        let dx = direction.x * radius;
-                        let dy = direction.y * radius;
-                        svg.push(
-                            Group::new()
-                                .blend(Blend::Lighten)
-                                .replay_part(replay.then_some(ReplayPart(index + 1)))
-                                .add(
-                                    Circle::new()
-                                        .r(1)
-                                        .fill(Paint::Gradient(gradient))
-                                        .transformed(Transform::matrix(
-                                            [dx, dy, -dy, dx, point.x, point.y],
-                                            7,
-                                            4,
-                                        )),
-                                ),
-                        );
-                    }
-                });
-            },
-        );
-    });
-    svg.push(
-        Path::new()
-            .fill(Paint::from_hex(&paint.color))
-            .fill_opacity(decimal(paint.opacity, 6))
-            .masked(&mask)
-            .data(rectangle),
+    let matrix = ColorMatrix::matrix([
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.r) / 255.,
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.g) / 255.,
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.b) / 255.,
+        1.,
+        0.,
+        0.,
+        0.,
+        0.,
+    ]);
+    svg.scope(
+        Definitions::new().add(ramp).add(
+            SvgFilter::new(&filter)
+                .region(x, y, width, height)
+                .add(matrix),
+        ),
+        |_| {},
+    );
+    svg.scope(
+        Group::new().filtered(&filter).opacity(paint.opacity),
+        |svg| {
+            svg.scope(Group::new().isolated(), |svg| {
+                svg.push(
+                    super::vector::Rectangle::new()
+                        .x(x)
+                        .y(y)
+                        .width(width)
+                        .height(height)
+                        .fill(Paint::BLACK),
+                );
+                // Opaque Lighten stamps implement maximum coverage without alpha accumulation.
+                for (index, ((point, radius), direction)) in
+                    paint.points.iter().zip(radii).zip(directions).enumerate()
+                {
+                    let dx = direction.x * radius;
+                    let dy = direction.y * radius;
+                    svg.push(
+                        Group::new()
+                            .blend(Blend::Lighten)
+                            .replay_part(replay.then_some(ReplayPart(index + 1)))
+                            .add(
+                                Circle::new()
+                                    .r(1)
+                                    .fill(Paint::Gradient(gradient))
+                                    .transformed(Transform::matrix(
+                                        [dx, dy, -dy, dx, point.x, point.y],
+                                        7,
+                                        4,
+                                    )),
+                            ),
+                    );
+                }
+            });
+        },
     );
     true
 }
@@ -272,6 +292,15 @@ mod tests {
     use std::borrow::Cow;
 
     fn shaded_stamp(direction: Point, count: usize) -> String {
+        shaded_stamp_with_color(direction, count, "#000000", false)
+    }
+
+    fn shaded_stamp_with_color(
+        direction: Point,
+        count: usize,
+        color: &str,
+        replay: bool,
+    ) -> String {
         let reference: serde_json::Value =
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap();
@@ -286,10 +315,10 @@ mod tests {
             x_max: 52.,
             y_max: 52.,
         });
-        paint.color = "#000000".into();
+        paint.color = color.into();
         paint.opacity = 0.6;
         let mut svg = Scene::new(Svg::new().width(64).height(64));
-        assert!(render(&mut svg, &paint, false));
+        assert!(render(&mut svg, &paint, replay));
         svg.finish()
     }
 
@@ -357,7 +386,70 @@ mod tests {
         let vertical = preview(&shaded_stamp(Point { x: 0., y: 1. }, 1));
         assert_eq!(image.pixel(48, 32), vertical.pixel(32, 48));
         assert!(!horizontal.contains("<image"));
-        assert!(!horizontal.contains("<filter"));
+        assert_eq!(horizontal.matches("<filter ").count(), 1);
+        assert_eq!(horizontal.matches("<feColorMatrix").count(), 1);
+    }
+
+    #[test]
+    fn v14_colorizer_keeps_tint_opacity_and_replay_parts() {
+        let svg = shaded_stamp_with_color(Point { x: 1., y: 0. }, 2, "#336699", false);
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let filter = xml
+            .descendants()
+            .find(|node| node.has_tag_name("filter"))
+            .unwrap();
+        assert_eq!(filter.attribute("filterUnits"), Some("userSpaceOnUse"));
+        assert_eq!(
+            filter.attribute("color-interpolation-filters"),
+            Some("sRGB")
+        );
+        let matrix = xml
+            .descendants()
+            .find(|node| node.has_tag_name("feColorMatrix"))
+            .unwrap();
+        let values = svgtypes::NumberListParser::from(matrix.attribute("values").unwrap())
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(values.len(), 20);
+        assert_eq!(values[4], 0x33 as f64 / 255.);
+        assert_eq!(values[9], 0x66 as f64 / 255.);
+        assert_eq!(values[14], 0x99 as f64 / 255.);
+        assert_eq!(&values[15..], &[1., 0., 0., 0., 0.]);
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.attribute("filter").is_some())
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.attribute("opacity").is_some())
+                .count(),
+            1,
+            "saved opacity is applied once on the filtered source"
+        );
+        let tinted = preview(&svg);
+        let pixel = tinted.pixel(48, 32).unwrap();
+        let expected_alpha = 255. * 0.6 * (1. - 1.86 * (0.825 - 0.5));
+        assert!((pixel.alpha() as f64 - expected_alpha).abs() <= 2.);
+        let expected_channel = |channel: u8| (channel as f64 * expected_alpha / 255.).round() as u8;
+        for (actual, expected) in [
+            (pixel.red(), expected_channel(0x33)),
+            (pixel.green(), expected_channel(0x66)),
+            (pixel.blue(), expected_channel(0x99)),
+        ] {
+            assert!((actual as i16 - expected as i16).abs() <= 1);
+        }
+        assert!(!svg.contains("<image"));
+        assert!(!svg.contains("<feImage"));
+
+        let replay = shaded_stamp_with_color(Point { x: 1., y: 0. }, 2, "#336699", true);
+        let replay_xml = roxmltree::Document::parse(&replay).unwrap();
+        let parts = replay_xml
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .collect::<Vec<_>>();
+        assert_eq!(parts, ["1", "2"]);
     }
 
     #[test]
@@ -465,10 +557,9 @@ mod tests {
                 .count(),
             1
         );
-        assert!(
-            xml.descendants()
-                .any(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#000000"))
-        );
+        assert!(xml
+            .descendants()
+            .any(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#000000")));
         assert!(!one_svg.contains("<image"));
         assert!(!one_svg.contains("<feImage"));
         let one = preview(&one_svg);
@@ -633,15 +724,14 @@ mod tests {
         for settings in ["14;", "18;0;100;"] {
             stroke.rendering.as_mut().unwrap().advanced_settings = Some(settings.into());
             stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff000000);
-            let v16 = settings == "18;0;100;";
-            let opaque = render_stroke(&stroke, v16);
+            let opaque = render_stroke(&stroke, true);
             assert!(opaque.pixels().iter().any(|p| p.alpha() == 255));
             for alpha in [0, 1, 64, 128, 254, 255] {
                 stroke.rendering.as_mut().unwrap().style.color_argb = Some(alpha << 24);
                 let paint = crate::prepare_stroke(&stroke, false);
                 assert!(paint.dot_radii.is_some());
                 assert_eq!(paint.opacity, (alpha as f32 / 255.) as f64);
-                let image = render_stroke(&stroke, v16);
+                let image = render_stroke(&stroke, true);
                 for (actual, full) in image.pixels().iter().zip(opaque.pixels()) {
                     let expected = full.alpha() as f64 * paint.opacity;
                     assert!(

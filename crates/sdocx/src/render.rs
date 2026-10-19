@@ -4425,7 +4425,7 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn fountain_svg_keeps_reconstructed_ink_as_vector_paths() {
+    fn fountain_svg_keeps_reconstructed_ink_as_vector_primitives() {
         let reference: serde_json::Value =
             serde_json::from_str(include_str!("../../../conformance/fountain-v14.json")).unwrap();
         let mut stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
@@ -4452,9 +4452,9 @@ mod tests {
             page.objects = vec![stroke.clone().into()];
             let rendered = render_document_svg(&document(page), &RenderOptions::default());
             assert!(rendered[0].svg.contains("<linearGradient"));
-            assert!(rendered[0].svg.contains("<path "));
+            assert!(rendered[0].svg.contains("<circle "));
             assert!(!rendered[0].svg.contains("<image"));
-            assert!(!rendered[0].svg.contains("<filter"));
+            assert_eq!(rendered[0].svg.matches("<feColorMatrix").count(), 1);
         }
     }
 
@@ -4498,7 +4498,7 @@ mod tests {
             assert!(replay.svg.contains("data-replay-part="));
             assert!(replay.svg.contains("data-replay-lengths="));
             assert!(!replay.svg.contains("<image"));
-            assert!(!replay.svg.contains("<filter"));
+            assert_eq!(replay.svg.matches("<feColorMatrix").count(), 1);
         }
     }
 
