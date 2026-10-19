@@ -161,9 +161,12 @@ including tools 1–3 and both curve modes.
 A [positive paint capture](../conformance/brushpen-paint-positive-native.json)
 executes native Draw and shaders on host Mesa with a fixture-linked instance,
 a separate output framebuffer and an unused-atlas-cell sensitivity check.
-This establishes bounded host paint evidence, not same-run geometry-to-paint or
-Samsung device parity. General style/caller admission, vector paint and
-production integration remain outstanding.
+The [same-object capture](../conformance/brushpen-same-run-native.json) checks
+26 native-generated records through native upload and host paint, including
+a full-stream unused-atlas-cell control. A host pointer alias supplies the
+producer vector to Update; natural queue handoff and endPen completion remain
+unverified. General style/caller admission, vector paint, production integration
+and Samsung device parity remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
