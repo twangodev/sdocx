@@ -1,0 +1,93 @@
+{
+  "schema": "sdocx-object-stroke-defaults-native-v1",
+  "source": {
+    "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "pencommon_sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "calligraphy_sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+    "loaded_library_paths": {
+      "Model": "scratch/apk-output/samsung-notes-4.4.45.37/lib/arm64-v8a/libSPenModel.so",
+      "Base": "scratch/apk-output/samsung-notes-4.4.45.37/lib/arm64-v8a/libSPenBase.so",
+      "PenCommon": "scratch/apk-output/samsung-notes-4.4.45.37/lib/arm64-v8a/libSPenPenCommon.so",
+      "MontblancCalligraphyPen": "scratch/apk-output/samsung-notes-4.4.45.37/lib/arm64-v8a/libSPenMontblancCalligraphyPen.so"
+    }
+  },
+  "cases": [
+    {
+      "case": "empty-flex-defaults",
+      "reader_return": 1,
+      "input": {
+        "length": 0,
+        "flags": 0,
+        "scale_bits": "0000803f"
+      },
+      "input_pointer_unchanged": true,
+      "buffer_unchanged": true,
+      "native_getters": {
+        "pen_size": "00000000",
+        "color_argb": 4278190080,
+        "color_type": 0,
+        "stroke_type": 0,
+        "tool_type": 2,
+        "curve_enabled": 1,
+        "fixed_width_enabled": 0,
+        "fixed_opacity_enabled": 0
+      },
+      "get_pen_size_nonzero_control_bits": "0000c040",
+      "null_getters": {
+        "pen_name": true,
+        "advanced_settings": true
+      },
+      "implementation_fields_u32le": {
+        "name_id": "ffffffff",
+        "curve_enabled": "01000000",
+        "argb": "000000ff",
+        "pen_size": "00000000",
+        "tool_type": "02000000",
+        "stroke_type": "00000000",
+        "color_type": "00000000"
+      },
+      "constructor_to_reader_changed_offsets": []
+    }
+  ],
+  "pen_size_forwarding": {
+    "constructor_default_bits": "00002041",
+    "cases": [
+      {
+        "input_bits": "00000000",
+        "setter_return": 1,
+        "getter_bits": "cdcccc3e"
+      },
+      {
+        "input_bits": "cdcccc3e",
+        "setter_return": 1,
+        "getter_bits": "cdcccc3e"
+      },
+      {
+        "input_bits": "0000c040",
+        "setter_return": 1,
+        "getter_bits": "0000c040"
+      }
+    ],
+    "boundary": "real PenCommon Pen ctor/SetSize/GetSize; Calligraphy-specific constructor min-size fields are outside this case"
+  },
+  "calligraphy_profile_size_vtable": {
+    "evidence": "pinned Calligraphy DSO disassembly and dynamic vtable relocation",
+    "createPenInst": {
+      "address": "0x1cf5c",
+      "alloc_bytes": 144,
+      "calls_ctor_at": "0x1cf74"
+    },
+    "constructor": {
+      "address": "0x1c9b4",
+      "initializes_Pen": "0x1c9d8",
+      "vtable_address_point": "vtable+0x10",
+      "SetSize_vtable_slot_offset": "0x10",
+      "SetSize_relocation_address": "0x2a2d8",
+      "constructor_argument_bits": "00008040",
+      "argument_load_pc": "0x1ca7c",
+      "indirect_call_pc": "0x1ca84"
+    },
+    "limit": "proves profile construction dispatches Pen::SetSize(4.0f); does not execute createPenInst or prove later saved-size clamp under profile-specific minimums"
+  }
+}
