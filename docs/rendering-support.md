@@ -360,6 +360,10 @@ A [paint-control matrix](../conformance/magicpen-paint-controls-native.json)
 checks eight scale/phase views plus GLV1/GLV2 and opaque-background controls.
 The source-derived shader model matches transparent support and stays within
 three RGBA bytes on these host captures; it does not establish export parity.
+A [GLV1 source matrix](../conformance/magicpen-glv1-source-native.json)
+checks native source getters and complete XYZ streams; the test-only Rust model
+matches all 26 two- to six-point cases. Longer nearby-point strokes and sizes
+above 800 still differ, so general sampling and production admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. Version dispatch is observed; sampler reconstruction, paint and

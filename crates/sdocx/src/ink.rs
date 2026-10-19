@@ -21,6 +21,8 @@ mod fountain_v14;
 mod inkpen;
 #[cfg(test)]
 mod inkpen2;
+#[cfg(test)]
+mod magicpen_glv1;
 mod marker2;
 #[cfg(test)]
 pub(crate) mod marker3;

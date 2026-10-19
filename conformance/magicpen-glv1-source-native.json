@@ -1,0 +1,2548 @@
+{
+  "schema": "sdocx-magicpen-glv1-source-native-v1",
+  "scope": "Synthetic Model ObjectStroke source getters -> Drawing-selected GLV1 -> RTV1 vector. No SDK deserialization, GLV2, or paint output. Expected XYZ words are native assertion outputs.",
+  "encoding": {
+    "source_point_and_pressure_words": "8-digit hexadecimal uint32 word; interpret as IEEE-754 f32 bits",
+    "native_xyz_words": "8-digit hexadecimal uint32 word; native vector bytes decoded little-endian into f32 words",
+    "size_word": "8-digit hexadecimal uint32 word; decoded from source getter byte encoding"
+  },
+  "provenance": {
+    "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "helpers": {
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "capture_source": "Hash-pinned MagicPen saved-caller runner, parameterized by this script; wrapper SHA-256 uses a stable <FIXTURE_OUTPUT> placeholder for the temporary output path. Each case records its adapted wrapper digest and actual getter/output capture."
+  },
+  "cases": [
+    {
+      "id": "baseline",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "4a4ac24b81001b2b0ec7e46a17048c44df2f0ff78dae5f44045f7faff21b809e",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "pressure",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3e800000",
+          "3f666666"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3fe00000",
+          "3fffa252",
+          "3c63e8bc",
+          "3ff45d17",
+          "4077265d",
+          "3d5e8d76",
+          "40045d17",
+          "40b35025",
+          "3df45873",
+          "400e8ba2",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "4018ba2e",
+          "41149b8b",
+          "3eb7d2bf",
+          "4022e8ba",
+          "4130bb4a",
+          "3f07b7df",
+          "402d1746",
+          "414e5862",
+          "3f413783",
+          "403745d2",
+          "416d0fc0",
+          "3f84c5a7",
+          "4041745e",
+          "4184e6ee",
+          "3fac17f7",
+          "404ba2ea",
+          "41929d8f",
+          "3fd58539",
+          "4055d176",
+          "419ffffd",
+          "3ffffff4",
+          "40600002"
+        ],
+        "sha256": "f0661ef764b865bb5923bc31e36c163b25d4a2c88d18222a34587a7527bee8dc"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "400448eae6a9b52daf837a19c5b0490118cad3abe44579f50b534a0709817930",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          250,
+          900
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "e672a0e06f8cf560986c7db279ebdb729f919d4517e951b5f80167f6e08ca451",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_500",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          600,
+          1100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "ce51e006546c2a1fe53820cd26af72bafb573917a751891906f68ef4f5d931fc",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_1000",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          1100,
+          2100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "894c697e1a0c6e3e2c3f6ffd69ddda98da87bb2d3843f1ad21c0b628511dbc2b",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_2000",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          2100,
+          4100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "a60ca39d40ee3b953e82b349b9d47b8d2a09930be5e2792d71359625a4679b72",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_5000",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          5100,
+          10100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "e7adf5e4d557cb4b96e2f824d92fa0ebf510d53c96926c1df211efc2cae1e1df",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_10000",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          10100,
+          20100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "85b395f3e6db68f965d601603777d78c8fb3fd9a8c2e89232738930fa4830262",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_slow",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          2100,
+          4100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "721c3843a3b942f50adfa45c8928b19abd4f19e9313bed4b764f9f471111b4dd",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "time_very_slow",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          20100,
+          40100
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "4045017f",
+          "3d0acf33",
+          "40692492",
+          "40baf92a",
+          "3e059ce7",
+          "40724924",
+          "410c2a07",
+          "3ea166e7",
+          "407b6db6",
+          "413863bb",
+          "3f15713a",
+          "40824924",
+          "4168cf47",
+          "3f7ec6a2",
+          "4086db6d",
+          "418ad734",
+          "3fbda6cf",
+          "408b6db6",
+          "419ffffd",
+          "3ffffff7",
+          "408fffff"
+        ],
+        "sha256": "48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "f3cb2006a7749fcf3760af1d135c76178a1ed31d2b97e31305cba4f133df3ab3",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size0",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "00000000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1eb852",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fa6a2",
+          "4077265d",
+          "3d5e8d76",
+          "3f2094f2",
+          "40b35025",
+          "3df45873",
+          "3f218342",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f227192",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f235fe2",
+          "4130bb4a",
+          "3f07b7df",
+          "3f244e32",
+          "414e5862",
+          "3f413783",
+          "3f253c82",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f262ad2",
+          "4184e6ee",
+          "3fac17f7",
+          "3f271922",
+          "41929d8f",
+          "3fd58539",
+          "3f280772",
+          "419ffffd",
+          "3ffffff4",
+          "3f28f5c2"
+        ],
+        "sha256": "6cca65a0dd792a710303ed567e1fb15939ac28bdb3e78baafac4f6b5bea55d9c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "83f76b194eba41a415c2a39620aec15f1bd32ec8ccc31f5f76f210051d3ac2d7",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size1",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "3f800000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f4ccccd",
+          "3fffa252",
+          "3c63e8bc",
+          "3f4f2095",
+          "4077265d",
+          "3d5e8d76",
+          "3f51745d",
+          "40b35025",
+          "3df45873",
+          "3f53c825",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f561bed",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f586fb5",
+          "4130bb4a",
+          "3f07b7df",
+          "3f5ac37d",
+          "414e5862",
+          "3f413783",
+          "3f5d1745",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f5f6b0d",
+          "4184e6ee",
+          "3fac17f7",
+          "3f61bed5",
+          "41929d8f",
+          "3fd58539",
+          "3f64129d",
+          "419ffffd",
+          "3ffffff4",
+          "3f666665"
+        ],
+        "sha256": "1edd1a7857d0adcf50a57d9d64dd76713a35ac5c9779c768d9c61357f58698d5"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "a8c35e1d8db8828187beba21902bf0f682dbba0b3b5e9a7d6bc0d4bc36d04f33",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size4",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "40800000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3fd9999a",
+          "3fffa252",
+          "3c63e8bc",
+          "3fde412a",
+          "4077265d",
+          "3d5e8d76",
+          "3fe2e8ba",
+          "40b35025",
+          "3df45873",
+          "3fe7904a",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3fec37da",
+          "41149b8b",
+          "3eb7d2bf",
+          "3ff0df6a",
+          "4130bb4a",
+          "3f07b7df",
+          "3ff586fa",
+          "414e5862",
+          "3f413783",
+          "3ffa2e8a",
+          "416d0fc0",
+          "3f84c5a7",
+          "3ffed61a",
+          "4184e6ee",
+          "3fac17f7",
+          "4001bed5",
+          "41929d8f",
+          "3fd58539",
+          "4004129d",
+          "419ffffd",
+          "3ffffff4",
+          "40066665"
+        ],
+        "sha256": "1d9deef39e10cad61ba39bcf79bab94cbe60e9b8665d3361da547de9970c39fb"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "fbe6edfd1e8d5808becc5edb4163b9b57ed94791ba2d36e0893ac21f3d550dfd",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size20",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "41a00000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 7,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40d00000",
+          "4063d2d7",
+          "3d3bc193",
+          "40daaaab",
+          "40d6f66a",
+          "3e3471d9",
+          "40e55556",
+          "4122efd6",
+          "3ee1eb5a",
+          "40f00001",
+          "4158d80c",
+          "3f587e8b",
+          "40faaaac",
+          "41873976",
+          "3fb2e160",
+          "4102aaac",
+          "419ffffd",
+          "3ffffff7",
+          "41080001"
+        ],
+        "sha256": "f504dbf027b01772ee14168773f8a4cdb662daf998d2edcac09e404e1ac577e5"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "5000d1e7326be79104ff31843f46c929c753ace5f038ebda22e4af157b2a8637",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size_omitted",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "00000000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1eb852",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fa6a2",
+          "4077265d",
+          "3d5e8d76",
+          "3f2094f2",
+          "40b35025",
+          "3df45873",
+          "3f218342",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f227192",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f235fe2",
+          "4130bb4a",
+          "3f07b7df",
+          "3f244e32",
+          "414e5862",
+          "3f413783",
+          "3f253c82",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f262ad2",
+          "4184e6ee",
+          "3fac17f7",
+          "3f271922",
+          "41929d8f",
+          "3fd58539",
+          "3f280772",
+          "419ffffd",
+          "3ffffff4",
+          "3f28f5c2"
+        ],
+        "sha256": "6cca65a0dd792a710303ed567e1fb15939ac28bdb3e78baafac4f6b5bea55d9c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "a9bb01ab30538a2f983ea8f499578acd3d139c9d4714151fc85b1ce92a70f319",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size_negative",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "00000000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1eb852",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fa6a2",
+          "4077265d",
+          "3d5e8d76",
+          "3f2094f2",
+          "40b35025",
+          "3df45873",
+          "3f218342",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f227192",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f235fe2",
+          "4130bb4a",
+          "3f07b7df",
+          "3f244e32",
+          "414e5862",
+          "3f413783",
+          "3f253c82",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f262ad2",
+          "4184e6ee",
+          "3fac17f7",
+          "3f271922",
+          "41929d8f",
+          "3fd58539",
+          "3f280772",
+          "419ffffd",
+          "3ffffff4",
+          "3f28f5c2"
+        ],
+        "sha256": "6cca65a0dd792a710303ed567e1fb15939ac28bdb3e78baafac4f6b5bea55d9c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "75b6554c8c80f1f9e35bc1d8a594f0a6e52cf53406ad2c524b9bdbb045498628",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size_below_floor",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "3ecc49ba",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1eb852",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fa6a2",
+          "4077265d",
+          "3d5e8d76",
+          "3f2094f2",
+          "40b35025",
+          "3df45873",
+          "3f218342",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f227192",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f235fe2",
+          "4130bb4a",
+          "3f07b7df",
+          "3f244e32",
+          "414e5862",
+          "3f413783",
+          "3f253c82",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f262ad2",
+          "4184e6ee",
+          "3fac17f7",
+          "3f271922",
+          "41929d8f",
+          "3fd58539",
+          "3f280772",
+          "419ffffd",
+          "3ffffff4",
+          "3f28f5c2"
+        ],
+        "sha256": "6cca65a0dd792a710303ed567e1fb15939ac28bdb3e78baafac4f6b5bea55d9c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "86dacb3424c5335fecccdbd35e7aaed5efc13030f44a23df7a9f59e2b3eaedfc",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size_at_floor",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "3ecccccd",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1eb852",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fa6a2",
+          "4077265d",
+          "3d5e8d76",
+          "3f2094f2",
+          "40b35025",
+          "3df45873",
+          "3f218342",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f227192",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f235fe2",
+          "4130bb4a",
+          "3f07b7df",
+          "3f244e32",
+          "414e5862",
+          "3f413783",
+          "3f253c82",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f262ad2",
+          "4184e6ee",
+          "3fac17f7",
+          "3f271922",
+          "41929d8f",
+          "3fd58539",
+          "3f280772",
+          "419ffffd",
+          "3ffffff4",
+          "3f28f5c2"
+        ],
+        "sha256": "6cca65a0dd792a710303ed567e1fb15939ac28bdb3e78baafac4f6b5bea55d9c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "1c1bcb9e0751e4e4b135b966a6b97c3a6abecb0f28325b3bc0e798c14dbee6d3",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "size_above_floor",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "3ecd4fdf",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f1ecbfb",
+          "3fffa252",
+          "3c63e8bc",
+          "3f1fbae4",
+          "4077265d",
+          "3d5e8d76",
+          "3f20a9cc",
+          "40b35025",
+          "3df45873",
+          "3f2198b5",
+          "40ec5fa2",
+          "3e5dd1a2",
+          "3f22879d",
+          "41149b8b",
+          "3eb7d2bf",
+          "3f237686",
+          "4130bb4a",
+          "3f07b7df",
+          "3f24656e",
+          "414e5862",
+          "3f413783",
+          "3f255457",
+          "416d0fc0",
+          "3f84c5a7",
+          "3f26433f",
+          "4184e6ee",
+          "3fac17f7",
+          "3f273228",
+          "41929d8f",
+          "3fd58539",
+          "3f282110",
+          "419ffffd",
+          "3ffffff4",
+          "3f290ff9"
+        ],
+        "sha256": "28e0dd517c107f4b6c00e9f82e41019ffc97a4092507acfd2c3d03476e1baccb"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "eb23f59dee361bdd8e20c6c0fd1540b4826ea5b05905047f3752e19cff039774",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "two_points",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 5,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40b00000",
+          "4029c811",
+          "00000000",
+          "40b00000",
+          "40a330bc",
+          "00000000",
+          "40b00000",
+          "40effebc",
+          "00000000",
+          "40b00000",
+          "41200000",
+          "00000000",
+          "40b00000"
+        ],
+        "sha256": "93360300d626b7df25174c9fe0812cc3c41f779d5d05552cea7b777822d8708f"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "bac3c153c5c56f05d69a119222a791edd1ad9befc40715ded3a10137935b2c8e",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "spacing",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3f800000",
+          "00000000",
+          "40000000",
+          "00000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 4,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40b00000",
+          "3f8e38e1",
+          "00000000",
+          "40b00000",
+          "3fe38e36",
+          "00000000",
+          "40b00000",
+          "40000000",
+          "00000000",
+          "40b00000"
+        ],
+        "sha256": "37166e75071d87404aac6d74265bca6d3b81ef35d0e3ba1d3bd2d7f91a138383"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "b6fc61b5cc076ffd1e618c7a3f808c5f13124e2354c683f4a06fb191871da286",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "four_points",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40a00000",
+          "00000000",
+          "41200000",
+          "40000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e4ccccd",
+          "3ecccccd",
+          "3f4ccccd",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120,
+          130
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 11,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40200000",
+          "3fd3d388",
+          "3ccf8295",
+          "40292492",
+          "405beea2",
+          "3dcf8295",
+          "40324924",
+          "40ab074c",
+          "3e6972e5",
+          "403b6db6",
+          "40e17c59",
+          "3ebf4a4c",
+          "40449248",
+          "410c7c31",
+          "3f0c7fb1",
+          "404db6da",
+          "41299221",
+          "3f41f34d",
+          "4056db6c",
+          "41480000",
+          "3f800000",
+          "40600000",
+          "417767f8",
+          "3fb29108",
+          "406fe53b",
+          "418d7b06",
+          "3fd87deb",
+          "407fca76",
+          "41a00000",
+          "40000000",
+          "4087d7d8"
+        ],
+        "sha256": "211ff8f56bc71aa5fa7616252cfe1631a491f986004c331ec0e0b3122964588a"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "a8df399ce0b8e9707ffbc74cfecd71153496833fa96c2627324da7dd87eb73db",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "curve_off",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": false,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40600000",
+          "401ffffc",
+          "00000000",
+          "40600000",
+          "409ffffc",
+          "00000000",
+          "40600000",
+          "40effffa",
+          "00000000",
+          "40600000",
+          "41200000",
+          "00000000",
+          "40600000",
+          "4147ffff",
+          "3efffffa",
+          "40800000",
+          "416ffffe",
+          "3f7ffffa",
+          "40900000",
+          "418bfffe",
+          "3fbffffb",
+          "40a00000"
+        ],
+        "sha256": "170dda4d45a289d32db43b8450b2221d44c4090414ee2da65283c9ce652f1522"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "f5b4dd6a3b94ca6c516064dc723bc76917be2299f575406987bed8a3b4c996b9",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "capture_four_points_arbitrary",
+      "input": {
+        "points_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "41000000",
+          "bf800000",
+          "41600000",
+          "40e00000",
+          "41f80000",
+          "40800000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e19999a",
+          "3eb33333",
+          "3f266666",
+          "3f733333"
+        ],
+        "timestamps_i32": [
+          100,
+          117,
+          139,
+          181
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 14,
+        "xyz_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "40100000",
+          "40686ee0",
+          "40051bdb",
+          "40171c72",
+          "40ae3d05",
+          "3fafe0ce",
+          "401e38e4",
+          "40ee10ba",
+          "3f61f696",
+          "40255556",
+          "4118ee32",
+          "3f1c2ce1",
+          "402c71c8",
+          "41355ea5",
+          "3f09edb9",
+          "40338e3a",
+          "41537f0a",
+          "3f179673",
+          "403aaaac",
+          "41734f65",
+          "3f45270c",
+          "4041c71e",
+          "418a67da",
+          "3f894fc2",
+          "4048e390",
+          "419c0000",
+          "3fc00000",
+          "40500000",
+          "41b467f6",
+          "400a7204",
+          "405b4846",
+          "41caead0",
+          "4031985e",
+          "4066908c",
+          "41e0ffa3",
+          "4057ff5e",
+          "4071d8d2",
+          "41f80000",
+          "40800000",
+          "407d2118"
+        ],
+        "sha256": "8cf4ecb053fedc24c073f34df5a6ce42e9116186bc43454d9183c64a43d16c95"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "64499b44c87f9724f34c8b277c0247687e2ad7181758b442f8a2fd22c5414164",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "capture_five_points_terminal_registers",
+      "input": {
+        "points_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "41000000",
+          "bf800000",
+          "41600000",
+          "40e00000",
+          "41f80000",
+          "40800000",
+          "42280000",
+          "41400000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e19999a",
+          "3eb33333",
+          "3f266666",
+          "3f733333",
+          "3f0ccccd"
+        ],
+        "timestamps_i32": [
+          100,
+          117,
+          139,
+          181,
+          220
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 23,
+        "xyz_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "40100000",
+          "40686ee0",
+          "40051bdb",
+          "40171c72",
+          "40ae3d05",
+          "3fafe0ce",
+          "401e38e4",
+          "40ee10ba",
+          "3f61f696",
+          "40255556",
+          "4118ee32",
+          "3f1c2ce1",
+          "402c71c8",
+          "41355ea5",
+          "3f09edb9",
+          "40338e3a",
+          "41537f0a",
+          "3f179673",
+          "403aaaac",
+          "41734f65",
+          "3f45270c",
+          "4041c71e",
+          "418a67da",
+          "3f894fc2",
+          "4048e390",
+          "419c0000",
+          "3fc00000",
+          "40500000",
+          "41ac5205",
+          "3ffcb257",
+          "404ec4ec",
+          "41bba221",
+          "401eb625",
+          "404d89d8",
+          "41ca011c",
+          "4040f564",
+          "404c4ec4",
+          "41d77fb8",
+          "4064f561",
+          "404b13b0",
+          "41e6adfd",
+          "40893a0b",
+          "4049d89c",
+          "41f50af2",
+          "40a178c3",
+          "40489d88",
+          "42013692",
+          "40bab23e",
+          "40476274",
+          "42082929",
+          "40d7c8d4",
+          "40462760",
+          "420f27ef",
+          "40f82c3c",
+          "4044ec4c",
+          "4215bba3",
+          "410cb2e7",
+          "4043b138",
+          "421bff09",
+          "411d9ffb",
+          "40427624",
+          "42220ce5",
+          "412ec299",
+          "40413b10",
+          "4227fffd",
+          "413ffffc",
+          "403ffffc"
+        ],
+        "sha256": "4b6e3d3597a1513f4afe08ca5fad548793756d677d5d7a29a31204528976b791"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "956ce7e2a55f2f32adae7573df5b5fd1cf573d0dda9d5894602e65a908ac94b3",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    },
+    {
+      "id": "capture_six_points_state",
+      "input": {
+        "points_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "41000000",
+          "bf800000",
+          "41600000",
+          "40e00000",
+          "41f80000",
+          "40800000",
+          "42280000",
+          "41400000",
+          "425c0000",
+          "c0c00000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3e19999a",
+          "3eb33333",
+          "3f266666",
+          "3f733333",
+          "3f0ccccd",
+          "3f59999a"
+        ],
+        "timestamps_i32": [
+          100,
+          117,
+          139,
+          181,
+          220,
+          275
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 23,
+        "xyz_f32_u32_hex": [
+          "40000000",
+          "40400000",
+          "40100000",
+          "40686ee0",
+          "40051bdb",
+          "40171c72",
+          "40ae3d05",
+          "3fafe0ce",
+          "401e38e4",
+          "40ee10ba",
+          "3f61f696",
+          "40255556",
+          "4118ee32",
+          "3f1c2ce1",
+          "402c71c8",
+          "41355ea5",
+          "3f09edb9",
+          "40338e3a",
+          "41537f0a",
+          "3f179673",
+          "403aaaac",
+          "41734f65",
+          "3f45270c",
+          "4041c71e",
+          "418a67da",
+          "3f894fc2",
+          "4048e390",
+          "419c0000",
+          "3fc00000",
+          "40500000",
+          "41b3b1eb",
+          "40012d98",
+          "4053c0ee",
+          "41cb859b",
+          "40128648",
+          "405781dc",
+          "41e37b12",
+          "40140a0e",
+          "405b42ca",
+          "41fb701f",
+          "4005d853",
+          "405f03b8",
+          "42093345",
+          "3fd376da",
+          "4062c4a6",
+          "4214bdaa",
+          "3f7d8c53",
+          "40668594",
+          "4220573d",
+          "3dd9e8f8",
+          "406a4682",
+          "422c0000",
+          "bf800000",
+          "406e0774",
+          "423657f6",
+          "c004f513",
+          "40710833",
+          "423f6efd",
+          "c0418e96",
+          "407408f2",
+          "42498c34",
+          "c0827e02",
+          "407709b1",
+          "4252fc72",
+          "c0a1f425",
+          "407a0a70",
+          "425c0000",
+          "c0c00000",
+          "407d0b2f"
+        ],
+        "sha256": "d9c0a61c2cccff048bb9968a89208ecadb18cbcf36629fe963dab2d16e119ce0"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "2bd36be4e26f8cc4739b6e65baff12c452cf3d0506c4ede9e0f0bed03c7d3aa1",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output"
+      }
+    }
+  ]
+}
