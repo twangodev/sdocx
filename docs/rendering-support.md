@@ -139,6 +139,9 @@ explicit 1920×1080 display profile. The V4 numeric model reproduces the complet
 The [property helper oracle](../conformance/object-stroke-curve-native.json)
 executes native property read/write and getter/setter controls, confirming
 serialized bit 0 selects curve state; full-record deserialization is not exercised.
+The [flag audit](../conformance/object-stroke-properties-native.json) checks
+137 zero/one-hot/pair masks against named native getters and the Rust parser;
+bit 2 is separately exercised through tilt/orientation channel storage.
 Actual device display values, RTV1 paint and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2

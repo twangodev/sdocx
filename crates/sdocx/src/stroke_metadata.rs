@@ -87,6 +87,49 @@ mod native_property_tests {
             );
         }
     }
+
+    #[test]
+    fn saved_property_flags_match_native_getters_and_channel_control() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/object-stroke-properties-native.json"
+        ))
+        .unwrap();
+        let cases = fixture["property_word_cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 137);
+        for case in cases {
+            let word = case["input_property_word"].as_u64().unwrap() as u32;
+            let mut encoded_mask = vec![4];
+            encoded_mask.extend_from_slice(&word.to_le_bytes());
+            let mut reader = Reader::new(&encoded_mask, "native property flags");
+            let properties = StrokeProperties::read(Mask::read(&mut reader).unwrap());
+            for (name, actual) in [
+                ("curve", properties.compressed),
+                ("replay_only", properties.replay_only),
+                ("eraser", properties.eraser),
+                ("fixed_width_enabled", properties.fixed_width),
+                ("millisecond_mode", properties.millisecond_timestamps),
+                ("top_layer", properties.top_layer_pen),
+                ("alpha_lock", properties.alpha_lock),
+                ("binary_added", properties.binary_added),
+                ("generated", properties.generated),
+                ("fixed_opacity", properties.fixed_opacity),
+                ("rainbow", properties.rainbow_effect),
+                ("straighten", properties.straighten),
+                ("reveal_mode", properties.reveal_mode),
+            ] {
+                assert_eq!(
+                    actual,
+                    case["native_getters"][name].as_u64().unwrap() != 0,
+                    "native {name}, property word {word:#x}"
+                );
+            }
+            assert_eq!(
+                properties.stylus_channels,
+                case["helper_bool_out_after_apply"].as_u64().unwrap() != 0,
+                "native channel flag, property word {word:#x}"
+            );
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
