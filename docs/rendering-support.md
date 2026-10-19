@@ -186,8 +186,12 @@ Admitted saved profiles render the native disks in order; other states retain
 the generic approximation. Natural queue/lifecycle setup and native shader edge
 coverage remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
-selected saved curve width/sampling and cache boundaries; ordinary InkPen also
-uses the generic geometry approximation. Ordinary V1 (null settings) and V4
+selected saved curve width/sampling and cache boundaries. Canonical-page SVG/PDF
+now reconstruct ordinary V1 null-setting geometry for tools 0–2 with saved ARGB;
+a bounded compound contour approximates native coverage at one SVG pixel per
+source unit. Replay preserves source-event cutoffs and folds the terminal suffix
+into the final event. Unsupported inputs and exhausted budgets retain fallback;
+the context-free preparer remains unchanged. Ordinary V1 and V4
 (empty or `4;` settings) use saved RGB when the public stroke color is absent,
 and apply saved ARGB alpha once per stroke in SVG/PDF.
 A test-only numeric core matches twenty-one
@@ -197,7 +201,7 @@ captures null settings selecting V1 and empty settings selecting V4 under an
 explicit 1920×1080 display profile. The V4 numeric model reproduces the complete
 312-byte Drawing stream bit for bit, plus all streams in a
 [seven-case display matrix](../conformance/inkpen-display-profiles-native.json);
-null settings remain outside that V4 model. A separate test-only V1 core matches
+null settings remain outside that V4 model. The separate V1 core matches
 all fourteen emitted streams in the [V1 matrix](../conformance/inkpen-v1-saved-native.json),
 including no-curve, duplicate-point, timing and display controls; Drawing rejects
 the separate one-point case before pen creation. A [nine-case size/tool capture](../conformance/inkpen-admission-native.json)
@@ -208,7 +212,7 @@ A [reuse capture](../conformance/inkpen-reuse-native.json) checks short/long fir
 strokes and a distinct-object control on the same pen, drawable and RT; every
 target stream matches the fresh 312 bytes. Direct redraw of the distinct object
 returns without callbacks after Drawing clears its cache-dirty flag. Broader
-reuse states and vector edge coverage remain open before production admission.
+reuse states and vector edge coverage remain open before V4 production admission.
 The [property helper oracle](../conformance/object-stroke-curve-native.json)
 executes native property read/write and getter/setter controls, confirming
 serialized bit 0 selects curve state; full-record deserialization is not exercised.
@@ -233,8 +237,8 @@ pixel-dependent edge band prevents treating a fixed 1× contour as a general pai
 A [V1 reuse oracle](../conformance/inkpen-v1-reuse-native.json) checks source-event
 and terminal vector prefixes, short/long preceding strokes and distinct source
 objects. Rust matches the complete first/target streams and their native boundaries.
-Cleanup tasks, Mesa-capability setup, actual device display
-values and production admission remain outstanding.
+General V4 admission, app display setup, device parity and exact scale-dependent
+coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.

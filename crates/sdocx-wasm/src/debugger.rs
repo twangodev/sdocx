@@ -367,10 +367,15 @@ impl Source {
                     }
                     _ => {
                         let strokes = parsed.document.pages[page_index]
-                            .composed_strokes()
-                            .map(|(object, stroke)| json!({
+                            .composed_strokes_with_context()
+                            .into_iter()
+                            .map(|(object, stroke, native_allowed)| json!({
                                 "offset": object.source_offset,
-                                "geometry": sdocx::prepare_stroke(stroke, false),
+                                "geometry": if native_allowed {
+                                    sdocx::prepare_stroke_for_page(stroke, false)
+                                } else {
+                                    sdocx::prepare_stroke(stroke, false)
+                                },
                                 "stroke": stroke,
                                 "milliseconds": stroke.rendering.as_ref().is_some_and(|rendering|
                                     rendering.properties.millisecond_timestamps)
@@ -450,13 +455,20 @@ mod source_tests {
         .unwrap();
         let items = replay["strokes"].as_array().unwrap();
         assert_eq!(items.len(), 77);
-        for (item, stroke) in items.iter().zip(parsed.document.pages[0].strokes()) {
+        for (item, (_, stroke, native_allowed)) in items
+            .iter()
+            .zip(parsed.document.pages[0].composed_strokes_with_context())
+        {
             // Use the same Value-to-wire roundtrip as the debugger, including
             // float32 promotion and JSON number parsing.
             let expected: Value = serde_json::from_str(
                 &json!({
                     "stroke": stroke,
-                    "geometry": sdocx::prepare_stroke(stroke, false)
+                    "geometry": if native_allowed {
+                        sdocx::prepare_stroke_for_page(stroke, false)
+                    } else {
+                        sdocx::prepare_stroke(stroke, false)
+                    }
                 })
                 .to_string(),
             )

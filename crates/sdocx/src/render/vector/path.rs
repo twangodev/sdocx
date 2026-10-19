@@ -124,6 +124,39 @@ impl ReplayPath {
             self.lengths.push(self.data.len());
         }
     }
+
+    /// Append an internally generated, already validated SVG path segment.
+    /// This is used by bounded vector candidates that need native f64-derived
+    /// coordinates rather than `Data`'s f32 command storage.
+    pub(in crate::render) fn push_serialized(
+        &mut self,
+        part: &str,
+        replay: bool,
+        max_bytes: usize,
+    ) -> bool {
+        if part.is_empty()
+            || !part
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || b"MLZmlz.,-+ eE".contains(&byte))
+            || self
+                .data
+                .len()
+                .checked_add(part.len())
+                .is_none_or(|len| len > max_bytes)
+        {
+            return false;
+        }
+        self.data.push_str(part);
+        if replay {
+            self.lengths.push(self.data.len());
+        }
+        true
+    }
+
+    #[cfg(test)]
+    pub(in crate::render) fn serialized_len(&self) -> usize {
+        self.data.len()
+    }
     pub fn finish(self) -> Path {
         let mut path = Path::new();
         path.0.valid = self.valid;

@@ -9,6 +9,7 @@ use crate::{
     RichTextObjectSpan, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
+use std::borrow::Cow;
 use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -1014,6 +1015,7 @@ fn render_object(
                 context.replay.then_some(*stroke_index),
                 calligraphy_session,
                 native_allowed,
+                [context.page.width, context.page.height],
             );
             *stroke_index += 1;
         }
@@ -3134,7 +3136,33 @@ fn render_stroke(
     replay_index: Option<usize>,
     calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
     native_allowed: bool,
+    viewport: [u32; 2],
 ) {
+    if native_allowed
+        && viewport.iter().all(|dimension| *dimension > 0)
+        && let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
+        && let Some(vector) = inkpen_v1_vector_path(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal.clone(),
+            replay_index.is_some(),
+        )
+    {
+        let color = theme.foreground(stroke_source_color(stroke));
+        let opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        let draw = |svg: &mut Scene| {
+            svg.scope(Group::new().opacity(opacity), |svg| {
+                svg.push(vector.path.fill(Paint::from_hex(&color)));
+            });
+        };
+        if let Some(index) = replay_index {
+            svg.scope(Group::new().replay_stroke(StrokeIndex(index)), draw);
+        } else {
+            draw(svg);
+        }
+        return;
+    }
     if native_allowed {
         match crate::ink::calligraphy::prepare_model_stroke(calligraphy_session, stroke) {
             crate::ink::calligraphy::CalligraphyAdmission::Mesh(mesh) => {
@@ -3186,6 +3214,198 @@ fn render_stroke(
     } else {
         render_prepared_stroke(svg, &paint, false);
     }
+}
+
+/// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
+/// used by canonical page exports. The context-free `prepare_stroke` keeps
+/// its compatibility behavior.
+pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::PreparedStroke<'_> {
+    let mut prepared = crate::ink::prepare_stroke_for_context(
+        stroke,
+        dark_mode,
+        crate::ink::InkRenderContext::CanonicalPage,
+    );
+    if let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
+        && let Some(vector) = inkpen_v1_vector_path(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal,
+            true,
+        )
+    {
+        prepared.points = Cow::Owned(ink.points);
+        prepared.sample_ends = Some(vector.sample_ends);
+        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
+        prepared.ordered_disk_replay = None;
+        prepared.dot_directions = None;
+        prepared.rect_stamp = None;
+        prepared.coverage_mesh = None;
+        prepared.segment_widths = None;
+        prepared.bounds = Some(ink.bounds);
+        prepared.color = RenderTheme::for_canvas(dark_mode).foreground(stroke_source_color(stroke));
+        prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        prepared.top_layer = false;
+        prepared.profile = Some("InkPen");
+        prepared.support = crate::InkSupport::Reconstructed;
+    }
+    prepared
+}
+
+struct InkPenV1VectorPath {
+    path: Path,
+    sample_ends: Vec<usize>,
+    #[cfg(test)]
+    source_event_path_ends: Vec<usize>,
+}
+
+fn inkpen_v1_vector_path(
+    points: &[crate::Point],
+    radii: &[f32],
+    sample_ends: &[usize],
+    terminal: Range<usize>,
+    replay: bool,
+) -> Option<InkPenV1VectorPath> {
+    const VERTICES: usize = 96;
+    const MAX_STAMPS: usize = 65_536;
+    const MAX_PATH_BYTES: usize = 8 * 1024 * 1024;
+
+    if points.is_empty()
+        || points.len() != radii.len()
+        || points.len() > MAX_STAMPS
+        || sample_ends.is_empty()
+        || sample_ends.windows(2).any(|pair| pair[0] > pair[1])
+        || sample_ends.iter().any(|&end| end > terminal.start)
+        || sample_ends.last().copied() != Some(terminal.start)
+        || terminal.start > terminal.end
+        || terminal.end != points.len()
+        || points.iter().any(|point| {
+            !point.x.is_finite()
+                || !point.y.is_finite()
+                || !(point.x as f32).is_finite()
+                || !(point.y as f32).is_finite()
+        })
+        || radii
+            .iter()
+            .any(|radius| !radius.is_finite() || *radius < 0.0)
+    {
+        return None;
+    }
+
+    // The saved V1 prefix table ends before the terminal path suffix. Page
+    // replay folds that suffix into the final source event.
+    let mut effective_ends = sample_ends.to_vec();
+    if let Some(last) = effective_ends.last_mut() {
+        *last = terminal.end;
+    }
+
+    let mut path = ReplayPath::default();
+    let contour_vertices = (0..VERTICES)
+        .map(|vertex| {
+            let angle = 2.0 * std::f64::consts::PI * vertex as f64 / VERTICES as f64;
+            let cos = angle.cos();
+            let sin = angle.sin();
+            (cos, sin, 0.5 * (cos.abs() + sin.abs()))
+        })
+        .collect::<Vec<_>>();
+    #[cfg(test)]
+    let mut source_event_path_ends = Vec::with_capacity(effective_ends.len());
+    let mut previous_end = 0;
+    for &event_end in &effective_ends {
+        if event_end < previous_end || event_end > points.len() {
+            return None;
+        }
+        for (point, radius) in points[previous_end..event_end]
+            .iter()
+            .zip(&radii[previous_end..event_end])
+        {
+            let radius = f64::from(*radius);
+            let mut data = String::with_capacity(VERTICES * 48 + 8);
+            for (vertex, &(cos, sin, coverage_offset)) in contour_vertices.iter().enumerate() {
+                // Approximate the native shader's half-coverage contour with
+                // a continuous-derivative boundary at one source unit per SVG
+                // pixel. Native finite 2x2 `fwidth` coverage differs near edges.
+                let contour = (radius - coverage_offset).max(0.0);
+                let x = point.x + contour * cos;
+                let y = point.y + contour * sin;
+                if !x.is_finite() || !y.is_finite() {
+                    return None;
+                }
+                if vertex == 0 {
+                    data.push_str(&format!("M{x:.7},{y:.7}"));
+                } else {
+                    data.push_str(&format!(" L{x:.7},{y:.7}"));
+                }
+            }
+            data.push_str(" Z");
+            if !path.push_serialized(&data, replay, MAX_PATH_BYTES) {
+                return None;
+            }
+        }
+        #[cfg(test)]
+        source_event_path_ends.push(path.serialized_len());
+        previous_end = event_end;
+    }
+    if previous_end != points.len() {
+        return None;
+    }
+
+    Some(InkPenV1VectorPath {
+        path: path.finish(),
+        sample_ends: effective_ends,
+        #[cfg(test)]
+        source_event_path_ends,
+    })
+}
+
+#[cfg(test)]
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn inkpen_v1_vector_candidate_svg(
+    points: &[crate::Point],
+    radii: &[f32],
+    sample_ends: &[usize],
+    terminal: Range<usize>,
+    color: &str,
+    opacity: f64,
+    viewport: [u32; 2],
+    replay: bool,
+) -> Option<InkPenV1VectorCandidate> {
+    if !opacity.is_finite()
+        || !(0.0..=1.0).contains(&opacity)
+        || viewport.contains(&0)
+        || !matches!(color.len(), 7)
+        || !color.starts_with('#')
+        || !color[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return None;
+    }
+    let vector = inkpen_v1_vector_path(points, radii, sample_ends, terminal, replay)?;
+    let root = Svg::new()
+        .width(viewport[0])
+        .height(viewport[1])
+        .view_box(ViewBox::new(
+            0.0,
+            0.0,
+            f64::from(viewport[0]),
+            f64::from(viewport[1]),
+            1,
+        ));
+    let mut scene = Scene::new(root);
+    scene.scope(Group::new().opacity(opacity), |scene| {
+        scene.push(vector.path.fill(Paint::from_hex(color)));
+    });
+    Some(InkPenV1VectorCandidate {
+        svg: scene.finish(),
+        sample_ends: vector.sample_ends,
+        source_event_path_ends: vector.source_event_path_ends,
+    })
+}
+
+#[cfg(test)]
+pub(crate) struct InkPenV1VectorCandidate {
+    pub(crate) svg: String,
+    pub(crate) sample_ends: Vec<usize>,
+    pub(crate) source_event_path_ends: Vec<usize>,
 }
 
 fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
@@ -4381,6 +4601,180 @@ mod tests {
         }
     }
 
+    fn inkpen_v1_stroke() -> Stroke {
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into()),
+                advanced_settings: None,
+                tool_type_raw: 1,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: false,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0x8033_6699),
+                    pen_size: Some(10.0),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: vec![
+                Point { x: 0.0, y: 0.0 },
+                Point { x: 10.0, y: 0.0 },
+                Point { x: 20.0, y: 0.0 },
+                Point { x: 30.0, y: 10.0 },
+            ],
+            pressures: vec![0.25, 0.5, 0.75, 1.0],
+            timestamps: vec![10, 20, 30, 40],
+            tilts: vec![0.0; 4],
+            orientations: vec![0.0; 4],
+            color: None,
+            pen_width: 10.0,
+        }
+    }
+
+    #[test]
+    fn canonical_v1_page_export_uses_saved_source_geometry_alpha_and_replay_prefixes() {
+        let stroke = inkpen_v1_stroke();
+        let prepared = crate::prepare_stroke_for_page(&stroke, false);
+        assert_eq!(prepared.sample_ends.as_deref(), Some(&[0, 0, 0, 25][..]));
+        assert_eq!(prepared.opacity, 128.0 / 255.0);
+        assert_eq!(prepared.color, "#336699");
+
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let source = document(page);
+        let normal = render_document_svg(&source, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let replay = super::render_layout_page_replay_svg(
+            &source,
+            &layout_document(&source),
+            0,
+            &RenderOptions::default(),
+        )
+        .unwrap()
+        .svg;
+        for (svg, has_replay) in [(&normal, false), (&replay, true)] {
+            let xml = roxmltree::Document::parse(svg).unwrap();
+            let paths = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("path"))
+                .collect::<Vec<_>>();
+            assert_eq!(paths.len(), 1);
+            let path = paths[0];
+            assert_eq!(path.attribute("fill"), Some("#336699"));
+            if has_replay {
+                assert_eq!(
+                    path.attribute("data-replay-lengths")
+                        .unwrap()
+                        .split(',')
+                        .count(),
+                    25
+                );
+            } else {
+                assert!(path.attribute("data-replay-lengths").is_none());
+            }
+            assert_eq!(path.attribute("d").unwrap().matches('Z').count(), 25);
+            let opacity = xml
+                .descendants()
+                .find(|node| node.has_tag_name("g") && node.attribute("opacity").is_some())
+                .and_then(|node| node.attribute("opacity"))
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
+        }
+        assert!(replay.contains("data-replay-stroke=\"0\""));
+        assert!(normal.contains("<path"));
+        assert!(!normal.contains("<circle"));
+
+        let mut explicit_color = inkpen_v1_stroke();
+        explicit_color.color = Some(Color {
+            r: 0xaa,
+            g: 0xbb,
+            b: 0xcc,
+        });
+        let explicit = crate::prepare_stroke_for_page(&explicit_color, false);
+        assert_eq!(explicit.color, "#aabbcc");
+        assert_eq!(explicit.opacity, 128.0 / 255.0);
+
+        let mut non_null_setting = inkpen_v1_stroke();
+        non_null_setting
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("4;".into());
+        let fallback = crate::prepare_stroke_for_page(&non_null_setting, false);
+        assert_eq!(fallback.support, crate::InkSupport::Approximate);
+        assert!(fallback.sample_ends.is_none());
+    }
+
+    #[test]
+    fn v1_path_budget_falls_back_consistently_in_metadata_normal_and_replay() {
+        let mut stroke = inkpen_v1_stroke();
+        let sample_count = 4_000;
+        stroke.points = (0..sample_count)
+            .map(|i| Point {
+                x: i as f64,
+                y: 0.0,
+            })
+            .collect();
+        stroke.pressures = vec![1.0; sample_count];
+        stroke.timestamps = (0..sample_count as i64).collect();
+        stroke.tilts = vec![0.0; sample_count];
+        stroke.orientations = vec![0.0; sample_count];
+
+        let ink = crate::ink::prepare_inkpen_v1_for_page(&stroke).unwrap();
+        assert!(
+            super::inkpen_v1_vector_path(
+                &ink.points,
+                &ink.radii,
+                &ink.sample_ends,
+                ink.terminal,
+                true,
+            )
+            .is_none()
+        );
+
+        let prepared = crate::prepare_stroke_for_page(&stroke, false);
+        assert_ne!(prepared.support, crate::InkSupport::Reconstructed);
+        assert!(prepared.sample_ends.is_none());
+
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let source = document(page);
+        let normal = render_document_svg(&source, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let replay = super::render_layout_page_replay_svg(
+            &source,
+            &layout_document(&source),
+            0,
+            &RenderOptions::default(),
+        )
+        .unwrap()
+        .svg;
+        assert!(!normal.contains("data-replay-lengths"));
+        assert!(!replay.contains("data-replay-lengths"));
+        assert!(replay.contains("data-replay-stroke=\"0\""));
+    }
+
     fn document(page: Page) -> Document {
         Document {
             pages: vec![page],
@@ -4525,22 +4919,47 @@ mod tests {
                     .descendants()
                     .filter(|node| node.has_tag_name("line"))
                     .collect::<Vec<_>>();
-                assert_eq!(lines.len(), 2);
-                assert!(lines.iter().all(|node| node.attribute("opacity").is_none()
-                    && node.attribute("stroke-opacity").is_none()));
-                assert!(
-                    lines
-                        .iter()
-                        .all(|node| node.attribute("stroke") == Some("#336699"))
-                );
+                if setting.is_none() {
+                    let paths = groups[0]
+                        .descendants()
+                        .filter(|node| node.has_tag_name("path"))
+                        .collect::<Vec<_>>();
+                    assert!(lines.is_empty());
+                    assert_eq!(paths.len(), 1);
+                    assert_eq!(paths[0].attribute("fill"), Some("#336699"));
+                    assert!(paths[0].attribute("fill-opacity").is_none());
+                } else {
+                    assert_eq!(lines.len(), 2);
+                    assert!(lines.iter().all(|node| node.attribute("opacity").is_none()
+                        && node.attribute("stroke-opacity").is_none()));
+                    assert!(
+                        lines
+                            .iter()
+                            .all(|node| node.attribute("stroke") == Some("#336699"))
+                    );
+                }
             }
             let xml = roxmltree::Document::parse(&replay).unwrap();
-            let parts = xml
-                .descendants()
-                .filter(|node| node.has_tag_name("line"))
-                .map(|node| node.attribute("data-replay-part").unwrap())
-                .collect::<Vec<_>>();
-            assert_eq!(parts, ["2", "3"]);
+            if setting.is_none() {
+                let path = xml
+                    .descendants()
+                    .find(|node| node.has_tag_name("path"))
+                    .unwrap();
+                let lengths = path.attribute("data-replay-lengths").unwrap();
+                let stamp_count = lengths.split(',').count();
+                assert!(stamp_count > 0);
+                assert_eq!(
+                    path.attribute("d").unwrap().matches('Z').count(),
+                    stamp_count
+                );
+            } else {
+                let parts = xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("line"))
+                    .map(|node| node.attribute("data-replay-part").unwrap())
+                    .collect::<Vec<_>>();
+                assert_eq!(parts, ["2", "3"]);
+            }
         }
     }
 

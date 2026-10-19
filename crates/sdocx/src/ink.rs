@@ -17,7 +17,7 @@ mod fountain;
 mod fountain_v14;
 // Native numeric regression only until caller context and RTV1 paint transport
 // are integrated; production InkPen rendering remains explicitly approximate.
-#[cfg(test)]
+#[allow(dead_code)]
 mod inkpen;
 #[cfg(test)]
 mod inkpen2;
@@ -170,6 +170,61 @@ pub struct OrderedDiskReplay {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum InkRenderContext {
     CanonicalPage,
+}
+
+/// Saved V1 geometry admitted only for the captured null-setting profile.
+/// This internal canonical-page adapter keeps the public context-free
+/// `prepare_stroke` behavior unchanged.
+pub(crate) struct PreparedInkPenV1 {
+    pub points: Vec<crate::Point>,
+    pub radii: Vec<f32>,
+    pub sample_ends: Vec<usize>,
+    pub terminal: std::ops::Range<usize>,
+    pub argb: u32,
+    pub bounds: BoundingBox,
+}
+
+pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkPenV1> {
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    let argb = rendering.style.color_argb?;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
+        || rendering.advanced_settings.is_some()
+        || rendering.tool_type_raw > 2
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || !matches!(rendering.style.stroke_type_raw, None | Some(0))
+        || !matches!(rendering.style.color_type_raw, None | Some(0))
+    {
+        return None;
+    }
+    const MAX_EXPORT_DOTS: usize = 65_536;
+    let ink = inkpen::prepare_v1_bounded(
+        stroke,
+        inkpen::RuntimeContext {
+            curve_enabled: properties.compressed,
+            // V1 saved redraw does not consume display resolution; these zero
+            // values select the native helper's neutral scale path.
+            screen_width: 0,
+            screen_height: 0,
+        },
+        MAX_EXPORT_DOTS,
+    )?;
+    Some(PreparedInkPenV1 {
+        points: ink.points,
+        radii: ink.radii,
+        sample_ends: ink.sample_ends,
+        terminal: ink.terminal,
+        argb,
+        bounds: ink.bounds,
+    })
 }
 
 /// Prepare native Oblique V1/V4 geometry only for canonical page export. The

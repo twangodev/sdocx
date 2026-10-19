@@ -108,6 +108,52 @@ impl Page {
                 _ => None,
             })
     }
+
+    /// Strokes accepted by root composition with the renderer's inherited
+    /// native-geometry admission state. A promoted descendant disables native
+    /// geometry for its entire subtree, including descendants inside a
+    /// container.
+    pub fn composed_strokes_with_context(&self) -> Vec<(&PageObject, &Stroke, bool)> {
+        fn visit<'a>(
+            object: &'a PageObject,
+            native_allowed: bool,
+            out: &mut Vec<(&'a PageObject, &'a Stroke, bool)>,
+        ) {
+            let native_allowed =
+                native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
+            visit_content(object, &object.content, native_allowed, out);
+        }
+
+        fn visit_content<'a>(
+            object: &'a PageObject,
+            content: &'a PageObjectContent,
+            native_allowed: bool,
+            out: &mut Vec<(&'a PageObject, &'a Stroke, bool)>,
+        ) {
+            match content {
+                PageObjectContent::Stroke(stroke) => out.push((object, stroke, native_allowed)),
+                PageObjectContent::Container(children) => {
+                    for child in children {
+                        visit(child, native_allowed, out);
+                    }
+                }
+                PageObjectContent::Descendant(inner) => {
+                    visit_content(object, inner, false, out);
+                }
+                PageObjectContent::Element(_) => {}
+            }
+        }
+
+        let mut strokes = Vec::new();
+        for root in self
+            .objects
+            .iter()
+            .filter(|root| root.render_pass().is_some())
+        {
+            visit(root, true, &mut strokes);
+        }
+        strokes
+    }
 }
 
 #[cfg(feature = "render")]
@@ -271,6 +317,72 @@ mod tests {
             color: None,
             pen_width: 1.0,
         }
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    fn composed_stroke_context_inherits_promoted_descendant_admission() {
+        let make_stroke = |x| {
+            let mut stroke = empty_stroke();
+            stroke.points.push(crate::Point { x, y: 0.0 });
+            stroke
+        };
+        let object = |content| PageObject {
+            render_layer: ObjectRenderLayer::Base,
+            source_offset: None,
+            content,
+        };
+        let page = Page {
+            uuid: "context-provenance".into(),
+            width: 100,
+            height: 100,
+            content_bbox: crate::BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![object(PageObjectContent::Container(vec![
+                object(PageObjectContent::Stroke(make_stroke(1.0))),
+                object(PageObjectContent::Descendant(Box::new(
+                    PageObjectContent::Container(vec![object(PageObjectContent::Stroke(
+                        make_stroke(2.0),
+                    ))]),
+                ))),
+            ]))],
+        };
+        let contextual = page.composed_strokes_with_context();
+        assert_eq!(
+            contextual
+                .iter()
+                .map(|(_, stroke, native_allowed)| { (stroke.points[0].x, *native_allowed) })
+                .collect::<Vec<_>>(),
+            [(1.0, true), (2.0, false)]
+        );
+
+        let mut mixed = page;
+        mixed.objects = [
+            (ObjectRenderLayer::Top, 3.0),
+            (ObjectRenderLayer::Base, 1.0),
+            (ObjectRenderLayer::Masking, 2.0),
+        ]
+        .into_iter()
+        .map(|(render_layer, x)| PageObject {
+            render_layer,
+            source_offset: None,
+            content: PageObjectContent::Stroke(make_stroke(x)),
+        })
+        .collect();
+        assert_eq!(
+            mixed
+                .composed_strokes_with_context()
+                .iter()
+                .map(|(_, stroke, _)| stroke.points[0].x)
+                .collect::<Vec<_>>(),
+            mixed
+                .composed_strokes()
+                .map(|(_, stroke)| stroke.points[0].x)
+                .collect::<Vec<_>>(),
+            "contextual metadata must retain stored-order replay stroke indices"
+        );
     }
 
     #[test]

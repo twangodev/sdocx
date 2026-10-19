@@ -169,6 +169,7 @@ struct Pass {
     width: f32,
     fixed_width_radius: Option<f32>,
     alternate: bool,
+    max_generated_dots: usize,
     points: Vec<Point>,
     pre_add_radii: Vec<f32>,
     radii: Vec<f32>,
@@ -255,7 +256,7 @@ impl Pass {
         let n = Self::repeat(
             self.width.min(target).trunc(),
             quad.length,
-            MAX_GENERATED_DOTS.saturating_sub(self.points.len()),
+            self.max_generated_dots.saturating_sub(self.points.len()),
         )?;
         if quad.length > 0. {
             let mut d = 0.;
@@ -498,7 +499,7 @@ impl Pass {
         let n = Self::repeat(
             self.width.min(target).trunc(),
             quad.length,
-            MAX_GENERATED_DOTS.saturating_sub(self.points.len()),
+            self.max_generated_dots.saturating_sub(self.points.len()),
         )?;
         // Native reDrawLine emits no callback points for a zero-length
         // quadratic. Its bookkeeping still advances below, but sampling an
@@ -541,7 +542,7 @@ impl Pass {
         let n = Self::repeat(
             self.width.min(target).trunc(),
             length,
-            MAX_GENERATED_DOTS.saturating_sub(self.points.len()),
+            self.max_generated_dots.saturating_sub(self.points.len()),
         )?;
         if length > 0. {
             let step = length / n as f32;
@@ -624,7 +625,7 @@ fn path_emission(
     let n = Pass::repeat(
         pass.width.min(target).trunc(),
         length,
-        MAX_GENERATED_DOTS.saturating_sub(pass.points.len()),
+        pass.max_generated_dots.saturating_sub(pass.points.len()),
     )?;
     let begin = pass.points.len();
     let mut d = 0.;
@@ -708,6 +709,7 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
             .fixed_width
             .then(|| r.style.fixed_width.unwrap() * 0.5),
         alternate: false,
+        max_generated_dots: MAX_GENERATED_DOTS,
         points: Vec::new(),
         pre_add_radii: Vec::new(),
         radii: Vec::new(),
@@ -794,7 +796,15 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
 /// Test-only reconstruction of the saved InkPen V1 drawable. This remains a
 /// separate policy from V4 because V1 movement is distance/threshold based and
 /// does not consume timestamps or display resolution.
-fn prepare_v1(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
+pub(super) fn prepare_v1(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
+    prepare_v1_bounded(s, context, MAX_GENERATED_DOTS)
+}
+
+pub(super) fn prepare_v1_bounded(
+    s: &Stroke,
+    context: RuntimeContext,
+    max_generated_dots: usize,
+) -> Option<InkPenInk> {
     let r = s.rendering.as_ref()?;
     let requested_size = r.style.pen_size.unwrap_or(0.);
     if r.pen_name.as_deref() != Some(PEN)
@@ -839,6 +849,7 @@ fn prepare_v1(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
         width: 0.,
         fixed_width_radius: None,
         alternate: false,
+        max_generated_dots: max_generated_dots.min(MAX_GENERATED_DOTS),
         points: Vec::new(),
         pre_add_radii: Vec::new(),
         radii: Vec::new(),
@@ -1332,6 +1343,220 @@ mod tests {
                 "V1 callback {i} radius"
             );
         }
+    }
+
+    #[test]
+    fn v1_vector_candidate_is_one_alpha_path_with_stamp_prefix_boundaries() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["straight_curve_tool1_null"];
+        let mut input = native_caller_stroke(&case["input"]);
+        input.rendering.as_mut().unwrap().style.color_argb = Some(0x8033_6699);
+        let resolution = &case["screen_resolution"][0];
+        let ink = prepare_v1(
+            &input,
+            RuntimeContext {
+                curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                screen_width: resolution["width"].as_u64().unwrap() as u32,
+                screen_height: resolution["height"].as_u64().unwrap() as u32,
+            },
+        )
+        .expect("native V1 full callback case");
+        assert_eq!(ink.sample_ends.last().copied(), Some(ink.terminal.start));
+        assert_eq!(ink.terminal.end, ink.points.len());
+
+        let page_prepared = crate::prepare_stroke_for_page(&input, false);
+        assert_eq!(
+            page_prepared.sample_ends.as_deref(),
+            Some(&[0, 0, 0, 25][..])
+        );
+        assert_eq!(page_prepared.points.len(), 25);
+        assert_eq!(page_prepared.opacity, 128.0 / 255.0);
+        assert_eq!(page_prepared.color, "#336699");
+        assert_eq!(page_prepared.profile, Some("InkPen"));
+        let context_free = crate::prepare_stroke(&input, false);
+        assert!(context_free.sample_ends.is_none());
+        assert!(context_free.dot_radii.is_none());
+
+        let candidate = crate::render::inkpen_v1_vector_candidate_svg(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal.clone(),
+            "#336699",
+            0.5,
+            [128, 64],
+            true,
+        )
+        .expect("bounded V1 vector candidate");
+        let svg = &candidate.svg;
+        assert_eq!(
+            candidate.sample_ends.last().copied(),
+            Some(ink.terminal.end)
+        );
+        assert_eq!(candidate.sample_ends.len(), ink.sample_ends.len());
+        assert_eq!(
+            candidate.source_event_path_ends.len(),
+            candidate.sample_ends.len()
+        );
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let path = xml
+            .descendants()
+            .find(|node| node.has_tag_name("path"))
+            .expect("single union path");
+        let paths = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("path"))
+            .collect::<Vec<_>>();
+        assert_eq!(paths.len(), 1);
+        assert_eq!(path.attribute("fill"), Some("#336699"));
+        assert_eq!(path.attribute("fill-opacity"), None);
+        assert_eq!(
+            path.attribute("data-replay-lengths")
+                .unwrap()
+                .split(',')
+                .count(),
+            ink.points.len()
+        );
+        let data = path.attribute("d").unwrap();
+        assert_eq!(data.matches('Z').count(), ink.points.len());
+        assert_eq!(data.matches('L').count(), ink.points.len() * 95);
+        let lengths = path
+            .attribute("data-replay-lengths")
+            .unwrap()
+            .split(',')
+            .map(|value| value.parse::<usize>().unwrap())
+            .collect::<Vec<_>>();
+        assert!(lengths.windows(2).all(|pair| pair[0] < pair[1]));
+        assert_eq!(lengths.last().copied(), Some(data.len()));
+        for (event_index, (&end, &path_end)) in candidate
+            .sample_ends
+            .iter()
+            .zip(&candidate.source_event_path_ends)
+            .enumerate()
+        {
+            let stamp_end = if end == 0 { 0 } else { lengths[end - 1] };
+            assert_eq!(
+                path_end, stamp_end,
+                "source event {event_index} path cutoff"
+            );
+        }
+
+        let opacity_groups = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("g") && node.attribute("opacity").is_some())
+            .collect::<Vec<_>>();
+        assert_eq!(opacity_groups.len(), 1);
+        assert_eq!(opacity_groups[0].attribute("opacity"), Some("0.5"));
+
+        // ReplaySvg.show(count) cuts at the path's per-stamp byte offsets.
+        // It can reveal empty prefixes and then the terminal suffix without
+        // splitting any generated polygon.
+        let show = |count: usize| {
+            if count >= lengths.len() {
+                data.to_string()
+            } else if count == 0 {
+                String::new()
+            } else {
+                data[..lengths[count - 1]].to_string()
+            }
+        };
+        assert_eq!(show(0), "");
+        for count in [
+            candidate.sample_ends[0],
+            candidate.sample_ends[1],
+            ink.terminal.start,
+        ] {
+            let prefix = show(count);
+            assert_eq!(prefix.matches('Z').count(), count);
+        }
+        assert_eq!(
+            show(ink.terminal.end).matches('Z').count(),
+            ink.points.len()
+        );
+        assert_eq!(show(ink.terminal.end), data);
+
+        #[cfg(feature = "pdf")]
+        {
+            let page = crate::RenderedPage::new(0, 128, 64, svg.clone());
+            let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                .expect("the vector-only V1 candidate must lower to PDF");
+            let document = lopdf::Document::load_mem(&pdf).unwrap();
+            assert!(document.objects.values().all(|object| {
+                !matches!(
+                    object,
+                    lopdf::Object::Stream(stream)
+                        if stream.dict.get(b"Subtype").ok()
+                            == Some(&lopdf::Object::Name(b"Image".to_vec()))
+                )
+            }));
+        }
+    }
+
+    #[test]
+    fn v1_vector_candidate_rejects_unbounded_output() {
+        let points = vec![
+            Point {
+                x: 1.0e30,
+                y: 1.0e30,
+            };
+            2048
+        ];
+        let radii = vec![1.0e30_f32; points.len()];
+        assert!(
+            crate::render::inkpen_v1_vector_candidate_svg(
+                &points,
+                &radii,
+                &[0],
+                0..points.len(),
+                "#000000",
+                1.0,
+                [128, 64],
+                false,
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn v1_vector_candidate_preserves_empty_event_cutoffs_and_folds_terminal_into_last() {
+        let points = [
+            Point { x: 1.0, y: 1.0 },
+            Point { x: 2.0, y: 2.0 },
+            Point { x: 3.0, y: 3.0 },
+        ];
+        let candidate = crate::render::inkpen_v1_vector_candidate_svg(
+            &points,
+            &[2.0; 3],
+            &[0, 0, 1],
+            1..3,
+            "#000000",
+            1.0,
+            [16, 16],
+            true,
+        )
+        .expect("bounded event sequence");
+        assert_eq!(candidate.sample_ends, [0, 0, 3]);
+        assert_eq!(candidate.source_event_path_ends[0], 0);
+        assert_eq!(candidate.source_event_path_ends[1], 0);
+        let document = roxmltree::Document::parse(&candidate.svg).unwrap();
+        let path = document
+            .descendants()
+            .find(|node| node.has_tag_name("path"))
+            .unwrap();
+        let lengths = path
+            .attribute("data-replay-lengths")
+            .unwrap()
+            .split(',')
+            .map(|value| value.parse::<usize>().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(lengths.len(), 3);
+        assert_eq!(
+            candidate.source_event_path_ends[2],
+            *lengths.last().unwrap()
+        );
     }
 
     #[test]

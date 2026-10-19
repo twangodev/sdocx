@@ -778,6 +778,7 @@ mod tests {
                 None,
                 &mut calligraphy_session,
                 true,
+                [64, 64],
             );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));
