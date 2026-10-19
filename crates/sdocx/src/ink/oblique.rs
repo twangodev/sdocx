@@ -473,6 +473,37 @@ fn append_segment(
     Some(())
 }
 
+/// Exercise the native RTV1 AddPoint mesh kernel on an explicit callback
+/// sequence. This is test-only because it does not model drawable admission.
+#[cfg(test)]
+pub(super) fn prepare_addpoint_stream(
+    callbacks: &[(P, P)],
+    size: u32,
+    runtime: ObliqueRuntime,
+) -> Option<Vec<CoverageTriangle>> {
+    if callbacks.len() > MAX_PATH_SAMPLES
+        || !runtime.k.is_finite()
+        || runtime
+            .inverse_scale
+            .iter()
+            .any(|value| !value.is_finite() || *value == 0.0)
+    {
+        return None;
+    }
+    let mut triangles = Vec::new();
+    for &(previous, current) in callbacks {
+        if !previous.x.is_finite()
+            || !previous.y.is_finite()
+            || !current.x.is_finite()
+            || !current.y.is_finite()
+        {
+            return None;
+        }
+        append_segment(&mut triangles, size, runtime, previous, current)?;
+    }
+    Some(triangles)
+}
+
 /// Reconstruct the captured V4 saved redraw for explicit saved/runtime state.
 /// Inputs outside the measured finite numeric domain or the documented
 /// allocation budget are rejected as `None` rather than producing partial

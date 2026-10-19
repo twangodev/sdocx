@@ -358,6 +358,131 @@ mod tests {
     }
 
     #[test]
+    fn native_v1_callback_streams_match_rtv1_geometry_buffers() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/oblique-saved-caller-selected-native.json"
+        ))
+        .unwrap();
+        for case_name in [
+            "two_point_curve",
+            "two_point_near",
+            "two_point_far",
+            "two_point_offset",
+            "three_points_curve",
+            "three_points_no_curve",
+            "four_points_curve",
+            "alternating_terminal_curve",
+        ] {
+            let case = &fixture["cases"][case_name];
+            let source = &case["input"];
+            let samples = selected_v1_samples(
+                &fixture_points(source),
+                f32::from_bits(bits(&source["pen_size_f32_bits"])),
+                source["curve_enabled"].as_bool().unwrap(),
+            )
+            .unwrap();
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                let callbacks: Vec<_> = case["callback_add_point_calls"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|call| call["phase"] == phase)
+                    .collect();
+                assert_eq!(callbacks.len(), samples.len(), "{case_name} {phase}");
+                let first = callbacks.first().unwrap();
+                let size = first["stored_size_u32"].as_u64().unwrap() as u32;
+                let runtime = super::super::oblique::ObliqueRuntime {
+                    k: f32::from_bits(bits(&first["k_bits"])),
+                    inverse_scale: [
+                        f32::from_bits(bits(&first["inverse_scale_bits"][0])),
+                        f32::from_bits(bits(&first["inverse_scale_bits"][1])),
+                    ],
+                };
+
+                // Previous points are oracle inputs here. This verifies the shared
+                // mesh kernel, not independently reconstructed sampler resets.
+                let mut callback_geometry = Vec::with_capacity(callbacks.len());
+                for (index, (sample, callback)) in samples.iter().zip(&callbacks).enumerate() {
+                    let prior = &callback["previous_xy_bits"];
+                    assert_eq!(
+                        sample.x.to_bits(),
+                        word_bits(&callback["xy_bits"][0]),
+                        "{case_name} {phase} callback {index} current x"
+                    );
+                    assert_eq!(
+                        sample.y.to_bits(),
+                        word_bits(&callback["xy_bits"][1]),
+                        "{case_name} {phase} callback {index} current y"
+                    );
+                    assert_eq!(
+                        callback["stored_size_u32"].as_u64().unwrap() as u32,
+                        size,
+                        "{case_name} {phase} callback {index} stored size"
+                    );
+                    assert_eq!(
+                        bits(&callback["k_bits"]),
+                        runtime.k.to_bits(),
+                        "{case_name} {phase} callback {index} k"
+                    );
+                    for axis in 0..2 {
+                        assert_eq!(
+                            bits(&callback["inverse_scale_bits"][axis]),
+                            runtime.inverse_scale[axis].to_bits(),
+                            "{case_name} {phase} callback {index} inverse scale {axis}"
+                        );
+                    }
+                    callback_geometry.push((
+                        P {
+                            x: f32::from_bits(bits(&prior[0])),
+                            y: f32::from_bits(bits(&prior[1])),
+                        },
+                        *sample,
+                    ));
+                }
+
+                let triangles = super::super::oblique::prepare_addpoint_stream(
+                    &callback_geometry,
+                    size,
+                    runtime,
+                )
+                .unwrap();
+                let actual: Vec<u32> = triangles
+                    .iter()
+                    .flat_map(|triangle| {
+                        triangle.0.iter().flat_map(|vertex| {
+                            [
+                                vertex.position.x.to_bits(),
+                                vertex.position.y.to_bits(),
+                                vertex.coverage.to_bits(),
+                            ]
+                        })
+                    })
+                    .collect();
+                let native_hex = case["phase_final_vectors"][phase]["vector_bytes"]
+                    .as_str()
+                    .unwrap();
+                assert_eq!(native_hex.len() % 8, 0, "{case_name} {phase} bytes");
+                assert_eq!(
+                    actual.len() * 8,
+                    native_hex.len(),
+                    "{case_name} {phase} full vector byte length"
+                );
+                for (index, value) in actual.iter().enumerate() {
+                    let offset = index * 8;
+                    let native = u32::from_le_bytes(std::array::from_fn(|byte| {
+                        u8::from_str_radix(
+                            &native_hex[offset + byte * 2..offset + byte * 2 + 2],
+                            16,
+                        )
+                        .unwrap()
+                    }));
+                    assert_eq!(*value, native, "{case_name} {phase} float {index}");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn repeat_count_follows_v1_native_width_bands() {
         // Branch thresholds and divisors come from V1 getRepeat at 0x39ebc.
         // The lengths here make each side of every width band observable.
