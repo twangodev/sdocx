@@ -149,6 +149,13 @@ sets S0 to 0.5 at the first native call and records its five Rect arguments,
 skipping `buildMesh` bodies; it isolates the extent clamp and is a synthetic
 register probe, not a naturally selected caller extent.
 
+The [saved-wrapper capture](../../conformance/calligraphy-saved-wrapper-native.json)
+executes native Model getters, the secondary saved-redraw thunk and Base
+MotionEvent construction/accessors. Nine cases establish paired tilt/orientation
+defaults (both zero unless both arrays exist), one-sample no-draw behavior and
+a reused-drawable control. Vector storage is supplied by the harness; trailing
+`movePen`, full Drawing dispatch and GPU output remain outside this capture.
+
 Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
 this profile borrows original samples with `InkSupport::Approximate`. Its
 [retained metadata](stroke-metadata-findings.md) and channels distinguish optional

@@ -1,0 +1,3711 @@
+{
+  "schema": "sdocx-calligraphy-saved-wrapper-v1",
+  "source": {
+    "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "calligraphy_sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42"
+  },
+  "evidence": {
+    "path": "Model ObjectStroke/Impl getters -> Drawing secondary slot +40 thunk -> Calligraphy GLV1 saved wrapper -> actual Base MotionEvent array constructor/accessors -> V1 event redraw and RTV1 AddPoint",
+    "host_boundaries": [
+      "Unicorn relocation of GLV1 primary MotionEvent RedrawPen vtable slot +144",
+      "bounded allocator and native C++ operator new/delete services",
+      "recursive mutex operations and Android error/log calls",
+      "PenGLDataManager queue response",
+      "RectF MakeRect/Union/IncreaseRect operations",
+      "host sincos callback",
+      "trailing movePen skipped after endPen"
+    ],
+    "limits": [
+      "No APK Java callback construction",
+      "No GPU draw or pixels",
+      "No movePen lifecycle"
+    ],
+    "native_capture": "Each case constructs a fresh GLV1 drawable; repeat_rows executes a second distinct saved stroke on that same drawable. Native AddPoint records include all four vector float words and extent float word.",
+    "model_setup": "ObjectStroke::SetToolType is called with the enum in integer W1 (2), then actual GetToolType must return 2. Fixture vectors use null-null-null triplets for absent optional channels; no raw tool field overwrite follows the setter.",
+    "empty_count_boundary": "No zero-point case is run: saved wrapper loads timestamp[0] at 0x1ed04 before constructing MotionEvent or any zero-count return. Null empty-vector storage would fault at that load."
+  },
+  "cases": [
+    {
+      "id": "one-sample",
+      "rows": [
+        [
+          3.0,
+          7.0,
+          0.6,
+          500
+        ]
+      ],
+      "tilt": [
+        0.25
+      ],
+      "orientation": [
+        0.4
+      ],
+      "native": {
+        "case": "one-sample",
+        "source_count": 1,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          }
+        ],
+        "sample_ends": [],
+        "orientation_reads": [],
+        "native_add_point_vectors": [],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "00000000",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "00000000",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 0
+      }
+    },
+    {
+      "id": "two-samples",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          6.0,
+          0.0,
+          0.65,
+          120
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4
+      ],
+      "orientation": [
+        0.1,
+        0.35
+      ],
+      "native": {
+        "case": "two-samples",
+        "source_count": 2,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 1,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 1,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000c040",
+              "00000000"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [],
+        "orientation_reads": [],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "00000000",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "00000000",
+          "flags": {
+            "initial": 1,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 5
+      }
+    },
+    {
+      "id": "three-samples",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "native": {
+        "case": "three-samples",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      }
+    },
+    {
+      "id": "six-paired-optionals",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.3,
+          100
+        ],
+        [
+          4.0,
+          2.0,
+          0.4,
+          120
+        ],
+        [
+          9.0,
+          1.0,
+          0.55,
+          140
+        ],
+        [
+          15.0,
+          5.0,
+          0.7,
+          160
+        ],
+        [
+          22.0,
+          4.0,
+          0.85,
+          180
+        ],
+        [
+          30.0,
+          9.0,
+          1.0,
+          200
+        ]
+      ],
+      "tilt": [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6
+      ],
+      "orientation": [
+        0.05,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "native": {
+        "case": "six-paired-optionals",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "control_bits": [
+              "00007041",
+              "0000a040"
+            ],
+            "path_mid_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "accepted_bits": [
+              "0000b041",
+              "00008040"
+            ],
+            "direction_bits": [
+              "1f0d7a3f",
+              "a5775b3e"
+            ],
+            "angle_bits": "ea149b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000f041",
+              "00001041"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "f56f4b3e",
+            "a5e57a3f",
+            "00004040"
+          ],
+          [
+            "51552d3f",
+            "8ae3a83e",
+            "96e54c3e",
+            "a4d27a3f",
+            "00004040"
+          ],
+          [
+            "fbffaf3f",
+            "6d1c273f",
+            "1b5b4e3e",
+            "7fbf7a3f",
+            "00004040"
+          ],
+          [
+            "fdff0540",
+            "faff773f",
+            "83d04f3e",
+            "38ac7a3f",
+            "00004040"
+          ],
+          [
+            "50553540",
+            "358ea33f",
+            "ce45513e",
+            "cf987a3f",
+            "00004040"
+          ],
+          [
+            "fbff6540",
+            "e038ca3f",
+            "fcba523e",
+            "42857a3f",
+            "00004040"
+          ],
+          [
+            "fdff8b40",
+            "fbffef3f",
+            "0d30543e",
+            "93717a3f",
+            "00004040"
+          ],
+          [
+            "a6aaa540",
+            "c4710a40",
+            "01a5553e",
+            "c15d7a3f",
+            "00004040"
+          ],
+          [
+            "faffbf40",
+            "c3711c40",
+            "d719573e",
+            "cd497a3f",
+            "00004040"
+          ],
+          [
+            "f9ffda40",
+            "fcff2d40",
+            "8f8e583e",
+            "b6357a3f",
+            "00004040"
+          ],
+          [
+            "a6aaf640",
+            "6e1c3f40",
+            "29035a3e",
+            "7c217a3f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "00001841",
+            "00006040",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "157e1c41",
+            "db886440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "81da2f41",
+            "a89f7940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "1e8f4341",
+            "fc828740",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "c8955741",
+            "215b9240",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "5ae86b41",
+            "7e559d40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "56408041",
+            "4d6fa840",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "50ac8a41",
+            "c9a5b340",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "06359541",
+            "2ff6be40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "60339f41",
+            "efadc940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "2122a941",
+            "9451d440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "0322b341",
+            "ab04df40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "9330bd41",
+            "00c5e940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "604bc741",
+            "5c90f440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "f66fd141",
+            "8a64ff40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "e39bdb41",
+            "ac1f0541",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "b8cce541",
+            "488f0a41",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "1f0d7a3f",
+          "a5775b3e"
+        ],
+        "angle_bits": "ea149b42",
+        "state": {
+          "path_start_bits": [
+            "fd7f0941",
+            "1ac74f40"
+          ],
+          "control_bits": [
+            "00007041",
+            "0000a040"
+          ],
+          "path_mid_bits": [
+            "0000b441",
+            "0000e040"
+          ],
+          "accepted_bits": [
+            "0000b041",
+            "00008040"
+          ],
+          "direction_bits": [
+            "1f0d7a3f",
+            "a5775b3e"
+          ],
+          "angle_bits": "ea149b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 145
+      }
+    },
+    {
+      "id": "six-optionals-absent",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.3,
+          100
+        ],
+        [
+          4.0,
+          2.0,
+          0.4,
+          120
+        ],
+        [
+          9.0,
+          1.0,
+          0.55,
+          140
+        ],
+        [
+          15.0,
+          5.0,
+          0.7,
+          160
+        ],
+        [
+          22.0,
+          4.0,
+          0.85,
+          180
+        ],
+        [
+          30.0,
+          9.0,
+          1.0,
+          200
+        ]
+      ],
+      "tilt": null,
+      "orientation": null,
+      "native": {
+        "case": "six-optionals-absent",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "control_bits": [
+              "00007041",
+              "0000a040"
+            ],
+            "path_mid_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "accepted_bits": [
+              "0000b041",
+              "00008040"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "32318d24"
+            ],
+            "angle_bits": "0000b442",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000f041",
+              "00001041"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "51552d3f",
+            "8ae3a83e",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbffaf3f",
+            "6d1c273f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff0540",
+            "faff773f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50553540",
+            "358ea33f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbff6540",
+            "e038ca3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff8b40",
+            "fbffef3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaa540",
+            "c4710a40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "faffbf40",
+            "c3711c40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f9ffda40",
+            "fcff2d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaf640",
+            "6e1c3f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "00001841",
+            "00006040",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "157e1c41",
+            "db886440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "81da2f41",
+            "a89f7940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "1e8f4341",
+            "fc828740",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "c8955741",
+            "215b9240",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "5ae86b41",
+            "7e559d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "56408041",
+            "4d6fa840",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50ac8a41",
+            "c9a5b340",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "06359541",
+            "2ff6be40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "60339f41",
+            "efadc940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "2122a941",
+            "9451d440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "0322b341",
+            "ab04df40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "9330bd41",
+            "00c5e940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "604bc741",
+            "5c90f440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f66fd141",
+            "8a64ff40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "e39bdb41",
+            "ac1f0541",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "b8cce541",
+            "488f0a41",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "32318d24"
+        ],
+        "angle_bits": "0000b442",
+        "state": {
+          "path_start_bits": [
+            "fd7f0941",
+            "1ac74f40"
+          ],
+          "control_bits": [
+            "00007041",
+            "0000a040"
+          ],
+          "path_mid_bits": [
+            "0000b441",
+            "0000e040"
+          ],
+          "accepted_bits": [
+            "0000b041",
+            "00008040"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "32318d24"
+          ],
+          "angle_bits": "0000b442",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 145
+      }
+    },
+    {
+      "id": "six-tilt-only",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.3,
+          100
+        ],
+        [
+          4.0,
+          2.0,
+          0.4,
+          120
+        ],
+        [
+          9.0,
+          1.0,
+          0.55,
+          140
+        ],
+        [
+          15.0,
+          5.0,
+          0.7,
+          160
+        ],
+        [
+          22.0,
+          4.0,
+          0.85,
+          180
+        ],
+        [
+          30.0,
+          9.0,
+          1.0,
+          200
+        ]
+      ],
+      "tilt": [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6
+      ],
+      "orientation": null,
+      "native": {
+        "case": "six-tilt-only",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "control_bits": [
+              "00007041",
+              "0000a040"
+            ],
+            "path_mid_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "accepted_bits": [
+              "0000b041",
+              "00008040"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "32318d24"
+            ],
+            "angle_bits": "0000b442",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000f041",
+              "00001041"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "51552d3f",
+            "8ae3a83e",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbffaf3f",
+            "6d1c273f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff0540",
+            "faff773f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50553540",
+            "358ea33f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbff6540",
+            "e038ca3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff8b40",
+            "fbffef3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaa540",
+            "c4710a40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "faffbf40",
+            "c3711c40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f9ffda40",
+            "fcff2d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaf640",
+            "6e1c3f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "00001841",
+            "00006040",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "157e1c41",
+            "db886440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "81da2f41",
+            "a89f7940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "1e8f4341",
+            "fc828740",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "c8955741",
+            "215b9240",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "5ae86b41",
+            "7e559d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "56408041",
+            "4d6fa840",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50ac8a41",
+            "c9a5b340",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "06359541",
+            "2ff6be40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "60339f41",
+            "efadc940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "2122a941",
+            "9451d440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "0322b341",
+            "ab04df40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "9330bd41",
+            "00c5e940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "604bc741",
+            "5c90f440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f66fd141",
+            "8a64ff40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "e39bdb41",
+            "ac1f0541",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "b8cce541",
+            "488f0a41",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "32318d24"
+        ],
+        "angle_bits": "0000b442",
+        "state": {
+          "path_start_bits": [
+            "fd7f0941",
+            "1ac74f40"
+          ],
+          "control_bits": [
+            "00007041",
+            "0000a040"
+          ],
+          "path_mid_bits": [
+            "0000b441",
+            "0000e040"
+          ],
+          "accepted_bits": [
+            "0000b041",
+            "00008040"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "32318d24"
+          ],
+          "angle_bits": "0000b442",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 145
+      }
+    },
+    {
+      "id": "six-orientation-only",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.3,
+          100
+        ],
+        [
+          4.0,
+          2.0,
+          0.4,
+          120
+        ],
+        [
+          9.0,
+          1.0,
+          0.55,
+          140
+        ],
+        [
+          15.0,
+          5.0,
+          0.7,
+          160
+        ],
+        [
+          22.0,
+          4.0,
+          0.85,
+          180
+        ],
+        [
+          30.0,
+          9.0,
+          1.0,
+          200
+        ]
+      ],
+      "tilt": null,
+      "orientation": [
+        0.05,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "native": {
+        "case": "six-orientation-only",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "control_bits": [
+              "00007041",
+              "0000a040"
+            ],
+            "path_mid_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "accepted_bits": [
+              "0000b041",
+              "00008040"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "32318d24"
+            ],
+            "angle_bits": "0000b442",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000f041",
+              "00001041"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "51552d3f",
+            "8ae3a83e",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbffaf3f",
+            "6d1c273f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff0540",
+            "faff773f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50553540",
+            "358ea33f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fbff6540",
+            "e038ca3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fdff8b40",
+            "fbffef3f",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaa540",
+            "c4710a40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "faffbf40",
+            "c3711c40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f9ffda40",
+            "fcff2d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "a6aaf640",
+            "6e1c3f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "00001841",
+            "00006040",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "157e1c41",
+            "db886440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "81da2f41",
+            "a89f7940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "1e8f4341",
+            "fc828740",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "c8955741",
+            "215b9240",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "5ae86b41",
+            "7e559d40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "56408041",
+            "4d6fa840",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "50ac8a41",
+            "c9a5b340",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "06359541",
+            "2ff6be40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "60339f41",
+            "efadc940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "2122a941",
+            "9451d440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "0322b341",
+            "ab04df40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "9330bd41",
+            "00c5e940",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "604bc741",
+            "5c90f440",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "f66fd141",
+            "8a64ff40",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "e39bdb41",
+            "ac1f0541",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "b8cce541",
+            "488f0a41",
+            "32318d24",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "32318d24"
+        ],
+        "angle_bits": "0000b442",
+        "state": {
+          "path_start_bits": [
+            "fd7f0941",
+            "1ac74f40"
+          ],
+          "control_bits": [
+            "00007041",
+            "0000a040"
+          ],
+          "path_mid_bits": [
+            "0000b441",
+            "0000e040"
+          ],
+          "accepted_bits": [
+            "0000b041",
+            "00008040"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "32318d24"
+          ],
+          "angle_bits": "0000b442",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 145
+      }
+    },
+    {
+      "id": "reuse-different-stroke",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.3,
+          100
+        ],
+        [
+          4.0,
+          2.0,
+          0.4,
+          120
+        ],
+        [
+          9.0,
+          1.0,
+          0.55,
+          140
+        ],
+        [
+          15.0,
+          5.0,
+          0.7,
+          160
+        ],
+        [
+          22.0,
+          4.0,
+          0.85,
+          180
+        ],
+        [
+          30.0,
+          9.0,
+          1.0,
+          200
+        ]
+      ],
+      "tilt": [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6
+      ],
+      "orientation": [
+        0.05,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "repeat_rows": [
+        [
+          100.0,
+          40.0,
+          0.9,
+          300
+        ],
+        [
+          104.0,
+          44.0,
+          0.8,
+          330
+        ],
+        [
+          111.0,
+          41.0,
+          0.7,
+          360
+        ],
+        [
+          119.0,
+          47.0,
+          0.6,
+          390
+        ],
+        [
+          128.0,
+          43.0,
+          0.5,
+          420
+        ],
+        [
+          138.0,
+          50.0,
+          0.4,
+          450
+        ]
+      ],
+      "repeat_tilt": [
+        0.6,
+        0.5,
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "repeat_orientation": [
+        1.0,
+        0.8,
+        0.6,
+        0.4,
+        0.2,
+        0.05
+      ],
+      "native": {
+        "case": "reuse-different-stroke",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": {
+          "wrapper_return": 1,
+          "add_vectors": [
+            [
+              "0000c842",
+              "00002042",
+              "a6a4373f",
+              "5f5b323f",
+              "00004040"
+            ],
+            [
+              "9c81c942",
+              "d8d02242",
+              "3162373f",
+              "b39f323f",
+              "00004040"
+            ],
+            [
+              "9d20cb42",
+              "b3772542",
+              "a31f373f",
+              "eee3323f",
+              "00004040"
+            ],
+            [
+              "02ddcc42",
+              "91f42742",
+              "fbdc363f",
+              "1028333f",
+              "00004040"
+            ],
+            [
+              "cab6ce42",
+              "73472a42",
+              "399a363f",
+              "1a6c333f",
+              "00004040"
+            ],
+            [
+              "f6add042",
+              "59702c42",
+              "5f57363f",
+              "0ab0333f",
+              "00004040"
+            ],
+            [
+              "e59bd242",
+              "814c2e42",
+              "6b14363f",
+              "e2f3333f",
+              "00004040"
+            ],
+            [
+              "3577d442",
+              "55e12f42",
+              "5ed1353f",
+              "a137343f",
+              "00004040"
+            ],
+            [
+              "df67d642",
+              "a8573142",
+              "378e353f",
+              "477b343f",
+              "00004040"
+            ],
+            [
+              "e16dd842",
+              "7daf3242",
+              "f84a353f",
+              "d3be343f",
+              "00004040"
+            ],
+            [
+              "3d89da42",
+              "d3e83342",
+              "9f07353f",
+              "4702353f",
+              "00004040"
+            ],
+            [
+              "f2b9dc42",
+              "a9033542",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "0000df42",
+              "00003642",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "f2b9dc42",
+              "a9033542",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "5987df42",
+              "1e223642",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "045ce242",
+              "6b3c3742",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "8837e542",
+              "d2523842",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "7b19e842",
+              "8b653942",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "7301eb42",
+              "d4743a42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "08efed42",
+              "ea803b42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "cfe1f042",
+              "078a3c42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "5fd9f342",
+              "69903d42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "4ed5f642",
+              "4c943e42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "39bef942",
+              "458e3f42",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "dea0fc42",
+              "28834042",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "6986ff42",
+              "61764142",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "3f370143",
+              "29684242",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "60ac0243",
+              "b2584342",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "6a220443",
+              "33484442",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "2d990543",
+              "e0364542",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "7b100743",
+              "ed244642",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ],
+            [
+              "26880843",
+              "91124742",
+              "2dc4343f",
+              "a245353f",
+              "00004040"
+            ]
+          ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "fd7f0941",
+                "1ac74f40"
+              ],
+              "control_bits": [
+                "00007041",
+                "0000a040"
+              ],
+              "path_mid_bits": [
+                "0000b441",
+                "0000e040"
+              ],
+              "accepted_bits": [
+                "0000b041",
+                "00008040"
+              ],
+              "direction_bits": [
+                "1f0d7a3f",
+                "a5775b3e"
+              ],
+              "angle_bits": "ea149b42",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              }
+            },
+            {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "0000c842",
+                "00002042"
+              ],
+              "control_bits": [
+                "00007041",
+                "0000a040"
+              ],
+              "path_mid_bits": [
+                "0000b441",
+                "0000e040"
+              ],
+              "accepted_bits": [
+                "0000c842",
+                "00002042"
+              ],
+              "direction_bits": [
+                "1f0d7a3f",
+                "a5775b3e"
+              ],
+              "angle_bits": "ea149b42",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "f2b9dc42",
+                "a9033542"
+              ],
+              "control_bits": [
+                "0000ee42",
+                "00003c42"
+              ],
+              "path_mid_bits": [
+                "f2b9dc42",
+                "a9033542"
+              ],
+              "accepted_bits": [
+                "00000043",
+                "00002c42"
+              ],
+              "direction_bits": [
+                "a245353f",
+                "2dc4343f"
+              ],
+              "angle_bits": "4ca73442",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00000a43",
+                "00004842"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "sample_ends": [
+            {
+              "history_index": 1,
+              "add_point_end": 0
+            },
+            {
+              "history_index": 2,
+              "add_point_end": 0
+            },
+            {
+              "history_index": 3,
+              "add_point_end": 13
+            },
+            {
+              "history_index": 4,
+              "add_point_end": 13
+            }
+          ],
+          "orientation_reads": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "motion_event_call_counts": {
+            "SPen::MotionEvent::GetEventTime() const": 1,
+            "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+            "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+            "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+            "SPen::MotionEvent::GetHistorySize() const": 1,
+            "SPen::MotionEvent::GetOrientation(int) const": 1,
+            "SPen::MotionEvent::GetPressure(int) const": 1,
+            "SPen::MotionEvent::GetTilt(int) const": 1,
+            "SPen::MotionEvent::GetToolType(int) const": 2,
+            "SPen::MotionEvent::GetX(int) const": 2,
+            "SPen::MotionEvent::GetY(int) const": 2,
+            "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+            "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+            "SPen::MotionEvent::~MotionEvent()": 1,
+            "SPen::ObjectStroke::GetOrientation() const": 1,
+            "SPen::ObjectStroke::GetPoint() const": 1,
+            "SPen::ObjectStroke::GetPointCount() const": 1,
+            "SPen::ObjectStroke::GetPressure() const": 1,
+            "SPen::ObjectStroke::GetTilt() const": 1,
+            "SPen::ObjectStroke::GetTimeStamp() const": 1,
+            "SPen::ObjectStroke::GetToolType() const": 1
+          },
+          "build_call_count": 155,
+          "direction_bits": [
+            "a245353f",
+            "2dc4343f"
+          ],
+          "angle_bits": "4ca73442",
+          "state": {
+            "path_start_bits": [
+              "f2b9dc42",
+              "a9033542"
+            ],
+            "control_bits": [
+              "0000ee42",
+              "00003c42"
+            ],
+            "path_mid_bits": [
+              "00800043",
+              "00004242"
+            ],
+            "accepted_bits": [
+              "00000043",
+              "00002c42"
+            ],
+            "direction_bits": [
+              "a245353f",
+              "2dc4343f"
+            ],
+            "angle_bits": "4ca73442",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            }
+          }
+        },
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "control_bits": [
+              "00007041",
+              "0000a040"
+            ],
+            "path_mid_bits": [
+              "fd7f0941",
+              "1ac74f40"
+            ],
+            "accepted_bits": [
+              "0000b041",
+              "00008040"
+            ],
+            "direction_bits": [
+              "1f0d7a3f",
+              "a5775b3e"
+            ],
+            "angle_bits": "ea149b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "0000f041",
+              "00001041"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "f56f4b3e",
+            "a5e57a3f",
+            "00004040"
+          ],
+          [
+            "51552d3f",
+            "8ae3a83e",
+            "96e54c3e",
+            "a4d27a3f",
+            "00004040"
+          ],
+          [
+            "fbffaf3f",
+            "6d1c273f",
+            "1b5b4e3e",
+            "7fbf7a3f",
+            "00004040"
+          ],
+          [
+            "fdff0540",
+            "faff773f",
+            "83d04f3e",
+            "38ac7a3f",
+            "00004040"
+          ],
+          [
+            "50553540",
+            "358ea33f",
+            "ce45513e",
+            "cf987a3f",
+            "00004040"
+          ],
+          [
+            "fbff6540",
+            "e038ca3f",
+            "fcba523e",
+            "42857a3f",
+            "00004040"
+          ],
+          [
+            "fdff8b40",
+            "fbffef3f",
+            "0d30543e",
+            "93717a3f",
+            "00004040"
+          ],
+          [
+            "a6aaa540",
+            "c4710a40",
+            "01a5553e",
+            "c15d7a3f",
+            "00004040"
+          ],
+          [
+            "faffbf40",
+            "c3711c40",
+            "d719573e",
+            "cd497a3f",
+            "00004040"
+          ],
+          [
+            "f9ffda40",
+            "fcff2d40",
+            "8f8e583e",
+            "b6357a3f",
+            "00004040"
+          ],
+          [
+            "a6aaf640",
+            "6e1c3f40",
+            "29035a3e",
+            "7c217a3f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "00001841",
+            "00006040",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "fd7f0941",
+            "1ac74f40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "157e1c41",
+            "db886440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "81da2f41",
+            "a89f7940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "1e8f4341",
+            "fc828740",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "c8955741",
+            "215b9240",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "5ae86b41",
+            "7e559d40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "56408041",
+            "4d6fa840",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "50ac8a41",
+            "c9a5b340",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "06359541",
+            "2ff6be40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "60339f41",
+            "efadc940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "2122a941",
+            "9451d440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "0322b341",
+            "ab04df40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "9330bd41",
+            "00c5e940",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "604bc741",
+            "5c90f440",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "f66fd141",
+            "8a64ff40",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "e39bdb41",
+            "ac1f0541",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ],
+          [
+            "b8cce541",
+            "488f0a41",
+            "a5775b3e",
+            "1f0d7a3f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "1f0d7a3f",
+          "a5775b3e"
+        ],
+        "angle_bits": "ea149b42",
+        "state": {
+          "path_start_bits": [
+            "fd7f0941",
+            "1ac74f40"
+          ],
+          "control_bits": [
+            "00007041",
+            "0000a040"
+          ],
+          "path_mid_bits": [
+            "0000b441",
+            "0000e040"
+          ],
+          "accepted_bits": [
+            "0000b041",
+            "00008040"
+          ],
+          "direction_bits": [
+            "1f0d7a3f",
+            "a5775b3e"
+          ],
+          "angle_bits": "ea149b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 145
+      }
+    },
+    {
+      "id": "fresh-second-stroke-control",
+      "rows": [
+        [
+          100.0,
+          40.0,
+          0.9,
+          300
+        ],
+        [
+          104.0,
+          44.0,
+          0.8,
+          330
+        ],
+        [
+          111.0,
+          41.0,
+          0.7,
+          360
+        ],
+        [
+          119.0,
+          47.0,
+          0.6,
+          390
+        ],
+        [
+          128.0,
+          43.0,
+          0.5,
+          420
+        ],
+        [
+          138.0,
+          50.0,
+          0.4,
+          450
+        ]
+      ],
+      "tilt": [
+        0.6,
+        0.5,
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "orientation": [
+        1.0,
+        0.8,
+        0.6,
+        0.4,
+        0.2,
+        0.05
+      ],
+      "native": {
+        "case": "fresh-second-stroke-control",
+        "source_count": 6,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 9,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 9,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "0000c842",
+              "00002042"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "0000c842",
+              "00002042"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "f2b9dc42",
+              "a9033542"
+            ],
+            "control_bits": [
+              "0000ee42",
+              "00003c42"
+            ],
+            "path_mid_bits": [
+              "f2b9dc42",
+              "a9033542"
+            ],
+            "accepted_bits": [
+              "00000043",
+              "00002c42"
+            ],
+            "direction_bits": [
+              "a245353f",
+              "2dc4343f"
+            ],
+            "angle_bits": "4ca73442",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 1
+            },
+            "event_end_bits": [
+              "00000a43",
+              "00004842"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 2,
+            "add_point_end": 0
+          },
+          {
+            "history_index": 3,
+            "add_point_end": 13
+          },
+          {
+            "history_index": 4,
+            "add_point_end": 13
+          }
+        ],
+        "orientation_reads": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "native_add_point_vectors": [
+          [
+            "0000c842",
+            "00002042",
+            "a6a4373f",
+            "5f5b323f",
+            "00004040"
+          ],
+          [
+            "9c81c942",
+            "d8d02242",
+            "3162373f",
+            "b39f323f",
+            "00004040"
+          ],
+          [
+            "9d20cb42",
+            "b3772542",
+            "a31f373f",
+            "eee3323f",
+            "00004040"
+          ],
+          [
+            "02ddcc42",
+            "91f42742",
+            "fbdc363f",
+            "1028333f",
+            "00004040"
+          ],
+          [
+            "cab6ce42",
+            "73472a42",
+            "399a363f",
+            "1a6c333f",
+            "00004040"
+          ],
+          [
+            "f6add042",
+            "59702c42",
+            "5f57363f",
+            "0ab0333f",
+            "00004040"
+          ],
+          [
+            "e59bd242",
+            "814c2e42",
+            "6b14363f",
+            "e2f3333f",
+            "00004040"
+          ],
+          [
+            "3577d442",
+            "55e12f42",
+            "5ed1353f",
+            "a137343f",
+            "00004040"
+          ],
+          [
+            "df67d642",
+            "a8573142",
+            "378e353f",
+            "477b343f",
+            "00004040"
+          ],
+          [
+            "e16dd842",
+            "7daf3242",
+            "f84a353f",
+            "d3be343f",
+            "00004040"
+          ],
+          [
+            "3d89da42",
+            "d3e83342",
+            "9f07353f",
+            "4702353f",
+            "00004040"
+          ],
+          [
+            "f2b9dc42",
+            "a9033542",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "0000df42",
+            "00003642",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "f2b9dc42",
+            "a9033542",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "5987df42",
+            "1e223642",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "045ce242",
+            "6b3c3742",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "8837e542",
+            "d2523842",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "7b19e842",
+            "8b653942",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "7301eb42",
+            "d4743a42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "08efed42",
+            "ea803b42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "cfe1f042",
+            "078a3c42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "5fd9f342",
+            "69903d42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "4ed5f642",
+            "4c943e42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "39bef942",
+            "458e3f42",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "dea0fc42",
+            "28834042",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "6986ff42",
+            "61764142",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "3f370143",
+            "29684242",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "60ac0243",
+            "b2584342",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "6a220443",
+            "33484442",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "2d990543",
+            "e0364542",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "7b100743",
+            "ed244642",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ],
+          [
+            "26880843",
+            "91124742",
+            "2dc4343f",
+            "a245353f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "a245353f",
+          "2dc4343f"
+        ],
+        "angle_bits": "4ca73442",
+        "state": {
+          "path_start_bits": [
+            "f2b9dc42",
+            "a9033542"
+          ],
+          "control_bits": [
+            "0000ee42",
+            "00003c42"
+          ],
+          "path_mid_bits": [
+            "00800043",
+            "00004242"
+          ],
+          "accepted_bits": [
+            "00000043",
+            "00002c42"
+          ],
+          "direction_bits": [
+            "a245353f",
+            "2dc4343f"
+          ],
+          "angle_bits": "4ca73442",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 1
+          }
+        },
+        "build_call_count": 155
+      }
+    }
+  ]
+}
