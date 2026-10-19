@@ -75,6 +75,60 @@ pub(super) struct SavedObjectStrokeOutput {
     pub(super) tool_type: i32,
 }
 
+/// Per-stroke AddPoint members retained by the RTV1 drawable.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct AddPointState {
+    pub(super) center: [f32; 2],
+    pub(super) initial_edge: bool,
+    pub(super) previous_edges: [[[f32; 2]; 2]; 3],
+}
+
+impl AddPointState {
+    pub(super) const fn fresh() -> Self {
+        Self {
+            center: [0.0; 2],
+            initial_edge: true,
+            previous_edges: [[[0.0; 2]; 2]; 3],
+        }
+    }
+}
+
+/// Complete explicit state needed to adapt a saved stroke into RTV1 meshes.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct CalligraphyState {
+    pub(super) saved: SavedHistoryState,
+    pub(super) add_point: AddPointState,
+}
+
+impl CalligraphyState {
+    pub(super) const fn fresh() -> Self {
+        let zero = P { x: 0.0, y: 0.0 };
+        Self {
+            saved: SavedHistoryState {
+                nib: NibState::fresh(),
+                accepted: zero,
+                start: zero,
+                control: zero,
+                midpoint: zero,
+            },
+            add_point: AddPointState::fresh(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct AddPointFrame {
+    pub(super) input: AddPointInput,
+    pub(super) geometry: Option<AddPointGeometry>,
+}
+
+pub(super) struct SavedObjectStrokeMeshOutput {
+    pub(super) stroke: SavedObjectStrokeOutput,
+    pub(super) add_points: Vec<AddPointFrame>,
+    pub(super) buffers: MeshBuffers,
+    pub(super) state: CalligraphyState,
+}
+
 /// Adapt the saved object's source arrays to Base MotionEvent history plus its
 /// separate terminal event. Callers must supply the drawable's retained state;
 /// this function does not assume every saved record starts from a new drawable.
@@ -659,6 +713,56 @@ impl MeshBuffers {
     }
 }
 
+/// Adapt saved ObjectStroke channels and explicit retained drawable state to
+/// the three Vector4 buffers produced by the native RTV1 AddPoint path.
+pub(super) fn saved_object_stroke_mesh(
+    input: SavedObjectStrokeInput<'_>,
+    mut state: CalligraphyState,
+) -> Option<SavedObjectStrokeMeshOutput> {
+    let stroke = saved_object_stroke_redraw(input, state.saved)?;
+    let mut add_points = Vec::with_capacity(stroke.vectors.len());
+    let mut buffers = MeshBuffers::default();
+    for (vector, extent) in stroke
+        .vectors
+        .iter()
+        .copied()
+        .zip(stroke.extents.iter().copied())
+    {
+        let frame_input = AddPointInput {
+            vector,
+            extent,
+            gate_center: state.add_point.center,
+            initial_edge: state.add_point.initial_edge,
+            previous_edges: state.add_point.previous_edges,
+        };
+        let geometry = add_point(frame_input);
+        if let Some(geometry) = geometry {
+            for (buffer, rect) in geometry
+                .buffers
+                .iter()
+                .copied()
+                .zip(geometry.rectangles.iter().copied())
+            {
+                buffers.append(buffer, rect);
+            }
+            state.add_point.previous_edges = geometry.next_edges;
+        }
+        state.add_point.center = [vector[0], vector[1]];
+        state.add_point.initial_edge = false;
+        add_points.push(AddPointFrame {
+            input: frame_input,
+            geometry,
+        });
+    }
+    state.saved = stroke.final_state;
+    Some(SavedObjectStrokeMeshOutput {
+        stroke,
+        add_points,
+        buffers,
+        state,
+    })
+}
+
 /// Test bridge from the captured saved coordinate/orientation history through
 /// the sampler, AddPoint state, mesh builder, and RTV1 Vector4 lanes. Pressure,
 /// timestamps, stylus channels, and model admission are outside this fixture.
@@ -688,8 +792,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
     let orientations: Vec<f32> = history.iter().map(|row| row[2]).collect();
     let pressures = vec![0.5; points.len()];
     let timestamps: Vec<i32> = (0..points.len() as i32).collect();
-    let zero = P { x: 0.0, y: 0.0 };
-    let output = saved_object_stroke_redraw(
+    let output = saved_object_stroke_mesh(
         SavedObjectStrokeInput {
             points: &points,
             pressures: &pressures,
@@ -699,17 +802,24 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             tool_type: 2,
             pen_size: case["input"]["pen_size"].as_f64()? as f32,
         },
-        SavedHistoryState {
-            nib: NibState::fresh(),
-            accepted: zero,
-            start: zero,
-            control: zero,
-            midpoint: zero,
-        },
+        CalligraphyState::fresh(),
     )?;
+    let stroke = &output.stroke;
+    let Some(last_vector) = stroke.vectors.last() else {
+        return None;
+    };
+    if output.state.add_point.center.map(f32::to_bits)
+        != [last_vector[0].to_bits(), last_vector[1].to_bits()]
+        || output.state.saved.nib.angle_degrees.to_bits()
+            != stroke.final_state.nib.angle_degrees.to_bits()
+        || output.state.saved.nib.direction.map(f32::to_bits)
+            != stroke.final_state.nib.direction.map(f32::to_bits)
+    {
+        return None;
+    }
 
     let captured_add_points = case["saved_redraw"]["native_add_points"].as_array()?;
-    if captured_add_points.len() != output.vectors.len() {
+    if captured_add_points.len() != stroke.vectors.len() {
         return None;
     }
     let bits = |hex: &str| -> Option<u32> {
@@ -720,7 +830,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             .collect::<Option<Vec<_>>>()?;
         Some(u32::from_le_bytes(bytes.try_into().ok()?))
     };
-    for (index, (vector, extent)) in output.vectors.iter().zip(&output.extents).enumerate() {
+    for (index, (vector, extent)) in stroke.vectors.iter().zip(&stroke.extents).enumerate() {
         let captured = &captured_add_points[index];
         let expected_vector: [u32; 4] = captured["vector_bits"]
             .as_array()?
@@ -736,13 +846,9 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
         }
     }
 
-    let mut center = [0.0_f32; 2];
-    let mut initial_edge = true;
-    let mut previous_edges = [[[0.0_f32; 2]; 2]; 3];
-    let mut buffers = MeshBuffers::default();
     let native_builds = case["saved_redraw"]["native_build_rectangles"].as_array()?;
     let mut build_cursor = 0;
-    for (index, (vector, extent)) in output.vectors.iter().zip(&output.extents).enumerate() {
+    for (index, frame) in output.add_points.iter().enumerate() {
         let captured_add = &captured_add_points[index];
         let snapshot = &captured_add["pre_state"];
         let expected_center: [u32; 2] = snapshot["center_bits"]
@@ -757,29 +863,24 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             .iter()
             .map(|value| bits(value.as_str()?))
             .collect::<Option<Vec<_>>>()?;
-        let actual_edges: Vec<u32> = previous_edges
+        let actual_edges: Vec<u32> = frame
+            .input
+            .previous_edges
             .iter()
             .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
             .map(f32::to_bits)
             .collect();
-        if center.map(f32::to_bits) != expected_center
-            || initial_edge != (snapshot["initial_flag"].as_u64()? != 0)
+        if frame.input.gate_center.map(f32::to_bits) != expected_center
+            || frame.input.initial_edge != (snapshot["initial_flag"].as_u64()? != 0)
             || actual_edges != expected_edges
         {
             return None;
         }
-        let geometry = add_point(AddPointInput {
-            vector: *vector,
-            extent: *extent,
-            gate_center: center,
-            initial_edge,
-            previous_edges,
-        });
         let expected_build_count = captured_add["build_calls"].as_u64()? as usize;
-        if geometry.is_some() != (expected_build_count == 5) {
+        if frame.geometry.is_some() != (expected_build_count == 5) {
             return None;
         }
-        if let Some(geometry) = geometry {
+        if let Some(geometry) = frame.geometry {
             for slot in 0..5 {
                 let rect = geometry.rectangles[slot];
                 let native = &native_builds[build_cursor + slot];
@@ -801,20 +902,16 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
                 {
                     return None;
                 }
-                buffers.append(geometry.buffers[slot], rect);
             }
             build_cursor += 5;
-            previous_edges = geometry.next_edges;
         }
-        center = [vector[0], vector[1]];
-        initial_edge = false;
     }
     if build_cursor != native_builds.len() {
         return None;
     }
-    let lanes = |vertices: Vec<MeshVertex>| {
+    let lanes = |vertices: &[MeshVertex]| {
         vertices
-            .into_iter()
+            .iter()
             .map(|vertex| {
                 [
                     vertex.position[0],
@@ -826,9 +923,9 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             .collect()
     };
     Some([
-        lanes(buffers.core),
-        lanes(buffers.fringe_a),
-        lanes(buffers.fringe_b),
+        lanes(&output.buffers.core),
+        lanes(&output.buffers.fringe_a),
+        lanes(&output.buffers.fringe_b),
     ])
 }
 
