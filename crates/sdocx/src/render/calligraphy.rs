@@ -168,7 +168,7 @@ fn core_path(
 
     let det = (points[1][0] - points[0][0]) * (points[2][1] - points[0][1])
         - (points[2][0] - points[0][0]) * (points[1][1] - points[0][1]);
-    if !det.is_finite() || det.abs() <= 1e-18 {
+    if !det.is_finite() || det == 0.0 {
         return Err(AdapterError::UnrepresentableGradient);
     }
     let gx = ((w1 - w0) * (points[2][1] - points[0][1])
@@ -178,14 +178,14 @@ fn core_path(
         - (points[2][0] - points[0][0]) * (w1 - w0))
         / det;
     let norm = gx * gx + gy * gy;
-    if !norm.is_finite() || norm <= 1e-30 {
+    if !norm.is_finite() || norm == 0.0 {
         return Err(AdapterError::UnrepresentableGradient);
     }
-    let constant = w0 - gx * points[0][0] - gy * points[0][1];
-    let x1 = -constant * gx / norm;
-    let y1 = -constant * gy / norm;
-    let x2 = (1.0 - constant) * gx / norm;
-    let y2 = (1.0 - constant) * gy / norm;
+    let [x0, y0] = points[0];
+    let x1 = x0 - w0 * gx / norm;
+    let y1 = y0 - w0 * gy / norm;
+    let x2 = x0 + (1.0 - w0) * gx / norm;
+    let y2 = y0 + (1.0 - w0) * gy / norm;
     if [x1, y1, x2, y2].iter().any(|v| !v.is_finite()) {
         return Err(AdapterError::UnrepresentableGradient);
     }
@@ -220,6 +220,57 @@ mod tests {
         let mut scene = Scene::new(super::super::vector::Svg::new().width(64).height(64));
         render(&mut scene, mesh, Viewport::default()).unwrap();
         scene.finish()
+    }
+
+    fn assert_gradient_reconstructs(triangle: NativeTriangle, viewport: Viewport, tolerance: f64) {
+        let mesh = NativeMeshBatch {
+            core_232: vec![triangle],
+            rgb: [0x11, 0x22, 0x33],
+            ..Default::default()
+        };
+        let mut scene = Scene::new(super::super::vector::Svg::new().width(64).height(64));
+        render(&mut scene, &mesh, viewport).unwrap();
+        let svg = scene.finish();
+        let gradients = tags(&svg, "linearGradient");
+        assert_eq!(gradients.len(), 1, "{svg}");
+        let gradient = gradients[0];
+        let start = [
+            attribute(gradient, "x1").parse::<f64>().unwrap(),
+            attribute(gradient, "y1").parse::<f64>().unwrap(),
+        ];
+        let end = [
+            attribute(gradient, "x2").parse::<f64>().unwrap(),
+            attribute(gradient, "y2").parse::<f64>().unwrap(),
+        ];
+        let delta = [end[0] - start[0], end[1] - start[1]];
+        let norm = delta[0] * delta[0] + delta[1] * delta[1];
+        assert!(norm.is_finite() && norm > 0.0, "{gradient}");
+        let points = transformed(&triangle, viewport).unwrap();
+        let weights = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.2, 0.3, 0.5],
+        ];
+        for lambda in weights {
+            let point = [
+                (0..3)
+                    .map(|index| lambda[index] * points[index][0])
+                    .sum::<f64>(),
+                (0..3)
+                    .map(|index| lambda[index] * points[index][1])
+                    .sum::<f64>(),
+            ];
+            let actual =
+                ((point[0] - start[0]) * delta[0] + (point[1] - start[1]) * delta[1]) / norm;
+            let expected = (0..3)
+                .map(|index| lambda[index] * f64::from(triangle.0[index].w))
+                .sum::<f64>();
+            assert!(
+                (actual - expected).abs() <= tolerance,
+                "gradient {gradient} reconstructed {actual} instead of {expected} at {lambda:?}"
+            );
+        }
     }
 
     fn fixture() -> NativeMeshBatch {
@@ -327,6 +378,23 @@ mod tests {
         assert!(svg.contains("offset=\"0.7\""));
         assert!(svg.contains("color-interpolation=\"linearRGB\""));
         assert!(!svg.contains("mix-blend-mode"));
+    }
+
+    #[test]
+    fn affine_gradient_reconstructs_w_across_small_large_and_translated_coordinates() {
+        let triangle = tri([[0.0, 0.0, 0.2], [2.0, 0.0, 0.5], [0.0, 2.0, 0.8]]);
+        let viewport = |origin, scale| Viewport {
+            width: 64,
+            height: 64,
+            origin,
+            scale,
+        };
+
+        assert_gradient_reconstructs(triangle, viewport([17.25, -31.5], [1e-10, 1e-10]), 1e-5);
+        assert_gradient_reconstructs(triangle, viewport([0.0, 0.0], [1e15, 1e15]), 1e-6);
+        assert_gradient_reconstructs(triangle, viewport([1e6, 1e6], [1.0, 1.0]), 1e-6);
+        assert_gradient_reconstructs(triangle, viewport([17.25, -31.5], [1e-8, 1e-8]), 1e-6);
+        assert_gradient_reconstructs(triangle, viewport([17.25, -31.5], [-3.0, 0.25]), 1e-6);
     }
 
     #[test]
