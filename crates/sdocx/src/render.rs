@@ -3607,7 +3607,7 @@ mod tests {
         let first = calligraphy_stroke(&sources[0]);
         let second = calligraphy_stroke(&sources[1]);
         let mut unsupported = first.clone();
-        unsupported.rendering.as_mut().unwrap().style.pen_size = None;
+        unsupported.rendering.as_mut().unwrap().style.pen_size = Some(f32::NAN);
 
         let first_only = render_objects(vec![first.clone().into()], false);
         let poisoned = render_objects(

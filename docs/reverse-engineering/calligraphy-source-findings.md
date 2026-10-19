@@ -184,8 +184,9 @@ establish Android device pixels or admission beyond the bounded model route.
 
 Production SVG/PDF dispatch uses a caller-owned Calligraphy session for the
 canonical pen with ordinary stroke/color types, resolved size/ARGB and valid
-source channels. Finite sizes follow native `SetSize` clamping; fixed width is
-applied only when enabled. Sampling and triangle budgets fail back to the generic
+source channels. The [native defaults oracle](../../conformance/object-stroke-defaults-native.json)
+checks omitted size (0.0) and ARGB (opaque black); size then follows native
+`SetSize` clamping to at least 0.4. Fixed width is applied only when enabled. Sampling and triangle budgets fail back to the generic
 renderer. Unsupported matching input invalidates retained state until a verified
 batch reset. Standalone `ink::prepare_stroke` remains approximate because its
 API has no Drawing lifetime. Native mesh paths request crisp SVG edges to avoid

@@ -239,14 +239,12 @@ pub(crate) fn prepare_model_stroke(
         return CalligraphyAdmission::Unsupported(CalligraphyUnsupported::UnsupportedStrokeType);
     }
 
-    let Some(pen_size) = rendering.style.pen_size else {
-        session.state = None;
-        return CalligraphyAdmission::Unsupported(CalligraphyUnsupported::MissingStyle);
-    };
-    let Some(argb) = rendering.style.color_argb else {
-        session.state = None;
-        return CalligraphyAdmission::Unsupported(CalligraphyUnsupported::MissingStyle);
-    };
+    // Native ObjectStroke defaults from the empty flexible-property record:
+    // Pen size reads 0.0 (then Pen::SetSize clamps it to 0.4), and ARGB reads
+    // opaque black. Keep the explicit name requirement above because a null
+    // pen name cannot select this plugin in Drawing.
+    let pen_size = rendering.style.pen_size.unwrap_or(0.0);
+    let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     if !pen_size.is_finite() {
         session.state = None;
         return CalligraphyAdmission::Unsupported(CalligraphyUnsupported::MissingStyle);
@@ -3853,7 +3851,7 @@ mod tests {
 
         let mut poisoned = super::CalligraphySession::new();
         let mut unsupported = first_stroke;
-        unsupported.rendering.as_mut().unwrap().style.pen_size = None;
+        unsupported.rendering.as_mut().unwrap().style.pen_size = Some(f32::NAN);
         assert!(matches!(
             super::prepare_model_stroke(&mut poisoned, &unsupported),
             super::CalligraphyAdmission::Unsupported(super::CalligraphyUnsupported::MissingStyle)
@@ -3878,5 +3876,97 @@ mod tests {
             super::CalligraphyAdmission::Unsupported(super::CalligraphyUnsupported::BudgetExceeded)
         ));
         assert!(!oversized.is_valid());
+    }
+
+    #[test]
+    fn model_adapter_uses_native_empty_flexible_property_defaults() {
+        let defaults: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/object-stroke-defaults-native.json"
+        ))
+        .unwrap();
+        assert_eq!(defaults["schema"], "sdocx-object-stroke-defaults-native-v1");
+        let native_defaults = &defaults["cases"][0]["native_getters"];
+        assert_eq!(native_defaults["pen_size"], "00000000");
+        assert_eq!(native_defaults["color_argb"], 0xff00_0000_u32);
+        assert_eq!(native_defaults["stroke_type"], 0);
+        assert_eq!(native_defaults["color_type"], 0);
+        let zero_size = &defaults["pen_size_forwarding"]["cases"][0];
+        assert_eq!(zero_size["input_bits"], "00000000");
+        assert_eq!(zero_size["getter_bits"], "cdcccc3e"); // native 0 -> 0.4
+
+        // Feed captured ObjectStroke channels through the model adapter while
+        // removing only the properties whose native defaults were captured.
+        let source_fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        let source =
+            &source_fixture["cases"]["two-stroke-object-list-batch"]["input"]["sources"][0];
+        let mut stroke = fixture_stroke(source);
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.style.pen_size = None;
+        rendering.style.color_argb = None;
+        rendering.style.stroke_type_raw = None;
+        rendering.style.color_type_raw = None;
+
+        let mut session = super::CalligraphySession::new();
+        let adapted = match super::prepare_model_stroke(&mut session, &stroke) {
+            super::CalligraphyAdmission::Mesh(mesh) => mesh,
+            _ => panic!("known Calligraphy stroke with native default style must be admitted"),
+        };
+        assert_eq!(adapted.rgb, [0, 0, 0]);
+
+        // Native GetPenSize reports 0.0, then Pen::SetSize stores 0.4. Compare
+        // the complete geometry against that effective size, including the
+        // terminal sample extent.
+        let points = stroke
+            .points
+            .iter()
+            .map(|point| [point.x as f32, point.y as f32])
+            .collect::<Vec<_>>();
+        let pressures = stroke
+            .pressures
+            .iter()
+            .map(|&value| value as f32)
+            .collect::<Vec<_>>();
+        let timestamps = stroke
+            .timestamps
+            .iter()
+            .map(|&value| value as i32)
+            .collect::<Vec<_>>();
+        let tilts = stroke
+            .tilts
+            .iter()
+            .map(|&value| value as f32)
+            .collect::<Vec<_>>();
+        let orientations = stroke
+            .orientations
+            .iter()
+            .map(|&value| value as f32)
+            .collect::<Vec<_>>();
+        let native_default_geometry = super::saved_object_stroke_mesh(
+            super::SavedObjectStrokeInput {
+                points: &points,
+                pressures: &pressures,
+                timestamps: &timestamps,
+                tilt: Some(&tilts),
+                orientation: Some(&orientations),
+                tool_type: native_defaults["tool_type"].as_i64().unwrap() as i32,
+                pen_size: 0.4,
+                fixed_width: None,
+            },
+            super::CalligraphyState::fresh(),
+        )
+        .unwrap();
+        assert_eq!(adapted.buffers, native_default_geometry.buffers);
+        assert_eq!(
+            native_default_geometry
+                .stroke
+                .terminal
+                .as_ref()
+                .unwrap()
+                .point_extent,
+            1.0
+        );
     }
 }
