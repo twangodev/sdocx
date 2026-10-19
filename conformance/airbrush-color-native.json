@@ -1,0 +1,1146 @@
+{
+  "full_drawing_controls": [
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 0,
+      "source_argb_u32": "0x6cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 14,
+      "source_argb_u32": "0xe6cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 15,
+      "source_argb_u32": "0xf6cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 16,
+      "source_argb_u32": "0x106cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 19,
+      "source_argb_u32": "0x136cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x36cdd8f",
+      "rt_setpendata_argb_u32": "0x36cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 20,
+      "source_argb_u32": "0x146cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x46cdd8f",
+      "rt_setpendata_argb_u32": "0x46cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 21,
+      "source_argb_u32": "0x156cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x196cdd8f",
+      "rt_setpendata_argb_u32": "0x196cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 128,
+      "source_argb_u32": "0x806cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x316cdd8f",
+      "rt_setpendata_argb_u32": "0x316cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 254,
+      "source_argb_u32": "0xfe6cdd8f"
+    },
+    {
+      "direct_native_getter_argb_u32": "0x326cdd8f",
+      "rt_setpendata_argb_u32": "0x326cdd8f",
+      "rt_stream_bytes": 416,
+      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "selected_profile_version": 2,
+      "source_alpha_u8": 255,
+      "source_argb_u32": "0xff6cdd8f"
+    }
+  ],
+  "native_contract": {
+    "drawable_getter": "SPen::AirBrushPenStrokeDrawableGL::getColor(), AirBrushPen DSO RVA 0x24c94; reads stored source ARGB then multiplies source alpha byte as f32 by 50.0f, divides by 255.0f, FCVTZS truncates toward zero, clamps output alpha to [3,50], and preserves low 24 RGB bits",
+    "limits": "The 256-result sweep invokes native SetColor and getColor on the drawable selected by an actual explicit-empty Model->Drawing route. Ten separate complete Drawing routes confirm each returned color at RTV1 SetPenData. This records native color conversion, not GPU pixels, blending, or user/app lifecycle.",
+    "setter": "SPen::Pen::SetColor(int), PenCommon RVA 0x4602c: raw W1 store at this+28; getter RVA 0x4603c loads this+28"
+  },
+  "schema": "airbrush-color-native-v1",
+  "selected_receiver_alpha_sweep": [
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 0
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 1
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 2
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 3
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 4
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 5
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 6
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 7
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 8
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 9
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 10
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 11
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 12
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 13
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 14
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 15
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 16
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 17
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 18
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 19
+    },
+    {
+      "returned_argb_u32": "0x36cdd8f",
+      "source_alpha_u8": 20
+    },
+    {
+      "returned_argb_u32": "0x46cdd8f",
+      "source_alpha_u8": 21
+    },
+    {
+      "returned_argb_u32": "0x46cdd8f",
+      "source_alpha_u8": 22
+    },
+    {
+      "returned_argb_u32": "0x46cdd8f",
+      "source_alpha_u8": 23
+    },
+    {
+      "returned_argb_u32": "0x46cdd8f",
+      "source_alpha_u8": 24
+    },
+    {
+      "returned_argb_u32": "0x46cdd8f",
+      "source_alpha_u8": 25
+    },
+    {
+      "returned_argb_u32": "0x56cdd8f",
+      "source_alpha_u8": 26
+    },
+    {
+      "returned_argb_u32": "0x56cdd8f",
+      "source_alpha_u8": 27
+    },
+    {
+      "returned_argb_u32": "0x56cdd8f",
+      "source_alpha_u8": 28
+    },
+    {
+      "returned_argb_u32": "0x56cdd8f",
+      "source_alpha_u8": 29
+    },
+    {
+      "returned_argb_u32": "0x56cdd8f",
+      "source_alpha_u8": 30
+    },
+    {
+      "returned_argb_u32": "0x66cdd8f",
+      "source_alpha_u8": 31
+    },
+    {
+      "returned_argb_u32": "0x66cdd8f",
+      "source_alpha_u8": 32
+    },
+    {
+      "returned_argb_u32": "0x66cdd8f",
+      "source_alpha_u8": 33
+    },
+    {
+      "returned_argb_u32": "0x66cdd8f",
+      "source_alpha_u8": 34
+    },
+    {
+      "returned_argb_u32": "0x66cdd8f",
+      "source_alpha_u8": 35
+    },
+    {
+      "returned_argb_u32": "0x76cdd8f",
+      "source_alpha_u8": 36
+    },
+    {
+      "returned_argb_u32": "0x76cdd8f",
+      "source_alpha_u8": 37
+    },
+    {
+      "returned_argb_u32": "0x76cdd8f",
+      "source_alpha_u8": 38
+    },
+    {
+      "returned_argb_u32": "0x76cdd8f",
+      "source_alpha_u8": 39
+    },
+    {
+      "returned_argb_u32": "0x76cdd8f",
+      "source_alpha_u8": 40
+    },
+    {
+      "returned_argb_u32": "0x86cdd8f",
+      "source_alpha_u8": 41
+    },
+    {
+      "returned_argb_u32": "0x86cdd8f",
+      "source_alpha_u8": 42
+    },
+    {
+      "returned_argb_u32": "0x86cdd8f",
+      "source_alpha_u8": 43
+    },
+    {
+      "returned_argb_u32": "0x86cdd8f",
+      "source_alpha_u8": 44
+    },
+    {
+      "returned_argb_u32": "0x86cdd8f",
+      "source_alpha_u8": 45
+    },
+    {
+      "returned_argb_u32": "0x96cdd8f",
+      "source_alpha_u8": 46
+    },
+    {
+      "returned_argb_u32": "0x96cdd8f",
+      "source_alpha_u8": 47
+    },
+    {
+      "returned_argb_u32": "0x96cdd8f",
+      "source_alpha_u8": 48
+    },
+    {
+      "returned_argb_u32": "0x96cdd8f",
+      "source_alpha_u8": 49
+    },
+    {
+      "returned_argb_u32": "0x96cdd8f",
+      "source_alpha_u8": 50
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 51
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 52
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 53
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 54
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 55
+    },
+    {
+      "returned_argb_u32": "0xa6cdd8f",
+      "source_alpha_u8": 56
+    },
+    {
+      "returned_argb_u32": "0xb6cdd8f",
+      "source_alpha_u8": 57
+    },
+    {
+      "returned_argb_u32": "0xb6cdd8f",
+      "source_alpha_u8": 58
+    },
+    {
+      "returned_argb_u32": "0xb6cdd8f",
+      "source_alpha_u8": 59
+    },
+    {
+      "returned_argb_u32": "0xb6cdd8f",
+      "source_alpha_u8": 60
+    },
+    {
+      "returned_argb_u32": "0xb6cdd8f",
+      "source_alpha_u8": 61
+    },
+    {
+      "returned_argb_u32": "0xc6cdd8f",
+      "source_alpha_u8": 62
+    },
+    {
+      "returned_argb_u32": "0xc6cdd8f",
+      "source_alpha_u8": 63
+    },
+    {
+      "returned_argb_u32": "0xc6cdd8f",
+      "source_alpha_u8": 64
+    },
+    {
+      "returned_argb_u32": "0xc6cdd8f",
+      "source_alpha_u8": 65
+    },
+    {
+      "returned_argb_u32": "0xc6cdd8f",
+      "source_alpha_u8": 66
+    },
+    {
+      "returned_argb_u32": "0xd6cdd8f",
+      "source_alpha_u8": 67
+    },
+    {
+      "returned_argb_u32": "0xd6cdd8f",
+      "source_alpha_u8": 68
+    },
+    {
+      "returned_argb_u32": "0xd6cdd8f",
+      "source_alpha_u8": 69
+    },
+    {
+      "returned_argb_u32": "0xd6cdd8f",
+      "source_alpha_u8": 70
+    },
+    {
+      "returned_argb_u32": "0xd6cdd8f",
+      "source_alpha_u8": 71
+    },
+    {
+      "returned_argb_u32": "0xe6cdd8f",
+      "source_alpha_u8": 72
+    },
+    {
+      "returned_argb_u32": "0xe6cdd8f",
+      "source_alpha_u8": 73
+    },
+    {
+      "returned_argb_u32": "0xe6cdd8f",
+      "source_alpha_u8": 74
+    },
+    {
+      "returned_argb_u32": "0xe6cdd8f",
+      "source_alpha_u8": 75
+    },
+    {
+      "returned_argb_u32": "0xe6cdd8f",
+      "source_alpha_u8": 76
+    },
+    {
+      "returned_argb_u32": "0xf6cdd8f",
+      "source_alpha_u8": 77
+    },
+    {
+      "returned_argb_u32": "0xf6cdd8f",
+      "source_alpha_u8": 78
+    },
+    {
+      "returned_argb_u32": "0xf6cdd8f",
+      "source_alpha_u8": 79
+    },
+    {
+      "returned_argb_u32": "0xf6cdd8f",
+      "source_alpha_u8": 80
+    },
+    {
+      "returned_argb_u32": "0xf6cdd8f",
+      "source_alpha_u8": 81
+    },
+    {
+      "returned_argb_u32": "0x106cdd8f",
+      "source_alpha_u8": 82
+    },
+    {
+      "returned_argb_u32": "0x106cdd8f",
+      "source_alpha_u8": 83
+    },
+    {
+      "returned_argb_u32": "0x106cdd8f",
+      "source_alpha_u8": 84
+    },
+    {
+      "returned_argb_u32": "0x106cdd8f",
+      "source_alpha_u8": 85
+    },
+    {
+      "returned_argb_u32": "0x106cdd8f",
+      "source_alpha_u8": 86
+    },
+    {
+      "returned_argb_u32": "0x116cdd8f",
+      "source_alpha_u8": 87
+    },
+    {
+      "returned_argb_u32": "0x116cdd8f",
+      "source_alpha_u8": 88
+    },
+    {
+      "returned_argb_u32": "0x116cdd8f",
+      "source_alpha_u8": 89
+    },
+    {
+      "returned_argb_u32": "0x116cdd8f",
+      "source_alpha_u8": 90
+    },
+    {
+      "returned_argb_u32": "0x116cdd8f",
+      "source_alpha_u8": 91
+    },
+    {
+      "returned_argb_u32": "0x126cdd8f",
+      "source_alpha_u8": 92
+    },
+    {
+      "returned_argb_u32": "0x126cdd8f",
+      "source_alpha_u8": 93
+    },
+    {
+      "returned_argb_u32": "0x126cdd8f",
+      "source_alpha_u8": 94
+    },
+    {
+      "returned_argb_u32": "0x126cdd8f",
+      "source_alpha_u8": 95
+    },
+    {
+      "returned_argb_u32": "0x126cdd8f",
+      "source_alpha_u8": 96
+    },
+    {
+      "returned_argb_u32": "0x136cdd8f",
+      "source_alpha_u8": 97
+    },
+    {
+      "returned_argb_u32": "0x136cdd8f",
+      "source_alpha_u8": 98
+    },
+    {
+      "returned_argb_u32": "0x136cdd8f",
+      "source_alpha_u8": 99
+    },
+    {
+      "returned_argb_u32": "0x136cdd8f",
+      "source_alpha_u8": 100
+    },
+    {
+      "returned_argb_u32": "0x136cdd8f",
+      "source_alpha_u8": 101
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 102
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 103
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 104
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 105
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 106
+    },
+    {
+      "returned_argb_u32": "0x146cdd8f",
+      "source_alpha_u8": 107
+    },
+    {
+      "returned_argb_u32": "0x156cdd8f",
+      "source_alpha_u8": 108
+    },
+    {
+      "returned_argb_u32": "0x156cdd8f",
+      "source_alpha_u8": 109
+    },
+    {
+      "returned_argb_u32": "0x156cdd8f",
+      "source_alpha_u8": 110
+    },
+    {
+      "returned_argb_u32": "0x156cdd8f",
+      "source_alpha_u8": 111
+    },
+    {
+      "returned_argb_u32": "0x156cdd8f",
+      "source_alpha_u8": 112
+    },
+    {
+      "returned_argb_u32": "0x166cdd8f",
+      "source_alpha_u8": 113
+    },
+    {
+      "returned_argb_u32": "0x166cdd8f",
+      "source_alpha_u8": 114
+    },
+    {
+      "returned_argb_u32": "0x166cdd8f",
+      "source_alpha_u8": 115
+    },
+    {
+      "returned_argb_u32": "0x166cdd8f",
+      "source_alpha_u8": 116
+    },
+    {
+      "returned_argb_u32": "0x166cdd8f",
+      "source_alpha_u8": 117
+    },
+    {
+      "returned_argb_u32": "0x176cdd8f",
+      "source_alpha_u8": 118
+    },
+    {
+      "returned_argb_u32": "0x176cdd8f",
+      "source_alpha_u8": 119
+    },
+    {
+      "returned_argb_u32": "0x176cdd8f",
+      "source_alpha_u8": 120
+    },
+    {
+      "returned_argb_u32": "0x176cdd8f",
+      "source_alpha_u8": 121
+    },
+    {
+      "returned_argb_u32": "0x176cdd8f",
+      "source_alpha_u8": 122
+    },
+    {
+      "returned_argb_u32": "0x186cdd8f",
+      "source_alpha_u8": 123
+    },
+    {
+      "returned_argb_u32": "0x186cdd8f",
+      "source_alpha_u8": 124
+    },
+    {
+      "returned_argb_u32": "0x186cdd8f",
+      "source_alpha_u8": 125
+    },
+    {
+      "returned_argb_u32": "0x186cdd8f",
+      "source_alpha_u8": 126
+    },
+    {
+      "returned_argb_u32": "0x186cdd8f",
+      "source_alpha_u8": 127
+    },
+    {
+      "returned_argb_u32": "0x196cdd8f",
+      "source_alpha_u8": 128
+    },
+    {
+      "returned_argb_u32": "0x196cdd8f",
+      "source_alpha_u8": 129
+    },
+    {
+      "returned_argb_u32": "0x196cdd8f",
+      "source_alpha_u8": 130
+    },
+    {
+      "returned_argb_u32": "0x196cdd8f",
+      "source_alpha_u8": 131
+    },
+    {
+      "returned_argb_u32": "0x196cdd8f",
+      "source_alpha_u8": 132
+    },
+    {
+      "returned_argb_u32": "0x1a6cdd8f",
+      "source_alpha_u8": 133
+    },
+    {
+      "returned_argb_u32": "0x1a6cdd8f",
+      "source_alpha_u8": 134
+    },
+    {
+      "returned_argb_u32": "0x1a6cdd8f",
+      "source_alpha_u8": 135
+    },
+    {
+      "returned_argb_u32": "0x1a6cdd8f",
+      "source_alpha_u8": 136
+    },
+    {
+      "returned_argb_u32": "0x1a6cdd8f",
+      "source_alpha_u8": 137
+    },
+    {
+      "returned_argb_u32": "0x1b6cdd8f",
+      "source_alpha_u8": 138
+    },
+    {
+      "returned_argb_u32": "0x1b6cdd8f",
+      "source_alpha_u8": 139
+    },
+    {
+      "returned_argb_u32": "0x1b6cdd8f",
+      "source_alpha_u8": 140
+    },
+    {
+      "returned_argb_u32": "0x1b6cdd8f",
+      "source_alpha_u8": 141
+    },
+    {
+      "returned_argb_u32": "0x1b6cdd8f",
+      "source_alpha_u8": 142
+    },
+    {
+      "returned_argb_u32": "0x1c6cdd8f",
+      "source_alpha_u8": 143
+    },
+    {
+      "returned_argb_u32": "0x1c6cdd8f",
+      "source_alpha_u8": 144
+    },
+    {
+      "returned_argb_u32": "0x1c6cdd8f",
+      "source_alpha_u8": 145
+    },
+    {
+      "returned_argb_u32": "0x1c6cdd8f",
+      "source_alpha_u8": 146
+    },
+    {
+      "returned_argb_u32": "0x1c6cdd8f",
+      "source_alpha_u8": 147
+    },
+    {
+      "returned_argb_u32": "0x1d6cdd8f",
+      "source_alpha_u8": 148
+    },
+    {
+      "returned_argb_u32": "0x1d6cdd8f",
+      "source_alpha_u8": 149
+    },
+    {
+      "returned_argb_u32": "0x1d6cdd8f",
+      "source_alpha_u8": 150
+    },
+    {
+      "returned_argb_u32": "0x1d6cdd8f",
+      "source_alpha_u8": 151
+    },
+    {
+      "returned_argb_u32": "0x1d6cdd8f",
+      "source_alpha_u8": 152
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 153
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 154
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 155
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 156
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 157
+    },
+    {
+      "returned_argb_u32": "0x1e6cdd8f",
+      "source_alpha_u8": 158
+    },
+    {
+      "returned_argb_u32": "0x1f6cdd8f",
+      "source_alpha_u8": 159
+    },
+    {
+      "returned_argb_u32": "0x1f6cdd8f",
+      "source_alpha_u8": 160
+    },
+    {
+      "returned_argb_u32": "0x1f6cdd8f",
+      "source_alpha_u8": 161
+    },
+    {
+      "returned_argb_u32": "0x1f6cdd8f",
+      "source_alpha_u8": 162
+    },
+    {
+      "returned_argb_u32": "0x1f6cdd8f",
+      "source_alpha_u8": 163
+    },
+    {
+      "returned_argb_u32": "0x206cdd8f",
+      "source_alpha_u8": 164
+    },
+    {
+      "returned_argb_u32": "0x206cdd8f",
+      "source_alpha_u8": 165
+    },
+    {
+      "returned_argb_u32": "0x206cdd8f",
+      "source_alpha_u8": 166
+    },
+    {
+      "returned_argb_u32": "0x206cdd8f",
+      "source_alpha_u8": 167
+    },
+    {
+      "returned_argb_u32": "0x206cdd8f",
+      "source_alpha_u8": 168
+    },
+    {
+      "returned_argb_u32": "0x216cdd8f",
+      "source_alpha_u8": 169
+    },
+    {
+      "returned_argb_u32": "0x216cdd8f",
+      "source_alpha_u8": 170
+    },
+    {
+      "returned_argb_u32": "0x216cdd8f",
+      "source_alpha_u8": 171
+    },
+    {
+      "returned_argb_u32": "0x216cdd8f",
+      "source_alpha_u8": 172
+    },
+    {
+      "returned_argb_u32": "0x216cdd8f",
+      "source_alpha_u8": 173
+    },
+    {
+      "returned_argb_u32": "0x226cdd8f",
+      "source_alpha_u8": 174
+    },
+    {
+      "returned_argb_u32": "0x226cdd8f",
+      "source_alpha_u8": 175
+    },
+    {
+      "returned_argb_u32": "0x226cdd8f",
+      "source_alpha_u8": 176
+    },
+    {
+      "returned_argb_u32": "0x226cdd8f",
+      "source_alpha_u8": 177
+    },
+    {
+      "returned_argb_u32": "0x226cdd8f",
+      "source_alpha_u8": 178
+    },
+    {
+      "returned_argb_u32": "0x236cdd8f",
+      "source_alpha_u8": 179
+    },
+    {
+      "returned_argb_u32": "0x236cdd8f",
+      "source_alpha_u8": 180
+    },
+    {
+      "returned_argb_u32": "0x236cdd8f",
+      "source_alpha_u8": 181
+    },
+    {
+      "returned_argb_u32": "0x236cdd8f",
+      "source_alpha_u8": 182
+    },
+    {
+      "returned_argb_u32": "0x236cdd8f",
+      "source_alpha_u8": 183
+    },
+    {
+      "returned_argb_u32": "0x246cdd8f",
+      "source_alpha_u8": 184
+    },
+    {
+      "returned_argb_u32": "0x246cdd8f",
+      "source_alpha_u8": 185
+    },
+    {
+      "returned_argb_u32": "0x246cdd8f",
+      "source_alpha_u8": 186
+    },
+    {
+      "returned_argb_u32": "0x246cdd8f",
+      "source_alpha_u8": 187
+    },
+    {
+      "returned_argb_u32": "0x246cdd8f",
+      "source_alpha_u8": 188
+    },
+    {
+      "returned_argb_u32": "0x256cdd8f",
+      "source_alpha_u8": 189
+    },
+    {
+      "returned_argb_u32": "0x256cdd8f",
+      "source_alpha_u8": 190
+    },
+    {
+      "returned_argb_u32": "0x256cdd8f",
+      "source_alpha_u8": 191
+    },
+    {
+      "returned_argb_u32": "0x256cdd8f",
+      "source_alpha_u8": 192
+    },
+    {
+      "returned_argb_u32": "0x256cdd8f",
+      "source_alpha_u8": 193
+    },
+    {
+      "returned_argb_u32": "0x266cdd8f",
+      "source_alpha_u8": 194
+    },
+    {
+      "returned_argb_u32": "0x266cdd8f",
+      "source_alpha_u8": 195
+    },
+    {
+      "returned_argb_u32": "0x266cdd8f",
+      "source_alpha_u8": 196
+    },
+    {
+      "returned_argb_u32": "0x266cdd8f",
+      "source_alpha_u8": 197
+    },
+    {
+      "returned_argb_u32": "0x266cdd8f",
+      "source_alpha_u8": 198
+    },
+    {
+      "returned_argb_u32": "0x276cdd8f",
+      "source_alpha_u8": 199
+    },
+    {
+      "returned_argb_u32": "0x276cdd8f",
+      "source_alpha_u8": 200
+    },
+    {
+      "returned_argb_u32": "0x276cdd8f",
+      "source_alpha_u8": 201
+    },
+    {
+      "returned_argb_u32": "0x276cdd8f",
+      "source_alpha_u8": 202
+    },
+    {
+      "returned_argb_u32": "0x276cdd8f",
+      "source_alpha_u8": 203
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 204
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 205
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 206
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 207
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 208
+    },
+    {
+      "returned_argb_u32": "0x286cdd8f",
+      "source_alpha_u8": 209
+    },
+    {
+      "returned_argb_u32": "0x296cdd8f",
+      "source_alpha_u8": 210
+    },
+    {
+      "returned_argb_u32": "0x296cdd8f",
+      "source_alpha_u8": 211
+    },
+    {
+      "returned_argb_u32": "0x296cdd8f",
+      "source_alpha_u8": 212
+    },
+    {
+      "returned_argb_u32": "0x296cdd8f",
+      "source_alpha_u8": 213
+    },
+    {
+      "returned_argb_u32": "0x296cdd8f",
+      "source_alpha_u8": 214
+    },
+    {
+      "returned_argb_u32": "0x2a6cdd8f",
+      "source_alpha_u8": 215
+    },
+    {
+      "returned_argb_u32": "0x2a6cdd8f",
+      "source_alpha_u8": 216
+    },
+    {
+      "returned_argb_u32": "0x2a6cdd8f",
+      "source_alpha_u8": 217
+    },
+    {
+      "returned_argb_u32": "0x2a6cdd8f",
+      "source_alpha_u8": 218
+    },
+    {
+      "returned_argb_u32": "0x2a6cdd8f",
+      "source_alpha_u8": 219
+    },
+    {
+      "returned_argb_u32": "0x2b6cdd8f",
+      "source_alpha_u8": 220
+    },
+    {
+      "returned_argb_u32": "0x2b6cdd8f",
+      "source_alpha_u8": 221
+    },
+    {
+      "returned_argb_u32": "0x2b6cdd8f",
+      "source_alpha_u8": 222
+    },
+    {
+      "returned_argb_u32": "0x2b6cdd8f",
+      "source_alpha_u8": 223
+    },
+    {
+      "returned_argb_u32": "0x2b6cdd8f",
+      "source_alpha_u8": 224
+    },
+    {
+      "returned_argb_u32": "0x2c6cdd8f",
+      "source_alpha_u8": 225
+    },
+    {
+      "returned_argb_u32": "0x2c6cdd8f",
+      "source_alpha_u8": 226
+    },
+    {
+      "returned_argb_u32": "0x2c6cdd8f",
+      "source_alpha_u8": 227
+    },
+    {
+      "returned_argb_u32": "0x2c6cdd8f",
+      "source_alpha_u8": 228
+    },
+    {
+      "returned_argb_u32": "0x2c6cdd8f",
+      "source_alpha_u8": 229
+    },
+    {
+      "returned_argb_u32": "0x2d6cdd8f",
+      "source_alpha_u8": 230
+    },
+    {
+      "returned_argb_u32": "0x2d6cdd8f",
+      "source_alpha_u8": 231
+    },
+    {
+      "returned_argb_u32": "0x2d6cdd8f",
+      "source_alpha_u8": 232
+    },
+    {
+      "returned_argb_u32": "0x2d6cdd8f",
+      "source_alpha_u8": 233
+    },
+    {
+      "returned_argb_u32": "0x2d6cdd8f",
+      "source_alpha_u8": 234
+    },
+    {
+      "returned_argb_u32": "0x2e6cdd8f",
+      "source_alpha_u8": 235
+    },
+    {
+      "returned_argb_u32": "0x2e6cdd8f",
+      "source_alpha_u8": 236
+    },
+    {
+      "returned_argb_u32": "0x2e6cdd8f",
+      "source_alpha_u8": 237
+    },
+    {
+      "returned_argb_u32": "0x2e6cdd8f",
+      "source_alpha_u8": 238
+    },
+    {
+      "returned_argb_u32": "0x2e6cdd8f",
+      "source_alpha_u8": 239
+    },
+    {
+      "returned_argb_u32": "0x2f6cdd8f",
+      "source_alpha_u8": 240
+    },
+    {
+      "returned_argb_u32": "0x2f6cdd8f",
+      "source_alpha_u8": 241
+    },
+    {
+      "returned_argb_u32": "0x2f6cdd8f",
+      "source_alpha_u8": 242
+    },
+    {
+      "returned_argb_u32": "0x2f6cdd8f",
+      "source_alpha_u8": 243
+    },
+    {
+      "returned_argb_u32": "0x2f6cdd8f",
+      "source_alpha_u8": 244
+    },
+    {
+      "returned_argb_u32": "0x306cdd8f",
+      "source_alpha_u8": 245
+    },
+    {
+      "returned_argb_u32": "0x306cdd8f",
+      "source_alpha_u8": 246
+    },
+    {
+      "returned_argb_u32": "0x306cdd8f",
+      "source_alpha_u8": 247
+    },
+    {
+      "returned_argb_u32": "0x306cdd8f",
+      "source_alpha_u8": 248
+    },
+    {
+      "returned_argb_u32": "0x306cdd8f",
+      "source_alpha_u8": 249
+    },
+    {
+      "returned_argb_u32": "0x316cdd8f",
+      "source_alpha_u8": 250
+    },
+    {
+      "returned_argb_u32": "0x316cdd8f",
+      "source_alpha_u8": 251
+    },
+    {
+      "returned_argb_u32": "0x316cdd8f",
+      "source_alpha_u8": 252
+    },
+    {
+      "returned_argb_u32": "0x316cdd8f",
+      "source_alpha_u8": 253
+    },
+    {
+      "returned_argb_u32": "0x316cdd8f",
+      "source_alpha_u8": 254
+    },
+    {
+      "returned_argb_u32": "0x326cdd8f",
+      "source_alpha_u8": 255
+    }
+  ],
+  "source_rgb_u24": "0x6cdd8f",
+  "sources": {
+    "caller_sha256": "c64aa5a51f85ba9abe3755e22ade255dba23f2ef5e24ad82fda4a3c4feeaf5bd",
+    "native_helper_sha256": {
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "native_libraries_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    }
+  }
+}

@@ -186,7 +186,11 @@ native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](../conformance/airbrush-saved-caller-native.json)
 selects V1 for null settings and V2 for empty settings. The numeric model matches
 both 416-byte streams bit for bit under an explicit 1920×1080 display profile;
-native color forwarding is recorded separately. A native
+the [color oracle](../conformance/airbrush-color-native.json) checks all 256 source
+alpha bytes and ten full Drawing routes: native output alpha is
+`clamp(trunc(f32(f32(alpha) * 50) / 255), 3, 50)`, preserving RGB.
+This includes source alpha zero becoming output alpha three; GPU compositing
+is not established by this getter contract. A native
 [texture capture](../conformance/airbrush-texture-native.json) now checks Renderer
 allocation, nearest/clamped sampling and exact GL upload bytes. An
 [instanced Draw capture](../conformance/airbrush-draw-native.json) checks native
