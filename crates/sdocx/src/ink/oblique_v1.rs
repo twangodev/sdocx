@@ -1,7 +1,7 @@
 //! Bounded model of the selected Oblique GLV1 saved sampler.
 //!
-//! This covers sixteen synthetic saved-caller witnesses with tool 0 or 2,
-//! including curve-disabled, alternating terminal, and longer stress paths.
+//! This covers selected synthetic saved-caller and edge witnesses with tool 0
+//! or 2, including curve-disabled, duplicate, alternating, and stress paths.
 //! It does not establish other tool settings, arbitrary stroke histories, input
 //! decoding, or renderer state.
 
@@ -96,8 +96,13 @@ fn quadratic_terminal_samples(
 
 fn line_path_samples(start: P, end: P, size: f32, emission_budget: usize) -> Option<Vec<P>> {
     let length = end.sub(start).len();
-    if length == 0.0 || !length.is_finite() {
+    if !length.is_finite() {
         return None;
+    }
+    // A zero-length native SmPath has no subdivision record and getPosTan
+    // emits no sample. redrawLineNoCurve still makes its direct endpoint call.
+    if length == 0.0 {
+        return Some(Vec::new());
     }
     let count = repeat_count(size, length)?;
     if count > emission_budget {
@@ -286,15 +291,6 @@ pub(super) fn prepare_selected_v1_stream(
     }) {
         return None;
     }
-    if !curve_enabled
-        && points
-            .windows(2)
-            .any(|pair| pair[1].sub(pair[0]).len() < SHORT_PATH)
-    {
-        // Short or duplicate no-curve transitions have not been captured;
-        // leave those strokes on the existing approximate renderer.
-        return None;
-    }
     let mut output = Vec::new();
     let mut redraw_line_ends = Vec::with_capacity(points.len() - 1);
     let mut redraw_line_rt = Vec::with_capacity(points.len() - 1);
@@ -461,6 +457,7 @@ mod tests {
         [
             include_str!("../../../../conformance/oblique-saved-caller-selected-native.json"),
             include_str!("../../../../conformance/oblique-v1-stress-native.json"),
+            include_str!("../../../../conformance/oblique-v1-edge-native.json"),
         ]
         .into_iter()
         .flat_map(|json| {
@@ -653,6 +650,11 @@ mod tests {
                 continue;
             };
             let source = &case["input"];
+            if source["tool_type"].as_u64() == Some(1) {
+                // Tool 1 uses a distinct native sampler and is deliberately
+                // outside this source-derived V1 model.
+                continue;
+            }
             assert_eq!(source["advanced_setting"], Value::Null, "{case_name}");
             let points = fixture_points(source);
             let size = f32::from_bits(bits(&source["pen_size_f32_bits"]));
@@ -714,6 +716,9 @@ mod tests {
                 continue;
             };
             let source = &case["input"];
+            if source["tool_type"].as_u64() == Some(1) {
+                continue;
+            }
             let points = fixture_points(source);
             let stream = prepare_selected_v1_stream(
                 &points,
@@ -787,6 +792,32 @@ mod tests {
                 assert_vector_buffer(&triangles, &case, phase, &case_name);
             }
         }
+    }
+
+    #[test]
+    fn native_tool1_edge_is_outside_the_selected_v1_sampler() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/oblique-v1-edge-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["edge_tool1_same_mesh"];
+        let points = fixture_points(&case["input"]);
+        let modeled = prepare_selected_v1_stream(
+            &points,
+            f32::from_bits(bits(&case["input"]["pen_size_f32_bits"])),
+            case["input"]["curve_enabled"].as_bool().unwrap(),
+        )
+        .unwrap();
+        let native_count = case["callback_add_point_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|call| call["phase"] == "draw_object_stroke")
+            .count();
+        assert_eq!(case["input"]["tool_type"], 1);
+        assert_eq!(native_count, 23);
+        assert_eq!(modeled.pairs.len(), 45);
+        assert_ne!(modeled.pairs.len(), native_count);
     }
 
     #[test]

@@ -889,8 +889,8 @@ mod tests {
         assert!(
             prepare_stroke_for_context(&v1_tool, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
-                .is_none(),
-            "short V1 no-curve transitions stay on the fallback"
+                .is_some(),
+            "short V1 no-curve transitions have captured native support"
         );
 
         for effect in 0..6 {
@@ -998,6 +998,121 @@ mod tests {
             .as_str()
             .unwrap();
         assert_eq!(actual, expected, "full V1 native AddPoint vector");
+    }
+
+    #[test]
+    fn canonical_v1_duplicate_short_linear_input_matches_native_mesh() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique-v1-edge-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["edge_linear_duplicates_sub5"];
+        let input = &case["input"];
+        let bits = |value: &serde_json::Value| {
+            let hex = value.as_str().unwrap().trim_start_matches("0x");
+            u32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| {
+                let pair = pair.as_array().unwrap();
+                crate::Point {
+                    x: f64::from(f32::from_bits(bits(&pair[0]))),
+                    y: f64::from(f32::from_bits(bits(&pair[1]))),
+                }
+            })
+            .collect::<Vec<_>>();
+        let size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
+        let stroke = Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                pen_name: input["pen_name"].as_str().map(str::to_owned),
+                advanced_settings: None,
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: crate::StrokeProperties {
+                    compressed: false,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: Some(0xff33_6699),
+                    color_type_raw: Some(0),
+                    pen_size: Some(size),
+                    stroke_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures: Vec::new(),
+            timestamps: Vec::new(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: None,
+            pen_width: size,
+        };
+        let prepared = prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+        assert!(prepare_stroke(&stroke, false).coverage_mesh.is_none());
+        let mesh = prepared.coverage_mesh.expect("captured short/duplicate V1 mesh");
+        assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
+        let native_lines: Vec<_> = case["transitions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|event| {
+                event["phase"] == "draw_object_stroke"
+                    && event["method"] == "redrawLineNoCurve"
+            })
+            .collect();
+        assert_eq!(native_lines.len(), mesh.sample_ends.len());
+        for (end, event) in mesh.sample_ends.iter().zip(native_lines) {
+            assert_eq!(
+                *end,
+                event["vector_count_after_bytes"].as_u64().unwrap() as usize / 36
+            );
+        }
+        let terminal = case["transitions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|event| {
+                event["phase"] == "draw_object_stroke" && event["method"] == "endPen"
+            })
+            .unwrap();
+        assert_eq!(
+            mesh.terminal_start,
+            terminal["vector_count_before_bytes"].as_u64().unwrap() as usize / 36
+        );
+        assert_eq!(mesh.terminal_end, mesh.triangles.len());
+        let actual: Vec<u8> = mesh
+            .triangles
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        use sha2::{Digest, Sha256};
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&actual)),
+            case["phase_final_vectors"]["draw_object_stroke"]["sha256"]
+                .as_str()
+                .unwrap()
+        );
     }
 
     #[test]

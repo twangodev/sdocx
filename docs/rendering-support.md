@@ -216,11 +216,12 @@ raster scales; SVG stays close in those captures. PDF transport remains under
 investigation.
 Selected V1 now uses the shared RTV1 vector transport in canonical page
 coordinates for ordinary tool-0/2 strokes with explicit size/ARGB and color type
-0, excluding fixed width and effects. Short or duplicate curve-disabled
-segments retain the generic approximation. The
-[stress oracle](../conformance/oblique-v1-stress-native.json) and source-derived
-model match callback pairs, return-state boundaries and complete mesh buffers
-across 16 synthetic geometry cases. Paired 1×/2× SVG checks against vendor shader
+0, excluding fixed width and effects. The
+[stress](../conformance/oblique-v1-stress-native.json) and
+[edge](../conformance/oblique-v1-edge-native.json) oracles verify callback pairs,
+return-state boundaries and complete mesh buffers, including short and
+duplicate curve-disabled transitions. Tool 1 has a different native sampler
+and remains outside this route. Paired 1×/2× SVG checks against vendor shader
 replay are close; vector-only PDFs retain material active-region errors.
 That replay and the host-modeled overlap controls do not establish native
 multi-stroke paint, device pixels or complete parity.
