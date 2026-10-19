@@ -1,8 +1,8 @@
-//! Bounded test-only model of the selected Oblique GLV1 curve sampler.
+//! Bounded test-only model of the selected Oblique GLV1 saved sampler.
 //!
-//! This covers only the five synthetic tool-0, curve-enabled native saved-
-//! caller witnesses. It does not model input decoding, other tool settings,
-//! curve-disabled paths, or renderer state.
+//! This covers eight synthetic tool-0 saved-caller witnesses, including
+//! curve-disabled and alternating terminal paths. It does not model input
+//! decoding, other tool settings, arbitrary stroke histories, or renderer state.
 
 use super::path::{P, Quad};
 
@@ -53,6 +53,39 @@ fn quadratic_path_samples(start: P, control: P, end: P, size: f32) -> Option<Vec
     let mut samples = Vec::with_capacity(count);
     for _ in 0..count {
         samples.push(path.at(distance));
+        distance += step;
+    }
+    Some(samples)
+}
+
+fn quadratic_terminal_samples(start: P, control: P, end: P, size: f32) -> Option<Vec<P>> {
+    let path = Quad::new(start, control, end);
+    if path.length == 0.0 || !path.length.is_finite() {
+        return None;
+    }
+    let count = repeat_count(size, path.length)?;
+    let step = path.length / count as f32;
+    let mut distance = 0.0_f32;
+    let mut samples = Vec::with_capacity(count + 1);
+    for _ in 0..=count {
+        samples.push(path.at(distance));
+        distance += step;
+    }
+    Some(samples)
+}
+
+fn line_path_samples(start: P, end: P, size: f32) -> Option<Vec<P>> {
+    let length = end.sub(start).len();
+    if length == 0.0 || !length.is_finite() {
+        return None;
+    }
+    let count = repeat_count(size, length)?;
+    let step = length / count as f32;
+    let scale = 32767.0_f32 * f32::from_bits(0x3800_00fd);
+    let mut distance = 0.0_f32;
+    let mut samples = Vec::with_capacity(count);
+    for _ in 0..count {
+        samples.push(start.lerp(end, distance * scale / length));
         distance += step;
     }
     Some(samples)
@@ -152,10 +185,21 @@ fn cubic_terminal_samples(start: P, control: P, end: P, size: f32) -> Option<Vec
 }
 
 /// Model the traced redrawLine/endPen state transitions for the narrow
-/// selected V1 profile represented by the five saved-caller cases.
-fn selected_v1_samples(points: &[P], size: f32) -> Option<Vec<P>> {
-    if points.len() < 2 || points.len() > 3 || !size.is_finite() || size <= 0.0 {
+/// selected V1 profile represented by the eight saved-caller cases.
+fn selected_v1_samples(points: &[P], size: f32, curve_enabled: bool) -> Option<Vec<P>> {
+    if points.len() < 2 || points.len() > 4 || !size.is_finite() || size <= 0.0 {
         return None;
+    }
+    if !curve_enabled {
+        let mut output = Vec::new();
+        for pair in points.windows(2) {
+            output.extend(line_path_samples(pair[0], pair[1], size)?);
+            output.push(pair[1]);
+        }
+        // The no-curve endPen line is zero length at the final source point;
+        // getPosTan fails and the unconditional endpoint draw remains.
+        output.push(*points.last()?);
+        return (output.len() <= MAX_SAMPLES).then_some(output);
     }
     let mut output = Vec::new();
     let mut previous = points[0];
@@ -165,7 +209,7 @@ fn selected_v1_samples(points: &[P], size: f32) -> Option<Vec<P>> {
     let mut alternate = true;
     let mut last_accepted = points[0];
 
-    for (index, &current) in points.iter().enumerate().skip(1) {
+    for &current in points.iter().skip(1) {
         let delta = P {
             x: (current.x - previous.x).abs(),
             y: (current.y - previous.y).abs(),
@@ -181,6 +225,7 @@ fn selected_v1_samples(points: &[P], size: f32) -> Option<Vec<P>> {
             if was_alternate {
                 // Native still updates +124 at the common return tail.
                 last_accepted = current;
+                previous = current;
                 continue;
             }
         } else {
@@ -198,11 +243,10 @@ fn selected_v1_samples(points: &[P], size: f32) -> Option<Vec<P>> {
         let endpoint = control.mid(current);
         let path_samples = quadratic_path_samples(start, control, endpoint, size)?;
         output.extend(path_samples.iter().copied());
-        if index == points.len() - 1 {
-            // redrawLine's final-segment flag draws the quadratic endpoint
-            // after the repeat-count interior loop.
-            output.push(endpoint);
-        }
+        // The saved V1 redraw loop passes the endpoint flag to each
+        // redrawLine call, so every generated quadratic path gets this direct
+        // endpoint draw after its repeat-count interior samples.
+        output.push(endpoint);
         // The next path starts at the last successful getPosTan position,
         // while the stored control advances to the raw current source point.
         if let Some(last) = path_samples.last() {
@@ -223,9 +267,12 @@ fn selected_v1_samples(points: &[P], size: f32) -> Option<Vec<P>> {
             size,
         )?);
     } else {
-        // The alternate terminal quadratic branch is not in the durable
-        // selected-null fixture set yet; reject rather than infer its output.
-        return None;
+        output.extend(quadratic_terminal_samples(
+            start,
+            control,
+            *points.last()?,
+            size,
+        )?);
     }
     (output.len() <= MAX_SAMPLES).then_some(output)
 }
@@ -273,16 +320,19 @@ mod tests {
             "two_point_far",
             "two_point_offset",
             "three_points_curve",
+            "three_points_no_curve",
+            "four_points_curve",
+            "alternating_terminal_curve",
         ] {
             let case = &fixture["cases"][case_name];
             let source = &case["input"];
             assert_eq!(source["advanced_setting"], Value::Null, "{case_name}");
-            assert!(source["curve_enabled"].as_bool().unwrap(), "{case_name}");
             assert_eq!(source["tool_type"], 0, "{case_name}");
             let points = fixture_points(source);
             let size = f32::from_bits(bits(&source["pen_size_f32_bits"]));
-            let samples = selected_v1_samples(&points, size)
-                .unwrap_or_else(|| panic!("unsupported saved V1 case {case_name}"));
+            let samples =
+                selected_v1_samples(&points, size, source["curve_enabled"].as_bool().unwrap())
+                    .unwrap_or_else(|| panic!("unsupported saved V1 case {case_name}"));
             for phase in ["draw_object_stroke", "saved_redraw"] {
                 let native: Vec<_> = case["callback_add_point_calls"]
                     .as_array()
@@ -333,5 +383,46 @@ mod tests {
         assert_eq!(repeat_count(1.0, 20.0).unwrap(), 20);
         assert_eq!(repeat_count(56.0, 100.0).unwrap(), 20);
         assert_eq!(repeat_count(f32::NAN, 1.0), None);
+    }
+
+    #[test]
+    fn terminal_cubic_matches_shared_native_smpath_fixture() {
+        let fixture: Value =
+            serde_json::from_str(include_str!("../../../../conformance/smpath-cubic.json"))
+                .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let controls = case["native"]["controls_f32"].as_array().unwrap();
+            let point = |index: usize| P {
+                x: controls[index * 2].as_f64().unwrap() as f32,
+                y: controls[index * 2 + 1].as_f64().unwrap() as f32,
+            };
+            let path = Cubic::new([point(0), point(1), point(2), point(3)]);
+            assert_eq!(
+                path.length.to_bits(),
+                word_bits(&case["native"]["length_bits"]),
+                "{} cubic length",
+                case["name"]
+            );
+            for sample in case["native"]["samples"].as_array().unwrap() {
+                let position = path
+                    .at(f32::from_bits(word_bits(&sample["distance_bits"])))
+                    .unwrap();
+                let expected = &sample["position_bits"];
+                assert_eq!(
+                    position.x.to_bits(),
+                    word_bits(&expected[0]),
+                    "{} cubic x at {}",
+                    case["name"],
+                    sample["fraction"]
+                );
+                assert_eq!(
+                    position.y.to_bits(),
+                    word_bits(&expected[1]),
+                    "{} cubic y at {}",
+                    case["name"],
+                    sample["fraction"]
+                );
+            }
+        }
     }
 }

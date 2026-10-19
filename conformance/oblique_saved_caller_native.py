@@ -23,7 +23,7 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 mode.add_argument('--check-profile-invariance',action='store_true')
-parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','reuse_second','color_contract'),default='two_point_curve')
+parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','three_points_no_curve','four_points_curve','alternating_terminal_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','reuse_second','color_contract'),default='two_point_curve')
 parser.add_argument('--redraw-version',choices=('selected','v4'),default='selected',help='use the selected drawable vtable entry, or the explicit GLV4 diagnostic probe')
 parser.add_argument('--advanced-setting',choices=('none','4'),default='none',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
 parser.add_argument('--width',type=int,default=1920)
@@ -51,6 +51,9 @@ INPUT_CASES={
  'two_point_above5': {'points':[[0.0,0.0],[5.001,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'two_point_offset_at5': {'points':[[10.0,20.0],[15.0,20.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'three_points_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,8,16],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
+ 'three_points_no_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0]],'size':4.0,'curve_enabled':False,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,8,16],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
+ 'four_points_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5,0.5],'timestamps':[0,8,16,24],'tilt':[0.0,0.0,0.0,0.0],'orientation':[0.0,0.0,0.0,0.0]},
+ 'alternating_terminal_curve': {'points':[[0.0,0.0],[10.0,0.0],[12.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,10,20],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
  'reuse_second': {'points':[[30.0,2.0],[31.25,2.5]],'size':4.25,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.6,0.8],'timestamps':[33,43],'tilt':[0.1,-0.2],'orientation':[0.3,0.5]},
  'color_contract': {'points':[[0.0,0.0],[2.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
 }
