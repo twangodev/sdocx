@@ -98,9 +98,14 @@ separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses;
 runtime paper coverage and vector paint integration remain outstanding.
-Test-only samplers check Marker3 V5 stamp positions, radii and callback boundaries
-in ten [synthetic native cases](../conformance/marker3-saved-native.json), and
-DefaultPen position/radius streams in sixteen synthetic
+The test-only Marker3 V5 sampler checks stamp positions, radii and callback
+boundaries in ten [synthetic native cases](../conformance/marker3-saved-native.json).
+Its [positive paint capture](../conformance/marker3-paint-positive-native.json)
+executes native mask/composite draws on separate complete framebuffer targets
+in host Mesa, retaining the full RGBA hash and GL error checks. Points enter
+directly at RTV1; saved-object paint integration, vector edge coverage and device
+pixel parity remain outstanding. DefaultPen's test-only sampler checks
+position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
 DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
 native blend setup and shader text that replaces input alpha with screen-space
