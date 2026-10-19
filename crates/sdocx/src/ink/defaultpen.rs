@@ -316,6 +316,57 @@ mod tests {
     }
 
     #[test]
+    fn saved_samples_match_native_drawing_caller_stream() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/defaultpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["straight_curve_tool1_default"];
+        let input = &case["input"];
+        let float = |value: &Value| {
+            let hex = value.as_str().unwrap();
+            f32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: f64::from(float(&pair[0])),
+                y: f64::from(float(&pair[1])),
+            })
+            .collect::<Vec<_>>();
+        let sources = case["motion_event_source_returns"].as_array().unwrap();
+        assert_eq!(sources.len(), 2);
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            let source = sources.iter().find(|row| row["phase"] == phase).unwrap();
+            let source = u32::try_from(source["source_u32"].as_u64().unwrap()).unwrap();
+            let actual = saved(
+                &points,
+                float(&input["pen_size_f32_bits"]),
+                input["tool_type"].as_u64().unwrap() as u32,
+                source,
+            )
+            .unwrap();
+            // The native caller asserts equal full streams in both phases;
+            // the fixture retains all float bits once, without duplicating them.
+            let expected = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+                .as_array()
+                .unwrap();
+            assert_eq!(actual.len() * 3, expected.len(), "{phase}");
+            for (index, (actual, expected)) in actual.iter().flatten().zip(expected).enumerate() {
+                assert_eq!(
+                    actual.to_bits(),
+                    float(expected).to_bits(),
+                    "{phase} float {index}"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn native_getrepeat_width_buckets_match_executed_helper() {
         let fixture = fixture();
         for row in fixture["repeat_matrix"].as_array().unwrap() {

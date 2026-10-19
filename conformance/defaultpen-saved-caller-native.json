@@ -82,6 +82,16 @@
           "name": "createPenInst"
         }
       ],
+      "motion_event_source_returns": [
+        {
+          "phase": "draw_object_stroke",
+          "source_u32": 0
+        },
+        {
+          "phase": "saved_redraw",
+          "source_u32": 0
+        }
+      ],
       "native_model_getters": {
         "SPen::ObjectStroke::GetOrientation() const": {
           "host_callback_present": false,
