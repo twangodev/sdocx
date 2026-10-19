@@ -5,7 +5,7 @@
     "renderer_library_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
     "graphics_library_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
     "host_context": "Pinned saved RedrawPen/endPen execute through actual WorkerTask::Member2 queue Run, RTV1::Update, and native GraphicsObject::UpdateBuffer. Native RTV1::Draw and Renderer GLES GraphicsObject, BlendStateObject, OpenGLShaderProgram, and ParameterBindingImpl methods execute. Host supplies explicit MotionEvent values, an identity-transform ISPSubBitmap callback interface, synthetic EGL context/GLES object handles/status, source-derived uniform reflection, and intercepted GLES imports. After queued Update, host code redirects PC at movePen+0x3b4 to the native epilogue (+0x3e4); at redraw+0x1f5b4 the queue callback returns through a host trampoline. These redirects skip remaining canvas-size/density metadata; they are not native early returns. Draw then uses the resulting RTV1 state.",
-    "capture_normalization": "Draw subclass instruments AddPoint/buildMesh directly and does not delegate those same internal addresses to NativeCalligraphy.hook, preventing duplicated host records; uploaded bytes remain native RTV1 vectors.",
+    "capture_normalization": "Draw subclass instruments saved-redraw events directly and delegates host imports to NativeFountain.hook, bypassing the duplicate NativeCalligraphy recorder; uploaded bytes remain native RTV1 vectors.",
     "limits": [
       "No Android EGL/GLES driver or device pixels",
       "Shader compile/link success, uniform reflection and locations are host-adapter values; type is derived from pinned captured GLSL",
@@ -39,7 +39,7 @@
       "saved_redraw": {
         "native_add_point_count": 13,
         "native_build_mesh_count": 65,
-        "orientation_reads": 4
+        "orientation_reads": 2
       },
       "set_pen_data": {
         "native_argb": "0x80112233",
@@ -366,7 +366,7 @@
         "queue_runs": 4,
         "add_points": 13,
         "build_meshes": 65,
-        "orientation_reads": 4
+        "orientation_reads": 2
       }
     },
     {
@@ -394,7 +394,7 @@
       "saved_redraw": {
         "native_add_point_count": 13,
         "native_build_mesh_count": 65,
-        "orientation_reads": 4
+        "orientation_reads": 2
       },
       "set_pen_data": {
         "native_argb": "0x4044aaee",
@@ -721,7 +721,7 @@
         "queue_runs": 4,
         "add_points": 13,
         "build_meshes": 65,
-        "orientation_reads": 4
+        "orientation_reads": 2
       }
     },
     {
@@ -750,7 +750,7 @@
       "saved_redraw": {
         "native_add_point_count": 13,
         "native_build_mesh_count": 65,
-        "orientation_reads": 2,
+        "orientation_reads": 1,
         "native_add_points": [
           {
             "vector_bits": [
@@ -2394,7 +2394,7 @@
         "queue_runs": 4,
         "add_points": 13,
         "build_meshes": 65,
-        "orientation_reads": 2
+        "orientation_reads": 1
       }
     }
   ]

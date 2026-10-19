@@ -576,7 +576,9 @@ class NativeDrawCalligraphy(saved_calligraphy.NativeCalligraphy):
             return
         if address in self.plt and self.plt[address] == "SPen::MotionEvent::GetHistoricalOrientation(int) const":
             self.orientation_reads.append(self.x(1))
-        super().hook(u, address, size, data)
+        # This override already records saved-redraw state and sample reads.
+        # Delegate only host imports, not NativeCalligraphy's duplicate recorder.
+        fountain_native.NativeFountain.hook(self, u, address, size, data)
 
     def run(self, case):
         self.history = [tuple(row) for row in case["history"]]
@@ -1120,7 +1122,7 @@ def capture():
                          "renderer_library_sha256": fountain_native.HASHES["Renderer"],
                          "graphics_library_sha256": fountain_native.HASHES["Graphics"],
                          "host_context": "Pinned saved RedrawPen/endPen execute through actual WorkerTask::Member2 queue Run, RTV1::Update, and native GraphicsObject::UpdateBuffer. Native RTV1::Draw and Renderer GLES GraphicsObject, BlendStateObject, OpenGLShaderProgram, and ParameterBindingImpl methods execute. Host supplies explicit MotionEvent values, an identity-transform ISPSubBitmap callback interface, synthetic EGL context/GLES object handles/status, source-derived uniform reflection, and intercepted GLES imports. After queued Update, host code redirects PC at movePen+0x3b4 to the native epilogue (+0x3e4); at redraw+0x1f5b4 the queue callback returns through a host trampoline. These redirects skip remaining canvas-size/density metadata; they are not native early returns. Draw then uses the resulting RTV1 state.",
-                         "capture_normalization": "Draw subclass instruments AddPoint/buildMesh directly and does not delegate those same internal addresses to NativeCalligraphy.hook, preventing duplicated host records; uploaded bytes remain native RTV1 vectors.",
+                         "capture_normalization": "Draw subclass instruments saved-redraw events directly and delegates host imports to NativeFountain.hook, bypassing the duplicate NativeCalligraphy recorder; uploaded bytes remain native RTV1 vectors.",
                          "limits": ["No Android EGL/GLES driver or device pixels", "Shader compile/link success, uniform reflection and locations are host-adapter values; type is derived from pinned captured GLSL", "Identity subbitmap transform and bind/unbind are synthetic host inputs", "GL import calls are native call arguments, not executed driver state"]},
             "cases": results}
 
