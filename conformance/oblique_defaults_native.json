@@ -1,0 +1,3442 @@
+{
+  "cases": {
+    "v1_both_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": null,
+        "color_argb_u32": "0xff000000",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": true,
+          "pen_size": true
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "0000000000000000000000000000803f",
+          "drawing_selected_rt_rgba_f32": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "cdcccc3e",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "ObjectStroke_GetPenSize_f32_bits": "00000000",
+          "Pen_GetSize_after_Drawing_f32_bits": "cdcccc3e",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "00000000",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "cdcccc3e"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "cdcccc3e",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": null,
+          "drawing_selected_drawable_version": "1",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "1"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV1",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x503991c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f8",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10034f00",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f0",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10034f00",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "706b0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x10036c70",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f0",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10036c70",
+              "x6": "0x10036c70",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f0",
+              "x1": "0x1003556c",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10036c70",
+              "x6": "0x10036c70",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x503991c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100354f8",
+              "x1": "0x1002d460",
+              "x2": "0x10034070",
+              "x3": "0x10034070",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100354f0",
+              "x1": "0x1002d460",
+              "x2": "0x10034070",
+              "x3": "0x10034070",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "d0770310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x100378d0",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f0",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x100378d0",
+              "x6": "0x100378d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100354f0",
+              "x1": "0x1003556c",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x100378d0",
+              "x6": "0x100378d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "00000000",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV1 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "v1_color_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 1,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 1,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": null,
+        "color_argb_u32": "0xff000000",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "0000803f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": true,
+          "pen_size": false
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "0000803f",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "0000803f",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "0000000000000000000000000000803f",
+          "drawing_selected_rt_rgba_f32": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "0000803f",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "ObjectStroke_GetPenSize_f32_bits": "0000803f",
+          "Pen_GetSize_after_Drawing_f32_bits": "0000803f",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "0000803f"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "0000803f",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": null,
+          "drawing_selected_drawable_version": "1",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "1"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV1",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x503991c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c8",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x100350d0",
+              "x5": "0x100336b0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x100350d0",
+              "x5": "0x100336b0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "406d0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x10036e40",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10036e40",
+              "x6": "0x10036e40",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3f000000",
+              "s1": "0x3f800000",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1003573c",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10036e40",
+              "x6": "0x10036e40",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x503991c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f800000",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100356c8",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f800000",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100356c0",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "a0790310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x10037aa0",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037aa0",
+              "x6": "0x10037aa0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f000000",
+              "s1": "0x3f800000",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1003573c",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037aa0",
+              "x6": "0x10037aa0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "0000803f",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 1,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 1,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV1 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "v1_size_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": null,
+        "color_argb_u32": "0x80402010",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": false,
+          "pen_size": true
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0x80402010",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "8180803e8180003e8180803d8180003f",
+          "drawing_selected_rt_rgba_f32": [
+            0.250980406999588,
+            0.125490203499794,
+            0.062745101749897,
+            0.501960813999176
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "8180803e",
+            "8180003e",
+            "8180803d",
+            "8180003f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "cdcccc3e",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0x80402010",
+          "ObjectStroke_GetPenSize_f32_bits": "00000000",
+          "Pen_GetSize_after_Drawing_f32_bits": "cdcccc3e",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "8180803e",
+            "8180003e",
+            "8180803d",
+            "8180003f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "00000000",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 2151686160,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "cdcccc3e"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e68",
+            "return_pc_expected": "0x5037e68",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x5037e78",
+            "return_pc_expected": "0x5037e78",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "cdcccc3e",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": null,
+          "drawing_selected_drawable_version": "1",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "1"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV1",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x503991c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c8",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x100350d0",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x100350d0",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "406d0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x10036e40",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10036e40",
+              "x6": "0x10036e40",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1003573c",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10036e40",
+              "x6": "0x10036e40",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x503991c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100356c8",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5038f88",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x100356c0",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "a0790310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x5037e08",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x10037aa0",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40a00000",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037aa0",
+              "x6": "0x10037aa0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5039d8c",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x40000000",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x100356c0",
+              "x1": "0x1003573c",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037aa0",
+              "x6": "0x10037aa0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "00000000",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV1 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "v4_both_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": "4;",
+        "color_argb_u32": "0xff000000",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": true,
+          "pen_size": true
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "0000000000000000000000000000803f",
+          "drawing_selected_rt_rgba_f32": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "cdcccc3e",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "ObjectStroke_GetPenSize_f32_bits": "00000000",
+          "Pen_GetSize_after_Drawing_f32_bits": "cdcccc3e",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "00000000",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "cdcccc3e"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "cdcccc3e",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": "4;",
+          "drawing_selected_drawable_version": "4",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "4"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV4",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x50411b8",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035958",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035240",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035950",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035240",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "00700310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x10037100",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035950",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037100",
+              "x6": "0x10037100",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035950",
+              "x1": "0x100359cc",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037100",
+              "x6": "0x10037100",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x50411b8",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035958",
+              "x1": "0x1002d460",
+              "x2": "0x10034070",
+              "x3": "0x10034070",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035950",
+              "x1": "0x1002d460",
+              "x2": "0x10034070",
+              "x3": "0x10034070",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "607c0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x10037d60",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035950",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037d60",
+              "x6": "0x10037d60",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035950",
+              "x1": "0x100359cc",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037d60",
+              "x6": "0x10037d60",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "00000000",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV4 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "v4_color_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 1,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 1,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": "4;",
+        "color_argb_u32": "0xff000000",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "0000803f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": true,
+          "pen_size": false
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "0000803f",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "0000803f",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "0000000000000000000000000000803f",
+          "drawing_selected_rt_rgba_f32": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "0000803f",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0xff000000",
+          "ObjectStroke_GetPenSize_f32_bits": "0000803f",
+          "Pen_GetSize_after_Drawing_f32_bits": "0000803f",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "0000803f"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "0000803f",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": "4;",
+          "drawing_selected_drawable_version": "4",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "4"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV4",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x50411b8",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b28",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035410",
+              "x5": "0x100336b0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035410",
+              "x5": "0x100336b0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "d0710310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x100372d0",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x100372d0",
+              "x6": "0x100372d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3f000000",
+              "s1": "0x3f800000",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x10035b9c",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x100372d0",
+              "x6": "0x100372d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x50411b8",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f800000",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b28",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f800000",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "307e0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x10037f30",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037f30",
+              "x6": "0x10037f30",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3f000000",
+              "s1": "0x3f800000",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x10035b9c",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037f30",
+              "x6": "0x10037f30",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "0000803f",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 1,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 1,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV4 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "v4_size_omitted": {
+      "callback_add_point_calls": [
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "draw_object_stroke",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        },
+        {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "phase": "saved_redraw",
+          "pre_append_count_bytes": 0,
+          "previous_xy_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "rt_id": "rt0",
+          "stored_size_u32": 0,
+          "vector_count_bytes": 360,
+          "vector_delta_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "xy_bits": [
+            "0x40000000",
+            "0x0"
+          ]
+        }
+      ],
+      "case_id": "color_contract",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is an explicit identity color-conversion host callback",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": "4;",
+        "color_argb_u32": "0x80402010",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "9a99993e"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ObliquePen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000040",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "style_setters_omitted": {
+          "color_argb": false,
+          "pen_size": true
+        },
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e"
+        ],
+        "timestamps_i32": [
+          100,
+          110
+        ],
+        "tool_type": 0
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "ObjectDrawing::drawObjectStroke_return": 1,
+        "ObjectStroke_getter_snapshots": [
+          {
+            "curve_enabled": 1,
+            "label": "before_drawObjectStroke",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          },
+          {
+            "curve_enabled": 1,
+            "label": "before_saved_RedrawPen",
+            "point_count": 2,
+            "size_bits": "00000000",
+            "stroke_type": 0,
+            "tool_type": 0
+          }
+        ],
+        "color": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0x80402010",
+          "context_color_conversion": "explicit identity host callback",
+          "drawing_selected_rt_rgba_bytes_le": "8180803e8180003e8180803d8180003f",
+          "drawing_selected_rt_rgba_f32": [
+            0.250980406999588,
+            0.125490203499794,
+            0.062745101749897,
+            0.501960813999176
+          ],
+          "drawing_selected_rt_rgba_f32_bits": [
+            "8180803e",
+            "8180003e",
+            "8180803d",
+            "8180003f"
+          ]
+        },
+        "drawable_getInverseScale_f32_bits": [
+          "0000803f",
+          "0000803f"
+        ],
+        "drawable_getSize_f32_bits": "cdcccc3e",
+        "drawing_selected_rt_id": "rt0",
+        "loader": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenObliquePen.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "missing_style_defaults_probe": {
+          "ObjectStroke_GetColorType_u32": 0,
+          "ObjectStroke_GetColor_argb_u32": "0x80402010",
+          "ObjectStroke_GetPenSize_f32_bits": "00000000",
+          "Pen_GetSize_after_Drawing_f32_bits": "cdcccc3e",
+          "drawing_selected_rt_RGBA_f32_bits": [
+            "8180803e",
+            "8180003e",
+            "8180803d",
+            "8180003f"
+          ],
+          "native_Pen_SetSize_SetColor_entries_during_Drawing": [
+            {
+              "arg_s0_bits": "0000803f",
+              "caller_lr": "0x5036384",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 4278190080,
+              "caller_lr": "0x5036398",
+              "method": "SPen::Pen::SetColor(int)"
+            },
+            {
+              "arg_s0_bits": "00000000",
+              "caller_lr": "0x3081bfc",
+              "method": "SPen::Pen::SetSize(float)"
+            },
+            {
+              "arg_w1": 2151686160,
+              "caller_lr": "0x3081c4c",
+              "method": "SPen::Pen::SetColor(int)"
+            }
+          ],
+          "selected_drawable_getSize_after_saved_redraw_f32_bits": "cdcccc3e"
+        },
+        "motion_event_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eecb0",
+              "x1": "0x0",
+              "x2": "0x200eeca0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eecb0"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x4000000000000000",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f914",
+            "return_pc_expected": "0x503f914",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eee80",
+              "x1": "0x0",
+              "x2": "0x200eee70",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "saved_redraw",
+            "phase_return": "saved_redraw",
+            "return": {
+              "d0": "0x0",
+              "s0": "0x0",
+              "x0": "0x200eee80"
+            },
+            "return_pc": "0x503f924",
+            "return_pc_expected": "0x503f924",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          }
+        ],
+        "pen_GetSize_after_draw_f32_bits": "cdcccc3e",
+        "pen_screen_resolution": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "phase_rt_ids": {
+          "draw_object_stroke": [
+            "rt0"
+          ],
+          "saved_redraw": [
+            "rt0"
+          ]
+        },
+        "route": {
+          "advanced_setting": "4;",
+          "drawing_selected_drawable_version": "4",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "4"
+        },
+        "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "selected_drawable_object_redraw_return": 1,
+        "selected_drawable_primary_vtable_id": "ObliquePenStrokeDrawableGLV4",
+        "selected_drawable_redraw_lifecycle_method_entries": [
+          {
+            "pc": "0x50411b8",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b28",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035410",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x0",
+              "s1": "0xbf800000",
+              "s2": "0xbf800000",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x1002d460",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10035410",
+              "x5": "0x100334e0",
+              "x6": "0x2",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "d0710310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x100372d0",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x200eecb0",
+              "x2": "0x200eeca0",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x100372d0",
+              "x6": "0x100372d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "draw_object_stroke",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10035b20",
+              "x1": "0x10035b9c",
+              "x2": "0x200eeca0",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x100372d0",
+              "x6": "0x100372d0",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          },
+          {
+            "pc": "0x50411b8",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b28",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x5040928",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3ecccccd",
+              "s1": "0x0",
+              "s2": "0x40800000",
+              "s3": "0x40000000",
+              "s4": "0x406d413d",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x1002d460",
+              "x2": "0x10034240",
+              "x3": "0x10034240",
+              "x4": "0x200eedac",
+              "x5": "0x200eeaf0",
+              "x6": "0x200eeae0",
+              "x7": "0x200eead0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "307e0310000000006e0000000000000000000000000000009a99993e0000403fcdcc4c3e0000000000000000ffffffff00000000000000400000000000000000",
+            "pc": "0x503f8b4",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x10037f30",
+              "s1": "0xb",
+              "s2": "0x3e99999a",
+              "s3": "0x40000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x200eee80",
+              "x2": "0x200eee70",
+              "x3": "0x0",
+              "x4": "0x1",
+              "x5": "0x10037f30",
+              "x6": "0x10037f30",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::endPen(SPen::MotionEvent const*, SPen::RectF*, bool, bool)"
+            ]
+          },
+          {
+            "pc": "0x5041648",
+            "phase": "saved_redraw",
+            "regs": {
+              "s0": "0x3e4ccccd",
+              "s1": "0x3ecccccd",
+              "s2": "0x0",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0xbfec8360",
+              "x0": "0x10035b20",
+              "x1": "0x10035b9c",
+              "x2": "0x200eee70",
+              "x3": "0x1",
+              "x4": "0x1",
+              "x5": "0x10037f30",
+              "x6": "0x10037f30",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ObliquePenStrokeDrawableGLV4::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)"
+            ]
+          }
+        ],
+        "source_ObjectStroke_GetPenSize_f32_bits": "00000000",
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "000000009a99993e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00000000000000000000004000000000",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "0000003f0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "cdcccc3dcdcc4c3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "640000006e000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        },
+        "saved_redraw": {
+          "inverse_scale_bits": [
+            "0000803f",
+            "0000803f"
+          ],
+          "k_bits": "f304353f",
+          "sha256": "34f6f672da8b0642a05bb1561bce9dff6ea4596fb08b2f63399d2d6ae92fd16e",
+          "stored_size_u32": 0,
+          "vector_bytes": "f304353ff30435bf0000803ff30435bff304353f0000803f3d412d40f30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803f867da53ff304353f0000803f10a26ebded8223c000000000ec8223c0047abc3f00000000f304353ff30435bf0000803ff304353ff30435bf0000803fec8223c0047abc3f00000000f30435bff304353f0000803f3d412d40f30435bf0000803f867da53ff304353f0000803f76c19140047abcbf0000000076c19140047abcbf00000000867da53ff304353f0000803f88ba0340ed8223400000000010a26ebded8223c000000000f304353ff30435bf0000803f76c19140047abcbf0000000076c19140047abcbf00000000f304353ff30435bf0000803f3d412d40f30435bf0000803ff30435bff304353f0000803fec8223c0047abc3f00000000867da53ff304353f0000803f867da53ff304353f0000803fec8223c0047abc3f0000000088ba0340ed82234000000000",
+          "vector_count_bytes": 360
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "schema": "sdocx-oblique-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV4 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    }
+  },
+  "schema": "sdocx-oblique-missing-style-defaults-native-v1",
+  "scope": "synthetic native ObjectStroke caller with actual native Drawing and selected V1/V4 saved redraw; not serialized SDocx input or Samsung app/device export policy",
+  "source_hashes": {
+    "object-stroke-defaults-native.json": "b4142701a6e5ffc2c3a87653a4bea167d267279fe26211ee4f5e371442b331dc",
+    "oblique_saved_caller_native.py": "733e70ff9fe8194e5f056fc5094a462e7a3639094399e09f230de0d38c41ae23"
+  }
+}
