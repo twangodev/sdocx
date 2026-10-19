@@ -157,6 +157,11 @@ class NativeBrush(NativeFountain):
         self.relocate_data()
         self.add_address = self.syms[ADD_POINT]
         self.end_pen_plt = 0
+        self.end_pen_address = 0
+        self.draw_pattern_address = 0
+        self.end_pen_records = []
+        self.active_end_pen_record = None
+        self.pending_end_pen_returns = {}
         self.setting_inputs = []
         self.callbacks.update({
             'SPen::PenGLDataManager::GetMsgQueue()': self.queue_return,
@@ -422,6 +427,78 @@ class NativeBrush(NativeFountain):
         return self.current_motion[aliases.get(key, key)]
 
     def hook(self, u, address, size, data):
+        end_pen = self.active_end_pen_record
+        if end_pen is not None:
+            end_pc = address - 3 * 0x1000000
+            if end_pc == 0x5ab50:
+                end_pen['pen_path_selector_flag_88'] = self.x(8) & 0xff
+            elif end_pc == 0x5ab68:
+                end_pen['drawable_path_selector_flag_226'] = self.x(8) & 0xff
+            elif address == end_pen['return_pc']:
+                drawable = end_pen['drawable_address']
+                end_pen['exit_drawable_fields'] = self._end_pen_drawable_fields(drawable)
+                radii = end_pen.pop('_draw_pattern_radii_bits_le')
+                end_pen['draw_pattern_call_count'] = len(radii)
+                end_pen['draw_pattern_radius_inputs_bits_le'] = radii
+                end_pen['draw_pattern_opacity_arguments'] = end_pen.pop('_draw_pattern_opacity_values')
+                end_pen['emitted_addpoint_count'] = len(self.buffer_records) - end_pen['buffer_records_begin']
+                end_pen['emitted_records_range'] = [end_pen['buffer_records_begin'], len(self.buffer_records)]
+                end_pen['selected_path_method'] = next(
+                    call['method'] for call in end_pen['path_calls']
+                    if call['method'] in ('lineTo', 'quadTo', 'cubicTo'))
+                branch_flag = end_pen.get('drawable_path_selector_flag_226')
+                selected = end_pen['selected_path_method']
+                if end_pen.get('pen_path_selector_flag_88'):
+                    expected = 'cubicTo' if branch_flag else 'quadTo'
+                    if selected != expected:
+                        raise AssertionError(f'endPen path branch mismatch: +226={branch_flag}, executed {selected}')
+                elif selected != 'lineTo':
+                    raise AssertionError(f'endPen linear branch executed {selected}, expected lineTo')
+                del end_pen['drawable_address']
+                del end_pen['buffer_records_begin']
+                del end_pen['return_pc']
+                self.active_end_pen_record = None
+            if address in self.plt:
+                name = self.plt[address]
+                if name in ('SPen::SmPath::moveTo(float, float)',
+                            'SPen::SmPath::lineTo(float, float)',
+                            'SPen::SmPath::quadTo(float, float, float, float)',
+                            'SPen::SmPath::cubicTo(float, float, float, float, float, float)'):
+                    arity = 6 if 'cubicTo' in name else 4 if 'quadTo' in name else 2
+                    end_pen['path_calls'].append({
+                        'method': name.rsplit('::', 1)[1].split('(')[0],
+                        'arguments_bits_le': [fbits(self.f(i)) for i in range(arity)],
+                    })
+                elif name == 'SPen::SmPath::getLength()':
+                    end_pen['path_length_call_count'] += 1
+                    self.pending_end_pen_returns[u.reg_read(R.UC_ARM64_REG_LR)] = end_pen
+            if address == self.draw_pattern_address:
+                end_pen['_draw_pattern_radii_bits_le'].append(fbits(self.f(0)))
+                end_pen['_draw_pattern_opacity_values'].append(self.x(2) & 0xffffffff)
+            if address in self.pending_end_pen_returns:
+                owner = self.pending_end_pen_returns.pop(address)
+                if owner is self.active_end_pen_record:
+                    owner['path_length_bits_le'] = fbits(self.f(0))
+                    owner['path_length_f32'] = self.f(0)
+        if address == self.end_pen_address and self.current_motion is not None:
+            drawable = self.x(0)
+            record = {
+                'entry_arguments_x0_x3': [hex(self.x(i)) for i in range(4)],
+                'entry_drawable_fields': self._end_pen_drawable_fields(drawable),
+                'pen_path_selector_flag_88': None,
+                'drawable_path_selector_flag_226': None,
+                'path_calls': [],
+                'path_length_call_count': 0,
+                'draw_pattern_radius_inputs_bits_le': [],
+                'draw_pattern_opacity_arguments': [],
+                '_draw_pattern_radii_bits_le': [],
+                '_draw_pattern_opacity_values': [],
+                'drawable_address': drawable,
+                'buffer_records_begin': len(self.buffer_records),
+                'return_pc': u.reg_read(R.UC_ARM64_REG_LR),
+            }
+            self.end_pen_records.append(record)
+            self.active_end_pen_record = record
         if self.current_draw_line and self.current_motion is not None:
             draw_pc = address - 3 * 0x1000000
             if address == self.current_draw_line:
@@ -585,6 +662,17 @@ class NativeBrush(NativeFountain):
             'point_state_232_264_bits_le': [fbits(value) for value in self.get(drawable + 232, '9f')],
         }
 
+    def _end_pen_drawable_fields(self, drawable):
+        return {
+            'f32_bits_le_by_offset': {
+                str(offset): fbits(self.get(drawable + offset, 'f')[0])
+                for offset in (232, 236, 240, 244, 248, 252, 256, 260, 264, 280, 296)
+            },
+            'i64_by_offset': {'288': self.get(drawable + 288, 'q')[0]},
+            'flags_by_offset': {str(offset): self.get(drawable + offset, 'B')[0]
+                                for offset in (225, 226, 227)},
+        }
+
     def setup_native_pen(self):
         pen, manager = self.alloc(256), self.alloc(128)
         queue, qvt = self.alloc(32), self.alloc(32)
@@ -608,6 +696,9 @@ class NativeBrush(NativeFountain):
             raise AssertionError(f'fresh constructor admission mismatch: getVersion={version}, vptr={vptr:#x}')
         self.end_pen_plt = next(a for a, n in self.plt.items()
                                 if n == END_PEN.format(version=version))
+        self.end_pen_address = self.syms[END_PEN.format(version=version)]
+        self.draw_pattern_address = self.syms[
+            f'SPen::BrushPenStrokeDrawableGLV{version}::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)']
         rt = self.get(drawable + 16, 'Q')[0]
         rt_vptr = self.get(rt, 'Q')[0]
         expected_rt_vptr = self.syms['vtable for SPen::BrushPenStrokeDrawableRTV1'] + 16
@@ -653,10 +744,23 @@ class NativeBrush(NativeFountain):
         profile['settings_count_limits'] = list(self.get(pen_settings + 32, '2I'))
         event, rect = self.make_motion(case)
         begin_calls, begin_records = len(self.callback_records), len(self.buffer_records)
+        begin_end_pen = len(self.end_pen_records)
         self.call(MOTION_REDRAW.format(version=state['native_version']),
                   [state['drawable'], event, rect], instruction_limit=5_000_000)
         new_calls = self.callback_records[begin_calls:]
         records = self.buffer_records[begin_records:]
+        end_pen_records = self.end_pen_records[begin_end_pen:]
+        if self.active_end_pen_record is not None or len(end_pen_records) != 1:
+            raise AssertionError(f'MotionEvent redraw captured {len(end_pen_records)} completed endPen records')
+        terminal = end_pen_records[0]
+        if (not terminal.get('entry_drawable_fields') or not terminal.get('exit_drawable_fields')
+                or terminal.get('path_length_call_count') != 1
+                or terminal.get('path_length_bits_le') is None
+                or not terminal.get('selected_path_method')
+                or terminal.get('draw_pattern_call_count') != len(terminal.get('draw_pattern_radius_inputs_bits_le', []))
+                or terminal.get('draw_pattern_call_count') != len(terminal.get('draw_pattern_opacity_arguments', []))
+                or terminal.get('emitted_addpoint_count') is None):
+            raise AssertionError('MotionEvent endPen trace is missing terminal state, selected path, or emission counts')
         if not new_calls or any(r['count_f32'] != 11 * i for i, r in enumerate(records, 1)):
             raise AssertionError('MotionEvent redraw did not emit 11-float per-instance records')
         if any(not r.get('outcome') or not isinstance(r.get('state_after'), dict)
@@ -675,6 +779,7 @@ class NativeBrush(NativeFountain):
                 'admission': self.admission(state), 'bounds_f32': rect_values,
                 'draw_line_gate_profile_before_redraw': profile,
                 'draw_line_gate_records': self.draw_line_gate_records,
+                'end_pen_terminal_record': terminal,
                 'callback_arguments': new_calls, 'buffer_records': records,
                 'native_host_boundaries': self.boundaries()}
 
@@ -786,6 +891,11 @@ MOTION_CASES = [
      'points': [[0, 0], [4, 0], [8, 0], [12, 0], [16, 0]],
      'pressures': [0.5, 0.5, 0.5, 0.5, 0.5],
      'times': [0, 10, 20, 30, 40], 'tilts': [0, 0, 0, 0, 0],
+     'orientations': [0, 0, 0, 0, 0]},
+    {'name': 'synthetic-motion-tool1-uneven-terminal-time-speed', 'tool_type': 1,
+     'points': [[0, 0], [4, 0], [8, 0], [12, 0], [16, 0]],
+     'pressures': [0.5, 0.5, 0.5, 0.5, 0.5],
+     'times': [0, 10, 20, 23, 60], 'tilts': [0, 0, 0, 0, 0],
      'orientations': [0, 0, 0, 0, 0]},
 ]
 

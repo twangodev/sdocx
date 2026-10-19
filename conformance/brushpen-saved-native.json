@@ -1198,6 +1198,92 @@
           "stored_time_before_i64": 10
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 0,
+        "draw_pattern_opacity_arguments": [],
+        "draw_pattern_radius_inputs_bits_le": [],
+        "drawable_path_selector_flag_226": 0,
+        "emitted_addpoint_count": 0,
+        "emitted_records_range": [
+          16,
+          16
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00000040",
+            "236": "0000803f",
+            "240": "00008040",
+            "244": "00000040",
+            "248": "00000040",
+            "252": "0000803f",
+            "256": "00000040",
+            "260": "8c57f23f",
+            "264": "8c57723f",
+            "280": "ff000000",
+            "296": "bd1b0f40"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00000040",
+            "236": "0000803f",
+            "240": "00008040",
+            "244": "00000040",
+            "248": "00000040",
+            "252": "0000803f",
+            "256": "00000040",
+            "260": "8c57f23f",
+            "264": "8c57723f",
+            "280": "ff000000",
+            "296": "bd1b0f40"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00000040",
+              "0000803f"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "00008040",
+              "00000040",
+              "00001041",
+              "0000a040"
+            ],
+            "method": "quadTo"
+          }
+        ],
+        "path_length_bits_le": "1f030141",
+        "path_length_call_count": 1,
+        "path_length_f32": 8.063261985778809,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "quadTo"
+      },
       "label": "synthetic-motion-neutral-tool2",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -5272,6 +5358,158 @@
           "stored_time_before_i64": 112
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 31,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "655d8d3f",
+          "75f18b3f",
+          "d3798a3f",
+          "adf7883f",
+          "206c873f",
+          "3ad8853f",
+          "f63c843f",
+          "439b823f",
+          "01f4803f",
+          "02907e3f",
+          "0e307b3f",
+          "9ac9773f",
+          "005e743f",
+          "83ee703f",
+          "537c6d3f",
+          "8c086a3f",
+          "3494663f",
+          "4520633f",
+          "a3ad5f3f",
+          "283d5c3f",
+          "96cf583f",
+          "a765553f",
+          "0900523f",
+          "569f4e3f",
+          "24444b3f",
+          "f8ee473f",
+          "4ea0443f",
+          "9858413f",
+          "3d183e3f",
+          "9edf3a3f",
+          "11af373f"
+        ],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 31,
+        "emitted_records_range": [
+          31,
+          62
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000d040",
+            "236": "0000b040",
+            "240": "00000041",
+            "244": "0000e040",
+            "248": "0000d040",
+            "252": "0000b040",
+            "256": "655d0d40",
+            "260": "facece40",
+            "264": "faceae40",
+            "280": "ff000000",
+            "296": "13b99f3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 129
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000d040",
+            "236": "0000b040",
+            "240": "00000041",
+            "244": "0000e040",
+            "248": "00002841",
+            "252": "0000f040",
+            "256": "655d0d40",
+            "260": "facece40",
+            "264": "faceae40",
+            "280": "ff000000",
+            "296": "13b99f3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 129
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "0000d040",
+              "0000b040"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "00000041",
+              "0000e040",
+              "00002841",
+              "0000f040",
+              "00005041",
+              "00000041"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "9e02e140",
+        "path_length_call_count": 1,
+        "path_length_f32": 7.031569480895996,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
       "label": "synthetic-motion-tool1-pressure-tilt-orientation",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -8260,6 +8498,154 @@
           "stored_time_before_i64": 200
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 30,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "0000803f",
+          "46087e3f",
+          "f1fb7b3f",
+          "90dc793f",
+          "9fab773f",
+          "8a6a753f",
+          "a71a733f",
+          "43bd703f",
+          "97536e3f",
+          "c7de6b3f",
+          "f45f693f",
+          "2ad8663f",
+          "6748643f",
+          "9fb1613f",
+          "b9145f3f",
+          "92725c3f",
+          "f4cb593f",
+          "a821573f",
+          "6974543f",
+          "e4c4513f",
+          "c4134f3f",
+          "a4614c3f",
+          "1aaf493f",
+          "b3fc463f",
+          "f54a443f",
+          "5c9a413f",
+          "5feb3e3f",
+          "6a3e3c3f",
+          "eb93393f",
+          "3fec363f"
+        ],
+        "drawable_path_selector_flag_226": 0,
+        "emitted_addpoint_count": 30,
+        "emitted_records_range": [
+          16,
+          46
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "000000c0",
+            "236": "00008040",
+            "240": "000080bf",
+            "244": "0000c040",
+            "248": "000000c0",
+            "252": "00008040",
+            "256": "00000040",
+            "260": "793f03c0",
+            "264": "0e817940",
+            "280": "ff000000",
+            "296": "bd1b8f3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 220
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "000000c0",
+            "236": "00008040",
+            "240": "000080bf",
+            "244": "0000c040",
+            "248": "000000c0",
+            "252": "00008040",
+            "256": "00000040",
+            "260": "793f03c0",
+            "264": "0e817940",
+            "280": "ff000000",
+            "296": "bd1b8f3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 220
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "000000c0",
+              "00008040"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "000080bf",
+              "0000c040",
+              "00000040",
+              "00001041"
+            ],
+            "method": "quadTo"
+          }
+        ],
+        "path_length_bits_le": "65e6cc40",
+        "path_length_call_count": 1,
+        "path_length_f32": 6.4031243324279785,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "quadTo"
+      },
       "label": "synthetic-motion-tool3-pressure-orientation",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -10340,6 +10726,94 @@
           "stored_time_before_i64": 10
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 0,
+        "draw_pattern_opacity_arguments": [],
+        "draw_pattern_radius_inputs_bits_le": [],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 0,
+        "emitted_records_range": [
+          25,
+          25
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00006040",
+            "252": "0000803f",
+            "256": "00000040",
+            "260": "67ea4f40",
+            "264": "5c66663f",
+            "280": "c3000000",
+            "296": "4553ac3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 30
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00000041",
+            "252": "00004040",
+            "256": "00000040",
+            "260": "67ea4f40",
+            "264": "5c66663f",
+            "280": "c3000000",
+            "296": "4553ac3f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 30
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00006040",
+              "0000803f"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000040",
+              "00000041",
+              "00004040",
+              "00002041",
+              "00008040"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "cc15e540",
+        "path_length_call_count": 1,
+        "path_length_f32": 7.158910751342773,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
       "label": "synthetic-motion-tool2-pressure-low",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -11824,6 +12298,94 @@
           "stored_time_before_i64": 2
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 0,
+        "draw_pattern_opacity_arguments": [],
+        "draw_pattern_radius_inputs_bits_le": [],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 0,
+        "emitted_records_range": [
+          14,
+          14
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00006040",
+            "252": "0000803f",
+            "256": "4d381f40",
+            "260": "9bf15240",
+            "264": "bc326b3f",
+            "280": "ff000000",
+            "296": "d12d7640"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 9
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00000041",
+            "252": "00004040",
+            "256": "4d381f40",
+            "260": "9bf15240",
+            "264": "bc326b3f",
+            "280": "ff000000",
+            "296": "d12d7640"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 9
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00006040",
+              "0000803f"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000040",
+              "00000041",
+              "00004040",
+              "00002041",
+              "00008040"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "cc15e540",
+        "path_length_call_count": 1,
+        "path_length_f32": 7.158910751342773,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
       "label": "synthetic-motion-tool2-pressure-above-one",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -15156,6 +15718,158 @@
           "stored_time_before_i64": 15
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 31,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "05958d3f",
+          "bc368c3f",
+          "abcc8a3f",
+          "f757893f",
+          "b2d9873f",
+          "e152863f",
+          "78c4843f",
+          "5e2f833f",
+          "6d94813f",
+          "e2e87f3f",
+          "55a07c3f",
+          "9b50793f",
+          "08fb753f",
+          "dba0723f",
+          "3e436f3f",
+          "49e36b3f",
+          "0382683f",
+          "5d20653f",
+          "40bf613f",
+          "7e5f5e3f",
+          "e2015b3f",
+          "22a7573f",
+          "eb4f543f",
+          "defc503f",
+          "8dae4d3f",
+          "82654a3f",
+          "3d22473f",
+          "32e5433f",
+          "caae403f",
+          "697f3d3f",
+          "6a573a3f"
+        ],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 31,
+        "emitted_records_range": [
+          16,
+          47
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00006040",
+            "252": "0000803f",
+            "256": "05950d40",
+            "260": "41fd5d40",
+            "264": "eec87c3f",
+            "280": "ff000000",
+            "296": "932d193f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 60
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00000041",
+            "252": "00004040",
+            "256": "05950d40",
+            "260": "41fd5d40",
+            "264": "eec87c3f",
+            "280": "ff000000",
+            "296": "932d193f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 60
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00006040",
+              "0000803f"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000040",
+              "00000041",
+              "00004040",
+              "00002041",
+              "00008040"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "cc15e540",
+        "path_length_call_count": 1,
+        "path_length_f32": 7.158910751342773,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
       "label": "synthetic-motion-tool1-pressure-insensitive-multisegment",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -18542,6 +19256,160 @@
           "stored_time_before_i64": 13
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 32,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "b34b8d3f",
+          "1ae48b3f",
+          "f8708a3f",
+          "75f3883f",
+          "aa6c873f",
+          "99dd853f",
+          "3e47843f",
+          "7caa823f",
+          "3108813f",
+          "52c27e3f",
+          "4c6c7b3f",
+          "b70f783f",
+          "e8ad743f",
+          "1d48713f",
+          "7edf6d3f",
+          "27756a3f",
+          "140a673f",
+          "3f9f633f",
+          "8635603f",
+          "bfcd5c3f",
+          "ad68593f",
+          "0607563f",
+          "74a9523f",
+          "94504f3f",
+          "f5fc4b3f",
+          "1faf483f",
+          "8b67453f",
+          "ab26423f",
+          "e7ec3e3f",
+          "9cba3b3f",
+          "2490383f",
+          "cb6d353f"
+        ],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 32,
+        "emitted_records_range": [
+          16,
+          48
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00006040",
+            "252": "0000803f",
+            "256": "b34b0d40",
+            "260": "c9ad5d40",
+            "264": "f4497c3f",
+            "280": "ff000000",
+            "296": "5cc4e53f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 28
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00006040",
+            "236": "0000803f",
+            "240": "0000c040",
+            "244": "00000040",
+            "248": "00000041",
+            "252": "00004040",
+            "256": "b34b0d40",
+            "260": "c9ad5d40",
+            "264": "f4497c3f",
+            "280": "ff000000",
+            "296": "5cc4e53f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 28
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00006040",
+              "0000803f"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000040",
+              "00000041",
+              "00004040",
+              "00002041",
+              "00008040"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "cc15e540",
+        "path_length_call_count": 1,
+        "path_length_f32": 7.158910751342773,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
       "label": "synthetic-motion-tool3-pressure-insensitive-multisegment",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -19177,6 +20045,92 @@
           "stored_time_before_i64": 101
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 0,
+        "draw_pattern_opacity_arguments": [],
+        "draw_pattern_radius_inputs_bits_le": [],
+        "drawable_path_selector_flag_226": 0,
+        "emitted_addpoint_count": 0,
+        "emitted_records_range": [
+          1,
+          1
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "cdcc4c3d",
+            "236": "00000000",
+            "240": "cdcccc3d",
+            "244": "00000000",
+            "248": "cdcc4c3d",
+            "252": "00000000",
+            "256": "00000040",
+            "260": "cbae193d",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "0000003f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 101
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "cdcc4c3d",
+            "236": "00000000",
+            "240": "cdcccc3d",
+            "244": "00000000",
+            "248": "cdcc4c3d",
+            "252": "00000000",
+            "256": "00000040",
+            "260": "cbae193d",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "0000003f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 101
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "cdcc4c3d",
+              "00000000"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "cdcccc3d",
+              "00000000",
+              "00004041",
+              "00000000"
+            ],
+            "method": "quadTo"
+          }
+        ],
+        "path_length_bits_le": "33333f41",
+        "path_length_call_count": 1,
+        "path_length_f32": 11.949999809265137,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "quadTo"
+      },
       "label": "synthetic-motion-tool2-uneven-fast-slow-movement-gate",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -24065,6 +25019,184 @@
           "stored_time_before_i64": 20
         }
       ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 45,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "0c728d3f",
+          "829d8c3f",
+          "fcbe8b3f",
+          "1ad78a3f",
+          "76e6893f",
+          "a1ed883f",
+          "2aed873f",
+          "98e5863f",
+          "6bd7853f",
+          "20c3843f",
+          "2da9833f",
+          "048a823f",
+          "1366813f",
+          "c13d803f",
+          "e4227e3f",
+          "0bc37b3f",
+          "b05c793f",
+          "7cf0763f",
+          "197f743f",
+          "2409723f",
+          "398f6f3f",
+          "e3116d3f",
+          "b1916a3f",
+          "250f683f",
+          "bc8a653f",
+          "ef04633f",
+          "2e7e603f",
+          "e7f65d3f",
+          "806f5b3f",
+          "5de8583f",
+          "d861563f",
+          "4cdc533f",
+          "0d58513f",
+          "69d54e3f",
+          "aa544c3f",
+          "1ad6493f",
+          "fb59473f",
+          "8ce0443f",
+          "0b6a423f",
+          "b0f63f3f",
+          "ae863d3f",
+          "3a1a3b3f",
+          "83b1383f",
+          "b44c363f",
+          "f5eb333f"
+        ],
+        "drawable_path_selector_flag_226": 0,
+        "emitted_addpoint_count": 45,
+        "emitted_records_range": [
+          29,
+          74
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000c040",
+            "236": "00000000",
+            "240": "00000041",
+            "244": "00000000",
+            "248": "0000c040",
+            "252": "00000000",
+            "256": "0c720d40",
+            "260": "bbacbd40",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "00000040"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000c040",
+            "236": "00000000",
+            "240": "00000041",
+            "244": "00000000",
+            "248": "0000c040",
+            "252": "00000000",
+            "256": "0c720d40",
+            "260": "bbacbd40",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "00000040"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000000"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "00000041",
+              "00000000",
+              "00008041",
+              "00000000"
+            ],
+            "method": "quadTo"
+          }
+        ],
+        "path_length_bits_le": "00002041",
+        "path_length_call_count": 1,
+        "path_length_f32": 10.0,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "quadTo"
+      },
       "label": "synthetic-motion-tool1-alternating-distance-gate",
       "native_host_boundaries": {
         "explicitly_bounded": [
@@ -24227,6 +25359,5012 @@
           20,
           30,
           40
+        ],
+        "tool_type": 1
+      }
+    },
+    {
+      "admission": {
+        "actual_GetSize_f32": 3.1440000534057617,
+        "actual_GetStrokeDrawableGL_vptr": "0x3097f18",
+        "actual_RT_vptr": "0x3098b30",
+        "actual_getVersion": 10,
+        "constructed_RTV1_vtable_symbol_plus_16": "0x3098b30",
+        "constructor": "SPen::BrushPen::BrushPen()",
+        "constructor_setting_parser_inputs": [
+          {
+            "kind": "atoi",
+            "text": "10"
+          }
+        ],
+        "selected_GLVx_vtable_symbol_plus_16": "0x3097f18"
+      },
+      "bounds_f32": [
+        -1.9660141468048096,
+        -2.0,
+        18.0,
+        2.8555331230163574
+      ],
+      "buffer_records": [
+        {
+          "append_index": 0,
+          "count_f32": 11,
+          "cumulative_sha256": "4808ae7a31b7d727510ecace4aed58e1c4a397d3def52a5c0d1fa3fd163d670b",
+          "instance_bits_le": [
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 1,
+          "count_f32": 22,
+          "cumulative_sha256": "704206efafb761c33de4d61833659871934354f0768e089b7d088cb7155bc80c",
+          "instance_bits_le": [
+            "f1e0153d",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 2,
+          "count_f32": 33,
+          "cumulative_sha256": "eeeddec63c5b2ce985069d92b2b1a10863dd2215d5f3ac1c15bb3d227a2c442e",
+          "instance_bits_le": [
+            "cec6393d",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 3,
+          "count_f32": 44,
+          "cumulative_sha256": "4112a41ece2467c79b961937ba7c7108d8522caeb0cef63f04e914562d38a55f",
+          "instance_bits_le": [
+            "9ca67d3d",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 4,
+          "count_f32": 55,
+          "cumulative_sha256": "301e12ce4398c03289f65fbd035233ebaa5ad05e2d75f9144163cbb050eecc14",
+          "instance_bits_le": [
+            "53d8b43d",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 5,
+          "count_f32": 66,
+          "cumulative_sha256": "2eb653a8c12074d9b5cbcfc40411cdb4bd62335cf3c2cd76f3268b53d58e9547",
+          "instance_bits_le": [
+            "6ff3013e",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 6,
+          "count_f32": 77,
+          "cumulative_sha256": "fe7c715eef6100b5ff20d6406131cba560c6d47a9a91f3612aaa866fe398e807",
+          "instance_bits_le": [
+            "67fd383e",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 7,
+          "count_f32": 88,
+          "cumulative_sha256": "2cdb341c4fb6927ddf6d2f88d9b9200f13f63c10a89861c4d588897ed748a10a",
+          "instance_bits_le": [
+            "b392813e",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 8,
+          "count_f32": 99,
+          "cumulative_sha256": "37f57c6653db3b56ee0de196293eceac4d0a8a5f9789c9c475296812c7bd2f1d",
+          "instance_bits_le": [
+            "6861b23e",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 9,
+          "count_f32": 110,
+          "cumulative_sha256": "0b1bdc63e92d91d54a5b7d03d80a7677b1843e855dc09f93fc22e3627a34b024",
+          "instance_bits_le": [
+            "b286f13e",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 10,
+          "count_f32": 121,
+          "cumulative_sha256": "fb859235863d1a1ac3ae5491b01ed336dfe196ca92068b58c636b4ba6b44c6ef",
+          "instance_bits_le": [
+            "2612213f",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 11,
+          "count_f32": 132,
+          "cumulative_sha256": "ed14b11c1d44119a1fe7b0a582b3c2143db04ce8cca19a04dae3769d6e60bbe7",
+          "instance_bits_le": [
+            "bafd533f",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 12,
+          "count_f32": 143,
+          "cumulative_sha256": "60148f5b23c07a36262185c63da135fc404a289bfadf1fa19abc20aa4e50faf6",
+          "instance_bits_le": [
+            "e9e2893f",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 13,
+          "count_f32": 154,
+          "cumulative_sha256": "15abb7b97b0fe95fee6a8a834594b4ddd77536aaf01de52543e63aa994d3dea0",
+          "instance_bits_le": [
+            "ae8db13f",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 14,
+          "count_f32": 165,
+          "cumulative_sha256": "4abccb773bab8a014c0f1d87a654e54d9824566ad3f37242116fdb3d7b3b3a1b",
+          "instance_bits_le": [
+            "d32c0240",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 15,
+          "count_f32": 176,
+          "cumulative_sha256": "ac874dc4a7430b82ba4fe14a1bf7af6ec2e09108d09bbf230191fd037b5bf499",
+          "instance_bits_le": [
+            "7b301240",
+            "ff002f3f",
+            "21d7803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 16,
+          "count_f32": 187,
+          "cumulative_sha256": "23a8fa0db6bda8fe54025220faf5f6765558f1e0103de3d33bb6b7e1554618ec",
+          "instance_bits_le": [
+            "0d4f2240",
+            "1f27303f",
+            "abaf813f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 17,
+          "count_f32": 198,
+          "cumulative_sha256": "ac42192125221782f8974f3a3bd81354eaba76402191a98fc116f8bb95efe124",
+          "instance_bits_le": [
+            "b5883240",
+            "2d4f313f",
+            "a189823f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 18,
+          "count_f32": 209,
+          "cumulative_sha256": "334886a5707002b1a773e7c5d7373ed4f2eddd4406e1611e2b6bf489bf215a53",
+          "instance_bits_le": [
+            "a3dd4240",
+            "2e79323f",
+            "0665833f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 19,
+          "count_f32": 220,
+          "cumulative_sha256": "5cea1107f0da9323a7105f0c2c9506d9167f82d5a55a5ede3e92447d50980084",
+          "instance_bits_le": [
+            "044e5340",
+            "23a5333f",
+            "db41843f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 20,
+          "count_f32": 231,
+          "cumulative_sha256": "6854b327ec6040734ac94b541c65c1824620e373344dafe7affb4800417e91e4",
+          "instance_bits_le": [
+            "07da6340",
+            "10d3343f",
+            "2320853f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 21,
+          "count_f32": 242,
+          "cumulative_sha256": "f09255d38fa751cd1762a6129bef53d8da810db1fcdabb0fc2e49d11f410e23b",
+          "instance_bits_le": [
+            "d8817440",
+            "f802363f",
+            "e1ff853f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 22,
+          "count_f32": 253,
+          "cumulative_sha256": "ff10009ce3d8f2a99c9f734d9b4c4d82548e9f419f57179cc650625d6256efed",
+          "instance_bits_le": [
+            "d4a28240",
+            "e034373f",
+            "17e1863f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 23,
+          "count_f32": 264,
+          "cumulative_sha256": "33b08ae53312e4e1e1e055acfe925a27261477d9b0d71574ebaf690e682a4f44",
+          "instance_bits_le": [
+            "d2128b40",
+            "ca68383f",
+            "c8c3873f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 24,
+          "count_f32": 275,
+          "cumulative_sha256": "11ffe056a5f7d8ad7f2272d65f30effb27a5c6d9a7c27e78d97b2a42814b1624",
+          "instance_bits_le": [
+            "fe909340",
+            "ba9e393f",
+            "f6a7883f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 25,
+          "count_f32": 286,
+          "cumulative_sha256": "ee29d1b63ab43a87136093adeafba9c99894ad435c5017b8a0bd597c7c015e1f",
+          "instance_bits_le": [
+            "711d9c40",
+            "b2d63a3f",
+            "a38d893f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 26,
+          "count_f32": 297,
+          "cumulative_sha256": "f41979a9f29a2159a7b3d1ca89dc3db3520d9da39d2e1719fceef8cd43e62be5",
+          "instance_bits_le": [
+            "42b8a440",
+            "b6103c3f",
+            "d2748a3f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 27,
+          "count_f32": 308,
+          "cumulative_sha256": "966c04fb2e03351233eec194cbaea12e63e72d5f6939a822215ac49532d16e9b",
+          "instance_bits_le": [
+            "8961ad40",
+            "cb4c3d3f",
+            "865d8b3f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 28,
+          "count_f32": 319,
+          "cumulative_sha256": "0ccfcda1e0b9bcc43b07a5a33d9df9df0511306022a86536dc87f740791a9598",
+          "instance_bits_le": [
+            "5f19b640",
+            "f28a3e3f",
+            "c1478c3f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 29,
+          "count_f32": 330,
+          "cumulative_sha256": "03c3ed26bcdc99eb37623930b18e6f9afbe8fb2b500bad3e9e88aff634f2544b",
+          "instance_bits_le": [
+            "a833c140",
+            "1e20403f",
+            "0c728d3f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 30,
+          "count_f32": 341,
+          "cumulative_sha256": "c8d68e13175b805275d0687ac631efcc5bcd906ff0448d331dbd17bb3d26d09c",
+          "instance_bits_le": [
+            "9d8bc640",
+            "48043f3f",
+            "15a18c3f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 31,
+          "count_f32": 352,
+          "cumulative_sha256": "84e21e506f7e58e94a776ba9543022ecb383ae21261f32219ae5684aabcd8eab",
+          "instance_bits_le": [
+            "456ccc40",
+            "d6da3d3f",
+            "19c68b3f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 32,
+          "count_f32": 363,
+          "cumulative_sha256": "8e2416f1cfb194fda16c65706225c746a4c007005ee27c0f9df8c2c97d8a718d",
+          "instance_bits_le": [
+            "31d1d240",
+            "a3a43c3f",
+            "bae18a3f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 33,
+          "count_f32": 374,
+          "cumulative_sha256": "1346e1df32333ebd11d78a5f38758bf82b5113c2030f63574bfcd682fd3bc8c4",
+          "instance_bits_le": [
+            "07b6d940",
+            "7a623b3f",
+            "8cf4893f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 34,
+          "count_f32": 385,
+          "cumulative_sha256": "19412800e2710e2d749b324c198a6f318ffdd7ae286dfd5dff51ce7610a49f8e",
+          "instance_bits_le": [
+            "8916e140",
+            "24153a3f",
+            "24ff883f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 35,
+          "count_f32": 396,
+          "cumulative_sha256": "d25c07377acf0b5945b461f3f1c54d86a995c103da1ef11b234ed82d5cb21e56",
+          "instance_bits_le": [
+            "96eee840",
+            "5cbd383f",
+            "0b02883f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 36,
+          "count_f32": 407,
+          "cumulative_sha256": "8920fb5115c97993c15143fff9721df59d45c625886e4629cfd1c6ba2cf2c18b",
+          "instance_bits_le": [
+            "243af140",
+            "d85b373f",
+            "c8fd863f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 37,
+          "count_f32": 418,
+          "cumulative_sha256": "b1faab306f8b260b20e57d8b985d1d6ac09bcc9a6170a1e075afa52847c8c7a9",
+          "instance_bits_le": [
+            "43f5f940",
+            "49f1353f",
+            "dcf2853f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 38,
+          "count_f32": 429,
+          "cumulative_sha256": "fb9f3cb56158c06246722eb10c3d26718b786bb3437f1276509b9fbd654919a2",
+          "instance_bits_le": [
+            "0e8e0141",
+            "557e343f",
+            "c2e1843f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 39,
+          "count_f32": 440,
+          "cumulative_sha256": "74a0fc71aa29d2dadc83d16860d300eb2716547184d82d25917ff01dd95ad818",
+          "instance_bits_le": [
+            "78550641",
+            "9b03333f",
+            "efca833f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 40,
+          "count_f32": 451,
+          "cumulative_sha256": "25abcbb427af083c68bcb102933ce1ee1bcfbd65e0d670c8954948b98281cc00",
+          "instance_bits_le": [
+            "0c4f0b41",
+            "b781313f",
+            "d6ae823f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 41,
+          "count_f32": 462,
+          "cumulative_sha256": "48320c94ef84570b493b4a2aff283c234b7d9ed2eff109af94b0787a40f94eea",
+          "instance_bits_le": [
+            "ff781041",
+            "38f92f3f",
+            "e08d813f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 42,
+          "count_f32": 473,
+          "cumulative_sha256": "d60b7ffc987569b0ffcaf67f6dafb7ad9099996d642be648610b8002c35fe2b6",
+          "instance_bits_le": [
+            "98d11541",
+            "af6a2e3f",
+            "7868803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 43,
+          "count_f32": 484,
+          "cumulative_sha256": "03fbed26ab4dadae273744ccfbc23f45c41dae9a9e95b255d5ac3d3edfc1e5a9",
+          "instance_bits_le": [
+            "0b0b1a41",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 44,
+          "count_f32": 495,
+          "cumulative_sha256": "7ee15b90aa6ba277d8f752acfffcd23f489c231062adaa926467abec4c9c7999",
+          "instance_bits_le": [
+            "da0d1d41",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 45,
+          "count_f32": 506,
+          "cumulative_sha256": "9498c9b7734143d89f586cf71a3197fec3dce1b6c3d6e4e88a64f52ec4fef2f4",
+          "instance_bits_le": [
+            "32192041",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 46,
+          "count_f32": 517,
+          "cumulative_sha256": "10b50c23f8b181cf699bb4d89caadedd18e9fff6011796c0414c1237e9fe886a",
+          "instance_bits_le": [
+            "aa2c2341",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 47,
+          "count_f32": 528,
+          "cumulative_sha256": "d42746da8c08b202852a18f7edd7750c8a3d76454adfc14f82ab55d0b43f4348",
+          "instance_bits_le": [
+            "d8472641",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 48,
+          "count_f32": 539,
+          "cumulative_sha256": "149122bdf64d612e1477ea69aaca2048dafacabf2e250b29db1eb3d16f0077dd",
+          "instance_bits_le": [
+            "556a2941",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 49,
+          "count_f32": 550,
+          "cumulative_sha256": "b2acdbf2997dc08d2fbf28d5e9150dafaaddd9724c26da7ba615537c41c4562f",
+          "instance_bits_le": [
+            "bf932c41",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 50,
+          "count_f32": 561,
+          "cumulative_sha256": "fca40286fa6aef047b2ea828124242867eb665bccc075266a1e49fa536c86755",
+          "instance_bits_le": [
+            "b5c32f41",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 51,
+          "count_f32": 572,
+          "cumulative_sha256": "f1289049f0c051c2c19921e3fad1587538e72d85135e8b7580fa730251742927",
+          "instance_bits_le": [
+            "d9f93241",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 52,
+          "count_f32": 583,
+          "cumulative_sha256": "adc6072bdc4c9d55e24938b805dd4ed8654d2159a4831ee9b13649facc7b167f",
+          "instance_bits_le": [
+            "cf353641",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 53,
+          "count_f32": 594,
+          "cumulative_sha256": "929171d63168aa53800e0867435bee3d71b953dc4e8bfc47072e5c1fd387d4df",
+          "instance_bits_le": [
+            "3f773941",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 54,
+          "count_f32": 605,
+          "cumulative_sha256": "ab1cf495ef5135072305951b9af6ece3e3f83b770b94ef7466c1875060f60d8a",
+          "instance_bits_le": [
+            "d1bd3c41",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 55,
+          "count_f32": 616,
+          "cumulative_sha256": "dc325ce0d1bf32e6821ff1ee3b2e630464dd635fd58045213cad3e05a6f4681e",
+          "instance_bits_le": [
+            "31094041",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 56,
+          "count_f32": 627,
+          "cumulative_sha256": "d6233a7cc576c0b6766771643092da0ecaa8478b0225517a1c1451992ae6bafb",
+          "instance_bits_le": [
+            "0f594341",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 57,
+          "count_f32": 638,
+          "cumulative_sha256": "b676360596055a3a62d67ceddaa2f25c2783284c95f02ae01a2c2311d5a56e88",
+          "instance_bits_le": [
+            "19ad4641",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 58,
+          "count_f32": 649,
+          "cumulative_sha256": "9436533d20ec94efdda68641064a15d84539a4b996e2b9090376c2eaad116953",
+          "instance_bits_le": [
+            "02054a41",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 59,
+          "count_f32": 660,
+          "cumulative_sha256": "bcec89bb45304b3960da0d18db4c556b8daa438339c0b45cd55e3881136f020c",
+          "instance_bits_le": [
+            "7f604d41",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 60,
+          "count_f32": 671,
+          "cumulative_sha256": "4a2f88d9acced14a03d79c2e6762386d944c98784b9acb8dd5fe976696ccc214",
+          "instance_bits_le": [
+            "47bf5041",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 61,
+          "count_f32": 682,
+          "cumulative_sha256": "2b7777aebf2298e91640ee3e52ab53fc0f4b1da3b40814b3a88d03e2d16758bd",
+          "instance_bits_le": [
+            "11215441",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 62,
+          "count_f32": 693,
+          "cumulative_sha256": "b2831aa58955e7daca9cc50188588e40facec145b4b372f218188abcedff8214",
+          "instance_bits_le": [
+            "99855741",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 63,
+          "count_f32": 704,
+          "cumulative_sha256": "c4dc26a54ff0f581a7562ce7e129b8cf531b125ea06453ec1a4cbe71d88f6c8c",
+          "instance_bits_le": [
+            "9dec5a41",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 64,
+          "count_f32": 715,
+          "cumulative_sha256": "a278664f18db67504f9192370a508ba4f7aa5b3dc408e8e3ff01f90a87ba2498",
+          "instance_bits_le": [
+            "d8555e41",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 65,
+          "count_f32": 726,
+          "cumulative_sha256": "7ea0e4397fd06e1a1e9bbe38f0aefb5f93db56858c93d9dbbbab4d01a61ce53c",
+          "instance_bits_le": [
+            "0ec16141",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 66,
+          "count_f32": 737,
+          "cumulative_sha256": "c00d9f235653b0e5988b0e0c3a11408165ad1c183c664669ac49605ebc1a7e1f",
+          "instance_bits_le": [
+            "ff2d6541",
+            "c9dc2d3f",
+            "0000803f",
+            "ec515040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 67,
+          "count_f32": 748,
+          "cumulative_sha256": "64bad4599dceb6c689f59b9d566f0645452e06f4ba767454fee05ebb3177d598",
+          "instance_bits_le": [
+            "719c6841",
+            "c9dc2d3f",
+            "0000803f",
+            "f6288840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 68,
+          "count_f32": 759,
+          "cumulative_sha256": "2910ef5d5e82a7dd6334888bfaad05e6c568d337ce1360f4f5fadedfc2dd867e",
+          "instance_bits_le": [
+            "290c6c41",
+            "c9dc2d3f",
+            "0000803f",
+            "f628a840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 69,
+          "count_f32": 770,
+          "cumulative_sha256": "d14862ef5f7d5c5498d3eb69c86490660bd759fc4fe55331421ac3e91ad885c8",
+          "instance_bits_le": [
+            "ed7c6f41",
+            "c9dc2d3f",
+            "0000803f",
+            "f628c840",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 70,
+          "count_f32": 781,
+          "cumulative_sha256": "0311e0d5f37a39817d823ffb9c8e2069984dfee41f36031c598093908d92852b",
+          "instance_bits_le": [
+            "87ee7241",
+            "c9dc2d3f",
+            "0000803f",
+            "5c8f823e",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 71,
+          "count_f32": 792,
+          "cumulative_sha256": "db78ab52736201fcf3dbdb32c6f6e129eb381faf2e74cf3e1b89338fa3c33046",
+          "instance_bits_le": [
+            "c3607641",
+            "c9dc2d3f",
+            "0000803f",
+            "d7a3a03f",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 72,
+          "count_f32": 803,
+          "cumulative_sha256": "6347cbf1cae5a2f62599d735b6e59b1a1ac4b78412dea30e3413c65debcf1102",
+          "instance_bits_le": [
+            "6dd37941",
+            "c9dc2d3f",
+            "0000803f",
+            "ec511040",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "callback_arguments": [
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000bb340b3dc9dc2d3f0000803f00000000a659843f64eed63fb44c77bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            0.03398583456873894,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000f1e0153dc9dc2d3f0000803f0000803f08af843f64eed63ff1a176bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "f1e0153d",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            0.03659147396683693,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000cec6393dc9dc2d3f0000803f0000004036ce853f64eed63f936374bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "cec6393d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            0.04535561054944992,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000000000000009ca67d3dc9dc2d3f0000803f0000404035ed873f64eed63f962570bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "9ca67d3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            0.06192646920681,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "00000000000000000000000000000000000000000000000053d8b43dc9dc2d3f0000803f00008040854d8b3f64eed63ff66469bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "53d8b43d",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            0.08830323070287704,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000000000000006ff3013ec9dc2d3f0000803f0000a0406e3e903f64eed63f24835fbf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "6ff3013e",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            0.1269051879644394,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "00000000000000000000000000000000000000000000000067fd383ec9dc2d3f0000803f0000c040ad1f973f64eed63fa6c051bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "67fd383e",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            0.1806541532278061,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000b392813ec9dc2d3f0000803f00000000ad64a03f64eed63fa6363fbf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "b392813e",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            0.2530723512172699,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000000000000006861b23ec9dc2d3f0000803f0000803f5a98ac3f64eed63f4ccf26bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "6861b23e",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            0.34839940071105957,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000b286f13ec9dc2d3f0000803f00000040ac61bc3f64eed63fa73c07bf6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "b286f13e",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            0.4717307686805725,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000000000000002612213fc9dc2d3f0000803f000040401389d03f64eed63fb4dbbdbe6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "2612213f",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            0.6291831731796265,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000bafd533fc9dc2d3f0000803f00008040ddfee93f64eed63f180930be6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "bafd533f",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            0.8280903100967407,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000e9e2893fc9dc2d3f0000803f0000a04074f1044064eed63f902e9e3d6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "e9e2893f",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            1.0772372484207153,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000000000000000ae8db13fc9dc2d3f0000803f0000c040d7c6184064eed63fb836c63e6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "ae8db13f",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            1.3871362209320068,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000d32c0240c9dc2d3f0000803f00000000d32c424064eed63fa659843f6e46a4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "d32c0240",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            2.0339858531951904,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000040000000007b301240ff002f3f21d7803f0000803f0c9c5240a057d83fd589a33f865aa5be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "7b301240",
+            "ff002f3f",
+            "21d7803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            2.2842090129852295,
+            0.6836089491844177,
+            1.0065652132034302,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000040000000000d4f22401f27303fabaf813f00000040e22663403ac3d93f6feec23f6e70a6be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "0d4f2240",
+            "1f27303f",
+            "abaf813f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            2.5360748767852783,
+            0.6880969405174255,
+            1.0131734609603882,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000b58832402d4f313fa189823f0000404086cd73403831db3fc987e23f2a88a7be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "b5883240",
+            "2d4f313f",
+            "a189823f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            2.7895939350128174,
+            0.6926143765449524,
+            1.0198251008987427,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000a3dd42402e79323f0665833f00008040134882409da1dc3f202b0140bca1a8be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "a3dd4240",
+            "2e79323f",
+            "0665833f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            3.0447776317596436,
+            0.6971615552902222,
+            1.0265204906463623,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000044e534023a5333fdb41843f0000a04079b78a406c14de3f162d114026bda9be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "044e5340",
+            "23a5333f",
+            "db41843f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            3.3016366958618164,
+            0.7017385363578796,
+            1.0332597494125366,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "00000000000000000000000000000000000000400000000007da634010d3343f2320853f0000c0400c359340ab89df3ff64921406cdaaabe0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "07da6340",
+            "10d3343f",
+            "2320853f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            3.5601823329925537,
+            0.7063455581665039,
+            1.0400432348251343,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000d8817440f802363fe1ff853f00000000e4c09b405d01e13fe881314094f9abbe0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "d8817440",
+            "f802363f",
+            "e1ff853f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            3.820425033569336,
+            0.7109827995300293,
+            1.046871304512024,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000d4a28240e034373f17e1863f0000803f1a5ba440877be23f1cd541409c1aadbe0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "d4a28240",
+            "e034373f",
+            "17e1863f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            4.082376480102539,
+            0.7156505584716797,
+            1.0537441968917847,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000d2128b40ca68383fc8c3873f00000040c403ad402df8e33fc04352408c3daebe0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "d2128b40",
+            "ca68383f",
+            "c8c3873f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            4.346047401428223,
+            0.7203489542007446,
+            1.0606622695922852,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000fe909340ba9e393ff6a7883f00004040fcbab5405377e53f01ce62406462afbe0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "fe909340",
+            "ba9e393f",
+            "f6a7883f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            4.611449241638184,
+            0.7250782251358032,
+            1.0676257610321045,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "000000000000000000000000000000000000004000000000711d9c40b2d63a3fa38d893f00008040da80be40fcf8e63f107473402889b0be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "711d9c40",
+            "b2d63a3f",
+            "a38d893f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            4.878593921661377,
+            0.729838490486145,
+            1.0746349096298218,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "00000000000000000000000000000000000000400000000042b8a440b6103c3fd2748a3f0000a0407655c7402d7de83f0e1b8240dcb1b1be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "42b8a440",
+            "b6103c3f",
+            "d2748a3f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            5.147492408752441,
+            0.7346299886703491,
+            1.0816900730133057,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000040000000008961ad40cb4c3d3f865d8b3f0000c040ea38d040ec03ea3f288a8a4082dcb2be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "8961ad40",
+            "cb4c3d3f",
+            "865d8b3f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            5.418156147003174,
+            0.7394530177116394,
+            1.0887916088104248,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000000000040000000005f19b640f28a3e3fc1478c3f000000004f2bd9403a8deb3f6f0793402009b4be0000000000000000",
+          "vector4_address": "0x200efca8",
+          "vector4_bits_le": [
+            "5f19b640",
+            "f28a3e3f",
+            "c1478c3f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            5.690597057342529,
+            0.7443076372146606,
+            1.0959397554397583,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efca8",
+            "0xff",
+            "0x200efd78",
+            "0x10009610",
+            "0x1",
+            "0x10009860",
+            "0x10009590"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000a833c1401e20403f0c728d3f0000803f2b90e4401b82ed3f25d79d40f487b5be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "a833c140",
+            "1e20403f",
+            "0c728d3f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            6.037555694580078,
+            0.7504900693893433,
+            1.1050429344177246,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000009d8bc64048043f3f15a18c3f00000040e2b3e9403923ec3f5863a340c47bb4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "9d8bc640",
+            "48043f3f",
+            "15a18c3f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            6.204542636871338,
+            0.7461590766906738,
+            1.0986658334732056,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000456ccc40d6da3d3f19c68b3f00004040cb5def4084b3ea3fbf7aa940b862b3be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "456ccc40",
+            "d6da3d3f",
+            "19c68b3f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            6.388216495513916,
+            0.7416204214096069,
+            1.0919829607009888,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000031d1d240a3a43c3fbae18a3f00008040a089f5400c34e93fc218b040a23db2be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "31d1d240",
+            "a3a43c3f",
+            "bae18a3f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            6.588036060333252,
+            0.7368871569633484,
+            1.0850136280059814,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000007b6d9407a623b3f8cf4893f0000a0402a33fc40c9a5e73fe438b7403c0db1be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "07b6d940",
+            "7a623b3f",
+            "8cf4893f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            6.803470134735107,
+            0.7319713830947876,
+            1.077775478363037,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000008916e14024153a3f24ff883f0000c04029ab0141b609e63fc0d6be4048d2afbe0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "8916e140",
+            "24153a3f",
+            "24ff883f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            7.034000873565674,
+            0.7268850803375244,
+            1.0702862739562988,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000096eee8405cbd383f0b02883f000000008c770541b960e43f13eec640748daebe0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "96eee840",
+            "5cbd383f",
+            "0b02883f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            7.2791242599487305,
+            0.7216393947601318,
+            1.062562346458435,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000243af140d85b373fc8fd863f0000803fcb7c0941b4abe23fb27acf40703fadbe0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "243af140",
+            "d85b373f",
+            "c8fd863f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            7.538347244262695,
+            0.716245174407959,
+            1.0546197891235352,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000043f5f94049f1353fdcf2853f00000040fdb80d4180ebe03f8c78d840dee8abbe0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "43f5f940",
+            "49f1353f",
+            "dcf2853f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            7.8111891746521,
+            0.7107129693031311,
+            1.0464739799499512,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000000e8e0141557e343fc2e1843f00004040462a1241ec20df3face3e1405e8aaabe0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "0e8e0141",
+            "557e343f",
+            "c2e1843f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            8.09718132019043,
+            0.7050526738166809,
+            1.0381395816802979,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000785506419b03333fefca833f00008040d6ce1641bc4cdd3f34b8eb408624a9be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "78550641",
+            "9b03333f",
+            "efca833f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            8.395866394042969,
+            0.6992737650871277,
+            1.0296305418014526,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000000c4f0b41b781313fd6ae823f0000a040e7a41b41b26fdb3f62f2f540eab7a7be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "0c4f0b41",
+            "b781313f",
+            "d6ae823f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            8.706798553466797,
+            0.6933855414390564,
+            1.0209605693817139,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000ff78104138f92f3fe08d813f0000c040bbaa20417c8ad93f434700411045a6be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "ff781041",
+            "38f92f3f",
+            "e08d813f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            9.029540061950684,
+            0.6873965263366699,
+            1.0121421813964844,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000098d11541af6a2e3f7868803f00000000a7de2541d09dd73f89c4054182cca4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "98d11541",
+            "af6a2e3f",
+            "7868803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            9.363670349121094,
+            0.6813153624534607,
+            1.003188133239746,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000000b0b1a41c9dc2d3f0000803f0000803f0b0b2a4164eed63f0b0b0a416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "0b0b1a41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            9.62769603729248,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000da0d1d41c9dc2d3f0000803f00000040da0d2d4164eed63fda0d0d416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "da0d1d41",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            9.815881729125977,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000032192041c9dc2d3f0000803f000040403219304164eed63f321910416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "32192041",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            10.00615119934082,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000aa2c2341c9dc2d3f0000803f00008040aa2c334164eed63faa2c13416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "aa2c2341",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            10.198404312133789,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000d8472641c9dc2d3f0000803f0000a040d847364164eed63fd84716416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "d8472641",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            10.392539978027344,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000556a2941c9dc2d3f0000803f0000c040556a394164eed63f556a19416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "556a2941",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            10.588459968566895,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000bf932c41c9dc2d3f0000803f00000000bf933c4164eed63fbf931c416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "bf932c41",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            10.786070823669434,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000b5c32f41c9dc2d3f0000803f0000803fb5c33f4164eed63fb5c31f416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "b5c32f41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            10.98528003692627,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000d9f93241c9dc2d3f0000803f00000040d9f9424164eed63fd9f922416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "d9f93241",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            11.18599796295166,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000cf353641c9dc2d3f0000803f00004040cf35464164eed63fcf3526416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "cf353641",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            11.388136863708496,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000003f773941c9dc2d3f0000803f000080403f77494164eed63f3f7729416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "3f773941",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            11.591612815856934,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000d1bd3c41c9dc2d3f0000803f0000a040d1bd4c4164eed63fd1bd2c416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "d1bd3c41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            11.796341896057129,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000031094041c9dc2d3f0000803f0000c0403109504164eed63f310930416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "31094041",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            12.002243995666504,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000000f594341c9dc2d3f0000803f000000000f59534164eed63f0f5933416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "0f594341",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            12.209242820739746,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000019ad4641c9dc2d3f0000803f0000803f19ad564164eed63f19ad36416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "19ad4641",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            12.41726016998291,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000002054a41c9dc2d3f0000803f0000004002055a4164eed63f02053a416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "02054a41",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            12.626222610473633,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000007f604d41c9dc2d3f0000803f000040407f605d4164eed63f7f603d416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "7f604d41",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            12.836058616638184,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000047bf5041c9dc2d3f0000803f0000804047bf604164eed63f47bf40416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "47bf5041",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            13.046698570251465,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000011215441c9dc2d3f0000803f0000a0401121644164eed63f112144416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "11215441",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            13.258072853088379,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "ffff7f3f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000099855741c9dc2d3f0000803f0000c0409985674164eed63f998547416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "99855741",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            13.47011661529541,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000009dec5a41c9dc2d3f0000803f000000009dec6a4164eed63f9dec4a416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "9dec5a41",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            13.682766914367676,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000d8555e41c9dc2d3f0000803f0000803fd8556e4164eed63fd8554e416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "d8555e41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            13.895957946777344,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000000ec16141c9dc2d3f0000803f000000400ec1714164eed63f0ec151416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "0ec16141",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            14.10963249206543,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000ff2d6541c9dc2d3f0000803f00004040ff2d754164eed63fff2d55416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "ff2d6541",
+            "c9dc2d3f",
+            "0000803f",
+            "00004040"
+          ],
+          "vector4_f32": [
+            14.323729515075684,
+            0.6791501641273499,
+            1.0,
+            3.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000719c6841c9dc2d3f0000803f00008040719c784164eed63f719c58416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "719c6841",
+            "c9dc2d3f",
+            "0000803f",
+            "00008040"
+          ],
+          "vector4_f32": [
+            14.538193702697754,
+            0.6791501641273499,
+            1.0,
+            4.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000290c6c41c9dc2d3f0000803f0000a040290c7c4164eed63f290c5c416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "290c6c41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000a040"
+          ],
+          "vector4_f32": [
+            14.752968788146973,
+            0.6791501641273499,
+            1.0,
+            5.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000ed7c6f41c9dc2d3f0000803f0000c040ed7c7f4164eed63fed7c5f416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "ed7c6f41",
+            "c9dc2d3f",
+            "0000803f",
+            "0000c040"
+          ],
+          "vector4_f32": [
+            14.967999458312988,
+            0.6791501641273499,
+            1.0,
+            6.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e200000000087ee7241c9dc2d3f0000803f000000004477814164eed63f87ee62416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "87ee7241",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000"
+          ],
+          "vector4_f32": [
+            15.183234214782715,
+            0.6791501641273499,
+            1.0,
+            0.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e2000000000c3607641c9dc2d3f0000803f0000803f6230834164eed63fc36066416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "c3607641",
+            "c9dc2d3f",
+            "0000803f",
+            "0000803f"
+          ],
+          "vector4_f32": [
+            15.3986234664917,
+            0.6791501641273499,
+            1.0,
+            1.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "lr": "0x305c7cc",
+          "rt_this": "0x10001270",
+          "s0_s7_bits": [
+            "00007f43",
+            "bb340b3d",
+            "c9dc2d3f",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000a042"
+          ],
+          "stack64_hex": "0000000000000000000000000000000080fc0e20000000006dd37941c9dc2d3f0000803f00000040b6e9844164eed63f6dd369416e46a4be0000000000000000",
+          "vector4_address": "0x200efc58",
+          "vector4_bits_le": [
+            "6dd37941",
+            "c9dc2d3f",
+            "0000803f",
+            "00000040"
+          ],
+          "vector4_f32": [
+            15.614117622375488,
+            0.6791501641273499,
+            1.0,
+            2.0
+          ],
+          "x0_x7": [
+            "0x10001270",
+            "0x200efc58",
+            "0xff",
+            "0x200efd18",
+            "0x200efe40",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "draw_line_gate_profile_before_redraw": {
+        "alternating_distance_336_bits_le": "66662641",
+        "flags_225_226_227": [
+          0,
+          1,
+          0
+        ],
+        "minimum_distance_44_bits_le": "66662640",
+        "point_state_232_264_bits_le": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "settings_count_limits": [
+          1440,
+          2560
+        ]
+      },
+      "draw_line_gate_records": [
+        {
+          "accepted_timing": {
+            "delta_microseconds_i64": 40650,
+            "distance_bits_le": "00008040",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "12e8fb3e",
+            "previous_speed_bits_le": "00000000",
+            "smoothed_speed_bits_le": "12e87b3e"
+          },
+          "fallback_counter_before_bits_le": "0000803f",
+          "first_gate_passed": true,
+          "gate_steps": [
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "first_gate_threshold_bits_le": "66662640",
+              "flags_225_226_227": [
+                1,
+                0,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 4,
+              "pc": "0x5c380",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                1,
+                0,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c39c",
+              "s8_bits_le": "00008040",
+              "second_gate_threshold_bits_le": "00004842"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                1,
+                0,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 0,
+              "pc": "0x5c3a8",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 1
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                1,
+                1,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 0,
+              "pc": "0x5c3ac",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 1
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                1,
+                1,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c3e0",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "flags_225_226_227": [
+                0,
+                0,
+                0
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 6,
+              "pc": "0x5c640",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 6,
+              "pc": "0x5cfb4",
+              "s8_bits_le": "2092d23f"
+            }
+          ],
+          "index": 0,
+          "input_xy_bits_le": [
+            "00008040",
+            "00000000"
+          ],
+          "make_draw_point_path_lengths_bits_le": [
+            "00000040"
+          ],
+          "outcome": "accepted",
+          "path_calls": [
+            {
+              "arguments_bits_le": [
+                "00000000",
+                "00000000"
+              ],
+              "method": "moveTo"
+            },
+            {
+              "arguments_bits_le": [
+                "00000000",
+                "00000000",
+                "00000040",
+                "00000000"
+              ],
+              "method": "quadTo"
+            }
+          ],
+          "second_gate_passed": true,
+          "second_gate_pl_taken": false,
+          "state_after": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              0,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "00000040",
+              "00000000",
+              "00008040",
+              "00000000",
+              "00000040",
+              "00000000",
+              "00000040",
+              "6d41de3f",
+              "00000000"
+            ]
+          },
+          "state_before": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              1,
+              0,
+              0
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ]
+          },
+          "state_before_sampling": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              0,
+              0
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000040",
+              "00000000",
+              "f0d7133f",
+              "00008040",
+              "00000000"
+            ]
+          },
+          "stored_time_before_i64": 0
+        },
+        {
+          "accepted_timing": {
+            "delta_microseconds_i64": 10000,
+            "distance_bits_le": "00008040",
+            "fallback_counter_bits_le": "a4709d3f",
+            "next_speed_bits_le": "00000040",
+            "previous_speed_bits_le": "12e8fb3e",
+            "smoothed_speed_bits_le": "027d9f3f"
+          },
+          "fallback_counter_before_bits_le": "a4709d3f",
+          "first_gate_passed": true,
+          "gate_steps": [
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "first_gate_threshold_bits_le": "66662640",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 4,
+              "pc": "0x5c380",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c39c",
+              "s8_bits_le": "00008040",
+              "second_gate_threshold_bits_le": "00004842"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 0,
+              "pc": "0x5c3a8",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 1
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 0,
+              "pc": "0x5c3ac",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 1
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c3e0",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 2,
+              "pc": "0x5c640",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 6,
+              "pc": "0x5cfb4",
+              "s8_bits_le": "84d06940"
+            }
+          ],
+          "index": 1,
+          "input_xy_bits_le": [
+            "00000041",
+            "00000000"
+          ],
+          "make_draw_point_path_lengths_bits_le": [
+            "00008040"
+          ],
+          "outcome": "accepted",
+          "path_calls": [
+            {
+              "arguments_bits_le": [
+                "00000040",
+                "00000000"
+              ],
+              "method": "moveTo"
+            },
+            {
+              "arguments_bits_le": [
+                "00008040",
+                "00000000",
+                "0000c040",
+                "00000000"
+              ],
+              "method": "quadTo"
+            }
+          ],
+          "second_gate_passed": true,
+          "second_gate_pl_taken": false,
+          "state_after": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              1,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "0000c040",
+              "00000000",
+              "00000041",
+              "00000000",
+              "0000c040",
+              "00000000",
+              "0c720d40",
+              "bbacbd40",
+              "00000000"
+            ]
+          },
+          "state_before": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              0,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "00000040",
+              "00000000",
+              "00008040",
+              "00000000",
+              "00000040",
+              "00000000",
+              "00000040",
+              "6d41de3f",
+              "00000000"
+            ]
+          },
+          "state_before_sampling": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              1,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "00000040",
+              "00000000",
+              "00008040",
+              "00000000",
+              "0000c040",
+              "00000000",
+              "00000040",
+              "6d41de3f",
+              "00000000"
+            ]
+          },
+          "stored_time_before_i64": 10
+        },
+        {
+          "fallback_counter_before_bits_le": "a4709d3f",
+          "first_gate_passed": true,
+          "gate_steps": [
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "first_gate_threshold_bits_le": "66662640",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 4,
+              "pc": "0x5c380",
+              "s8_bits_le": "00008040"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c39c",
+              "s8_bits_le": "00008040",
+              "second_gate_threshold_bits_le": "00004842"
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                1,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 1,
+              "pc": "0x5c3a8",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 0
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "old_flag_226": 1,
+              "pc": "0x5c3ac",
+              "s8_bits_le": "00008040",
+              "toggled_flag_226": 0
+            },
+            {
+              "alternating_distance_336_bits_le": "00004842",
+              "distance_bits_le": "00008040",
+              "flags_225_226_227": [
+                0,
+                0,
+                1
+              ],
+              "minimum_distance_44_bits_le": "66662640",
+              "nzcv": 8,
+              "pc": "0x5c3b0",
+              "s8_bits_le": "00008040"
+            }
+          ],
+          "index": 2,
+          "input_xy_bits_le": [
+            "00004041",
+            "00000000"
+          ],
+          "outcome": "rejected-alternating-gate",
+          "second_gate_passed": false,
+          "second_gate_pl_taken": false,
+          "state_after": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              0,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "0000c040",
+              "00000000",
+              "00000041",
+              "00000000",
+              "0000c040",
+              "00000000",
+              "0c720d40",
+              "bbacbd40",
+              "00000000"
+            ]
+          },
+          "state_before": {
+            "alternating_distance_336_bits_le": "00004842",
+            "flags_225_226_227": [
+              0,
+              1,
+              1
+            ],
+            "minimum_distance_44_bits_le": "66662640",
+            "point_state_232_264_bits_le": [
+              "0000c040",
+              "00000000",
+              "00000041",
+              "00000000",
+              "0000c040",
+              "00000000",
+              "0c720d40",
+              "bbacbd40",
+              "00000000"
+            ]
+          },
+          "stored_time_before_i64": 20
+        }
+      ],
+      "end_pen_terminal_record": {
+        "draw_pattern_call_count": 44,
+        "draw_pattern_opacity_arguments": [
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255
+        ],
+        "draw_pattern_radius_inputs_bits_le": [
+          "0c728d3f",
+          "15a18c3f",
+          "19c68b3f",
+          "bae18a3f",
+          "8cf4893f",
+          "24ff883f",
+          "0b02883f",
+          "c8fd863f",
+          "dcf2853f",
+          "c2e1843f",
+          "efca833f",
+          "d6ae823f",
+          "e08d813f",
+          "7868803f",
+          "ff7d7e3f",
+          "ab237c3f",
+          "a9c2793f",
+          "a95b773f",
+          "51ef743f",
+          "407e723f",
+          "0809703f",
+          "3f906d3f",
+          "6f146b3f",
+          "1a96683f",
+          "bd15663f",
+          "d293633f",
+          "c910613f",
+          "108d5e3f",
+          "10095c3f",
+          "2785593f",
+          "b601573f",
+          "147f543f",
+          "95fd513f",
+          "8a7d4f3f",
+          "3eff4c3f",
+          "fb824a3f",
+          "0309483f",
+          "9491453f",
+          "ef1c433f",
+          "4cab403f",
+          "e03c3e3f",
+          "dfd13b3f",
+          "786a393f",
+          "d806373f"
+        ],
+        "drawable_path_selector_flag_226": 0,
+        "emitted_addpoint_count": 44,
+        "emitted_records_range": [
+          29,
+          73
+        ],
+        "entry_arguments_x0_x3": [
+          "0x100004c0",
+          "0x200efe50",
+          "0x200efe40",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000c040",
+            "236": "00000000",
+            "240": "00000041",
+            "244": "00000000",
+            "248": "0000c040",
+            "252": "00000000",
+            "256": "0c720d40",
+            "260": "bbacbd40",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "00000040"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "0000c040",
+            "236": "00000000",
+            "240": "00000041",
+            "244": "00000000",
+            "248": "0000c040",
+            "252": "00000000",
+            "256": "0c720d40",
+            "260": "bbacbd40",
+            "264": "00000000",
+            "280": "ff000000",
+            "296": "00000040"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 0,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 20
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00000000"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "00000041",
+              "00000000",
+              "00008041",
+              "00000000"
+            ],
+            "method": "quadTo"
+          }
+        ],
+        "path_length_bits_le": "00002041",
+        "path_length_call_count": 1,
+        "path_length_f32": 10.0,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "quadTo"
+      },
+      "label": "synthetic-motion-tool1-uneven-terminal-time-speed",
+      "native_host_boundaries": {
+        "explicitly_bounded": [
+          "PenGLDataManager::GetMsgQueue returns a local queue object",
+          "PenReturnCallback buffer/rect attachment and destruction are host callbacks",
+          "SPen::String destructor is a no-op host boundary; parser numeric calls are modeled",
+          "__emutls_get_address uses a bounded per-control TLS allocation",
+          "pthread mutex lifecycle is modeled as local success",
+          "__cxa_guard_acquire/release use single-thread first-initialization semantics",
+          "matrix method returns the explicit identity matrix",
+          "no GLES shader/texture upload or pixels were executed"
+        ],
+        "host_stub_calls": {
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)": 1,
+          "SPen::PenGLDataManager::GetMsgQueue()": 2,
+          "SPen::PenReturnCallback::PenReturnCallback(SPen::PenDrawableRT*, SPen::ISPPenCanvas*)": 1,
+          "SPen::PenReturnCallback::SetPenRect(SPen::RectF const&)": 1,
+          "SPen::PenReturnCallback::~PenReturnCallback()": 1,
+          "SPen::String::~String()": 3
+        },
+        "reached_import_calls": {
+          "SPen::BrushPenStrokeDrawableGLV10::BrushPenStrokeDrawableGLV10(SPen::BrushPenData*, SPen::PenGLDataManager*)": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::drawLine(float, float, float, long long, SPen::RectF*, int, bool)": 3,
+          "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)": 73,
+          "SPen::BrushPenStrokeDrawableGLV10::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::getInverseScale()": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::makeDrawPoint(float, float, float, float, float, long long, SPen::RectF*, bool)": 2,
+          "SPen::BrushPenStrokeDrawableGLV10::makeEndPenPoint(int, float, float, float, SPen::RectF*, bool)": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::redraw(SPen::MotionEvent const*, SPen::RectF*, bool)": 1,
+          "SPen::BrushPenStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float, SPen::Vector2<float>, SPen::Vector2<float>, SPen::Vector2<float>, SPen::Vector3<float>)": 73,
+          "SPen::Matrix3<float>::Matrix3()": 2,
+          "SPen::MotionEvent::AddBatch(long long, SPen::PointD, float, float, float, long long, SPen::Range<float> const&, SPen::MotionEvent::ResampledType)": 4,
+          "SPen::MotionEvent::GetButtonState() const": 1,
+          "SPen::MotionEvent::GetDownTime() const": 1,
+          "SPen::MotionEvent::GetEventTime() const": 2,
+          "SPen::MotionEvent::GetFlags() const": 1,
+          "SPen::MotionEvent::GetHistoricalEventTime(int) const": 4,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 6,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 6,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetSource() const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 15,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent()": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::Pen::Pen()": 1,
+          "SPen::Pen::getSettingData()": 1,
+          "SPen::Pen::getVersion()": 1,
+          "SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)": 1,
+          "SPen::PenGLDataManager::GetMsgQueue()": 2,
+          "SPen::PenReturnCallback::GetBuffer()": 1,
+          "SPen::PenReturnCallback::PenReturnCallback(SPen::PenDrawableRT*, SPen::ISPPenCanvas*)": 1,
+          "SPen::PenReturnCallback::SetPenRect(SPen::RectF const&)": 1,
+          "SPen::PenReturnCallback::~PenReturnCallback()": 1,
+          "SPen::PenStrokeDrawableGL::PenStrokeDrawableGL()": 1,
+          "SPen::RectF::ExtendRect()": 1,
+          "SPen::RectF::IncreaseRect(float)": 2,
+          "SPen::RectF::MakeRect(SPen::PointF const*)": 146,
+          "SPen::RectF::Set(float, float, float, float)": 2,
+          "SPen::RectF::Union(SPen::RectF const&)": 1,
+          "SPen::SmPath::SmPath()": 1,
+          "SPen::SmPath::getLength()": 3,
+          "SPen::SmPath::getPosTan(float, SPen::SmPoint*, SPen::SmPoint*)": 76,
+          "SPen::SmPath::helper_buildSegments()": 3,
+          "SPen::SmPath::helper_compute_quad_segs(SPen::SmPoint const*, float, int, int, int)": 5,
+          "SPen::SmPath::helper_distanceToSegment(float, float*)": 76,
+          "SPen::SmPath::incReserve(unsigned int)": 1,
+          "SPen::SmPath::moveTo(float, float)": 3,
+          "SPen::SmPath::nextVerb(SPen::SmPoint*)": 9,
+          "SPen::SmPath::quadTo(float, float, float, float)": 3,
+          "SPen::SmPath::resetPath(bool)": 3,
+          "SPen::SmPath::rewind()": 3,
+          "SPen::String::Append(char)": 2,
+          "SPen::String::Append(int)": 2,
+          "SPen::String::Append(unsigned short const*)": 5,
+          "SPen::String::Append(unsigned short)": 2,
+          "SPen::String::Clear()": 3,
+          "SPen::String::Construct()": 3,
+          "SPen::String::Construct(SPen::String const*)": 1,
+          "SPen::String::GetLength() const": 3,
+          "SPen::String::GetUTF8(char*, int) const": 1,
+          "SPen::String::GetUTF8Size() const": 1,
+          "SPen::String::Set(unsigned short const*)": 1,
+          "SPen::String::String()": 4,
+          "SPen::String::Token(char const*, SPen::String*)": 1,
+          "SPen::String::~String()": 3,
+          "SPen::StringImplBase::AllocateCapacity(int)": 1,
+          "SPen::StringImplBase::Itoa(int, char*, int)": 2,
+          "SPen::StringImplBase::Swprintf(unsigned short*, int, int)": 2,
+          "SPen::StringImplBase::Wcstok(unsigned short*, unsigned short const*)": 1,
+          "atoi": 1,
+          "expf": 4,
+          "memcmp": 1,
+          "memset": 1,
+          "operator delete(void*)": 5,
+          "operator delete[](void*)": 7,
+          "operator new(unsigned long)": 27,
+          "operator new(unsigned long, std::nothrow_t const&)": 4,
+          "operator new[](unsigned long)": 1,
+          "operator new[](unsigned long, std::nothrow_t const&)": 10,
+          "sincosf": 3,
+          "strlen": 4
+        }
+      },
+      "path": "native MotionEvent constructor/getters -> factory-selected GLV10 RedrawPen -> native drawPattern -> RTV1::AddPoint",
+      "synthetic_input": {
+        "orientations": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            12,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "pressures": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "tilts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "times": [
+          0,
+          10,
+          20,
+          23,
+          60
         ],
         "tool_type": 1
       }
