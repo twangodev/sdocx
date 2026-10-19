@@ -513,7 +513,18 @@ pub(super) fn prepare(input: ObliqueInput<'_>) -> Option<PreparedOblique> {
         sample_ends.push(triangles.len());
     }
     let terminal_start = triangles.len();
-    if let Some(&first) = terminal.first() {
+    if triangles.is_empty() && terminal.len() == 1 {
+        // When the first redrawLine is rejected as a short move, RedrawPen
+        // leaves RTV1's previous XY at the initial source point. endPen then
+        // emits only the final point, so AddPoint connects those two points.
+        append_segment(
+            &mut triangles,
+            stored_size,
+            input.runtime,
+            input.points[0],
+            terminal[0],
+        )?;
+    } else if let Some(&first) = terminal.first() {
         append_segment(&mut triangles, stored_size, input.runtime, first, first)?;
         for pair in terminal.windows(2) {
             append_segment(&mut triangles, stored_size, input.runtime, pair[0], pair[1])?;
@@ -699,6 +710,165 @@ mod tests {
                         );
                     }
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn typed_v4_saved_caller_matches_native_raw_vectors() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/oblique-saved-caller-advanced4-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-oblique-saved-caller-native-v1");
+        let cases = fixture["cases"].as_object().unwrap();
+        for id in [
+            "two_point_curve",
+            "two_point_near",
+            "two_point_far",
+            "two_point_offset",
+            "three_points_curve",
+        ] {
+            assert!(cases.contains_key(id), "missing required native case {id}");
+        }
+        for (id, case) in cases {
+            let source = &case["input"];
+            let native_arrays = &case["native_calls"]["source_ObjectStroke_arrays"];
+            let pack_hex = |values: Vec<String>| values.concat();
+            let point_bytes = pack_hex(
+                source["points_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .flat_map(|point| point.as_array().unwrap().iter())
+                    .map(|value| value.as_str().unwrap().to_owned())
+                    .collect(),
+            );
+            assert_eq!(
+                native_arrays["points"]["data_hex"], point_bytes,
+                "{id} source points"
+            );
+            for (native_name, input_name) in [
+                ("pressures", "pressure_f32_bits"),
+                ("tilts", "tilt_f32_bits"),
+                ("orientations", "orientation_f32_bits"),
+            ] {
+                let expected = pack_hex(
+                    source[input_name]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| value.as_str().unwrap().to_owned())
+                        .collect(),
+                );
+                assert_eq!(
+                    native_arrays[native_name]["data_hex"], expected,
+                    "{id} {native_name}"
+                );
+            }
+            assert_eq!(
+                native_arrays["timestamps"]["data_hex"],
+                pack_hex(
+                    source["timestamps_i32"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| (value.as_i64().unwrap() as i32)
+                            .to_le_bytes()
+                            .iter()
+                            .map(|byte| format!("{byte:02x}"))
+                            .collect::<String>())
+                        .collect(),
+                ),
+                "{id} timestamps"
+            );
+            let points: Vec<P> = source["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| {
+                    let xy = point.as_array().unwrap();
+                    P {
+                        x: f32::from_bits(bits(&xy[0])),
+                        y: f32::from_bits(bits(&xy[1])),
+                    }
+                })
+                .collect();
+            let vectors = &case["phase_final_vectors"]["draw_object_stroke"];
+            let inverse = vectors["inverse_scale_bits"].as_array().unwrap();
+            assert_eq!(
+                case["native_calls"]["drawable_getInverseScale_f32_bits"],
+                vectors["inverse_scale_bits"],
+                "{id} runtime inverse scale"
+            );
+            let input = ObliqueInput::new(
+                &points,
+                f32::from_bits(bits(&source["pen_size_f32_bits"])),
+                source["curve_enabled"].as_bool().unwrap(),
+                source["tool_type"].as_u64().unwrap() as u32,
+                ObliqueRuntime {
+                    k: f32::from_bits(bits(&vectors["k_bits"])),
+                    inverse_scale: [
+                        f32::from_bits(bits(&inverse[0])),
+                        f32::from_bits(bits(&inverse[1])),
+                    ],
+                },
+            );
+            assert_eq!(source["advanced_setting"], "4;", "{id} V4 setting");
+            assert_eq!(source["stroke_type"], 0, "{id} StrokeType");
+            assert_eq!(
+                case["native_calls"]["route"]["drawing_selected_drawable_version"], "4",
+                "{id} drawable"
+            );
+            for snapshot in case["native_calls"]["ObjectStroke_getter_snapshots"]
+                .as_array()
+                .unwrap()
+            {
+                assert_eq!(
+                    snapshot["size_bits"], source["pen_size_f32_bits"],
+                    "{id} size"
+                );
+                assert_eq!(snapshot["curve_enabled"].as_u64(), Some(1), "{id} curve");
+                assert_eq!(snapshot["tool_type"], source["tool_type"], "{id} tool");
+                assert_eq!(
+                    snapshot["stroke_type"], source["stroke_type"],
+                    "{id} stroke type"
+                );
+            }
+
+            let prepared = prepare(input).unwrap();
+            let actual: Vec<u32> = prepared
+                .triangles
+                .iter()
+                .flat_map(|triangle| {
+                    triangle.0.iter().flat_map(|vertex| {
+                        [
+                            vertex.position.x.to_bits(),
+                            vertex.position.y.to_bits(),
+                            vertex.coverage.to_bits(),
+                        ]
+                    })
+                })
+                .collect();
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                let native = &case["phase_final_vectors"][phase];
+                let expected = native["vector_bytes"].as_str().unwrap();
+                assert_eq!(actual.len() * 4, expected.len() / 2, "{id} {phase} bytes");
+                for (index, actual_bits) in actual.iter().enumerate() {
+                    let offset = index * 8;
+                    let native_bits = u32::from_le_bytes(std::array::from_fn(|byte| {
+                        u8::from_str_radix(&expected[offset + byte * 2..offset + byte * 2 + 2], 16)
+                            .unwrap()
+                    }));
+                    assert_eq!(*actual_bits, native_bits, "{id} {phase} float {index}");
+                }
+                let mut callback_bytes = String::new();
+                for callback in case["callback_add_point_calls"].as_array().unwrap() {
+                    if callback["phase"] == phase {
+                        callback_bytes.push_str(callback["vector_delta_bytes"].as_str().unwrap());
+                    }
+                }
+                assert_eq!(callback_bytes, expected, "{id} {phase} callback deltas");
             }
         }
     }

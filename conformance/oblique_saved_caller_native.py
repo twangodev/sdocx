@@ -22,7 +22,7 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 mode.add_argument('--check-profile-invariance',action='store_true')
-parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve'),default='two_point_curve')
+parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5'),default='two_point_curve')
 parser.add_argument('--redraw-version',choices=('selected','v4'),default='selected',help='use the selected drawable vtable entry, or the explicit GLV4 diagnostic probe')
 parser.add_argument('--advanced-setting',choices=('none','4'),default='none',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
 parser.add_argument('--width',type=int,default=1920)
@@ -36,11 +36,17 @@ def print(*values,**kwargs):
  if args.verbose or always:_console_print(*values,**kwargs)
 FIXTURE=SELECTED_VERSION_FIXTURE if args.redraw_version=='selected' else FIXTURE
 if args.redraw_version=='selected' and args.advanced_setting=='4': FIXTURE=ADVANCED4_FIXTURE
+if args.case in {'two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5'} and (args.redraw_version!='selected' or args.advanced_setting!='4'):
+ raise SystemExit('threshold witnesses are scoped to the Drawing-selected V4 route with saved setting 4;')
 INPUT_CASES={
  'two_point_curve': {'points':[[0.0,0.0],[2.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'two_point_near': {'points':[[0.0,0.0],[0.5,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'two_point_far': {'points':[[0.0,0.0],[20.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'two_point_offset': {'points':[[10.0,20.0],[12.0,20.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
+ 'two_point_below5': {'points':[[0.0,0.0],[4.999,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
+ 'two_point_at5': {'points':[[0.0,0.0],[5.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
+ 'two_point_above5': {'points':[[0.0,0.0],[5.001,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
+ 'two_point_offset_at5': {'points':[[10.0,20.0],[15.0,20.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'three_points_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,8,16],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
 }
 input_case=INPUT_CASES[args.case]
@@ -188,12 +194,13 @@ p.callbacks['__system_property_get']=lambda:(p.u.mem_write(p.x(1),b'arm64-v8a0')
 p.callbacks['__cxa_thread_atexit']=lambda:p.x(0,0)
 p._emutls={}
 def emutls():
- key=p.x(0); size,align,existing=struct.unpack('<QQQ',p.u.mem_read(key,24))
+ key=p.x(0); size,align,existing,template=struct.unpack('<QQQQ',p.u.mem_read(key,32))
  if not 0<size<=0x100000 or not 0<align<=0x10000 or align&(align-1): raise RuntimeError(f'invalid emutls descriptor {size} {align}')
+ template_bytes=bytes(p.u.mem_read(template,size)) if template else bytes(size)
  value=p._emutls.get(key)
  if value is None:
   if existing: raise RuntimeError(f'unowned preexisting emutls pointer {existing:#x}')
-  rawp=p.alloc(size+align); value=(rawp+align-1)&-align; p.u.mem_write(key+16,struct.pack('<Q',value)); p._emutls[key]=value
+  rawp=p.alloc(size+align); value=(rawp+align-1)&-align; p.u.mem_write(value,template_bytes); p.u.mem_write(key+16,struct.pack('<Q',value)); p._emutls[key]=value
  p.x(0,value)
 p.callbacks['__emutls_get_address']=emutls
 p._guards=set()
