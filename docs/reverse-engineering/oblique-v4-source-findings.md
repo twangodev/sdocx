@@ -211,4 +211,7 @@ generic fallback. The context-free API remains approximate. The
 complete first/second native buffers against a fresh second-stroke reference.
 Public vector exports preserve source RGB/alpha and max coverage; paired host
 SVG/PDF rendering at four scales improves on the pre-integration approximation
-for one captured case. Host raster edges and Samsung-device parity remain open.
+for one captured case. Extended nonorigin and repeated-stroke captures retain
+close SVG appearance, while light-background PDFs show material coverage/color
+errors at low raster scales. The PDF transport cause is not yet established;
+Samsung-device parity remains open.

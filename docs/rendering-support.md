@@ -185,8 +185,10 @@ three-point stroke followed by a short stroke on the same drawable/RT; the
 second callback stream and geometry match its fresh reference. Standalone
 `prepare_stroke` remains approximate because it lacks a canvas context. Fixed
 width, alternate stroke modes, arbitrary reuse and device pixel parity remain
-open; one paired host SVG/PDF export improves on the pre-integration renderer
-at four scales but retains raster-edge differences.
+open. Paired host exports improve on the pre-integration renderer, but broader
+light-background PDF cases show material coverage/color differences at low
+raster scales; SVG stays close in those captures. PDF transport remains under
+investigation.
 
 ## Text and embedded layout
 
