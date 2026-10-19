@@ -1,0 +1,170 @@
+{
+  "entrypoints": {
+    "GLES::BlendStateObject::Activate": "libSPenRenderer.so:resolved ELF symbol",
+    "GLES::BlendStateObject::BlendStateObject": "libSPenRenderer.so:resolved ELF symbol",
+    "GLES::BlendStateObject::SetDescriptor": "libSPenRenderer.so:resolved ELF symbol",
+    "ObliquePenStrokeDrawableRTV1::Draw": "0x4746c",
+    "ObliquePenStrokeDrawableRTV1::Init": "0x4473c",
+    "ObliquePenStrokeDrawableRTV1::ObliquePenStrokeDrawableRTV1": "0x445fc",
+    "PenDrawableRT::SetPenData": "libSPenPenCommon.so:0x4a558"
+  },
+  "explicit_input": {
+    "argb_u32": "0x80402010",
+    "draw_matrix_f32": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "kind": "synthetic, explicit host input; not captured device data",
+    "set_pen_data_size_f32": 9.75
+  },
+  "libraries": {
+    "libSPenObliquePen.so": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+  },
+  "limitations": [
+    "ARGB and host resources are explicit synthetic inputs; no captured Samsung color or framebuffer",
+    "Renderer GLES entry points are intercepted after actual BlendStateObject methods; no GPU or pixels are executed"
+  ],
+  "native_draw": {
+    "blend_activation_order": [
+      {
+        "descriptor_index": 1,
+        "rt_field_offset": 312
+      },
+      {
+        "descriptor_index": 0,
+        "rt_field_offset": 304
+      }
+    ],
+    "blend_objects_by_rt_field_offset": {
+      "304": "0x10020060",
+      "312": "0x100200b0"
+    },
+    "color_binding": {
+      "receiver": "0x10020ba0",
+      "rgba_bytes_hex": "8180803e8180003e8180803d8180003f",
+      "rgba_field_is_SetPenData_output": true,
+      "rgba_field_ptr": "0x1000802c",
+      "setter_return_pc": "0x47b90"
+    },
+    "entry_count": 1,
+    "host_adapters": [
+      "bitmap interface methods",
+      "graphics/resource handles",
+      "shader-interface methods",
+      "queue/context handles"
+    ],
+    "return_pc": "0x30001000",
+    "scope": "actual RTV1 Draw control flow, matrix/color helper, and blend activation; interface objects are synthetic adapters"
+  },
+  "native_init": {
+    "blend_descriptors_hex": [
+      "0101000000000000000000000100000007000000010000000700000000000000",
+      "0101000004000000040000000100000001000000010000000100000000000000"
+    ],
+    "constructor_entry_count": 1,
+    "entry_count": 1,
+    "factory_boundary": "synthetic CreateBlendStateObject and ManagedObject::Register host adapters; Init and descriptor construction/mutation are native"
+  },
+  "native_renderer_blend_mapping": [
+    {
+      "descriptor_hex": "0101000000000000000000000100000007000000010000000700000000000000",
+      "gles_calls": [
+        {
+          "args": [
+            32774,
+            32774
+          ],
+          "call": "glBlendEquationSeparate"
+        },
+        {
+          "args": [
+            1,
+            771,
+            1,
+            771
+          ],
+          "call": "glBlendFuncSeparate"
+        },
+        {
+          "args": [
+            3042
+          ],
+          "call": "glEnable"
+        },
+        {
+          "args": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "call": "glColorMask"
+        }
+      ]
+    },
+    {
+      "descriptor_hex": "0101000004000000040000000100000001000000010000000100000000000000",
+      "gles_calls": [
+        {
+          "args": [
+            32776,
+            32776
+          ],
+          "call": "glBlendEquationSeparate"
+        },
+        {
+          "args": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "call": "glBlendFuncSeparate"
+        },
+        {
+          "args": [
+            3042
+          ],
+          "call": "glEnable"
+        },
+        {
+          "args": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "call": "glColorMask"
+        }
+      ]
+    }
+  ],
+  "native_set_pen_data": {
+    "executed": true,
+    "rgba_bytes_hex": "8180803e8180003e8180803d8180003f",
+    "rgba_f32": [
+      0.250980406999588,
+      0.125490203499794,
+      0.062745101749897,
+      0.501960813999176
+    ],
+    "stored_size_u32": 9
+  },
+  "schema": "sdocx-oblique-draw-native-v1"
+}
