@@ -381,7 +381,10 @@ checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
 retains complete four-lane streams for 44 three- and five-event controls across
 GLV1/2/3; the test-only Rust model matches every word in those bounded families.
-Arbitrary-length sampling, paint and production vector integration remain open.
+A [reuse matrix](../conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
+target streams after short, long and different preludes and version changes,
+with explicit host lifecycle adapters. Arbitrary-length sampling, paint and
+production vector integration remain open.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
