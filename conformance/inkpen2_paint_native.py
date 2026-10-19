@@ -25,10 +25,13 @@ SCENARIOS = {
     'coincident_same': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.8, 0.2, 0.1))],
     'separated': [(64.0, 48.0, (0.8, 0.2, 0.1)), (96.0, 48.0, (0.8, 0.2, 0.1))],
     'coincident_different': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.2, 0.8, 0.3))],
+    'single_half_alpha': [(64.0, 48.0, (0.8, 0.2, 0.1))],
+    'coincident_different_half_alpha': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.2, 0.8, 0.3))],
 }
 
 def main(case_id):
     point_inputs = SCENARIOS[case_id]
+    input_argb = 0x80336699 if case_id.endswith("half_alpha") else 0xff336699
     old_uc=fn.Uc
     def max_uc(*args):
         u=old_uc(*args);u.ctl_set_cpu_model(R.UC_CPU_ARM64_MAX);return u
@@ -400,7 +403,7 @@ def main(case_id):
             if name=='glVertexAttribPointer':row['attrib']={'index':p.x(0),'size':p.x(1),'type':hex(p.x(2)),'stride':p.x(4),'offset':hex(p.x(5))}
             if name=='glUniformMatrix4fv':row['matrix_values']=list(p.get(p.x(3),'16f'))
             if name=='glUniform4fv':row['uniform_values']=list(struct.unpack('<4f',p.u.mem_read(p.x(2),16)))
-            if name=='glUniform4f':row['uniform_values']=[p.f(i) for i in range(1,5)]
+            if name=='glUniform4f':row['uniform_values']=[p.f(i) for i in range(4)]
             if name=='glGenFramebuffers' and 0<p.x(0)<=16:row['ids_before']=[p.get(p.x(1)+4*i,'I')[0] for i in range(p.x(0))]
             if name=='glInvalidateFramebuffer':
                 fb=C.c_int(); f['glGetIntegerv'](0x8CA6,C.byref(fb))
@@ -451,7 +454,7 @@ def main(case_id):
     inv=p.alloc(8);p.put(inv,'2f',1.0,1.0);call(p,'SPen::InkPen2StrokeDrawableRTV3::SetInverseScale(SPen::Vector2<float> const&)',[rt,inv])
     color_vec=p.alloc(24); color_buf=p.alloc(4096); p.put(color_vec,'3Q',color_buf,color_buf,color_buf+4096); p.put(rt+80,'Q',color_vec); p.put(rt+88,'Q',color_vec)
     p.put(rt+296,'2f',1.0,1.0)
-    settings=p.alloc(64);p.put(settings,'fI',6.0,0xff336699);p.put(settings+44,'f',1.0);p.put(settings+52,'B',1)
+    settings=p.alloc(64);p.put(settings,'fI',6.0,input_argb);p.put(settings+44,'f',1.0);p.put(settings+52,'B',1)
     call(p,'SPen::PenDrawableRT::SetPenSettingData(SPen::PenSettingData*)',[rt,settings])
     add_color='SPen::InkPen2StrokeDrawableRTV3::AddPoint(SPen::Vector2<float>, float, SPen::Vector3<float>)'
     for x,y,rgb in point_inputs:
@@ -488,7 +491,7 @@ def main(case_id):
     relevant_calls=('glTexImage2D','glBindFramebuffer','glFramebufferTexture2D','glCheckFramebufferStatus','glViewport','glClearColor','glClear','glInvalidateFramebuffer','glBindTexture','glActiveTexture','glUseProgram','glUniform1i','glUniform1f','glUniform2f','glUniform4f','glUniform4fv','glUniformMatrix4fv','glBlendEquationSeparate','glBlendFuncSeparate','glEnable','glDisable','glColorMask','glDrawArrays','glDrawArraysInstanced','glVertexAttribPointer','glVertexAttribDivisor','glEnableVertexAttribArray','glDisableVertexAttribArray','glBufferData','glBufferSubData','glBindBuffer')
     fixture_case={
         'id':case_id,
-        'input':{'canvas_width':128,'canvas_height':96,'inverse_scale':[1.0,1.0],'set_pen_setting_data':{'allocation_size':64,'field_layout':{'size_f32':0,'argb_u32':4,'alpha_f32':44,'branch_flag_u8':52},'raw_hex':bytes(p.u.mem_read(settings,56)).hex(),'size':6.0,'argb':0xff336699,'alpha':1.0,'branch_flag':1},'points':[{'position':[x,y],'pressure':0.7,'rgb':list(rgb)} for x,y,rgb in point_inputs]},
+        'input':{'canvas_width':128,'canvas_height':96,'inverse_scale':[1.0,1.0],'set_pen_setting_data':{'allocation_size':64,'field_layout':{'size_f32':0,'argb_u32':4,'field_44_f32':44,'branch_flag_u8':52},'raw_hex':bytes(p.u.mem_read(settings,56)).hex(),'size':6.0,'argb':input_argb,'field_44':1.0,'branch_flag':1},'points':[{'position':[x,y],'pressure':0.7,'rgb':list(rgb)} for x,y,rgb in point_inputs]},
         'host_setup':{'drawable':'native InkPen2StrokeDrawableRTV3 constructed and initialized by pinned DSO','buffer_wiring':'test host allocates a bounded std::vector<float> ABI buffer and installs its pointer at RTV3 offsets +80 and +88','canvas':'native RTV3::CreatePenCanvas, native SPPenCanvasRT::GetBitmap, native SPTextureBitmap::GetSubBitmap(0)','queue':'host IGLMsgQueue slot+16 is a bounded synchronous no-op return; no task delivery is claimed','queue_slot_calls':queue_calls,'saved_drawing_or_device_profile':False},
         'native_calls':['InkPen2StrokeDrawableRTV3::InkPen2StrokeDrawableRTV3','InkPen2StrokeDrawableRTV3::Init','InkPen2StrokeDrawableRTV3::CreatePenCanvas(128,96)','InkPen2StrokeDrawableRTV3::SetInverseScale([1,1])','PenDrawableRT::SetPenSettingData','InkPen2StrokeDrawableRTV3::AddPoint(Vector2,float,Vector3) per input point','InkPen2StrokeDrawableRTV3::Update(false)','InkPen2StrokeDrawableRTV3::Draw(subbitmap,matrix)'],
         'input_vector_records':records,
@@ -508,7 +511,7 @@ def main(case_id):
         'host_gl':host_gl,
         'native_libraries_sha256':{path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in library_paths},
         'conformance_helper_sha256':{path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in helper_paths},
-        'scope_note':'Synthetic native RTV3 input and settings; Mesa GLES output from the pinned ARM64 library behavior. The RGBA8 source-over canvas and the GL_RG8 max-mask/final-composite target are separate products. The final composite target red lane is premultiplied output color, not a stand-alone alpha mask. This is not saved Drawing, parser, device, or production-dispatch evidence.'
+        'scope_note':'Synthetic native RTV3 input and settings; Mesa GLES output from the pinned ARM64 library behavior. The RGBA8 source-over canvas and the GL_R8 max-mask/final-composite target are separate products. The final composite target red lane is premultiplied output color, not a stand-alone alpha mask. This is not saved Drawing, parser, device, or production-dispatch evidence.'
     }
     return fixture_case
 
@@ -543,7 +546,17 @@ def capture_all():
         raise RuntimeError('separated control changed the first stamp output pixels')
     if stage('coincident_different','final_composite')['rgba_bytes']==stage('single','final_composite')['rgba_bytes']:
         raise RuntimeError('different-RGB overlap failed to expose source-over color normalization')
+    for low, full in [('single_half_alpha', 'single'), ('coincident_different_half_alpha', 'coincident_different')]:
+        if stage(low, 'max_alpha_mask')['rgba_bytes'] != stage(full, 'max_alpha_mask')['rgba_bytes']:
+            raise RuntimeError('input alpha changed the native geometric max mask')
+        if stage(low, 'final_composite')['rgba_bytes'] == stage(full, 'final_composite')['rgba_bytes']:
+            raise RuntimeError('input alpha failed to change native final composition')
     for case in cases:
+        argb = case['input']['set_pen_setting_data']['argb']
+        rgba = [struct.unpack('<f', struct.pack('<f', channel / 255.0))[0] for channel in ((argb >> 16) & 255, (argb >> 8) & 255, argb & 255, argb >> 24)]
+        color_uniforms = [row['values'] for row in case['uniform_calls'] if row['call'] == 'glUniform4fv']
+        if color_uniforms != [rgba, rgba]:
+            raise RuntimeError(f"{case['id']} native shader uniforms did not preserve packed ARGB")
         if len(case['draw_calls'])!=3 or len(case['stage_readbacks_before_invalidate'])!=3:
             raise RuntimeError(f"{case['id']} did not traverse all three native paint stages")
         if any(row['errors'] for row in case['gl_error_checkpoints']):
@@ -561,7 +574,7 @@ def capture_all():
             'evidence':'derived from the captured native shader source, blend state, and Mesa readbacks',
             'max_mask':'M = max_i(alpha_i) per covered pixel (GL_MAX, ONE/ONE)',
             'source_over':'P_i = c_i * alpha_i; P = P_i + P_prev * (1 - alpha_i); A = alpha_i + A_prev * (1 - alpha_i)',
-            'final_composite':'C = (P / A) * (M * input_alpha), when A > 0; the GL_RG8 target R is premultiplied output color, not standalone alpha',
+            'final_composite':'C = (P / A) * (M * input_alpha), when A > 0; the GL_R8 target R is premultiplied output color, not standalone alpha',
             'uniform_rgb_reduction':'when every record has the same RGB c, P/A = c, so final RGB is c * M * input_alpha; same-RGB overlap should preserve final color while differing RGB exposes source-over normalization',
             'scope':'This is the observed synthetic native RTV3 paint path, not a saved Drawing or production admission claim.'
         },
