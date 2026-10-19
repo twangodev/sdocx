@@ -597,7 +597,7 @@ def run_case(case, path='motion'):
     return native.run_motion(case)
 
 
-CASES = [
+MOTION_CASES = [
     {'name': 'synthetic-motion-neutral-tool2', 'tool_type': 2,
      'points': [[0, 0], [4, 2], [9, 5]], 'pressures': [0.25, 0.5, 0.75],
      'times': [10, 20, 30], 'tilts': [0, 0, 0], 'orientations': [0, 0, 0]},
@@ -609,11 +609,39 @@ CASES = [
      'points': [[-3, 2], [-1, 6], [2, 9]], 'pressures': [0.35, 0.65, 0.95],
      'times': [200, 220, 255], 'tilts': [0.2, 0.35, 0.5],
      'orientations': [-0.2, -0.1, 0.1]},
-    {'name': 'synthetic-object-stroke-tool2', 'tool_type': 2,
-     'points': [[1, -2], [3, 1], [6, 4]], 'pressures': [0.3, 0.6, 0.85],
-     'times': [300, 315, 340], 'tilts': [0.12, 0.32, 0.55],
-     'orientations': [0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool2-pressure-low', 'tool_type': 2,
+     'points': [[0, 0], [1, 0], [3, 1], [6, 2], [10, 4]],
+     'pressures': [0.01, 0.01, 0.01, 0.01, 0.01],
+     'times': [0, 10, 20, 30, 40], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
+     'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool2-pressure-above-one', 'tool_type': 2,
+     'points': [[0, 0], [1, 0], [3, 1], [6, 2], [10, 4]],
+     'pressures': [0.4, 0.8, 1.2, 1.5, 2.0],
+     'times': [0, 2, 5, 9, 15], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
+     'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool1-pressure-insensitive-multisegment', 'tool_type': 1,
+     'points': [[0, 0], [1, 0], [3, 1], [6, 2], [10, 4]],
+     'pressures': [0.05, 0.2, 0.4, 0.7, 1.0],
+     'times': [10, 15, 30, 60, 110], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
+     'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool3-pressure-insensitive-multisegment', 'tool_type': 3,
+     'points': [[0, 0], [1, 0], [3, 1], [6, 2], [10, 4]],
+     'pressures': [1.0, 0.7, 0.4, 0.2, 0.05],
+     'times': [10, 13, 19, 28, 40], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
+     'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
+    {'name': 'synthetic-motion-tool2-uneven-fast-slow-movement-gate', 'tool_type': 2,
+     'points': [[0, 0], [0.1, 0], [2, 0], [2.1, 0], [12, 0]],
+     'pressures': [0.2, 0.3, 0.4, 0.5, 0.6],
+     'times': [100, 101, 120, 121, 160], 'tilts': [0, 0.1, 0.25, 0.4, 0.6],
+     'orientations': [0, 0.1, 0.2, 0.35, 0.55]},
 ]
+
+OBJECT_CASE = {
+    'name': 'synthetic-object-stroke-tool2', 'tool_type': 2,
+    'points': [[1, -2], [3, 1], [6, 4]], 'pressures': [0.3, 0.6, 0.85],
+    'times': [300, 315, 340], 'tilts': [0.12, 0.32, 0.55],
+    'orientations': [0.2, 0.35, 0.55],
+}
 
 
 def main():
@@ -622,8 +650,8 @@ def main():
     mode.add_argument('--write-fixture', action='store_true', help='replace the local native-output fixture')
     mode.add_argument('--check-fixture', action='store_true', help='compare native output with the checked fixture')
     args = parser.parse_args()
-    motion_results = [run_case(case) for case in CASES[:3]]
-    object_result = run_case(CASES[3], 'object-core')
+    motion_results = [run_case(case) for case in MOTION_CASES]
+    object_result = run_case(OBJECT_CASE, 'object-core')
     result = {'artifact': 'Samsung Notes 4.4.45.37 native BrushPen',
               'evidence_scope': 'Synthetic saved-style inputs execute the fresh-constructor-selected native GL version and RTV1 geometry writer. No captured BrushPen device witness, GPU texture upload, shader execution, or pixels.',
               'library_sha256': HASHES,
