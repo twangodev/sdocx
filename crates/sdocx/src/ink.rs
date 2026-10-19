@@ -385,7 +385,7 @@ fn prepare_stroke_inner(
                 None,
                 None,
                 None,
-                1.,
+                saved_inkpen_opacity(stroke).unwrap_or(1.),
             )
         };
     let profile = stroke
@@ -471,6 +471,41 @@ fn prepare_stroke_inner(
             .is_some_and(|r| r.properties.top_layer_pen),
         profile: profile.map(|p| p.name),
     }
+}
+
+// V1 and V4 use RTV1's MAX coverage pass followed by one source-color
+// composite. That paint contract does not depend on V4's display-dependent
+// geometry; keep the geometry approximate while retaining saved source alpha.
+fn saved_inkpen_opacity(stroke: &Stroke) -> Option<f64> {
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("") | Some("4;")
+        )
+        || rendering.tool_type_raw > 4
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || rendering
+            .style
+            .stroke_type_raw
+            .is_some_and(|value| value != 0)
+        || rendering
+            .style
+            .color_type_raw
+            .is_some_and(|value| value != 0)
+    {
+        return None;
+    }
+    Some(f64::from((rendering.style.color_argb? >> 24) as u8) / 255.0)
 }
 
 struct PreparedObliqueInk {
@@ -777,6 +812,64 @@ mod tests {
             },
         });
         input
+    }
+
+    #[test]
+    fn inkpen_source_alpha_preserves_approximate_geometry() {
+        for setting in [None, Some(""), Some("4;")] {
+            for alpha in [0_u32, 128, 255] {
+                let mut input = defaultpen_stroke();
+                let rendering = input.rendering.as_mut().unwrap();
+                rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
+                rendering.advanced_settings = setting.map(str::to_owned);
+                rendering.style.color_argb = Some((alpha << 24) | 0x0033_6699);
+                let mut opaque = input.clone();
+                opaque.rendering.as_mut().unwrap().style.color_argb = Some(0xff33_6699);
+                let actual = prepare_stroke(&input, false);
+                let geometry = prepare_stroke(&opaque, false);
+                assert_eq!(actual.opacity, f64::from(alpha) / 255.0);
+                assert_eq!(actual.support, InkSupport::Approximate);
+                assert_eq!(actual.points, geometry.points);
+                assert_eq!(actual.segment_widths, geometry.segment_widths);
+                assert_eq!(actual.bounds, geometry.bounds);
+                assert!(actual.dot_radii.is_none());
+            }
+        }
+    }
+
+    #[test]
+    fn inkpen_alpha_does_not_change_unverified_profiles_or_effects() {
+        for unsupported in 0..14 {
+            let mut input = defaultpen_stroke();
+            let rendering = input.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
+            rendering.style.color_argb = Some(0x0033_6699);
+            match unsupported {
+                0 => rendering.advanced_settings = Some("9;".into()),
+                1 => {
+                    rendering.pen_name =
+                        Some("com.samsung.android.sdk.pen.pen.preload.InkPen2".into())
+                }
+                2 => rendering.tool_type_raw = 5,
+                3 => rendering.style.stroke_type_raw = Some(1),
+                4 => rendering.style.color_type_raw = Some(1),
+                5 => rendering.properties.replay_only = true,
+                6 => rendering.properties.eraser = true,
+                7 => rendering.properties.fixed_width = true,
+                8 => rendering.properties.top_layer_pen = true,
+                9 => rendering.properties.alpha_lock = true,
+                10 => rendering.properties.fixed_opacity = true,
+                11 => rendering.properties.rainbow_effect = true,
+                12 => rendering.properties.straighten = true,
+                13 => rendering.properties.reveal_mode = true,
+                _ => unreachable!(),
+            }
+            assert_eq!(
+                prepare_stroke(&input, false).opacity,
+                1.0,
+                "case {unsupported}"
+            );
+        }
     }
 
     fn fountain_stroke(advanced_settings: &str) -> Stroke {

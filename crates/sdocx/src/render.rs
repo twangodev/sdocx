@@ -3190,7 +3190,6 @@ fn render_stroke(
 
 fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
     let color = &paint.color;
-    let base_width = paint.width;
     if oblique::render(svg, paint, replay) {
         return;
     }
@@ -3315,6 +3314,20 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
         svg.push(node);
         return;
     }
+    // Composite approximate InkPen segments before applying source alpha;
+    // per-segment opacity would accumulate at joins and self intersections.
+    if paint.opacity != 1.0 {
+        svg.scope(Group::new().opacity(paint.opacity), |svg| {
+            render_generic_stroke(svg, paint, replay);
+        });
+    } else {
+        render_generic_stroke(svg, paint, replay);
+    }
+}
+
+fn render_generic_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
+    let color = &paint.color;
+    let base_width = paint.width;
     if let [point] = paint.points.as_ref() {
         svg.push(
             Circle::new()
@@ -4459,6 +4472,59 @@ mod tests {
             (advanced_setting == "14;").then_some(0.0);
         stroke.pen_width = 2.5;
         stroke
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn public_inkpen_alpha_is_applied_once_in_normal_and_replay_svg() {
+        for setting in [None, Some(""), Some("4;")] {
+            let mut stroke = fountain_color_stroke("14;");
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
+            rendering.advanced_settings = setting.map(str::to_owned);
+            rendering.tool_type_raw = 1;
+            rendering.style.stroke_type_raw = Some(0);
+            rendering.style.color_argb = Some(0x8033_6699);
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let document = document(page);
+            let normal = render_document_svg(&document, &RenderOptions::default())
+                .remove(0)
+                .svg;
+            let layout = layout_document(&document);
+            let replay = super::render_layout_page_replay_svg(
+                &document,
+                &layout,
+                0,
+                &RenderOptions::default(),
+            )
+            .unwrap()
+            .svg;
+            for output in [&normal, &replay] {
+                let xml = roxmltree::Document::parse(output).unwrap();
+                let groups = xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("g") && node.attribute("opacity").is_some())
+                    .collect::<Vec<_>>();
+                assert_eq!(groups.len(), 1);
+                let opacity: f64 = groups[0].attribute("opacity").unwrap().parse().unwrap();
+                assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
+                let lines = groups[0]
+                    .descendants()
+                    .filter(|node| node.has_tag_name("line"))
+                    .collect::<Vec<_>>();
+                assert_eq!(lines.len(), 2);
+                assert!(lines.iter().all(|node| node.attribute("opacity").is_none()
+                    && node.attribute("stroke-opacity").is_none()));
+            }
+            let xml = roxmltree::Document::parse(&replay).unwrap();
+            let parts = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("line"))
+                .map(|node| node.attribute("data-replay-part").unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(parts, ["2", "3"]);
+        }
     }
 
     #[cfg(feature = "serde")]
