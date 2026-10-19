@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{Point, Stroke};
 
-pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
+pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
     let rendering = s.rendering.as_ref().unwrap();
     let stylus = rendering.tool_type_raw == 2;
     let pressure_at = |i| {
@@ -21,7 +21,6 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
     } else {
         5.
     };
-    let size = s.pen_width;
     let mut previous = P::from(s.points[0]);
     let mut midpoint = previous;
     let mut width = (size * 0.5) * pressure_at(0);

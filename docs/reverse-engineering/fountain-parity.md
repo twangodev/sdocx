@@ -36,6 +36,15 @@ without the native device-pixel fringe; V16 expresses radial coverage at
 canonical unit inverse scale. Small-field PDF sampling, zoom-dependent coverage
 and native device pixels remain unverified.
 
+The [V14 Drawing defaults](../../conformance/fountain-v14-defaults-native.json)
+use saved style size, default it to zero before the native 0.4–800 clamp, and
+default omitted tolerance to zero. Six cases match all prepared geometry lanes.
+After this correction, all 7,103 corpus V14 strokes retain identical geometry
+(235,343 dots). Paired vector exports across Chromium, Firefox, MuPDF and PDFium
+improve most changed controls, but minimum-width dots can still disappear at 1×;
+the omitted-size/public-width-0.8 control has mixed raster results. Matching
+native geometry does not close the missing V14 fringe paint.
+
 ## Validation on 2026-09-25
 
 Chromium checks observed identical completed replay pixels and preserved SVG

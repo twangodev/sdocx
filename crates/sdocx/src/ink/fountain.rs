@@ -233,17 +233,13 @@ impl Pass<'_> {
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
-    // V16 SetSize/GetSize operates on the saved style size and clamps it
-    // natively. V14's existing prepared-size input remains Stroke.pen_width.
-    let size = if v14 {
-        s.pen_width
-    } else {
-        let saved_size = r.style.pen_size.unwrap_or(0.);
-        if !saved_size.is_finite() || saved_size < 0. {
-            return None;
-        }
-        saved_size.clamp(0.4, 800.)
-    };
+    // Both saved drawable versions consume ObjectStroke's saved style size.
+    // A missing native size reads as zero, then Pen::SetSize clamps it to 0.4.
+    let saved_size = r.style.pen_size.unwrap_or(0.);
+    if !saved_size.is_finite() || saved_size < 0. {
+        return None;
+    }
+    let size = saved_size.clamp(0.4, 800.);
     let input_supported = matches!(r.tool_type_raw, 1..=3);
     let fixed_width_supported = !r.properties.fixed_width
         || r.style
@@ -268,7 +264,6 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
         || (!s.tilts.is_empty() && s.tilts.len() != s.points.len())
         || !size.is_finite()
         || size <= 0.
-        || (v14 && size > 1024.)
         || s.points
             .iter()
             .any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7)
@@ -279,11 +274,9 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     {
         return None;
     }
-    let tolerance = match (v14, r.style.initial_tolerance) {
-        (true, Some(value)) | (false, Some(value)) => value,
-        (true, None) => return None,
-        (false, None) => 0.,
-    };
+    // The native Model getter returns zero when this V14/V16 style value is
+    // absent, and RedrawPen copies that value into drawable+44.
+    let tolerance = r.style.initial_tolerance.unwrap_or(0.);
     if !(0. ..=1000.).contains(&tolerance) {
         return None;
     }
@@ -298,7 +291,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
         return None;
     }
     if v14 {
-        return Some(super::fountain_v14::prepare(s, tolerance));
+        return Some(super::fountain_v14::prepare(s, size, tolerance));
     }
     let stylus = r.tool_type_raw == 2;
     let pressure_at = |i| if stylus { s.pressures[i] as f32 } else { 0.5 };
@@ -422,13 +415,9 @@ mod tests {
                 stroke.pen_width = case.size;
                 let style = &mut stroke.rendering.as_mut().unwrap().style;
                 style.initial_tolerance = Some(case.tolerance);
-                if v14 {
-                    // V14 keeps the preexisting Stroke.pen_width contract.
-                    style.pen_size = Some(99.);
-                } else {
-                    // V16 samples the native saved style size.
-                    style.pen_size = Some(case.size);
-                }
+                // The normalized helper adapter maps this case's size to the
+                // native saved style size for both drawable versions.
+                style.pen_size = Some(case.size);
                 if let Some(tool) = case.tool_type_raw {
                     stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
                 }
@@ -443,8 +432,15 @@ mod tests {
                     stroke.tilts.push(tilt);
                     stroke.timestamps.push(time);
                 }
-                let actual = prepare(&stroke)
-                    .unwrap_or_else(|| panic!("{} unexpectedly used fallback geometry", case.name));
+                let actual = if v14 {
+                    // This fixture captures the lower-level V14 sampler helper,
+                    // before Drawing applies the saved Pen::SetSize clamp.
+                    super::super::fountain_v14::prepare(&stroke, case.size, case.tolerance)
+                } else {
+                    prepare(&stroke).unwrap_or_else(|| {
+                        panic!("{} unexpectedly used fallback geometry", case.name)
+                    })
+                };
                 assert_eq!(
                     actual.sample_ends, case.sample_ends,
                     "{} mapping",
@@ -593,6 +589,151 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn v14_saved_size_and_missing_tolerance_match_native_drawing_records() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-defaults-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let name = case["case"].as_str().unwrap();
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some("14;".into());
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.FountainPen".into());
+            rendering.tool_type_raw = fixture["source_input"]["tool_type"].as_u64().unwrap() as u16;
+            rendering.style.pen_size = if case["style_saved_size_setter"] == "omit" {
+                None
+            } else {
+                Some(little_endian_f32(
+                    &case["source_model_get_pen_size_f32_bits"],
+                ))
+            };
+            rendering.style.initial_tolerance = if case["style_initial_tolerance_setter"] == "omit"
+            {
+                None
+            } else {
+                Some(little_endian_f32(
+                    &case["model_get_initial_tolerance_f32_bits"],
+                ))
+            };
+            stroke.pen_width =
+                little_endian_f32(&case["adapter_public_pen_width_metadata_f32_bits"]);
+
+            let source = &case["source_arrays"];
+            let point_words = source["points_f32_bits"].as_array().unwrap();
+            stroke.points = point_words
+                .chunks_exact(2)
+                .map(|pair| Point {
+                    x: f64::from(source_array_f32(&pair[0])),
+                    y: f64::from(source_array_f32(&pair[1])),
+                })
+                .collect();
+            stroke.pressures = source["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f64::from(source_array_f32(value)))
+                .collect();
+            stroke.tilts = source["tilt_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f64::from(source_array_f32(value)))
+                .collect();
+            stroke.timestamps = source["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap())
+                .collect();
+
+            let dots = prepare(&stroke).unwrap_or_else(|| panic!("{name} rejected"));
+            let native = case["rtv_addpoint_entries"].as_array().unwrap();
+            assert_eq!(dots.points.len(), native.len(), "{name} RTV4 count");
+            let directions = dots.directions.as_ref().unwrap();
+            for (index, ((point, radius), callback)) in
+                dots.points.iter().zip(&dots.radii).zip(native).enumerate()
+            {
+                let words = callback["float_words_s0_s5"].as_array().unwrap();
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    little_endian_u32(&words[0]),
+                    "{name} record {index} x"
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    little_endian_u32(&words[1]),
+                    "{name} record {index} y"
+                );
+                assert_eq!(
+                    (*radius as f32).to_bits(),
+                    little_endian_u32(&words[2]),
+                    "{name} record {index} radius"
+                );
+                assert_eq!(
+                    (directions[index].x as f32).to_bits(),
+                    little_endian_u32(&words[3]),
+                    "{name} record {index} direction x"
+                );
+                assert_eq!(
+                    (directions[index].y as f32).to_bits(),
+                    little_endian_u32(&words[4]),
+                    "{name} record {index} direction y"
+                );
+                assert_eq!(
+                    little_endian_u32(&words[5]),
+                    1.0f32.to_bits(),
+                    "{name} alpha"
+                );
+            }
+            let effective_size = stroke
+                .rendering
+                .as_ref()
+                .unwrap()
+                .style
+                .pen_size
+                .unwrap_or(0.)
+                .clamp(0.4, 800.);
+            assert_eq!(
+                effective_size.to_bits(),
+                little_endian_f32(&case["native_pen_getsize_f32_bits"]).to_bits(),
+                "{name} native Pen GetSize"
+            );
+            assert_eq!(
+                stroke
+                    .rendering
+                    .as_ref()
+                    .unwrap()
+                    .style
+                    .initial_tolerance
+                    .unwrap_or(0.)
+                    .to_bits(),
+                little_endian_f32(&case["model_get_initial_tolerance_f32_bits"]).to_bits(),
+                "{name} native tolerance default/setter"
+            );
+        }
+    }
+
+    #[test]
+    fn v14_rejects_negative_or_nonfinite_style_size_before_clamp() {
+        let mut stroke = reference().stroke;
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("14;".into());
+        stroke.pen_width = 99.;
+        stroke.points = vec![Point { x: 0., y: 0. }];
+        stroke.pressures = vec![0.5];
+        stroke.timestamps = vec![0];
+        stroke.rendering.as_mut().unwrap().style.initial_tolerance = None;
+        for size in [-0.1, f32::NAN, f32::INFINITY] {
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            assert!(prepare(&stroke).is_none(), "{size:?}");
+        }
+        stroke.rendering.as_mut().unwrap().style.pen_size = None;
+        assert_eq!(prepare(&stroke).unwrap().radii, vec![f64::from(0.1f32)]);
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(900.);
+        assert_eq!(prepare(&stroke).unwrap().radii, vec![200.]);
     }
 
     #[test]
