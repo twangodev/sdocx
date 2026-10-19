@@ -1,8 +1,7 @@
-//! Test-only numeric reconstruction of Pencil3 V1's particle core.
-//!
-//! This module is intentionally not registered for production use. The public
-//! functions require explicit native RNG values or an explicit bionic RNG
-//! context so they cannot silently depend on process-global libc state.
+//! Test-only numeric reconstruction of Pencil3 V1 and V3 sampling and particle
+//! kernels. This module is intentionally not registered for production use.
+//! Random state is supplied explicitly: V1 models an explicit bionic RNG
+//! context, while V3 keeps its observed per-redraw private state here.
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct RectF {
@@ -23,6 +22,15 @@ pub(super) struct Particle {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct V3Particle {
     pub attributes: [f32; 5],
+}
+
+/// Source-derived input shared by Pencil3 versions before their distinct
+/// particle kernels consume random state or pack RTV records.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct SavedSample {
+    point: [f32; 2],
+    size: f32,
+    alpha: f32,
 }
 
 /// Per-Redraw private Pencil3 V3 random state. Native RedrawPen resets the
@@ -267,6 +275,33 @@ fn line_particles_with_phase(
     initial_distance: f32,
     rng: &mut BionicRandom,
 ) -> (Vec<Particle>, f32) {
+    let mut particles = Vec::new();
+    let phase = sample_line_with_phase(
+        start,
+        control,
+        end,
+        point_size,
+        alpha,
+        spacing,
+        initial_distance,
+        |sample| particles.push(v1_particle_from_sample(sample, rng)),
+    );
+    (particles, phase)
+}
+
+/// Run the shared native SmPath sampling loop without selecting a particle
+/// RNG or output packing. This lets V1 and V3 share saved-source iteration
+/// while keeping their Bionic and private-LCG particle kernels separate.
+fn sample_line_with_phase(
+    start: [f32; 2],
+    control: [f32; 2],
+    end: [f32; 2],
+    point_size: f32,
+    alpha: f32,
+    spacing: f32,
+    initial_distance: f32,
+    mut emit: impl FnMut(SavedSample),
+) -> f32 {
     use super::path::{P, Quad};
     let path = Quad::new(
         P {
@@ -282,36 +317,51 @@ fn line_particles_with_phase(
             y: end[1],
         },
     );
-    let mut particles = Vec::new();
     let mut distance = initial_distance;
     while distance <= path.length {
         let point = path.at(distance);
-        particles.push(
-            draw_point(DrawPoint {
-                point: [point.x, point.y],
-                size: point_size,
-                alpha,
-                initial_bounds: RectF {
-                    left: 0.0,
-                    top: 0.0,
-                    right: 0.0,
-                    bottom: 0.0,
-                },
-                rand_values: [rng.next(), rng.next(), rng.next()],
-            })
-            .particle,
-        );
+        emit(SavedSample {
+            point: [point.x, point.y],
+            size: point_size,
+            alpha,
+        });
         distance += spacing;
     }
-    (particles, distance - path.length)
+    distance - path.length
+}
+
+fn v1_particle_from_sample(sample: SavedSample, rng: &mut BionicRandom) -> Particle {
+    draw_point(DrawPoint {
+        point: sample.point,
+        size: sample.size,
+        alpha: sample.alpha,
+        initial_bounds: RectF {
+            left: 0.0,
+            top: 0.0,
+            right: 0.0,
+            bottom: 0.0,
+        },
+        rand_values: [rng.next(), rng.next(), rng.next()],
+    })
+    .particle
 }
 
 /// Reconstruct the native V1 saved-event lifecycle for the bounded finite
 /// profile used by the conformance fixture.  Values are derived from the
 /// saved stroke; fixture output is never consulted by this implementation.
 fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<Particle> {
+    let mut particles = Vec::new();
+    sample_saved_redraw(stroke, |sample| {
+        particles.push(v1_particle_from_sample(sample, rng));
+    });
+    particles
+}
+
+/// Run the source-side saved-stroke sampler and hand each upstream point,
+/// width, and opacity to a caller-owned particle kernel.
+fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) {
     if stroke.points.len() < 2 {
-        return Vec::new();
+        return;
     }
     let pressure_for_move = |pressure: f32| {
         if pressure.is_finite() {
@@ -329,7 +379,13 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
     let mut point_size = stroke.size.mul_add(initial_pressure, stroke.size) * 0.5;
     let step = stroke.size * 0.08;
     let mut distance_phase = step;
-    let mut particles = seven_start_dabs(stroke.points[0], stroke.size, initial_alpha, rng);
+    for _ in 0..7 {
+        emit(SavedSample {
+            point: stroke.points[0],
+            size: stroke.size,
+            alpha: initial_alpha,
+        });
+    }
 
     let mut raw = stroke.points[0];
     let mut midpoint = raw;
@@ -371,7 +427,7 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
             pressure_for_move(stroke.pressures[index])
         };
         let alpha = pressure.clamp(0.1, 0.6) / 1.5;
-        let (line, phase) = line_particles_with_phase(
+        distance_phase = sample_line_with_phase(
             midpoint,
             raw,
             [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5],
@@ -379,10 +435,8 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
             alpha,
             step,
             distance_phase,
-            rng,
+            &mut emit,
         );
-        particles.extend(line);
-        distance_phase = phase;
         midpoint = [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5];
         raw = current;
 
@@ -416,7 +470,7 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
     };
     let terminal_alpha = terminal_pressure.clamp(0.1, 0.6) / 1.5;
     let terminal = *stroke.points.last().unwrap();
-    let (line, _) = line_particles_with_phase(
+    sample_line_with_phase(
         midpoint,
         raw,
         terminal,
@@ -424,10 +478,30 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
         terminal_alpha,
         step,
         distance_phase,
-        rng,
+        &mut emit,
     );
-    particles.extend(line);
-    particles
+}
+
+/// Compose the shared saved-source sampler with V3's private particle kernel.
+/// Channel validation happens before sampling so malformed arrays cannot
+/// trigger partial output or an out-of-range getter read.
+fn saved_redraw_v3_particles(
+    stroke: &SavedStroke,
+    rng: &mut V3PrivateRandom,
+) -> Result<Vec<V3Particle>, &'static str> {
+    stroke.validate()?;
+    let spacing = stroke.size * 0.08;
+    if !stroke.size.is_finite() || stroke.size <= 0.0 || !spacing.is_finite() || spacing <= 0.0 {
+        return Err("saved pen size must produce a finite positive spacing");
+    }
+    // Native V3 resets its private state on every RedrawPen invocation, even
+    // when the same drawable and RNG-bearing receiver are reused.
+    rng.reset();
+    let mut particles = Vec::new();
+    sample_saved_redraw(stroke, |sample| {
+        particles.push(rng.particle(sample.point, sample.size, sample.alpha));
+    });
+    Ok(particles)
 }
 
 #[cfg(test)]
@@ -1010,6 +1084,40 @@ mod tests {
         }
     }
 
+    fn saved_v3_stroke_from_json(value: &Value) -> SavedStroke {
+        let points = value["points_f32_bits"].as_array().unwrap();
+        let floats = |name: &str| {
+            value[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| f32::from_bits(little_endian_hex_word(v)))
+                .collect::<Vec<_>>()
+        };
+        SavedStroke {
+            points: points
+                .iter()
+                .map(|pair| {
+                    [
+                        f32::from_bits(little_endian_hex_word(&pair[0])),
+                        f32::from_bits(little_endian_hex_word(&pair[1])),
+                    ]
+                })
+                .collect(),
+            pressures: floats("pressure_f32_bits"),
+            timestamps: value["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_i64().unwrap() as i32)
+                .collect(),
+            tilts: Some(floats("tilt_f32_bits")),
+            orientations: Some(floats("orientation_f32_bits")),
+            tool_type: value["tool_type"].as_i64().unwrap() as i32,
+            size: f32::from_bits(little_endian_hex_word(&value["pen_size_f32_bits"])),
+        }
+    }
+
     #[test]
     fn saved_inputs_keep_optional_axes_absence_and_present_zeroes_distinct() {
         let fixture: Value = serde_json::from_str(include_str!(
@@ -1264,5 +1372,196 @@ mod tests {
             reset.attributes, first.attributes,
             "native redraw reset should reproduce the first particle"
         );
+    }
+
+    #[test]
+    fn v3_saved_sampler_composes_source_channels_with_private_particle_kernel() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-v3-native.json"
+        ))
+        .unwrap();
+        let stroke = saved_v3_stroke_from_json(&fixture["input"]);
+        assert_eq!(stroke.validate(), Ok(()));
+        let mut rng = V3PrivateRandom::new();
+        let particles = saved_redraw_v3_particles(&stroke, &mut rng).unwrap();
+        assert_eq!(particles.len(), 48);
+
+        let packed = particles
+            .iter()
+            .flat_map(|particle| particle.attributes)
+            .flat_map(f32::to_le_bytes)
+            .collect::<Vec<_>>();
+        for phase_name in ["draw_object_stroke", "saved_redraw"] {
+            let phase = &fixture["phases"][phase_name];
+            let native = if let Some(words) = phase["native_packed_stream_f32_bits_le"].as_array() {
+                words
+                    .iter()
+                    .flat_map(|word| little_endian_hex_word(word).to_le_bytes())
+                    .collect::<Vec<_>>()
+            } else {
+                phase["records"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .flat_map(|record| {
+                        let args = record["native_addpoint_s0_s4_u32_hex"].as_array().unwrap();
+                        let x = prefixed_hex_u32(&args[0]);
+                        let y = prefixed_hex_u32(&args[1]);
+                        let row = prefixed_hex_u32(&args[2]);
+                        let size = f32::from_bits(prefixed_hex_u32(&args[3]));
+                        let alpha = prefixed_hex_u32(&args[4]);
+                        [x, y, (size * 0.5).to_bits(), row, alpha]
+                    })
+                    .flat_map(u32::to_le_bytes)
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(packed, native, "{phase_name} full native stream");
+        }
+
+        let replay = saved_redraw_v3_particles(&stroke, &mut rng).unwrap();
+        assert_eq!(
+            particles, replay,
+            "a repeated native saved redraw resets the private generator"
+        );
+
+        let mut malformed = stroke.clone();
+        malformed.pressures.pop();
+        let mut untouched_rng = V3PrivateRandom { state: 0x1234 };
+        assert_eq!(
+            saved_redraw_v3_particles(&malformed, &mut untouched_rng),
+            Err("saved point, pressure and timestamp channels must be aligned")
+        );
+        assert_eq!(untouched_rng.state, 0x1234);
+
+        for invalid_size in [0.0, -1.0, f32::NAN, f32::INFINITY, f32::from_bits(1)] {
+            let mut invalid_stroke = stroke.clone();
+            invalid_stroke.size = invalid_size;
+            assert_eq!(
+                saved_redraw_v3_particles(&invalid_stroke, &mut untouched_rng),
+                Err("saved pen size must produce a finite positive spacing"),
+                "invalid size bits {:08x}",
+                invalid_size.to_bits()
+            );
+            assert_eq!(untouched_rng.state, 0x1234);
+        }
+    }
+
+    #[test]
+    fn v3_saved_sampler_matches_all_native_source_profiles() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-sampler-inputs-native.json"
+        ))
+        .unwrap();
+
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let profile = &case["input_profile"];
+            let stroke = SavedStroke {
+                points: profile["points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|point| {
+                        [
+                            point[0].as_f64().unwrap() as f32,
+                            point[1].as_f64().unwrap() as f32,
+                        ]
+                    })
+                    .collect(),
+                pressures: profile["pressure"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_f64().unwrap() as f32)
+                    .collect(),
+                timestamps: profile["timestamps"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_i64().unwrap() as i32)
+                    .collect(),
+                tilts: Some(
+                    profile["tilt"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| value.as_f64().unwrap() as f32)
+                        .collect(),
+                ),
+                orientations: Some(
+                    profile["orientation"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| value.as_f64().unwrap() as f32)
+                        .collect(),
+                ),
+                tool_type: profile["tool_type"].as_i64().unwrap() as i32,
+                size: profile["size"].as_f64().unwrap() as f32,
+            };
+            assert_eq!(stroke.validate(), Ok(()), "{name} source alignment");
+
+            let mut samples = Vec::new();
+            sample_saved_redraw(&stroke, |sample| samples.push(sample));
+            let route = &case["routes"]["v3"];
+            let draw_phase = &route["phases"]["draw_object_stroke"];
+            let input_tuples = draw_phase["drawpoint_input_tuples_le_hex_point_then_s0_alpha_u32"]
+                .as_array()
+                .unwrap();
+            assert_eq!(samples.len(), input_tuples.len(), "{name} drawPoint count");
+            for (index, (sample, input)) in samples.iter().zip(input_tuples).enumerate() {
+                let native_point = little_endian_hex_pair(&input[0]);
+                assert_eq!(
+                    sample.point.map(f32::to_bits),
+                    native_point.map(f32::to_bits),
+                    "{name} drawPoint {index} point"
+                );
+                assert_eq!(
+                    sample.size.to_bits(),
+                    u32::from_str_radix(input[1].as_str().unwrap(), 16).unwrap(),
+                    "{name} drawPoint {index} size"
+                );
+                assert_eq!(
+                    sample.alpha.to_bits(),
+                    u32::from_str_radix(input[2].as_str().unwrap(), 16).unwrap(),
+                    "{name} drawPoint {index} alpha"
+                );
+            }
+
+            let mut rng = V3PrivateRandom::new();
+            let particles = saved_redraw_v3_particles(&stroke, &mut rng)
+                .unwrap_or_else(|error| panic!("{name}: {error}"));
+            let packed = particles
+                .iter()
+                .flat_map(|particle| particle.attributes)
+                .flat_map(f32::to_le_bytes)
+                .collect::<Vec<_>>();
+            let native = draw_phase["native_packed_stream_f32_bits_le"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .flat_map(|word| little_endian_hex_word(word).to_le_bytes())
+                .collect::<Vec<_>>();
+            assert_eq!(packed.len(), native.len(), "{name} packed bytes");
+            assert_eq!(packed, native, "{name} complete native stream");
+            let digest = format!("{:x}", Sha256::digest(&packed));
+            assert_eq!(digest, draw_phase["native_packed_stream_sha256"]);
+
+            let saved_phase = &route["phases"]["saved_redraw"];
+            assert_eq!(
+                saved_phase["drawpoint_inputs_identical_to_drawing_phase"],
+                true
+            );
+            assert_eq!(
+                saved_phase["native_packed_stream_same_bytes_as_drawing"],
+                true
+            );
+            assert_eq!(saved_phase["native_packed_word_count"], packed.len() / 4);
+            assert_eq!(saved_phase["native_packed_stream_sha256"], digest);
+            assert_eq!(saved_phase["drawpoint_input_count"], samples.len());
+            assert_eq!(
+                saved_phase["drawpoint_input_sha256"],
+                draw_phase["drawpoint_input_sha256"]
+            );
+        }
     }
 }

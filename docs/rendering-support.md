@@ -106,7 +106,10 @@ The [Drawing caller](../conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
 The test-only [V3 particle kernel](../conformance/pencil3-v3-native.json)
 matches all 48 particles in two redraw phases, including private RNG state and
-reset behavior. Its full saved sampler and production paint remain incomplete.
+reset behavior. The test-only [V3 saved sampler](../conformance/pencil3-sampler-inputs-native.json)
+reconstructs complete native particle streams from source channels across five
+profiles, including varied pressure, tilt, tools and context dimensions.
+Production paint integration remains incomplete.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
