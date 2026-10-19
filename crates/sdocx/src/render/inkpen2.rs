@@ -48,6 +48,7 @@ mod tests {
     #[derive(Deserialize)]
     struct SettingData {
         argb: u32,
+        branch_flag: u8,
     }
 
     #[derive(Deserialize)]
@@ -76,6 +77,7 @@ mod tests {
         program: u32,
         blend_equation: Vec<String>,
         blend_function: Vec<String>,
+        blend_enabled_at_draw: Option<bool>,
     }
 
     #[derive(Deserialize)]
@@ -111,6 +113,11 @@ mod tests {
             .values
             .as_ref()
             .unwrap()[3];
+        if case.input.set_pen_setting_data.branch_flag == 0 {
+            let packed_alpha = ((case.input.set_pen_setting_data.argb >> 24) & 0xff) as f32 / 255.0;
+            assert_eq!(alpha5.to_bits(), packed_alpha.to_bits());
+            return alpha5;
+        }
         let alpha6 = case
             .uniform_calls
             .iter()
@@ -178,6 +185,9 @@ mod tests {
         );
         assert_eq!(case.input.points.len(), case.input_vector_records.len());
 
+        if case.input.set_pen_setting_data.branch_flag == 0 {
+            return render_direct(case, alpha_uniform);
+        }
         let mut max_mask = vec![0u8; pixels];
         let mut source_over = vec![0u8; pixels * 4];
 
@@ -242,9 +252,62 @@ mod tests {
         }
     }
 
+    fn render_direct(case: &Case, alpha_uniform: f32) -> PaintReadbacks {
+        let width = case.input.canvas_width;
+        let height = case.input.canvas_height;
+        let pixels = width * height;
+        let mut red = vec![0u8; pixels];
+        for (point, record) in case.input.points.iter().zip(&case.input_vector_records) {
+            assert_eq!(record[0].to_bits(), point.position[0].to_bits());
+            assert_eq!(record[1].to_bits(), point.position[1].to_bits());
+            assert_eq!(record[6].to_bits(), point.rgb[0].to_bits());
+            assert_eq!(record[7].to_bits(), point.rgb[1].to_bits());
+            assert_eq!(record[8].to_bits(), point.rgb[2].to_bits());
+            for y in 0..height {
+                for x in 0..width {
+                    let center = [x as f32 + 0.5, y as f32 + 0.5];
+                    let Some(alpha) = fragment_alpha(record, center) else {
+                        continue;
+                    };
+                    let src_red = quantize_unorm8(record[6] * alpha * alpha_uniform);
+                    let src_alpha = alpha * alpha_uniform;
+                    let index = y * width + x;
+                    let dst = f32::from(red[index]) / 255.0;
+                    red[index] = quantize_unorm8(f32::from(src_red) / 255.0 + dst * (1.0 - src_alpha));
+                }
+            }
+        }
+        let readback = red.into_iter().flat_map(|r| [r, 0, 0, 255]).collect();
+        PaintReadbacks {
+            max_mask: vec![0; pixels * 4],
+            source_over: vec![0; pixels * 4],
+            final_composite: readback,
+        }
+    }
+
     fn assert_capture_contract(fixture: &Fixture, case: &Case) {
         assert_eq!(fixture.schema, "sdocx.inkpen2.paint.native.v1");
         assert!(fixture.paint_model.contains_key("final_composite"));
+        if case.input.set_pen_setting_data.branch_flag == 0 {
+            let program = &case.shader_programs["5"];
+            assert!(program.linked);
+            assert_eq!(program.shaders.len(), 2);
+            for shader in &program.shaders {
+                assert!(shader.compiled);
+            }
+            assert_eq!(program.shaders[0].kind, 35633);
+            assert_eq!(program.shaders[1].kind, 35632);
+            assert!(program.shaders[1].source.contains("FragColor = vec4(fragColor, 1.0) * alpha * uInputColor.a"));
+            assert_eq!(case.draw_calls.len(), 1);
+            assert_eq!(case.draw_calls[0].program, 5);
+            assert_eq!(case.draw_calls[0].blend_enabled_at_draw, Some(true));
+            assert_eq!(case.draw_calls[0].blend_equation, ["0x8006", "0x8006"]);
+            assert_eq!(case.draw_calls[0].blend_function, ["0x1", "0x303", "0x1", "0x303"]);
+            assert_eq!(case.texture_allocations.len(), 2);
+            assert_eq!(case.texture_allocations[0].internal_format, "0x8229");
+            assert_eq!(case.texture_allocations[1].internal_format, "0x8058");
+            return;
+        }
         let program3 = &case.shader_programs["3"];
         let program5 = &case.shader_programs["5"];
         let program6 = &case.shader_programs["6"];
@@ -346,18 +409,23 @@ mod tests {
     #[test]
     fn native_shader_field_and_quantized_rgba_readbacks_match() {
         let fixture: Fixture = serde_json::from_str(FIXTURE).unwrap();
-        assert_eq!(fixture.cases.len(), 6);
+        assert_eq!(fixture.cases.len(), 10);
         let mut cases = fixture.cases.iter().collect::<Vec<_>>();
         cases.sort_by_key(|case| case.id.as_str());
 
         for case in cases {
             assert_capture_contract(&fixture, case);
             let modeled = render_model(case);
-            for (stage_name, modeled_bytes) in [
-                ("max_alpha_mask", &modeled.max_mask),
-                ("source_over_canvas", &modeled.source_over),
-                ("final_composite", &modeled.final_composite),
-            ] {
+            let stages = if case.input.set_pen_setting_data.branch_flag == 0 {
+                vec![("direct_source_over", &modeled.final_composite)]
+            } else {
+                vec![
+                    ("max_alpha_mask", &modeled.max_mask),
+                    ("source_over_canvas", &modeled.source_over),
+                    ("final_composite", &modeled.final_composite),
+                ]
+            };
+            for (stage_name, modeled_bytes) in stages {
                 let captured = case
                     .stage_readbacks_before_invalidate
                     .iter()

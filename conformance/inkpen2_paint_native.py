@@ -27,10 +27,15 @@ SCENARIOS = {
     'coincident_different': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.2, 0.8, 0.3))],
     'single_half_alpha': [(64.0, 48.0, (0.8, 0.2, 0.1))],
     'coincident_different_half_alpha': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.2, 0.8, 0.3))],
+    'direct_single': [(64.0, 48.0, (0.8, 0.2, 0.1))],
+    'direct_coincident_same': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.8, 0.2, 0.1))],
+    'direct_coincident_different': [(64.0, 48.0, (0.8, 0.2, 0.1)), (64.0, 48.0, (0.2, 0.8, 0.3))],
+    'direct_single_half_alpha': [(64.0, 48.0, (0.8, 0.2, 0.1))],
 }
 
 def main(case_id):
     point_inputs = SCENARIOS[case_id]
+    direct_branch = case_id.startswith('direct_')
     input_argb = 0x80336699 if case_id.endswith("half_alpha") else 0xff336699
     old_uc=fn.Uc
     def max_uc(*args):
@@ -427,6 +432,10 @@ def main(case_id):
             if name=='glVertexAttribPointer':row['vertex_buffer']=gl_state['array_buffer']
             if name in ('glDrawArrays','glDrawArraysInstanced'):
                 row['draw_state']=dict(gl_state)
+                if direct_branch:
+                    enabled=C.c_ubyte()
+                    f['glGetBooleanv'](0x0BE2,C.byref(enabled))
+                    row['draw_state']['blend_enabled_at_draw']=bool(enabled.value)
                 gl_state['last_draw']={'call':name,'framebuffer':gl_state['framebuffer'],'program':gl_state['program'],'blend_equation':gl_state['blend_equation'],'blend_function':gl_state['blend_function'],'args':row['x']}
             gl_trace.append(row)
         p.callbacks[glname]=wrapped
@@ -454,7 +463,7 @@ def main(case_id):
     inv=p.alloc(8);p.put(inv,'2f',1.0,1.0);call(p,'SPen::InkPen2StrokeDrawableRTV3::SetInverseScale(SPen::Vector2<float> const&)',[rt,inv])
     color_vec=p.alloc(24); color_buf=p.alloc(4096); p.put(color_vec,'3Q',color_buf,color_buf,color_buf+4096); p.put(rt+80,'Q',color_vec); p.put(rt+88,'Q',color_vec)
     p.put(rt+296,'2f',1.0,1.0)
-    settings=p.alloc(64);p.put(settings,'fI',6.0,input_argb);p.put(settings+44,'f',1.0);p.put(settings+52,'B',1)
+    settings=p.alloc(64);p.put(settings,'fI',6.0,input_argb);p.put(settings+44,'f',1.0);p.put(settings+52,'B',0 if direct_branch else 1)
     call(p,'SPen::PenDrawableRT::SetPenSettingData(SPen::PenSettingData*)',[rt,settings])
     add_color='SPen::InkPen2StrokeDrawableRTV3::AddPoint(SPen::Vector2<float>, float, SPen::Vector3<float>)'
     for x,y,rgb in point_inputs:
@@ -467,9 +476,10 @@ def main(case_id):
     except Exception:
         print('DRAW_ENTRY_TRACE',entry_trace[-40:]);raise
     check_gl('Update+Draw+readback')
-    if len(pre_invalidate)!=5:
-        raise RuntimeError(f'expected two setup and three draw-stage invalidations, found {len(pre_invalidate)}')
-    stage_names=['max_alpha_mask','source_over_canvas','final_composite']
+    expected_invalidations = 3 if direct_branch else 5
+    if len(pre_invalidate)!=expected_invalidations:
+        raise RuntimeError(f'expected {expected_invalidations} invalidations for branch={int(direct_branch)}, found {len(pre_invalidate)}')
+    stage_names=['direct_source_over'] if direct_branch else ['max_alpha_mask','source_over_canvas','final_composite']
     stage_readbacks=[]
     for stage,name in zip(pre_invalidate[2:],stage_names):
         stage_readbacks.append({'stage':name,**stage})
@@ -491,7 +501,7 @@ def main(case_id):
     relevant_calls=('glTexImage2D','glBindFramebuffer','glFramebufferTexture2D','glCheckFramebufferStatus','glViewport','glClearColor','glClear','glInvalidateFramebuffer','glBindTexture','glActiveTexture','glUseProgram','glUniform1i','glUniform1f','glUniform2f','glUniform4f','glUniform4fv','glUniformMatrix4fv','glBlendEquationSeparate','glBlendFuncSeparate','glEnable','glDisable','glColorMask','glDrawArrays','glDrawArraysInstanced','glVertexAttribPointer','glVertexAttribDivisor','glEnableVertexAttribArray','glDisableVertexAttribArray','glBufferData','glBufferSubData','glBindBuffer')
     fixture_case={
         'id':case_id,
-        'input':{'canvas_width':128,'canvas_height':96,'inverse_scale':[1.0,1.0],'set_pen_setting_data':{'allocation_size':64,'field_layout':{'size_f32':0,'argb_u32':4,'field_44_f32':44,'branch_flag_u8':52},'raw_hex':bytes(p.u.mem_read(settings,56)).hex(),'size':6.0,'argb':input_argb,'field_44':1.0,'branch_flag':1},'points':[{'position':[x,y],'pressure':0.7,'rgb':list(rgb)} for x,y,rgb in point_inputs]},
+        'input':{'canvas_width':128,'canvas_height':96,'inverse_scale':[1.0,1.0],'set_pen_setting_data':{'allocation_size':64,'field_layout':{'size_f32':0,'argb_u32':4,'field_44_f32':44,'branch_flag_u8':52},'raw_hex':bytes(p.u.mem_read(settings,56)).hex(),'size':6.0,'argb':input_argb,'field_44':1.0,'branch_flag':0 if direct_branch else 1},'points':[{'position':[x,y],'pressure':0.7,'rgb':list(rgb)} for x,y,rgb in point_inputs]},
         'host_setup':{'drawable':'native InkPen2StrokeDrawableRTV3 constructed and initialized by pinned DSO','buffer_wiring':'test host allocates a bounded std::vector<float> ABI buffer and installs its pointer at RTV3 offsets +80 and +88','canvas':'native RTV3::CreatePenCanvas, native SPPenCanvasRT::GetBitmap, native SPTextureBitmap::GetSubBitmap(0)','queue':'host IGLMsgQueue slot+16 is a bounded synchronous no-op return; no task delivery is claimed','queue_slot_calls':queue_calls,'saved_drawing_or_device_profile':False},
         'native_calls':['InkPen2StrokeDrawableRTV3::InkPen2StrokeDrawableRTV3','InkPen2StrokeDrawableRTV3::Init','InkPen2StrokeDrawableRTV3::CreatePenCanvas(128,96)','InkPen2StrokeDrawableRTV3::SetInverseScale([1,1])','PenDrawableRT::SetPenSettingData','InkPen2StrokeDrawableRTV3::AddPoint(Vector2,float,Vector3) per input point','InkPen2StrokeDrawableRTV3::Update(false)','InkPen2StrokeDrawableRTV3::Draw(subbitmap,matrix)'],
         'input_vector_records':records,
@@ -511,7 +521,7 @@ def main(case_id):
         'host_gl':host_gl,
         'native_libraries_sha256':{path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in library_paths},
         'conformance_helper_sha256':{path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in helper_paths},
-        'scope_note':'Synthetic native RTV3 input and settings; Mesa GLES output from the pinned ARM64 library behavior. The RGBA8 source-over canvas and the GL_R8 max-mask/final-composite target are separate products. The final composite target red lane is premultiplied output color, not a stand-alone alpha mask. This is not saved Drawing, parser, device, or production-dispatch evidence.'
+        'scope_note':('Synthetic native RTV3 input and settings; Mesa GLES output from the pinned ARM64 library behavior. The direct branch writes its single source-over pass into GL_R8; this does not establish saved Drawing admission.' if direct_branch else 'Synthetic native RTV3 input and settings; Mesa GLES output from the pinned ARM64 library behavior. The RGBA8 source-over canvas and the GL_R8 max-mask/final-composite target are separate products. The final composite target red lane is premultiplied output color, not a stand-alone alpha mask. This is not saved Drawing, parser, device, or production-dispatch evidence.')
     }
     return fixture_case
 
@@ -533,6 +543,7 @@ def capture_all():
         cases.append(json.loads(marker))
     by_id={case['id']:case for case in cases}
     if set(by_id)!=set(SCENARIOS):raise RuntimeError('native paint control set is incomplete')
+    def is_direct(case_id):return case_id.startswith('direct_')
     def stage(case_id,name):
         return next(row for row in by_id[case_id]['stage_readbacks_before_invalidate'] if row['stage']==name)
     if stage('single','max_alpha_mask')['rgba_bytes']!=stage('coincident_same','max_alpha_mask')['rgba_bytes']:
@@ -551,14 +562,30 @@ def capture_all():
             raise RuntimeError('input alpha changed the native geometric max mask')
         if stage(low, 'final_composite')['rgba_bytes'] == stage(full, 'final_composite')['rgba_bytes']:
             raise RuntimeError('input alpha failed to change native final composition')
+    if stage('direct_single','direct_source_over')['center_rgba'] != [101,0,0,255]:
+        raise RuntimeError('direct branch single-stamp center witness changed')
+    if stage('direct_single','direct_source_over')['nonzero_rgb'] != 4:
+        raise RuntimeError('direct branch single-stamp coverage witness changed')
+    if stage('direct_single','direct_source_over')['rgba_bytes'] == stage('direct_coincident_same','direct_source_over')['rgba_bytes']:
+        raise RuntimeError('same-color direct overlap failed to accumulate through R8 source-over')
+    if stage('direct_coincident_different','direct_source_over')['rgba_bytes'] == stage('direct_single','direct_source_over')['rgba_bytes']:
+        raise RuntimeError('different-color direct overlap failed to expose ordered source-over')
+    if stage('direct_single_half_alpha','direct_source_over')['rgba_bytes'] == stage('direct_single','direct_source_over')['rgba_bytes']:
+        raise RuntimeError('direct branch packed alpha did not affect paint')
     for case in cases:
+        direct=is_direct(case['id'])
+        if case['input']['set_pen_setting_data']['branch_flag'] != (0 if direct else 1):
+            raise RuntimeError(f"{case['id']} has an incorrect explicit branch setting")
         argb = case['input']['set_pen_setting_data']['argb']
         rgba = [struct.unpack('<f', struct.pack('<f', channel / 255.0))[0] for channel in ((argb >> 16) & 255, (argb >> 8) & 255, argb & 255, argb >> 24)]
         color_uniforms = [row['values'] for row in case['uniform_calls'] if row['call'] == 'glUniform4fv']
-        if color_uniforms != [rgba, rgba]:
+        if color_uniforms != ([rgba] if direct else [rgba, rgba]):
             raise RuntimeError(f"{case['id']} native shader uniforms did not preserve packed ARGB")
-        if len(case['draw_calls'])!=3 or len(case['stage_readbacks_before_invalidate'])!=3:
-            raise RuntimeError(f"{case['id']} did not traverse all three native paint stages")
+        expected_programs=[5] if direct else [3,5,6]
+        if [row['program'] for row in case['draw_calls']]!=expected_programs or len(case['stage_readbacks_before_invalidate'])!=(1 if direct else 3):
+            raise RuntimeError(f"{case['id']} did not traverse its captured native paint branch")
+        if direct and case['draw_calls'][0].get('blend_enabled_at_draw') is not True:
+            raise RuntimeError(f"{case['id']} direct draw did not capture GL_BLEND enabled")
         if any(row['errors'] for row in case['gl_error_checkpoints']):
             raise RuntimeError(f"{case['id']} has a Mesa GL error")
         if case['host_setup']['queue_slot_calls']:
@@ -576,6 +603,7 @@ def capture_all():
             'source_over':'P_i = c_i * alpha_i; P = P_i + P_prev * (1 - alpha_i); A = alpha_i + A_prev * (1 - alpha_i)',
             'final_composite':'C = (P / A) * (M * input_alpha), when A > 0; the GL_R8 target R is premultiplied output color, not standalone alpha',
             'uniform_rgb_reduction':'when every record has the same RGB c, P/A = c, so final RGB is c * M * input_alpha; same-RGB overlap should preserve final color while differing RGB exposes source-over normalization',
+            'direct_branch':'An explicit PenSettingData byte at +52 equal to zero selects one program-5 source-over draw into GL_R8; fragment output RGB is record.rgb * analytic_alpha * uniform_alpha, and the R8 target quantizes each fragment before ONE / ONE_MINUS_SRC_ALPHA accumulation. Its only readback stage is direct_source_over.',
             'scope':'This is the observed synthetic native RTV3 paint path, not a saved Drawing or production admission claim.'
         },
         'cases':cases,
