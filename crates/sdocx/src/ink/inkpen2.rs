@@ -28,6 +28,8 @@ pub(super) struct Input<'a> {
     pub times: &'a [i32],
     pub tools: &'a [i32],
     pub pressures: &'a [f32],
+    /// Source RGB from ObjectStroke::GetColor, without the packed alpha byte.
+    pub rgb: [u8; 3],
     pub size: f32,
     pub curve_enabled: bool,
     pub is_shape: bool,
@@ -75,7 +77,18 @@ impl<'a> Core<'a> {
         let uy = b.mul_add(k, 0.5);
         let m = ux.max(uy);
         let edge = ((m - 1.0) / m) * 0.5;
-        let vertex = [p.x, p.y, sx * ux, sy * uy, edge, coverage, 0., 0., 0.];
+        let rgb = self.input.rgb.map(|channel| f32::from(channel) / 255.);
+        let vertex = [
+            p.x,
+            p.y,
+            sx * ux,
+            sy * uy,
+            edge,
+            coverage,
+            rgb[0],
+            rgb[1],
+            rgb[2],
+        ];
         if vertex.iter().any(|v| !v.is_finite()) || self.output.vertices.len() >= MAX_EMISSIONS {
             return None;
         }
@@ -364,6 +377,41 @@ mod tests {
             .map(f32_from_le_hex)
             .collect();
         let native_calls = &case["native_calls"];
+        let rgb = if let Some(packed) = native_calls["source_ObjectStroke_GetColor_u32"].as_u64() {
+            let argb = packed as u32;
+            assert_eq!(input["color_argb_u32"].as_u64(), Some(packed));
+            let setter_calls = native_calls["paint_color_calls"].as_array().unwrap();
+            assert!(setter_calls.iter().any(|call| {
+                call["method"] == "SPen::Pen::SetColor(int)"
+                    && call["phase"] == "draw_object_stroke"
+                    && call["argb_u32"] == format!("0x{argb:08x}")
+            }));
+            assert!(setter_calls.iter().any(|call| {
+                call["method"] == "SPen::PenDrawableRT::SetPenData(float, int)"
+                    && call["phase"] == phase
+                    && call["argb_u32"] == format!("0x{argb:08x}")
+                    && u32::from_str_radix(
+                        call["size_f32_bits"]
+                            .as_str()
+                            .unwrap()
+                            .trim_start_matches("0x"),
+                        16,
+                    )
+                    .unwrap()
+                        == u32::from_le_bytes(
+                            hex_bytes(input["pen_size_f32_bits"].as_str().unwrap())
+                                .try_into()
+                                .unwrap(),
+                        )
+            }));
+            [
+                ((argb >> 16) & 0xff) as u8,
+                ((argb >> 8) & 0xff) as u8,
+                (argb & 0xff) as u8,
+            ]
+        } else {
+            [0; 3]
+        };
         let entry = native_calls["selected_drawable_redraw_entry_state"]
             .as_array()
             .unwrap()
@@ -400,6 +448,7 @@ mod tests {
             times: &times,
             tools: &tools,
             pressures: &pressures,
+            rgb,
             size: f32_from_le_hex(&native_calls["drawable_getSize_f32_bits"]),
             curve_enabled: before_redraw["curve_enabled"].as_i64().unwrap() != 0,
             is_shape: before_redraw["shape"].as_i64().unwrap() != 0,
@@ -480,6 +529,7 @@ mod tests {
                 times: &timestamps,
                 tools: &tools,
                 pressures: &pressures,
+                rgb: [0; 3],
                 size: number(&case["size"]),
                 curve_enabled: case["curve_enabled"].as_bool().unwrap(),
                 is_shape: case["is_shape"].as_bool().unwrap(),
@@ -531,7 +581,7 @@ mod tests {
         let cases = caller["cases"].as_object().unwrap();
         assert_eq!(
             cases.len(),
-            4,
+            5,
             "native ObjectDrawing route coverage changed"
         );
 
@@ -548,6 +598,7 @@ mod tests {
         let empty = &cases["route_control_empty_v9"];
         let explicit = &cases["route_control_explicit9_v9"];
         let nontrivial = &cases["line0_curve_short_history_explicit9_v9"];
+        let color = &cases["line0_curve_short_history_color_explicit9_v9"];
         let input = &nontrivial["input"];
         let numeric: Value =
             serde_json::from_str(include_str!("../../../../conformance/inkpen2-saved.json"))
@@ -595,6 +646,19 @@ mod tests {
             "actual ObjectStroke caller time channels"
         );
         assert_eq!(input["tool_type"], 2);
+        assert_eq!(color["input"]["color_argb_u32"], 0xff336699_u32);
+        assert_eq!(
+            color["native_calls"]["source_ObjectStroke_GetColor_u32"],
+            0xff336699_u32
+        );
+        assert_eq!(
+            color["native_calls"]["color_contract_validation"]["draw_object_stroke"]["constant_rgb_f32_bits"],
+            serde_json::json!(["cdcc4c3e", "cdcccc3e", "9a99193f"])
+        );
+        assert_eq!(
+            color["native_calls"]["color_contract_validation"]["saved_redraw"]["geometry_first_six_match_numeric_fixture"],
+            true
+        );
         let caller_pressures = input["pressure_f32_bits"]
             .as_array()
             .unwrap()
@@ -664,7 +728,7 @@ mod tests {
         assert_eq!(replay_entry["tolerance_plus_44_f32_bits"], "00000000");
         assert_eq!(replay_entry["residual_plus_92_f32_bits"], "409f383f");
         assert_eq!(replay_entry["alternation_plus_100_u8"], 1);
-        for case in [empty, explicit, nontrivial] {
+        for case in [empty, explicit, nontrivial, color] {
             assert_eq!(
                 case["native_calls"]["route"]["drawing_selected_drawable_version"],
                 "9"
@@ -678,7 +742,9 @@ mod tests {
                 1
             );
 
-            let phases: &[&str] = if case["case_id"] == nontrivial["case_id"] {
+            let phases: &[&str] = if case["case_id"] == nontrivial["case_id"]
+                || case["case_id"] == color["case_id"]
+            {
                 &["draw_object_stroke", "saved_redraw"]
             } else {
                 &["saved_redraw"]
@@ -792,6 +858,43 @@ mod tests {
             }
         }
 
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            let final_bytes = |case: &Value| {
+                let event = case["callback_buffer_events"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| event["phase"] == phase)
+                    .last()
+                    .unwrap();
+                hex_bytes(event["after_bytes"].as_str().unwrap())
+            };
+            let colored = floats_from_le_bytes(&final_bytes(color));
+            let black = floats_from_le_bytes(&final_bytes(nontrivial));
+            assert_eq!(colored.len(), 25 * 9);
+            assert_eq!(black.len(), colored.len());
+            for (index, (colored, black)) in colored
+                .chunks_exact(9)
+                .zip(black.chunks_exact(9))
+                .enumerate()
+            {
+                assert_eq!(
+                    colored[..6]
+                        .iter()
+                        .map(|value| value.to_bits())
+                        .collect::<Vec<_>>(),
+                    black[..6]
+                        .iter()
+                        .map(|value| value.to_bits())
+                        .collect::<Vec<_>>(),
+                    "{phase}: colored record {index} geometry matches black native stream"
+                );
+                assert_eq!(colored[6].to_bits(), (51f32 / 255.).to_bits());
+                assert_eq!(colored[7].to_bits(), (102f32 / 255.).to_bits());
+                assert_eq!(colored[8].to_bits(), (153f32 / 255.).to_bits());
+            }
+        }
+
         let empty_bytes = cases["route_control_empty_v9"]["callback_buffer_events"]
             .as_array()
             .unwrap()
@@ -860,6 +963,7 @@ mod tests {
                 times: &time,
                 tools: &tool,
                 pressures: &pressure,
+                rgb: [0; 3],
                 size: 4.,
                 curve_enabled: false,
                 is_shape: true,
