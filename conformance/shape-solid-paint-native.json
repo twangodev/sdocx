@@ -1,0 +1,2276 @@
+{
+  "cases": [
+    {
+      "final": {
+        "byte_count": 65536,
+        "checked_native_gl_calls": 266,
+        "fbo_status": 36053,
+        "gl_errors": [
+          0,
+          0
+        ],
+        "native_gl_error_history": [],
+        "nontransparent_bbox_inclusive": [
+          10,
+          20,
+          89,
+          99
+        ],
+        "post_draw_gl_errors": [
+          0
+        ],
+        "rgba_counts": {
+          "0,0,0,0": 9984,
+          "51,102,153,255": 6400
+        },
+        "sha256": "e4800246993be838e4975598222bf96caeecd765671d7c9d3bfbd4b7b085d274"
+      },
+      "gl_call_counts": {
+        "glAttachShader": 6,
+        "glBindBuffer": 9,
+        "glBindFramebuffer": 2,
+        "glBindTexture": 3,
+        "glBlendFuncSeparate": 1,
+        "glBufferData": 3,
+        "glCheckFramebufferStatus": 2,
+        "glColorMask": 1,
+        "glCompileShader": 6,
+        "glCreateProgram": 3,
+        "glCreateShader": 6,
+        "glDeleteShader": 6,
+        "glDetachShader": 6,
+        "glDisable": 5,
+        "glDrawArrays": 1,
+        "glEnable": 1,
+        "glEnableVertexAttribArray": 2,
+        "glFramebufferTexture2D": 1,
+        "glGenBuffers": 4,
+        "glGenFramebuffers": 1,
+        "glGenSamplers": 1,
+        "glGenTextures": 1,
+        "glGetError": 1,
+        "glGetIntegerv": 4,
+        "glGetProgramBinary": 3,
+        "glGetProgramiv": 25,
+        "glGetShaderiv": 6,
+        "glGetString": 2,
+        "glLinkProgram": 3,
+        "glShaderSource": 6,
+        "glTexImage2D": 1,
+        "glUniform1i": 1,
+        "glUniform4fv": 2,
+        "glUniformMatrix4fv": 1,
+        "glUseProgram": 1,
+        "glVertexAttribPointer": 2,
+        "glViewport": 1,
+        "synthetic_gl_fallback": 5
+      },
+      "inputs": {
+        "density": 1,
+        "fill_rgba": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "line_color_argb": 0,
+        "line_width": 0.0,
+        "output": [
+          128,
+          128
+        ],
+        "path": [
+          [
+            "M",
+            10,
+            20
+          ],
+          [
+            "L",
+            90,
+            20
+          ],
+          [
+            "L",
+            90,
+            100
+          ],
+          [
+            "L",
+            10,
+            100
+          ],
+          [
+            "Close"
+          ]
+        ],
+        "shape_rect": [
+          10,
+          20,
+          90,
+          100
+        ]
+      },
+      "name": "solid_fill_no_outline",
+      "native_calls": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0x0",
+            "line_style_effect_present": true,
+            "line_width": 0.0,
+            "measured_line_width": 0.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d330",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3b0",
+            "x1": "0x1004d3b0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3b8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3c0",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3c8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3d0",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d330",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d040",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d040",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              10.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              10.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708afbc",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708afd0",
+            "x0": "0xff336699",
+            "x21": "0xff336699",
+            "x22": "0x100455b0"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708affc",
+            "x0": "0x0",
+            "x21": "0xff336699",
+            "x22": "0x0"
+          }
+        },
+        {
+          "canvas_draw_rect_call": {
+            "canvas": "0x1003c920",
+            "paint": "0x200efd68",
+            "rect": "0x200efd20",
+            "rect_words": [
+              0.0,
+              0.0,
+              80.0,
+              80.0
+            ]
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 1
+        }
+      ],
+      "native_observations": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0x0",
+            "line_style_effect_present": true,
+            "line_width": 0.0,
+            "measured_line_width": 0.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d330",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3b0",
+            "x1": "0x1004d3b0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3b8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3c0",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3c8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d3d0",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d330",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d040",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d040",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              10.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              10.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              10.0,
+              20.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708afbc",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708afd0",
+            "x0": "0xff336699",
+            "x21": "0xff336699",
+            "x22": "0x100455b0"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708affc",
+            "x0": "0x0",
+            "x21": "0xff336699",
+            "x22": "0x0"
+          }
+        },
+        {
+          "canvas_draw_rect_call": {
+            "canvas": "0x1003c920",
+            "paint": "0x200efd68",
+            "rect": "0x200efd20",
+            "rect_words": [
+              0.0,
+              0.0,
+              80.0,
+              80.0
+            ]
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 1
+        }
+      ],
+      "queue_task_count": 8,
+      "route": "native ObjectShapeDrawing; direct ObjectShape::Construct; solid rectangle fastpath"
+    },
+    {
+      "final": {
+        "byte_count": 65536,
+        "checked_native_gl_calls": 348,
+        "fbo_status": 36053,
+        "gl_errors": [
+          0,
+          0
+        ],
+        "native_gl_error_history": [],
+        "nontransparent_bbox_inclusive": [
+          9,
+          19,
+          89,
+          99
+        ],
+        "post_draw_gl_errors": [
+          0,
+          0
+        ],
+        "rgba_counts": {
+          "0,0,0,0": 9823,
+          "15,31,47,206": 1,
+          "16,33,49,231": 4,
+          "17,34,51,255": 156,
+          "25,51,76,243": 4,
+          "34,68,102,255": 312,
+          "51,102,153,255": 6084
+        },
+        "sha256": "d76cbddb4d2c192fa609e8506b5ee1048c30ed9356a333a5627414c3e19e57dc"
+      },
+      "gl_call_counts": {
+        "glActiveTexture": 1,
+        "glAttachShader": 10,
+        "glBindBuffer": 9,
+        "glBindFramebuffer": 2,
+        "glBindSampler": 1,
+        "glBindTexture": 6,
+        "glBlendFuncSeparate": 1,
+        "glBufferData": 3,
+        "glCheckFramebufferStatus": 2,
+        "glColorMask": 1,
+        "glCompileShader": 10,
+        "glCreateProgram": 5,
+        "glCreateShader": 10,
+        "glDeleteShader": 10,
+        "glDetachShader": 10,
+        "glDisable": 3,
+        "glDrawArrays": 1,
+        "glEnable": 1,
+        "glEnableVertexAttribArray": 2,
+        "glFramebufferTexture2D": 1,
+        "glGenBuffers": 2,
+        "glGenFramebuffers": 1,
+        "glGenSamplers": 2,
+        "glGenTextures": 2,
+        "glGetError": 2,
+        "glGetIntegerv": 6,
+        "glGetProgramBinary": 5,
+        "glGetProgramiv": 38,
+        "glGetShaderiv": 10,
+        "glGetString": 3,
+        "glLinkProgram": 5,
+        "glShaderSource": 10,
+        "glTexImage2D": 2,
+        "glUniform1i": 3,
+        "glUniform4fv": 2,
+        "glUniformMatrix4fv": 1,
+        "glUseProgram": 1,
+        "glVertexAttribPointer": 2,
+        "glViewport": 1,
+        "synthetic_gl_fallback": 7
+      },
+      "inputs": {
+        "density": 1,
+        "fill_rgba": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "line_color_argb": 4279312947,
+        "line_width": 1.0,
+        "output": [
+          128,
+          128
+        ],
+        "path": [
+          [
+            "M",
+            10,
+            20
+          ],
+          [
+            "L",
+            90,
+            20
+          ],
+          [
+            "L",
+            90,
+            100
+          ],
+          [
+            "L",
+            10,
+            100
+          ],
+          [
+            "Close"
+          ]
+        ],
+        "shape_rect": [
+          10,
+          20,
+          90,
+          100
+        ]
+      },
+      "name": "outlined_software_path_width_1",
+      "native_calls": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 1.0,
+            "measured_line_width": 1.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d5c0",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d640",
+            "x1": "0x1004d640",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d648",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d650",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d658",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d660",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d5c0",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d2d0",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d2d0",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.5
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.5
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "native_observations": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 1.0,
+            "measured_line_width": 1.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d5c0",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d640",
+            "x1": "0x1004d640",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d648",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d650",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d658",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d660",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d5c0",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d2d0",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d2d0",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.5
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.5
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              9.5,
+              19.5
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "queue_task_count": 11,
+      "route": "native ObjectShapeDrawing; direct ObjectShape::Construct; ShapePath DrawEffect and pinned Skia software raster"
+    },
+    {
+      "final": {
+        "byte_count": 65536,
+        "checked_native_gl_calls": 348,
+        "fbo_status": 36053,
+        "gl_errors": [
+          0,
+          0
+        ],
+        "native_gl_error_history": [],
+        "nontransparent_bbox_inclusive": [
+          9,
+          19,
+          90,
+          100
+        ],
+        "post_draw_gl_errors": [
+          0,
+          0
+        ],
+        "rgba_counts": {
+          "0,0,0,0": 9660,
+          "17,34,51,255": 640,
+          "51,102,153,255": 6084
+        },
+        "sha256": "d1ba6b2f6812e1c6fcadf69d2d32eaff527a5978975c2d1185c48a085e9361ef"
+      },
+      "gl_call_counts": {
+        "glActiveTexture": 1,
+        "glAttachShader": 10,
+        "glBindBuffer": 9,
+        "glBindFramebuffer": 2,
+        "glBindSampler": 1,
+        "glBindTexture": 6,
+        "glBlendFuncSeparate": 1,
+        "glBufferData": 3,
+        "glCheckFramebufferStatus": 2,
+        "glColorMask": 1,
+        "glCompileShader": 10,
+        "glCreateProgram": 5,
+        "glCreateShader": 10,
+        "glDeleteShader": 10,
+        "glDetachShader": 10,
+        "glDisable": 3,
+        "glDrawArrays": 1,
+        "glEnable": 1,
+        "glEnableVertexAttribArray": 2,
+        "glFramebufferTexture2D": 1,
+        "glGenBuffers": 2,
+        "glGenFramebuffers": 1,
+        "glGenSamplers": 2,
+        "glGenTextures": 2,
+        "glGetError": 2,
+        "glGetIntegerv": 6,
+        "glGetProgramBinary": 5,
+        "glGetProgramiv": 38,
+        "glGetShaderiv": 10,
+        "glGetString": 3,
+        "glLinkProgram": 5,
+        "glShaderSource": 10,
+        "glTexImage2D": 2,
+        "glUniform1i": 3,
+        "glUniform4fv": 2,
+        "glUniformMatrix4fv": 1,
+        "glUseProgram": 1,
+        "glVertexAttribPointer": 2,
+        "glViewport": 1,
+        "synthetic_gl_fallback": 7
+      },
+      "inputs": {
+        "density": 1,
+        "fill_rgba": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "line_color_argb": 4279312947,
+        "line_width": 2.0,
+        "output": [
+          128,
+          128
+        ],
+        "path": [
+          [
+            "M",
+            10,
+            20
+          ],
+          [
+            "L",
+            90,
+            20
+          ],
+          [
+            "L",
+            90,
+            100
+          ],
+          [
+            "L",
+            10,
+            100
+          ],
+          [
+            "Close"
+          ]
+        ],
+        "shape_rect": [
+          10,
+          20,
+          90,
+          100
+        ]
+      },
+      "name": "outlined_software_path_width_2",
+      "native_calls": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 2.0,
+            "measured_line_width": 2.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d840",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8c0",
+            "x1": "0x1004d8c0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8c8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8d0",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8d8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8e0",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d840",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d550",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d550",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "native_observations": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 2.0,
+            "measured_line_width": 2.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004d840",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8c0",
+            "x1": "0x1004d8c0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8c8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8d0",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8d8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004d8e0",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004d840",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d550",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004d550",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              9.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              9.0,
+              19.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "queue_task_count": 11,
+      "route": "native ObjectShapeDrawing; direct ObjectShape::Construct; ShapePath DrawEffect and pinned Skia software raster"
+    },
+    {
+      "final": {
+        "byte_count": 65536,
+        "checked_native_gl_calls": 348,
+        "fbo_status": 36053,
+        "gl_errors": [
+          0,
+          0
+        ],
+        "native_gl_error_history": [],
+        "nontransparent_bbox_inclusive": [
+          8,
+          18,
+          91,
+          101
+        ],
+        "post_draw_gl_errors": [
+          0,
+          0
+        ],
+        "rgba_counts": {
+          "0,0,0,0": 9328,
+          "17,34,51,255": 1280,
+          "51,102,153,255": 5776
+        },
+        "sha256": "193bf590c001f65a04302ae8f4e6fed424131501d4abd3c44862c2f55f75dcfd"
+      },
+      "gl_call_counts": {
+        "glActiveTexture": 1,
+        "glAttachShader": 10,
+        "glBindBuffer": 9,
+        "glBindFramebuffer": 2,
+        "glBindSampler": 1,
+        "glBindTexture": 6,
+        "glBlendFuncSeparate": 1,
+        "glBufferData": 3,
+        "glCheckFramebufferStatus": 2,
+        "glColorMask": 1,
+        "glCompileShader": 10,
+        "glCreateProgram": 5,
+        "glCreateShader": 10,
+        "glDeleteShader": 10,
+        "glDetachShader": 10,
+        "glDisable": 3,
+        "glDrawArrays": 1,
+        "glEnable": 1,
+        "glEnableVertexAttribArray": 2,
+        "glFramebufferTexture2D": 1,
+        "glGenBuffers": 2,
+        "glGenFramebuffers": 1,
+        "glGenSamplers": 2,
+        "glGenTextures": 2,
+        "glGetError": 2,
+        "glGetIntegerv": 6,
+        "glGetProgramBinary": 5,
+        "glGetProgramiv": 38,
+        "glGetShaderiv": 10,
+        "glGetString": 3,
+        "glLinkProgram": 5,
+        "glShaderSource": 10,
+        "glTexImage2D": 2,
+        "glUniform1i": 3,
+        "glUniform4fv": 2,
+        "glUniformMatrix4fv": 1,
+        "glUseProgram": 1,
+        "glVertexAttribPointer": 2,
+        "glViewport": 1,
+        "synthetic_gl_fallback": 7
+      },
+      "inputs": {
+        "density": 1,
+        "fill_rgba": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "line_color_argb": 4279312947,
+        "line_width": 4.0,
+        "output": [
+          128,
+          128
+        ],
+        "path": [
+          [
+            "M",
+            10,
+            20
+          ],
+          [
+            "L",
+            90,
+            20
+          ],
+          [
+            "L",
+            90,
+            100
+          ],
+          [
+            "L",
+            10,
+            100
+          ],
+          [
+            "Close"
+          ]
+        ],
+        "shape_rect": [
+          10,
+          20,
+          90,
+          100
+        ]
+      },
+      "name": "outlined_software_path_width_4",
+      "native_calls": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 4.0,
+            "measured_line_width": 4.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004dd70",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004ddf0",
+            "x1": "0x1004ddf0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004ddf8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de00",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de08",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de10",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004dd70",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004da80",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004da80",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              8.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              8.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "native_observations": [
+        {
+          "shape_construction_probe": {
+            "construct_result": 1,
+            "init_mode": "direct",
+            "object": "0x1002a550",
+            "path": "0x100296d0",
+            "shape_type": 7
+          }
+        },
+        {
+          "object_shape_get_path_probe": {
+            "result": "0x1002bd20",
+            "segment_count": 5,
+            "source_path": "0x100296d0"
+          }
+        },
+        {
+          "declared_shape_input": {
+            "fill_color": "0xff336699",
+            "line_color": "0xff112233",
+            "line_style_effect_present": true,
+            "line_width": 4.0,
+            "measured_line_width": 4.0,
+            "path_rect": [
+              10.0,
+              20.0,
+              90.0,
+              100.0
+            ]
+          }
+        },
+        {
+          "fill_effect_probe": {
+            "object": "0x1002a550",
+            "present": 1,
+            "solid_color": 4281558681
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a844",
+            "s0": 1.0,
+            "x0": "0x1004dd70",
+            "x1": "0x10046ad0",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a85c",
+            "s0": 1.0,
+            "x0": "0x1002bd20",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a86c",
+            "s0": 1.0,
+            "x0": "0x1002bda0",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a878",
+            "s0": 1.0,
+            "x0": "0x5",
+            "x1": "0x1002a550",
+            "x2": "0x1002a550",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004ddf0",
+            "x1": "0x1004ddf0",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004ddf8",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de00",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de08",
+            "x1": "0x1",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "native_shape_path_stage": {
+            "pc": "0x708a8b0",
+            "s0": 0.0,
+            "x0": "0x1004de10",
+            "x1": "0x5",
+            "x2": "0x0",
+            "x3": "0x0"
+          }
+        },
+        {
+          "shape_path_draw_dispatch": {
+            "path": "0x200efdc0",
+            "receiver": "0x1004dd70",
+            "shape": "0x100455b0",
+            "style": "0x100455c0",
+            "target": "0x708bab0",
+            "target_symbol": "SPen::ObjectShapeDrawing::AbsShapePathType::DrawEffect(Spen_SkPath&, SPen::ShapeDrawingFillEffect&, SPen::ShapeDrawingLineEffect&)",
+            "vtable": "0x70c3838"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004da80",
+            "paint": "0x100456b8",
+            "path": "0x200efce0"
+          }
+        },
+        {
+          "native_skcanvas_draw_path": {
+            "canvas": "0x1004da80",
+            "paint": "0x100462a0",
+            "path": "0x200efc50"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              1.0
+            ],
+            "pc": "0x708add0",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x0",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              8.0
+            ],
+            "pc": "0x708ade4",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "drawpath_outer_canvas_step": {
+            "fp_args": [
+              1.0,
+              8.0
+            ],
+            "pc": "0x708adf8",
+            "stack_xy": [
+              8.0,
+              18.0
+            ],
+            "x0": "0x1003c920",
+            "x1": "0x1"
+          }
+        },
+        {
+          "draw_solid_rectangle_probe_return": {
+            "pc": "0x708af80",
+            "x0": "0x1",
+            "x21": "0x200eff88",
+            "x22": "0x1002a550"
+          }
+        },
+        {
+          "draw_solid_rectangle_return": 0
+        }
+      ],
+      "queue_task_count": 11,
+      "route": "native ObjectShapeDrawing; direct ObjectShape::Construct; ShapePath DrawEffect and pinned Skia software raster"
+    }
+  ],
+  "schema": "sdocx.native-object-shape-paint.v1",
+  "scope": {
+    "claim": "Executed native output under these host boundaries; not Android-device parity",
+    "host_boundaries": [
+      "Mesa GLES forwarding",
+      "synthetic EGL current context",
+      "synchronous queue task dispatch",
+      "pinned host libm",
+      "tracked realloc",
+      "GL flush/invalidate"
+    ],
+    "native": "Pinned arm64 Samsung Notes Model/Drawing/Skia shape path and paint code"
+  },
+  "source": {
+    "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+    "application": "Samsung Notes 4.4.45.37",
+    "host_libm": {
+      "path": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+      "sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"
+    },
+    "libraries": {
+      "airbrushpen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "fountainpen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "libcxx_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "skia": "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d",
+      "view": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8"
+    }
+  }
+}
