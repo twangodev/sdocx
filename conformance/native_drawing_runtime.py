@@ -1,8 +1,9 @@
 """Shared pinned Drawing/Model/libc++ Unicorn runtime for caller oracles.
 
 This helper executes only project-local, hash-checked native libraries. It
-provides the initialized Oblique CanvasProbe used as a native host scaffold;
-individual callers map their own profile DSO and install their own callbacks.
+provides the configured Oblique CanvasProbe used as a native host scaffold;
+individual callers map their own profile DSO, choose init arrays, and install
+their own callbacks.
 """
 from pathlib import Path
 from types import SimpleNamespace

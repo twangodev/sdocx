@@ -129,7 +129,7 @@ from unicorn import UC_HOOK_CODE
 trace_names=['SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)','SPen::PenManager::GetPenData(SPen::String*)','SPen::PenManager::GetPenData(SPen::String const*)','SPen::Pen::SetScreenResolution(int, int)','SPen::MontblancCalligraphyPen::GetStrokeDrawableGL()','SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)','SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Update(bool)','SPen::ObjectStroke::GetPenName() const','SPen::ObjectStroke::GetPointCount() const']
 addrs={p.syms[nm]:nm for nm in trace_names if nm in p.syms}
 seen=[]
-caller_records={'add_points':[],'sample_ends':[],'build_calls':[],'drawable':None,'event':None}
+caller_records={'add_points':[],'sample_ends':[],'build_calls':[],'drawable':None,'event':None,'rtv1_lifecycle':[],'redraw_sessions':[]}
 screen_resolution_calls=[]
 screen_resolution_addr=p.syms['SPen::Pen::SetScreenResolution(int, int)']
 pen_data_addr=p.syms.get('SPen::PenManager::GetPenData(SPen::String*)',0);pending_pen_data={};pen_data_returns=[]
@@ -137,7 +137,17 @@ event_getters={n:p.syms[n] for n in ('SPen::MotionEvent::GetHistorySize() const'
 redraw_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)']
 add_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)']
 build_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::buildMesh(SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Rect const&, std::__ndk1::vector<SPen::Vector4<float>, std::__ndk1::allocator<SPen::Vector4<float> > >*)']
+clear_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Clear()']
+update_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Update(bool)']
+pending_redraw_returns={}
 def tr(u,a,z,data):
+ if a in pending_redraw_returns:
+  session=pending_redraw_returns.pop(a)
+  session['end_add_point_index']=len(caller_records['add_points'])
+  session['end_build_call_index']=len(caller_records['build_calls'])
+  session['terminal_start_add_point_index']=caller_records['terminal_start']
+  session['glv1_state_after_hex']=bytes(u.mem_read(session['drawable_address'],512)).hex()
+  caller_records['redraw_sessions'].append(session)
  if a in pending_pen_data:
   rec=pending_pen_data.pop(a);rec['return']=hex(p.x(0));pen_data_returns.append(rec)
  if a in pending_event_getters:
@@ -146,8 +156,18 @@ def tr(u,a,z,data):
   caller=u.reg_read(R.UC_ARM64_REG_LR);name=next(n for n,v in event_getters.items() if v==a);rec={'method':name,'args':[hex(p.x(i)) for i in range(3)],'entry_s0':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex()};pending_event_getters[caller]=rec
  if a in addrs:
   seen.append(addrs[a])
+ if a==redraw_addr:
+  caller_records['rtv1_lifecycle'].append({'event':'GLV1::RedrawPen(MotionEvent)','drawable':hex(p.x(0)),'motion_event':hex(p.x(1))})
+ if a==clear_addr:caller_records['rtv1_lifecycle'].append({'event':'RTV1::Clear','receiver':hex(p.x(0))})
+ if a==update_addr:caller_records['rtv1_lifecycle'].append({'event':'RTV1::Update(bool)','receiver':hex(p.x(0)),'force':bool(p.x(1))})
  if a==screen_resolution_addr:screen_resolution_calls.append({'width':u.reg_read(R.UC_ARM64_REG_W1),'height':u.reg_read(R.UC_ARM64_REG_W2)})
- if a==redraw_addr:caller_records['drawable']=p.x(0);caller_records['event']=p.x(1);caller_records['event_entry_bytes']=bytes(u.mem_read(p.x(1),192)).hex()
+ if a==redraw_addr:
+  caller_records['drawable']=p.x(0);caller_records['event']=p.x(1);caller_records['event_entry_bytes']=bytes(u.mem_read(p.x(1),192)).hex()
+  ret=u.reg_read(R.UC_ARM64_REG_LR)
+  session={'drawable':hex(p.x(0)),'drawable_address':p.x(0),'motion_event':hex(p.x(1)),
+           'start_add_point_index':len(caller_records['add_points']),'start_build_call_index':len(caller_records['build_calls']),
+           'glv1_state_before_hex':bytes(u.mem_read(p.x(0),512)).hex()}
+  pending_redraw_returns[ret]=session
  if a==redraw_addr+0x1cc:caller_records['sample_ends'].append({'history_index':u.reg_read(R.UC_ARM64_REG_W23),'add_count':len(caller_records['add_points'])})
  if a==redraw_addr+0x300:caller_records['terminal_start']=len(caller_records['add_points'])
  if a==add_addr:
@@ -171,34 +191,90 @@ def capture_mesh(drawable,build_calls):
   payload=bytes(p.u.mem_read(begin,size)) if size else b''
   rows.append({'build_output_slot':slot,'vector_object':hex(vector),'float_count':size//4,'vertex_count':size//16,'bytes_hex':payload.hex(),'sha256':hashlib.sha256(payload).hexdigest()})
  return {'rtv1':hex(rtv1),'buffers':rows}
+def snapshot_rtv1_state(drawable):
+ rtv1=p.get(drawable+16,'Q')[0]
+ return {'center_bits':[struct.pack('<f',p.get(rtv1+off,'f')[0]).hex() for off in (296,300)],
+         'initial_flag':p.get(rtv1+304,'B')[0],
+         'edge_state_bits':[p.get(rtv1+308+4*i,'I')[0].to_bytes(4,'little').hex() for i in range(12)]}
+def draw_capture(drawing,stroke):
+ add_start=len(caller_records['add_points']);build_start=len(caller_records['build_calls']);sample_start=len(caller_records['sample_ends']);lifecycle_start=len(caller_records['rtv1_lifecycle']);redraw_start=len(caller_records['redraw_sessions']);pen_data_start=len(pen_data_returns)
+ caller_records['terminal_start']=None
+ p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[drawing,p.draw_canvas,p.pen_canvas,stroke,1],limit=5000000)
+ adds=caller_records['add_points'][add_start:];builds=caller_records['build_calls'][build_start:]
+ if not caller_records['drawable'] or not builds:raise RuntimeError('saved stroke draw returned without native drawable/buildMesh evidence')
+ return {'native_return':p.x(0),'drawable':caller_records['drawable'],
+         'pen_data':pen_data_returns[-1]['return'] if len(pen_data_returns)>pen_data_start else None,
+         'add_points':adds,'sample_boundaries':caller_records['sample_ends'][sample_start:],
+         'rtv1_lifecycle':caller_records['rtv1_lifecycle'][lifecycle_start:],
+         'redraw_sessions':caller_records['redraw_sessions'][redraw_start:],
+         'terminal_start_add_point_index':caller_records['terminal_start'],
+         'build_calls':builds,'rtv1_mesh':capture_mesh(caller_records['drawable'],builds),
+         'post_draw_rtv1_state':snapshot_rtv1_state(caller_records['drawable'])}
 try:
  p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[d,p.draw_canvas,p.pen_canvas,obj,1],limit=5000000)
  drawable=caller_records['drawable'];rtv1=p.get(drawable+16,'Q')[0]
  first_mesh=capture_mesh(drawable,caller_records['build_calls'])
+ first_post_rtv1_state=snapshot_rtv1_state(drawable)
  first_drawable=caller_records['drawable'];first_pen_data=pen_data_returns[-1]['return'] if pen_data_returns else None;first_manager=pen_data_returns[-1]['manager'] if pen_data_returns else None
  first_add_count=len(caller_records['add_points']);first_build_count=len(caller_records['build_calls'])
  first_add_points=caller_records['add_points'][:first_add_count]
  first_build_calls=caller_records['build_calls'][:first_build_count]
- p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[d,p.draw_canvas,p.pen_canvas,obj,1],limit=5000000)
- repeat_summary={'same_drawable':first_drawable==caller_records['drawable'],'same_pen_data':first_pen_data==(pen_data_returns[-1]['return'] if pen_data_returns else None),'same_manager':first_manager==(pen_data_returns[-1]['manager'] if pen_data_returns else None),'new_add_points':len(caller_records['add_points'])-first_add_count,'new_build_calls':len(caller_records['build_calls'])-first_build_count,'native_return':p.x(0)}
+ first_redraw_session=caller_records['redraw_sessions'][-1]
+ repeated_capture=draw_capture(d,obj)
+ repeat_summary={'same_drawable':first_drawable==repeated_capture['drawable'],'same_pen_data':first_pen_data==repeated_capture['pen_data'],'same_manager':first_manager==(pen_data_returns[-1]['manager'] if pen_data_returns else None),'new_add_points':len(repeated_capture['add_points']),'new_build_calls':len(repeated_capture['build_calls']),'native_return':repeated_capture['native_return']}
  # Second ObjectStroke, same active profile and Drawing: this probes whether
  # saved-call history reuses the cached PenData/drawable across stroke objects.
  obj2=p.alloc(256);impl2=p.alloc(512);p.call('SPen::ObjectStroke::ObjectStroke()',[obj2]);p.call('SPen::ObjectStrokeImpl::ObjectStrokeImpl(SPen::ObjectStroke*)',[impl2,obj2]);p.put(obj2+32,'Q',impl2);p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj2,pname]);p.f(0,6.0);p.call('SPen::ObjectStroke::SetPenSize(float)',[obj2]);p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj2,2]);p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj2,0]);p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj2,1]);p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj2,0x80112233])
- pts2=p.alloc(24);prs2=p.alloc(12);ts2=p.alloc(12);tilt2=p.alloc(12);ori2=p.alloc(12);p.put(pts2,'6f',0,0,4,1,9,5);p.put(prs2,'3f',.3,.6,.8);p.put(ts2,'3i',100,115,130);p.put(tilt2,'3f',.1,.2,.3);p.put(ori2,'3f',0,.35,.7);p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj2,pts2,prs2,ts2,tilt2,ori2,3]);add2=len(caller_records['add_points']);build2=len(caller_records['build_calls']);sample2=len(caller_records['sample_ends']);pdata2=len(pen_data_returns);pen_data_second=None
+ pts2=p.alloc(24);prs2=p.alloc(12);ts2=p.alloc(12);tilt2=p.alloc(12);ori2=p.alloc(12);p.put(pts2,'6f',0,0,4,1,9,5);p.put(prs2,'3f',.3,.6,.8);p.put(ts2,'3i',100,115,130);p.put(tilt2,'3f',.1,.2,.3);p.put(ori2,'3f',0,.35,.7);p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj2,pts2,prs2,ts2,tilt2,ori2,3])
+ obj3=p.alloc(256);impl3=p.alloc(512);p.call('SPen::ObjectStroke::ObjectStroke()',[obj3]);p.call('SPen::ObjectStrokeImpl::ObjectStrokeImpl(SPen::ObjectStroke*)',[impl3,obj3]);p.put(obj3+32,'Q',impl3);p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj3,pname]);p.f(0,4.25);p.call('SPen::ObjectStroke::SetPenSize(float)',[obj3]);p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj3,2]);p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj3,0]);p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj3,1]);p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj3,0x80112233])
+ pts3=p.alloc(16);prs3=p.alloc(8);ts3=p.alloc(8);tilt3=p.alloc(8);ori3=p.alloc(8);p.put(pts3,'4f',30,2,31.25,2.5);p.put(prs3,'2f',.75,.4);p.put(ts3,'2i',200,215);p.put(tilt3,'2f',.05,.25);p.put(ori3,'2f',.9,1.1);p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj3,pts3,prs3,ts3,tilt3,ori3,2])
+ second_model_channels={}
+ for label,method,element_size in [('points','SPen::ObjectStroke::GetPoint() const',8),('pressure','SPen::ObjectStroke::GetPressure() const',4),('timestamps','SPen::ObjectStroke::GetTimeStamp() const',4),('tilt','SPen::ObjectStroke::GetTilt() const',4),('orientation','SPen::ObjectStroke::GetOrientation() const',4)]:
+  p.call(method,[obj3]);data=p.x(0);length=2*element_size
+  second_model_channels[label]={'getter':method,'count':2,'element_size':element_size,'bytes':bytes(p.u.mem_read(data,length)).hex()}
+ for label,method in [('pen_size','SPen::ObjectStroke::GetPenSize() const'),('color','SPen::ObjectStroke::GetColor() const'),('tool_type','SPen::ObjectStroke::GetToolType() const'),('stroke_type','SPen::ObjectStroke::GetStrokeType() const'),('point_count','SPen::ObjectStroke::GetPointCount() const')]:
+  p.call(method,[obj3]);second_model_channels[label]=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex() if label=='pen_size' else p.x(0)
+ second_same_drawing=draw_capture(d,obj3);pdata2=len(pen_data_returns)
  old_drawing=d;p.call('SPen::DrawingFactory::CreateDrawing(SPen::IContext const*)',[ctx],limit=1000000);d=p.x(0)
- p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[d,p.draw_canvas,p.pen_canvas,obj2,1],limit=5000000)
- fresh_return=p.x(0);fresh_pen_data=pen_data_returns[-1] if len(pen_data_returns)>pdata2 else None
- fresh_add_points=caller_records['add_points'][add2:];fresh_build_calls=caller_records['build_calls'][build2:]
- fresh_drawable=caller_records['drawable'];fresh_mesh=capture_mesh(fresh_drawable,fresh_build_calls)
+ sample2=len(caller_records['sample_ends'])
+ fresh_capture=draw_capture(d,obj2)
+ fresh_return=fresh_capture['native_return'];fresh_pen_data=pen_data_returns[-1] if len(pen_data_returns)>pdata2 else None
+ fresh_add_points=fresh_capture['add_points'];fresh_build_calls=fresh_capture['build_calls']
+ fresh_drawable=fresh_capture['drawable'];fresh_mesh=fresh_capture['rtv1_mesh']
  fresh_manager=hex(p.get(d+16,'Q')[0])
+ original_fresh_drawing=d
+ p.call('SPen::DrawingFactory::CreateDrawing(SPen::IContext const*)',[ctx],limit=1000000);short_fresh_drawing=p.x(0)
+ short_fresh_capture=draw_capture(short_fresh_drawing,obj3)
+ short_fresh_manager=hex(p.get(short_fresh_drawing+16,'Q')[0])
  library_hashes={name:hashlib.sha256(libpath.read_bytes()).hexdigest() for name,libpath in runtime.paths.items()}
  library_hashes['libc++_shared.so']=hashlib.sha256((LIBS/'libc++_shared.so').read_bytes()).hexdigest()
  library_hashes['libSPenMontblancCalligraphyPen.so']=hashlib.sha256(path.read_bytes()).hexdigest()
- result={'schema':'sdocx-calligraphy-saved-caller-case-v1','case_id':'three-point-curve-fresh-drawing','input':{'kind':'synthetic native ObjectStroke setters; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen','points_f32_bits':['00000000','00000000','00008040','0000803f','00001041','0000a040'],'pressure_f32_bits':['9a99993e','9a99193f','cdcc4c3f'],'timestamps_i32':[100,115,130],'tilt_f32_bits':['cdcccc3d','cdcc4c3e','9a99993e'],'orientation_f32_bits':['00000000','3333b33e','3333333f'],'pen_size_f32_bits':'0000c040','argb_u32':0x80112233,'tool_type':2,'stroke_type':0,'curve_enabled_setter_arg':1},'model_getters':model_channels,'context':{'profile_width':1920,'profile_height':1080,'color_get_color_selector3':'identity','flags_u32':1,'version_f32_bits':'0000803f'},'initializer_scope':{'executed':['libSPenMontblancCalligraphyPen.so .init_array'],'not_executed':'Mapped support DSO init arrays are not run by this capture; helper exposes an opt-in runner but this fixture does not invoke it.'},'motion_event':{'constructor_and_getters_native':True,'entry_bytes':caller_records['event_entry_bytes'],'native_redraw_getter_calls':event_getter_calls,'getter_results_scope':'only getters intercepted during native RedrawPen; no post-destruction manual calls','note':'MotionEvent time getter reports relative saved timestamps [0,15,30] while downTime is 100; coordinate getter ABI was recorded with both historical argument orders.'},'cache_observation':{'first_drawing':hex(old_drawing),'first_manager':first_manager,'first_pen_data':first_pen_data,'first_drawable':hex(first_drawable),'same_drawing_repeat':repeat_summary,'fresh_drawing':hex(d),'fresh_manager':fresh_manager,'fresh_pen_data':fresh_pen_data['return'] if fresh_pen_data else None,'fresh_drawable':hex(fresh_drawable),'distinct_manager':fresh_manager!=first_manager,'distinct_pen_data':(fresh_pen_data['return'] if fresh_pen_data else None)!=first_pen_data},'native_capture':{'draw_object_stroke_return':fresh_return,'screen_resolution_calls':screen_resolution_calls,'first_draw':{'add_points':first_add_points,'build_calls':first_build_calls,'rtv1_mesh':first_mesh},'same_drawing_repeat':repeat_summary,'fresh_drawing':{'add_points':fresh_add_points,'observed_sample_boundary_hooks':caller_records['sample_ends'][sample2:],'terminal_start_add_point_index':caller_records['terminal_start'],'build_calls':fresh_build_calls,'rtv1_mesh':fresh_mesh}},'libraries':library_hashes,'host_boundaries':['explicit synthetic IContext display profile 1920x1080, identity color conversion, flags=1/version=1.0','Canvas/bitmap/context ownership and queued-task registration remain host adapters; the native task Run methods, ObjectDrawing::drawObjectStroke, PenManager lookup, MotionEvent constructor/getters, Calligraphy GLV1 redraw, RTV1 AddPoint and buildMesh execute','ManagedObject::OnRelease/OnRestore relocations target BRK traps to prove they are not needed on the capture path; __sF is zeroed host data; unresolved imports are left zero and recorded below','the outer Composer DrawObjectList bitmap traversal and DrawingFactory::ReleaseDrawing resource teardown are not exercised']}
+ result={'schema':'sdocx-calligraphy-saved-caller-case-v1','case_id':'three-point-curve-fresh-drawing','input':{'kind':'synthetic native ObjectStroke setters; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen','points_f32_bits':['00000000','00000000','00008040','0000803f','00001041','0000a040'],'pressure_f32_bits':['9a99993e','9a99193f','cdcc4c3f'],'timestamps_i32':[100,115,130],'tilt_f32_bits':['cdcccc3d','cdcc4c3e','9a99993e'],'orientation_f32_bits':['00000000','3333b33e','3333333f'],'pen_size_f32_bits':'0000c040','argb_u32':0x80112233,'tool_type':2,'stroke_type':0,'curve_enabled_setter_arg':1},'model_getters':model_channels,'context':{'profile_width':1920,'profile_height':1080,'color_get_color_selector3':'identity','flags_u32':1,'version_f32_bits':'0000803f'},'initializer_scope':{'executed':['libSPenMontblancCalligraphyPen.so .init_array'],'not_executed':'Mapped support DSO init arrays are not run by this capture; helper exposes an opt-in runner but this fixture does not invoke it.'},'motion_event':{'constructor_and_getters_native':True,'entry_bytes':caller_records['event_entry_bytes'],'native_redraw_getter_calls':event_getter_calls,'getter_results_scope':'only getters intercepted during native RedrawPen; no post-destruction manual calls','note':'MotionEvent time getter reports relative saved timestamps [0,15,30] while downTime is 100; coordinate getter ABI was recorded with both historical argument orders.'},'cache_observation':{'first_drawing':hex(old_drawing),'first_manager':first_manager,'first_pen_data':first_pen_data,'first_drawable':hex(first_drawable),'same_drawing_repeat':repeat_summary,'fresh_drawing':hex(d),'fresh_manager':fresh_manager,'fresh_pen_data':fresh_pen_data['return'] if fresh_pen_data else None,'fresh_drawable':hex(fresh_drawable),'distinct_manager':fresh_manager!=first_manager,'distinct_pen_data':(fresh_pen_data['return'] if fresh_pen_data else None)!=first_pen_data},'native_capture':{'draw_object_stroke_return':fresh_return,'screen_resolution_calls':screen_resolution_calls,'first_draw':{'add_points':first_add_points,'redraw_session':first_redraw_session,'build_calls':first_build_calls,'rtv1_mesh':first_mesh},'same_drawing_repeat':repeat_summary,'fresh_drawing':{'add_points':fresh_add_points,'observed_sample_boundary_hooks':caller_records['sample_ends'][sample2:],'terminal_start_add_point_index':caller_records['terminal_start'],'build_calls':fresh_build_calls,'rtv1_mesh':fresh_mesh}},'libraries':library_hashes,'host_boundaries':['explicit synthetic IContext display profile 1920x1080, identity color conversion, flags=1/version=1.0','Canvas/bitmap/context ownership and queued-task registration remain host adapters; the native task Run methods, ObjectDrawing::drawObjectStroke, PenManager lookup, MotionEvent constructor/getters, Calligraphy GLV1 redraw, RTV1 AddPoint and buildMesh execute','ManagedObject::OnRelease/OnRestore relocations target BRK traps to prove they are not needed on the capture path; __sF is zeroed host data; unresolved imports are left zero and recorded below','the outer Composer DrawObjectList bitmap traversal and DrawingFactory::ReleaseDrawing resource teardown are not exercised']}
  unresolved_counts=collections.Counter((lib,typ,name) for lib,where,name,typ in runtime.unresolved_imports)
  result['unresolved_imports']=[{'dso':lib,'relocation_type':f'R_AARCH64_{"ABS64" if typ==0x101 else "GLOB_DAT"}','symbol':name,'relocation_count':count} for (lib,typ,name),count in sorted(unresolved_counts.items())]
  emutls_counts=collections.Counter((row['size'],row['align'],row['existing_nonnull'],row['template_nonnull'],row['template_sha256'],row['template_nonzero'],row['template_bytes_hex']) for row in runtime.emutls_descriptors)
  result['emutls_descriptors']=[{'size':size,'align':align,'existing_nonnull':existing,'template_nonnull':template,'template_sha256':digest,'template_nonzero':nonzero,'template_bytes_hex':template_bytes,'observed_calls':count} for (size,align,existing,template,digest,nonzero,template_bytes),count in sorted(emutls_counts.items())]
+ result['reused_drawing_streams']={
+  'scope':'sequential direct ObjectDrawing::drawObjectStroke calls on one reused Drawing; outer DrawObjectList batching is not exercised',
+  'lifecycle_observation':'Each saved stroke call entered GLV1::RedrawPen(MotionEvent); no RTV1::Clear or RTV1::Update(bool) entry was observed. Per-call GLV1 512-byte state snapshots and RTV1 AddPoint prestate/poststate are captured below.',
+  'same_stroke_repeat':repeated_capture,
+  'same_stroke_prior_post_state':first_post_rtv1_state,
+  'original_three_point_fresh_drawing':{'drawing':hex(original_fresh_drawing),'capture':fresh_capture},
+  'different_short_stroke':{'input':{'point_bytes_f32_le':bytes(p.u.mem_read(pts3,16)).hex(),'pressure_bytes_f32_le':bytes(p.u.mem_read(prs3,8)).hex(),'timestamps_i32':[200,215],'tilt_bytes_f32_le':bytes(p.u.mem_read(tilt3,8)).hex(),'orientation_bytes_f32_le':bytes(p.u.mem_read(ori3,8)).hex(),'pen_size_f32_bits':struct.pack('<f',4.25).hex(),'argb_u32':0x80112233,'stroke_type':0,'tool_type':2,'curve_enabled_setter_arg':1},'model_getters':second_model_channels,'same_drawing_capture':second_same_drawing,'fresh_drawing_capture':short_fresh_capture,'fresh_drawing':hex(short_fresh_drawing),'fresh_manager':short_fresh_manager}
+ }
+ if first_post_rtv1_state['edge_state_bits']!=repeated_capture['add_points'][0]['pre_state']['edge_state_bits']:
+  raise RuntimeError('same-Drawing repeat did not begin with the prior completed native nib edge state')
+ if repeated_capture['post_draw_rtv1_state']['edge_state_bits']!=second_same_drawing['add_points'][0]['pre_state']['edge_state_bits']:
+  raise RuntimeError('different stroke did not begin with the prior completed native nib edge state')
+ if any(bytes.fromhex(value)!=bytes(4) for value in fresh_capture['add_points'][0]['pre_state']['edge_state_bits']):
+  raise RuntimeError('fresh Drawing did not begin with a zeroed nib edge state')
+ if not short_fresh_capture['add_points'] or any(bytes.fromhex(value)!=bytes(4) for value in short_fresh_capture['add_points'][0]['pre_state']['edge_state_bits']):
+  raise RuntimeError('fresh Drawing short stroke did not begin with a zeroed nib edge state')
+ if short_fresh_capture['add_points'][0]['vector_bytes'] != second_same_drawing['add_points'][0]['vector_bytes']:
+  raise RuntimeError('short stroke fresh reference did not consume the same first saved sample')
+ for capture in (repeated_capture,second_same_drawing,fresh_capture,short_fresh_capture):
+  if [item['event'] for item in capture['rtv1_lifecycle']]!=['GLV1::RedrawPen(MotionEvent)']:
+   raise RuntimeError(f'unexpected Clear/Update lifecycle call in saved stroke draw: {capture["rtv1_lifecycle"]}')
  if len(fresh_add_points)!=13 or fresh_return!=1 or not fresh_mesh['buffers']:
   raise RuntimeError(f'unexpected fresh caller capture: AddPoint={len(fresh_add_points)} return={fresh_return}')
  if [item['sha256'] for item in first_mesh['buffers']] != [item['sha256'] for item in fresh_mesh['buffers']]:
