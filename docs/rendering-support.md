@@ -132,8 +132,10 @@ The [Drawing caller capture](../conformance/calligraphy-saved-caller-native.json
 checks fresh/reused source conversion and two-stroke native list traversal;
 Rust matches complete buffers and retained state. The
 [saved-wrapper capture](../conformance/calligraphy-saved-wrapper-native.json)
-covers fixed width, raw tool normalization and paired curve flags, while the
-[queued Draw capture](../conformance/calligraphy-draw-native.json) records uploads,
+covers fixed width, raw tool normalization and paired curve flags. The
+[native defaults capture](../conformance/object-stroke-defaults-native.json)
+checks omitted size and ARGB; the adapter uses effective size 0.4 and opaque
+black. The [queued Draw capture](../conformance/calligraphy-draw-native.json) records uploads,
 uniforms and blend calls. Unsupported inputs retain the generic approximation;
 unknown state stays in fallback until a batch reset. Standalone `prepare_stroke`
 also retains that approximation because it has no Drawing lifetime. Object/group
@@ -168,7 +170,11 @@ Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
 coverage/compositing; Oblique still uses the generic pressure approximation in Rust.
 The [native Draw oracle](../conformance/oblique-draw-native.json) also verifies
 explicit ARGB forwarding and executed MAX/source-over blend descriptors, with
-synthetic resource adapters and no device-pixel claim.
+synthetic resource adapters and no device-pixel claim. The
+[reuse witness](../conformance/oblique-saved-caller-reuse-native.json) checks a
+three-point stroke followed by a short stroke on the same drawable/RT; the
+second callback stream and geometry match its fresh reference. General reuse
+and production renderer admission remain unverified.
 
 ## Text and embedded layout
 
