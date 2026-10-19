@@ -659,6 +659,179 @@ impl MeshBuffers {
     }
 }
 
+/// Test bridge from the captured saved coordinate/orientation history through
+/// the sampler, AddPoint state, mesh builder, and RTV1 Vector4 lanes. Pressure,
+/// timestamps, stylus channels, and model admission are outside this fixture.
+#[cfg(test)]
+pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
+    let draw: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/calligraphy-draw-native.json"
+    ))
+    .ok()?;
+    let case = draw["cases"]
+        .as_array()?
+        .iter()
+        .find(|case| case["input"]["saved_wrapper_case"] == "three-samples")?;
+    let history: Vec<[f32; 3]> = case["input"]["history_xy_orientation"]
+        .as_array()?
+        .iter()
+        .map(|row| {
+            row.as_array()?
+                .iter()
+                .map(|value| value.as_f64().map(|value| value as f32))
+                .collect::<Option<Vec<_>>>()?
+                .try_into()
+                .ok()
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let points: Vec<[f32; 2]> = history.iter().map(|row| [row[0], row[1]]).collect();
+    let orientations: Vec<f32> = history.iter().map(|row| row[2]).collect();
+    let pressures = vec![0.5; points.len()];
+    let timestamps: Vec<i32> = (0..points.len() as i32).collect();
+    let zero = P { x: 0.0, y: 0.0 };
+    let output = saved_object_stroke_redraw(
+        SavedObjectStrokeInput {
+            points: &points,
+            pressures: &pressures,
+            timestamps: &timestamps,
+            tilt: Some(&vec![0.0; points.len()]),
+            orientation: Some(&orientations),
+            tool_type: 2,
+            pen_size: case["input"]["pen_size"].as_f64()? as f32,
+        },
+        SavedHistoryState {
+            nib: NibState::fresh(),
+            accepted: zero,
+            start: zero,
+            control: zero,
+            midpoint: zero,
+        },
+    )?;
+
+    let captured_add_points = case["saved_redraw"]["native_add_points"].as_array()?;
+    if captured_add_points.len() != output.vectors.len() {
+        return None;
+    }
+    let bits = |hex: &str| -> Option<u32> {
+        let bytes: Vec<u8> = hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).ok()?, 16).ok())
+            .collect::<Option<Vec<_>>>()?;
+        Some(u32::from_le_bytes(bytes.try_into().ok()?))
+    };
+    for (index, (vector, extent)) in output.vectors.iter().zip(&output.extents).enumerate() {
+        let captured = &captured_add_points[index];
+        let expected_vector: [u32; 4] = captured["vector_bits"]
+            .as_array()?
+            .iter()
+            .map(|value| bits(value.as_str()?))
+            .collect::<Option<Vec<_>>>()?
+            .try_into()
+            .ok()?;
+        if vector.map(f32::to_bits) != expected_vector
+            || extent.to_bits() != bits(captured["extent_bits"].as_str()?)?
+        {
+            return None;
+        }
+    }
+
+    let mut center = [0.0_f32; 2];
+    let mut initial_edge = true;
+    let mut previous_edges = [[[0.0_f32; 2]; 2]; 3];
+    let mut buffers = MeshBuffers::default();
+    let native_builds = case["saved_redraw"]["native_build_rectangles"].as_array()?;
+    let mut build_cursor = 0;
+    for (index, (vector, extent)) in output.vectors.iter().zip(&output.extents).enumerate() {
+        let captured_add = &captured_add_points[index];
+        let snapshot = &captured_add["pre_state"];
+        let expected_center: [u32; 2] = snapshot["center_bits"]
+            .as_array()?
+            .iter()
+            .map(|value| bits(value.as_str()?))
+            .collect::<Option<Vec<_>>>()?
+            .try_into()
+            .ok()?;
+        let expected_edges: Vec<u32> = snapshot["edge_state_bits"]
+            .as_array()?
+            .iter()
+            .map(|value| bits(value.as_str()?))
+            .collect::<Option<Vec<_>>>()?;
+        let actual_edges: Vec<u32> = previous_edges
+            .iter()
+            .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
+            .map(f32::to_bits)
+            .collect();
+        if center.map(f32::to_bits) != expected_center
+            || initial_edge != (snapshot["initial_flag"].as_u64()? != 0)
+            || actual_edges != expected_edges
+        {
+            return None;
+        }
+        let geometry = add_point(AddPointInput {
+            vector: *vector,
+            extent: *extent,
+            gate_center: center,
+            initial_edge,
+            previous_edges,
+        });
+        let expected_build_count = captured_add["build_calls"].as_u64()? as usize;
+        if geometry.is_some() != (expected_build_count == 5) {
+            return None;
+        }
+        if let Some(geometry) = geometry {
+            for slot in 0..5 {
+                let rect = geometry.rectangles[slot];
+                let native = &native_builds[build_cursor + slot];
+                let expected_rect: Vec<u32> = native["rect_bits"]
+                    .as_array()?
+                    .iter()
+                    .map(|value| bits(value.as_str()?))
+                    .collect::<Option<Vec<_>>>()?;
+                let [a, b, c, d] = rect.corners;
+                let actual_rect =
+                    [a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]].map(f32::to_bits);
+                let expected_buffer = match geometry.buffers[slot] {
+                    MeshBuffer::Core => "mesh_200",
+                    MeshBuffer::FringeA => "mesh_208",
+                    MeshBuffer::FringeB => "mesh_216",
+                };
+                if actual_rect.as_slice() != expected_rect.as_slice()
+                    || native["buffer"] != expected_buffer
+                {
+                    return None;
+                }
+                buffers.append(geometry.buffers[slot], rect);
+            }
+            build_cursor += 5;
+            previous_edges = geometry.next_edges;
+        }
+        center = [vector[0], vector[1]];
+        initial_edge = false;
+    }
+    if build_cursor != native_builds.len() {
+        return None;
+    }
+    let lanes = |vertices: Vec<MeshVertex>| {
+        vertices
+            .into_iter()
+            .map(|vertex| {
+                [
+                    vertex.position[0],
+                    vertex.position[1],
+                    vertex.coverage[0],
+                    vertex.coverage[1],
+                ]
+            })
+            .collect()
+    };
+    Some([
+        lanes(buffers.core),
+        lanes(buffers.fringe_a),
+        lanes(buffers.fringe_b),
+    ])
+}
+
 impl NibState {
     /// The native V1 constructor initializes these once. A cached drawable can
     /// retain this state between records; callers must not silently recreate it.

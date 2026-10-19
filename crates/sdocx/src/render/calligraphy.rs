@@ -454,6 +454,65 @@ mod tests {
     }
 
     #[test]
+    fn saved_object_sampler_addpoint_and_mesh_builder_feed_native_svg_transport() {
+        let lanes = crate::ink::calligraphy_saved_native_mesh_for_test()
+            .expect("saved channels and AddPoint lifecycle match native geometry capture");
+        let fixture = captured_fixture();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["input"]["saved_wrapper_case"] == "three-samples")
+            .unwrap();
+        let uploads = case["queued_update"]["uploads"].as_array().unwrap();
+        for (index, upload) in uploads.iter().enumerate() {
+            let actual: Vec<u8> = lanes[index]
+                .iter()
+                .flat_map(|vertex| vertex.iter().flat_map(|lane| lane.to_le_bytes()))
+                .collect();
+            let expected = decode_hex(upload["bytes_hex"].as_str().unwrap());
+            if actual != expected {
+                let mismatch = actual
+                    .chunks_exact(4)
+                    .zip(expected.chunks_exact(4))
+                    .position(|(left, right)| left != right)
+                    .unwrap_or(actual.len().min(expected.len()) / 4);
+                panic!(
+                    "saved ObjectStroke -> RTV1 slot {} first differing float lane {mismatch}: {:?} vs {:?}; lengths {} vs {}",
+                    upload["source_vector_slot"],
+                    actual.get(mismatch * 4..mismatch * 4 + 4),
+                    expected.get(mismatch * 4..mismatch * 4 + 4),
+                    actual.len(),
+                    expected.len()
+                );
+            }
+        }
+
+        let triangles = |vertices: &[[f32; 4]]| {
+            assert!(vertices.len().is_multiple_of(3));
+            vertices
+                .chunks_exact(3)
+                .map(|triangle| {
+                    NativeTriangle(std::array::from_fn(|index| NativeVertex {
+                        position: [triangle[index][0], triangle[index][1]],
+                        w: triangle[index][3],
+                    }))
+                })
+                .collect::<Vec<_>>()
+        };
+        let mesh = NativeMeshBatch {
+            fringe_224: triangles(&lanes[0]),
+            core_232: triangles(&lanes[1]),
+            core_240: triangles(&lanes[2]),
+            rgb: [0x11, 0x22, 0x33],
+        };
+        let svg = test_scene(&mesh);
+        let emitted_paths = tags(&svg, "path").len();
+        let source_triangles = mesh.core_232.len() + mesh.core_240.len() + mesh.fringe_224.len();
+        assert!(emitted_paths > 0 && emitted_paths <= source_triangles);
+    }
+
+    #[test]
     fn native_piecewise_alpha_and_rgb_do_not_apply_saved_argb_alpha() {
         for (w, alpha) in [
             (0.0, 0.0),

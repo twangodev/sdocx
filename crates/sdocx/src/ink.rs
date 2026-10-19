@@ -7,6 +7,12 @@ mod airbrush;
 mod brushpen;
 #[cfg(test)]
 mod calligraphy;
+
+#[cfg(test)]
+pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>; 3]> {
+    calligraphy::saved_native_mesh_bridge()
+}
+
 #[cfg(test)]
 mod defaultpen;
 mod fountain;
