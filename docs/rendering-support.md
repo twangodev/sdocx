@@ -147,7 +147,11 @@ serialized bit 0 selects curve state; full-record deserialization is not exercis
 The [flag audit](../conformance/object-stroke-properties-native.json) checks
 137 zero/one-hot/pair masks against named native getters and the Rust parser;
 bit 2 is separately exercised through tilt/orientation channel storage.
-Actual device display values, RTV1 paint and production admission remain outstanding.
+A [joined paint capture](../conformance/inkpen-joined-paint-native.json) executes
+native Renderer factories and RTV1 Init/Update/Draw, checking the 312-byte upload
+and full RGBA readbacks with host vector-slot and Mesa-capability setup.
+Actual device display values, natural queue handoff and production admission
+remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
