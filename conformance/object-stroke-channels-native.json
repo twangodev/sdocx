@@ -41,7 +41,7 @@
     "conformance/calligraphy_saved_native.py": "663f15668825ce6ed219830f3e671c408b85ad103477b444201f68f0b12c6517",
     "conformance/calligraphy_saved_wrapper_native.py": "5952473d15716fa686113f35887f550224462f2ee4fbd500c589cb4e52b05cff",
     "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
-    "conformance/object_stroke_channels_native.py": "3ebcfb4281f60ab1a7b70ce173b0c6fd355aa80ee020e168c39665b293b51892"
+    "conformance/object_stroke_channels_native.py": "78216df84c591d5c04e1fbda4c4a93d01921513ca7b619a5a0a79f1d97f25c2a"
   },
   "expected_native_state": {
     "color_argb": 4278190080,
@@ -79,12 +79,12 @@
       "entry_address": "0x42ee650",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x9d2",
-      "rva": "0x12ee650",
+      "rva": "0x2ee650",
       "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
     },
     "mode": 0,
     "return_bytes_consumed": 2514,
-    "rva": "0x12ee650",
+    "rva": "0x2ee650",
     "scale_f32_bits": "0000803f",
     "scope": "direct ObjectStrokeBinaryHandler::NewApplyBinary on the real type-1 stroke frame; outer ObjectBaseBinaryHandler and SDK document loading are excluded",
     "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
@@ -92,79 +92,79 @@
   "native_entries": {
     "SPen::ObjectStroke::GetColor() const": {
       "address": "0x42e0ac0",
-      "rva": "0x12e0ac0"
+      "rva": "0x2e0ac0"
     },
     "SPen::ObjectStroke::GetFixedWidth() const": {
       "address": "0x42e1b28",
-      "rva": "0x12e1b28"
+      "rva": "0x2e1b28"
     },
     "SPen::ObjectStroke::GetLineType() const": {
       "address": "0x42e2a28",
-      "rva": "0x12e2a28"
+      "rva": "0x2e2a28"
     },
     "SPen::ObjectStroke::GetOrientation() const": {
       "address": "0x42dffbc",
-      "rva": "0x12dffbc"
+      "rva": "0x2dffbc"
     },
     "SPen::ObjectStroke::GetPenSize() const": {
       "address": "0x42e0d54",
-      "rva": "0x12e0d54"
+      "rva": "0x2e0d54"
     },
     "SPen::ObjectStroke::GetPoint() const": {
       "address": "0x42dfa28",
-      "rva": "0x12dfa28"
+      "rva": "0x2dfa28"
     },
     "SPen::ObjectStroke::GetPointCount() const": {
       "address": "0x42dfa98",
-      "rva": "0x12dfa98"
+      "rva": "0x2dfa98"
     },
     "SPen::ObjectStroke::GetPressure() const": {
       "address": "0x42dfaf0",
-      "rva": "0x12dfaf0"
+      "rva": "0x2dfaf0"
     },
     "SPen::ObjectStroke::GetRainbowDistance() const": {
       "address": "0x42e3294",
-      "rva": "0x12e3294"
+      "rva": "0x2e3294"
     },
     "SPen::ObjectStroke::GetRainbowOffset() const": {
       "address": "0x42e3494",
-      "rva": "0x12e3494"
+      "rva": "0x2e3494"
     },
     "SPen::ObjectStroke::GetStrokeType() const": {
       "address": "0x42e16b0",
-      "rva": "0x12e16b0"
+      "rva": "0x2e16b0"
     },
     "SPen::ObjectStroke::GetTilt() const": {
       "address": "0x42dff4c",
-      "rva": "0x12dff4c"
+      "rva": "0x2dff4c"
     },
     "SPen::ObjectStroke::GetTimeStamp() const": {
       "address": "0x42dfb60",
-      "rva": "0x12dfb60"
+      "rva": "0x2dfb60"
     },
     "SPen::ObjectStroke::GetToolType() const": {
       "address": "0x42e1550",
-      "rva": "0x12e1550"
+      "rva": "0x2e1550"
     },
     "SPen::ObjectStroke::IsCurveEnabled() const": {
       "address": "0x42e067c",
-      "rva": "0x12e067c"
+      "rva": "0x2e067c"
     },
     "SPen::ObjectStroke::IsFixedWidthEnabled() const": {
       "address": "0x42e18bc",
-      "rva": "0x12e18bc"
+      "rva": "0x2e18bc"
     },
     "SPen::ObjectStroke::IsRainbowEffectEnabled() const": {
       "address": "0x42e318c",
-      "rva": "0x12e318c"
+      "rva": "0x2e318c"
     },
     "SPen::ObjectStroke::IsShape() const": {
       "address": "0x42e2754",
-      "rva": "0x12e2754"
+      "rva": "0x2e2754"
     },
     "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)": {
       "address": "0x42ee650",
-      "rva": "0x12ee650"
+      "rva": "0x2ee650"
     }
   },
   "native_entry_return_evidence": [
@@ -179,7 +179,7 @@
       "entry_address": "0x42ee650",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x9d2",
-      "rva": "0x12ee650",
+      "rva": "0x2ee650",
       "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
     },
     {
@@ -190,7 +190,7 @@
       "entry_address": "0x42dfa98",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0xcc",
-      "rva": "0x12dfa98",
+      "rva": "0x2dfa98",
       "symbol": "SPen::ObjectStroke::GetPointCount() const"
     },
     {
@@ -201,7 +201,7 @@
       "entry_address": "0x42dfa28",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x10001640",
-      "rva": "0x12dfa28",
+      "rva": "0x2dfa28",
       "symbol": "SPen::ObjectStroke::GetPoint() const"
     },
     {
@@ -212,7 +212,7 @@
       "entry_address": "0x42dfaf0",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x10001ca0",
-      "rva": "0x12dfaf0",
+      "rva": "0x2dfaf0",
       "symbol": "SPen::ObjectStroke::GetPressure() const"
     },
     {
@@ -223,7 +223,7 @@
       "entry_address": "0x42dfb60",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x10001fd0",
-      "rva": "0x12dfb60",
+      "rva": "0x2dfb60",
       "symbol": "SPen::ObjectStroke::GetTimeStamp() const"
     },
     {
@@ -234,7 +234,7 @@
       "entry_address": "0x42dff4c",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x10002300",
-      "rva": "0x12dff4c",
+      "rva": "0x2dff4c",
       "symbol": "SPen::ObjectStroke::GetTilt() const"
     },
     {
@@ -245,7 +245,7 @@
       "entry_address": "0x42dffbc",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x10002630",
-      "rva": "0x12dffbc",
+      "rva": "0x2dffbc",
       "symbol": "SPen::ObjectStroke::GetOrientation() const"
     },
     {
@@ -256,7 +256,7 @@
       "entry_address": "0x42e067c",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x1",
-      "rva": "0x12e067c",
+      "rva": "0x2e067c",
       "symbol": "SPen::ObjectStroke::IsCurveEnabled() const"
     },
     {
@@ -267,7 +267,7 @@
       "entry_address": "0x42e1550",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x2",
-      "rva": "0x12e1550",
+      "rva": "0x2e1550",
       "symbol": "SPen::ObjectStroke::GetToolType() const"
     },
     {
@@ -278,7 +278,7 @@
       "entry_address": "0x42e16b0",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x0",
-      "rva": "0x12e16b0",
+      "rva": "0x2e16b0",
       "symbol": "SPen::ObjectStroke::GetStrokeType() const"
     },
     {
@@ -289,7 +289,7 @@
       "entry_address": "0x42e0ac0",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0xff000000",
-      "rva": "0x12e0ac0",
+      "rva": "0x2e0ac0",
       "symbol": "SPen::ObjectStroke::GetColor() const"
     },
     {
@@ -300,7 +300,7 @@
       "entry_address": "0x42e0d54",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x100005f0",
-      "rva": "0x12e0d54",
+      "rva": "0x2e0d54",
       "symbol": "SPen::ObjectStroke::GetPenSize() const"
     },
     {
@@ -311,7 +311,7 @@
       "entry_address": "0x42e18bc",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x0",
-      "rva": "0x12e18bc",
+      "rva": "0x2e18bc",
       "symbol": "SPen::ObjectStroke::IsFixedWidthEnabled() const"
     },
     {
@@ -322,7 +322,7 @@
       "entry_address": "0x42e1b28",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x100005f0",
-      "rva": "0x12e1b28",
+      "rva": "0x2e1b28",
       "symbol": "SPen::ObjectStroke::GetFixedWidth() const"
     },
     {
@@ -333,7 +333,7 @@
       "entry_address": "0x42e2754",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x0",
-      "rva": "0x12e2754",
+      "rva": "0x2e2754",
       "symbol": "SPen::ObjectStroke::IsShape() const"
     },
     {
@@ -344,7 +344,7 @@
       "entry_address": "0x42e2a28",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x0",
-      "rva": "0x12e2a28",
+      "rva": "0x2e2a28",
       "symbol": "SPen::ObjectStroke::GetLineType() const"
     },
     {
@@ -355,7 +355,7 @@
       "entry_address": "0x42e318c",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x0",
-      "rva": "0x12e318c",
+      "rva": "0x2e318c",
       "symbol": "SPen::ObjectStroke::IsRainbowEffectEnabled() const"
     },
     {
@@ -366,7 +366,7 @@
       "entry_address": "0x42e3294",
       "return_s0_f32_bits": "6ade1141",
       "return_x0": "0x0",
-      "rva": "0x12e3294",
+      "rva": "0x2e3294",
       "symbol": "SPen::ObjectStroke::GetRainbowDistance() const"
     },
     {
@@ -377,7 +377,7 @@
       "entry_address": "0x42e3494",
       "return_s0_f32_bits": "00000000",
       "return_x0": "0x100005f0",
-      "rva": "0x12e3494",
+      "rva": "0x2e3494",
       "symbol": "SPen::ObjectStroke::GetRainbowOffset() const"
     }
   ],
@@ -424,7 +424,7 @@
   },
   "runner": {
     "path": "conformance/object_stroke_channels_native.py",
-    "sha256": "3ebcfb4281f60ab1a7b70ce173b0c6fd355aa80ee020e168c39665b293b51892"
+    "sha256": "78216df84c591d5c04e1fbda4c4a93d01921513ca7b619a5a0a79f1d97f25c2a"
   },
   "schema": "sdocx-object-stroke-channels-native-v1",
   "source": {
@@ -1086,7 +1086,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "pressure_data_hex": "17b7d138c66db439e3361a3ae3365a3a721b8d3a721bad3a721bcd3a721bed3ab98d063bb98d163bb98d263bb98d363bb98d463bb98d563bb98d663bb98d763bdc46833bdc468b3bdc46933bdc469b3bdc46a33bdc46ab3bdc46b33bdc46bb3bdc46c33bdc46cb3bdc46d33bdc46db3bdc46e33bdc46eb3bdc46f33bdc46fb3b6ea3013c6ea3053c6ea3093c6ea30d3c6ea3113c6ea3153c6ea3193c6ea31d3c6ea3213c6ea3253c6ea3293c6ea32d3c6ea3313c6ea3353c6ea3393c6ea33d3c6ea3413c6ea3453c6ea3493c6ea34d3c6ea3513c6ea3553c6ea3593c6ea35d3c6ea3613c6ea3653c6ea3693c6ea36d3c6ea3713c6ea3753c6ea3793c6ea37d3cb7d1803cb7d1823cb7d1843cb7d1863cb7d1883cb7d18a3cb7d18c3cb7d18e3cb7d1903cb7d1923cb7d1943cb7d1963cb7d1983cb7d19a3cb7d19c3cb7d19e3cb7d1a03cb7d1a23cb7d1a43cb7d1a63cb7d1a83cb7d1aa3cb7d1ac3cb7d1ae3cb7d1b03cb7d1b23cb7d1b43cb7d1b63cb7d1b83cb7d1ba3cb7d1bc3cb7d1be3cb7d1c03cb7d1c23cb7d1c43cb7d1c63cb7d1c83cb7d1ca3cb7d1cc3cb7d1ce3cb7d1d03cb7d1d23cb7d1d43cb7d1d63cb7d1d83cb7d1da3cb7d1dc3cb7d1de3cb7d1e03cb7d1e23cb7d1e43cb7d1e63cb7d1e83cb7d1ea3cb7d1ec3cb7d1ee3cb7d1f03cb7d1f23cb7d1f43cb7d1f63cb7d1f83cb7d1fa3cb7d1fc3cb7d1fe3cdc68003ddc68013ddc68023ddc68033ddc68043ddc68053ddc68063ddc68073ddc68083ddc68093ddc680a3ddc680b3ddc680c3ddc680d3ddc680e3ddc680f3ddc68103ddc68113ddc68123ddc68133ddc68143ddc68153ddc68163ddc68173ddc68183ddc68193ddc681a3ddc681b3ddc681c3ddc681d3ddc681e3ddc681f3ddc68203ddc68213ddc68223ddc68233ddc68243ddc68253ddc68263ddc68273ddc68283ddc68293ddc682a3ddc682b3ddc682c3ddc682d3ddc682e3ddc682f3ddc68303ddc68313ddc68323ddc68333ddc68343ddc68353ddc68363ddc68373ddc68383ddc68393ddc683a3ddc683b3ddc683c3ddc683d3ddc683e3ddc683f3ddc68403ddc68413ddc68423ddc68433ddc68443ddc68453ddc68463ddc68473ddc68483ddc68493ddc684a3ddc684b3d",
@@ -1109,7 +1109,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "pressure_data_hex": "17b7d138742417b93a92cbb91dc925ba1dc965ba8ee492ba8ee4b2ba8ee4d2ba8ee4f2ba477209bb477219bb477229bb477239bb477249bb477259bb477269bb477279bb24b984bb24b98cbb24b994bb24b99cbb24b9a4bb24b9acbb24b9b4bb24b9bcbb24b9c4bb24b9ccbb24b9d4bb24b9dcbb24b9e4bb24b9ecbb24b9f4bb24b9fcbb925c02bc925c06bc925c0abc925c0ebc925c12bc925c16bc925c1abc925c1ebc925c22bc925c26bc925c2abc925c2ebc925c32bc925c36bc925c3abc925c3ebc925c42bc925c46bc925c4abc925c4ebc925c52bc925c56bc925c5abc925c5ebc925c62bc925c66bc925c6abc925c6ebc925c72bc925c76bc925c7abc925c7ebc492e81bc492e83bc492e85bc492e87bc492e89bc492e8bbc492e8dbc492e8fbc492e91bc492e93bc492e95bc492e97bc492e99bc492e9bbc492e9dbc492e9fbc492ea1bc492ea3bc492ea5bc492ea7bc492ea9bc492eabbc492eadbc492eafbc492eb1bc492eb3bc492eb5bc492eb7bc492eb9bc492ebbbc492ebdbc492ebfbc492ec1bc492ec3bc492ec5bc492ec7bc492ec9bc492ecbbc492ecdbc492ecfbc492ed1bc492ed3bc492ed5bc492ed7bc492ed9bc492edbbc492eddbc492edfbc492ee1bc492ee3bc492ee5bc492ee7bc492ee9bc492eebbc492eedbc492eefbc492ef1bc492ef3bc492ef5bc492ef7bc492ef9bc492efbbc492efdbc492effbc249700bd249701bd249702bd249703bd249704bd249705bd249706bd249707bd249708bd249709bd24970abd24970bbd24970cbd24970dbd24970ebd24970fbd249710bd249711bd249712bd249713bd249714bd249715bd249716bd249717bd249718bd249719bd24971abd24971bbd24971cbd24971dbd24971ebd24971fbd249720bd249721bd249722bd249723bd249724bd249725bd249726bd249727bd249728bd249729bd24972abd24972bbd24972cbd24972dbd24972ebd24972fbd249730bd249731bd249732bd249733bd249734bd249735bd249736bd249737bd249738bd249739bd24973abd24973bbd24973cbd24973dbd24973ebd24973fbd249740bd249741bd249742bd249743bd249744bd249745bd249746bd249747bd249748bd249749bd24974abd",
@@ -1132,7 +1132,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "pressure_data_hex": "17b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db43918b7d138c66db439",
@@ -1208,7 +1208,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1277,7 +1277,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1346,7 +1346,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1415,7 +1415,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1484,7 +1484,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1553,7 +1553,7 @@
         "entry_address": "0x42ee650",
         "return_s0_f32_bits": "0000803f",
         "return_x0": "0x9d2",
-        "rva": "0x12ee650",
+        "rva": "0x2ee650",
         "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
       },
       "new_apply_return_bytes": 2514,
@@ -1626,7 +1626,7 @@
       "entry_address": "0x42ee650",
       "return_s0_f32_bits": "0000803f",
       "return_x0": "0x19ae",
-      "rva": "0x12ee650",
+      "rva": "0x2ee650",
       "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
     },
     "native_getter_state": {
