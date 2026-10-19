@@ -1,0 +1,726 @@
+{
+  "bitmap_pointer": "0x10000120",
+  "decoded_png_rgba_hex": "110000ff530000ff950000ffe70000ff",
+  "host_boundaries": {
+    "excluded": "DrawingFactory/ObjectStroke raster paint, PdfiumImageHandler::AddImage, and PDF export are not executed",
+    "filesystem": "bounded host stdio/path callbacks",
+    "gl_gles": "host simulated GL/GLES objects and framebuffer/readpixels; no GPU implementation",
+    "pixels": "synthetic 2x2 R8 source bytes, not DrawingFactory output",
+    "queue": "host synchronous task scheduler dispatches the native queued task",
+    "zlib": "pinned host libz 1.2.8 through z_stream and guest allocator bridges; APK libSPenLibpng is native"
+  },
+  "host_file_events": [
+    {
+      "event": "fopen",
+      "mode": "wb",
+      "path": "/tmp/sdocx-native-bitmap-cache/temp_export_pdf/0.png"
+    },
+    {
+      "bytes": 8,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 8,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 13,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 4,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 8,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 6,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 4,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 8,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 26,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 4,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 8,
+      "event": "fwrite"
+    },
+    {
+      "bytes": 4,
+      "event": "fwrite"
+    },
+    {
+      "event": "fclose"
+    }
+  ],
+  "host_gl_simulated_get_bitmap_data_rgba_hex": "110000ff530000ff950000ffe70000ff",
+  "host_gl_simulation": {
+    "calls": [
+      {
+        "args": [
+          3553,
+          0,
+          33321,
+          2,
+          2,
+          0,
+          6403,
+          5121
+        ],
+        "call": "tex-image-2d",
+        "data_hex": "115395e7",
+        "pixels_pointer": "0x100000f0"
+      },
+      {
+        "args": [
+          3553,
+          0,
+          0,
+          0,
+          2,
+          2,
+          6403,
+          5121
+        ],
+        "call": "tex-sub-image-2d",
+        "data_hex": "115395e7",
+        "pixels_pointer": "0x100000f0"
+      },
+      {
+        "call": "gen-object",
+        "count": 1,
+        "ids": [
+          900
+        ]
+      },
+      {
+        "args": [
+          36160,
+          900
+        ],
+        "call": "bind-object"
+      },
+      {
+        "args": [
+          36160,
+          36064,
+          3553,
+          100,
+          0
+        ],
+        "call": "framebuffer-texture"
+      },
+      {
+        "call": "framebuffer-status",
+        "result": 36053
+      },
+      {
+        "args": [
+          14,
+          0,
+          0,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glFinish"
+      },
+      {
+        "args": [
+          36160,
+          900
+        ],
+        "call": "bind-object"
+      },
+      {
+        "call": "framebuffer-status",
+        "result": 36053
+      },
+      {
+        "args": [
+          0,
+          0,
+          2,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glViewport"
+      },
+      {
+        "args": [
+          0,
+          0,
+          2,
+          2,
+          6408,
+          5121
+        ],
+        "call": "read-pixels",
+        "rgba_hex": "110000ff530000ff950000ffe70000ff"
+      },
+      {
+        "args": [
+          36160,
+          2,
+          537853568,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glInvalidateFramebuffer"
+      },
+      {
+        "args": [
+          1,
+          537853636,
+          84064875,
+          84057929
+        ],
+        "call": "gl-boundary",
+        "name": "glDeleteFramebuffers"
+      },
+      {
+        "call": "gen-object",
+        "count": 1,
+        "ids": [
+          901
+        ]
+      },
+      {
+        "args": [
+          36160,
+          901
+        ],
+        "call": "bind-object"
+      },
+      {
+        "args": [
+          36160,
+          36064,
+          3553,
+          100,
+          0
+        ],
+        "call": "framebuffer-texture"
+      },
+      {
+        "call": "framebuffer-status",
+        "result": 36053
+      },
+      {
+        "args": [
+          14,
+          0,
+          0,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glFinish"
+      },
+      {
+        "args": [
+          36160,
+          901
+        ],
+        "call": "bind-object"
+      },
+      {
+        "call": "framebuffer-status",
+        "result": 36053
+      },
+      {
+        "args": [
+          0,
+          0,
+          2,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glViewport"
+      },
+      {
+        "args": [
+          0,
+          0,
+          2,
+          2,
+          6408,
+          5121
+        ],
+        "call": "read-pixels",
+        "rgba_hex": "110000ff530000ff950000ffe70000ff"
+      },
+      {
+        "args": [
+          36160,
+          2,
+          537853312,
+          2
+        ],
+        "call": "gl-boundary",
+        "name": "glInvalidateFramebuffer"
+      },
+      {
+        "args": [
+          1,
+          537853380,
+          84064875,
+          84057929
+        ],
+        "call": "gl-boundary",
+        "name": "glDeleteFramebuffers"
+      },
+      {
+        "buffer": "0x200ef778",
+        "call": "setjmp-initial"
+      }
+    ],
+    "gpu_rendering_claimed": false,
+    "storage": "host bytearray models the native texture upload; framebuffer status is stubbed complete; readpixels expands R8 to RGBA"
+  },
+  "host_renderer_factory_callbacks": {
+    "CreateGraphicsObject": 0,
+    "CreateTextureObject": 0
+  },
+  "host_zlib_events": [
+    {
+      "event": "deflateInit2_",
+      "guest_allocator_pointers": [
+        "0x7010e48",
+        "0x7010e58",
+        "0x10000ec0"
+      ],
+      "guest_stream": "0x10001030",
+      "host_result": 0,
+      "level": 4294967295,
+      "mem_level": 8,
+      "method": 8,
+      "strategy": 1,
+      "stream_size": 112,
+      "version": "1.2.8",
+      "window_bits": 9
+    },
+    {
+      "consumed": 9,
+      "event": "deflate",
+      "flush": 0,
+      "host_result": 0,
+      "produced": 2
+    },
+    {
+      "consumed": 9,
+      "event": "deflate",
+      "flush": 0,
+      "host_result": 0,
+      "produced": 0
+    },
+    {
+      "consumed": 0,
+      "event": "deflate",
+      "flush": 4,
+      "host_result": 1,
+      "produced": 24
+    },
+    {
+      "event": "deflateEnd",
+      "host_result": 0
+    }
+  ],
+  "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+  "native_cached_png_bytes": 101,
+  "native_cached_png_dimensions": [
+    2,
+    2
+  ],
+  "native_cached_png_exists": true,
+  "native_cached_png_full_hex": "89504e470d0a1a0a0000000d494844520000000200000002080600000072b60d2400000006624b474400ff00ff00ffa0bda7930000001a49444154089963146460f8efc4c0c0c0309581e1ff730686ff0020cf04cee00e0ca40000000049454e44ae426082",
+  "native_cached_png_path": "/tmp/sdocx-native-bitmap-cache/temp_export_pdf/0.png",
+  "native_cached_png_rgba": "110000ff530000ff950000ffe70000ff",
+  "native_cached_png_sha256": "9c72a76678272a79fa8aa45fa4767b357cdbe11d7680f709482726791d4f7865",
+  "native_call_counts": {
+    "SPen::Bitmap::Construct(unsigned char*, int, int, int, SPen::Bitmap::Format, bool, bool)": 1,
+    "SPen::BitmapFactory::SaveBitmap(SPen::Bitmap const*, SPen::String const*, int)": 1,
+    "SPen::PDFUtil::String2string(SPen::String const*)": 1,
+    "SPen::PdfImageAdapter::PdfImageAdapter(std::__ndk1::shared_ptr<SPen::PdfExporter>, SPen::IContext const*)": 1,
+    "SPen::PdfImageAdapter::SetImage(SPen::ISPBitmap*)": 1,
+    "SPen::PdfImageAdapter::saveBitmap(SPen::ISPBitmap*, SPen::Rect, SPen::String&)": 1,
+    "SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 1,
+    "SPen::SPTextureBitmap::GetBitmapData(SPen::Rect const&, void*)": 1,
+    "SPen::SPTextureBitmap::UpdateBitmap(void const*, int)": 1,
+    "SPen::System::GetSDKCacheDirectoryPath()": 1,
+    "SPen::System::SetSDKCacheDirectoryPath(char const*)": 1,
+    "png_create_write_struct": 1,
+    "png_destroy_write_struct": 1,
+    "png_set_write_fn": 1,
+    "png_write_end": 1,
+    "png_write_image": 1,
+    "png_write_info": 1
+  },
+  "native_call_trace": [
+    {
+      "address": "0x40c04ac",
+      "args": [
+        268435536,
+        2,
+        2,
+        268435712,
+        268435696
+      ],
+      "lr": "0x200f1000",
+      "name": "SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)"
+    },
+    {
+      "address": "0x4090a94",
+      "args": [
+        268435744,
+        268435696,
+        1,
+        128,
+        268435712
+      ],
+      "lr": "0x200f1000",
+      "name": "SPen::SPTextureBitmap::UpdateBitmap(void const*, int)"
+    },
+    {
+      "address": "0x20c7528",
+      "args": [
+        268435664,
+        537853636,
+        84064875,
+        84057929,
+        268436896
+      ],
+      "lr": "0x200f1000",
+      "name": "SPen::System::SetSDKCacheDirectoryPath(char const*)"
+    },
+    {
+      "address": "0x6343f0c",
+      "args": [
+        268436992,
+        268437248,
+        0,
+        84057929,
+        268436896
+      ],
+      "lr": "0x200f1000",
+      "name": "SPen::PdfImageAdapter::PdfImageAdapter(std::__ndk1::shared_ptr<SPen::PdfExporter>, SPen::IContext const*)"
+    },
+    {
+      "address": "0x6344130",
+      "args": [
+        268436992,
+        268435744,
+        0,
+        1,
+        268436896
+      ],
+      "lr": "0x200f1000",
+      "name": "SPen::PdfImageAdapter::SetImage(SPen::ISPBitmap*)"
+    },
+    {
+      "address": "0x63442b4",
+      "args": [
+        1,
+        268435744,
+        0,
+        8589934594,
+        537853864
+      ],
+      "lr": "0x63441b4",
+      "name": "SPen::PdfImageAdapter::saveBitmap(SPen::ISPBitmap*, SPen::Rect, SPen::String&)"
+    },
+    {
+      "address": "0x20a3e10",
+      "args": [
+        537853728,
+        268437456,
+        2,
+        2,
+        8
+      ],
+      "lr": "0x6344340",
+      "name": "SPen::Bitmap::Construct(unsigned char*, int, int, int, SPen::Bitmap::Format, bool, bool)"
+    },
+    {
+      "address": "0x4091ad0",
+      "args": [
+        268435744,
+        537853712,
+        268437456,
+        2,
+        8
+      ],
+      "lr": "0x6344360",
+      "name": "SPen::SPTextureBitmap::GetBitmapData(SPen::Rect const&, void*)"
+    },
+    {
+      "address": "0x20c7570",
+      "args": [
+        1,
+        536879196,
+        84064875,
+        84057929,
+        268437616
+      ],
+      "lr": "0x6344374",
+      "name": "SPen::System::GetSDKCacheDirectoryPath()"
+    },
+    {
+      "address": "0x20a94fc",
+      "args": [
+        537853728,
+        537853864,
+        100,
+        102489505,
+        34569216
+      ],
+      "lr": "0x634444c",
+      "name": "SPen::BitmapFactory::SaveBitmap(SPen::Bitmap const*, SPen::String const*, int)"
+    },
+    {
+      "address": "0x7028dc4",
+      "args": [
+        33761631,
+        0,
+        0,
+        0,
+        8
+      ],
+      "lr": "0x20b4c9c",
+      "name": "png_create_write_struct"
+    },
+    {
+      "address": "0x7028660",
+      "args": [
+        268439232,
+        0,
+        0,
+        0,
+        0
+      ],
+      "lr": "0x7028e34",
+      "name": "png_set_write_fn"
+    },
+    {
+      "address": "0x7028870",
+      "args": [
+        268439232,
+        268440544,
+        537853502,
+        8,
+        6
+      ],
+      "lr": "0x20b4d28",
+      "name": "png_write_info"
+    },
+    {
+      "address": "0x7029254",
+      "args": [
+        268439232,
+        268439216,
+        2,
+        1879048192,
+        6
+      ],
+      "lr": "0x20b4d34",
+      "name": "png_write_image"
+    },
+    {
+      "address": "0x7028b6c",
+      "args": [
+        268439232,
+        268440544,
+        4,
+        1879048192,
+        82
+      ],
+      "lr": "0x20b4d40",
+      "name": "png_write_end"
+    },
+    {
+      "address": "0x7029338",
+      "args": [
+        537853520,
+        537853512,
+        4,
+        1879048192,
+        82
+      ],
+      "lr": "0x20b4d4c",
+      "name": "png_destroy_write_struct"
+    },
+    {
+      "address": "0x9067fe0",
+      "args": [
+        537853864,
+        33733613,
+        33732792,
+        537853728,
+        268437456
+      ],
+      "lr": "0x63441c8",
+      "name": "SPen::PDFUtil::String2string(SPen::String const*)"
+    }
+  ],
+  "native_entries": [
+    {
+      "args": [
+        537853336,
+        268435712,
+        268435696,
+        537853376,
+        2,
+        537853324,
+        0
+      ],
+      "name": "SPen::GLES::RendererFactoryImpl::CreateTextureObject(SPen::TextureDescriptor const&, char const*, void const*, unsigned int const*, unsigned int, SPen::TextureBufferInfo const*)"
+    },
+    {
+      "args": [
+        268436208,
+        537853336,
+        268435712,
+        268435696,
+        537853376,
+        2,
+        537853324
+      ],
+      "name": "SPen::GLES::TextureObject::CreateTexture(SPen::TextureDescriptor const&, char const*, void const*, unsigned int const*, unsigned int, SPen::TextureBufferInfo const*)"
+    },
+    {
+      "args": [
+        537853336,
+        268435712,
+        268435696,
+        537852648,
+        537853324,
+        2,
+        2
+      ],
+      "name": "SPen::GLES::TextureObject::createTextureInternalsSampler(SPen::TextureDescriptor const&, char const*, void const*, std::__ndk1::map<int, int, std::__ndk1::less<int>, std::__ndk1::allocator<std::__ndk1::pair<int const, int> > > const&, SPen::TextureBufferInfo const*)"
+    },
+    {
+      "args": [
+        268435744,
+        268435696,
+        1,
+        128
+      ],
+      "name": "SPen::SPTextureBitmap::UpdateBitmap(void const*, int)"
+    },
+    {
+      "args": [
+        268436096,
+        268435696,
+        1,
+        128
+      ],
+      "name": "non-virtual thunk to SPen::SPSubBitmapRT::UpdateBitmap(void const*, int)"
+    }
+  ],
+  "native_factory": "SPGraphicsFactory::CreateBitmap(queue,2,2,...)",
+  "native_get_bitmap_data": "SPTextureBitmap::GetBitmapData(Rect const&,void*) called; returned bytes were supplied by explicit host GL/GLES readpixels boundary",
+  "native_info_after_set_image_snapshot_128_hex": "100000000000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f000000000000000000000000000000004100000000000000340000000000000000360010000000000100000000000000f0bf0e02000000004800000034000000",
+  "native_info_constructor_snapshot_128_hex": "100000000000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "native_info_path_ownership_byte": 1,
+  "native_info_pointer": "0x10000710",
+  "native_set_image_bitmap_executed": true,
+  "native_set_image_bitmap_pointer_identity": {
+    "adapter_pointer": "0x10000600",
+    "matches": true,
+    "native_bitmap_pointer": "0x10000120",
+    "set_image_adapter_argument": "0x10000600",
+    "set_image_bitmap_argument": "0x10000120"
+  },
+  "native_set_image_bitmap_result": 1,
+  "native_std_string_layout": {
+    "data_pointer": "0x10003600",
+    "field_offset": 80,
+    "length": 52
+  },
+  "native_update": "SPTextureBitmap::UpdateBitmap(void const*,int)",
+  "native_zlib_guest_allocator_pointers": "recorded in the guest z_stream at offsets 64/72; bridged for host zlib and never called as host pointers",
+  "pinned_dso_sha256": {
+    "libSPenAirBrushPen.so": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libSPenLibpng.so": "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb",
+    "libSPenPdf.so": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenZlib.so": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "png_chunks": [
+    {
+      "crc32": "72b60d24",
+      "length": 13,
+      "type": "IHDR",
+      "valid": true
+    },
+    {
+      "crc32": "a0bda793",
+      "length": 6,
+      "type": "bKGD",
+      "valid": true
+    },
+    {
+      "crc32": "e00e0ca4",
+      "length": 26,
+      "type": "IDAT",
+      "valid": true
+    },
+    {
+      "crc32": "ae426082",
+      "length": 0,
+      "type": "IEND",
+      "valid": true
+    }
+  ],
+  "png_crc_validation": "all chunks CRC-checked; PNG row filters decoded before pixel comparison",
+  "renderer_texture_records": [
+    {
+      "buffer_info": [
+        0,
+        0,
+        2,
+        2
+      ],
+      "desc": [
+        2,
+        2,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "name": "pdf-image-probe",
+      "pair_count": 2,
+      "pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    }
+  ],
+  "schema": "sdocx.pdf-image-bitmap-native.v1",
+  "sdk_cache_root_input": "/tmp/sdocx-native-bitmap-cache",
+  "synthetic_source_r8_hex": "115395e7"
+}
