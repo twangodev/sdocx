@@ -84,7 +84,7 @@ outer SDK loading is not exercised.
 | Fountain V14, saved `14;` | Reconstructed stamps/directions; vector directional shading, mask and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [six host shader field captures](../conformance/fountain-v14-field-native.json). Device-pixel fringe and partial-alpha appearance still differ; Firefox masks fail. |
 | Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry and scalar coverage checks; V16 SVG witnesses render in Chromium and Firefox, and PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified; PDF raster samples differ from SVG. This setting selects drawing V16, not V18. |
 | DefaultPen, ordinary saved tools 0–3 | Native positions/radii rendered as ordered source-over circles; omitted size uses the native 0.4 clamp | Native geometry, replay-boundary and [admission controls](../conformance/defaultpen-admission-native.json); paired vector exports improve on the generic fallback. Shader edge coverage and device pixel parity remain unverified. |
-| Marker2 | Sampled circular stamps, constant radius and saved alpha | [Native Drawing/saved-caller controls](../conformance/marker2-saved-caller-native.json) select V1/V2 and capture full XY streams; zero/omitted size still falls back. V2 thin-edge shading and complete device appearance remain unverified. |
+| Marker2 | Sampled circular stamps, native integer size and saved alpha | [Native caller controls](../conformance/marker2-saved-caller-native.json) check full XY streams and size defaults; [host paint controls](../conformance/marker2-zero-paint-native.json) confirm zero-width strokes produce no ink. V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 V7, saved `7;` | Stylus midpoint sampling and fractional rounded rectangular tip | Executed native geometry fixtures and isolated real-document appearance evidence; public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 V8, saved `8;` | Sampled rounded rectangular tip, tool-specific rotation and saved alpha | Static native tracing and one paired Samsung PDF comparison; filtering/zoom coverage remain approximate. |
 | Other pens, unknown names or rejected settings | Generic straight segments with pressure width, polyline or tap circle | No pen-specific native texture, smoothing or width-law guarantee. |
@@ -102,6 +102,9 @@ The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
+The [Drawing caller](../conformance/pencil3-saved-caller-native.json) captures
+null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
+V3 remains unmodeled.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
