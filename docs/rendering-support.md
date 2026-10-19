@@ -113,6 +113,9 @@ enter directly at RTV1; saved-object paint integration, vector edge coverage and
 pixel parity remain outstanding. DefaultPen's test-only sampler checks
 position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
+Its [Drawing caller](../conformance/defaultpen-saved-caller-native.json) verifies
+native Model getters, factory selection and identical 132-byte Drawing/saved
+streams on the same RT under an explicit 1920×1080 display profile.
 DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
 native blend setup and shader text that replaces input alpha with screen-space
 coverage. Caller admission and vector paint remain outstanding.
