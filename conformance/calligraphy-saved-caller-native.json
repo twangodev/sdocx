@@ -1,0 +1,3199 @@
+{
+  "cases": {
+    "three-point-curve-fresh-drawing": {
+      "cache_observation": {
+        "distinct_manager": true,
+        "distinct_pen_data": true,
+        "first_drawable": "0x10008720",
+        "first_drawing": "0x10002120",
+        "first_manager": "0x100021c0",
+        "first_pen_data": "0x10008610",
+        "fresh_drawable": "0x10017d80",
+        "fresh_drawing": "0x100173d0",
+        "fresh_manager": "0x10017470",
+        "fresh_pen_data": "0x10017c70",
+        "same_drawing_repeat": {
+          "native_return": 1,
+          "new_add_points": 13,
+          "new_build_calls": 65,
+          "same_drawable": true,
+          "same_manager": true,
+          "same_pen_data": true
+        }
+      },
+      "case_id": "three-point-curve-fresh-drawing",
+      "context": {
+        "color_get_color_selector3": "identity",
+        "flags_u32": 1,
+        "profile_height": 1080,
+        "profile_width": 1920,
+        "version_f32_bits": "0000803f"
+      },
+      "emutls_descriptors": [
+        {
+          "align": 4,
+          "existing_nonnull": false,
+          "observed_calls": 2,
+          "size": 4,
+          "template_bytes_hex": null,
+          "template_nonnull": false,
+          "template_nonzero": false,
+          "template_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        },
+        {
+          "align": 4,
+          "existing_nonnull": true,
+          "observed_calls": 34,
+          "size": 4,
+          "template_bytes_hex": null,
+          "template_nonnull": false,
+          "template_nonzero": false,
+          "template_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        },
+        {
+          "align": 1,
+          "existing_nonnull": false,
+          "observed_calls": 2,
+          "size": 512,
+          "template_bytes_hex": null,
+          "template_nonnull": false,
+          "template_nonzero": false,
+          "template_sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+        },
+        {
+          "align": 1,
+          "existing_nonnull": true,
+          "observed_calls": 34,
+          "size": 512,
+          "template_bytes_hex": null,
+          "template_nonnull": false,
+          "template_nonzero": false,
+          "template_sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+        }
+      ],
+      "host_boundaries": [
+        "explicit synthetic IContext display profile 1920x1080, identity color conversion, flags=1/version=1.0",
+        "Canvas/bitmap/context ownership and queued-task registration remain host adapters; the native task Run methods, ObjectDrawing::drawObjectStroke, PenManager lookup, MotionEvent constructor/getters, Calligraphy GLV1 redraw, RTV1 AddPoint and buildMesh execute",
+        "ManagedObject::OnRelease/OnRestore relocations target BRK traps to prove they are not needed on the capture path; __sF is zeroed host data; unresolved imports are left zero and recorded below",
+        "the outer Composer DrawObjectList bitmap traversal and DrawingFactory::ReleaseDrawing resource teardown are not exercised"
+      ],
+      "initializer_scope": {
+        "executed": [
+          "libSPenMontblancCalligraphyPen.so .init_array"
+        ],
+        "not_executed": "Mapped support DSO init arrays are not run by this capture; helper exposes an opt-in runner but this fixture does not invoke it."
+      },
+      "input": {
+        "argb_u32": 2148606515,
+        "curve_enabled_setter_arg": 1,
+        "kind": "synthetic native ObjectStroke setters; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "3333b33e",
+          "3333333f"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "00008040",
+          "0000803f",
+          "00001041",
+          "0000a040"
+        ],
+        "pressure_f32_bits": [
+          "9a99993e",
+          "9a99193f",
+          "cdcc4c3f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "cdcccc3d",
+          "cdcc4c3e",
+          "9a99993e"
+        ],
+        "timestamps_i32": [
+          100,
+          115,
+          130
+        ],
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenMontblancCalligraphyPen.so": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "model_getters": {
+        "color": 2148606515,
+        "orientation": {
+          "bytes": "000000003333b33e3333333f",
+          "count": 3,
+          "data_pointer": "0x10007840",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetOrientation() const"
+        },
+        "pen_size": "0000c040",
+        "point_count": 3,
+        "points": {
+          "bytes": "0000000000000000000080400000803f000010410000a040",
+          "count": 3,
+          "data_pointer": "0x100077f0",
+          "element_size": 8,
+          "getter": "SPen::ObjectStroke::GetPoint() const"
+        },
+        "pressure": {
+          "bytes": "9a99993e9a99193fcdcc4c3f",
+          "count": 3,
+          "data_pointer": "0x10007810",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetPressure() const"
+        },
+        "stroke_type": 0,
+        "tilt": {
+          "bytes": "cdcccc3dcdcc4c3e9a99993e",
+          "count": 3,
+          "data_pointer": "0x10007830",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTilt() const"
+        },
+        "timestamps": {
+          "bytes": "640000007300000082000000",
+          "count": 3,
+          "data_pointer": "0x10007820",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTimeStamp() const"
+        },
+        "tool_type": 2
+      },
+      "motion_event": {
+        "constructor_and_getters_native": true,
+        "entry_bytes": "608d0110000000000000000000000000010000000100000000000000000000006400000000000000008e011000000000088e011000000000088e011000000000608e011000000000688e011000000000688e011000000000feffffff00000000208f011000000000308f011000000000308f0110000000000000803f0000000000000000000000000000803f0000000000000000000000000000803f0000000000000000020000000000000000000000f08d0110000000000000000000000000",
+        "getter_results_scope": "only getters intercepted during native RedrawPen; no post-destruction manual calls",
+        "native_redraw_getter_calls": [
+          {
+            "args": [
+              "0x100096f0",
+              "0x100096f0",
+              "0x200eee90"
+            ],
+            "entry_s0": "c8980010",
+            "method": "SPen::MotionEvent::GetHistorySize() const",
+            "result_d0": "c898001000000000",
+            "result_s0": "c8980010",
+            "result_x0": "0x2"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "0000c040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetEventTime() const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x1e"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x100096f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetPressure(int) const",
+            "result_d0": "cdcc4c3f00000000",
+            "result_s0": "cdcc4c3f",
+            "result_x0": "0x100096f0"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "909a0010",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x1000f8f0",
+              "0x200eee90"
+            ],
+            "entry_s0": "c8fa0010",
+            "method": "SPen::MotionEvent::GetHistorySize() const",
+            "result_d0": "c8fa001000000000",
+            "result_s0": "c8fa0010",
+            "result_x0": "0x2"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "0000c040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetEventTime() const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x1e"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x1000f8f0",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetPressure(int) const",
+            "result_d0": "cdcc4c3f00000000",
+            "result_s0": "cdcc4c3f",
+            "result_x0": "0x1000f8f0"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "90fc0010",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x10018d50",
+              "0x200eee90"
+            ],
+            "entry_s0": "288f0110",
+            "method": "SPen::MotionEvent::GetHistorySize() const",
+            "result_d0": "288f011000000000",
+            "result_s0": "288f0110",
+            "result_x0": "0x2"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "0000c040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalX(int, int) const",
+            "result_d0": "0000000000001040",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x1",
+              "0x0"
+            ],
+            "entry_s0": "00008040",
+            "method": "SPen::MotionEvent::GetHistoricalY(int, int) const",
+            "result_d0": "000000000000f03f",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetEventTime() const",
+            "result_d0": "0000000000000000",
+            "result_s0": "00000000",
+            "result_x0": "0x1e"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x10018d50",
+              "0x0",
+              "0x0"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetPressure(int) const",
+            "result_d0": "cdcc4c3f00000000",
+            "result_s0": "cdcc4c3f",
+            "result_x0": "0x10018d50"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "f0900110",
+            "method": "SPen::MotionEvent::GetX(int) const",
+            "result_d0": "0000000000002240",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          },
+          {
+            "args": [
+              "0x200eec88",
+              "0x0",
+              "0x200eec78"
+            ],
+            "entry_s0": "00000000",
+            "method": "SPen::MotionEvent::GetY(int) const",
+            "result_d0": "0000000000001440",
+            "result_s0": "00000000",
+            "result_x0": "0x200eec88"
+          }
+        ],
+        "note": "MotionEvent time getter reports relative saved timestamps [0,15,30] while downTime is 100; coordinate getter ABI was recorded with both historical argument orders."
+      },
+      "native_capture": {
+        "draw_object_stroke_return": 1,
+        "first_draw": {
+          "add_points": [
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "0000000000000000000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "edge_state_bits": [
+                  "00000000",
+                  "00004040",
+                  "00000000",
+                  "000040c0",
+                  "67d010c0",
+                  "3468a8c0",
+                  "67d01040",
+                  "64be3cbf",
+                  "67d01040",
+                  "3468a840",
+                  "67d010c0",
+                  "64be3c3f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "1c52333f2473483e000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "1c52333f",
+                  "2473483e"
+                ],
+                "edge_state_bits": [
+                  "1c52333f",
+                  "32874c40",
+                  "1c52333f",
+                  "ce7833c0",
+                  "f4e6c73f",
+                  "7c5bbcc0",
+                  "bca624be",
+                  "d82a8e3e",
+                  "bca624be",
+                  "aee2c840",
+                  "f4e6c73f",
+                  "2021e93d"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "d73db53fe77fdf3e000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "d73db53f",
+                  "e77fdf3e"
+                ],
+                "edge_state_bits": [
+                  "d73db53f",
+                  "fdef5b40",
+                  "d73db53f",
+                  "031024c0",
+                  "b4f01b40",
+                  "5615b3c0",
+                  "1c69ca3e",
+                  "3055f03e",
+                  "1c69ca3e",
+                  "5305cf40",
+                  "b4f01b40",
+                  "a0aace3e"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "2e5f094080e9383f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "2e5f0940",
+                  "80e9383f"
+                ],
+                "edge_state_bits": [
+                  "2e5f0940",
+                  "603a6e40",
+                  "2e5f0940",
+                  "a0c511c0",
+                  "36fd5340",
+                  "5e3fa8c0",
+                  "98047b3f",
+                  "f4cd333f",
+                  "98047b3f",
+                  "be79d640",
+                  "36fd5340",
+                  "0c053e3f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "4d153940b6cc863f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4d153940",
+                  "b6cc863f"
+                ],
+                "edge_state_bits": [
+                  "4d153940",
+                  "2eb38140",
+                  "4d153940",
+                  "4a33f9bf",
+                  "5f138640",
+                  "0ae69bc0",
+                  "b807cc3f",
+                  "28637a3f",
+                  "b807cc3f",
+                  "664cdf40",
+                  "5f138640",
+                  "da67903f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "4ac16940dee7b63f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4ac16940",
+                  "dee7b63f"
+                ],
+                "edge_state_bits": [
+                  "4ac16940",
+                  "f8b98d40",
+                  "4ac16940",
+                  "2218c9bf",
+                  "af3ea240",
+                  "49138ec0",
+                  "36050f40",
+                  "e01ca63f",
+                  "36050f40",
+                  "3887e940",
+                  "af3ea240",
+                  "deb2c73f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "518b8c40062dea3f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "518b8c40",
+                  "062dea3f"
+                ],
+                "edge_state_bits": [
+                  "518b8c40",
+                  "428b9a40",
+                  "518b8c40",
+                  "fad295bf",
+                  "594fbd40",
+                  "48ff7ec0",
+                  "928e3740",
+                  "9c58d23f",
+                  "928e3740",
+                  "2896f440",
+                  "594fbd40",
+                  "b9000140"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "c3b0a040f28f0c40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "c3b0a040",
+                  "f28f0c40"
+                ],
+                "edge_state_bits": [
+                  "c3b0a040",
+                  "f947a640",
+                  "c3b0a040",
+                  "38c04dbf",
+                  "023dd440",
+                  "716564c0",
+                  "08495a40",
+                  "aa0afb3f",
+                  "08495a40",
+                  "aac2fe40",
+                  "023dd440",
+                  "8f9a1b40"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "9c24b540d4df2540000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "9c24b540",
+                  "d4df2540"
+                ],
+                "edge_state_bits": [
+                  "9c24b540",
+                  "eaefb240",
+                  "9c24b540",
+                  "6001d1be",
+                  "b006eb40",
+                  "804748c0",
+                  "10857e40",
+                  "28071440",
+                  "10857e40",
+                  "ca010541",
+                  "b006eb40",
+                  "80b83740"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "dce6c94027064140000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "dce6c940",
+                  "27064140"
+                ],
+                "edge_state_bits": [
+                  "dce6c940",
+                  "1483c040",
+                  "dce6c940",
+                  "8013833c",
+                  "00f90041",
+                  "6c612ac0",
+                  "b7db9140",
+                  "ba6d2c40",
+                  "b7db9140",
+                  "6f1b0b41",
+                  "00f90041",
+                  "959e5540"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "87f7de40ee025e40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "87f7de40",
+                  "ee025e40"
+                ],
+                "edge_state_bits": [
+                  "87f7de40",
+                  "7701cf40",
+                  "87f7de40",
+                  "7017f03e",
+                  "5a810c41",
+                  "a5b50ac0",
+                  "59eca440",
+                  "81bb4640",
+                  "59eca440",
+                  "e0ae1141",
+                  "5a810c41",
+                  "5b4a7540"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "9956f44027d67c40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "9956f440",
+                  "27d67c40"
+                ],
+                "edge_state_bits": [
+                  "9956f440",
+                  "146bde40",
+                  "9956f440",
+                  "9c58733f",
+                  "231e1841",
+                  "be8bd2bf",
+                  "eb70b840",
+                  "2df26240",
+                  "eb70b840",
+                  "8cbc1841",
+                  "231e1841",
+                  "115d8b40"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10009470",
+              "vector_bytes": "0b020541ebbf8e40000000000000803f"
+            }
+          ],
+          "build_calls": [
+            {
+              "output": "0x10009930",
+              "rect": "000000000000404000000000000040c0000000000000404000000000000040c0"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "67d010403468a84067d010c064be3c3f67d010403468a84067d010c064be3c3f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "67d010c03468a8c067d0104064be3cbf67d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "67d010c064be3c3f67d010403468a84067d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "67d010c064be3c3f67d010403468a84067d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "000000000000404000000000000040c01c52333f32874c401c52333fce7833c0"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "67d010403468a84067d010c064be3c3fbca624beaee2c840f4e6c73f2021e93d"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "67d010c03468a8c067d0104064be3cbff4e6c73f7c5bbcc0bca624bed82a8e3e"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "f4e6c73f2021e93dbca624beaee2c840f4e6c73f7c5bbcc0bca624bed82a8e3e"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "b012724012d38140a26918c03f681540b0127240b6b3f8bfa26918c0c1976ac0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "1c52333f32874c401c52333fce7833c0d73db53ffdef5b40d73db53f031024c0"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "bca624beaee2c840f4e6c73f2021e93d1c69ca3e5305cf40b4f01b40a0aace3e"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "f4e6c73f7c5bbcc0bca624bed82a8e3eb4f01b405615b3c01c69ca3e3055f03e"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "b4f01b40a0aace3e1c69ca3e5305cf40b4f01b405615b3c01c69ca3e3055f03e"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "c95c8e40e2a08e4077f7cebf369e1a40c95c8e40777cc5bf77f7cebfca6165c0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "d73db53ffdef5b40d73db53f031024c02e5f0940603a6e402e5f0940a0c511c0"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "1c69ca3e5305cf40b4f01b40a0aace3e98047b3fbe79d64036fd53400c053e3f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "b4f01b405615b3c01c69ca3e3055f03e36fd53405e3fa8c098047b3ff4cd333f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "36fd53400c053e3f98047b3fbe79d64036fd53405e3fa8c098047b3ff4cd333f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "260ca440346c9c40bc6755bf589c2340260ca440304f8ebfbc6755bfa8635cc0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "2e5f0940603a6e402e5f0940a0c511c04d1539402eb381404d1539404a33f9bf"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "98047b3fbe79d64036fd53400c053e3fb807cc3f664cdf405f138640da67903f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "36fd53405e3fa8c098047b3ff4cd333f5f1386400ae69bc0b807cc3f28637a3f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "5f138640da67903fb807cc3f664cdf405f1386400ae69bc0b807cc3f28637a3f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "de23ba40e63bab40804807bdeb543040de23ba40d02026bf804807bd16ab4fc0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "4d1539402eb381404d1539404a33f9bf4ac16940f8b98d404ac169402218c9bf"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "b807cc3f664cdf405f138640da67903f36050f403887e940af3ea240deb2c73f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "5f1386400ae69bc0b807cc3f28637a3faf3ea24049138ec036050f40e01ca63f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "af3ea240deb2c73f36050f403887e940af3ea24049138ec036050f40e01ca63f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "e6add0400218bb40249b483fdcb74040e6add040c8ff1cbe249b483f26483fc0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "4ac16940f8b98d404ac169402218c9bf518b8c40428b9a40518b8c40fad295bf"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "36050f403887e940af3ea240deb2c73f928e37402896f440594fbd40b9000140"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "af3ea24049138ec036050f40e01ca63f594fbd4048ff7ec0928e37409c58d23f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "594fbd40b9000140928e37402896f440594fbd4048ff7ec0928e37409c58d23f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "3696e6404a4fcb40ae01ca3f748e53403696e6409cf4b43eae01ca3f8e712cc0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "518b8c40428b9a40518b8c40fad295bfc3b0a040f947a640c3b0a04038c04dbf"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "928e37402896f440594fbd40b900014008495a40aac2fe40023dd4408f9a1b40"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "594fbd4048ff7ec0928e37409c58d23f023dd440716564c008495a40aa0afb3f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "023dd4408f9a1b4008495a40aac2fe40023dd440716564c008495a40aa0afb3f"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "742bf94038d4d940236c104074776540742bf940c2a14e3f236c10408c881ac0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "c3b0a040f947a640c3b0a04038c04dbf9c24b540eaefb2409c24b5406001d1be"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "08495a40aac2fe40023dd4408f9a1b4010857e40ca010541b006eb4080b83740"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "023dd440716564c008495a40aa0afb3fb006eb40804748c010857e4028071440"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "b006eb4080b8374010857e40ca010541b006eb40804748c010857e4028071440"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "231c0641fed1e840e4213c40ac1b7a40231c0641f747a33fe4213c4054e405c0"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "9c24b540eaefb2409c24b5406001d1bedce6c9401483c040dce6c9408013833c"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "10857e40ca010541b006eb4080b83740b7db91406f1b0b4100f90041959e5540"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "b006eb40804748c010857e402807144000f900416c612ac0b7db9140ba6d2c40"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "00f90041959e5540b7db91406f1b0b4100f900416c612ac0b7db9140ba6d2c40"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "53cd0f41398ef84025666840ef77884053cd0f41e138e23f256668404520debf"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "dce6c9401483c040dce6c9408013833c87f7de407701cf4087f7de407017f03e"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "b7db91406f1b0b4100f90041959e554059eca440e0ae11415a810c415b4a7540"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "00f900416c612ac0b7db9140ba6d2c405a810c41a5b50ac059eca44081bb4640"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "5a810c415b4a754059eca440e0ae11415a810c41a5b50ac059eca44081bb4640"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "e8a91941528604413e9b8a4049f69440e8a919414a1912403e9b8a40db26acbf"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "87f7de407701cf4087f7de407017f03e9956f440146bde409956f4409c58733f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "59eca440e0ae11415a810c415b4a7540eb70b8408cbc1841231e1841115d8b40"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "5a810c41a5b50ac059eca44081bb4640231e1841be8bd2bfeb70b8402df26240"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "231e1841115d8b40eb70b8408cbc1841231e1841be8bd2bfeb70b8402df26240"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "4eb2234161280d419648a1406685a2404eb2234182a134409648a140d2d46bbf"
+            },
+            {
+              "output": "0x10009930",
+              "rect": "9956f440146bde409956f4409c58733f0b020541ebbfee400b020541acffba3f"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "eb70b8408cbc1841231e1841115d8b404466cc40bd442041f4d023415cf69c40"
+            },
+            {
+              "output": "0x10009970",
+              "rect": "231e1841be8bd2bfeb70b8402df26240f4d0234192268cbf4466cc407a898040"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "f4d023415cf69c404466cc40bd442041f4d0234192268cbf4466cc407a898040"
+            },
+            {
+              "output": "0x10009950",
+              "rect": "d3e62d41de2e1641863ab8401922b140d3e62d417abb5840863ab84070deedbe"
+            }
+          ],
+          "rtv1_mesh": {
+            "buffers": [
+              {
+                "build_output_slot": 0,
+                "bytes_hex": "00000000000040c000000000000000000000000000004040000000000000803f00000000000040c00000803f000000000000000000004040000000000000803f00000000000040c00000803f0000000000000000000040400000803f0000803f00000000000040c000000000000000000000000000004040000000000000803f1c52333fce7833c00000803f000000000000000000004040000000000000803f1c52333fce7833c00000803f000000001c52333f32874c400000803f0000803f1c52333fce7833c000000000000000001c52333f32874c40000000000000803fd73db53f031024c00000803f000000001c52333f32874c40000000000000803fd73db53f031024c00000803f00000000d73db53ffdef5b400000803f0000803fd73db53f031024c00000000000000000d73db53ffdef5b40000000000000803f2e5f0940a0c511c00000803f00000000d73db53ffdef5b40000000000000803f2e5f0940a0c511c00000803f000000002e5f0940603a6e400000803f0000803f2e5f0940a0c511c000000000000000002e5f0940603a6e40000000000000803f4d1539404a33f9bf0000803f000000002e5f0940603a6e40000000000000803f4d1539404a33f9bf0000803f000000004d1539402eb381400000803f0000803f4d1539404a33f9bf00000000000000004d1539402eb38140000000000000803f4ac169402218c9bf0000803f000000004d1539402eb38140000000000000803f4ac169402218c9bf0000803f000000004ac16940f8b98d400000803f0000803f4ac169402218c9bf00000000000000004ac16940f8b98d40000000000000803f518b8c40fad295bf0000803f000000004ac16940f8b98d40000000000000803f518b8c40fad295bf0000803f00000000518b8c40428b9a400000803f0000803f518b8c40fad295bf0000000000000000518b8c40428b9a40000000000000803fc3b0a04038c04dbf0000803f00000000518b8c40428b9a40000000000000803fc3b0a04038c04dbf0000803f00000000c3b0a040f947a6400000803f0000803fc3b0a04038c04dbf0000000000000000c3b0a040f947a640000000000000803f9c24b5406001d1be0000803f00000000c3b0a040f947a640000000000000803f9c24b5406001d1be0000803f000000009c24b540eaefb2400000803f0000803f9c24b5406001d1be00000000000000009c24b540eaefb240000000000000803fdce6c9408013833c0000803f000000009c24b540eaefb240000000000000803fdce6c9408013833c0000803f00000000dce6c9401483c0400000803f0000803fdce6c9408013833c0000000000000000dce6c9401483c040000000000000803f87f7de407017f03e0000803f00000000dce6c9401483c040000000000000803f87f7de407017f03e0000803f0000000087f7de407701cf400000803f0000803f87f7de407017f03e000000000000000087f7de407701cf40000000000000803f9956f4409c58733f0000803f0000000087f7de407701cf40000000000000803f9956f4409c58733f0000803f000000009956f440146bde400000803f0000803f9956f4409c58733f00000000000000009956f440146bde40000000000000803f0b020541acffba3f0000803f000000009956f440146bde40000000000000803f0b020541acffba3f0000803f000000000b020541ebbfee400000803f0000803f",
+                "float_count": 312,
+                "sha256": "68c7cfb31beaef0a70ea1ab5cd9d59347cc4fcc0c1a98d2a397737fdc8f9df39",
+                "vector_object": "0x10009930",
+                "vertex_count": 78
+              },
+              {
+                "build_output_slot": 1,
+                "bytes_hex": "67d010c064be3c3f000000000000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010c064be3c3f000000000000000067d010403468a840000000000000803ff4e6c73f2021e93d0000803f0000000067d010403468a840000000000000803ff4e6c73f2021e93d0000803f00000000bca624beaee2c8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803fbca624bed82a8e3e0000803f0000000067d010c03468a8c0000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f7c5bbcc00000803f0000803ff4e6c73f2021e93d0000000000000000bca624beaee2c840000000000000803fb4f01b40a0aace3e0000803f00000000bca624beaee2c840000000000000803fb4f01b40a0aace3e0000803f000000001c69ca3e5305cf400000803f0000803fbca624bed82a8e3e0000000000000000f4e6c73f7c5bbcc0000000000000803f1c69ca3e3055f03e0000803f00000000f4e6c73f7c5bbcc0000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b405615b3c00000803f0000803fb4f01b40a0aace3e00000000000000001c69ca3e5305cf40000000000000803f36fd53400c053e3f0000803f000000001c69ca3e5305cf40000000000000803f36fd53400c053e3f0000803f0000000098047b3fbe79d6400000803f0000803f1c69ca3e3055f03e0000000000000000b4f01b405615b3c0000000000000803f98047b3ff4cd333f0000803f00000000b4f01b405615b3c0000000000000803f98047b3ff4cd333f0000803f0000000036fd53405e3fa8c00000803f0000803f36fd53400c053e3f000000000000000098047b3fbe79d640000000000000803f5f138640da67903f0000803f0000000098047b3fbe79d640000000000000803f5f138640da67903f0000803f00000000b807cc3f664cdf400000803f0000803f98047b3ff4cd333f000000000000000036fd53405e3fa8c0000000000000803fb807cc3f28637a3f0000803f0000000036fd53405e3fa8c0000000000000803fb807cc3f28637a3f0000803f000000005f1386400ae69bc00000803f0000803f5f138640da67903f0000000000000000b807cc3f664cdf40000000000000803faf3ea240deb2c73f0000803f00000000b807cc3f664cdf40000000000000803faf3ea240deb2c73f0000803f0000000036050f403887e9400000803f0000803fb807cc3f28637a3f00000000000000005f1386400ae69bc0000000000000803f36050f40e01ca63f0000803f000000005f1386400ae69bc0000000000000803f36050f40e01ca63f0000803f00000000af3ea24049138ec00000803f0000803faf3ea240deb2c73f000000000000000036050f403887e940000000000000803f594fbd40b90001400000803f0000000036050f403887e940000000000000803f594fbd40b90001400000803f00000000928e37402896f4400000803f0000803f36050f40e01ca63f0000000000000000af3ea24049138ec0000000000000803f928e37409c58d23f0000803f00000000af3ea24049138ec0000000000000803f928e37409c58d23f0000803f00000000594fbd4048ff7ec00000803f0000803f594fbd40b90001400000000000000000928e37402896f440000000000000803f023dd4408f9a1b400000803f00000000928e37402896f440000000000000803f023dd4408f9a1b400000803f0000000008495a40aac2fe400000803f0000803f928e37409c58d23f0000000000000000594fbd4048ff7ec0000000000000803f08495a40aa0afb3f0000803f00000000594fbd4048ff7ec0000000000000803f08495a40aa0afb3f0000803f00000000023dd440716564c00000803f0000803f023dd4408f9a1b40000000000000000008495a40aac2fe40000000000000803fb006eb4080b837400000803f0000000008495a40aac2fe40000000000000803fb006eb4080b837400000803f0000000010857e40ca0105410000803f0000803f08495a40aa0afb3f0000000000000000023dd440716564c0000000000000803f10857e40280714400000803f00000000023dd440716564c0000000000000803f10857e40280714400000803f00000000b006eb40804748c00000803f0000803fb006eb4080b83740000000000000000010857e40ca010541000000000000803f00f90041959e55400000803f0000000010857e40ca010541000000000000803f00f90041959e55400000803f00000000b7db91406f1b0b410000803f0000803f10857e40280714400000000000000000b006eb40804748c0000000000000803fb7db9140ba6d2c400000803f00000000b006eb40804748c0000000000000803fb7db9140ba6d2c400000803f0000000000f900416c612ac00000803f0000803f00f90041959e55400000000000000000b7db91406f1b0b41000000000000803f5a810c415b4a75400000803f00000000b7db91406f1b0b41000000000000803f5a810c415b4a75400000803f0000000059eca440e0ae11410000803f0000803fb7db9140ba6d2c40000000000000000000f900416c612ac0000000000000803f59eca44081bb46400000803f0000000000f900416c612ac0000000000000803f59eca44081bb46400000803f000000005a810c41a5b50ac00000803f0000803f5a810c415b4a7540000000000000000059eca440e0ae1141000000000000803f231e1841115d8b400000803f0000000059eca440e0ae1141000000000000803f231e1841115d8b400000803f00000000eb70b8408cbc18410000803f0000803f59eca44081bb464000000000000000005a810c41a5b50ac0000000000000803feb70b8402df262400000803f000000005a810c41a5b50ac0000000000000803feb70b8402df262400000803f00000000231e1841be8bd2bf0000803f0000803f231e1841115d8b400000000000000000eb70b8408cbc1841000000000000803ff4d023415cf69c400000803f00000000eb70b8408cbc1841000000000000803ff4d023415cf69c400000803f000000004466cc40bd4420410000803f0000803feb70b8402df262400000000000000000231e1841be8bd2bf000000000000803f4466cc407a8980400000803f00000000231e1841be8bd2bf000000000000803f4466cc407a8980400000803f00000000f4d0234192268cbf0000803f0000803f",
+                "float_count": 624,
+                "sha256": "39a07a40cb0b2dc9cc9827c8657254635669dd52e42711cd705e0e7f8923527e",
+                "vector_object": "0x10009970",
+                "vertex_count": 156
+              },
+              {
+                "build_output_slot": 2,
+                "bytes_hex": "67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803fbca624beaee2c8400000000000000000f4e6c73f2021e93d000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f2021e93d000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f7c5bbcc00000803f0000803fa26918c03f6815400000000000000000b012724012d38140000000000000803fa26918c0c1976ac00000803f00000000b012724012d38140000000000000803fa26918c0c1976ac00000803f00000000b0127240b6b3f8bf0000803f0000803f1c69ca3e5305cf400000000000000000b4f01b40a0aace3e000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b40a0aace3e000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b405615b3c00000803f0000803f77f7cebf369e1a400000000000000000c95c8e40e2a08e40000000000000803f77f7cebfca6165c00000803f00000000c95c8e40e2a08e40000000000000803f77f7cebfca6165c00000803f00000000c95c8e40777cc5bf0000803f0000803f98047b3fbe79d640000000000000000036fd53400c053e3f000000000000803f98047b3ff4cd333f0000803f0000000036fd53400c053e3f000000000000803f98047b3ff4cd333f0000803f0000000036fd53405e3fa8c00000803f0000803fbc6755bf589c23400000000000000000260ca440346c9c40000000000000803fbc6755bfa8635cc00000803f00000000260ca440346c9c40000000000000803fbc6755bfa8635cc00000803f00000000260ca440304f8ebf0000803f0000803fb807cc3f664cdf4000000000000000005f138640da67903f000000000000803fb807cc3f28637a3f0000803f000000005f138640da67903f000000000000803fb807cc3f28637a3f0000803f000000005f1386400ae69bc00000803f0000803f804807bdeb5430400000000000000000de23ba40e63bab40000000000000803f804807bd16ab4fc00000803f00000000de23ba40e63bab40000000000000803f804807bd16ab4fc00000803f00000000de23ba40d02026bf0000803f0000803f36050f403887e9400000000000000000af3ea240deb2c73f000000000000803f36050f40e01ca63f0000803f00000000af3ea240deb2c73f000000000000803f36050f40e01ca63f0000803f00000000af3ea24049138ec00000803f0000803f249b483fdcb740400000000000000000e6add0400218bb40000000000000803f249b483f26483fc00000803f00000000e6add0400218bb40000000000000803f249b483f26483fc00000803f00000000e6add040c8ff1cbe0000803f0000803f928e37402896f4400000000000000000594fbd40b9000140000000000000803f928e37409c58d23f0000803f00000000594fbd40b9000140000000000000803f928e37409c58d23f0000803f00000000594fbd4048ff7ec00000803f0000803fae01ca3f748e534000000000000000003696e6404a4fcb40000000000000803fae01ca3f8e712cc00000803f000000003696e6404a4fcb40000000000000803fae01ca3f8e712cc00000803f000000003696e6409cf4b43e0000803f0000803f08495a40aac2fe400000000000000000023dd4408f9a1b40000000000000803f08495a40aa0afb3f0000803f00000000023dd4408f9a1b40000000000000803f08495a40aa0afb3f0000803f00000000023dd440716564c00000803f0000803f236c1040747765400000000000000000742bf94038d4d940000000000000803f236c10408c881ac00000803f00000000742bf94038d4d940000000000000803f236c10408c881ac00000803f00000000742bf940c2a14e3f0000803f0000803f10857e40ca0105410000000000000000b006eb4080b83740000000000000803f10857e40280714400000803f00000000b006eb4080b83740000000000000803f10857e40280714400000803f00000000b006eb40804748c00000803f0000803fe4213c40ac1b7a400000000000000000231c0641fed1e840000000000000803fe4213c4054e405c00000803f00000000231c0641fed1e840000000000000803fe4213c4054e405c00000803f00000000231c0641f747a33f0000803f0000803fb7db91406f1b0b41000000000000000000f90041959e5540000000000000803fb7db9140ba6d2c400000803f0000000000f90041959e5540000000000000803fb7db9140ba6d2c400000803f0000000000f900416c612ac00000803f0000803f25666840ef778840000000000000000053cd0f41398ef840000000000000803f256668404520debf0000803f0000000053cd0f41398ef840000000000000803f256668404520debf0000803f0000000053cd0f41e138e23f0000803f0000803f59eca440e0ae114100000000000000005a810c415b4a7540000000000000803f59eca44081bb46400000803f000000005a810c415b4a7540000000000000803f59eca44081bb46400000803f000000005a810c41a5b50ac00000803f0000803f3e9b8a4049f694400000000000000000e8a9194152860441000000000000803f3e9b8a40db26acbf0000803f00000000e8a9194152860441000000000000803f3e9b8a40db26acbf0000803f00000000e8a919414a1912400000803f0000803feb70b8408cbc18410000000000000000231e1841115d8b40000000000000803feb70b8402df262400000803f00000000231e1841115d8b40000000000000803feb70b8402df262400000803f00000000231e1841be8bd2bf0000803f0000803f9648a1406685a24000000000000000004eb2234161280d41000000000000803f9648a140d2d46bbf0000803f000000004eb2234161280d41000000000000803f9648a140d2d46bbf0000803f000000004eb2234182a134400000803f0000803f4466cc40bd4420410000000000000000f4d023415cf69c40000000000000803f4466cc407a8980400000803f00000000f4d023415cf69c40000000000000803f4466cc407a8980400000803f00000000f4d0234192268cbf0000803f0000803f863ab8401922b1400000000000000000d3e62d41de2e1641000000000000803f863ab84070deedbe0000803f00000000d3e62d41de2e1641000000000000803f863ab84070deedbe0000803f00000000d3e62d417abb58400000803f0000803f",
+                "float_count": 624,
+                "sha256": "26d0b243306d7d4c9cd3580465273b6f4a703001a0aa36dc24455ba8e0741977",
+                "vector_object": "0x10009950",
+                "vertex_count": 156
+              }
+            ],
+            "rtv1": "0x10009470"
+          }
+        },
+        "fresh_drawing": {
+          "add_points": [
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "0000000000000000000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "edge_state_bits": [
+                  "00000000",
+                  "00004040",
+                  "00000000",
+                  "000040c0",
+                  "67d010c0",
+                  "3468a8c0",
+                  "67d01040",
+                  "64be3cbf",
+                  "67d01040",
+                  "3468a840",
+                  "67d010c0",
+                  "64be3c3f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "1c52333f2473483e000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "1c52333f",
+                  "2473483e"
+                ],
+                "edge_state_bits": [
+                  "1c52333f",
+                  "32874c40",
+                  "1c52333f",
+                  "ce7833c0",
+                  "f4e6c73f",
+                  "7c5bbcc0",
+                  "bca624be",
+                  "d82a8e3e",
+                  "bca624be",
+                  "aee2c840",
+                  "f4e6c73f",
+                  "2021e93d"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "d73db53fe77fdf3e000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "d73db53f",
+                  "e77fdf3e"
+                ],
+                "edge_state_bits": [
+                  "d73db53f",
+                  "fdef5b40",
+                  "d73db53f",
+                  "031024c0",
+                  "b4f01b40",
+                  "5615b3c0",
+                  "1c69ca3e",
+                  "3055f03e",
+                  "1c69ca3e",
+                  "5305cf40",
+                  "b4f01b40",
+                  "a0aace3e"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "2e5f094080e9383f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "2e5f0940",
+                  "80e9383f"
+                ],
+                "edge_state_bits": [
+                  "2e5f0940",
+                  "603a6e40",
+                  "2e5f0940",
+                  "a0c511c0",
+                  "36fd5340",
+                  "5e3fa8c0",
+                  "98047b3f",
+                  "f4cd333f",
+                  "98047b3f",
+                  "be79d640",
+                  "36fd5340",
+                  "0c053e3f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "4d153940b6cc863f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4d153940",
+                  "b6cc863f"
+                ],
+                "edge_state_bits": [
+                  "4d153940",
+                  "2eb38140",
+                  "4d153940",
+                  "4a33f9bf",
+                  "5f138640",
+                  "0ae69bc0",
+                  "b807cc3f",
+                  "28637a3f",
+                  "b807cc3f",
+                  "664cdf40",
+                  "5f138640",
+                  "da67903f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "4ac16940dee7b63f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4ac16940",
+                  "dee7b63f"
+                ],
+                "edge_state_bits": [
+                  "4ac16940",
+                  "f8b98d40",
+                  "4ac16940",
+                  "2218c9bf",
+                  "af3ea240",
+                  "49138ec0",
+                  "36050f40",
+                  "e01ca63f",
+                  "36050f40",
+                  "3887e940",
+                  "af3ea240",
+                  "deb2c73f"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "518b8c40062dea3f000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "518b8c40",
+                  "062dea3f"
+                ],
+                "edge_state_bits": [
+                  "518b8c40",
+                  "428b9a40",
+                  "518b8c40",
+                  "fad295bf",
+                  "594fbd40",
+                  "48ff7ec0",
+                  "928e3740",
+                  "9c58d23f",
+                  "928e3740",
+                  "2896f440",
+                  "594fbd40",
+                  "b9000140"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "c3b0a040f28f0c40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "c3b0a040",
+                  "f28f0c40"
+                ],
+                "edge_state_bits": [
+                  "c3b0a040",
+                  "f947a640",
+                  "c3b0a040",
+                  "38c04dbf",
+                  "023dd440",
+                  "716564c0",
+                  "08495a40",
+                  "aa0afb3f",
+                  "08495a40",
+                  "aac2fe40",
+                  "023dd440",
+                  "8f9a1b40"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "9c24b540d4df2540000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "9c24b540",
+                  "d4df2540"
+                ],
+                "edge_state_bits": [
+                  "9c24b540",
+                  "eaefb240",
+                  "9c24b540",
+                  "6001d1be",
+                  "b006eb40",
+                  "804748c0",
+                  "10857e40",
+                  "28071440",
+                  "10857e40",
+                  "ca010541",
+                  "b006eb40",
+                  "80b83740"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "dce6c94027064140000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "dce6c940",
+                  "27064140"
+                ],
+                "edge_state_bits": [
+                  "dce6c940",
+                  "1483c040",
+                  "dce6c940",
+                  "8013833c",
+                  "00f90041",
+                  "6c612ac0",
+                  "b7db9140",
+                  "ba6d2c40",
+                  "b7db9140",
+                  "6f1b0b41",
+                  "00f90041",
+                  "959e5540"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "87f7de40ee025e40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "87f7de40",
+                  "ee025e40"
+                ],
+                "edge_state_bits": [
+                  "87f7de40",
+                  "7701cf40",
+                  "87f7de40",
+                  "7017f03e",
+                  "5a810c41",
+                  "a5b50ac0",
+                  "59eca440",
+                  "81bb4640",
+                  "59eca440",
+                  "e0ae1141",
+                  "5a810c41",
+                  "5b4a7540"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "9956f44027d67c40000000000000803f"
+            },
+            {
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "9956f440",
+                  "27d67c40"
+                ],
+                "edge_state_bits": [
+                  "9956f440",
+                  "146bde40",
+                  "9956f440",
+                  "9c58733f",
+                  "231e1841",
+                  "be8bd2bf",
+                  "eb70b840",
+                  "2df26240",
+                  "eb70b840",
+                  "8cbc1841",
+                  "231e1841",
+                  "115d8b40"
+                ],
+                "initial_flag": 0
+              },
+              "receiver": "0x10018ad0",
+              "vector_bytes": "0b020541ebbf8e40000000000000803f"
+            }
+          ],
+          "build_calls": [
+            {
+              "output": "0x10018f90",
+              "rect": "000000000000404000000000000040c0000000000000404000000000000040c0"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "67d010403468a84067d010c064be3c3f67d010403468a84067d010c064be3c3f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "67d010c03468a8c067d0104064be3cbf67d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "67d010c064be3c3f67d010403468a84067d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "67d010c064be3c3f67d010403468a84067d010c03468a8c067d0104064be3cbf"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "000000000000404000000000000040c01c52333f32874c401c52333fce7833c0"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "67d010403468a84067d010c064be3c3fbca624beaee2c840f4e6c73f2021e93d"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "67d010c03468a8c067d0104064be3cbff4e6c73f7c5bbcc0bca624bed82a8e3e"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "f4e6c73f2021e93dbca624beaee2c840f4e6c73f7c5bbcc0bca624bed82a8e3e"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "b012724012d38140a26918c03f681540b0127240b6b3f8bfa26918c0c1976ac0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "1c52333f32874c401c52333fce7833c0d73db53ffdef5b40d73db53f031024c0"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "bca624beaee2c840f4e6c73f2021e93d1c69ca3e5305cf40b4f01b40a0aace3e"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "f4e6c73f7c5bbcc0bca624bed82a8e3eb4f01b405615b3c01c69ca3e3055f03e"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "b4f01b40a0aace3e1c69ca3e5305cf40b4f01b405615b3c01c69ca3e3055f03e"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "c95c8e40e2a08e4077f7cebf369e1a40c95c8e40777cc5bf77f7cebfca6165c0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "d73db53ffdef5b40d73db53f031024c02e5f0940603a6e402e5f0940a0c511c0"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "1c69ca3e5305cf40b4f01b40a0aace3e98047b3fbe79d64036fd53400c053e3f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "b4f01b405615b3c01c69ca3e3055f03e36fd53405e3fa8c098047b3ff4cd333f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "36fd53400c053e3f98047b3fbe79d64036fd53405e3fa8c098047b3ff4cd333f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "260ca440346c9c40bc6755bf589c2340260ca440304f8ebfbc6755bfa8635cc0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "2e5f0940603a6e402e5f0940a0c511c04d1539402eb381404d1539404a33f9bf"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "98047b3fbe79d64036fd53400c053e3fb807cc3f664cdf405f138640da67903f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "36fd53405e3fa8c098047b3ff4cd333f5f1386400ae69bc0b807cc3f28637a3f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "5f138640da67903fb807cc3f664cdf405f1386400ae69bc0b807cc3f28637a3f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "de23ba40e63bab40804807bdeb543040de23ba40d02026bf804807bd16ab4fc0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "4d1539402eb381404d1539404a33f9bf4ac16940f8b98d404ac169402218c9bf"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "b807cc3f664cdf405f138640da67903f36050f403887e940af3ea240deb2c73f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "5f1386400ae69bc0b807cc3f28637a3faf3ea24049138ec036050f40e01ca63f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "af3ea240deb2c73f36050f403887e940af3ea24049138ec036050f40e01ca63f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "e6add0400218bb40249b483fdcb74040e6add040c8ff1cbe249b483f26483fc0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "4ac16940f8b98d404ac169402218c9bf518b8c40428b9a40518b8c40fad295bf"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "36050f403887e940af3ea240deb2c73f928e37402896f440594fbd40b9000140"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "af3ea24049138ec036050f40e01ca63f594fbd4048ff7ec0928e37409c58d23f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "594fbd40b9000140928e37402896f440594fbd4048ff7ec0928e37409c58d23f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "3696e6404a4fcb40ae01ca3f748e53403696e6409cf4b43eae01ca3f8e712cc0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "518b8c40428b9a40518b8c40fad295bfc3b0a040f947a640c3b0a04038c04dbf"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "928e37402896f440594fbd40b900014008495a40aac2fe40023dd4408f9a1b40"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "594fbd4048ff7ec0928e37409c58d23f023dd440716564c008495a40aa0afb3f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "023dd4408f9a1b4008495a40aac2fe40023dd440716564c008495a40aa0afb3f"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "742bf94038d4d940236c104074776540742bf940c2a14e3f236c10408c881ac0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "c3b0a040f947a640c3b0a04038c04dbf9c24b540eaefb2409c24b5406001d1be"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "08495a40aac2fe40023dd4408f9a1b4010857e40ca010541b006eb4080b83740"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "023dd440716564c008495a40aa0afb3fb006eb40804748c010857e4028071440"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "b006eb4080b8374010857e40ca010541b006eb40804748c010857e4028071440"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "231c0641fed1e840e4213c40ac1b7a40231c0641f747a33fe4213c4054e405c0"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "9c24b540eaefb2409c24b5406001d1bedce6c9401483c040dce6c9408013833c"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "10857e40ca010541b006eb4080b83740b7db91406f1b0b4100f90041959e5540"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "b006eb40804748c010857e402807144000f900416c612ac0b7db9140ba6d2c40"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "00f90041959e5540b7db91406f1b0b4100f900416c612ac0b7db9140ba6d2c40"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "53cd0f41398ef84025666840ef77884053cd0f41e138e23f256668404520debf"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "dce6c9401483c040dce6c9408013833c87f7de407701cf4087f7de407017f03e"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "b7db91406f1b0b4100f90041959e554059eca440e0ae11415a810c415b4a7540"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "00f900416c612ac0b7db9140ba6d2c405a810c41a5b50ac059eca44081bb4640"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "5a810c415b4a754059eca440e0ae11415a810c41a5b50ac059eca44081bb4640"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "e8a91941528604413e9b8a4049f69440e8a919414a1912403e9b8a40db26acbf"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "87f7de407701cf4087f7de407017f03e9956f440146bde409956f4409c58733f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "59eca440e0ae11415a810c415b4a7540eb70b8408cbc1841231e1841115d8b40"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "5a810c41a5b50ac059eca44081bb4640231e1841be8bd2bfeb70b8402df26240"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "231e1841115d8b40eb70b8408cbc1841231e1841be8bd2bfeb70b8402df26240"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "4eb2234161280d419648a1406685a2404eb2234182a134409648a140d2d46bbf"
+            },
+            {
+              "output": "0x10018f90",
+              "rect": "9956f440146bde409956f4409c58733f0b020541ebbfee400b020541acffba3f"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "eb70b8408cbc1841231e1841115d8b404466cc40bd442041f4d023415cf69c40"
+            },
+            {
+              "output": "0x10018fd0",
+              "rect": "231e1841be8bd2bfeb70b8402df26240f4d0234192268cbf4466cc407a898040"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "f4d023415cf69c404466cc40bd442041f4d0234192268cbf4466cc407a898040"
+            },
+            {
+              "output": "0x10018fb0",
+              "rect": "d3e62d41de2e1641863ab8401922b140d3e62d417abb5840863ab84070deedbe"
+            }
+          ],
+          "observed_sample_boundary_hooks": [
+            {
+              "add_count": 26,
+              "history_index": 1
+            }
+          ],
+          "rtv1_mesh": {
+            "buffers": [
+              {
+                "build_output_slot": 0,
+                "bytes_hex": "00000000000040c000000000000000000000000000004040000000000000803f00000000000040c00000803f000000000000000000004040000000000000803f00000000000040c00000803f0000000000000000000040400000803f0000803f00000000000040c000000000000000000000000000004040000000000000803f1c52333fce7833c00000803f000000000000000000004040000000000000803f1c52333fce7833c00000803f000000001c52333f32874c400000803f0000803f1c52333fce7833c000000000000000001c52333f32874c40000000000000803fd73db53f031024c00000803f000000001c52333f32874c40000000000000803fd73db53f031024c00000803f00000000d73db53ffdef5b400000803f0000803fd73db53f031024c00000000000000000d73db53ffdef5b40000000000000803f2e5f0940a0c511c00000803f00000000d73db53ffdef5b40000000000000803f2e5f0940a0c511c00000803f000000002e5f0940603a6e400000803f0000803f2e5f0940a0c511c000000000000000002e5f0940603a6e40000000000000803f4d1539404a33f9bf0000803f000000002e5f0940603a6e40000000000000803f4d1539404a33f9bf0000803f000000004d1539402eb381400000803f0000803f4d1539404a33f9bf00000000000000004d1539402eb38140000000000000803f4ac169402218c9bf0000803f000000004d1539402eb38140000000000000803f4ac169402218c9bf0000803f000000004ac16940f8b98d400000803f0000803f4ac169402218c9bf00000000000000004ac16940f8b98d40000000000000803f518b8c40fad295bf0000803f000000004ac16940f8b98d40000000000000803f518b8c40fad295bf0000803f00000000518b8c40428b9a400000803f0000803f518b8c40fad295bf0000000000000000518b8c40428b9a40000000000000803fc3b0a04038c04dbf0000803f00000000518b8c40428b9a40000000000000803fc3b0a04038c04dbf0000803f00000000c3b0a040f947a6400000803f0000803fc3b0a04038c04dbf0000000000000000c3b0a040f947a640000000000000803f9c24b5406001d1be0000803f00000000c3b0a040f947a640000000000000803f9c24b5406001d1be0000803f000000009c24b540eaefb2400000803f0000803f9c24b5406001d1be00000000000000009c24b540eaefb240000000000000803fdce6c9408013833c0000803f000000009c24b540eaefb240000000000000803fdce6c9408013833c0000803f00000000dce6c9401483c0400000803f0000803fdce6c9408013833c0000000000000000dce6c9401483c040000000000000803f87f7de407017f03e0000803f00000000dce6c9401483c040000000000000803f87f7de407017f03e0000803f0000000087f7de407701cf400000803f0000803f87f7de407017f03e000000000000000087f7de407701cf40000000000000803f9956f4409c58733f0000803f0000000087f7de407701cf40000000000000803f9956f4409c58733f0000803f000000009956f440146bde400000803f0000803f9956f4409c58733f00000000000000009956f440146bde40000000000000803f0b020541acffba3f0000803f000000009956f440146bde40000000000000803f0b020541acffba3f0000803f000000000b020541ebbfee400000803f0000803f",
+                "float_count": 312,
+                "sha256": "68c7cfb31beaef0a70ea1ab5cd9d59347cc4fcc0c1a98d2a397737fdc8f9df39",
+                "vector_object": "0x10018f90",
+                "vertex_count": 78
+              },
+              {
+                "build_output_slot": 1,
+                "bytes_hex": "67d010c064be3c3f000000000000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a840000000000000803f67d010c064be3c3f0000803f0000000067d010403468a8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c0000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010c064be3c3f000000000000000067d010403468a840000000000000803ff4e6c73f2021e93d0000803f0000000067d010403468a840000000000000803ff4e6c73f2021e93d0000803f00000000bca624beaee2c8400000803f0000803f67d0104064be3cbf000000000000000067d010c03468a8c0000000000000803fbca624bed82a8e3e0000803f0000000067d010c03468a8c0000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f7c5bbcc00000803f0000803ff4e6c73f2021e93d0000000000000000bca624beaee2c840000000000000803fb4f01b40a0aace3e0000803f00000000bca624beaee2c840000000000000803fb4f01b40a0aace3e0000803f000000001c69ca3e5305cf400000803f0000803fbca624bed82a8e3e0000000000000000f4e6c73f7c5bbcc0000000000000803f1c69ca3e3055f03e0000803f00000000f4e6c73f7c5bbcc0000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b405615b3c00000803f0000803fb4f01b40a0aace3e00000000000000001c69ca3e5305cf40000000000000803f36fd53400c053e3f0000803f000000001c69ca3e5305cf40000000000000803f36fd53400c053e3f0000803f0000000098047b3fbe79d6400000803f0000803f1c69ca3e3055f03e0000000000000000b4f01b405615b3c0000000000000803f98047b3ff4cd333f0000803f00000000b4f01b405615b3c0000000000000803f98047b3ff4cd333f0000803f0000000036fd53405e3fa8c00000803f0000803f36fd53400c053e3f000000000000000098047b3fbe79d640000000000000803f5f138640da67903f0000803f0000000098047b3fbe79d640000000000000803f5f138640da67903f0000803f00000000b807cc3f664cdf400000803f0000803f98047b3ff4cd333f000000000000000036fd53405e3fa8c0000000000000803fb807cc3f28637a3f0000803f0000000036fd53405e3fa8c0000000000000803fb807cc3f28637a3f0000803f000000005f1386400ae69bc00000803f0000803f5f138640da67903f0000000000000000b807cc3f664cdf40000000000000803faf3ea240deb2c73f0000803f00000000b807cc3f664cdf40000000000000803faf3ea240deb2c73f0000803f0000000036050f403887e9400000803f0000803fb807cc3f28637a3f00000000000000005f1386400ae69bc0000000000000803f36050f40e01ca63f0000803f000000005f1386400ae69bc0000000000000803f36050f40e01ca63f0000803f00000000af3ea24049138ec00000803f0000803faf3ea240deb2c73f000000000000000036050f403887e940000000000000803f594fbd40b90001400000803f0000000036050f403887e940000000000000803f594fbd40b90001400000803f00000000928e37402896f4400000803f0000803f36050f40e01ca63f0000000000000000af3ea24049138ec0000000000000803f928e37409c58d23f0000803f00000000af3ea24049138ec0000000000000803f928e37409c58d23f0000803f00000000594fbd4048ff7ec00000803f0000803f594fbd40b90001400000000000000000928e37402896f440000000000000803f023dd4408f9a1b400000803f00000000928e37402896f440000000000000803f023dd4408f9a1b400000803f0000000008495a40aac2fe400000803f0000803f928e37409c58d23f0000000000000000594fbd4048ff7ec0000000000000803f08495a40aa0afb3f0000803f00000000594fbd4048ff7ec0000000000000803f08495a40aa0afb3f0000803f00000000023dd440716564c00000803f0000803f023dd4408f9a1b40000000000000000008495a40aac2fe40000000000000803fb006eb4080b837400000803f0000000008495a40aac2fe40000000000000803fb006eb4080b837400000803f0000000010857e40ca0105410000803f0000803f08495a40aa0afb3f0000000000000000023dd440716564c0000000000000803f10857e40280714400000803f00000000023dd440716564c0000000000000803f10857e40280714400000803f00000000b006eb40804748c00000803f0000803fb006eb4080b83740000000000000000010857e40ca010541000000000000803f00f90041959e55400000803f0000000010857e40ca010541000000000000803f00f90041959e55400000803f00000000b7db91406f1b0b410000803f0000803f10857e40280714400000000000000000b006eb40804748c0000000000000803fb7db9140ba6d2c400000803f00000000b006eb40804748c0000000000000803fb7db9140ba6d2c400000803f0000000000f900416c612ac00000803f0000803f00f90041959e55400000000000000000b7db91406f1b0b41000000000000803f5a810c415b4a75400000803f00000000b7db91406f1b0b41000000000000803f5a810c415b4a75400000803f0000000059eca440e0ae11410000803f0000803fb7db9140ba6d2c40000000000000000000f900416c612ac0000000000000803f59eca44081bb46400000803f0000000000f900416c612ac0000000000000803f59eca44081bb46400000803f000000005a810c41a5b50ac00000803f0000803f5a810c415b4a7540000000000000000059eca440e0ae1141000000000000803f231e1841115d8b400000803f0000000059eca440e0ae1141000000000000803f231e1841115d8b400000803f00000000eb70b8408cbc18410000803f0000803f59eca44081bb464000000000000000005a810c41a5b50ac0000000000000803feb70b8402df262400000803f000000005a810c41a5b50ac0000000000000803feb70b8402df262400000803f00000000231e1841be8bd2bf0000803f0000803f231e1841115d8b400000000000000000eb70b8408cbc1841000000000000803ff4d023415cf69c400000803f00000000eb70b8408cbc1841000000000000803ff4d023415cf69c400000803f000000004466cc40bd4420410000803f0000803feb70b8402df262400000000000000000231e1841be8bd2bf000000000000803f4466cc407a8980400000803f00000000231e1841be8bd2bf000000000000803f4466cc407a8980400000803f00000000f4d0234192268cbf0000803f0000803f",
+                "float_count": 624,
+                "sha256": "39a07a40cb0b2dc9cc9827c8657254635669dd52e42711cd705e0e7f8923527e",
+                "vector_object": "0x10018fd0",
+                "vertex_count": 156
+              },
+              {
+                "build_output_slot": 2,
+                "bytes_hex": "67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803f67d010403468a840000000000000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c064be3c3f000000000000803f67d0104064be3cbf0000803f0000000067d010c03468a8c00000803f0000803fbca624beaee2c8400000000000000000f4e6c73f2021e93d000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f2021e93d000000000000803fbca624bed82a8e3e0000803f00000000f4e6c73f7c5bbcc00000803f0000803fa26918c03f6815400000000000000000b012724012d38140000000000000803fa26918c0c1976ac00000803f00000000b012724012d38140000000000000803fa26918c0c1976ac00000803f00000000b0127240b6b3f8bf0000803f0000803f1c69ca3e5305cf400000000000000000b4f01b40a0aace3e000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b40a0aace3e000000000000803f1c69ca3e3055f03e0000803f00000000b4f01b405615b3c00000803f0000803f77f7cebf369e1a400000000000000000c95c8e40e2a08e40000000000000803f77f7cebfca6165c00000803f00000000c95c8e40e2a08e40000000000000803f77f7cebfca6165c00000803f00000000c95c8e40777cc5bf0000803f0000803f98047b3fbe79d640000000000000000036fd53400c053e3f000000000000803f98047b3ff4cd333f0000803f0000000036fd53400c053e3f000000000000803f98047b3ff4cd333f0000803f0000000036fd53405e3fa8c00000803f0000803fbc6755bf589c23400000000000000000260ca440346c9c40000000000000803fbc6755bfa8635cc00000803f00000000260ca440346c9c40000000000000803fbc6755bfa8635cc00000803f00000000260ca440304f8ebf0000803f0000803fb807cc3f664cdf4000000000000000005f138640da67903f000000000000803fb807cc3f28637a3f0000803f000000005f138640da67903f000000000000803fb807cc3f28637a3f0000803f000000005f1386400ae69bc00000803f0000803f804807bdeb5430400000000000000000de23ba40e63bab40000000000000803f804807bd16ab4fc00000803f00000000de23ba40e63bab40000000000000803f804807bd16ab4fc00000803f00000000de23ba40d02026bf0000803f0000803f36050f403887e9400000000000000000af3ea240deb2c73f000000000000803f36050f40e01ca63f0000803f00000000af3ea240deb2c73f000000000000803f36050f40e01ca63f0000803f00000000af3ea24049138ec00000803f0000803f249b483fdcb740400000000000000000e6add0400218bb40000000000000803f249b483f26483fc00000803f00000000e6add0400218bb40000000000000803f249b483f26483fc00000803f00000000e6add040c8ff1cbe0000803f0000803f928e37402896f4400000000000000000594fbd40b9000140000000000000803f928e37409c58d23f0000803f00000000594fbd40b9000140000000000000803f928e37409c58d23f0000803f00000000594fbd4048ff7ec00000803f0000803fae01ca3f748e534000000000000000003696e6404a4fcb40000000000000803fae01ca3f8e712cc00000803f000000003696e6404a4fcb40000000000000803fae01ca3f8e712cc00000803f000000003696e6409cf4b43e0000803f0000803f08495a40aac2fe400000000000000000023dd4408f9a1b40000000000000803f08495a40aa0afb3f0000803f00000000023dd4408f9a1b40000000000000803f08495a40aa0afb3f0000803f00000000023dd440716564c00000803f0000803f236c1040747765400000000000000000742bf94038d4d940000000000000803f236c10408c881ac00000803f00000000742bf94038d4d940000000000000803f236c10408c881ac00000803f00000000742bf940c2a14e3f0000803f0000803f10857e40ca0105410000000000000000b006eb4080b83740000000000000803f10857e40280714400000803f00000000b006eb4080b83740000000000000803f10857e40280714400000803f00000000b006eb40804748c00000803f0000803fe4213c40ac1b7a400000000000000000231c0641fed1e840000000000000803fe4213c4054e405c00000803f00000000231c0641fed1e840000000000000803fe4213c4054e405c00000803f00000000231c0641f747a33f0000803f0000803fb7db91406f1b0b41000000000000000000f90041959e5540000000000000803fb7db9140ba6d2c400000803f0000000000f90041959e5540000000000000803fb7db9140ba6d2c400000803f0000000000f900416c612ac00000803f0000803f25666840ef778840000000000000000053cd0f41398ef840000000000000803f256668404520debf0000803f0000000053cd0f41398ef840000000000000803f256668404520debf0000803f0000000053cd0f41e138e23f0000803f0000803f59eca440e0ae114100000000000000005a810c415b4a7540000000000000803f59eca44081bb46400000803f000000005a810c415b4a7540000000000000803f59eca44081bb46400000803f000000005a810c41a5b50ac00000803f0000803f3e9b8a4049f694400000000000000000e8a9194152860441000000000000803f3e9b8a40db26acbf0000803f00000000e8a9194152860441000000000000803f3e9b8a40db26acbf0000803f00000000e8a919414a1912400000803f0000803feb70b8408cbc18410000000000000000231e1841115d8b40000000000000803feb70b8402df262400000803f00000000231e1841115d8b40000000000000803feb70b8402df262400000803f00000000231e1841be8bd2bf0000803f0000803f9648a1406685a24000000000000000004eb2234161280d41000000000000803f9648a140d2d46bbf0000803f000000004eb2234161280d41000000000000803f9648a140d2d46bbf0000803f000000004eb2234182a134400000803f0000803f4466cc40bd4420410000000000000000f4d023415cf69c40000000000000803f4466cc407a8980400000803f00000000f4d023415cf69c40000000000000803f4466cc407a8980400000803f00000000f4d0234192268cbf0000803f0000803f863ab8401922b1400000000000000000d3e62d41de2e1641000000000000803f863ab84070deedbe0000803f00000000d3e62d41de2e1641000000000000803f863ab84070deedbe0000803f00000000d3e62d417abb58400000803f0000803f",
+                "float_count": 624,
+                "sha256": "26d0b243306d7d4c9cd3580465273b6f4a703001a0aa36dc24455ba8e0741977",
+                "vector_object": "0x10018fb0",
+                "vertex_count": 156
+              }
+            ],
+            "rtv1": "0x10018ad0"
+          },
+          "terminal_start_add_point_index": 26
+        },
+        "same_drawing_repeat": {
+          "native_return": 1,
+          "new_add_points": 13,
+          "new_build_calls": 65,
+          "same_drawable": true,
+          "same_manager": true,
+          "same_pen_data": true
+        },
+        "screen_resolution_calls": [
+          {
+            "height": 1080,
+            "width": 1920
+          },
+          {
+            "height": 1080,
+            "width": 1920
+          },
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ]
+      },
+      "schema": "sdocx-calligraphy-saved-caller-case-v1",
+      "unresolved_imports": [
+        {
+          "dso": "Base",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "longjmp"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView11SetPositionEffff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView11onDoubleTapERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView11onLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView12GetTextPivotEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView13GetTextLayoutEPKci"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView13OnClickButtonERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView13onScrollStartEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView13onSingleTapUpERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView14MoveIntoScreenENS_5RectFERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEES1_"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView14RequestShowCTXEbRKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView14onScrollFinishEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView15GetObjectHandleEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView15GetScreenMatrixEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView15GetTextRotationEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView15IsCursorEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView15OnScrollChangedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView16UpdateScreenRectERKNS_5RectFERKNS_7Matrix3IfEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView19DrawSectionAsVectorERNS_9ISPCanvasENS_5RectFE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView19onScreenRectUpdatedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView20RequestShowMagnifierENS_6PointFEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView22GetTextVisiblePositionEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView27ConvertTextRectIntoViewRectERKNS_5RectFEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView27ConvertViewRectIntoTextRectERKNS_5RectFE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView28GetTextLayoutCriticalSectionEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView29ConvertTextPointIntoViewPointEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView29ConvertViewPointIntoTextPointEffb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView29NotifyCursorHandleRectUpdatedERNSt6__ndk16vectorINS_5RectFENS1_9allocatorIS3_EEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView31ConvertViewPointIntoScreenPointEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView31OnMaxSelectionTextLengthReachedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView33IsInsertingLineFeedByTouchEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView6onDrawERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView7MeasureEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView7onFlingERNS_11MotionEventES2_ff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView7onTouchERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen18ScrollEditTextView8onScrollERNS_11MotionEventES2_ff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10GetScrollYEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10InvalidateEPNS_4RectE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10SetEnabledEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10SetScrollYEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10SetVisibleEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View10onScaleEndEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View11IsFocusableEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View11SetRotationEf"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View11UpdateCacheERNS_9ISPCanvasEPNS_4RectE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View11onDoubleTapERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View11onLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12IsScrollableEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12SetFocusableEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12SetHoverIconENS_13HoverIconInfoE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12SetHoverIconEiiif"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12SetScrollbarEffff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View12onScaleBeginEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View13SetScrollableEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View13onScrollStartEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View13onSingleTapUpERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View14GetVisibleRectEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View14onScrollFinishEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View15RemoveHoverIconEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View15SetHoverPreviewENS_16HoverPreviewTypeERNS_5RectFERNS_6StringEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View15onDrawScrollbarERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View15onHoldLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16RequestFocusNextEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16RequestFocusPrevEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16onDoubleTapEventERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16onDrawBackgroundERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16onDrawForegroundERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View16onHoverLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View17IsKeyFocusEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View18IsScrollbarVisibleEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View18SetKeyFocusEnabledEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View19IsAllowOutsideTouchERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View19SetScrollbarVisibleEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View19onScreenRectUpdatedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View20GetAccessibilityInfoENS_6PointFE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View22SetAccessibilityEnableEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View22onSingleTapUpConfirmedERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View25GetAccessibilityIsFocusedERb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View25GetAccessibilityPageIndexERi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View29SetAccessibilityVisibleToUserEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View4DrawERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View6onDrawERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7DoClickEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7MeasureEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7onFlingERNS_11MotionEventES2_ff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7onHoverERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7onKeyUpEiRNS_8KeyEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7onScaleEfff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View7onTouchERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View8onScrollERNS_11MotionEventES2_ff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View9GetMatrixEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen4View9onKeyDownEiRNS_8KeyEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 5,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup11SetPositionEffff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup12OnTrimMemoryEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup12dispatchDrawERNS_9ISPCanvasE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup13DispatchFlingERNS_11MotionEventES2_ff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup13DispatchHoverERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup13DispatchKeyUpEiRNS_8KeyEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup13DispatchTouchERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup13GetScreenRectEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup15DispatchKeyDownEiRNS_8KeyEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup15InvalidateChildEPNS_4ViewEPNS_4RectE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup15OnScrollChangedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup16LockScreenUpdateEjb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 6,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup16UpdateScreenRectERKNS_5RectFERKNS_7Matrix3IfEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup17DispatchDoubleTapERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup17DispatchLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup17FindTouchableViewEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup18UnlockScreenUpdateEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19BuildViewCollectionERNS_14ViewCollectionE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19DispatchSingleTapUpERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19GetChildVisibleRectENS_5RectFERfS2_"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19OnScreenSizeChangedEbbii"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19RequestPlayPenSoundEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19RequestSetHoverIconENS_13HoverIconInfoE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup19RequestSetHoverIconEiiif"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup21DispatchHoldLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup21dispatchKeyToChildrenEiRNS_8KeyEventEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22ClearScreenRectUpdatedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22DispatchDoubleTapEventERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22DispatchHoverLongPressERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22OnConfigurationChangedERKNS_4View17ViewConfigurationE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22RequestHideContextMenuEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22RequestRemoveHoverIconEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22RequestSetHoverPreviewENS_16HoverPreviewTypeEPNS_4ViewERNS_5RectFERNS_6StringEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup22RequestShowContextMenuEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup23SetFrontBufferRenderingEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup23dispatchHoverToChildrenERNS_11MotionEventEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup23dispatchTouchToChildrenENS0_9TouchTypeERNS_11MotionEventEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup24GetAccessibilityInfoListENS_6PointFERNS_4ListE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup25RequestReverseContextMenuEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup26OnScreenOrientationChangedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup28DispatchSingleTapUpConfirmedERNS_11MotionEventE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup28RequestPerformHapticFeedbackEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup28RequestUpdateContextMenuRectEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup30NotifyScrollStartToContextMenuEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup30RequestChildRectMoveIntoScreenEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup32RequestCheckIsContextMenuShowingEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup7OnPauseEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup8ContainsEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup8OnResumeEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup9PrintViewEibbPKc"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZN4SPen9ViewGroup9clearDataEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen18ScrollEditTextView16IsEditingEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View10IsMeasuredEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View12GetClassNameEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View20GetAccessibilityTextERNS_6StringE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View21IsAccessibilityEnableEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View26GetAccessibilityPropertiesERi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View27GetAccessibilityDescriptionERNS_6StringE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View28IsAccessibilityVisibleToUserEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View31GetAccessibilityRoleDescriptionERNS_6StringE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen4View32GetAccessibilityStateDescriptionERNS_6StringE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZNK4SPen9ViewGroup16FindViewByViewIdEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZTIN4SPen16ObjectTextLayoutE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZTIN4SPen18ScrollEditTextViewE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 3,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZTIN4SPen9ViewGroupE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup13GetScreenRectEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup15InvalidateChildEPNS_4ViewEPNS_4RectE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup16LockScreenUpdateEjb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup18UnlockScreenUpdateEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup19GetChildVisibleRectENS_5RectFERfS2_"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup19RequestPlayPenSoundEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup19RequestSetHoverIconENS_13HoverIconInfoE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup19RequestSetHoverIconEiiif"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup22RequestHideContextMenuEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup22RequestRemoveHoverIconEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup22RequestSetHoverPreviewENS_16HoverPreviewTypeEPNS_4ViewERNS_5RectFERNS_6StringEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup22RequestShowContextMenuEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup23SetFrontBufferRenderingEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup25RequestReverseContextMenuEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup28RequestPerformHapticFeedbackEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup28RequestUpdateContextMenuRectEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup30NotifyScrollStartToContextMenuEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup30RequestChildRectMoveIntoScreenEPNS_4ViewEPNS_5RectFERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn464_N4SPen9ViewGroup32RequestCheckIsContextMenuShowingEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView12GetTextPivotEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView13GetTextLayoutEPKci"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView14MoveIntoScreenENS_5RectFERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEES1_"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView14RequestShowCTXEbRKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView15GetObjectHandleEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView15GetScreenMatrixEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView15GetTextRotationEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView15IsCursorEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView20RequestShowMagnifierENS_6PointFEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView22GetTextVisiblePositionEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView27ConvertTextRectIntoViewRectERKNS_5RectFEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView27ConvertViewRectIntoTextRectERKNS_5RectFE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView28GetTextLayoutCriticalSectionEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView29ConvertTextPointIntoViewPointEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView29ConvertViewPointIntoTextPointEffb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView29NotifyCursorHandleRectUpdatedERNSt6__ndk16vectorINS_5RectFENS1_9allocatorIS3_EEEE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView31ConvertViewPointIntoScreenPointEff"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView31OnMaxSelectionTextLengthReachedEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_N4SPen18ScrollEditTextView33IsInsertingLineFeedByTouchEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn520_NK4SPen18ScrollEditTextView16IsEditingEnabledEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn8_N4SPen4View10GetScrollYEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn8_N4SPen4View10SetScrollYEi"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn8_N4SPen4View12IsScrollableEv"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 7,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZThn8_N4SPen4View13SetScrollableEb"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "_ZN4SPen14TextLayoutUtil32DEFAULT_CHECKED_BULLET_TYPE_LISTE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "_ZN4SPen14TextLayoutUtil32DEFAULT_ORDERED_BULLET_TYPE_LISTE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "_ZN4SPen14TextLayoutUtil32DEFAULT_UNCHECK_BULLET_TYPE_LISTE"
+        },
+        {
+          "dso": "Drawing",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "_ZN4SPen14TextLayoutUtil34DEFAULT_UNORDERED_BULLET_TYPE_LISTE"
+        },
+        {
+          "dso": "PenCommon",
+          "relocation_count": 2,
+          "relocation_type": "R_AARCH64_ABS64",
+          "symbol": "_ZTIN4SPen13ManagedObjectE"
+        },
+        {
+          "dso": "libc++",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "__cxa_thread_atexit_impl"
+        },
+        {
+          "dso": "libc++",
+          "relocation_count": 1,
+          "relocation_type": "R_AARCH64_GLOB_DAT",
+          "symbol": "free"
+        }
+      ]
+    }
+  },
+  "schema": "sdocx-calligraphy-saved-caller-native-v1"
+}
