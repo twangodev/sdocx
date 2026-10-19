@@ -1004,6 +1004,69 @@ mod tests {
     }
 
     #[test]
+    fn matches_all_native_v4_display_profile_callback_bits() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-display-profiles-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-inkpen-display-profiles-native-v1");
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 7);
+        for (name, case) in cases {
+            assert_eq!(case["route"]["selected_drawable_vtable_id"], "v4", "{name}");
+            let settings = case["pen_setting_data"]["screen_resolution_i32_offsets_32_36"]
+                .as_array()
+                .unwrap();
+            let width = settings[0].as_i64().unwrap() as u32;
+            let height = settings[1].as_i64().unwrap() as u32;
+            assert_eq!(
+                case["profile_case"]["system_display_width_px"], width,
+                "{name} width"
+            );
+            assert_eq!(
+                case["profile_case"]["system_display_height_px"], height,
+                "{name} height"
+            );
+            let input = native_caller_stroke(&case["input"]);
+            let ink = prepare(
+                &input,
+                RuntimeContext {
+                    curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                    screen_width: width,
+                    screen_height: height,
+                },
+            )
+            .unwrap_or_else(|| panic!("{name} V4 caller input must be admitted"));
+            let drawing = &case["streams"]["draw_object_stroke"];
+            let saved = &case["streams"]["saved_redraw"];
+            let stream = drawing["values_f32_bits"].as_array().unwrap();
+            assert_eq!(stream.len() % 3, 0, "{name} native triples");
+            assert_eq!(ink.points.len(), stream.len() / 3, "{name} total count");
+            assert_eq!(drawing["callback_count"], ink.points.len(), "{name}");
+            assert_eq!(saved["same_bytes_as_drawing_phase"], true, "{name}");
+            assert_eq!(saved["sha256"], drawing["sha256"], "{name}");
+
+            for (i, point) in ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[i * 3].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} x"
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[i * 3 + 1].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} y"
+                );
+                assert_eq!(
+                    ink.radii[i].to_bits(),
+                    native_f32(stream[i * 3 + 2].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} radius"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn cubic_sampler_matches_native_base_length_and_positions_bit_exactly() {
         let fixture: Value =
             serde_json::from_str(include_str!("../../../../conformance/smpath-cubic.json"))
