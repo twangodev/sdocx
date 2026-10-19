@@ -4,6 +4,8 @@ use std::borrow::Cow;
 #[cfg(test)]
 mod airbrush;
 #[cfg(test)]
+mod brushpen;
+#[cfg(test)]
 mod calligraphy;
 mod fountain;
 mod fountain_v14;

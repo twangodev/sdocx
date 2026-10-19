@@ -123,8 +123,9 @@ admission and vector paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. Its
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
-native GL upload calls; source-driven sampling, rendered texture/vector paint
-and production integration remain outstanding.
+native GL upload and Draw-binding calls. A test-only source sampler matches
+every instance bit in ten synthetic MotionEvent cases. Style/caller admission,
+rendered texture/vector paint and production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
