@@ -25,7 +25,7 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 
-parser.add_argument('--case',choices=('route_control','line0_curve_short_history'),default='route_control')
+parser.add_argument('--case',choices=('route_control','line0_curve_short_history','line0_curve_short_history_color'),default='route_control')
 parser.add_argument('--advanced-setting',choices=('null','empty','9'),default='null',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
 parser.add_argument('--width',type=int,default=1920)
 parser.add_argument('--height',type=int,default=1080)
@@ -40,9 +40,9 @@ def print(*values,**kwargs):
 if args.case == 'route_control':
  INPUT_CASES={'route_control': {'points':[[0.0,0.0],[2.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]}}
 else:
- INPUT_CASES={'line0_curve_short_history': {'points':[[0.0,0.0],[8.0,0.0],[16.0,3.0],[24.0,3.0]],'size':4.0,'curve_enabled':True,'tool_type':2,'stroke_type':0,'pressure':[0.2,0.4,0.6,0.8],'timestamps':[0,10,20,30],'tilt':[0.0,0.0,0.0,0.0],'orientation':[0.0,0.0,0.0,0.0]}}
+ INPUT_CASES={args.case: {'points':[[0.0,0.0],[8.0,0.0],[16.0,3.0],[24.0,3.0]],'size':4.0,'curve_enabled':True,'tool_type':2,'stroke_type':0,'pressure':[0.2,0.4,0.6,0.8],'timestamps':[0,10,20,30],'tilt':[0.0,0.0,0.0,0.0],'orientation':[0.0,0.0,0.0,0.0]}}
 input_case=INPUT_CASES[args.case]
-if args.case == 'line0_curve_short_history' and args.advanced_setting != '9':
+if args.case in ('line0_curve_short_history','line0_curve_short_history_color') and args.advanced_setting != '9':
  raise SystemExit('the numeric V9 comparison case requires the explicit 9; saved setting')
 if not (0 < args.width < 65536 and 0 < args.height < 65536): raise SystemExit('profile dimensions must be positive u16 values')
 def mov_w0_ret(value):
@@ -265,9 +265,10 @@ method_trace_names_by_pc={}
 inkpen2_buffer_events=[]
 drawable_threshold_entries=[]
 drawable_entry_snapshots=[]
+paint_color_calls=[]
 pending_inkpen2_buffer_returns={}
 for _name,_address in p.syms.items():
- oblique_method='InkPen2StrokeDrawableGLV' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawLine(','::drawPoint(','::startPen(','::endPen('))
+ oblique_method=('InkPen2StrokeDrawableGLV' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawLine(','::drawPoint(','::startPen(','::endPen('))) or _name in ('SPen::Pen::SetColor(int)','SPen::PenDrawableRT::SetPenData(float, int)')
  motion_getter=_name.startswith('SPen::MotionEvent::Get') and ('()' in _name or '(int)' in _name)
  addpoint_method=_name.startswith('SPen::InkPen2StrokeDrawableRTV') and '::AddPoint(' in _name
  if oblique_method or motion_getter or addpoint_method:
@@ -338,6 +339,10 @@ def log_vcall(u,a,z,d):
    try:pointers[f'x{i}_head']=u.mem_read(ptr,96).hex() if ptr else None
    except Exception:pointers[f'x{i}_head']='unmapped'
   record={'signatures':method_trace_names_by_pc[a],'phase':phase,'pc':hex(a),'regs':regs,'pointer_heads':pointers}
+  if 'SPen::Pen::SetColor(int)' in method_trace_names_by_pc[a]:
+   paint_color_calls.append({'method':'SPen::Pen::SetColor(int)','phase':phase,'entry_pc':hex(a),'this':hex(u.reg_read(R.UC_ARM64_REG_X0)),'argb_u32':hex(u.reg_read(R.UC_ARM64_REG_W1))})
+  if 'SPen::PenDrawableRT::SetPenData(float, int)' in method_trace_names_by_pc[a]:
+   paint_color_calls.append({'method':'SPen::PenDrawableRT::SetPenData(float, int)','phase':phase,'entry_pc':hex(a),'this':hex(u.reg_read(R.UC_ARM64_REG_X0)),'size_f32_bits':hex(u.reg_read(R.UC_ARM64_REG_S0)),'argb_u32':hex(u.reg_read(R.UC_ARM64_REG_W1))})
   if any(name.startswith('SPen::InkPen2StrokeDrawableGLV9::RedrawPen(') for name in method_trace_names_by_pc[a]):
    this=u.reg_read(R.UC_ARM64_REG_X0)
    snapshot={'phase':phase,'entry_pc':hex(a),'receiver_address':hex(this),'receiver_role':'primary V9 drawable after native non-virtual thunk adjustment'}
@@ -402,7 +407,11 @@ try:
  manager=p.alloc(256); queue=p.alloc(64); qvt=p.alloc(64); p.put(queue,'Q',qvt); p.u.mem_write(p.context_vtable+16,struct.pack('<Q',0x20001040)); p.u.mem_write(0x20001040,bytes.fromhex('1f2003d5c0035fd6')); p.u.mem_write(0x20001000,bytes.fromhex('1f2003d5c0035fd6')); p.put(qvt+16,'Q',0x20001000); p._task_returns=[]; p.callbacks['SPen::PenGLDataManager::GetMsgQueue()']=lambda:(print('GMSGQ',hex(p.x(0)),hex(queue)),p.x(0,queue))
  p.call('SPen::PenGLDataManager::PenGLDataManager()', [manager]); p.call('SPen::PenGLDataManager::SetMsgQueue(SPen::IGLMsgQueue*)',[manager,queue]); p.put(pen+8,'Q',manager); p.call('SPen::PenGLDataManager::GetMsgQueue()',[manager]); print('manager queue',hex(p.x(0)),hex(queue))
  print('allocs first',p._newlog[:30]); print('canvasprobe addrs',{k:hex(getattr(p,k)) for k in ('drawing','context','bitmap','draw_canvas','pen_canvas','oblique','drawable_vtable','pen','canvas_reference')}); print('inkpen2 ctor ok',hex(pen),bytes(p.u.mem_read(pen,0xa0)).hex()); p.drawing=p.alloc(256); p.u.mem_write(p.drawing,bytes(256)); p.put(p.context,'Q',p.context_vtable); profile=p.alloc(64); profile_vt=p.alloc(64); p.put(profile,'Q',profile_vt); p.put(profile_vt+32,'Q',0x200f20e0); p.put(profile_vt+40,'Q',0x200f20f0); p.u.mem_write(0x200f20d0,bytes.fromhex('40000058c0035fd6')+struct.pack('<Q',profile)); p.u.mem_write(0x200f20e0,mov_w0_ret(args.width)); p.u.mem_write(0x200f20f0,mov_w0_ret(args.height)); p.put(p.context_vtable+16,'Q',0x200f20d0); p.put(p.context_vtable+80,'Q',0x200f20c0); p.u.mem_write(0x200f20c0,bytes.fromhex('e003012ac0035fd6')); p.put(p.context_vtable+144,'Q',0x200f20a0); p.put(p.context_vtable+152,'Q',0x200f20b0); p.u.mem_write(0x200f20a0,bytes.fromhex('20008052c0035fd6')); p.u.mem_write(0x200f20b0,bytes.fromhex('00102e1ec0035fd6')); p.call('SPen::ObjectDrawing::ObjectDrawing()',[p.drawing]); p.call('SPen::ObjectDrawing::Construct(SPen::IContext const*)',[p.drawing,p.context]); print('drawing constructed',p.u.mem_read(p.drawing,128).hex()); p.call('SPen::ObjectDrawing::setIPenBitmap(SPen::ISPPenCanvas*, SPen::IPen*, SPen::StrokeType)',[p.drawing,p.pen_canvas,pen,0],limit=5000000); d=struct.unpack('<Q',p.u.mem_read(pen+112,8))[0]; print('drawing setIPenBitmap drawable',hex(d),bytes(p.u.mem_read(d,0x180)).hex() if d else None);
- p.f(0,input_case['size']); p.call('SPen::ObjectStroke::SetPenSize(float)',[obj]); p.call('SPen::ObjectStroke::GetPenSize() const',[obj]); source_size_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex(); print('native ObjectStroke GetPenSize S0 bits',source_size_bits); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,input_case['tool_type']]); p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj,input_case['stroke_type']]); p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj,int(input_case['curve_enabled'])]); print('SetCurveEnabled post-call x0',p.x(0)); points=input_case['points']; count=len(points); pts=p.alloc(count*8); prs=p.alloc(count*4); ts=p.alloc(count*4); tilt=p.alloc(count*4); orient=p.alloc(count*4); p.u.mem_write(pts,struct.pack('<'+'f'*(count*2),*(v for xy in points for v in xy))); p.u.mem_write(prs,struct.pack('<'+'f'*count,*input_case['pressure'])); p.u.mem_write(ts,struct.pack('<'+'i'*count,*input_case['timestamps'])); p.u.mem_write(tilt,struct.pack('<'+'f'*count,*input_case['tilt'])); p.u.mem_write(orient,struct.pack('<'+'f'*count,*input_case['orientation'])); p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj,pts,prs,ts,tilt,orient,count]); rect=p.alloc(32); p.call('SPen::ObjectBase::SetVisibility(bool)',[obj,1]); p.call('SPen::ObjectBase::IsVisible() const',[obj]); print('visible',p.x(0)); p.call('SPen::ObjectStroke::GetPenName() const',[obj]); print('penname initial',hex(p.x(0))); pname=p.alloc(32); p.call('SPen::String::String()',[pname]); p.call('SPen::String::Construct()',[pname]); cstr=p.alloc(80); p.u.mem_write(cstr,b'com.samsung.android.sdk.pen.pen.preload.InkPen2\0'); p.call('SPen::String::Set(char const*)',[pname,cstr]); p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj,pname]);
+ p.f(0,input_case['size']); p.call('SPen::ObjectStroke::SetPenSize(float)',[obj]); p.call('SPen::ObjectStroke::GetPenSize() const',[obj]); source_size_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex(); print('native ObjectStroke GetPenSize S0 bits',source_size_bits); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,input_case['tool_type']]); p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj,input_case['stroke_type']]); source_color_argb=None
+ if args.case.endswith('_color'):
+  source_color_argb=0xff336699; p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj,source_color_argb]); p.call('SPen::ObjectStroke::GetColor() const',[obj]); source_color_getter=p.x(0)
+  if source_color_getter!=source_color_argb: raise RuntimeError(f'ObjectStroke::GetColor returned {source_color_getter:#x}, expected {source_color_argb:#x}')
+ p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj,int(input_case['curve_enabled'])]); print('SetCurveEnabled post-call x0',p.x(0)); points=input_case['points']; count=len(points); pts=p.alloc(count*8); prs=p.alloc(count*4); ts=p.alloc(count*4); tilt=p.alloc(count*4); orient=p.alloc(count*4); p.u.mem_write(pts,struct.pack('<'+'f'*(count*2),*(v for xy in points for v in xy))); p.u.mem_write(prs,struct.pack('<'+'f'*count,*input_case['pressure'])); p.u.mem_write(ts,struct.pack('<'+'i'*count,*input_case['timestamps'])); p.u.mem_write(tilt,struct.pack('<'+'f'*count,*input_case['tilt'])); p.u.mem_write(orient,struct.pack('<'+'f'*count,*input_case['orientation'])); p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj,pts,prs,ts,tilt,orient,count]); rect=p.alloc(32); p.call('SPen::ObjectBase::SetVisibility(bool)',[obj,1]); p.call('SPen::ObjectBase::IsVisible() const',[obj]); print('visible',p.x(0)); p.call('SPen::ObjectStroke::GetPenName() const',[obj]); print('penname initial',hex(p.x(0))); pname=p.alloc(32); p.call('SPen::String::String()',[pname]); p.call('SPen::String::Construct()',[pname]); cstr=p.alloc(80); p.u.mem_write(cstr,b'com.samsung.android.sdk.pen.pen.preload.InkPen2\0'); p.call('SPen::String::Set(char const*)',[pname,cstr]); p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj,pname]);
  if args.advanced_setting in ('empty','9'):
   advanced=p.alloc(32); p.call('SPen::String::String()',[advanced]); p.call('SPen::String::Construct()',[advanced]); advanced_cstr=p.alloc(8); p.u.mem_write(advanced_cstr,b'9;\0' if args.advanced_setting=='9' else b'\0'); p.call('SPen::String::Set(char const*)',[advanced,advanced_cstr]); p.call('SPen::ObjectStroke::SetAdvancedPenSetting(SPen::String const*)',[obj,advanced]);
  p.call('SPen::ObjectStroke::GetAdvancedPenSetting() const',[obj]); advanced_getter=p.x(0); advanced_getter_bytes=p.u.mem_read(advanced_getter,32).hex() if advanced_getter else None
@@ -448,11 +457,32 @@ try:
  traced_methods=[{k:v for k,v in row.items() if k in ('signatures','phase','pc','regs','motion_event_entry_bytes','pointer_heads')} for row in native_draw_entries if any(token in name for name in row['signatures'] for token in ('::RedrawPen(','::endPen(','::drawPoint('))]
  case_id=args.case+'_'+('null_v1' if args.advanced_setting=='null' else ('empty_v9' if args.advanced_setting=='empty' else 'explicit9_v9'))
  result={'schema':'sdocx-inkpen2-saved-caller-case-v1','case_id':case_id,'profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':{'kind':'synthetic native ObjectStroke setter input; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.InkPen2','stroke_type':stroke,'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'pen_size_f32_bits':source_size_bits,'points_f32_bits':[[struct.pack('<f',v).hex() for v in xy] for xy in points],'pressure_f32_bits':[struct.pack('<f',v).hex() for v in input_case['pressure']],'timestamps_i32':input_case['timestamps'],'tilt_f32_bits':[struct.pack('<f',v).hex() for v in input_case['tilt']],'orientation_f32_bits':[struct.pack('<f',v).hex() for v in input_case['orientation']],'advanced_setting_state':args.advanced_setting, 'advanced_setting':('9;' if args.advanced_setting=='9' else ('empty-string' if args.advanced_setting=='empty' else None)), 'advanced_getter_pointer_nonnull':bool(advanced_getter), 'advanced_getter_object_hex':advanced_getter_bytes, 'advanced_getter_utf8':advanced_utf8},'native_calls':{'ObjectDrawing::drawObjectStroke_return':draw_result,'selected_drawable_object_redraw_return':saved_redraw_result,'drawObjectStroke_rect_f32_bits':draw_rect,'separate_saved_RedrawPen_rect_f32_bits':saved_redraw_rect,'route':{'advanced_setting_state':args.advanced_setting, 'advanced_setting':('9;' if args.advanced_setting=='9' else ('empty-string' if args.advanced_setting=='empty' else None)), 'advanced_getter_pointer_nonnull':bool(advanced_getter), 'advanced_getter_object_hex':advanced_getter_bytes, 'advanced_getter_utf8':advanced_utf8,'drawing_selected_drawable_version':selected_drawable_version,'saved_redraw_invoked_version':selected_drawable_version},'source_ObjectStroke_arrays':source_object_arrays,'motion_event_getter_returns':native_motion_getter_returns,'loader':loader_calls,'pen_screen_resolution':screen_resolution_calls,'source_ObjectStroke_GetPenSize_f32_bits':source_size_bits,'ObjectStroke_getter_snapshots':object_stroke_snapshots,'selected_drawable_redraw_lifecycle_method_entries':traced_methods,'selected_drawable_state':drawable_native_state,'drawing_selected_rt_id':selected_rt_id,'pen_GetSize_after_draw_f32_bits':pen_size_after_draw_bits,'drawable_getSize_f32_bits':drawable_size_bits,'drawable_getInverseScale_f32_bits':inverse_scale_bits},'native_method_entries':traced_methods, 'callback_buffer_events':inkpen2_buffer_events,'libraries':native_hashes,'host_boundaries':['ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height','context vslot +80 is an explicit identity color-conversion host callback','context vslots +144/+152 return explicit flags/version values 1 and 1.0','canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/InkPen2 geometry execute natively'],'scope':'Native Drawing caller plus direct saved RedrawPen under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'}
+ if source_color_argb is not None:
+  result['input']['color_argb_u32']=source_color_argb
+  result['native_calls']['source_ObjectStroke_GetColor_u32']=source_color_getter
+  result['native_calls']['paint_color_calls']=paint_color_calls
  result['native_calls']['drawline_threshold_entries']=drawable_threshold_entries
  result['native_calls']['selected_drawable_redraw_entry_state']=drawable_entry_snapshots
  result['native_calls']['selected_drawable_object_redraw_entry']=selected_object_redraw_names[0] if selected_object_redraw_names else None
  result['native_calls']['selected_drawable_primary_vtable_id']='InkPen2StrokeDrawableGLV'+selected_drawable_version
  result['scope']=f'Native Drawing caller plus direct RedrawPen through selected GLV{selected_drawable_version} vtable slot under an explicit synthetic profile. No serialized SDocx parser, device-default profile, renderer pixels, or SVG/PDF export.'
+ if source_color_argb is not None:
+  rgb=tuple(((source_color_argb >> shift)&255)/255.0 for shift in (16,8,0))
+  reference=json.loads((ROOT/'conformance/inkpen2-saved.json').read_text())['cases'][0]['native']['rtv3']
+  expected_geometry=[struct.pack('<6f',*row[:6]) for row in reference]
+  validation={}
+  for phase_name in ('draw_object_stroke','saved_redraw'):
+   events=[row for row in inkpen2_buffer_events if row['phase']==phase_name]
+   raw=bytes.fromhex(events[-1]['after_bytes'])
+   if len(raw)%36 or len(raw)//36!=len(reference): raise RuntimeError(f'colored {phase_name} record count mismatch')
+   rows=[struct.unpack_from('<9f',raw,index) for index in range(0,len(raw),36)]
+   if [struct.pack('<6f',*row[:6]) for row in rows]!=expected_geometry: raise RuntimeError(f'colored {phase_name} geometry differs from numeric reference')
+   rgb_bits=[struct.pack('<f',value) for value in rgb]
+   if any([struct.pack('<f',value) for value in row[6:]]!=rgb_bits for row in rows): raise RuntimeError(f'colored {phase_name} RGB lanes differ from source ARGB {source_color_argb:#x}')
+   validation[phase_name]={'record_count':len(rows),'constant_rgb_f32_bits':[struct.pack('<f',value).hex() for value in rgb],'geometry_first_six_match_numeric_fixture':True}
+  if not any(row['method']=='SPen::Pen::SetColor(int)' and row['argb_u32']==hex(source_color_argb) and row['phase']=='draw_object_stroke' for row in paint_color_calls): raise RuntimeError('native Drawing did not forward the source color to Pen::SetColor')
+  if not any(row['method']=='SPen::PenDrawableRT::SetPenData(float, int)' and row['argb_u32']==hex(source_color_argb) for row in paint_color_calls): raise RuntimeError('native PenDrawableRT::SetPenData did not receive the source ARGB')
+  result['native_calls']['color_contract_validation']=validation
  encoded=json.dumps(result,indent=2,sort_keys=True)+'\n'
  if draw_result != 1 or saved_redraw_result != 1:
   raise RuntimeError(f'native saved caller/replay failed: {draw_result}, {saved_redraw_result}')
