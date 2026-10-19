@@ -114,12 +114,16 @@ The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-finding
 establishes orientation-derived nib geometry and reused state; this profile
 also uses the generic approximation in Rust. Its test-only linked core matches
 captured saved-array conversion, initialization, history/endPen state, vectors
-and core/fringe buffers for fresh/reused cases. Caller admission and paint
-remain outstanding.
+and core/fringe buffers for fresh/reused cases. A native
+[queued Draw capture](../conformance/calligraphy-draw-native.json) checks buffer
+uploads, draw order, uniforms and GLES blend calls under explicit host callbacks.
+Caller admission, layer opacity and rendered vector paint remain outstanding.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
-at a synthetic SPTextureBitmap UpdateBitmap boundary. GPU compositing, caller
-admission and vector paint integration remain outstanding.
+at a synthetic SPTextureBitmap UpdateBitmap boundary. A native
+[texture capture](../conformance/airbrush-texture-native.json) now checks Renderer
+allocation, nearest/clamped sampling and exact GL upload bytes. GPU compositing,
+caller admission and vector paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. Its
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
