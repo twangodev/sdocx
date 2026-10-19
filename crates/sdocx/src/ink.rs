@@ -16,6 +16,8 @@ mod inkpen;
 #[cfg(test)]
 mod inkpen2;
 mod marker2;
+#[cfg(test)]
+mod marker3;
 mod marker4;
 #[cfg(test)]
 mod oblique;
