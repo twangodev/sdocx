@@ -1,0 +1,707 @@
+{
+  "schema": "sdocx-calligraphy-v1-native-queued-draw-host-gles-v1",
+  "evidence": {
+    "calligraphy_library_sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+    "renderer_library_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "graphics_library_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "host_context": "Pinned saved RedrawPen/endPen execute through actual WorkerTask::Member2 queue Run, RTV1::Update, and native GraphicsObject::UpdateBuffer. Native RTV1::Draw and Renderer GLES GraphicsObject, BlendStateObject, OpenGLShaderProgram, and ParameterBindingImpl methods execute. Host supplies explicit MotionEvent values, an identity-transform ISPSubBitmap callback interface, synthetic EGL context/GLES object handles/status, source-derived uniform reflection, and intercepted GLES imports. After queued Update, host code redirects PC at movePen+0x3b4 to the native epilogue (+0x3e4); at redraw+0x1f5b4 the queue callback returns through a host trampoline. These redirects skip remaining canvas-size/density metadata; they are not native early returns. Draw then uses the resulting RTV1 state.",
+    "limits": [
+      "No Android EGL/GLES driver or device pixels",
+      "Shader compile/link success, uniform reflection and locations are host-adapter values; type is derived from pinned captured GLSL",
+      "Identity subbitmap transform and bind/unbind are synthetic host inputs",
+      "GL import calls are native call arguments, not executed driver state"
+    ]
+  },
+  "cases": [
+    {
+      "input": {
+        "history_xy_orientation": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            1.0,
+            0.35
+          ],
+          [
+            9.0,
+            5.0,
+            0.7
+          ]
+        ],
+        "pen_size": 6.0,
+        "argb": "0x80112233"
+      },
+      "saved_redraw": {
+        "native_add_point_count": 26,
+        "native_build_mesh_count": 130,
+        "orientation_reads": 4
+      },
+      "set_pen_data": {
+        "native_argb": "0x80112233",
+        "size_f32_bits": "0000c040",
+        "rgba_f32_bits": [
+          "8988883d",
+          "8988083e",
+          "cdcc4c3e",
+          "8180003f"
+        ]
+      },
+      "queued_update": {
+        "worker_runs": 4,
+        "update_buffer_entries": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "vertex_count": 156,
+            "sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "vertex_count": 156,
+            "sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "vertex_count": 78,
+            "sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          }
+        ],
+        "uploads": [
+          {
+            "source_vector_slot": 224,
+            "byte_count": 1248,
+            "vertex_count": 78,
+            "sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          },
+          {
+            "source_vector_slot": 232,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "source_vector_slot": 240,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          }
+        ]
+      },
+      "draw": {
+        "entry_return_pc": "0x200f1000",
+        "native_graphics_draw_count": 3,
+        "gles_import_count": 32,
+        "draws": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 78,
+            "source_sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          }
+        ],
+        "uniform_bindings": [
+          {
+            "shader_slot": 272,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 272,
+            "uniform": "inputColor",
+            "binding_type": 5
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "inputColor",
+            "binding_type": 5
+          }
+        ],
+        "active_uniform_reflection": {
+          "calligraphy-core": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz * a, a);",
+            "shader_sha256": [
+              "f7f69192f79d2ba2ceb5db81cb5e91cd68ee178242049f7929865ec287868783",
+              "6705c2ff0b27d75c105028b266404243dec829797a125e72a3824248657499a1"
+            ]
+          },
+          "calligraphy-fringe": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz, 1.0);",
+            "shader_sha256": [
+              "1a15105a02d56dcc24a867b66ab9772dace5ea8398dec9020148e4ec570c63ae",
+              "88c17194b87ac2a7087450d61f6b8f979a6f209467720b8e385d556236be97a3"
+            ]
+          }
+        },
+        "uniform_calls": [
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883d",
+              "8988083e",
+              "cdcc4c3e",
+              "8180003f"
+            ]
+          }
+        ],
+        "blend_calls": [
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "host_subbitmap_callbacks": {
+          "matrix": 3,
+          "bind": 1,
+          "unbind": 1
+        }
+      },
+      "native_run_counts": {
+        "queue_runs": 4,
+        "add_points": 26,
+        "build_meshes": 130,
+        "orientation_reads": 4
+      }
+    },
+    {
+      "input": {
+        "history_xy_orientation": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            1.0,
+            0.35
+          ],
+          [
+            9.0,
+            5.0,
+            0.7
+          ]
+        ],
+        "pen_size": 6.0,
+        "argb": "0x4044aaee"
+      },
+      "saved_redraw": {
+        "native_add_point_count": 26,
+        "native_build_mesh_count": 130,
+        "orientation_reads": 4
+      },
+      "set_pen_data": {
+        "native_argb": "0x4044aaee",
+        "size_f32_bits": "0000c040",
+        "rgba_f32_bits": [
+          "8988883e",
+          "abaa2a3f",
+          "efee6e3f",
+          "8180803e"
+        ]
+      },
+      "queued_update": {
+        "worker_runs": 4,
+        "update_buffer_entries": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "vertex_count": 156,
+            "sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "vertex_count": 156,
+            "sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "vertex_count": 78,
+            "sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          }
+        ],
+        "uploads": [
+          {
+            "source_vector_slot": 224,
+            "byte_count": 1248,
+            "vertex_count": 78,
+            "sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          },
+          {
+            "source_vector_slot": 232,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "source_vector_slot": 240,
+            "byte_count": 2496,
+            "vertex_count": 156,
+            "sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          }
+        ]
+      },
+      "draw": {
+        "entry_return_pc": "0x200f1000",
+        "native_graphics_draw_count": 3,
+        "gles_import_count": 32,
+        "draws": [
+          {
+            "graphics_slot": 256,
+            "source_vector_slot": 232,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "688bbdbecfee4088a7ff83269f92bf9b3270260e9bb46b010a99847aa15e1977"
+          },
+          {
+            "graphics_slot": 264,
+            "source_vector_slot": 240,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 156,
+            "source_sha256": "795e0acc5c66d39fc42a848003b956ba6eeaad2c5b1777d11ccbd8bb81295f12"
+          },
+          {
+            "graphics_slot": 248,
+            "source_vector_slot": 224,
+            "mode": 4,
+            "first": 0,
+            "vertex_count": 78,
+            "source_sha256": "d052b460ef3bf68b9672094b5efd884512dd53459cf0b3b01885175a94ecdce8"
+          }
+        ],
+        "uniform_bindings": [
+          {
+            "shader_slot": 272,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 272,
+            "uniform": "inputColor",
+            "binding_type": 5
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "ProjectionMatrix",
+            "binding_type": 2
+          },
+          {
+            "shader_slot": 280,
+            "uniform": "inputColor",
+            "binding_type": 5
+          }
+        ],
+        "active_uniform_reflection": {
+          "calligraphy-core": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz * a, a);",
+            "shader_sha256": [
+              "f7f69192f79d2ba2ceb5db81cb5e91cd68ee178242049f7929865ec287868783",
+              "6705c2ff0b27d75c105028b266404243dec829797a125e72a3824248657499a1"
+            ]
+          },
+          "calligraphy-fringe": {
+            "active": [
+              {
+                "name": "ProjectionMatrix",
+                "gl_type": 35676
+              },
+              {
+                "name": "inputColor",
+                "gl_type": 35666
+              }
+            ],
+            "fragment_output": "gl_FragColor = vec4(inputColor.xyz, 1.0);",
+            "shader_sha256": [
+              "1a15105a02d56dcc24a867b66ab9772dace5ea8398dec9020148e4ec570c63ae",
+              "88c17194b87ac2a7087450d61f6b8f979a6f209467720b8e385d556236be97a3"
+            ]
+          }
+        },
+        "uniform_calls": [
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883e",
+              "abaa2a3f",
+              "efee6e3f",
+              "8180803e"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-core",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883e",
+              "abaa2a3f",
+              "efee6e3f",
+              "8180803e"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "ProjectionMatrix",
+            "kind": "mat4",
+            "matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ]
+          },
+          {
+            "program": "calligraphy-fringe",
+            "uniform": "inputColor",
+            "kind": "vec4",
+            "value_f32_bits": [
+              "8988883e",
+              "abaa2a3f",
+              "efee6e3f",
+              "8180803e"
+            ]
+          }
+        ],
+        "blend_calls": [
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "call": "glBlendEquationSeparate",
+            "values": [
+              32774,
+              32774
+            ]
+          },
+          {
+            "call": "glBlendFuncSeparate",
+            "values": [
+              1,
+              771
+            ]
+          },
+          {
+            "call": "glEnable",
+            "values": [
+              3042
+            ]
+          },
+          {
+            "call": "glColorMask",
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "host_subbitmap_callbacks": {
+          "matrix": 3,
+          "bind": 1,
+          "unbind": 1
+        }
+      },
+      "native_run_counts": {
+        "queue_runs": 4,
+        "add_points": 26,
+        "build_meshes": 130,
+        "orientation_reads": 4
+      }
+    }
+  ]
+}
