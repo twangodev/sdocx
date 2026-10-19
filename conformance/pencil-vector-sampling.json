@@ -1,0 +1,267 @@
+{
+  "limitations": [
+    "one saved native particle (saved-4 particle 0), source row/phase and alpha only",
+    "neutral paper and embedded default paper only",
+    "host EGL/resvg profiles, not Android device",
+    "PDF path export has no pixel-grid crispEdges guarantee; PDF identity only proves the hint was discarded in this paired control",
+    "no saved-caller/context/production Pencil admission"
+  ],
+  "native_sampler": "NEAREST; brush CLAMP_TO_EDGE, paper REPEAT; shader input color and source-over factors match conformance/pencil-paint-v1.json host profile.",
+  "pdf_hint_loss_control": [
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": false,
+      "size": 128
+    },
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": false,
+      "size": 192
+    },
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": false,
+      "size": 256
+    },
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": true,
+      "size": 128
+    },
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": true,
+      "size": 192
+    },
+    {
+      "crisp_and_normal_pdf_identical": true,
+      "paper": true,
+      "size": 256
+    }
+  ],
+  "provenance": {
+    "atlas_red_sha256": "79991131bc27e15ffcc4ecd8e6a34e0775642efd82e92e71d13129a17e522e4a",
+    "host": "Unmodified DSO GLSL and embedded textures on surfaceless EGL/GLES; synthetic centered 128-unit page; host is not device GLES.",
+    "library_sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+    "native_input_fixture_sha256": "530b72d6891d430016d99948164ca4d85dd07f90de13b178be262c7da68d5597",
+    "packed_attributes_sha256": "7ff702068f403b964ff715fad1add28c3bb42dc85f2714387793979bb5ed8243",
+    "paper_gray_sha256": "171b3fc88b6e693a06676bcf0e8029cdc122d50bbeb9f03fe969b153104d3994",
+    "saved_particle": "saved-4-samples-size-4.01",
+    "shader_sha256": [
+      "cee078d0df53db8da119078a7c26106e43a3c1ae7364844f19edbb587eee7298",
+      "0746879b2dd55d0fc61036eaffa4651a0f9a9aabadb92c4dc08cf4bd5b655fb1"
+    ],
+    "source_inputs_sha256": {
+      "helper_lock": "581ae7968c08f74de3551f6c61812b18a6f1f7aa5fd38855a9008977a2961b99",
+      "helper_manifest": "624c3f3ddfb1d8e97ce4a8627a1aaddc593ef3a16bbfa4659e35d6c93f5e4e21",
+      "helper_source": "8d1ec580c061d4a57b17587e405bfc934febeec9779ccd9d3202f52fbbc83cd3",
+      "native_gles_support": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "native_particles": "530b72d6891d430016d99948164ca4d85dd07f90de13b178be262c7da68d5597",
+      "pdf_renderer": "bc5230078af42d2e2165e5bf4f73ab331730a9be6ca4769b3105a2ccda746e89",
+      "pencil_library": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+      "related_texture_harness": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+      "runner": "34dff202b60b6fcd2ab37b1a96d7f3df06a678ede717dd3b7547a3ce696e456f",
+      "sdocx_manifest": "8789b200f378fb5ff1515fab09aa2ecc61b0610f5c694571aa6afe79601d6a62",
+      "svg_render": "342ec97ae701746977789c717179602699fcc3e9aae0c107dfa69882c9d501f8",
+      "workspace_lock": "b4e04e58c2665e441c24d793fd7d4fad64dfe843ef4f48572c7621ac08499d04"
+    },
+    "toolchain": {
+      "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "cargo_lock_sha256": "581ae7968c08f74de3551f6c61812b18a6f1f7aa5fd38855a9008977a2961b99",
+      "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+      "target_dir": "<work-dir>/cargo-target"
+    },
+    "unrelated_texture_harness_role": "airbrush_texture_native.py is hash-recorded as an adjacent conformance reference only; this runner does not import or execute it."
+  },
+  "render_path": "Pinned resvg 0.47.0/usvg direct path rendering from generated SVG; same SVG also passed to sdocx::render_svg_pages_pdf.",
+  "results": [
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 15,
+      "max_rgb_error_outside_sibling": 51,
+      "native_rgb_sha256": "524e3a20528aac35482c25c8af6d9cfcebaecf9e78fc146fc6f19af1abbff42a",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "8a308e0452f0a52e4b8d0779498efacc0349b8127365faff08a62388ecf28d15",
+      "size": 128,
+      "sum_rgb_error_outside_sibling": 435,
+      "svg_sha256": "65d24e55501624553c69313a8610abd48d7a706bf26aa47893bc38f692a2e78d"
+    },
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "524e3a20528aac35482c25c8af6d9cfcebaecf9e78fc146fc6f19af1abbff42a",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "7a3939e90748455c8a3d61b2dfab21c31031b6acf4c22d3fbb7eb36adad658cd",
+      "size": 128,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "2618f800219c1627e0d6b301ec7d786e2e203b2c9096b05c7358e9c331e266f8"
+    },
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 28,
+      "max_rgb_error_outside_sibling": 64,
+      "native_rgb_sha256": "b9ba071791cd6dfda5e8f2a6947023c106c12626f31169e9d200349f28c34b14",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "6c9ae45e614d4ae5296cc6a1311b938769881ee5d53c46382cdb7d436a61c204",
+      "size": 192,
+      "sum_rgb_error_outside_sibling": 764,
+      "svg_sha256": "65d24e55501624553c69313a8610abd48d7a706bf26aa47893bc38f692a2e78d"
+    },
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "b9ba071791cd6dfda5e8f2a6947023c106c12626f31169e9d200349f28c34b14",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "2d5d019a8d2a704d65621148f4d8ccb2956509c712f25f408b2f619323be09ec",
+      "size": 192,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "2618f800219c1627e0d6b301ec7d786e2e203b2c9096b05c7358e9c331e266f8"
+    },
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 48,
+      "max_rgb_error_outside_sibling": 46,
+      "native_rgb_sha256": "7032e668a1daec4363ffa931d1df82a1d299164f9e915a79bd476ffd4504d321",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "958ad61e5e377740b6d4d2318531ec7b0e3bfd77540b8d272cd09c7f1e7f58ef",
+      "size": 256,
+      "sum_rgb_error_outside_sibling": 1105,
+      "svg_sha256": "65d24e55501624553c69313a8610abd48d7a706bf26aa47893bc38f692a2e78d"
+    },
+    {
+      "cell_intersections": 4354,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "7032e668a1daec4363ffa931d1df82a1d299164f9e915a79bd476ffd4504d321",
+      "nonzero_vector_cells": 4354,
+      "opacity_groups": 153,
+      "paper": false,
+      "pdf_sha256": "75e400ccaaa2d42325f2bec92e8528295f41fd2faa9726a7a614e340fbebc981",
+      "resvg_rgb_sha256": "d5dd4128894838c80582cb07d8c3c51e9d6c5484ad4fbe1bac71558bf368ef62",
+      "size": 256,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "2618f800219c1627e0d6b301ec7d786e2e203b2c9096b05c7358e9c331e266f8"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 17,
+      "max_rgb_error_outside_sibling": 13,
+      "native_rgb_sha256": "8bcc29d04232023395e80a6e7ba723b7088b01f636559526f44af83a89751c98",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "0662715a809a7301b94fa9176405996414f505843096acd5f8db6f308dfe5960",
+      "size": 128,
+      "sum_rgb_error_outside_sibling": 182,
+      "svg_sha256": "5a3615b856ca6d208457b07c3d00a93f01254d452dbb69bdc9e47990b7b1d9e2"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "8bcc29d04232023395e80a6e7ba723b7088b01f636559526f44af83a89751c98",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "c73d87d80b8001452c5e569b1a6863e33fc13382c507fece679f13d512a16082",
+      "size": 128,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "7d88cafb31272c6923b075872b26470eb37562054cdba522d5ca5752c347c9f3"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 27,
+      "max_rgb_error_outside_sibling": 27,
+      "native_rgb_sha256": "b3328ad7fa38fa87023b150d6c2ccc3bc09022ab117c231e759b641a9c49ae02",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "b1949488d358ce338b870069624d10f3a9742b0ba47cd07a6127d04cda8a6be3",
+      "size": 192,
+      "sum_rgb_error_outside_sibling": 338,
+      "svg_sha256": "5a3615b856ca6d208457b07c3d00a93f01254d452dbb69bdc9e47990b7b1d9e2"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "b3328ad7fa38fa87023b150d6c2ccc3bc09022ab117c231e759b641a9c49ae02",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "3aaf00ed33dd534f847639cf251ea84cd812ac96ff23f98449a50f2fa79ccb08",
+      "size": 192,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "7d88cafb31272c6923b075872b26470eb37562054cdba522d5ca5752c347c9f3"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": false,
+      "different_pixels_outside_sibling": 47,
+      "max_rgb_error_outside_sibling": 25,
+      "native_rgb_sha256": "da71bf259a7b96e78200cfa3f9ced65922e99bdd4a6a54277d2c110c86dba995",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "75df3f842ef5c98d2f1c345eb1a0b2af422c1f3cc69178417f6b41876c5a9b20",
+      "size": 256,
+      "sum_rgb_error_outside_sibling": 492,
+      "svg_sha256": "5a3615b856ca6d208457b07c3d00a93f01254d452dbb69bdc9e47990b7b1d9e2"
+    },
+    {
+      "cell_intersections": 4799,
+      "crisp_edges": true,
+      "different_pixels_outside_sibling": 0,
+      "max_rgb_error_outside_sibling": 0,
+      "native_rgb_sha256": "da71bf259a7b96e78200cfa3f9ced65922e99bdd4a6a54277d2c110c86dba995",
+      "nonzero_vector_cells": 4799,
+      "opacity_groups": 1742,
+      "paper": true,
+      "pdf_sha256": "767a4d2901eb10a46622f43e5999ac824250e180e56b6bb229f8961df0f06ade",
+      "resvg_rgb_sha256": "af32d446de164737570584839b42400a946cff0e8d1b547f0a367d3221b0bfa6",
+      "size": 256,
+      "sum_rgb_error_outside_sibling": 0,
+      "svg_sha256": "7d88cafb31272c6923b075872b26470eb37562054cdba522d5ca5752c347c9f3"
+    }
+  ],
+  "scope_control": {
+    "outside_sibling_pixels_changed": 0,
+    "sibling_region_rgb_sha256": "08634b31e8598338debf60168e50383c879f6bc1a2e2b8d39d1b7bc5b4d1fce1",
+    "size": 128
+  },
+  "shape_rendering_scope": "crispEdges is on #pencil-stamp group only. A nonoverlapping sibling rect is outside the group and compared across hint controls.",
+  "vector_model": "Original brush and paper mask texels become logical-coordinate path cells; paper is split at periodic source texel boundaries. No rasterized stroke or flattened framebuffer is embedded.",
+  "version": 1
+}

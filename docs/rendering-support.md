@@ -96,8 +96,11 @@ Profile admission and validation are narrower than the names above. See
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
-Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses;
-runtime paper coverage and vector paint integration remain outstanding.
+Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
+A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
+matches the host shader at three scales with group-scoped SVG `crispEdges`,
+including embedded paper. Public PDF export drops that hint; general runtime
+paper coverage and production vector paint integration remain outstanding.
 The test-only Marker3 V5 sampler checks stamp positions, radii and callback
 boundaries in ten [synthetic native cases](../conformance/marker3-saved-native.json).
 The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
