@@ -946,6 +946,7 @@ dependencies = [
  "bytemuck",
  "cesu8",
  "cssparser",
+ "flate2",
  "fontdb",
  "imagesize",
  "krilla",

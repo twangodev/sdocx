@@ -6,10 +6,14 @@
 
 #[cfg(test)]
 mod tests {
+    use flate2::read::ZlibDecoder;
     use serde::Deserialize;
     use std::collections::BTreeMap;
+    use std::io::Read;
 
     const FIXTURE: &str = include_str!("../../../../conformance/inkpen2-paint-native.json");
+    const JOINED_SCALE_FIXTURE: &str =
+        include_str!("../../../../conformance/inkpen2-joined-scale-native.json");
 
     #[derive(Deserialize)]
     struct Fixture {
@@ -98,6 +102,73 @@ mod tests {
         rgba_bytes: String,
     }
 
+    #[derive(Deserialize)]
+    struct JoinedScaleFixture {
+        schema: String,
+        cases: BTreeMap<String, JoinedScaleCase>,
+        partial_alpha_control: JoinedScaleCase,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedScaleCase {
+        draw_scale: f32,
+        draw_matrix_f32_row_major: Vec<f32>,
+        source_argb_u32: u32,
+        producer: JoinedScaleProducer,
+        paint: JoinedScalePaint,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedScaleProducer {
+        byte_count: usize,
+        #[serde(rename = "native_AddPoint_vector_bytes_hex")]
+        native_addpoint_vector_bytes_hex: String,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedScalePaint {
+        readback: JoinedScaleReadback,
+        draw_pass: String,
+        target_setup: JoinedScaleTarget,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedScaleReadback {
+        width: usize,
+        height: usize,
+        uncompressed_byte_count: usize,
+        full_bytes_zlib_base64: String,
+        draw_matrix_f32_row_major: Vec<f32>,
+        actual_uniform_matrix_calls: Vec<JoinedMatrixCall>,
+        actual_viewport_calls: Vec<Vec<i32>>,
+        actual_instanced_draw_state: Vec<JoinedDrawState>,
+        rt_plus_68_u8_before_draw: String,
+        draw_rt_plus_68_branch_trace: Vec<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedScaleTarget {
+        width: usize,
+        height: usize,
+        format_name: String,
+        host_created_destination: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedMatrixCall {
+        program: u32,
+        count: usize,
+        transpose: u8,
+        values: Vec<f32>,
+    }
+
+    #[derive(Deserialize)]
+    struct JoinedDrawState {
+        program: u32,
+        args: Vec<u32>,
+        viewport: Vec<i32>,
+    }
+
     struct PaintReadbacks {
         max_mask: Vec<u8>,
         source_over: Vec<u8>,
@@ -139,6 +210,173 @@ mod tests {
             .chunks_exact(2)
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
+    }
+
+    fn decode_base64_zlib(value: &str) -> Vec<u8> {
+        use base64::Engine as _;
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(value)
+            .unwrap();
+        let mut decoder = ZlibDecoder::new(compressed.as_slice());
+        let mut bytes = Vec::new();
+        decoder.read_to_end(&mut bytes).unwrap();
+        bytes
+    }
+
+    fn joined_records(case: &JoinedScaleCase) -> Vec<[f32; 9]> {
+        let bytes = decode_hex(&case.producer.native_addpoint_vector_bytes_hex);
+        assert_eq!(bytes.len(), case.producer.byte_count);
+        assert_eq!(bytes.len() % (9 * 4), 0);
+        bytes
+            .chunks_exact(9 * 4)
+            .map(|record| {
+                std::array::from_fn(|lane| {
+                    let offset = lane * 4;
+                    f32::from_bits(u32::from_le_bytes(
+                        record[offset..offset + 4].try_into().unwrap(),
+                    ))
+                })
+            })
+            .collect()
+    }
+
+    fn assert_joined_transform(case: &JoinedScaleCase, readback: &JoinedScaleReadback) {
+        let matrix = &case.draw_matrix_f32_row_major;
+        assert_eq!(matrix.len(), 16);
+        assert_eq!(matrix[0].to_bits(), case.draw_scale.to_bits());
+        assert_eq!(matrix[5].to_bits(), case.draw_scale.to_bits());
+        assert_eq!(matrix[10].to_bits(), 1.0f32.to_bits());
+        assert_eq!(matrix[12].to_bits(), 64.0f32.to_bits());
+        assert_eq!(matrix[13].to_bits(), 48.0f32.to_bits());
+        for (index, value) in matrix.iter().enumerate() {
+            let expected = match index {
+                0 | 5 => case.draw_scale,
+                10 | 15 => 1.0,
+                12 => 64.0,
+                13 => 48.0,
+                _ => 0.0,
+            };
+            assert_eq!(
+                value.to_bits(),
+                expected.to_bits(),
+                "draw matrix lane {index}"
+            );
+        }
+        assert_eq!(readback.draw_matrix_f32_row_major.len(), 16);
+        for (index, (actual, expected)) in readback
+            .draw_matrix_f32_row_major
+            .iter()
+            .zip(matrix)
+            .enumerate()
+        {
+            assert_eq!(
+                actual.to_bits(),
+                expected.to_bits(),
+                "readback matrix lane {index}"
+            );
+        }
+
+        assert_eq!(readback.actual_uniform_matrix_calls.len(), 1);
+        let projection = &readback.actual_uniform_matrix_calls[0];
+        assert_eq!(projection.program, 5);
+        assert_eq!(projection.count, 1);
+        assert_eq!(projection.transpose, 0);
+        assert_eq!(projection.values.len(), 16);
+        assert_eq!(
+            projection.values[0].to_bits(),
+            (2.0f32 * case.draw_scale / 256.0).to_bits()
+        );
+        assert_eq!(
+            projection.values[5].to_bits(),
+            (2.0f32 * case.draw_scale / 192.0).to_bits()
+        );
+        assert_eq!(projection.values[12].to_bits(), (-0.5f32).to_bits());
+        assert_eq!(projection.values[13].to_bits(), (-0.5f32).to_bits());
+        assert_eq!(
+            projection.values[10].to_bits(),
+            (-3.0518509e-5f32).to_bits()
+        );
+        assert_eq!(
+            readback.actual_viewport_calls,
+            [
+                vec![0, 0, 256, 192],
+                vec![0, 0, 128, 96],
+                vec![0, 0, 128, 96]
+            ]
+        );
+        assert_eq!(readback.rt_plus_68_u8_before_draw, "00");
+        assert_eq!(readback.draw_rt_plus_68_branch_trace.len(), 2);
+        assert_eq!(
+            readback.draw_rt_plus_68_branch_trace[1]["branch_path"],
+            "default"
+        );
+    }
+
+    fn render_joined_scale(case: &JoinedScaleCase) -> Vec<u8> {
+        let readback = &case.paint.readback;
+        assert_eq!(
+            case.paint.draw_pass,
+            "program 5 GL_TRIANGLE_STRIP instanced radial stamps; no final composite pass claimed"
+        );
+        assert_eq!(case.paint.target_setup.width, readback.width);
+        assert_eq!(case.paint.target_setup.height, readback.height);
+        assert_eq!(case.paint.target_setup.format_name, "RGBA");
+        assert!(case.paint.target_setup.host_created_destination);
+        assert_eq!(readback.width, 256);
+        assert_eq!(readback.height, 192);
+        assert_eq!(
+            readback.uncompressed_byte_count,
+            readback.width * readback.height * 4
+        );
+        assert_joined_transform(case, readback);
+        assert_eq!(readback.actual_instanced_draw_state.len(), 1);
+        let draw = &readback.actual_instanced_draw_state[0];
+        assert_eq!(draw.program, 5);
+        assert_eq!(draw.args, [5, 0, 4, 25]);
+        assert_eq!(draw.viewport, [0, 0, 256, 192]);
+
+        let records = joined_records(case);
+        assert_eq!(records.len(), 25);
+        assert!(records.iter().flatten().all(|value| value.is_finite()));
+        let scale = case.draw_scale;
+        let tx = case.draw_matrix_f32_row_major[12];
+        let ty = case.draw_matrix_f32_row_major[13];
+        let uniform_alpha = ((case.source_argb_u32 >> 24) & 0xff) as f32 / 255.0;
+        let mut rgba = vec![0u8; readback.uncompressed_byte_count];
+
+        for y in 0..readback.height {
+            let source_y = (y as f32 + 0.5 - ty) / scale;
+            for x in 0..readback.width {
+                let source_x = (x as f32 + 0.5 - tx) / scale;
+                let pixel = (y * readback.width + x) * 4;
+                for record in &records {
+                    let dx = (source_x - record[0]) / (2.0 * record[2]);
+                    let dy = (source_y - record[1]) / (2.0 * record[3]);
+                    let distance = (dx * dx + dy * dy).sqrt();
+                    let alpha = ((0.5 - distance) / (0.5 - record[4])).clamp(0.0, 1.0) * record[5];
+                    if alpha <= 0.0 {
+                        continue;
+                    }
+
+                    // The captured GL_RGBA8 target quantizes the shader output
+                    // before ONE/ONE_MINUS_SRC_ALPHA blending each instance.
+                    let source_alpha = quantize_unorm8(alpha * uniform_alpha);
+                    let blend_alpha = f32::from(source_alpha) / 255.0;
+                    for channel in 0..3 {
+                        let source =
+                            f32::from(quantize_unorm8(record[6 + channel] * alpha * uniform_alpha))
+                                / 255.0;
+                        let destination = f32::from(rgba[pixel + channel]) / 255.0;
+                        rgba[pixel + channel] =
+                            quantize_unorm8(source + destination * (1.0 - blend_alpha));
+                    }
+                    let source = blend_alpha;
+                    let destination = f32::from(rgba[pixel + 3]) / 255.0;
+                    rgba[pixel + 3] = quantize_unorm8(source + destination * (1.0 - blend_alpha));
+                }
+            }
+        }
+        rgba
     }
 
     fn quantize_unorm8(value: f32) -> u8 {
@@ -273,7 +511,8 @@ mod tests {
                     let src_alpha = alpha * alpha_uniform;
                     let index = y * width + x;
                     let dst = f32::from(red[index]) / 255.0;
-                    red[index] = quantize_unorm8(f32::from(src_red) / 255.0 + dst * (1.0 - src_alpha));
+                    red[index] =
+                        quantize_unorm8(f32::from(src_red) / 255.0 + dst * (1.0 - src_alpha));
                 }
             }
         }
@@ -297,12 +536,19 @@ mod tests {
             }
             assert_eq!(program.shaders[0].kind, 35633);
             assert_eq!(program.shaders[1].kind, 35632);
-            assert!(program.shaders[1].source.contains("FragColor = vec4(fragColor, 1.0) * alpha * uInputColor.a"));
+            assert!(
+                program.shaders[1]
+                    .source
+                    .contains("FragColor = vec4(fragColor, 1.0) * alpha * uInputColor.a")
+            );
             assert_eq!(case.draw_calls.len(), 1);
             assert_eq!(case.draw_calls[0].program, 5);
             assert_eq!(case.draw_calls[0].blend_enabled_at_draw, Some(true));
             assert_eq!(case.draw_calls[0].blend_equation, ["0x8006", "0x8006"]);
-            assert_eq!(case.draw_calls[0].blend_function, ["0x1", "0x303", "0x1", "0x303"]);
+            assert_eq!(
+                case.draw_calls[0].blend_function,
+                ["0x1", "0x303", "0x1", "0x303"]
+            );
             assert_eq!(case.texture_allocations.len(), 2);
             assert_eq!(case.texture_allocations[0].internal_format, "0x8229");
             assert_eq!(case.texture_allocations[1].internal_format, "0x8058");
@@ -475,6 +721,57 @@ mod tests {
                 let offset = (y * single.input.canvas_width + x) * 4;
                 assert_eq!(&bytes[offset..offset + 4], &[modeled_alpha, 0, 0, 255]);
                 assert_eq!(modeled_alpha, 126);
+            }
+        }
+    }
+
+    #[test]
+    fn joined_native_scale_field_matches_captured_readbacks() {
+        let fixture: JoinedScaleFixture = serde_json::from_str(JOINED_SCALE_FIXTURE).unwrap();
+        assert_eq!(fixture.schema, "sdocx-inkpen2-joined-scale-native-v1");
+        assert_eq!(fixture.cases.len(), 3);
+
+        let mut cases = fixture
+            .cases
+            .iter()
+            .map(|(name, case)| (name.as_str(), case))
+            .collect::<Vec<_>>();
+        cases.sort_by_key(|(name, _)| *name);
+        for (name, case) in cases.into_iter().chain(std::iter::once((
+            "partial_alpha_control",
+            &fixture.partial_alpha_control,
+        ))) {
+            let modeled = render_joined_scale(case);
+            let captured = decode_base64_zlib(&case.paint.readback.full_bytes_zlib_base64);
+            assert_eq!(captured.len(), case.paint.readback.uncompressed_byte_count);
+            assert_eq!(modeled.len(), captured.len());
+
+            if name == "partial_alpha_control" {
+                assert_eq!(case.source_argb_u32, 0x8033_6699);
+                assert_eq!(modeled, captured, "partial alpha full framebuffer");
+            } else {
+                assert_eq!(case.source_argb_u32, 0xff33_6699);
+                let mut max_error = 0u8;
+                for (pixel_index, (model, native)) in modeled
+                    .chunks_exact(4)
+                    .zip(captured.chunks_exact(4))
+                    .enumerate()
+                {
+                    assert_eq!(
+                        model[3] == 0,
+                        native[3] == 0,
+                        "{name} alpha support at pixel {pixel_index}"
+                    );
+                    assert_eq!(
+                        model[..3].iter().any(|channel| *channel != 0),
+                        native[..3].iter().any(|channel| *channel != 0),
+                        "{name} color support at pixel {pixel_index}"
+                    );
+                    for channel in 0..4 {
+                        max_error = max_error.max(model[channel].abs_diff(native[channel]));
+                    }
+                }
+                assert!(max_error <= 1, "{name} maximum RGBA error {max_error}");
             }
         }
     }
