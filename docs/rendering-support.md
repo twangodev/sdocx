@@ -123,8 +123,9 @@ also uses the generic approximation, separately from native live filtering.
 A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
 redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
-25-record V9 buffer match. General caller/runtime state, shape modes and paint
-integration remain open.
+25-record V9 buffer match. The Rust core checks both Drawing and saved replay
+using native body-normalized sampling state. General caller/runtime state,
+shape modes and paint integration remain open.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
@@ -166,10 +167,11 @@ executes native Draw and shaders on host Mesa with a fixture-linked instance,
 a separate output framebuffer and an unused-atlas-cell sensitivity check.
 The [same-object capture](../conformance/brushpen-same-run-native.json) checks
 26 native-generated records through native upload and host paint, including
-a full-stream unused-atlas-cell control. A host pointer alias supplies the
-producer vector to Update; natural queue handoff and endPen completion remain
-unverified. General style/caller admission, vector paint, production integration
-and Samsung device parity remain outstanding.
+a full-stream unused-atlas-cell control. The [handoff capture](../conformance/brushpen-handoff-native.json)
+also completes native endPen and callback destruction, then executes the queued
+`SendDataToGPU` task. A later canvas task remains blocked by its host adapter;
+full queue completion, general style/caller admission, vector paint, production
+integration and Samsung device parity remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
