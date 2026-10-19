@@ -257,6 +257,9 @@ and [image effect contracts](reverse-engineering/image-effects-findings.md)
 have static evidence for features absent from these documents; they do not add
 real-document appearance coverage. See also
 [PDF findings](reverse-engineering/pdf-export-findings.md).
+The [solid shape paint oracle](../conformance/shape-solid-paint-native.json)
+adds bounded native fill/outline raster evidence for an axis-aligned rectangle;
+odd-width edge coverage and broader paired appearance remain open.
 
 The [vector retention findings](reverse-engineering/vector-retention-findings.md)
 separate source-byte ownership, semantic decoding and drawable output. Physical

@@ -11,10 +11,18 @@ and the decompiled SDK class
 `com.samsung.android.sdk.pen.document.shapeeffect.SpenLineStyleEffect`.
 Addresses below are ELF virtual addresses. The native input remains under
 the ignored `scratch/apk-analysis-native/arm64-v8a/` directory. The bounded
-execution below verifies selected style inputs; no Samsung appearance comparison
-was performed for these contracts.
+execution below verifies selected style inputs; arrow and compound-style
+appearance remains unverified.
 The [shape and line findings](shape-line-findings.md) describe the saved
 frames, path encoding and existing renderer separately.
+
+The [solid paint oracle](../../conformance/shape-solid-paint-native.json) executes
+a native Model rectangle through Drawing, pinned Skia and host Mesa: no outline
+and solid outlines of widths 1, 2 and 4 at density 1. It records full RGBA hashes
+and empty GL error histories. Equivalent SDK PDF rectangles at 96 DPI match all
+visible native pixels for widths 2 and 4 in MuPDF 1.28.2; width-1 edge coverage
+still differs. This synthetic comparison does not establish curved, dashed,
+gradient, arrow, device or whole-document appearance parity.
 
 ## Saved style fields and loading
 
