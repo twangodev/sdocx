@@ -137,7 +137,7 @@ default GLV10 selection and 11-float instance records. Its
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
 native texture/instance uploads, attribute setup, blend mapping and Draw-binding
 calls. A test-only source sampler matches
-every instance bit in ten synthetic MotionEvent cases and eight
+every instance bit in ten synthetic MotionEvent cases and nine
 [saved-wrapper style profiles](../conformance/brushpen-saved-wrapper-native.json),
 including tools 1–3 and both curve modes.
 General style/caller admission,
@@ -146,6 +146,9 @@ The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
 coverage/compositing; Oblique still uses the generic pressure approximation in Rust.
+The [native Draw oracle](../conformance/oblique-draw-native.json) also verifies
+explicit ARGB forwarding and executed MAX/source-over blend descriptors, with
+synthetic resource adapters and no device-pixel claim.
 
 ## Text and embedded layout
 
@@ -231,6 +234,9 @@ resources. A [native source-PDF export probe](../conformance/pdf_paper_pdfium_qu
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](../conformance/pdf-paper-pdfium-image-export.json)
 also executes native PNG decoding and image placement for a synthetic rectangle.
+A [Composer branch capture](../conformance/pdf-paper-composer-export.json) verifies
+the imported-paper DrawPDF skip and two manual-background extent controls;
+its AddPages bridge does not join native PDF serialization.
 The note-to-PDF scale is host-composed; saved-note placement and production
 PDF-paper rendering remain outstanding.
 
