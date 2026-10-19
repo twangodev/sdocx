@@ -176,8 +176,11 @@ and full RGBA readbacks. With correct host queue wiring, native `SendDataToGPU`
 installs the saved vector and `Update(false)` uploads it without a host vector-slot
 write. A [three-color capture](../conformance/inkpen-color-native.json) checks an
 unchanged MAX mask and one source-over composite for zero, partial and opaque
-alpha under identity host color conversion. Cleanup tasks remain deferred;
-Mesa-capability setup, actual device display
+alpha under identity host color conversion. The
+[scalar derivative check](../conformance/inkpen_coverage_scalar.py) reproduces
+all 32,768 bytes of the captured 128×64 MAX mask using fine 2×2 differences.
+This is one host Mesa witness, not a universal device derivative contract.
+Cleanup tasks, Mesa-capability setup, actual device display
 values and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
