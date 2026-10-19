@@ -28,6 +28,10 @@ GRAIN_SOURCE_CAPTURE_PC = BRUSH_BASE + 0x767e8
 CREATE_BITMAP = ('SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, '
                  'char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, '
                  'SPen::TextureTargetLayout)')
+CREATE_GRAPHICS = ('SPen::RendererFactory::CreateGraphicsObject(unsigned int, SPen::PrimitiveType, '
+                   'SPen::VertexDescriptor const*, unsigned int, unsigned int)')
+CREATE_GRAPHICS_IMPL = ('SPen::GLES::RendererFactoryImpl::GreateGraphicsObject(unsigned int, '
+                        'SPen::PrimitiveType, SPen::VertexDescriptor const*, unsigned int, unsigned int)')
 
 
 def native_hashes():
@@ -58,6 +62,16 @@ class TextureProbe(NativeBrush):
         self.draw_capture = {'bindings': {}, 'events': []}
         self.blend_descriptor = None
         self.blend_gl_calls = []
+        self.graphics_gl_calls = []
+        self.graphics_factory_calls = []
+        self.graphics_buffer_ids = []
+        self.graphics_next_buffer_id = 500
+        self.graphics_bound_array_buffer = 0
+        self.graphics_buffer_uploads = []
+        self.graphics_attributes = {}
+        self.graphics_draw_calls = []
+        self.graphics_rt = 0
+        self.graphics_initialized = False
         self.state_stub = 0x20001160
         self.state_default_stub = 0x20001140
         self.device_caps = self.alloc(16)
@@ -92,6 +106,107 @@ class TextureProbe(NativeBrush):
         self.callbacks['glEnable'] = lambda: self.record_blend_gl('glEnable', 1)
         self.callbacks['glDisable'] = lambda: self.record_blend_gl('glDisable', 1)
         self.callbacks['glColorMask'] = lambda: self.record_blend_gl('glColorMask', 4)
+        self.callbacks.update({
+            'glGenBuffers': self.graphics_gen_buffers,
+            'glBindBuffer': lambda: self.graphics_record('glBindBuffer', [self.x(i) for i in range(2)]),
+            'glBufferData': self.graphics_buffer_data,
+            'glBufferSubData': self.graphics_buffer_sub_data,
+            'glEnableVertexAttribArray': lambda: self.graphics_record('glEnableVertexAttribArray', [self.x(0)]),
+            'glDisableVertexAttribArray': lambda: self.graphics_record('glDisableVertexAttribArray', [self.x(0)]),
+            'glVertexAttribPointer': self.graphics_attrib_pointer,
+            'glVertexAttribDivisor': lambda: self.graphics_record('glVertexAttribDivisor', [self.x(i) for i in range(2)]),
+            'glDrawArraysInstanced': self.graphics_draw,
+            'glGetError': lambda: self.x(0, 0),
+            'glGetIntegerv': self.graphics_get_integer,
+            'glGetString': self.graphics_get_string,
+            'eglGetCurrentContext': lambda: self.x(0, 0xabc),
+            'strstr': self.graphics_strstr,
+            'strcmp': self.graphics_strcmp,
+        })
+
+    def graphics_record(self, name, args):
+        if name == 'glBindBuffer' and args[0] == 0x8892:
+            self.graphics_bound_array_buffer = args[1]
+        self.graphics_gl_calls.append({'call': name, 'args': args})
+
+    def graphics_gen_buffers(self):
+        count, output = self.x(0), self.x(1)
+        if not 0 < count <= 16:
+            raise RuntimeError(f'unexpected native buffer count {count}')
+        ids = list(range(self.graphics_next_buffer_id, self.graphics_next_buffer_id + count))
+        self.graphics_next_buffer_id += count
+        self.put(output, 'I' * count, *ids)
+        self.graphics_buffer_ids.extend(ids)
+        self.graphics_gl_calls.append({'call': 'glGenBuffers', 'count': count, 'ids': ids})
+
+    def graphics_buffer_data(self):
+        target, size, pointer, usage = (self.x(i) for i in range(4))
+        if size > 65536 or (size and not pointer):
+            raise RuntimeError(f'unbounded native glBufferData request: {size} bytes')
+        raw = bytes(self.u.mem_read(pointer, size)) if size else b''
+        entry = {'buffer_id': self.graphics_bound_array_buffer, 'target': target,
+                 'size': size, 'usage': usage, 'data_hex': raw.hex(),
+                 'sha256': hashlib.sha256(raw).hexdigest()}
+        self.graphics_buffer_uploads.append(entry)
+        self.graphics_gl_calls.append({'call': 'glBufferData', **entry})
+
+    def graphics_buffer_sub_data(self):
+        target, offset, size, pointer = (self.x(i) for i in range(4))
+        if size > 65536 or (size and not pointer):
+            raise RuntimeError(f'unbounded native glBufferSubData request: {size} bytes')
+        raw = bytes(self.u.mem_read(pointer, size)) if size else b''
+        self.graphics_gl_calls.append({'call': 'glBufferSubData', 'target': target,
+                                       'offset': offset, 'size': size,
+                                       'data_hex': raw.hex()})
+
+    def graphics_attrib_pointer(self):
+        index, size, kind, normalized, stride, pointer = (self.x(i) for i in range(6))
+        entry = {'index': index, 'size': size, 'type': kind, 'normalized': normalized,
+                 'stride': stride, 'offset': pointer, 'buffer_id': self.graphics_bound_array_buffer}
+        self.graphics_attributes[index] = entry
+        self.graphics_gl_calls.append({'call': 'glVertexAttribPointer', **entry})
+
+    def graphics_draw(self):
+        args = [self.x(i) for i in range(4)]
+        self.graphics_draw_calls.append(args)
+        self.graphics_gl_calls.append({'call': 'glDrawArraysInstanced', 'args': args})
+
+    def graphics_get_integer(self):
+        pname, output = self.x(0), self.x(1)
+        value = 4096 if pname == 0x0d33 else 16
+        self.put(output, 'I', value)
+        self.graphics_gl_calls.append({'call': 'glGetIntegerv', 'pname': pname, 'returned': value})
+
+    def graphics_cbytes(self, pointer):
+        value = bytearray()
+        for i in range(4096):
+            byte = bytes(self.u.mem_read(pointer + i, 1))
+            if byte == b'\0':
+                return bytes(value)
+            value.extend(byte)
+        raise RuntimeError('unterminated native GLES query string')
+
+    def graphics_get_string(self):
+        enum = self.x(0)
+        strings = {0x1f00: b'sdocx synthetic host', 0x1f01: b'host adapter',
+                   0x1f02: b'OpenGL ES 3.0 synthetic',
+                   0x1f03: b'GL_OES_vertex_array_object GL_EXT_texture_filter_anisotropic'}
+        payload = strings.get(enum, b'')
+        pointer = self.alloc(len(payload) + 1)
+        self.u.mem_write(pointer, payload + b'\0')
+        self.graphics_gl_calls.append({'call': 'glGetString', 'enum': enum,
+                                       'value': payload.decode()})
+        self.x(0, pointer)
+
+    def graphics_strstr(self):
+        haystack, needle = self.x(0), self.x(1)
+        h, n = self.graphics_cbytes(haystack), self.graphics_cbytes(needle)
+        offset = h.find(n)
+        self.x(0, 0 if offset < 0 else haystack + offset)
+
+    def graphics_strcmp(self):
+        left, right = self.graphics_cbytes(self.x(0)), self.graphics_cbytes(self.x(1))
+        self.x(0, (left > right) - (left < right))
 
     def record_blend_gl(self, name, count):
         self.blend_gl_calls.append({'call': name, 'args': [self.x(i) for i in range(count)]})
@@ -216,11 +331,8 @@ class TextureProbe(NativeBrush):
         self.put(shader + 56, 'Q', program)
         self.put(rt + 216, 'Q', shader)
 
-        graphics, graphics_table = self.alloc(16), self.alloc(64)
-        self.put(graphics, 'Q', graphics_table)
-        self.put(graphics_table + 16, 'Q', self.new_draw_stub('graphics_update'))
-        self.put(graphics_table + 56, 'Q', self.new_draw_stub('graphics_draw'))
-        self.put(rt + 200, 'Q', graphics)
+        if not self.graphics_initialized:
+            raise RuntimeError('RTV1::Init did not install an actual native GraphicsObject')
         blend = self.get(rt + 208, 'Q')[0]
         if not blend:
             raise RuntimeError('native Init did not create a blend state object')
@@ -264,7 +376,10 @@ class TextureProbe(NativeBrush):
                                   'set_start_point_f32': [17.25, 22.5],
                                   'input_color_f32': [0.25, 0.5, 0.75, 0.8],
                                   'input_instance_bits_le': record,
-                                  'host_boundary': 'synthetic ISPSubBitmap matrix/dimensions, shader bindings/program, GraphicsObject, blend-state factory/activation; actual RTV1::Draw and SetStartPoint execute, binding dispatches are intercepted'})
+                                  'host_boundary': 'synthetic ISPSubBitmap matrix/dimensions and shader bindings/program; actual GraphicsObject and RTV1::Draw/SetStartPoint execute, GLES and shader-binding dispatches are intercepted'})
+        # The native RT consumes the fixture-linked record and uploads its
+        # complete 44-byte instance before the real GraphicsObject draws it.
+        self.call('SPen::BrushPenStrokeDrawableRTV1::Update(bool)', [rt, 0], instruction_limit=2_000_000)
         self.call('SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',
                   [rt, bitmap, matrix_address], instruction_limit=2_000_000)
         return self.draw_capture
@@ -406,8 +521,20 @@ class TextureProbe(NativeBrush):
         if address in self.draw_stubs:
             self.dispatch_draw_stub(address)
             return
+        if address == self.syms.get('SPen::BrushPenStrokeDrawableRTV1::Init()'):
+            self.graphics_rt = self.x(0)
+            # Base run uses a non-null placeholder to skip this unrelated
+            # branch; clear it at entry to exercise the real factory path.
+            self.put(self.graphics_rt + 200, 'Q', 0)
+        if address in self.plt and self.plt[address] == CREATE_GRAPHICS:
+            sp = self.u.reg_read(R.UC_ARM64_REG_SP)
+            self.graphics_factory_calls.append({'arguments_x0_x4': [self.x(i) for i in range(5)],
+                                                'stack_args_32_bytes': bytes(self.u.mem_read(sp, 32)).hex()})
+            u.reg_write(R.UC_ARM64_REG_PC, self.syms[CREATE_GRAPHICS_IMPL])
+            return
         entries = (
             'SPen::BrushPenStrokeDrawableRTV1::Init()',
+            'SPen::BrushPenStrokeDrawableRTV1::Update(bool)',
             'SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',
             'SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)',
             'SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)',
@@ -419,6 +546,9 @@ class TextureProbe(NativeBrush):
             'non-virtual thunk to SPen::SPSubBitmapRT::UpdateBitmap(void const*, int)',
             'SPen::SPTextureBitmap::SetTextureFilter(SPen::TextureParamFiltering, SPen::TextureParamFilteringValue)',
             'SPen::SPTextureBitmap::SetTextureWrap(SPen::TextureParamWrapping, SPen::TextureParamWrappingValue)',
+            'SPen::GLES::GraphicsObject::CreateBuffer(SPen::PrimitiveType, unsigned int, SPen::VertexDescriptor const*, unsigned int, unsigned int)',
+            'SPen::GLES::GraphicsObject::UpdateBuffer(unsigned int, void const*, unsigned int)',
+            'SPen::GLES::GraphicsObject::DrawInstanced(unsigned int, int, int) const',
         )
         for name in entries:
             if address == self.syms.get(name):
@@ -459,11 +589,10 @@ class TextureProbe(NativeBrush):
         grain_dims = list(self.get(rt + 240, '2f'))
         if state['native_version'] != 10 or grain_dims != [321.0, 228.0]:
             raise RuntimeError(f'constructor profile mismatch: GLV{state["native_version"]} grain={grain_dims}')
-        # Init sees nonnull sibling resources and skips the unrelated graphics
-        # and shader construction branches. These addresses
-        # are deliberately unmapped, so any unexpected dereference faults.
-        skipped_resources = {field: 0x13000000 + index * 0x1000
-                             for index, field in enumerate((200, 216))}
+        # Init sees a nonnull shader sibling; its pointer is deliberately
+        # unmapped, so an unexpected dereference faults. The graphics field
+        # is cleared at Init entry to exercise its actual construction branch.
+        skipped_resources = {216: 0x13001000}
         for field, pointer in skipped_resources.items():
             self.put(rt + field, 'Q', pointer)
         regions = self.u.mem_regions()
@@ -489,12 +618,19 @@ class TextureProbe(NativeBrush):
         if self.native_entries.get('texture_wrapper_args') != [[48, 48], [48, 48]]:
             raise RuntimeError(
                 f'Init texture wrapper args mismatch: {self.native_entries.get("texture_wrapper_args")}')
-        forbidden = ('RendererFactory::CreateGraphicsObject',
-                     'ShaderManager::GetInstance', 'BrushPenStrokeShaderV1::BrushPenStrokeShaderV1')
+        forbidden = ('ShaderManager::GetInstance', 'BrushPenStrokeShaderV1::BrushPenStrokeShaderV1')
         reached_forbidden = {name: count for name, count in self.import_calls.items()
                              if count and any(token in name for token in forbidden)}
         if reached_forbidden:
             raise RuntimeError(f'Init entered a skipped render sibling: {reached_forbidden}')
+        if len(self.graphics_factory_calls) != 1 or not self.get(rt + 200, 'Q')[0]:
+            raise RuntimeError('native Init did not create and retain its GraphicsObject')
+        factory_args = self.graphics_factory_calls[0]['arguments_x0_x4']
+        stack_args = list(struct.unpack('<II', bytes.fromhex(
+            self.graphics_factory_calls[0]['stack_args_32_bytes'])[:8]))
+        if factory_args[:2] != [2, 5] or stack_args != [0, 0]:
+            raise RuntimeError(f'native GraphicsObject factory descriptor changed: {factory_args}, {stack_args}')
+        self.graphics_initialized = True
         if len(self.texture_descriptors) != 2 or len(self.upload_records) != 2:
             raise RuntimeError('expected pattern and grain descriptors and uploads')
         if self.grain_source != {'bytes': 73188,
@@ -538,6 +674,52 @@ class TextureProbe(NativeBrush):
                     not math.isfinite(a) or not math.isfinite(b) or abs(a - b) > 0.002
                     for a, b in zip(observed, expected)):
                 raise RuntimeError(f'native Draw {binding} differs from independent transform: {observed} != {expected}')
+        geometry_fixture = json.loads((ROOT / 'conformance/brushpen-saved-native.json').read_text())
+        selected_case = next(c for c in geometry_fixture['synthetic_cases']
+                             if c['label'] == 'synthetic-motion-tool1-pressure-tilt-orientation')
+        instance_words = selected_case['buffer_records'][1]['instance_bits_le']
+        expected_instance = b''.join(bytes.fromhex(word) for word in instance_words)
+        instance_uploads = [upload for upload in self.graphics_buffer_uploads
+                            if upload['size'] == 44]
+        if len(instance_uploads) != 1 or bytes.fromhex(instance_uploads[0]['data_hex']) != expected_instance:
+            raise RuntimeError('native dynamic VBO upload differs from selected 11-word geometry fixture record')
+        if len(expected_instance) != 44 or self.graphics_buffer_ids != [500, 501]:
+            raise RuntimeError('native graphics buffer allocation or instance stride changed')
+        if self.get(rt + 72, 'I')[0] != 1:
+            raise RuntimeError('native RTV1 Update did not publish the fixture instance count')
+        expected_attributes = [
+            {'index': 0, 'size': 4, 'type': 0x1406, 'normalized': 0, 'stride': 16,
+             'offset': 0, 'buffer_id': 500, 'divisor': 0},
+            {'index': 1, 'size': 3, 'type': 0x1406, 'normalized': 0, 'stride': 44,
+             'offset': 0, 'buffer_id': 501, 'divisor': 1},
+            {'index': 2, 'size': 1, 'type': 0x1406, 'normalized': 0, 'stride': 44,
+             'offset': 12, 'buffer_id': 501, 'divisor': 1},
+            {'index': 3, 'size': 2, 'type': 0x1406, 'normalized': 0, 'stride': 44,
+             'offset': 16, 'buffer_id': 501, 'divisor': 1},
+            {'index': 4, 'size': 2, 'type': 0x1406, 'normalized': 0, 'stride': 44,
+             'offset': 24, 'buffer_id': 501, 'divisor': 1},
+            {'index': 5, 'size': 3, 'type': 0x1406, 'normalized': 0, 'stride': 44,
+             'offset': 32, 'buffer_id': 501, 'divisor': 1},
+        ]
+        observed_attributes = []
+        divisors = {}
+        for entry in self.graphics_gl_calls:
+            if entry['call'] == 'glVertexAttribDivisor':
+                divisors.setdefault(entry['args'][0], entry['args'][1])
+        for index in sorted(self.graphics_attributes):
+            observed_attributes.append({**self.graphics_attributes[index], 'divisor': divisors[index]})
+        if observed_attributes != expected_attributes:
+            raise RuntimeError(f'native VBO attribute layout changed: {observed_attributes}')
+        if self.graphics_draw_calls != [[5, 0, 4, 1]]:
+            raise RuntimeError(f'native instanced draw call changed: {self.graphics_draw_calls}')
+        if len(self.graphics_factory_calls) != 1:
+            raise RuntimeError('native GraphicsObject factory entry count changed')
+        if self.native_entries.get('SPen::GLES::GraphicsObject::CreateBuffer(SPen::PrimitiveType, unsigned int, SPen::VertexDescriptor const*, unsigned int, unsigned int)') != 1:
+            raise RuntimeError('native GraphicsObject::CreateBuffer entry count changed')
+        if self.native_entries.get('SPen::GLES::GraphicsObject::UpdateBuffer(unsigned int, void const*, unsigned int)') != 2:
+            raise RuntimeError('native GraphicsObject::UpdateBuffer entry count changed')
+        if self.native_entries.get('SPen::GLES::GraphicsObject::DrawInstanced(unsigned int, int, int) const') != 1:
+            raise RuntimeError('native GraphicsObject::DrawInstanced entry count changed')
         if self.blend_descriptor is None:
             raise RuntimeError('native Init did not create the blend-state descriptor')
         if self.blend_descriptor != '0101000000000000000000000600000007000000010000000700000000000000':
@@ -566,6 +748,24 @@ class TextureProbe(NativeBrush):
                             'init_blend_descriptor_raw_32_bytes': self.blend_descriptor,
                             'blend_descriptor_note': 'actual native Init input to intercepted CreateBlendStateObject; raw bytes only, not a GLES blend-state mapping'},
             'native_blend_mapping': blend_mapping,
+            'native_graphics_execution': {
+                'factory_call': self.graphics_factory_calls,
+                'factory_route': 'SPen::RendererFactory::CreateGraphicsObject PLT dispatched to native GLES::RendererFactoryImpl::GreateGraphicsObject',
+                'native_method_entries': {name: self.native_entries.get(name, 0) for name in (
+                    'SPen::GLES::GraphicsObject::CreateBuffer(SPen::PrimitiveType, unsigned int, SPen::VertexDescriptor const*, unsigned int, unsigned int)',
+                    'SPen::GLES::GraphicsObject::UpdateBuffer(unsigned int, void const*, unsigned int)',
+                    'SPen::GLES::GraphicsObject::DrawInstanced(unsigned int, int, int) const')},
+                'buffer_ids': self.graphics_buffer_ids,
+                'buffer_uploads': self.graphics_buffer_uploads,
+                'attribute_layout': observed_attributes,
+                'draw_calls': self.graphics_draw_calls,
+                'instance_count_after_update': self.get(rt + 72, 'I')[0],
+                'fixture_link': {'case': selected_case['label'], 'append_index': 1,
+                                 'stride_bytes': 44, 'instance_bits_le': instance_words,
+                                 'upload_sha256': instance_uploads[0]['sha256']},
+                'intercepted_gles_calls': self.graphics_gl_calls,
+                'host_boundary': 'native graphics methods execute; all GLES imports and context/capability values are synthetic intercepted host inputs; no GPU or pixels',
+            },
             'uploads': self.upload_records,
             'gl_calls': self.gl_calls,
             'host_boundaries': {
@@ -574,7 +774,8 @@ class TextureProbe(NativeBrush):
                 'GLES imports': 'arguments intercepted; no driver/context, native GPU allocation, shader execution, or pixel rendering',
                 'pattern allocator': 'diagnostic 0xcd poison distinguishes writes; it is not an assertion about production heap contents',
                 'clock_gettime and strncpy': 'deterministic bounded host shims',
-                'skipped Init siblings': 'explicit unmapped nonnull placeholders for existing graphics and shader fields',
+                'skipped Init sibling': 'explicit unmapped nonnull shader-field placeholder; actual graphics factory and object path execute',
+                'native GraphicsObject execution': 'native factory/CreateBuffer/UpdateBuffer/DrawInstanced methods execute; GLES context, queried capabilities, object IDs, and all GLES imports are intercepted synthetic host boundaries',
             },
         }
 

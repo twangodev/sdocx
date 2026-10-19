@@ -100,8 +100,9 @@
     "RendererFactory::CreateTextureObject": "synthetic ITextureObject storage/interface; actual Renderer::TextureObject::Update executes",
     "RendererFactory::GetRendererDeviceCaps": "synthetic caps object with maximum dimension 4096",
     "clock_gettime and strncpy": "deterministic bounded host shims",
+    "native GraphicsObject execution": "native factory/CreateBuffer/UpdateBuffer/DrawInstanced methods execute; GLES context, queried capabilities, object IDs, and all GLES imports are intercepted synthetic host boundaries",
     "pattern allocator": "diagnostic 0xcd poison distinguishes writes; it is not an assertion about production heap contents",
-    "skipped Init siblings": "explicit unmapped nonnull placeholders for existing graphics and shader fields"
+    "skipped Init sibling": "explicit unmapped nonnull shader-field placeholder; actual graphics factory and object path execute"
   },
   "init_path": {
     "buildTextures_setTextures_args": [
@@ -118,8 +119,12 @@
       "SPen::BrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::Init()": 1,
       "SPen::BrushPenStrokeDrawableRTV1::SetStartPoint(float, float)": 1,
+      "SPen::BrushPenStrokeDrawableRTV1::Update(bool)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::buildTextures(int, int)": 1,
       "SPen::BrushPenStrokeDrawableRTV1::setTextures(int, int)": 1,
+      "SPen::GLES::GraphicsObject::CreateBuffer(SPen::PrimitiveType, unsigned int, SPen::VertexDescriptor const*, unsigned int, unsigned int)": 1,
+      "SPen::GLES::GraphicsObject::DrawInstanced(unsigned int, int, int) const": 1,
+      "SPen::GLES::GraphicsObject::UpdateBuffer(unsigned int, void const*, unsigned int)": 2,
       "SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
       "SPen::SPSubBitmapRT::SPSubBitmapRT(SPen::IGLMsgQueue*, int, SPen::Rect const&, int, int, char const*, void const*, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
       "SPen::SPTextureBitmap::SPTextureBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, bool, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)": 2,
@@ -131,7 +136,6 @@
     "skipped_branches_reached": false,
     "skipped_sibling_pointer_dereference_guard": "unmapped addresses; execution faults if read",
     "synthetic_preinitialized_sibling_fields": [
-      200,
       216
     ]
   },
@@ -373,19 +377,6 @@
           "name": "sampler1"
         },
         {
-          "call": "graphics_draw",
-          "stack32_hex": "010000005eb85e4500000000efc98b3f43ab5643037a9143000000000000803f",
-          "x1_x7": [
-            0,
-            4,
-            0,
-            321,
-            228,
-            268475040,
-            268558320
-          ]
-        },
-        {
           "call": "bitmap_finish",
           "x1_x2": [
             0,
@@ -393,7 +384,7 @@
           ]
         }
       ],
-      "host_boundary": "synthetic ISPSubBitmap matrix/dimensions, shader bindings/program, GraphicsObject, blend-state factory/activation; actual RTV1::Draw and SetStartPoint execute, binding dispatches are intercepted",
+      "host_boundary": "synthetic ISPSubBitmap matrix/dimensions and shader bindings/program; actual GraphicsObject and RTV1::Draw/SetStartPoint execute, GLES and shader-binding dispatches are intercepted",
       "input_color_f32": [
         0.25,
         0.5,
@@ -417,6 +408,521 @@
         17.25,
         22.5
       ]
+    }
+  },
+  "native_graphics_execution": {
+    "attribute_layout": [
+      {
+        "buffer_id": 500,
+        "divisor": 0,
+        "index": 0,
+        "normalized": 0,
+        "offset": 0,
+        "size": 4,
+        "stride": 16,
+        "type": 5126
+      },
+      {
+        "buffer_id": 501,
+        "divisor": 1,
+        "index": 1,
+        "normalized": 0,
+        "offset": 0,
+        "size": 3,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "buffer_id": 501,
+        "divisor": 1,
+        "index": 2,
+        "normalized": 0,
+        "offset": 12,
+        "size": 1,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "buffer_id": 501,
+        "divisor": 1,
+        "index": 3,
+        "normalized": 0,
+        "offset": 16,
+        "size": 2,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "buffer_id": 501,
+        "divisor": 1,
+        "index": 4,
+        "normalized": 0,
+        "offset": 24,
+        "size": 2,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "buffer_id": 501,
+        "divisor": 1,
+        "index": 5,
+        "normalized": 0,
+        "offset": 32,
+        "size": 3,
+        "stride": 44,
+        "type": 5126
+      }
+    ],
+    "buffer_ids": [
+      500,
+      501
+    ],
+    "buffer_uploads": [
+      {
+        "buffer_id": 500,
+        "data_hex": "",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "target": 34962,
+        "usage": 35044
+      },
+      {
+        "buffer_id": 501,
+        "data_hex": "",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "target": 34962,
+        "usage": 35040
+      },
+      {
+        "buffer_id": 500,
+        "data_hex": "000080bf000080bf000000000000803f000080bf0000803f00000000000000000000803f000080bf0000803f0000803f0000803f0000803f0000803f00000000",
+        "sha256": "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4",
+        "size": 64,
+        "target": 34962,
+        "usage": 35044
+      },
+      {
+        "buffer_id": 501,
+        "data_hex": "2a4902401227d73f0000803fd7a3a03fbb340b3dc9dc2d3ff404353ff404353f000000000000000000000000",
+        "sha256": "06db0802140fe9ee15ffdea8e5becb5369a8dcfde853dcb3ab14f2f5bb980ba0",
+        "size": 44,
+        "target": 34962,
+        "usage": 35040
+      }
+    ],
+    "draw_calls": [
+      [
+        5,
+        0,
+        4,
+        1
+      ]
+    ],
+    "factory_call": [
+      {
+        "arguments_x0_x4": [
+          2,
+          5,
+          537853576,
+          0,
+          0
+        ],
+        "stack_args_32_bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "factory_route": "SPen::RendererFactory::CreateGraphicsObject PLT dispatched to native GLES::RendererFactoryImpl::GreateGraphicsObject",
+    "fixture_link": {
+      "append_index": 1,
+      "case": "synthetic-motion-tool1-pressure-tilt-orientation",
+      "instance_bits_le": [
+        "2a490240",
+        "1227d73f",
+        "0000803f",
+        "d7a3a03f",
+        "bb340b3d",
+        "c9dc2d3f",
+        "f404353f",
+        "f404353f",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "stride_bytes": 44,
+      "upload_sha256": "06db0802140fe9ee15ffdea8e5becb5369a8dcfde853dcb3ab14f2f5bb980ba0"
+    },
+    "host_boundary": "native graphics methods execute; all GLES imports and context/capability values are synthetic intercepted host inputs; no GPU or pixels",
+    "instance_count_after_update": 1,
+    "intercepted_gles_calls": [
+      {
+        "call": "glGetString",
+        "enum": 7939,
+        "value": "GL_OES_vertex_array_object GL_EXT_texture_filter_anisotropic"
+      },
+      {
+        "call": "glGenBuffers",
+        "count": 1,
+        "ids": [
+          500
+        ]
+      },
+      {
+        "args": [
+          34962,
+          500
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "buffer_id": 500,
+        "call": "glBufferData",
+        "data_hex": "",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "target": 34962,
+        "usage": 35044
+      },
+      {
+        "call": "glGenBuffers",
+        "count": 1,
+        "ids": [
+          501
+        ]
+      },
+      {
+        "args": [
+          34962,
+          501
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glBufferData",
+        "data_hex": "",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "target": 34962,
+        "usage": 35040
+      },
+      {
+        "args": [
+          34962,
+          0
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          34962,
+          500
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "buffer_id": 500,
+        "call": "glBufferData",
+        "data_hex": "000080bf000080bf000000000000803f000080bf0000803f00000000000000000000803f000080bf0000803f0000803f0000803f0000803f0000803f00000000",
+        "sha256": "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4",
+        "size": 64,
+        "target": 34962,
+        "usage": 35044
+      },
+      {
+        "args": [
+          34963,
+          0
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          34962,
+          0
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          34962,
+          501
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glBufferData",
+        "data_hex": "2a4902401227d73f0000803fd7a3a03fbb340b3dc9dc2d3ff404353ff404353f000000000000000000000000",
+        "sha256": "06db0802140fe9ee15ffdea8e5becb5369a8dcfde853dcb3ab14f2f5bb980ba0",
+        "size": 44,
+        "target": 34962,
+        "usage": 35040
+      },
+      {
+        "args": [
+          34963,
+          0
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          34962,
+          0
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          34962,
+          500
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          0
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 500,
+        "call": "glVertexAttribPointer",
+        "index": 0,
+        "normalized": 0,
+        "offset": 0,
+        "size": 4,
+        "stride": 16,
+        "type": 5126
+      },
+      {
+        "args": [
+          0,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          34962,
+          501
+        ],
+        "call": "glBindBuffer"
+      },
+      {
+        "args": [
+          1
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glVertexAttribPointer",
+        "index": 1,
+        "normalized": 0,
+        "offset": 0,
+        "size": 3,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "args": [
+          1,
+          1
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          2
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glVertexAttribPointer",
+        "index": 2,
+        "normalized": 0,
+        "offset": 12,
+        "size": 1,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "args": [
+          2,
+          1
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          3
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glVertexAttribPointer",
+        "index": 3,
+        "normalized": 0,
+        "offset": 16,
+        "size": 2,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "args": [
+          3,
+          1
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          4
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glVertexAttribPointer",
+        "index": 4,
+        "normalized": 0,
+        "offset": 24,
+        "size": 2,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "args": [
+          4,
+          1
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          5
+        ],
+        "call": "glEnableVertexAttribArray"
+      },
+      {
+        "buffer_id": 501,
+        "call": "glVertexAttribPointer",
+        "index": 5,
+        "normalized": 0,
+        "offset": 32,
+        "size": 3,
+        "stride": 44,
+        "type": 5126
+      },
+      {
+        "args": [
+          5,
+          1
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "call": "glDrawArraysInstanced"
+      },
+      {
+        "args": [
+          0,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          0
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          1,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          1
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          2,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          2
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          3,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          3
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          4,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          4
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          5,
+          0
+        ],
+        "call": "glVertexAttribDivisor"
+      },
+      {
+        "args": [
+          5
+        ],
+        "call": "glDisableVertexAttribArray"
+      },
+      {
+        "args": [
+          34962,
+          0
+        ],
+        "call": "glBindBuffer"
+      }
+    ],
+    "native_method_entries": {
+      "SPen::GLES::GraphicsObject::CreateBuffer(SPen::PrimitiveType, unsigned int, SPen::VertexDescriptor const*, unsigned int, unsigned int)": 1,
+      "SPen::GLES::GraphicsObject::DrawInstanced(unsigned int, int, int) const": 1,
+      "SPen::GLES::GraphicsObject::UpdateBuffer(unsigned int, void const*, unsigned int)": 2
     }
   },
   "texture_descriptors": [
