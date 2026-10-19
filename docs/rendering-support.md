@@ -130,8 +130,10 @@ and core/fringe buffers for fresh/reused cases. A native
 [queued Draw capture](../conformance/calligraphy-draw-native.json) checks buffer
 uploads, draw order, uniforms and GLES blend calls under explicit host callbacks.
 The [Drawing caller capture](../conformance/calligraphy-saved-caller-native.json)
-adds source conversion and retained-state evidence; saved-wrapper style cases
-check fixed-width extent overrides. Full caller-state integration remains open.
+adds source conversion and retained-state evidence, including two strokes
+traversed by native `DrawObjectList` with per-stroke mesh snapshots. Saved-wrapper
+cases check fixed-width overrides and native tool setter/getter behavior.
+Full caller-state integration remains open.
 A test-only vector adapter preserves those uploaded triangles, native draw order
 and core alpha gradients through SVG/PDF without image objects. Caller admission,
 layer opacity, production integration and device pixel parity remain outstanding.
@@ -152,8 +154,12 @@ calls. A test-only source sampler matches
 every instance bit in ten synthetic MotionEvent cases and nine
 [saved-wrapper style profiles](../conformance/brushpen-saved-wrapper-native.json),
 including tools 1–3 and both curve modes.
-General style/caller admission,
-rendered texture/vector paint and production integration remain outstanding.
+A [positive paint capture](../conformance/brushpen-paint-positive-native.json)
+executes native Draw and shaders on host Mesa with a fixture-linked instance,
+a separate output framebuffer and an unused-atlas-cell sensitivity check.
+This establishes bounded host paint evidence, not same-run geometry-to-paint or
+Samsung device parity. General style/caller admission, vector paint and
+production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
