@@ -2615,7 +2615,7 @@ mod tests {
                 );
             }
         }
-        assert_eq!(ids.len(), 30);
+        assert_eq!(ids.len(), 32);
         for id in [
             "fixed-width-two",
             "fixed-width-half",
@@ -2639,6 +2639,9 @@ mod tests {
             assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
         }
         assert!(ids.iter().any(|captured| captured == "raw-tool-type-65535"));
+        for id in ["curve-pair-enabled", "curve-pair-disabled"] {
+            assert!(ids.iter().any(|captured| captured == id), "missing {id}");
+        }
     }
 
     #[test]
