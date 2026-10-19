@@ -32,11 +32,21 @@ parser.add_argument('--case',choices=('line0_curve_short_history_color',),defaul
 parser.add_argument('--advanced-setting',choices=('9',),default='9',help='saved advanced setting required for the V9 joined paint witness')
 parser.add_argument('--width',type=int,default=1440)
 parser.add_argument('--height',type=int,default=2560)
+parser.add_argument('--matrix-scale',type=float,choices=(1.0,2.0,4.0),default=1.0)
+parser.add_argument('--matrix-translate-x',type=float,default=0.0)
+parser.add_argument('--matrix-translate-y',type=float,default=0.0)
+parser.add_argument('--output-width',type=int,default=128)
+parser.add_argument('--output-height',type=int,default=96)
+parser.add_argument('--color-argb',type=lambda value:int(value,0),default=0xff336699)
 parser.add_argument('--verbose',action='store_true',help='print native setup and instruction-boundary diagnostics')
 
 args=parser.parse_args()
 if (args.case,args.advanced_setting,args.width,args.height)!=('line0_curve_short_history_color','9',1440,2560):
  raise SystemExit('joined witness is pinned to the explicit 1440x2560 V9 color case')
+if not (16<=args.output_width<=2048 and 16<=args.output_height<=2048 and args.output_width*args.output_height<=4_194_304):
+ raise SystemExit('output target dimensions exceed bounded RGBA target limits')
+if not all(map(__import__('math').isfinite,(args.matrix_translate_x,args.matrix_translate_y))) or max(abs(args.matrix_translate_x),abs(args.matrix_translate_y))>4096:
+ raise SystemExit('matrix translation must be finite and within +/-4096')
 import builtins
 _console_print=builtins.print
 def print(*values,**kwargs):
@@ -484,7 +494,7 @@ try:
  print('allocs first',p._newlog[:30]); print('canvasprobe addrs',{k:hex(getattr(p,k)) for k in ('drawing','context','bitmap','draw_canvas','pen_canvas','oblique','drawable_vtable','pen','canvas_reference')}); print('inkpen2 ctor ok',hex(pen),bytes(p.u.mem_read(pen,0xa0)).hex()); p.drawing=p.alloc(256); p.u.mem_write(p.drawing,bytes(256)); p.put(p.context,'Q',p.context_vtable); profile=p.alloc(64); profile_vt=p.alloc(64); p.put(profile,'Q',profile_vt); p.put(profile_vt+32,'Q',0x200f20e0); p.put(profile_vt+40,'Q',0x200f20f0); p.u.mem_write(0x200f20d0,bytes.fromhex('40000058c0035fd6')+struct.pack('<Q',profile)); p.u.mem_write(0x200f20e0,mov_w0_ret(args.width)); p.u.mem_write(0x200f20f0,mov_w0_ret(args.height)); p.put(p.context_vtable+16,'Q',0x200f20d0); p.put(p.context_vtable+80,'Q',0x200f20c0); p.u.mem_write(0x200f20c0,bytes.fromhex('e003012ac0035fd6')); p.put(p.context_vtable+144,'Q',0x200f20a0); p.put(p.context_vtable+152,'Q',0x200f20b0); p.u.mem_write(0x200f20a0,bytes.fromhex('20008052c0035fd6')); p.u.mem_write(0x200f20b0,bytes.fromhex('00102e1ec0035fd6')); p.call('SPen::ObjectDrawing::ObjectDrawing()',[p.drawing]); p.call('SPen::ObjectDrawing::Construct(SPen::IContext const*)',[p.drawing,p.context]); print('drawing constructed',p.u.mem_read(p.drawing,128).hex()); p.call('SPen::ObjectDrawing::setIPenBitmap(SPen::ISPPenCanvas*, SPen::IPen*, SPen::StrokeType)',[p.drawing,p.pen_canvas,pen,0],instruction_limit=5000000); d=struct.unpack('<Q',p.u.mem_read(pen+112,8))[0]; print('drawing setIPenBitmap drawable',hex(d),bytes(p.u.mem_read(d,0x180)).hex() if d else None);
  p.f(0,input_case['size']); p.call('SPen::ObjectStroke::SetPenSize(float)',[obj]); p.call('SPen::ObjectStroke::GetPenSize() const',[obj]); source_size_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex(); print('native ObjectStroke GetPenSize S0 bits',source_size_bits); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,input_case['tool_type']]); p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj,input_case['stroke_type']]); source_color_argb=None
  if args.case.endswith('_color'):
-  source_color_argb=0xff336699; p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj,source_color_argb]); p.call('SPen::ObjectStroke::GetColor() const',[obj]); source_color_getter=p.x(0)
+  source_color_argb=args.color_argb; p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj,source_color_argb]); p.call('SPen::ObjectStroke::GetColor() const',[obj]); source_color_getter=p.x(0)
   if source_color_getter!=source_color_argb: raise RuntimeError(f'ObjectStroke::GetColor returned {source_color_getter:#x}, expected {source_color_argb:#x}')
  p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj,int(input_case['curve_enabled'])]); print('SetCurveEnabled post-call x0',p.x(0)); points=input_case['points']; count=len(points); pts=p.alloc(count*8); prs=p.alloc(count*4); ts=p.alloc(count*4); tilt=p.alloc(count*4); orient=p.alloc(count*4); p.u.mem_write(pts,struct.pack('<'+'f'*(count*2),*(v for xy in points for v in xy))); p.u.mem_write(prs,struct.pack('<'+'f'*count,*input_case['pressure'])); p.u.mem_write(ts,struct.pack('<'+'i'*count,*input_case['timestamps'])); p.u.mem_write(tilt,struct.pack('<'+'f'*count,*input_case['tilt'])); p.u.mem_write(orient,struct.pack('<'+'f'*count,*input_case['orientation'])); p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj,pts,prs,ts,tilt,orient,count]); rect=p.alloc(32); p.call('SPen::ObjectBase::SetVisibility(bool)',[obj,1]); p.call('SPen::ObjectBase::IsVisible() const',[obj]); print('visible',p.x(0)); p.call('SPen::ObjectStroke::GetPenName() const',[obj]); print('penname initial',hex(p.x(0))); pname=p.alloc(32); p.call('SPen::String::String()',[pname]); p.call('SPen::String::Construct()',[pname]); cstr=p.alloc(80); p.u.mem_write(cstr,b'com.samsung.android.sdk.pen.pen.preload.InkPen2\0'); p.call('SPen::String::Set(char const*)',[pname,cstr]); p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj,pname]);
  if args.advanced_setting in ('empty','9'):
@@ -561,6 +571,8 @@ try:
  shader_sources=[]
  shader_rows={}
  program_rows={}
+ draw_uniform_matrix_calls=[]
+ draw_viewport_calls=[]
  def create_shader():
      shader_type=p.x(0); shader=f['glCreateShader'](shader_type)
      shader_rows[shader]={'type':shader_type,'sources':[],'compiled':None}
@@ -605,6 +617,12 @@ try:
  def get_boolean():
      pname,outptr=p.x(0),p.x(1);count=4 if pname in (0x0C23,0x0C22) else 1
      out=(C.c_ubyte*count)();f['glGetBooleanv'](pname,out);p.u.mem_write(outptr,bytes(out))
+ def uniform_matrix4fv():
+     loc,count,transpose,ptr=(p.x(i) for i in range(4)); values=p.get(ptr,'f'*(16*count))
+     draw_uniform_matrix_calls.append({'program':active_gl_program[0],'location':loc,'count':count,'transpose':transpose,'values':values})
+     f['glUniformMatrix4fv'](loc,count,transpose,(C.c_float*(16*count))(*values))
+ def viewport_call():
+     values=[p.x(i) for i in range(4)]; draw_viewport_calls.append(values); f['glViewport'](*values)
  p.callbacks.update({
    'glCreateShader':create_shader,
    'glCreateProgram':create_program,
@@ -621,7 +639,7 @@ try:
    'glGetActiveAttrib':lambda:active_gl_name('glGetActiveAttrib'),
    'glUseProgram':lambda:f['glUseProgram'](p.x(0)),
    'glDrawArrays':lambda:f['glDrawArrays'](p.x(0),p.x(1),p.x(2)),
-   'glUniformMatrix4fv':lambda:(lambda loc,n,tr,ptr:(lambda vals,arr:(f['glUniformMatrix4fv'](loc,n,tr,arr),None))(p.get(ptr,'f'*(16*n)),(C.c_float*(16*n))(*p.get(ptr,'f'*(16*n)))))(p.x(0),p.x(1),p.x(2),p.x(3)),
+   'glUniformMatrix4fv':uniform_matrix4fv,
    'glUniform1i':lambda:f['glUniform1i'](p.x(0),p.x(1)),
    'glUniform1f':lambda:f['glUniform1f'](p.x(0),p.f(0)),
    'glUniform2f':lambda:f['glUniform2f'](p.x(0),p.f(0),p.f(1)),
@@ -639,7 +657,7 @@ try:
    'glFramebufferTexture2D':lambda:f['glFramebufferTexture2D'](*[p.x(i) for i in range(5)]),
    'glCheckFramebufferStatus':lambda:p.x(0,f['glCheckFramebufferStatus'](p.x(0))),
    'glGetBooleanv':get_boolean,
-   'glViewport':lambda:f['glViewport'](*[p.x(i) for i in range(4)]),
+   'glViewport':viewport_call,
    'glClearColor':lambda:f['glClearColor'](*[p.f(i) for i in range(4)]),
    'glClear':lambda:f['glClear'](p.x(0)),
    'glInvalidateFramebuffer':lambda:(lambda target,n,ptr:(lambda vals:f['glInvalidateFramebuffer'](target,n,vals))((C.c_uint*n)(*p.get(ptr,'I'*n))))(p.x(0),p.x(1),p.x(2)),
@@ -697,7 +715,7 @@ try:
      if zero>=0:raw=raw[:zero]+bytes(n-zero)
      p.u.mem_write(dst,raw);p.x(0,dst)
  p.callbacks['__strncpy_chk2']=strncpy_chk2
- gl_events=[]; active_gl_program=[0]
+ gl_events=[]; active_gl_program=[0]; gl_draw_state=[]
  for glname in ('glUseProgram','glDrawArrays','glDrawArraysInstanced','glBindFramebuffer','glFramebufferTexture2D','glViewport','glEnable','glDisable','glBlendEquationSeparate','glBlendFuncSeparate','glColorMask'):
   original=p.callbacks.get(glname)
   if original is None: continue
@@ -705,6 +723,8 @@ try:
    argc={'glUseProgram':1,'glDrawArrays':3,'glDrawArraysInstanced':4,'glBindFramebuffer':2,'glFramebufferTexture2D':5,'glViewport':4,'glEnable':1,'glDisable':1,'glBlendEquationSeparate':2,'glBlendFuncSeparate':4,'glColorMask':4}[glname]
    gl_args=[p.x(i) for i in range(argc)]
    if glname=='glUseProgram':active_gl_program[0]=gl_args[0]
+   if glname=='glDrawArraysInstanced':
+    viewport=(C.c_int*4)(); draw_fbo=C.c_int(); read_fbo=C.c_int(); f['glGetIntegerv'](0x0BA2,viewport); f['glGetIntegerv'](0x8CA6,C.byref(draw_fbo)); f['glGetIntegerv'](0x8CAA,C.byref(read_fbo)); gl_draw_state.append({'args':gl_args,'program':active_gl_program[0],'viewport':list(viewport),'draw_framebuffer':draw_fbo.value,'read_framebuffer':read_fbo.value})
    gl_lr=p.u.reg_read(R.UC_ARM64_REG_LR); gl_events.append({'name':glname,'args':gl_args,'program':active_gl_program[0],'lr':hex(gl_lr),'symbols':[name for name,address in p.syms.items() if address==gl_lr]})
    return original()
   p.callbacks[glname]=wrap_gl
@@ -762,7 +782,7 @@ try:
    target_storage_events.append({'target':args[0],'level':args[1],'internal_format':args[2],'width':args[3],'height':args[4],'border':args[5],'format':args[6],'type':args[7],'pixels_pointer_nonnull':bool(pixels)})
    original_tex_image()
   p.callbacks['glTexImage2D']=trace_target_tex_image
-  fmt=p.alloc(8); p.u.mem_write(fmt,b'RGBA\0'); initial=p.alloc(128*96*4); p.u.mem_write(initial,bytes(128*96*4))
+  fmt=p.alloc(8); p.u.mem_write(fmt,b'RGBA\0'); target_width,target_height=args.output_width,args.output_height; initial=p.alloc(target_width*target_height*4); p.u.mem_write(initial,bytes(target_width*target_height*4))
   def call_stack_args(name,x,stack_args):
    for i,v in enumerate(x): p.x(i,v)
    sp=0x200f0000; p.u.reg_write(R.UC_ARM64_REG_SP,sp); p.u.reg_write(R.UC_ARM64_REG_LR,0x200f1000)
@@ -789,16 +809,26 @@ try:
   p.callbacks.update({'glFenceSync':gl_fence_sync,'glClientWaitSync':gl_client_wait_sync,'glDeleteSync':gl_delete_sync,'glFlush':gl_flush,'glFinish':gl_finish})
   bitmap_factory='SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)'
   p.callbacks.pop(bitmap_factory,None)
-  call_stack_args(bitmap_factory,[queue,128,96,fmt,initial,1,128*4,1],[6,2]); rgba_bitmap=p.x(0)
+  call_stack_args(bitmap_factory,[queue,target_width,target_height,fmt,initial,1,target_width*4,1],[6,2]); rgba_bitmap=p.x(0)
   if not rgba_bitmap: raise RuntimeError('native RGBA CreateBitmap returned null')
   rgba_canvas=p.alloc(512); p.call('SPen::SPCanvasImpl::SPCanvasImpl(SPen::IGLMsgQueue*, SPen::ISPBitmap*, bool)',[rgba_canvas,queue,rgba_bitmap,1],instruction_limit=5000000)
   p.call('SPen::SPCanvasImpl::GetBitmap()',[rgba_canvas]); rgba_canvas_bitmap=p.x(0)
   p.call('SPen::SPTextureBitmap::GetSubBitmap(int)',[rgba_canvas_bitmap,0]); rgba_subbitmap=p.x(0)
-  before_draw_fbo=bp.C.c_int(); before_read_fbo=bp.C.c_int(); p.mesa.f['glGetIntegerv'](0x8CA6,bp.C.byref(before_draw_fbo)); p.mesa.f['glGetIntegerv'](0x8CAA,bp.C.byref(before_read_fbo)); before_read=bp.C.create_string_buffer(128*96*4); p.mesa.f['glPixelStorei'](0x0D05,1); p.mesa.f['glReadPixels'](0,0,128,96,0x1908,0x1401,before_read); rgba_before=bytes(before_read.raw)
+  before_draw_fbo=bp.C.c_int(); before_read_fbo=bp.C.c_int(); p.mesa.f['glGetIntegerv'](0x8CA6,bp.C.byref(before_draw_fbo)); p.mesa.f['glGetIntegerv'](0x8CAA,bp.C.byref(before_read_fbo)); before_read=bp.C.create_string_buffer(target_width*target_height*4); p.mesa.f['glPixelStorei'](0x0D05,1); p.mesa.f['glReadPixels'](0,0,target_width,target_height,0x1908,0x1401,before_read); rgba_before=bytes(before_read.raw)
   p.call('SPen::InkPen2StrokeDrawableRTV3::Update(bool)',[join_rt,0],instruction_limit=5000000)
-  join_matrix=p.alloc(64); p.put(join_matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
+  pre_draw_rt_plus_68=bytes(p.u.mem_read(join_rt+68,1)).hex()
+  draw_branch_trace=[]
+  draw_entry=p.syms['SPen::InkPen2StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)']
+  def trace_draw_branch(u,a,z,d):
+   if a==draw_entry+0x68:
+    draw_branch_trace.append({'pc':hex(a),'receiver':hex(u.reg_read(R.UC_ARM64_REG_X20)),'rt_plus_68_u8':u.mem_read(u.reg_read(R.UC_ARM64_REG_X20)+68,1)[0],'instruction_bytes_hex':bytes(u.mem_read(a,8)).hex()})
+   elif a in (draw_entry+0x70,draw_entry+0x320):
+    draw_branch_trace.append({'pc':hex(a),'branch_path':'enhanced' if a==draw_entry+0x70 else 'default','instruction_bytes_hex':bytes(u.mem_read(a,4)).hex()})
+  draw_branch_hook=p.u.hook_add(UC_HOOK_CODE,trace_draw_branch)
+  join_matrix=p.alloc(64); matrix_values=(args.matrix_scale,0,0,0,0,args.matrix_scale,0,0,0,0,1,0,args.matrix_translate_x,args.matrix_translate_y,0,1); p.put(join_matrix,'16f',*matrix_values); draw_uniform_matrix_calls.clear(); draw_viewport_calls.clear()
   p.call('SPen::InkPen2StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[join_rt,rgba_subbitmap,join_matrix],instruction_limit=5000000)
-  read=bp.C.create_string_buffer(128*96*4); p.mesa.f['glPixelStorei'](0x0D05,1); p.mesa.f['glReadPixels'](0,0,128,96,0x1908,0x1401,read); rgba_draw=bytes(read.raw); after_draw_fbo=bp.C.c_int(); after_read_fbo=bp.C.c_int(); p.mesa.f['glGetIntegerv'](0x8CA6,bp.C.byref(after_draw_fbo)); p.mesa.f['glGetIntegerv'](0x8CAA,bp.C.byref(after_read_fbo)); attach_type=bp.C.c_int(); attach_name=bp.C.c_int(); p.mesa.f['glGetFramebufferAttachmentParameteriv'](0x8D40,0x8CE0,0x8CD0,bp.C.byref(attach_type)); p.mesa.f['glGetFramebufferAttachmentParameteriv'](0x8D40,0x8CE0,0x8CD1,bp.C.byref(attach_name)); fbo_status=p.mesa.f['glCheckFramebufferStatus'](0x8D40)
+  p.u.hook_del(draw_branch_hook)
+  read=bp.C.create_string_buffer(target_width*target_height*4); p.mesa.f['glPixelStorei'](0x0D05,1); p.mesa.f['glReadPixels'](0,0,target_width,target_height,0x1908,0x1401,read); rgba_draw=bytes(read.raw); after_draw_fbo=bp.C.c_int(); after_read_fbo=bp.C.c_int(); p.mesa.f['glGetIntegerv'](0x8CA6,bp.C.byref(after_draw_fbo)); p.mesa.f['glGetIntegerv'](0x8CAA,bp.C.byref(after_read_fbo)); attach_type=bp.C.c_int(); attach_name=bp.C.c_int(); p.mesa.f['glGetFramebufferAttachmentParameteriv'](0x8D40,0x8CE0,0x8CD0,bp.C.byref(attach_type)); p.mesa.f['glGetFramebufferAttachmentParameteriv'](0x8D40,0x8CE0,0x8CD1,bp.C.byref(attach_name)); fbo_status=p.mesa.f['glCheckFramebufferStatus'](0x8D40)
   tex_level_query=ip.cfunc(p.mesa.gl,'glGetTexLevelParameteriv',None,[bp.C.c_uint,bp.C.c_int,bp.C.c_uint,bp.C.POINTER(bp.C.c_int)])
   previous_texture=bp.C.c_int(); p.mesa.f['glGetIntegerv'](0x8069,bp.C.byref(previous_texture)); p.mesa.f['glBindTexture'](0x0DE1,attach_name.value)
   texture_level={}
@@ -809,9 +839,9 @@ try:
   samples=[]
   for i in range(0,len(rgba_draw),4):
    px=rgba_draw[i:i+4]
-   if any(px): samples.append({'xy':[i//4%128,i//4//128],'rgba':list(px)})
+   if any(px): samples.append({'xy':[i//4%target_width,i//4//target_width],'rgba':list(px)})
    if len(samples)>=12: break
-  drawn=[(i//4%128,i//4//128,rgba_draw[i:i+4]) for i in range(0,len(rgba_draw),4) if any(rgba_draw[i:i+4])]
+  drawn=[(i//4%target_width,i//4//target_width,rgba_draw[i:i+4]) for i in range(0,len(rgba_draw),4) if any(rgba_draw[i:i+4])]
   descriptor232=next(row for row in descriptor_events if row['site']=='rt232_factory')
   blend_raw=bytes(p.u.mem_read(blend_obj,40)); vector_uploaded=[i for i,row in enumerate(p.graphics_buffer_uploads) if row.get('data_hex')==join_bytes.hex()]
   draw_rows=[list(row) for row in p.graphics_draw_calls]
@@ -826,9 +856,9 @@ try:
   if rgba_before!=bytes(len(rgba_before)): raise RuntimeError('RGBA target was not all zero immediately before Draw')
   if fbo_status!=0x8cd5 or after_draw_fbo.value!=before_draw_fbo.value or attach_name.value==0: raise RuntimeError('native Draw output target/FBO attachment is not complete and stable')
   if not (before_draw_fbo.value==before_read_fbo.value==after_draw_fbo.value==after_read_fbo.value): raise RuntimeError(f'GL read/draw framebuffer bindings diverged: before draw/read={before_draw_fbo.value}/{before_read_fbo.value}, after={after_draw_fbo.value}/{after_read_fbo.value}')
-  if attach_type.value!=0x1702 or texture_level!={'width':128,'height':96,'internal_format':0x8058}: raise RuntimeError(f'output attachment is not the RGBA8 128x96 texture: type={attach_type.value:#x} level={texture_level!r}')
+  if attach_type.value!=0x1702 or texture_level!={'width':target_width,'height':target_height,'internal_format':0x8058}: raise RuntimeError(f'output attachment is not the requested RGBA8 texture: type={attach_type.value:#x} level={texture_level!r}')
   if restored_texture.value!=previous_texture.value: raise RuntimeError('texture level query did not restore prior GL_TEXTURE_BINDING_2D')
-  if not any(row['width']==128 and row['height']==96 and row['internal_format']==0x8058 and row['format']==0x1908 for row in target_storage_events): raise RuntimeError(f'host destination did not allocate RGBA8 storage: {target_storage_events!r}')
+  if not any(row['width']==target_width and row['height']==target_height and row['internal_format']==0x8058 and row['format']==0x1908 for row in target_storage_events): raise RuntimeError(f'host destination did not allocate RGBA8 storage: {target_storage_events!r}')
   if not drawn or not draw_rows or draw_rows[-1]!=[5,0,4,25]: raise RuntimeError(f'expected one 25-instance program-5 draw, got {draw_rows!r}')
   if after_gl_error or getattr(p,'gl_errors',[]): raise RuntimeError(f'host GLES errors: get_error={after_gl_error:#x} records={getattr(p,"gl_errors",[])}')
   if [row['args'] for row in p.blend_gl_calls if row['call']=='glColorMask'][-1:]!=[[1,1,1,1]]: raise RuntimeError('native blend activation did not enable all output channels')
@@ -836,9 +866,11 @@ try:
    'receiver':{'drawing_selected_rt_identity':selected_rt_id,'receiver_is_selected_drawing_rt':True,'same_native_receiver_used_for_Init_CreatePenCanvas_Update_Draw':True,'rt_plus_208_caller_canvas_pointer_before_host_clear':hex(caller_canvas_pointer_before_clear),'rt_plus_208_after_host_clear':caller_canvas_pointer_after_clear,'rt_plus_208_provenance':'Drawing-created RT canvas slot was explicitly cleared by the host bridge to allow a separately supplied RGBA target; this does not model the saved app canvas lifecycle.','rt_plus_232_native_blend_object':hex(blend_obj),'blend_object_bytes_hex':blend_raw.hex()},
    'native_init_blend_descriptor':{'init_call_site':'InkPen2StrokeDrawableRTV3::Init+0x1f0','constructor_input_hex':next(row['bytes'] for row in descriptor_events if row['site']=='rt232_ctor'),'factory_input_hex':descriptor232['bytes'],'object_embeds_same_descriptor':True,'semantic_call_args':{'constructor_enabled':True,'color':[0,1,7],'alpha':[0,1,7]}},
    'producer':{'native_AddPoint_vector_bytes_hex':join_bytes.hex(),'byte_count':len(join_bytes),'sha256':hashlib.sha256(join_bytes).hexdigest(),'uploaded_gl_buffer_indices':vector_uploaded,'matching_upload_bytes_hex':p.graphics_buffer_uploads[vector_uploaded[0]]['data_hex'],'all_draw_calls':draw_rows,'vertex_attributes':p.graphics_attributes},
-   'paint':{'rtv3_draw_pass':'program 5 GL_TRIANGLE_STRIP instanced radial stamps; no final composite pass claimed','target_setup':{'native_factory':'SPGraphicsFactory::CreateBitmap','width':128,'height':96,'format_name':'RGBA','texture_memory_layout_raw':6,'texture_target_layout_raw':2,'native_canvas':'SPCanvasImpl(queue, bitmap, true) + GetBitmap + GetSubBitmap(0)','host_created_destination':True,'texture_gl_storage_calls':target_storage_events,'native_texture_upload_summary':storage_uploads},'readback':{'width':128,'height':96,'format':'RGBA8','full_bytes_zlib_base64':base64.b64encode(zlib.compress(rgba_draw,9)).decode(),'uncompressed_byte_count':len(rgba_draw),'sha256':hashlib.sha256(rgba_draw).hexdigest(),'baseline_all_zero':not any(rgba_before),'baseline_sha256':hashlib.sha256(rgba_before).hexdigest(),'nonzero_pixels':len(drawn),'nonzero_bbox_xyxy':[min(x for x,y,c in drawn),min(y for x,y,c in drawn),max(x for x,y,c in drawn),max(y for x,y,c in drawn)],'sample_pixels':samples,'attachment':{'framebuffer':after_draw_fbo.value,'draw_framebuffer_before':before_draw_fbo.value,'read_framebuffer_before':before_read_fbo.value,'draw_framebuffer_after':after_draw_fbo.value,'read_framebuffer_after':after_read_fbo.value,'attachment_type':attach_type.value,'texture':attach_name.value,'texture_level0':texture_level,'texture_binding_before_query':previous_texture.value,'texture_binding_after_query':restored_texture.value,'framebuffer_complete':fbo_status==0x8cd5}},'gl_blend_calls':p.blend_gl_calls,'post_draw_color_mask':list(mask_state),'gl_error_after_draw':after_gl_error,'gl_errors_recorded':list(getattr(p,'gl_errors',[])),'shader_programs':{str(k):{'linked':v['linked'],'shader_ids':v['shaders'],'source_fragments':[src for sh in v['shader_snapshots'] for src in sh['sources']]} for k,v in program_rows.items()},'sampler_note':'The observed program-5 stamp draw has no texture-sampling input; no sampled texture is asserted.'},
+   'paint':{'rtv3_draw_pass':'program 5 GL_TRIANGLE_STRIP instanced radial stamps; no final composite pass claimed','target_setup':{'native_factory':'SPGraphicsFactory::CreateBitmap','width':target_width,'height':target_height,'format_name':'RGBA','texture_memory_layout_raw':6,'texture_target_layout_raw':2,'native_canvas':'SPCanvasImpl(queue, bitmap, true) + GetBitmap + GetSubBitmap(0)','host_created_destination':True,'texture_gl_storage_calls':target_storage_events,'native_texture_upload_summary':storage_uploads},'readback':{'width':target_width,'height':target_height,'format':'RGBA8','full_bytes_zlib_base64':base64.b64encode(zlib.compress(rgba_draw,9)).decode(),'uncompressed_byte_count':len(rgba_draw),'sha256':hashlib.sha256(rgba_draw).hexdigest(),'baseline_all_zero':not any(rgba_before),'baseline_sha256':hashlib.sha256(rgba_before).hexdigest(),'nonzero_pixels':len(drawn),'nonzero_bbox_xyxy':[min(x for x,y,c in drawn),min(y for x,y,c in drawn),max(x for x,y,c in drawn),max(y for x,y,c in drawn)],'sample_pixels':samples,'attachment':{'framebuffer':after_draw_fbo.value,'draw_framebuffer_before':before_draw_fbo.value,'read_framebuffer_before':before_read_fbo.value,'draw_framebuffer_after':after_draw_fbo.value,'read_framebuffer_after':after_read_fbo.value,'attachment_type':attach_type.value,'texture':attach_name.value,'texture_level0':texture_level,'texture_binding_before_query':previous_texture.value,'texture_binding_after_query':restored_texture.value,'framebuffer_complete':fbo_status==0x8cd5}},'gl_blend_calls':p.blend_gl_calls,'post_draw_color_mask':list(mask_state),'gl_error_after_draw':after_gl_error,'gl_errors_recorded':list(getattr(p,'gl_errors',[])),'shader_programs':{str(k):{'linked':v['linked'],'shader_ids':v['shaders'],'source_fragments':[src for sh in v['shader_snapshots'] for src in sh['sources']]} for k,v in program_rows.items()},'sampler_note':'The observed program-5 stamp draw has no texture-sampling input; no sampled texture is asserted.'},
    'boundaries':['ObjectStroke/model/drawable factory and V9 geometry execute through actual native Drawing caller.','Queue execution, GL context, explicit screen profile, and native RGBA bitmap/canvas destination are host-provided.','PenGLDataManager vector pointer is reattached to the exact native caller-produced vector object for this bounded paint phase.','This does not claim SDK deserialization, default device Canvas setup, final canvas composition, or Samsung-device pixels.']}
-  print('JOIN_DRAW_OK',hex(join_canvas),hex(join_subbitmap),'rgba_bitmap',hex(rgba_bitmap),'rgba_canvas',hex(rgba_canvas),'rgba_subbitmap',hex(rgba_subbitmap),'before_draw_fbo',before_draw_fbo.value,'before_read_fbo',before_read_fbo.value,'before_rgba_nonzero',sum(1 for i in range(0,len(rgba_before),4) if any(rgba_before[i:i+4])),'before_rgba_sha256',hashlib.sha256(rgba_before).hexdigest(),'after_draw_fbo',after_draw_fbo.value,'after_read_fbo',after_read_fbo.value,'attachment_type',attach_type.value,'attachment_name',attach_name.value,'texture_level0',texture_level,'fbo_status',hex(fbo_status),'rgba_center',list(rgba_draw[(48*128+64)*4:(48*128+64)*4+4]),'rgba_samples',samples,'rgba_nonzero',len(drawn),'bbox',[min(x for x,y,c in drawn),min(y for x,y,c in drawn),max(x for x,y,c in drawn),max(y for x,y,c in drawn)],'rgba_alpha_values',sorted(set(c[3] for x,y,c in drawn)),'rgba_rgb_values',sorted(set((c[0],c[1],c[2]) for x,y,c in drawn))[:16],'rgba_sha256',hashlib.sha256(rgba_draw).hexdigest(),'buffer',p.u.mem_read(p.vector,24).hex())
+  if (args.matrix_scale,args.matrix_translate_x,args.matrix_translate_y,target_width,target_height)!=(1.0,0.0,0.0,128,96):
+   joined_paint_capture['paint']['readback'].update({'draw_matrix_f32_row_major':list(matrix_values),'actual_uniform_matrix_calls':draw_uniform_matrix_calls,'actual_viewport_calls':draw_viewport_calls,'actual_instanced_draw_state':gl_draw_state,'rt_plus_68_u8_before_draw':pre_draw_rt_plus_68,'draw_symbol_entry_pc':hex(draw_entry),'draw_rt_plus_68_branch_trace':draw_branch_trace})
+  print('JOIN_DRAW_OK',hex(join_canvas),hex(join_subbitmap),'rgba_bitmap',hex(rgba_bitmap),'rgba_canvas',hex(rgba_canvas),'rgba_subbitmap',hex(rgba_subbitmap),'before_draw_fbo',before_draw_fbo.value,'before_read_fbo',before_read_fbo.value,'before_rgba_nonzero',sum(1 for i in range(0,len(rgba_before),4) if any(rgba_before[i:i+4])),'before_rgba_sha256',hashlib.sha256(rgba_before).hexdigest(),'after_draw_fbo',after_draw_fbo.value,'after_read_fbo',after_read_fbo.value,'attachment_type',attach_type.value,'attachment_name',attach_name.value,'texture_level0',texture_level,'fbo_status',hex(fbo_status),'rgba_center',list(rgba_draw[((target_height//2)*target_width+target_width//2)*4:((target_height//2)*target_width+target_width//2)*4+4]),'rgba_samples',samples,'rgba_nonzero',len(drawn),'bbox',[min(x for x,y,c in drawn),min(y for x,y,c in drawn),max(x for x,y,c in drawn),max(y for x,y,c in drawn)],'rgba_alpha_values',sorted(set(c[3] for x,y,c in drawn)),'rgba_rgb_values',sorted(set((c[0],c[1],c[2]) for x,y,c in drawn))[:16],'rgba_sha256',hashlib.sha256(rgba_draw).hexdigest(),'buffer',p.u.mem_read(p.vector,24).hex())
   jb,je,jc=struct.unpack('<3Q',p.u.mem_read(p.vector,24)); join_bytes=bytes(p.u.mem_read(jb,je-jb)); print('JOIN_UPLOADS',[(row.get('size'),row.get('sha256')) for row in p.graphics_buffer_uploads],'source',len(join_bytes),hashlib.sha256(join_bytes).hexdigest(),'matches',[i for i,row in enumerate(p.graphics_buffer_uploads) if row.get('data_hex')==join_bytes.hex()],'draws',p.graphics_draw_calls,'blend',p.blend_gl_calls); cobj=struct.unpack('<Q',p.u.mem_read(join_rt+232,8))[0]; cvt=struct.unpack('<Q',p.u.mem_read(cobj,8))[0] if cobj else 0; cslots=struct.unpack('<4Q',p.u.mem_read(cvt,32)) if cvt else (); print('RT_CONTEXT_OBJECT',hex(cobj),hex(cvt),[(hex(x),[n for n,a in p.syms.items() if a==x]) for x in cslots]); mask_state=(bp.C.c_ubyte*4)(); p.mesa.f['glGetBooleanv'](0x0C23,mask_state); print('COLOR_MASK_QUERY',list(mask_state)); print('JOIN_GL_EVENTS',gl_events); print('JOIN_DRAW_CALLS',p.graphics_draw_calls,'attributes',p.graphics_attributes,'blend',p.blend_gl_calls,'gl_errors',getattr(p,'gl_errors',None),'blend_factory_events',blend_factory_events,'blend_object_events',blend_object_events,'shader_rows',shader_rows,'program_rows',program_rows,'graphics_calls_tail',getattr(p,'graphics_calls',[])[-20:],'gl_events',gl_events,'shader_program_summary',{k:{'linked':v['linked'],'sources':[src[:180] for sh in v['shader_snapshots'] for src in sh['sources']]} for k,v in program_rows.items()})
  except Exception as join_error:
   print('JOIN_PAINT_FAILURE',type(join_error).__name__,str(join_error),'pc',hex(p.u.reg_read(R.UC_ARM64_REG_PC)),'lr',hex(p.u.reg_read(R.UC_ARM64_REG_LR)),'x0_x7',[hex(p.x(i)) for i in range(8)],'rt_fields',p.u.mem_read(join_rt,0x140).hex(),flush=True); raise
