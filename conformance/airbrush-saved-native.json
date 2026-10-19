@@ -7,7 +7,8 @@
   },
   "supporting_libraries": {
     "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
-    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
   },
   "native_context": {
     "Pen::Pen_default_version": 1,
@@ -40,7 +41,7 @@
   "default_v2_saved_redraw": {
     "profile_version": 2,
     "record_storage": "per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays",
-    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures construct CPU pattern bytes and submit them through synthetic queue interfaces",
+    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures construct CPU pattern bytes and pass them through the synthetic SPTextureBitmap UpdateBitmap interface",
     "cases": [
       {
         "input_id": "stylus-straight-size10",
@@ -96,10 +97,10 @@
               198
             ],
             "other_channels_nonzero": false,
-            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
-            "queue_submission": {
-              "queue": "0x10009450",
-              "payload_ptr": "0x10009520",
+            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
+            "update_call": {
+              "interface": "0x100093c0",
+              "payload_ptr": "0x10009560",
               "size_arg": 0,
               "payload_bytes": 36864
             }
@@ -161,10 +162,10 @@
               198
             ],
             "other_channels_nonzero": false,
-            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
-            "queue_submission": {
-              "queue": "0x10009430",
-              "payload_ptr": "0x10009500",
+            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
+            "update_call": {
+              "interface": "0x100093a0",
+              "payload_ptr": "0x10009540",
               "size_arg": 0,
               "payload_bytes": 36864
             }
@@ -226,10 +227,10 @@
               198
             ],
             "other_channels_nonzero": false,
-            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
-            "queue_submission": {
-              "queue": "0x10009430",
-              "payload_ptr": "0x10009500",
+            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
+            "update_call": {
+              "interface": "0x100093a0",
+              "payload_ptr": "0x10009540",
               "size_arg": 0,
               "payload_bytes": 36864
             }
@@ -271,12 +272,54 @@
       198
     ],
     "other_byte_channels_nonzero": false,
-    "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
-    "queue_submission": {
-      "queue": "0x10000730",
-      "payload_ptr": "0x100007f0",
+    "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int) after GetTextureBitmap slot +168",
+    "update_call": {
+      "interface": "0x100006a0",
+      "payload_ptr": "0x10000830",
       "size_arg": 0,
       "payload_bytes": 36864
+    },
+    "native_vtable_provenance": {
+      "library": "libSPenGraphics.so",
+      "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "factory": "SPGraphicsFactory::CreateBitmap at 0xc04ac constructs SPTextureBitmap at 0x8f140",
+      "primary_address_point": "0xcfd28",
+      "texture_getter": {
+        "caller_slot_offset": 168,
+        "vtable_entry": "0xcfdd0",
+        "symbol": "SPTextureBitmap::GetTextureBitmap",
+        "address": "0x92020",
+        "returns_this_plus": "0xb0"
+      },
+      "buffer_update_interface": {
+        "subobject_offset": "0xb0",
+        "address_point": "0xcff30",
+        "caller_slot_offset": 48,
+        "vtable_entry": "0xcff60",
+        "symbol": "non-virtual thunk to SPTextureBitmap::UpdateBitmap(void const*, int)",
+        "address": "0x90b08",
+        "native_target": "0x90a94"
+      },
+      "filter_requests": [
+        {
+          "caller": "AirBrushPenStrokeDrawableRTV1::buildTextures at 0x27744",
+          "readable_getter_slot": 144,
+          "setter_slot": 32,
+          "args": [
+            4,
+            0
+          ]
+        },
+        {
+          "caller": "AirBrushPenStrokeDrawableRTV1::buildTextures at 0x2776c",
+          "readable_getter_slot": 144,
+          "setter_slot": 32,
+          "args": [
+            5,
+            0
+          ]
+        }
+      ]
     },
     "pixel_bytes_order": "little-endian uint32; observed R varying, G/B/A zero",
     "shader_contract": "fragment preserves input RGB and multiplies input alpha by sampled pattern red",
@@ -320,8 +363,8 @@
     ],
     "texture": [
       "SPGraphicsFactory::CreateBitmap",
-      "synthetic SPSubBitmap::GetMsgQueue result",
-      "synthetic IGLMsgQueue vtable slot +48 payload capture"
+      "synthetic SPTextureBitmap::GetTextureBitmap result",
+      "synthetic texture-buffer UpdateBitmap(void const*, int) payload capture"
     ],
     "runtime": [
       "operator new/new[] and nothrow overloads use bounded Unicorn arena",
@@ -336,7 +379,7 @@
     "synthetic MotionEvent historical/current coordinate callbacks listed per case",
     "synthetic manager and queue host; queue task Run invoked synchronously",
     "synthetic RT vtable methods except actual RTV1::AddPoint",
-    "synthetic SPGraphicsFactory::CreateBitmap; actual RTV1::setTextures constructs CPU pattern bytes and passes the pointer through a synthetic queue slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168; no texture object or GPU upload is exercised",
+    "synthetic SPGraphicsFactory::CreateBitmap; actual RTV1::setTextures constructs CPU pattern bytes and passes the pointer through a synthetic SPTextureBitmap texture-buffer UpdateBitmap slot +48 after GetTextureBitmap slot +168; no texture allocation, GPU upload, or GPU execution is exercised",
     "bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached",
     "ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run"
   ],

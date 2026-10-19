@@ -112,13 +112,13 @@ A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
 redraw cases; shape modes, caller admission and paint integration remain open.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and reused state; this profile
-also uses the generic approximation in Rust. Its test-only core reproduces
-captured core/fringe buffers and a 13-vector history prefix; terminal sampling,
-caller admission and paint integration remain outstanding.
+also uses the generic approximation in Rust. Its test-only linked core matches
+captured initialization, history/endPen state, all vectors and exact core/fringe
+buffers for fresh/reused cases; caller admission and paint remain outstanding.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
-at a synthetic queue boundary. GPU compositing, caller admission and vector
-paint integration remain outstanding.
+at a synthetic SPTextureBitmap UpdateBitmap boundary. GPU compositing, caller
+admission and vector paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records; source-driven sampling,
 material transport and production integration remain outstanding.
