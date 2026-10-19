@@ -129,6 +129,9 @@ captured saved-array conversion, initialization, history/endPen state, vectors
 and core/fringe buffers for fresh/reused cases. A native
 [queued Draw capture](../conformance/calligraphy-draw-native.json) checks buffer
 uploads, draw order, uniforms and GLES blend calls under explicit host callbacks.
+The [Drawing caller capture](../conformance/calligraphy-saved-caller-native.json)
+adds source conversion and retained-state evidence; saved-wrapper style cases
+check fixed-width extent overrides. Full caller-state integration remains open.
 A test-only vector adapter preserves those uploaded triangles, native draw order
 and core alpha gradients through SVG/PDF without image objects. Caller admission,
 layer opacity, production integration and device pixel parity remain outstanding.

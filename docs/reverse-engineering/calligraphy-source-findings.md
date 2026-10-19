@@ -151,10 +151,18 @@ register probe, not a naturally selected caller extent.
 
 The [saved-wrapper capture](../../conformance/calligraphy-saved-wrapper-native.json)
 executes native Model getters, the secondary saved-redraw thunk and Base
-MotionEvent construction/accessors. Nine cases establish paired tilt/orientation
+MotionEvent construction/accessors. Fifteen cases establish paired tilt/orientation
 defaults (both zero unless both arrays exist), one-sample no-draw behavior and
-a reused-drawable control. Vector storage is supplied by the harness; trailing
+a reused-drawable control. Native setter-driven fixed-width cases override the
+half-size extent with `max(fixedWidth, 1)`; disabled fixed width retains
+`max(penSize / 2, 1)`. Vector storage is supplied by the harness; trailing
 `movePen`, full Drawing dispatch and GPU output remain outside this capture.
+
+The [Drawing caller capture](../../conformance/calligraphy-saved-caller-native.json)
+executes native pen lookup and saved redraw under an explicit host context.
+Sequential strokes reset the RTV1 initial flag and center while retaining edge
+words. It records complete repeated/short-stroke meshes and fresh controls;
+outer list batching and complete Rust post-call state remain separate gates.
 
 The [queued Draw fixture](../../conformance/calligraphy-draw-native.json) retains
 exact uploaded Vector4 bytes. The test-only
