@@ -203,7 +203,11 @@ default GLV10 selection and 11-float instance records. The separate
 with an explicitly empty saved setting and captures 26 records under a
 1920×1080 context. The numeric model reproduces all 1144 bytes using the native
 `1440 / min(display limits)` speed factor; direct-wrapper cases retain the
-constructor’s 1440×2560 limits. A
+constructor’s 1440×2560 limits. The [reuse capture](../conformance/brushpen-reuse-native.json)
+checks short/long first strokes and a distinct-object control on the same pen,
+drawable and RT: all second streams equal the fresh 1144-byte stream. Native
+redraw clears retained speed, and the next accepted segment seeds radius.
+The observed cache slot is not established as the drawable cache key. A
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
 native texture/instance uploads, attribute setup, blend mapping and Draw-binding
 calls. A test-only source sampler matches
