@@ -432,7 +432,7 @@ fn prepare_oblique_stroke(
     let version = effective_oblique_version(rendering.advanced_settings.as_deref())?;
     if !matches!(version, 1 | 4)
         || effective_oblique_stroke_type(rendering.style.stroke_type_raw) != 0
-        || rendering.style.color_type_raw != Some(0)
+        || !matches!(rendering.style.color_type_raw, None | Some(0))
         || rendering.properties.fixed_width
         || rendering.properties.replay_only
         || rendering.properties.eraser
@@ -444,8 +444,15 @@ fn prepare_oblique_stroke(
     {
         return None;
     }
-    let size = oblique_native_size(rendering.style.pen_size?)?;
-    let argb = rendering.style.color_argb?;
+    // ObjectStroke getters return size 0 and opaque black when these style
+    // setters are omitted. Drawing passes size through Pen::SetSize, which
+    // clamps it to 0.4; the color getter remains opaque black.
+    let requested_size = rendering.style.pen_size.unwrap_or(0.0);
+    if !requested_size.is_finite() || requested_size < 0.0 {
+        return None;
+    }
+    let size = oblique_native_size(requested_size)?;
+    let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     let tool_type = u32::from(rendering.tool_type_raw);
     if version == 1
         && (tool_type != 0
@@ -472,10 +479,7 @@ fn prepare_oblique_stroke(
         )?,
         _ => return None,
     };
-    let opacity = rendering
-        .style
-        .color_argb
-        .map_or(1.0, |argb| f64::from((argb >> 24) as u8) / 255.0);
+    let opacity = f64::from((argb >> 24) as u8) / 255.0;
     Some(PreparedObliqueInk {
         mesh,
         opacity,
@@ -732,15 +736,39 @@ mod tests {
         );
         let mut missing_size = input.clone();
         missing_size.rendering.as_mut().unwrap().style.pen_size = None;
-        assert!(
-            prepare_stroke_for_context(&missing_size, false, InkRenderContext::CanonicalPage,)
-                .coverage_mesh
-                .is_none()
+        let missing_size_ink =
+            prepare_stroke_for_context(&missing_size, false, InkRenderContext::CanonicalPage);
+        assert_eq!(
+            missing_size_ink.coverage_mesh,
+            prepare_oblique_mesh(&missing_size.points, 0.4, false, 0, [1.0, 1.0])
         );
         let mut missing_color = input.clone();
         missing_color.rendering.as_mut().unwrap().style.color_argb = None;
+        let missing_color_ink =
+            prepare_stroke_for_context(&missing_color, false, InkRenderContext::CanonicalPage);
+        assert!(missing_color_ink.coverage_mesh.is_some());
+        assert_eq!(missing_color_ink.color, "#000000");
+        assert_eq!(missing_color_ink.opacity, 1.0);
+        let mut absent_color_type = input.clone();
+        absent_color_type
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_type_raw = None;
         assert!(
-            prepare_stroke_for_context(&missing_color, false, InkRenderContext::CanonicalPage,)
+            prepare_stroke_for_context(
+                &absent_color_type,
+                false,
+                InkRenderContext::CanonicalPage,
+            )
+            .coverage_mesh
+            .is_some()
+        );
+        let mut negative_size = input.clone();
+        negative_size.rendering.as_mut().unwrap().style.pen_size = Some(-0.1);
+        assert!(
+            prepare_stroke_for_context(&negative_size, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
                 .is_none()
         );
@@ -1113,6 +1141,132 @@ mod tests {
                 .as_str()
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn canonical_oblique_native_missing_style_defaults_match_full_vectors() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique_defaults_native.json"
+        ))
+        .unwrap();
+        let bits = |value: &serde_json::Value| {
+            let hex = value.as_str().unwrap().trim_start_matches("0x");
+            u32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        for (case_id, case) in fixture["cases"].as_object().unwrap() {
+            let input = &case["input"];
+            let points = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|pair| {
+                    let pair = pair.as_array().unwrap();
+                    crate::Point {
+                        x: f64::from(f32::from_bits(bits(&pair[0]))),
+                        y: f64::from(f32::from_bits(bits(&pair[1]))),
+                    }
+                })
+                .collect::<Vec<_>>();
+            let omitted = &input["style_setters_omitted"];
+            let raw_size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
+            let raw_argb = u32::from_str_radix(
+                input["color_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let size = (!omitted["pen_size"].as_bool().unwrap()).then_some(raw_size);
+            let argb = (!omitted["color_argb"].as_bool().unwrap()).then_some(raw_argb);
+            let stroke = Stroke {
+                rendering: Some(crate::StrokeRendering {
+                    metadata: None,
+                    pen_name: input["pen_name"].as_str().map(str::to_owned),
+                    advanced_settings: case["native_calls"]["route"]["advanced_setting"]
+                        .as_str()
+                        .map(str::to_owned),
+                    tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                    properties: crate::StrokeProperties {
+                        compressed: input["curve_enabled"].as_bool().unwrap(),
+                        replay_only: false,
+                        stylus_channels: false,
+                        eraser: false,
+                        fixed_width: false,
+                        millisecond_timestamps: false,
+                        top_layer_pen: false,
+                        alpha_lock: false,
+                        binary_added: true,
+                        generated: false,
+                        fixed_opacity: false,
+                        rainbow_effect: false,
+                        straighten: false,
+                        reveal_mode: false,
+                    },
+                    style: crate::StrokeStyle {
+                        color_argb: argb,
+                        color_type_raw: None,
+                        pen_size: size,
+                        stroke_type_raw: Some(input["stroke_type"].as_u64().unwrap() as u16),
+                        ..crate::StrokeStyle::default()
+                    },
+                }),
+                bbox: BoundingBox::default(),
+                points,
+                pressures: Vec::new(),
+                timestamps: Vec::new(),
+                tilts: Vec::new(),
+                orientations: Vec::new(),
+                color: None,
+                pen_width: raw_size,
+            };
+            let prepared =
+                prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+            assert!(
+                prepare_stroke(&stroke, false).coverage_mesh.is_none(),
+                "{case_id}: context-free API remains approximate"
+            );
+            let mesh = prepared
+                .coverage_mesh
+                .unwrap_or_else(|| panic!("{case_id}: canonical native defaults rejected"));
+            let actual: Vec<u8> = mesh
+                .triangles
+                .iter()
+                .flat_map(|triangle| triangle.vertices)
+                .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            let expected = case["phase_final_vectors"]["draw_object_stroke"]["vector_bytes"]
+                .as_str()
+                .unwrap();
+            assert_eq!(actual.len(), expected.len() / 2, "{case_id} bytes");
+            for (index, byte) in actual.iter().enumerate() {
+                assert_eq!(
+                    *byte,
+                    u8::from_str_radix(&expected[index * 2..index * 2 + 2], 16).unwrap(),
+                    "{case_id} byte {index}"
+                );
+            }
+            let probe = &case["native_calls"]["missing_style_defaults_probe"];
+            assert_eq!(
+                prepared.color,
+                format!("#{:06x}", raw_argb & 0x00ff_ffff),
+                "{case_id} native ARGB default"
+            );
+            let final_size = f32::from_bits(bits(&probe["Pen_GetSize_after_Drawing_f32_bits"]));
+            assert_eq!(
+                final_size,
+                if omitted["pen_size"].as_bool().unwrap() {
+                    0.4
+                } else {
+                    raw_size
+                },
+                "{case_id} native size default/clamp"
+            );
+            assert_eq!(prepared.opacity, f64::from((raw_argb >> 24) as u8) / 255.0);
+        }
     }
 
     #[test]

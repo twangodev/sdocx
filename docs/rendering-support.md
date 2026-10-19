@@ -199,8 +199,10 @@ The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
 coverage/compositing. Production SVG/PDF uses the bounded V4 mesh in canonical
-page coordinates for ordinary strokes with explicit size/ARGB and color type 0;
-unsupported settings and Descendant objects retain the generic approximation.
+page coordinates for ordinary strokes with color type 0 or absent. Omitted
+size/ARGB use the [native defaults](../conformance/oblique_defaults_native.json)
+of size 0.4 and opaque black; unsupported settings and Descendant objects retain
+the generic approximation.
 Source RGB/alpha and max coverage are preserved without image objects.
 The [native Draw oracle](../conformance/oblique-draw-native.json) also verifies
 explicit ARGB forwarding and executed MAX/source-over blend descriptors, with
@@ -215,8 +217,8 @@ light-background PDF cases show material coverage/color differences at low
 raster scales; SVG stays close in those captures. PDF transport remains under
 investigation.
 Selected V1 now uses the shared RTV1 vector transport in canonical page
-coordinates for ordinary tool-0/2 strokes with explicit size/ARGB and color type
-0, excluding fixed width and effects. The
+coordinates for ordinary tool-0/2 strokes with the same native style defaults,
+excluding fixed width and effects. The
 [stress](../conformance/oblique-v1-stress-native.json) and
 [edge](../conformance/oblique-v1-edge-native.json) oracles verify callback pairs,
 return-state boundaries and complete mesh buffers, including short and
