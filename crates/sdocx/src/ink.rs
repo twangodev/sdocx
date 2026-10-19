@@ -389,11 +389,11 @@ fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
         return None;
     }
     if effective_oblique_version(rendering.advanced_settings.as_deref()) != 4
-        || rendering.style.stroke_type_raw == Some(1)
+        || effective_oblique_stroke_type(rendering.style.stroke_type_raw) != 0
     {
         return None;
     }
-    let size = (stroke.pen_width as f32).clamp(0.4, 800.0);
+    let size = oblique_native_size(stroke.pen_width)?;
     let tool_type = u32::from(rendering.tool_type_raw);
     let mesh = prepare_oblique_mesh(
         &stroke.points,
@@ -407,6 +407,22 @@ fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
         .color_argb
         .map_or(1.0, |argb| f64::from((argb >> 24) as u8) / 255.0);
     Some((mesh, opacity))
+}
+
+/// ObjectStroke defaults missing StrokeType to zero and maps stored values >=3
+/// to zero in GetStrokeType. Type zero is the only Drawing GL path that assigns
+/// the ISPPenCanvas consumed by Oblique V4's inverse-scale lookup.
+#[cfg(test)]
+fn effective_oblique_stroke_type(raw: Option<u16>) -> u16 {
+    let raw = raw.unwrap_or(0);
+    if raw >= 3 { 0 } else { raw }
+}
+
+/// The saved adapter converts size with FCVTZU to u32. Keep only its modeled
+/// finite, nonnegative input domain; mesh traversal has separate work budgets.
+#[cfg(test)]
+fn oblique_native_size(size: f32) -> Option<f32> {
+    (size.is_finite() && (0.0..4_294_967_296.0).contains(&size)).then_some(size)
 }
 
 #[cfg(test)]
@@ -482,7 +498,7 @@ mod tests {
             style: crate::StrokeStyle {
                 color_argb: Some(0x8033_6699),
                 fixed_width: Some(24.0),
-                stroke_type_raw: Some(2),
+                stroke_type_raw: Some(0),
                 ..crate::StrokeStyle::default()
             },
         });
@@ -545,12 +561,16 @@ mod tests {
             .unwrap()
             .style
             .stroke_type_raw = None;
-        assert!(prepare_stroke(&absent_stroke_type, false).coverage_mesh.is_some());
+        assert!(
+            prepare_stroke(&absent_stroke_type, false)
+                .coverage_mesh
+                .is_some()
+        );
         let mut high_size = input.clone();
         high_size.pen_width = 1_000.0;
         assert_eq!(
             prepare_stroke(&high_size, false).coverage_mesh,
-            prepare_oblique_mesh(&high_size.points, 800.0, false, 0, [1.0, 1.0])
+            prepare_oblique_mesh(&high_size.points, 1_000.0, false, 0, [1.0, 1.0])
         );
 
         let mut other_version = input.clone();
@@ -561,8 +581,16 @@ mod tests {
                 .is_none()
         );
         let mut clamped_version = input.clone();
-        clamped_version.rendering.as_mut().unwrap().advanced_settings = Some("9;".into());
-        assert!(prepare_stroke(&clamped_version, false).coverage_mesh.is_some());
+        clamped_version
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("9;".into());
+        assert!(
+            prepare_stroke(&clamped_version, false)
+                .coverage_mesh
+                .is_some()
+        );
         let mut other_route = input;
         other_route
             .rendering
@@ -571,6 +599,39 @@ mod tests {
             .style
             .stroke_type_raw = Some(1);
         assert!(prepare_stroke(&other_route, false).coverage_mesh.is_none());
+        let mut unassigned_gl_canvas = other_route.clone();
+        unassigned_gl_canvas
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .stroke_type_raw = Some(2);
+        assert!(
+            prepare_stroke(&unassigned_gl_canvas, false)
+                .coverage_mesh
+                .is_none()
+        );
+        let mut getter_normalized_type = other_route;
+        getter_normalized_type
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .stroke_type_raw = Some(3);
+        assert!(
+            prepare_stroke(&getter_normalized_type, false)
+                .coverage_mesh
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn oblique_size_uses_native_conversion_domain_without_a_clamp() {
+        assert_eq!(oblique_native_size(0.1), Some(0.1_f32));
+        assert_eq!(oblique_native_size(1_000.0), Some(1_000.0_f32));
+        assert_eq!(oblique_native_size(-0.1), None);
+        assert_eq!(oblique_native_size(f32::NAN), None);
+        assert_eq!(oblique_native_size(4_294_967_296.0), None);
     }
 
     #[test]

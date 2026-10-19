@@ -14,7 +14,7 @@ virtual addresses; the Oblique library is byte-identical to its APK member,
 | `libSPenPenCommon.so` | `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d` |
 
 This covers selected ObliquePen V4, one ordinary saved object with
-`StrokeType != 1`, curve enabled and no clean reusable point cache. It does
+effective `StrokeType == 0`, curve enabled and no clean reusable point cache. It does
 not establish native execution, numerical or appearance parity, complete
 contours, shaders, other versions, effects or live input. Existing
 [pen selection](pen-selection-findings.md), [recording](stroke-recording-findings.md)
@@ -74,6 +74,20 @@ with half size; `GetRepeat` receives full size (`0x4069c`–`0x40744`). These
 input roles do not establish executed SmPath sampling parity.
 
 ## Fixed width, diagonal core and inverse scale
+
+Drawing `setIPenBitmap` (`0x829fc`) assigns the GL canvas only for effective
+stroke type zero; the later non-one redraw branch alone does not prove canvas
+assignment. Missing type defaults to zero, and the native getter normalizes
+stored values at least three to zero. Drawing forwards saved size without the
+previous test adapter's `.4..800` clamp; V4 converts it with `FCVTZU`.
+
+V4 inverse-scale lookup (`0x4045c`) uses canvas slot 216. Graphics
+`GetModelMatrix` (`0xae4dc`) reads model matrix `+0xd8`, separately from the
+canvas matrix. Optional Drawing matrices can reach both canvases through
+`SetMatrix` (`0x80274`/`0x80290`). Composer's inspected bitmap-backed stroke
+PDF exporter builds a translation-only matrix (`0x34f788`–`0x34f7ec`), but
+the final matrix at the pen call and other caller policies still need runtime
+verification before general production admission.
 
 Saved curve/fixed-enable/fixed-value really reach the morphable interface.
 Primary slot 288 (`0x6c328`) → `GetMorphable`, `0x36b00`, returns plugin +96;
