@@ -49,6 +49,7 @@ pub(super) struct EndPenOutput {
 /// Required saved ObjectStroke channels. Optional stylus arrays are kept as
 /// supplied; Base MotionEvent pairs tilt and orientation, zeroing both unless
 /// both arrays exist.
+#[derive(Clone, Copy)]
 pub(super) struct SavedObjectStrokeInput<'a> {
     pub(super) points: &'a [[f32; 2]],
     pub(super) pressures: &'a [f32],
@@ -1004,9 +1005,9 @@ pub(super) fn repeat_count(path_length: f32, second_argument: f32) -> Option<u32
 #[cfg(test)]
 mod tests {
     use super::{
-        AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, SavedHistoryState, add_point,
-        advance_angle, orientation_target, prepare_saved_history, repeat_count,
-        saved_history_vectors, terminal_end_pen_vectors,
+        AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, SavedHistoryState,
+        SavedObjectStrokeInput, add_point, advance_angle, orientation_target,
+        prepare_saved_history, repeat_count, saved_history_vectors, terminal_end_pen_vectors,
     };
     use crate::ink::path::P;
 
@@ -1177,6 +1178,190 @@ mod tests {
         assert_eq!(
             NibState::fresh().direction.map(f32::to_bits),
             [1.0_f32.to_bits(), 0]
+        );
+    }
+
+    #[test]
+    fn object_drawing_fresh_streams_match_saved_mesh_producer_bitwise() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-calligraphy-saved-caller-native-v1"
+        );
+        let case = &fixture["cases"]["three-point-curve-fresh-drawing"];
+        let source = &case["input"];
+        let f32s = |name: &str| -> Vec<f32> {
+            source[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                .collect()
+        };
+        let xy = f32s("points_f32_bits");
+        assert_eq!(xy.len() % 2, 0);
+        let points: Vec<[f32; 2]> = xy
+            .chunks_exact(2)
+            .map(|point| [point[0], point[1]])
+            .collect();
+        let pressures = f32s("pressure_f32_bits");
+        let tilt = f32s("tilt_f32_bits");
+        let orientation = f32s("orientation_f32_bits");
+        let timestamps: Vec<i32> = source["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_i64().unwrap() as i32)
+            .collect();
+        let size = f32::from_bits(bits(source["pen_size_f32_bits"].as_str().unwrap()));
+        assert_eq!(source["curve_enabled_setter_arg"].as_i64(), Some(1));
+        let input = SavedObjectStrokeInput {
+            points: &points,
+            pressures: &pressures,
+            timestamps: &timestamps,
+            tilt: Some(&tilt),
+            orientation: Some(&orientation),
+            tool_type: source["tool_type"].as_i64().unwrap() as i32,
+            pen_size: size,
+        };
+        let parse_words = |hex: &str| -> Vec<u32> {
+            hex.as_bytes()
+                .chunks_exact(8)
+                .map(|word| bits(std::str::from_utf8(word).unwrap()))
+                .collect()
+        };
+        let compare_stream = |name: &str| {
+            let capture = &case["native_capture"][name];
+            let actual = super::saved_object_stroke_mesh(input, super::CalligraphyState::fresh())
+                .expect("captured Model channels are accepted by saved mesh producer");
+            let add_points = capture["add_points"].as_array().unwrap();
+            let build_calls = capture["build_calls"].as_array().unwrap();
+            assert_eq!(
+                actual.add_points.len(),
+                add_points.len(),
+                "{name} AddPoint calls"
+            );
+            assert_eq!(
+                build_calls.len(),
+                add_points.len() * 5,
+                "{name} buildMesh calls"
+            );
+            let mut build_cursor = 0;
+            for (index, (frame, native)) in actual.add_points.iter().zip(add_points).enumerate() {
+                assert_eq!(
+                    frame.input.vector.map(f32::to_bits),
+                    parse_words(native["vector_bytes"].as_str().unwrap()).as_slice(),
+                    "{name} AddPoint {index} Vector4"
+                );
+                assert_eq!(
+                    frame.input.extent.to_bits(),
+                    bits(native["extent_bits"].as_str().unwrap()),
+                    "{name} AddPoint {index} extent"
+                );
+                let state = &native["pre_state"];
+                let center: [u32; 2] = state["center_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|word| bits(word.as_str().unwrap()))
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap();
+                assert_eq!(
+                    frame.input.gate_center.map(f32::to_bits),
+                    center,
+                    "{name} AddPoint {index} center"
+                );
+                assert_eq!(
+                    frame.input.initial_edge,
+                    state["initial_flag"].as_u64().unwrap() != 0,
+                    "{name} AddPoint {index} initial flag"
+                );
+                let expected_edges: Vec<u32> = state["edge_state_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|word| bits(word.as_str().unwrap()))
+                    .collect();
+                let actual_edges: Vec<u32> = frame
+                    .input
+                    .previous_edges
+                    .iter()
+                    .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
+                    .map(f32::to_bits)
+                    .collect();
+                assert_eq!(
+                    actual_edges, expected_edges,
+                    "{name} AddPoint {index} edge cache"
+                );
+                let geometry = frame.geometry.expect("all captured AddPoint calls build");
+                for (slot, rect) in geometry.rectangles.iter().enumerate() {
+                    assert_eq!(
+                        rect_bits(*rect).as_slice(),
+                        parse_words(build_calls[build_cursor]["rect"].as_str().unwrap()).as_slice(),
+                        "{name} AddPoint {index} buildMesh slot {slot}"
+                    );
+                    build_cursor += 1;
+                }
+            }
+            assert_eq!(build_cursor, build_calls.len());
+            let lanes = [
+                &actual.buffers.core,
+                // Native capture slots follow first-seen BuildMesh output
+                // objects: core, FringeB, then FringeA.
+                &actual.buffers.fringe_b,
+                &actual.buffers.fringe_a,
+            ];
+            let native_buffers = capture["rtv1_mesh"]["buffers"].as_array().unwrap();
+            for (slot, vertices) in lanes.iter().enumerate() {
+                let native = native_buffers
+                    .iter()
+                    .find(|buffer| buffer["build_output_slot"].as_u64() == Some(slot as u64))
+                    .unwrap();
+                let actual_bytes: Vec<u8> = vertices
+                    .iter()
+                    .flat_map(|vertex| {
+                        [
+                            vertex.position[0],
+                            vertex.position[1],
+                            vertex.coverage[0],
+                            vertex.coverage[1],
+                        ]
+                        .into_iter()
+                        .flat_map(f32::to_le_bytes)
+                    })
+                    .collect();
+                let expected_bytes: Vec<u8> = native["bytes_hex"]
+                    .as_str()
+                    .unwrap()
+                    .as_bytes()
+                    .chunks_exact(2)
+                    .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                    .collect();
+                assert_eq!(actual_bytes, expected_bytes, "{name} RTV1 buffer {slot}");
+            }
+            assert_eq!(actual.stroke.event_time_ms, 30, "{name} MotionEvent time");
+            assert_eq!(
+                actual.stroke.event_pressure.to_bits(),
+                pressures[2].to_bits()
+            );
+            assert_eq!(actual.stroke.event_tilt.to_bits(), tilt[2].to_bits());
+            assert_eq!(
+                actual.stroke.event_orientation.to_bits(),
+                orientation[2].to_bits()
+            );
+            assert_eq!(actual.stroke.tool_type, 2);
+            actual.state
+        };
+        let first_state = compare_stream("first_draw");
+        let fresh_state = compare_stream("fresh_drawing");
+        assert_eq!(
+            saved_history_state_bits(first_state.saved),
+            saved_history_state_bits(fresh_state.saved),
+            "independent new Drawings reach the same saved state"
         );
     }
 
