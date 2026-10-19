@@ -99,6 +99,13 @@ coverage, input color alpha and point alpha, with factor 1.5. This identifies
 coverage inputs rather than proving texture or compositing equivalence; see
 the separate [opacity findings](pen-opacity-findings.md).
 
+A [V3 scale-producer replay](../../conformance/pencil3-paper-scale-native.json)
+executes the screen-resolution handoff, native queued task and RTV1 setter in
+four contexts. GLV3 `RedrawPen` computes `min(width,height) / 1440`
+(`0x10b1e4–0x10b200`); the task carries it to RTV1+264. The observed scales are
+0.75, 0.5, 1.0 and 0.75, including portrait. Context/bitmap adapters and queue
+scheduling are host supplied; this witness stops before paint.
+
 The paper bitmap is distinct from an [editable Painting source](painting-source-findings.md)
 and does not replace saved XY. No inspected route proves this runtime input
 is serialized in an ordinary stroke. Preserve original samples, optional

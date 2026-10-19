@@ -137,8 +137,10 @@ captured streams through the extracted shader and masks at three scales, with
 synthetic projection, color and paper phase; native device/FBO paint is unverified.
 A [native V3 draw handoff](../conformance/pencil3-draw-handoff-native.json)
 captures color, projection, paper scale and texture bindings across five explicit
-profiles using mocked renderer resources and context; native paper/scale producers
-and device pixels remain unverified. Production paint integration remains incomplete.
+profiles using mocked renderer resources and context. A [scale-producer replay](../conformance/pencil3-paper-scale-native.json)
+checks native `min(screen width,height) / 1440` through task dispatch to the RT
+field in four contexts; application paper inputs, paint and device pixels remain
+unverified. Production paint integration remains incomplete.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
