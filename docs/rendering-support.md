@@ -141,7 +141,12 @@ its MAX result. The [joined capture](../conformance/inkpen2-joined-paint-native.
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
 Natural app canvas setup, production vector admission and device parity remain
-unverified.
+unverified. A paired radial-gradient experiment preserves native support in
+SVG at 1×/2×/4×, but the public vector-only PDF path has active-region RGBA
+mean errors of 18.65/12.44/6.64 bytes in MuPDF, with large edge alpha errors
+also present in PDFium. Its forms and gradient bounds match the source;
+scale-dependent raster sampling remains unresolved. This candidate is not
+production-admitted.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
