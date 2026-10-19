@@ -346,6 +346,10 @@ the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json
 joins native color, the unchanged upload and interior partial-alpha paint on
 transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
 initialization is host-supplied; production vector paint and device parity remain open.
+A [paint-control matrix](../conformance/magicpen-paint-controls-native.json)
+checks eight scale/phase views plus GLV1/GLV2 and opaque-background controls.
+The source-derived shader model matches transparent support and stays within
+three RGBA bytes on these host captures; it does not establish export parity.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. Version dispatch is observed; sampler reconstruction, paint and
