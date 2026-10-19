@@ -92,9 +92,11 @@ outer SDK loading is not exercised.
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
 A [native RTV4 paint oracle](../conformance/fountain-rtv4-paint-native.json)
-replays three captured V14 tuples and a synthetic control through native
-constructor, upload and Draw code on host Mesa, with color and matrix controls.
-It excludes natural Drawing admission and Samsung-device pixels.
+replays three V14 tuples, a synthetic control and a complete 24-stamp source
+tuple stream through native constructor, upload and Draw code on host Mesa.
+The full-stroke 1× crop matches all 64 shader-reference support pixels, with
+maximum channel error 6 and active-region mean error 1.4844. Color and matrix
+controls remain bounded; natural Drawing admission and device pixels are unverified.
 
 Native [matrix-scale captures](../conformance/fountain-inverse-scale-native.json)
 cover changed and cached V14/V16 getters under five controlled canvas matrices;
