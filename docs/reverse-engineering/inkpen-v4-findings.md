@@ -171,10 +171,17 @@ That constructor default does not establish saved Drawing's runtime context:
 `drawObjectStroke` calls pen slot +112 with `Context::GetDisplay()` system
 width/height pixels (`Drawing:0x82394–0x823f4`; InkPen relocation `0x42118`
 resolves `Pen::SetScreenResolution`). Display's getters read caller-supplied
-fields (`Graphics:0xb0e10`, `0xb0e18`); the ordinary export's numeric dimensions
-remain unverified. The fixtures establish their explicit configured resolutions,
-not a universal 1440×2560 saved-export profile. RTV1 paint and production
-admission remain separate from this numeric reconstruction.
+fields (`Graphics:0xb0e10`, `0xb0e18`). The public Standard SDK exporter constructs
+`SpenDisplay(context)` from Android `Display.getRealMetrics`. It retains the
+last enumerated built-in display whose minimum side exceeds the original
+default display's minimum side; the threshold is not updated within the loop
+(`SpenDisplay.smali`, constructor file lines 331–469). Composer passes that
+same display through `NoteCapturePage` and `ComposerContext` into Drawing
+(`0x356430`, `0x32da7c–0x32da88`). These are system display pixels, not saved
+page or PDF bitmap dimensions. The numeric pair remains runtime-dependent and
+unobserved. The fixtures establish their explicit configured resolutions, not
+a universal 1440×2560 saved-export profile. RTV1 paint and production admission
+remain separate from this numeric reconstruction.
 
 `drawPoint`, `0x3095c–0x30a38`, optionally replaces radius with fixedWidth*0.5
 when data byte 9 is set, then replaces an ordered radius<1 with 1.
