@@ -92,10 +92,11 @@
     "explicit 1920x1080 ObjectDrawing screen profile from saved-caller fixture",
     "identity ARGB context conversion is host-supplied",
     "host GLES context/driver and EGL context identity",
-    "explicit host IGLMsgQueue object; synchronous in-emulator execution; managed-registration hooks installed but no registration occurred in this run",
+    "actual IGLMsgQueue route is host-wired to synchronously run native WorkerTasks; managed queue registration hooks are installed",
     "native SPGraphicsFactory creates external RGBA8 output texture with layouts 6/2",
-    "same-object RT+88 bridge after native Drawing wrapper cleared both slots",
-    "no device GPU, Android EGL, destruction lifecycle, or serialized SDK parser claim"
+    "native SendDataToGPU transfers vector ownership into RT+88; no host RT slot write",
+    "PenGLRenderMsg deferred because matrix-only host canvas lacks native bitmap vtable required at its virtual call; vector-delete tasks remain pending after paint, so destruction lifecycle is unclaimed",
+    "no device GPU, Android EGL, complete renderer message/lifetime or serialized SDK parser claim"
   ],
   "callback_count": 22,
   "color_mapping": {
@@ -118,6 +119,29 @@
     1,
     2
   ],
+  "deferred_native_tasks": [
+    {
+      "run": "0x104676c",
+      "task": "0x100378d0",
+      "vtable": "0x10774c8"
+    },
+    {
+      "run": "0x1045e6c",
+      "task": "0x10037960",
+      "vtable": "0x1077528"
+    },
+    {
+      "run": "0x104676c",
+      "task": "0x10038490",
+      "vtable": "0x10774c8"
+    },
+    {
+      "run": "0x1045e6c",
+      "task": "0x10038520",
+      "vtable": "0x1077528"
+    }
+  ],
+  "draw_phase_vector_pointer": "0x10037370",
   "draws": [
     {
       "call": "glDrawArraysInstanced",
@@ -1437,24 +1461,149 @@
     "Marker3StrokeDrawableRTV1::Update(false)",
     "Marker3StrokeDrawableRTV1::Draw(outputSubBitmap,identityMatrix4)"
   ],
+  "native_queue_tasks": [
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x5037920",
+      "task": "0x10036f40",
+      "vtable": "0x50562b8"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x5037940",
+      "task": "0x10036f70",
+      "vtable": "0x5056998"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x5037968",
+      "task": "0x10036fa0",
+      "vtable": "0x50569c8"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x50378f4",
+      "task": "0x10037730",
+      "vtable": "0x5056ec8"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x10506b4",
+      "task": "0x10037890",
+      "vtable": "0x10774f8"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x104676c",
+      "task": "0x100378d0",
+      "vtable": "0x10774c8"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x1045e6c",
+      "task": "0x10037960",
+      "vtable": "0x1077528"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "run": "0x5037994",
+      "task": "0x10037980",
+      "vtable": "0x5056458"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x5037920",
+      "task": "0x100379b0",
+      "vtable": "0x50562b8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x5037940",
+      "task": "0x100379e0",
+      "vtable": "0x5056998"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x5037968",
+      "task": "0x10037a10",
+      "vtable": "0x50569c8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x50378f4",
+      "task": "0x100382f0",
+      "vtable": "0x5056ec8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x10506b4",
+      "task": "0x10038450",
+      "vtable": "0x10774f8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x104676c",
+      "task": "0x10038490",
+      "vtable": "0x10774c8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x1045e6c",
+      "task": "0x10038520",
+      "vtable": "0x1077528"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x5037994",
+      "task": "0x10038540",
+      "vtable": "0x5056458"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x408d4b0",
+      "task": "0x10087e50",
+      "vtable": "0x40cf400"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x4092444",
+      "task": "0x100880f0",
+      "vtable": "0x40d00d8"
+    },
+    {
+      "phase": "saved_redraw",
+      "run": "0x408d754",
+      "task": "0x10088110",
+      "vtable": "0x40cf730"
+    }
+  ],
+  "native_rendered_vector_pointer_valid_after_draw": true,
   "native_rt_color_rgba_f32": [
     0.20000000298023224,
     0.4000000059604645,
     0.6000000238418579,
     1.0
   ],
+  "native_task_vtable_order_by_phase": {
+    "draw_object_stroke": [
+      "0x10774f8",
+      "0x10774c8",
+      "0x1077528"
+    ],
+    "saved_redraw": [
+      "0x10774f8",
+      "0x10774c8",
+      "0x1077528"
+    ]
+  },
   "native_vector_bytes": 176,
   "native_vector_hex": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
   "native_vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
   "original_rt_slots_after_drawing_caller_before_paint": [
     "0x0",
-    "0x0"
+    "0x10037fb0"
   ],
-  "post_bridge_rt_plus88": "drawing_selected_rt_vector_1",
-  "pre_bridge_slots": [
-    "0x0",
-    "0x0"
-  ],
+  "post_send_rt_plus88": "drawing_selected_rt_saved_redraw_vector_1",
   "readback": {
     "bbox": [
       0,
@@ -1553,11 +1702,14 @@
     "sha256": "626281623598a4bf5fb75cfaf509167af10051d19535c9acee8bc78dddfa1796",
     "zlib_base64": "eNrt1r9KQgEUB2C3NkdHaRBazJve1aAncE6sa6b0CL2BLZlKVNbou/ga6Sj+QRqC0EUxwTcQRL8PDmc4ZzrwgxM+fC3DHdVZ4bEXA/ZWuMP8J/OljgvD8eX/9KrSPYknUi4M++virv2TuXkeBreNUfq6/p2rvc9ztY9FEDWn6WK9H0Qvk3XPVt/+svevv9v9qDHezJvT8+LT4H9Wbs3WP3/ysvQp+wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABweFZq5sVc"
   },
-  "same_vector_object": "drawing_selected_rt_vector_1",
+  "rt_plus88_after_draw": "0x10037fb0",
+  "runner_sha256": "83d870085a3c82e8878a5bf79261a736f303169cf4451267986ab1b150ec32c8",
+  "same_vector_object": "drawing_selected_rt_saved_redraw_vector_1",
   "same_vector_object_pointer_equal": true,
   "same_xy_as_saved_redraw": true,
-  "schema": "marker3-drawing-selected-rt-host-gles-positive-v1",
-  "scope": "Actual Model ObjectStroke setters and native ObjectDrawing route selected Marker3 GLV5/RTV1 and native RedrawPen captured the 22 actual drawObjectStroke AddPoint callbacks. After wrapper return, native RT vector slots +80/+88 were zero; a bounded explicit host bridge placed the identical retained std::vector object captured from those callbacks into +88. The same Drawing-selected native RTV1 then executed Init, native PenGLDataManager::GetPenCanvas and SPGraphicsFactory::CreatePenCanvas, CreatePenCanvas, native Update(false), and native Draw to a separately created native RGBA8 target. No XY points were re-fed. Mesa GLES 3.2 llvmpipe provides GL; this is not Android device GPU parity.",
+  "saved_redraw_vector_pointer": "0x10037fb0",
+  "schema": "marker3-drawing-selected-rt-host-gles-positive-v2",
+  "scope": "Actual Model ObjectStroke setters and native ObjectDrawing route selected Marker3 GLV5/RTV1 and native RedrawPen. Its PenReturnCallback destructor posted a native WorkerTask::Member2<PenDrawableRT, SendDataToGPU>; the explicitly wired host queue ran both native SendData tasks, which populated the same selected RT +88 from the native callback vector after temporary +80 had been cleared. PenGLRenderMsg and vector-delete WorkerTasks were deferred at explicit host boundaries while the same RT executed native Init, native PenGLDataManager::GetPenCanvas/SPGraphicsFactory::CreatePenCanvas, native Update(false), and native Draw to the separately created native RGBA8 target. No vector bytes/points were re-fed and no RT slot was written by the host. Mesa GLES 3.2 llvmpipe provides GL; this is not Android device GPU parity.",
   "selected_drawable": "Marker3StrokeDrawableGLV5",
   "selected_drawable_version": "5",
   "selected_rt": "drawing_selected_rt_1",
@@ -1599,6 +1751,10 @@
         "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
       ]
     }
+  ],
+  "slots_after_native_send_task": [
+    "0x0",
+    "0x10037fb0"
   ],
   "source_caller_case": {
     "callback_add_point_calls": [
@@ -5677,7 +5833,7 @@
     "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV5 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
   },
   "source_caller_fixture_sha256": "6551bc4a2403079c54ddae2a8123b63189030596f9af79f5b7c5af1c2349d090",
-  "source_vector_phase": "draw_object_stroke",
+  "source_vector_phase": "saved_redraw",
   "stage_resources": {
     "complete": true,
     "composite_framebuffer": 2,
