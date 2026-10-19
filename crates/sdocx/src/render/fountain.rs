@@ -453,6 +453,73 @@ mod tests {
     }
 
     #[test]
+    fn v16_svg_fields_match_native_unit_scale_records() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v16-addpoint-native.json"
+        ))
+        .unwrap();
+        let mut checked = 0;
+        for case in fixture["cases"].as_array().unwrap() {
+            if case["inverse_xy"] != serde_json::json!([1.0, 1.0])
+                || case["radius"].as_f64().unwrap() <= 0.0
+            {
+                continue;
+            }
+            let native: Vec<f32> = case["record_f32_le_hex_words"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|word| {
+                    f32::from_bits(
+                        u32::from_str_radix(word.as_str().unwrap(), 16)
+                            .unwrap()
+                            .swap_bytes(),
+                    )
+                })
+                .collect();
+            let svg = v16_scene(
+                &[(32.25, 32.25, case["radius"].as_f64().unwrap())],
+                1.,
+                false,
+            );
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let transform = xml
+                .descendants()
+                .filter_map(|node| node.attribute("transform"))
+                .find(|value| value.starts_with("matrix("))
+                .unwrap();
+            let matrix: Vec<f32> = transform
+                .strip_prefix("matrix(")
+                .unwrap()
+                .strip_suffix(')')
+                .unwrap()
+                .split(|c: char| c == ',' || c.is_ascii_whitespace())
+                .filter(|part| !part.is_empty())
+                .map(|part| part.parse().unwrap())
+                .collect();
+            assert_eq!(matrix, [native[2], 0., 0., native[3], native[0], native[1]]);
+            let stops: Vec<(f32, f32)> = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("stop"))
+                .map(|node| {
+                    (
+                        node.attribute("offset").unwrap().parse().unwrap(),
+                        node.attribute("stop-opacity").unwrap().parse().unwrap(),
+                    )
+                })
+                .collect();
+            let mut expected = vec![(0., native[6])];
+            if native[5] > 0. {
+                expected.push((native[5] + native[5], native[6]));
+            }
+            expected.push((1., 0.));
+            assert_eq!(stops, expected, "{}", case["case_id"]);
+            checked += 1;
+        }
+        assert_eq!(checked, 6);
+    }
+
+    #[test]
     fn v16_unit_scale_radial_stops_match_rtv5_numeric_witnesses() {
         // Independent RTV5 AddPoint + fragment-shader witnesses at sx=sy=1:
         // r=.1 => extent 1, A=.2, inner=0; center=.2, u=.5 => .1.
