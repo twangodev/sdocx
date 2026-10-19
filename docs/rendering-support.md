@@ -91,6 +91,10 @@ outer SDK loading is not exercised.
 | Rainbow, eraser and straighten effects | Metadata retained; native effect semantics not reproduced | Gates vary by profile. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
+Native [matrix-scale captures](../conformance/fountain-inverse-scale-native.json)
+cover changed and cached V14/V16 getters under five controlled canvas matrices;
+the full zoom-dependent Drawing/RT pipeline remains unverified.
+
 Admitted Fountain V14/V16 strokes with neither public RGB nor saved ARGB use
 native default black through the existing page theme. The [color oracle](../conformance/fountain-saved-color-native.json)
 replays two embedded corpus frames and eight separate synthetic Drawing controls;

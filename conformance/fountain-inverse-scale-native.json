@@ -1,0 +1,851 @@
+{
+  "cases": [
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "anisotropic_scale",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "changed",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "anisotropic_scale",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "same",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "shear",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "native_tolerance_field_f32_le_hex": "d022033e",
+      "phase": "changed",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "shear",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "native_tolerance_field_f32_le_hex": "d022033e",
+      "phase": "same",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "rotated_3_4",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "changed",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "rotated_3_4",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "same",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "third_component",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "native_tolerance_field_f32_le_hex": "20f0763d",
+      "phase": "changed",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "third_component",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "native_tolerance_field_f32_le_hex": "20f0763d",
+      "phase": "same",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "matrix_id": "translation_only",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513f",
+      "phase": "changed",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "matrix_id": "translation_only",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513f",
+      "phase": "same",
+      "version": 14
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "anisotropic_scale",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "changed",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "anisotropic_scale",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000003f",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "same",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "shear",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "native_tolerance_field_f32_le_hex": "d022033e",
+      "phase": "changed",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "shear",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "00000000",
+        "00008040",
+        "0000a040",
+        "00000000",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "d5008e3e",
+        "04ec1f3e"
+      ],
+      "native_tolerance_field_f32_le_hex": "d022033e",
+      "phase": "same",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "rotated_3_4",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "changed",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "matrix_id": "rotated_3_4",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000000",
+        "00004040",
+        "00000000",
+        "000080c0",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "abaaaa3e",
+        "0000803e"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513e",
+      "phase": "same",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "third_component",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "native_tolerance_field_f32_le_hex": "20f0763d",
+      "phase": "changed",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "matrix_id": "third_component",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "00000040",
+        "00004040",
+        "0000c040",
+        "00008040",
+        "0000a040",
+        "00004041",
+        "00001041",
+        "0000e0c0",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "2549123e",
+        "6b92963d"
+      ],
+      "native_tolerance_field_f32_le_hex": "20f0763d",
+      "phase": "same",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "matrix_id": "translation_only",
+      "memcmp_equal": false,
+      "native_cached_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513f",
+      "phase": "changed",
+      "version": 16
+    },
+    {
+      "getter_return_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "input_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "matrix_id": "translation_only",
+      "memcmp_equal": true,
+      "native_cached_matrix_f32_le_hex_words": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000fa43",
+        "000096c3",
+        "0000803f"
+      ],
+      "native_inverse_xy_f32_le_hex_words": [
+        "0000803f",
+        "0000803f"
+      ],
+      "native_tolerance_field_f32_le_hex": "85eb513f",
+      "phase": "same",
+      "version": 16
+    }
+  ],
+  "evidence": {
+    "apk": "Samsung Notes 4.4.45.37 pinned ARM64 libraries",
+    "comparison_order": "For matrix words m0..m8, t0=fmul(m1,m1); a0=fmadd(m0,m0,t0); a1=fmadd(m2,m2,a0); t1=fmul(m4,m4); b0=fmadd(m3,m3,t1); b1=fmadd(m5,m5,b0); s0=fdiv(1,fsqrt(a1)); s1=fdiv(1,fsqrt(b1)).",
+    "host_boundary": [
+      "The actual GLV14/GLV16 getInverseScale code executes in the hash-pinned NativeFountain Unicorn loader.",
+      "The canvas receiver is synthetic. Its vtable GetModelMatrix slot is a host callback that writes the exact nine-float input matrix to the native output-reference pointer in X8.",
+      "The GL drawable receiver is an explicitly zeroed host allocation; its constructor is not invoked, so this oracle makes no GL-constructor/default-scale claim.",
+      "memcmp is a faithful bounded bytewise comparison callback over the native pointers and requested 36-byte range; changed and unchanged cache paths are both exercised.",
+      "Redraw caller disassembly witnesses show direct stores into attached RT fields; this oracle does not execute the full GL RedrawPen caller or RTV Draw."
+    ],
+    "instruction_witness": {
+      "anchors": {
+        "rtv4_setter_load_pair": {
+          "bytes_le": "280040f9",
+          "rva": "0x9e5f8"
+        },
+        "rtv4_setter_store_pair": {
+          "bytes_le": "088400f9",
+          "rva": "0x9e5fc"
+        },
+        "rtv5_setter_load_pair": {
+          "bytes_le": "280040f9",
+          "rva": "0x9fd28"
+        },
+        "rtv5_setter_store_pair": {
+          "bytes_le": "088400f9",
+          "rva": "0x9fd2c"
+        },
+        "v14_get_matrix_slot": {
+          "bytes_le": "096d40f9",
+          "rva": "0x7225c"
+        },
+        "v14_get_model_matrix": {
+          "bytes_le": "001040f9",
+          "rva": "0x7224c"
+        },
+        "v14_inverse_x_store": {
+          "bytes_le": "605201bd",
+          "rva": "0x72308"
+        },
+        "v14_inverse_y_store": {
+          "bytes_le": "615601bd",
+          "rva": "0x7230c"
+        },
+        "v14_redraw_get_inverse": {
+          "bytes_le": "2b610194",
+          "rva": "0x72a64"
+        },
+        "v14_redraw_x_direct_store": {
+          "bytes_le": "200b01bd",
+          "rva": "0x72a68"
+        },
+        "v14_redraw_y_direct_store": {
+          "bytes_le": "210f01bd",
+          "rva": "0x72a6c"
+        },
+        "v16_get_matrix_slot": {
+          "bytes_le": "096d40f9",
+          "rva": "0x77e8c"
+        },
+        "v16_get_model_matrix": {
+          "bytes_le": "001040f9",
+          "rva": "0x77e7c"
+        },
+        "v16_inverse_x_store": {
+          "bytes_le": "604a01bd",
+          "rva": "0x77f38"
+        },
+        "v16_inverse_y_store": {
+          "bytes_le": "614e01bd",
+          "rva": "0x77f3c"
+        },
+        "v16_redraw_get_inverse": {
+          "bytes_le": "ca4a0194",
+          "rva": "0x78618"
+        },
+        "v16_redraw_x_direct_store": {
+          "bytes_le": "080901bd",
+          "rva": "0x78840"
+        },
+        "v16_redraw_y_direct_store": {
+          "bytes_le": "090d01bd",
+          "rva": "0x78844"
+        }
+      },
+      "sha256": "e1680897504e45759eae480c0aaab9de8b16700e96467258b44c077b5caeb338"
+    },
+    "libraries": {
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+    },
+    "native_contract": "The getter reads the canvas Matrix3 through vtable slot +216, byte-compares it to the drawable cache, and on change calculates two reciprocal column norms in scalar AArch64 f32 using fmul/fmadd/fsqrt/fdiv. Getter return words equal the stored cache pair on changed and unchanged calls.",
+    "native_helper": {
+      "path": "conformance/fountain_native.py",
+      "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+    },
+    "runner_sha256": "df7e091034dbaf9d04e0b6a08a1e14b055028c5e0c476661cc9f5d5a83aff37f",
+    "scale_boundary": "These inverse factors are derived from the canvas model matrix basis. The separately passed Matrix4 in RTV Draw remains a per-draw transform; no display-density or bitmap-dimension input is part of this getter.",
+    "symbols": {
+      "SPen::FountainPenStrokeDrawableGLV14::getInverseScale()": "0x72228",
+      "SPen::FountainPenStrokeDrawableGLV16::getInverseScale()": "0x77e58",
+      "SPen::FountainPenStrokeDrawableRTV4::SetInverseScale(SPen::Vector2<float> const&)": "0x9e5f8",
+      "SPen::FountainPenStrokeDrawableRTV5::SetInverseScale(SPen::Vector2<float> const&)": "0x9fd28"
+    }
+  },
+  "schema": "sdocx-fountain-inverse-scale-native-v1"
+}
