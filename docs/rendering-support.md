@@ -128,7 +128,10 @@ redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-n
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay
 using native body-normalized sampling state. General caller/runtime state,
-shape modes and paint integration remain open.
+shape modes and paint integration remain open. The
+[RTV3 paint capture](../conformance/inkpen2-paint-native.json) checks native
+MAX coverage, source-over color and final composition in four synthetic host
+Mesa cases; it does not join saved Drawing to paint or establish device parity.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
@@ -287,7 +290,11 @@ uses retained quiz dimensions with explicit host text/object queries; full
 export and final page appearance remain unverified.
 The [body-writer transform capture](../conformance/pdf-paper-body-writer-matrix.json)
 observes native note-to-PDF scale and marker rectangles for rotated pages with
-two CropBox origins, then calls PDFium matrix helpers separately. Native
+two CropBox origins, then calls PDFium matrix helpers separately. The
+[image-adapter capture](../conformance/pdf-image-adapter-native.json) joins the
+native String-overload constructor/setters to PDFium image insertion and export
+for four rotations and shifted origins, with host-supplied placement and PNG.
+The bitmap overload and native raster-batch producer remain unverified. Native
 Drawing-to-insertion, saved-note placement and production PDF-paper rendering
 remain outstanding.
 
