@@ -455,7 +455,7 @@ fn prepare_oblique_stroke(
     let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     let tool_type = u32::from(rendering.tool_type_raw);
     if version == 1
-        && (tool_type != 0 && tool_type != 1 && tool_type != 2
+        && (tool_type > 3
             || rendering.properties.top_layer_pen
             || rendering.style.fixed_width.is_some())
     {
@@ -762,13 +762,9 @@ mod tests {
             .style
             .color_type_raw = None;
         assert!(
-            prepare_stroke_for_context(
-                &absent_color_type,
-                false,
-                InkRenderContext::CanonicalPage,
-            )
-            .coverage_mesh
-            .is_some()
+            prepare_stroke_for_context(&absent_color_type, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_some()
         );
         let mut negative_size = input.clone();
         negative_size.rendering.as_mut().unwrap().style.pen_size = Some(-0.1);
@@ -1034,90 +1030,105 @@ mod tests {
     }
 
     #[test]
-    fn canonical_v1_tool1_adapter_matches_native_mesh_and_keeps_gates() {
+    fn canonical_v1_tool_adapters_match_native_mesh_and_keep_gates() {
         use sha2::Digest;
 
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/oblique-v1-tool1-native.json"
         ))
         .unwrap();
-        let case = &fixture["cases"]["tool1_curve_alternating_short_long"];
-        let input = &case["input"];
-        let bits = |value: &serde_json::Value| {
-            let hex = value.as_str().unwrap().trim_start_matches("0x");
-            u32::from_le_bytes(std::array::from_fn(|index| {
-                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
-            }))
-        };
-        let points = input["points_f32_bits"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|pair| {
-                let pair = pair.as_array().unwrap();
-                crate::Point {
-                    x: f64::from(f32::from_bits(bits(&pair[0]))),
-                    y: f64::from(f32::from_bits(bits(&pair[1]))),
-                }
-            })
-            .collect::<Vec<_>>();
-        let size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
-        let mut stroke = oblique_stroke();
-        stroke.points = points;
-        stroke.pen_width = size;
-        let rendering = stroke.rendering.as_mut().unwrap();
-        rendering.advanced_settings = None;
-        rendering.tool_type_raw = 1;
-        rendering.properties.compressed = input["curve_enabled"].as_bool().unwrap();
-        rendering.style.pen_size = Some(size);
+        for case_name in [
+            "tool1_curve_alternating_short_long",
+            "tool3_curve_short_long",
+            "tool3_linear_same_mesh",
+        ] {
+            let case = &fixture["cases"][case_name];
+            let input = &case["input"];
+            let bits = |value: &serde_json::Value| {
+                let hex = value.as_str().unwrap().trim_start_matches("0x");
+                u32::from_le_bytes(std::array::from_fn(|index| {
+                    u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+                }))
+            };
+            let points = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|pair| {
+                    let pair = pair.as_array().unwrap();
+                    crate::Point {
+                        x: f64::from(f32::from_bits(bits(&pair[0]))),
+                        y: f64::from(f32::from_bits(bits(&pair[1]))),
+                    }
+                })
+                .collect::<Vec<_>>();
+            let size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
+            let mut stroke = oblique_stroke();
+            stroke.points = points;
+            stroke.pen_width = size;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = None;
+            rendering.tool_type_raw = input["tool_type"].as_u64().unwrap() as u16;
+            rendering.properties.compressed = input["curve_enabled"].as_bool().unwrap();
+            rendering.style.pen_size = Some(size);
 
-        let prepared = prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
-        assert!(prepare_stroke(&stroke, false).coverage_mesh.is_none());
-        let mesh = prepared.coverage_mesh.expect("captured tool1 V1 mesh");
-        assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
-        assert_eq!(mesh.terminal_end, mesh.triangles.len());
-        let actual: Vec<u8> = mesh
-            .triangles
-            .iter()
-            .flat_map(|triangle| triangle.vertices)
-            .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
-            .flat_map(f32::to_le_bytes)
-            .collect();
-        let expected = &case["phase_final_vectors"]["draw_object_stroke"];
-        assert_eq!(
-            actual.len(),
-            expected["raw_byte_count"].as_u64().unwrap() as usize
-        );
-        assert_eq!(
-            format!("{:x}", sha2::Sha256::digest(&actual)),
-            expected["sha256"].as_str().unwrap(),
-            "complete tool1 native mesh"
-        );
+            let prepared =
+                prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+            assert!(prepare_stroke(&stroke, false).coverage_mesh.is_none());
+            let mesh = prepared.coverage_mesh.expect("captured V1 tool mesh");
+            assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
+            assert_eq!(mesh.terminal_end, mesh.triangles.len());
+            let actual: Vec<u8> = mesh
+                .triangles
+                .iter()
+                .flat_map(|triangle| triangle.vertices)
+                .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            let expected = &case["phase_final_vectors"]["draw_object_stroke"];
+            assert_eq!(
+                actual.len(),
+                expected["raw_byte_count"].as_u64().unwrap() as usize
+            );
+            assert_eq!(
+                format!("{:x}", sha2::Sha256::digest(&actual)),
+                expected["sha256"].as_str().unwrap(),
+                "complete native mesh: {case_name}"
+            );
 
-        let mut unsupported_tool = stroke.clone();
-        unsupported_tool.rendering.as_mut().unwrap().tool_type_raw = 3;
-        assert!(
-            prepare_stroke_for_context(&unsupported_tool, false, InkRenderContext::CanonicalPage)
+            let mut unsupported_tool = stroke.clone();
+            unsupported_tool.rendering.as_mut().unwrap().tool_type_raw = 4;
+            assert!(
+                prepare_stroke_for_context(
+                    &unsupported_tool,
+                    false,
+                    InkRenderContext::CanonicalPage
+                )
                 .coverage_mesh
                 .is_none()
-        );
-        for gate in 0..3 {
-            let mut unsupported = stroke.clone();
-            let rendering = unsupported.rendering.as_mut().unwrap();
-            match gate {
-                0 => rendering.properties.top_layer_pen = true,
-                1 => {
-                    rendering.properties.fixed_width = true;
-                    rendering.style.fixed_width = Some(size);
+            );
+            for gate in 0..3 {
+                let mut unsupported = stroke.clone();
+                let rendering = unsupported.rendering.as_mut().unwrap();
+                match gate {
+                    0 => rendering.properties.top_layer_pen = true,
+                    1 => {
+                        rendering.properties.fixed_width = true;
+                        rendering.style.fixed_width = Some(size);
+                    }
+                    _ => rendering.properties.eraser = true,
                 }
-                _ => rendering.properties.eraser = true,
-            }
-            assert!(
-                prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
+                assert!(
+                    prepare_stroke_for_context(
+                        &unsupported,
+                        false,
+                        InkRenderContext::CanonicalPage
+                    )
                     .coverage_mesh
                     .is_none(),
-                "unsupported tool1 drawing gate {gate}"
-            );
+                    "unsupported drawing gate {gate}: {case_name}"
+                );
+            }
         }
     }
 
@@ -1189,15 +1200,16 @@ mod tests {
         };
         let prepared = prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
         assert!(prepare_stroke(&stroke, false).coverage_mesh.is_none());
-        let mesh = prepared.coverage_mesh.expect("captured short/duplicate V1 mesh");
+        let mesh = prepared
+            .coverage_mesh
+            .expect("captured short/duplicate V1 mesh");
         assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
         let native_lines: Vec<_> = case["transitions"]
             .as_array()
             .unwrap()
             .iter()
             .filter(|event| {
-                event["phase"] == "draw_object_stroke"
-                    && event["method"] == "redrawLineNoCurve"
+                event["phase"] == "draw_object_stroke" && event["method"] == "redrawLineNoCurve"
             })
             .collect();
         assert_eq!(native_lines.len(), mesh.sample_ends.len());
@@ -1211,9 +1223,7 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .find(|event| {
-                event["phase"] == "draw_object_stroke" && event["method"] == "endPen"
-            })
+            .find(|event| event["phase"] == "draw_object_stroke" && event["method"] == "endPen")
             .unwrap();
         assert_eq!(
             mesh.terminal_start,
