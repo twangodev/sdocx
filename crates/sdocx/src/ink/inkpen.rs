@@ -1758,7 +1758,7 @@ mod tests {
     }
 
     #[test]
-    fn curved_tool3_and_tool4_use_native_vectors_and_leave_no_curve_on_fallback() {
+    fn curved_tool3_and_tool4_use_native_vectors_and_argb() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v1-boundaries-native.json"
         ))
@@ -1783,13 +1783,99 @@ mod tests {
                 crate::prepare_stroke_for_page(&input, false).support,
                 crate::InkSupport::Reconstructed
             );
-            input.rendering.as_mut().unwrap().properties.compressed = false;
-            assert!(crate::ink::prepare_inkpen_v1_for_page(&input).is_none());
+        }
+    }
+
+    #[test]
+    fn canonical_no_curve_tools_3_and_4_match_native_vectors_and_keep_fallback_gates() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-nocurve-tool34-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-inkpen-v1-nocurve-tool34-native-fixture-v1"
+        );
+
+        for tool in [3_u64, 4] {
+            let name = format!("tool{tool}_five_nonsymmetric");
+            let source = &fixture["cases"][&name]["native"]["input"];
+            assert_eq!(source["curve_enabled"], false);
+            assert_eq!(source["tool_type"], tool);
+            let mut input = native_caller_stroke(source);
+            let argb = 0xff33_6699;
+            input.rendering.as_mut().unwrap().style.color_argb = Some(argb);
+
+            let prepared = crate::ink::prepare_inkpen_v1_for_page(&input)
+                .unwrap_or_else(|| panic!("{name}: canonical page preparer rejected native V1"));
+            assert_eq!(prepared.argb, argb, "{name}: saved ARGB");
             assert_eq!(
                 crate::prepare_stroke_for_page(&input, false).support,
-                crate::InkSupport::Approximate
+                crate::InkSupport::Reconstructed,
+                "{name}: canonical support"
+            );
+
+            let expected = decode_hex_bytes(
+                fixture["cases"][&name]["native"]["reuse"]["target_stream_bytes"]
+                    .as_str()
+                    .unwrap(),
+            );
+            let mut actual = Vec::with_capacity(prepared.points.len() * 12);
+            for (point, radius) in prepared.points.iter().zip(&prepared.radii) {
+                actual.extend_from_slice(&(point.x as f32).to_bits().to_le_bytes());
+                actual.extend_from_slice(&(point.y as f32).to_bits().to_le_bytes());
+                actual.extend_from_slice(&radius.to_bits().to_le_bytes());
+            }
+            assert_eq!(
+                actual, expected,
+                "{name}: canonical native XYZ/radius words"
+            );
+
+            let phase = &fixture["cases"][&name]["native"]["event_boundary_summary"][0];
+            let sample_ends: Vec<usize> = phase["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|n| n.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(
+                prepared.sample_ends, sample_ends,
+                "{name}: source event ends"
+            );
+            assert_eq!(
+                prepared.terminal.start,
+                phase["terminal"][0].as_u64().unwrap() as usize,
+                "{name}: terminal start"
+            );
+            assert_eq!(
+                prepared.terminal.end,
+                phase["terminal"][1].as_u64().unwrap() as usize,
+                "{name}: terminal end"
             );
         }
+
+        let source = &fixture["cases"]["tool3_five_nonsymmetric"]["native"]["input"];
+        let mut unsupported_tool = native_caller_stroke(source);
+        let rendering = unsupported_tool.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 5;
+        rendering.style.color_argb = Some(0xff33_6699);
+        assert!(crate::ink::prepare_inkpen_v1_for_page(&unsupported_tool).is_none());
+        assert_eq!(
+            crate::prepare_stroke_for_page(&unsupported_tool, false).support,
+            crate::InkSupport::Approximate,
+            "tool 5 retains generic fallback"
+        );
+
+        let mut advanced = native_caller_stroke(source);
+        let rendering = advanced.rendering.as_mut().unwrap();
+        rendering.advanced_settings = Some("4;".to_string());
+        rendering.style.color_argb = Some(0xff33_6699);
+        assert!(crate::ink::prepare_inkpen_v1_for_page(&advanced).is_none());
+        assert_eq!(
+            crate::prepare_stroke_for_page(&advanced, false).support,
+            crate::InkSupport::Approximate,
+            "advanced V4 retains generic fallback"
+        );
     }
 
     #[test]

@@ -199,8 +199,8 @@ the generic approximation. Natural queue/lifecycle setup and native shader edge
 coverage remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries. Canonical-page SVG/PDF
-now reconstruct ordinary V1 null-setting geometry with saved ARGB for curved
-tools 0–4 and no-curve tools 0–2;
+now reconstruct ordinary V1 null-setting geometry with saved ARGB for
+tools 0–4 in both curve modes;
 a bounded compound contour approximates native coverage at one SVG pixel per
 source unit. Replay preserves source-event cutoffs and folds the terminal suffix
 into the final event. Unsupported inputs and exhausted budgets retain fallback;
@@ -256,7 +256,8 @@ including curved tools 0–4 and one no-curve tool1 control; Rust matches every 
 and cutoff. These synthetic setter controls do not establish serialized-note admission.
 A [ten-case no-curve tool-3/4 capture](../conformance/inkpen-v1-nocurve-tool34-native.json)
 checks pressure and size boundaries; Rust matches complete vectors and native
-event cutoffs. Production admission still awaits paired paint/export validation.
+event cutoffs. Paired SVG/PDF exports improve native-referenced error across
+1×/2×/4× host comparisons; tool5 and advanced V4 retain generic fallback.
 General V4 admission, app display setup, device parity and exact scale-dependent
 coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)

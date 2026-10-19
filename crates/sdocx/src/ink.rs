@@ -193,7 +193,6 @@ pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkP
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
         || rendering.advanced_settings.is_some()
         || rendering.tool_type_raw > 4
-        || (rendering.tool_type_raw > 2 && !properties.compressed)
         || properties.replay_only
         || properties.eraser
         || properties.fixed_width
