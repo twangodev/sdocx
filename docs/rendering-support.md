@@ -226,6 +226,9 @@ the same Drawing-selected RT. The
 [scalar derivative check](../conformance/inkpen_coverage_scalar.py) reproduces
 all 32,768 bytes of the captured 128×64 MAX mask using fine 2×2 differences.
 This is one host Mesa witness, not a universal device derivative contract.
+A [V1 scale replay](../conformance/inkpen-v1-scale-native.json) checks fresh
+1×/2×/4× native Draw targets and separate identity-transform controls. Its
+pixel-dependent edge band prevents treating a fixed 1× contour as a general paint law.
 Cleanup tasks, Mesa-capability setup, actual device display
 values and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
@@ -324,6 +327,10 @@ completes native clip setup, upload, draw and deferred vector deletion with a
 distinct cleared native canvas on host Mesa. Its style/color and scheduling are
 explicit host inputs; general caller admission, vector paint, production
 integration and Samsung device parity remain outstanding.
+The [MagicPen Drawing caller](../conformance/magicpen-saved-caller-native.json)
+checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
+RTV1 vectors separately from callback arguments for synthetic Model inputs;
+texture paint and production vector integration remain unverified.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES

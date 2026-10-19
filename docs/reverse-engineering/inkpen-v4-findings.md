@@ -213,3 +213,10 @@ The V4 numeric core therefore cannot serve V1 unchanged. The separate test-only
 V1 policy matches every callback word in fourteen [native matrix streams](../../conformance/inkpen-v1-saved-native.json),
 including no-curve and duplicate-point controls. Broader state and paint
 validation remain open before production admission.
+
+The [V1 scale replay](../../conformance/inkpen-v1-scale-native.json) retains
+the same Drawing stream through native Draw at explicit host transforms 1×/2×/4×.
+Fresh targets alone leave support unchanged; matching view transforms scale it.
+The shader's finite-quad `fwidth` changes its edge band with pixel scale, so a
+fixed document-space half-coverage contour remains an approximation. These
+host Mesa controls establish neither Samsung device zoom nor PDF pixel parity.
