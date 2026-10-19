@@ -3175,7 +3175,7 @@ fn render_stroke(
         let color = if native_fountain_default_color {
             Some(Color { r: 0, g: 0, b: 0 })
         } else {
-            stroke.color
+            stroke_source_color(stroke)
         };
         paint.color = theme.foreground(color);
     }
@@ -3380,6 +3380,18 @@ pub struct StrokePaint {
     pub segment_widths: Option<Vec<f64>>,
 }
 
+fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
+    // Preserve an explicit public color; recover saved RGB only for the
+    // ordinary InkPen profiles whose source-color contract is established.
+    stroke.color.or_else(|| {
+        crate::ink::saved_inkpen_argb(stroke).map(|argb| Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        })
+    })
+}
+
 /// Resolve paint for a default light or dark canvas, without document metadata.
 pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
     let width = normalized_stroke_width(stroke.pen_width);
@@ -3389,7 +3401,7 @@ pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
             .iter()
             .any(|&p| p > PRESSURE_PRESENT_EPSILON);
     StrokePaint {
-        color: RenderTheme::for_canvas(dark_mode).foreground(stroke.color),
+        color: RenderTheme::for_canvas(dark_mode).foreground(stroke_source_color(stroke)),
         width,
         segment_widths: pressure.then(|| {
             stroke
@@ -4516,6 +4528,11 @@ mod tests {
                 assert_eq!(lines.len(), 2);
                 assert!(lines.iter().all(|node| node.attribute("opacity").is_none()
                     && node.attribute("stroke-opacity").is_none()));
+                assert!(
+                    lines
+                        .iter()
+                        .all(|node| node.attribute("stroke") == Some("#336699"))
+                );
             }
             let xml = roxmltree::Document::parse(&replay).unwrap();
             let parts = xml

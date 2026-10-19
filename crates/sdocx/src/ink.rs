@@ -385,7 +385,7 @@ fn prepare_stroke_inner(
                 None,
                 None,
                 None,
-                saved_inkpen_opacity(stroke).unwrap_or(1.),
+                saved_inkpen_argb(stroke).map_or(1., |argb| f64::from((argb >> 24) as u8) / 255.),
             )
         };
     let profile = stroke
@@ -475,8 +475,8 @@ fn prepare_stroke_inner(
 
 // V1 and V4 use RTV1's MAX coverage pass followed by one source-color
 // composite. That paint contract does not depend on V4's display-dependent
-// geometry; keep the geometry approximate while retaining saved source alpha.
-fn saved_inkpen_opacity(stroke: &Stroke) -> Option<f64> {
+// geometry; keep the geometry approximate while retaining saved source ARGB.
+pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
@@ -505,7 +505,7 @@ fn saved_inkpen_opacity(stroke: &Stroke) -> Option<f64> {
     {
         return None;
     }
-    Some(f64::from((rendering.style.color_argb? >> 24) as u8) / 255.0)
+    rendering.style.color_argb
 }
 
 struct PreparedObliqueInk {
@@ -819,6 +819,7 @@ mod tests {
         for setting in [None, Some(""), Some("4;")] {
             for alpha in [0_u32, 128, 255] {
                 let mut input = defaultpen_stroke();
+                input.color = None;
                 let rendering = input.rendering.as_mut().unwrap();
                 rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
                 rendering.advanced_settings = setting.map(str::to_owned);
@@ -828,6 +829,7 @@ mod tests {
                 let actual = prepare_stroke(&input, false);
                 let geometry = prepare_stroke(&opaque, false);
                 assert_eq!(actual.opacity, f64::from(alpha) / 255.0);
+                assert_eq!(actual.color, "#336699");
                 assert_eq!(actual.support, InkSupport::Approximate);
                 assert_eq!(actual.points, geometry.points);
                 assert_eq!(actual.segment_widths, geometry.segment_widths);
@@ -869,6 +871,45 @@ mod tests {
                 1.0,
                 "case {unsupported}"
             );
+            input.color = None;
+            assert_eq!(
+                prepare_stroke(&input, false).color,
+                "#1a1a1a",
+                "case {unsupported}"
+            );
+        }
+    }
+
+    #[test]
+    fn inkpen_saved_rgb_preserves_explicit_color_and_theme_mapping() {
+        let saved_rgb = crate::Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        };
+        let override_rgb = crate::Color {
+            r: 0x11,
+            g: 0x22,
+            b: 0x33,
+        };
+        for setting in [None, Some(""), Some("4;")] {
+            let mut input = defaultpen_stroke();
+            let rendering = input.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
+            rendering.advanced_settings = setting.map(str::to_owned);
+            rendering.style.color_argb = Some(0x8033_6699);
+            for explicit in [None, Some(override_rgb)] {
+                input.color = explicit;
+                let mut expected = input.clone();
+                expected.rendering = None;
+                expected.color = explicit.or(Some(saved_rgb));
+                for dark in [false, true] {
+                    assert_eq!(
+                        prepare_stroke(&input, dark).color,
+                        stroke_paint(&expected, dark).color
+                    );
+                }
+            }
         }
     }
 

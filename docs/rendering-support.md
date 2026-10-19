@@ -188,7 +188,8 @@ coverage remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic geometry approximation. Ordinary V1 (null settings) and V4
-(empty or `4;` settings) apply saved ARGB alpha once per stroke in SVG/PDF.
+(empty or `4;` settings) use saved RGB when the public stroke color is absent,
+and apply saved ARGB alpha once per stroke in SVG/PDF.
 A test-only numeric core matches twenty-one
 configured-context native redraw cases and four setter cases, including both
 curve modes, fixed width and a degenerate curve. The [Drawing caller](../conformance/inkpen-saved-caller-native.json)
