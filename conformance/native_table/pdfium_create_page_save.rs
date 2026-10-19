@@ -884,6 +884,7 @@ pub(super) fn capture(
     source_pdf: Option<&[u8]>,
     standard_export_path: Option<&Path>,
 ) {
+    machine.prepare_pdfium_arena();
     map_library(
         machine.engine,
         pdfium,
@@ -1166,7 +1167,7 @@ pub(super) fn capture(
         bind_extra_dso(machine.engine, spenbase, SPENBASE_BASE, &providers, external.as_mut(), &mut next_stub);
         bind_extra_dso(machine.engine, spenpdf, SPENPDF_BASE, &providers, external.as_mut(), &mut next_stub);
     }
-    register(machine.engine, REGISTER_TPIDR_EL0, TLS);
+    register(machine.engine, REGISTER_TPIDR_EL0, machine.tls_pointer);
 
     // Recreate the shared-library initialization order for the C++ runtime and PDFium.
     for (array, count) in [

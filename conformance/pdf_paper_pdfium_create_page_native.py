@@ -25,7 +25,7 @@ LIBCPP_SHA256 = "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b
 LIBM_PATH = Path("/usr/lib/x86_64-linux-gnu/libm.so.6")
 LIBM_SHA256 = "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"
 APK_SHA256 = "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
-PDF_SHA256 = "1eb11b0cb2e5ca924b64934e12685350c9590414d552d004f628cfefb4db0b6f"
+PDF_SHA256 = "70b75e9ff2c31dedbeb2320cb4300c62b4d73f8740ee4f8afd97e27e0b2ff083"
 
 
 def object_body(pdf: bytes, number: int) -> bytes:

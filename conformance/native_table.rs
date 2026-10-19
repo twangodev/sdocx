@@ -180,6 +180,14 @@ const HEAP: u64 = MODEL + 0x40000;
 const STOP: u64 = MODEL + 0xff000;
 const STACK: u64 = MODEL + 0xfe000;
 const TLS: u64 = MODEL + 0xfd000;
+const PDF_HEAP_BASE: u64 = 0x6000_0000;
+const PDF_HEAP_SIZE: u64 = 0x0200_0000;
+const PDF_STACK_BASE: u64 = 0x6200_0000;
+const PDF_STACK_SIZE: u64 = 0x0010_0000;
+const PDF_CONTROL_BASE: u64 = 0x6300_0000;
+const PDF_CONTROL_SIZE: u64 = 0x0001_0000;
+const PDF_TLS: u64 = PDF_CONTROL_BASE;
+const PDF_STOP: u64 = PDF_CONTROL_BASE + PDF_CONTROL_SIZE - 16;
 const CELL_BASE: u64 = MODEL + 0x20000;
 const CELL_STRIDE: u64 = 256;
 const ROW_BASE: u64 = MODEL + 0x2000;
@@ -231,6 +239,11 @@ fn read_u32(engine: Engine, address: u64) -> u32 {
     let mut bytes = [0; 4];
     check(unsafe { uc_mem_read(engine, address, bytes.as_mut_ptr().cast(), bytes.len()) });
     u32::from_le_bytes(bytes)
+}
+fn read_bytes(engine: Engine, address: u64, length: usize) -> Vec<u8> {
+    let mut bytes = vec![0; length];
+    check(unsafe { uc_mem_read(engine, address, bytes.as_mut_ptr().cast(), length) });
+    bytes
 }
 fn read_float(engine: Engine, address: u64) -> f32 {
     let value = f32::from_bits(read_u32(engine, address));
@@ -325,8 +338,12 @@ fn bind_native(engine: Engine, plt: u64, target: u64) {
 }
 
 struct Heap {
+    base: u64,
     cursor: u64,
     limit: u64,
+    reserved: Vec<(u64, u64)>,
+    intervals: Vec<(u64, u64)>,
+    audit_intervals: bool,
     allocation_fill: u8,
     allocations: usize,
     fills: usize,
@@ -339,8 +356,16 @@ unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *
         NEW => {
             let allocation = first.max(16).checked_add(15).unwrap() & !15;
             let pointer = heap.cursor;
-            heap.cursor = pointer.checked_add(allocation).unwrap();
-            assert!(heap.cursor < heap.limit);
+            let end = pointer.checked_add(allocation).unwrap();
+            assert!(pointer >= heap.base && end <= heap.limit, "native heap escaped arena: {pointer:#x}..{end:#x} vs {:#x}..{:#x}", heap.base, heap.limit);
+            if heap.audit_intervals {
+                assert!(heap.intervals.last().is_none_or(|(_, previous_end)| *previous_end <= pointer), "native bump allocator intervals overlap or go backwards");
+                for &(reserved_start, reserved_end) in &heap.reserved {
+                    assert!(end <= reserved_start || pointer >= reserved_end, "native heap allocation {pointer:#x}..{end:#x} overlaps reserved range {reserved_start:#x}..{reserved_end:#x}");
+                }
+                heap.intervals.push((pointer, end));
+            }
+            heap.cursor = end;
             write(
                 engine,
                 pointer,
@@ -366,6 +391,9 @@ unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *
 struct Machine {
     engine: Engine,
     heap: Box<Heap>,
+    stack_pointer: u64,
+    stop_address: u64,
+    tls_pointer: u64,
     call_timeout_micros: u64,
     call_instruction_limit: usize,
 }
@@ -393,13 +421,20 @@ impl Machine {
             call_timeout_micros: 1_000_000,
             call_instruction_limit: 1_000_000,
             heap: Box::new(Heap {
+                base: HEAP,
                 cursor: HEAP,
                 limit: TLS,
+                reserved: vec![(STACK, STACK + 0x1000), (TLS, TLS + 0x1000), (STOP, STOP + 0x1000)],
+                intervals: Vec::new(),
+                audit_intervals: false,
                 allocation_fill: 0,
                 allocations: 0,
                 fills: 0,
                 deletes: 0,
             }),
+            stack_pointer: STACK,
+            stop_address: STOP,
+            tls_pointer: TLS,
         };
         for address in [NEW, DELETE, MEMSET] {
             write(engine, address, &0xd65f03c0_u32.to_le_bytes());
@@ -416,8 +451,73 @@ impl Machine {
                 )
             });
         }
-        register(engine, REGISTER_TPIDR_EL0, TLS);
+        register(engine, REGISTER_TPIDR_EL0, machine.tls_pointer);
         machine
+    }
+    fn prepare_pdfium_arena(&mut self) {
+        check(unsafe { uc_mem_map(self.engine, PDF_HEAP_BASE, PDF_HEAP_SIZE, 7) });
+        check(unsafe { uc_mem_map(self.engine, PDF_STACK_BASE, PDF_STACK_SIZE, 7) });
+        check(unsafe { uc_mem_map(self.engine, PDF_CONTROL_BASE, PDF_CONTROL_SIZE, 7) });
+        let heap_end = PDF_HEAP_BASE + PDF_HEAP_SIZE;
+        let stack_end = PDF_STACK_BASE + PDF_STACK_SIZE;
+        let control_end = PDF_CONTROL_BASE + PDF_CONTROL_SIZE;
+        assert!(heap_end <= PDF_STACK_BASE || PDF_HEAP_BASE >= stack_end);
+        assert!(heap_end <= PDF_CONTROL_BASE || PDF_HEAP_BASE >= control_end);
+        assert!(stack_end <= PDF_CONTROL_BASE || PDF_STACK_BASE >= control_end);
+        self.heap.base = PDF_HEAP_BASE;
+        self.heap.cursor = PDF_HEAP_BASE;
+        self.heap.limit = heap_end;
+        self.heap.reserved = vec![
+            (PDF_STACK_BASE, stack_end),
+            (PDF_CONTROL_BASE, control_end),
+        ];
+        self.heap.intervals.clear();
+        self.heap.audit_intervals = true;
+        self.stack_pointer = stack_end - 16;
+        self.stop_address = PDF_STOP;
+        self.tls_pointer = PDF_TLS;
+        register(self.engine, REGISTER_TPIDR_EL0, self.tls_pointer);
+
+        // Regression: allocate through the old in-model TLS/stack/stop band.
+        // These addresses are now inactive; execution state lives in the
+        // disjoint PDF stack/control mappings and must survive the write.
+        self.heap.base = MODEL + 0xfc000;
+        self.heap.cursor = self.heap.base;
+        self.heap.limit = MODEL + 0x100000;
+        self.heap.reserved.clear();
+        self.heap.intervals.clear();
+        self.heap.allocation_fill = 0xa5;
+        let canary = [0x5a_u8; 32];
+        let previous_allocation_bytes = read_bytes(self.engine, self.heap.base, 0x4000);
+        let previous_stack_bytes = read_bytes(
+            self.engine,
+            self.stack_pointer - canary.len() as u64,
+            canary.len(),
+        );
+        write(self.engine, self.stack_pointer - canary.len() as u64, &canary);
+        let allocation = self.call(NEW, &[0x4000]);
+        assert_eq!(allocation, MODEL + 0xfc000);
+        assert!(allocation < STACK && allocation + 0x4000 > STOP, "regression allocation must cross the legacy stack/stop addresses");
+        assert_eq!(read_bytes(self.engine, allocation, 0x4000), vec![0xa5; 0x4000]);
+        assert_eq!(read_bytes(self.engine, self.stack_pointer - canary.len() as u64, canary.len()), canary);
+        write(self.engine, allocation, &previous_allocation_bytes);
+        write(
+            self.engine,
+            self.stack_pointer - canary.len() as u64,
+            &previous_stack_bytes,
+        );
+        self.heap.base = PDF_HEAP_BASE;
+        self.heap.cursor = PDF_HEAP_BASE;
+        self.heap.limit = heap_end;
+        self.heap.reserved = vec![
+            (PDF_STACK_BASE, stack_end),
+            (PDF_CONTROL_BASE, control_end),
+        ];
+        self.heap.intervals.clear();
+        self.heap.allocation_fill = 0;
+        self.heap.allocations = 0;
+        self.heap.fills = 0;
+        self.heap.deletes = 0;
     }
     fn load_drawing(&self, path: &Path) {
         map_library(self.engine, path, DRAWING_BASE, DRAWING_SHA256);
@@ -435,13 +535,13 @@ impl Machine {
         for (index, &value) in arguments.iter().enumerate() {
             register(self.engine, REGISTER_X0 + index as i32, value);
         }
-        register(self.engine, REGISTER_X30, STOP);
-        register(self.engine, REGISTER_SP, STACK);
+        register(self.engine, REGISTER_X30, self.stop_address);
+        register(self.engine, REGISTER_SP, self.stack_pointer);
         let error = unsafe {
             uc_emu_start(
                 self.engine,
                 function,
-                STOP,
+                self.stop_address,
                 self.call_timeout_micros,
                 self.call_instruction_limit,
             )
@@ -456,7 +556,7 @@ impl Machine {
         );
         assert_eq!(
             read_register(self.engine, 260),
-            STOP,
+            self.stop_address,
             "native call did not return"
         );
         read_register(self.engine, REGISTER_X0)
@@ -482,7 +582,8 @@ impl Machine {
             assert!(column_span > 0 && column_span as usize <= columns - index % columns);
         }
         write(self.engine, MODEL, &vec![0; 0x100000]);
-        self.heap.cursor = HEAP;
+        self.heap.cursor = self.heap.base;
+        self.heap.intervals.clear();
         self.heap.allocations = 0;
         self.heap.fills = 0;
         self.heap.deletes = 0;

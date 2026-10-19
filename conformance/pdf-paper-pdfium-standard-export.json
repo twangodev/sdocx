@@ -13,7 +13,7 @@
     {
       "source_rotation_degrees": 0,
       "input_pdf_sha256": "e7a9cdb5c17611bf7ee4be604ad90e984d4bd435a9aa0f3a22362197c0508db6",
-      "serialized_pdf_sha256": "b6a84f1011ed3ce5b8e463ff616c9067f6990f80e93965830cf130b22b589a07",
+      "serialized_pdf_sha256": "4abf7686bbf13117060a531d3cc825ade630f98df2e3eadd23d0ec3c2da046c0",
       "serialized_pdf_bytes": 1434,
       "pdfium_native": {
         "loaded_width": 150,
@@ -131,12 +131,12 @@
         ],
         "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
       },
-      "output_file_sha256": "b6a84f1011ed3ce5b8e463ff616c9067f6990f80e93965830cf130b22b589a07"
+      "output_file_sha256": "4abf7686bbf13117060a531d3cc825ade630f98df2e3eadd23d0ec3c2da046c0"
     },
     {
       "source_rotation_degrees": 90,
       "input_pdf_sha256": "6e92278832402105779fe6a765dee53c9cd3a680c09e3926617da9b8b5530ef2",
-      "serialized_pdf_sha256": "63009ee1354db91c8f0a29013586771ef441048606afc5a009fe05886d1da909",
+      "serialized_pdf_sha256": "01b9228069b6b27b4c21269e492faebdf1465bc655578ddedabf5fca702f0cf3",
       "serialized_pdf_bytes": 1443,
       "pdfium_native": {
         "loaded_width": 115,
@@ -254,12 +254,12 @@
         ],
         "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
       },
-      "output_file_sha256": "63009ee1354db91c8f0a29013586771ef441048606afc5a009fe05886d1da909"
+      "output_file_sha256": "01b9228069b6b27b4c21269e492faebdf1465bc655578ddedabf5fca702f0cf3"
     },
     {
       "source_rotation_degrees": 180,
       "input_pdf_sha256": "ab055765faa07d5e1885eab0b436afb3a768d180a043f79fef040c29f092f329",
-      "serialized_pdf_sha256": "078ffc7157ec5ae171107e0e3d948fdb84dad02eeb8bb070496c34b63189d855",
+      "serialized_pdf_sha256": "690d3305d6dc0657c54941e970d03b0b660fc416a0e07a2a59d00f7e13476a59",
       "serialized_pdf_bytes": 1443,
       "pdfium_native": {
         "loaded_width": 150,
@@ -377,12 +377,12 @@
         ],
         "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
       },
-      "output_file_sha256": "078ffc7157ec5ae171107e0e3d948fdb84dad02eeb8bb070496c34b63189d855"
+      "output_file_sha256": "690d3305d6dc0657c54941e970d03b0b660fc416a0e07a2a59d00f7e13476a59"
     },
     {
       "source_rotation_degrees": 270,
       "input_pdf_sha256": "5561da86a2d266062feb9e79fec35282af2445206debf0abc1a1d950f34aa74f",
-      "serialized_pdf_sha256": "e9299aa31dc6ae2a085d9bf989b5792636a34b991e6406432cd38a2f5edb0290",
+      "serialized_pdf_sha256": "b1c0ad1cfed08edfc7c1967d25e514a851628afc77c8385be6d882cf647de318",
       "serialized_pdf_bytes": 1442,
       "pdfium_native": {
         "loaded_width": 115,
@@ -500,7 +500,7 @@
         ],
         "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
       },
-      "output_file_sha256": "e9299aa31dc6ae2a085d9bf989b5792636a34b991e6406432cd38a2f5edb0290"
+      "output_file_sha256": "b1c0ad1cfed08edfc7c1967d25e514a851628afc77c8385be6d882cf647de318"
     }
   ],
   "evidence_boundary": "Executes the pinned Samsung PdfiumImpl constructor, file-backed Open, LoadPage, PdfiumExportHandler OpenWriter/CloseWriter/Export inclusive range 0..0, actual PdfiumPathHandler DrawPath, and PDFFileWriter through PDFium serialization. The source PDF and overlay points are deterministic synthetic host inputs. Output checks prove the original vector path and tested boxes, rotation and UserUnit survive this one-page fixture while the Samsung vector overlay is serialized in the retained page. The host supplies file I/O and selected deterministic C/libm/platform callbacks; single-thread synchronization is a no-op and unknown imports abort. This does not prove arbitrary-PDF preservation, Android rendering parity, or execution of the full app/JNI route."
