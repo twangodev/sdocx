@@ -952,14 +952,16 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
 }
 
 impl NibState {
-    /// The native V1 constructor initializes these once. A cached drawable can
-    /// retain this state between records; callers must not silently recreate it.
+    /// GLV1 constructor defaults, as captured before the first RedrawPen.
+    /// A cached drawable retains this state between records; RedrawPen rearms
+    /// both lifecycle flags from each new source stroke. The pinned native
+    /// constructor stores zero at GLV1+80 (0x1d7b0) and +272 (0x1d7e0).
     pub(super) const fn fresh() -> Self {
         Self {
             angle_degrees: 0.0,
             direction: [1.0, 0.0],
-            initial_pending: true,
-            movement_armed: true,
+            initial_pending: false,
+            movement_armed: false,
         }
     }
 }
@@ -1881,7 +1883,7 @@ mod tests {
             })
             .collect();
         let zero = P { x: 0.0, y: 0.0 };
-        let actual = saved_history_vectors(
+        let native_fresh = prepare_saved_history(
             &history,
             SavedHistoryState {
                 nib: NibState::fresh(),
@@ -1892,6 +1894,7 @@ mod tests {
             },
         )
         .unwrap();
+        let actual = saved_history_vectors(&history, native_fresh).unwrap();
         let native = &case["native"]["fresh"];
         let expected_ends: Vec<usize> = native["sample_ends"]
             .as_array()
@@ -2574,6 +2577,294 @@ mod tests {
         for tool in [5, 65535] {
             let id = format!("tool-type-{tool}");
             assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
+        }
+    }
+
+    #[test]
+    fn object_list_batch_replays_chained_saved_strokes_and_native_meshes() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        let capture = &fixture["cases"]["two-stroke-object-list-batch"]["capture"];
+        let sources = fixture["cases"]["two-stroke-object-list-batch"]["input"]["sources"]
+            .as_array()
+            .unwrap();
+        let runs = capture["runs"].as_array().unwrap();
+        assert_eq!(sources.len(), 2);
+        assert_eq!(runs.len(), 2);
+
+        let decode_words = |hex: &str| -> Vec<u32> {
+            hex.as_bytes()
+                .chunks_exact(8)
+                .map(|word| {
+                    let bytes = word
+                        .chunks_exact(2)
+                        .map(|pair| {
+                            u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
+                        })
+                        .collect::<Vec<_>>();
+                    u32::from_le_bytes(bytes.try_into().unwrap())
+                })
+                .collect()
+        };
+        let source_floats = |source: &serde_json::Value, bits_key: &str, bytes_key: &str| {
+            if let Some(values) = source.get(bits_key).and_then(serde_json::Value::as_array) {
+                values
+                    .iter()
+                    .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                    .collect::<Vec<_>>()
+            } else {
+                decode_words(source[bytes_key].as_str().unwrap())
+                    .into_iter()
+                    .map(f32::from_bits)
+                    .collect()
+            }
+        };
+        let source_points = |source: &serde_json::Value| {
+            source_floats(source, "points_f32_bits", "point_bytes_f32_le")
+                .chunks_exact(2)
+                .map(|pair| [pair[0], pair[1]])
+                .collect::<Vec<_>>()
+        };
+        let state_bits = |state: &serde_json::Value| {
+            (
+                state["center_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| bits(value.as_str().unwrap()))
+                    .collect::<Vec<_>>(),
+                state["edge_state_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| bits(value.as_str().unwrap()))
+                    .collect::<Vec<_>>(),
+                state["initial_flag"].as_u64().unwrap(),
+            )
+        };
+        let captured_glv1_state = |hex: &str| {
+            let bytes = hex
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect::<Vec<_>>();
+            let word =
+                |offset: usize| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+            super::SavedHistoryState {
+                accepted: P {
+                    x: f32::from_bits(word(116)),
+                    y: f32::from_bits(word(120)),
+                },
+                start: P {
+                    x: f32::from_bits(word(88)),
+                    y: f32::from_bits(word(92)),
+                },
+                control: P {
+                    x: f32::from_bits(word(96)),
+                    y: f32::from_bits(word(100)),
+                },
+                midpoint: P {
+                    x: f32::from_bits(word(104)),
+                    y: f32::from_bits(word(108)),
+                },
+                nib: super::NibState {
+                    angle_degrees: f32::from_bits(word(284)),
+                    direction: [f32::from_bits(word(276)), f32::from_bits(word(280))],
+                    initial_pending: bytes[80] != 0,
+                    movement_armed: bytes[272] != 0,
+                },
+            }
+        };
+
+        // The saved wrapper's native constructor snapshot has both GLV1
+        // lifecycle flags clear. RedrawPen rearms them from the first source
+        // record before sampling.
+        let mut state = super::CalligraphyState::fresh();
+        let fresh_saved = saved_history_state_bits(state.saved);
+        let native_fresh = saved_history_state_bits(captured_glv1_state(
+            runs[0]["glv1_prestate_hex"].as_str().unwrap(),
+        ));
+        assert_eq!(fresh_saved, native_fresh, "native fresh GLV1 state");
+        for index in 0..2 {
+            let source = &sources[index];
+            let run = &runs[index];
+            assert_eq!(run["ordinal"].as_u64().unwrap() as usize, index);
+            if index > 0 {
+                assert_eq!(
+                    state_bits(&runs[index - 1]["rtv1_state_after"]),
+                    state_bits(&run["rtv1_state_before"]),
+                    "native RTV1 state continuity before stroke {index}"
+                );
+                let previous_native = &runs[index - 1]["rtv1_state_after"];
+                let actual_center = state.add_point.center.map(f32::to_bits).to_vec();
+                let actual_edges = state
+                    .add_point
+                    .previous_edges
+                    .iter()
+                    .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
+                    .map(f32::to_bits)
+                    .collect::<Vec<_>>();
+                assert_eq!(actual_center, state_bits(previous_native).0);
+                assert_eq!(actual_edges, state_bits(previous_native).1);
+                assert!(!state.add_point.initial_edge);
+            }
+            if index > 0 {
+                assert_eq!(
+                    saved_history_state_bits(state.saved),
+                    saved_history_state_bits(captured_glv1_state(
+                        run["glv1_prestate_hex"].as_str().unwrap()
+                    )),
+                    "run {index} complete chained GLV1 input state"
+                );
+            }
+
+            let points = source_points(source);
+            let pressures = source_floats(source, "pressure_f32_bits", "pressure_bytes_f32_le");
+            let orientation =
+                source_floats(source, "orientation_f32_bits", "orientation_bytes_f32_le");
+            let tilt = source_floats(source, "tilt_f32_bits", "tilt_bytes_f32_le");
+            let timestamps = source["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap() as i32)
+                .collect::<Vec<_>>();
+            let pen_size = f32::from_bits(bits(source["pen_size_f32_bits"].as_str().unwrap()));
+            let output = super::saved_object_stroke_mesh(
+                super::SavedObjectStrokeInput {
+                    points: &points,
+                    pressures: &pressures,
+                    timestamps: &timestamps,
+                    tilt: Some(&tilt),
+                    orientation: Some(&orientation),
+                    tool_type: source["tool_type"].as_u64().unwrap() as i32,
+                    pen_size,
+                    fixed_width: None,
+                },
+                state,
+            )
+            .expect("valid native ObjectStroke source arrays");
+
+            let native_add_points = run["add_points"].as_array().unwrap();
+            assert_eq!(
+                output.add_points.len(),
+                native_add_points.len(),
+                "run {index} AddPoint count"
+            );
+            let native_builds = run["build_calls"].as_array().unwrap();
+            let mut build_cursor = 0;
+            let mut native_buffer_targets: [Option<&str>; 3] = [None; 3];
+            for (frame, native) in output.add_points.iter().zip(native_add_points) {
+                assert_eq!(
+                    frame.input.vector.map(f32::to_bits).as_slice(),
+                    decode_words(native["vector_bytes"].as_str().unwrap()),
+                    "run {index} native AddPoint vector"
+                );
+                assert_eq!(
+                    frame.input.extent.to_bits(),
+                    bits(native["extent_bits"].as_str().unwrap()),
+                    "run {index} native AddPoint extent"
+                );
+                let pre = &native["pre_state"];
+                assert_eq!(
+                    frame.input.gate_center.map(f32::to_bits).as_slice(),
+                    state_bits(pre).0,
+                    "run {index} AddPoint gate center"
+                );
+                assert_eq!(
+                    frame.input.initial_edge,
+                    pre["initial_flag"].as_u64().unwrap() != 0,
+                    "run {index} AddPoint initial flag"
+                );
+                let edges = frame
+                    .input
+                    .previous_edges
+                    .iter()
+                    .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
+                    .map(f32::to_bits)
+                    .collect::<Vec<_>>();
+                assert_eq!(edges, state_bits(pre).1, "run {index} AddPoint edges");
+
+                if let Some(geometry) = frame.geometry {
+                    for (buffer, rect) in geometry.buffers.into_iter().zip(geometry.rectangles) {
+                        let target = native_builds[build_cursor]["output"].as_str().unwrap();
+                        let target_slot = match buffer {
+                            super::MeshBuffer::Core => 0,
+                            super::MeshBuffer::FringeA => 1,
+                            super::MeshBuffer::FringeB => 2,
+                        };
+                        if let Some(previous) = native_buffer_targets[target_slot] {
+                            assert_eq!(previous, target, "run {index} stable native output slot");
+                        } else {
+                            native_buffer_targets[target_slot] = Some(target);
+                        }
+                        assert_eq!(
+                            rect_bits(rect).as_slice(),
+                            decode_words(native_builds[build_cursor]["rect"].as_str().unwrap()),
+                            "run {index} native build rectangle {build_cursor}"
+                        );
+                        build_cursor += 1;
+                    }
+                }
+            }
+            assert_eq!(
+                build_cursor,
+                native_builds.len(),
+                "run {index} build call count"
+            );
+
+            for slot in 0..3 {
+                let actual = match slot {
+                    0 => mesh_bits(&output.buffers.core),
+                    1 => mesh_bits(&output.buffers.fringe_a),
+                    _ => mesh_bits(&output.buffers.fringe_b),
+                };
+                let target = native_buffer_targets[slot].expect("native output target captured");
+                let native_buffer = run["rtv1_mesh"]["buffers"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|buffer| buffer["vector_object"].as_str() == Some(target))
+                    .unwrap_or_else(|| panic!("run {index} native target {target} missing"));
+                assert_eq!(
+                    actual,
+                    decode_words(native_buffer["bytes_hex"].as_str().unwrap()),
+                    "run {index} native output buffer slot {slot}"
+                );
+                assert_eq!(
+                    actual.len() / 4,
+                    native_buffer["vertex_count"].as_u64().unwrap() as usize
+                );
+            }
+
+            assert_eq!(
+                output.state.add_point.center.map(f32::to_bits).as_slice(),
+                state_bits(&run["rtv1_state_after"]).0,
+                "run {index} retained center"
+            );
+            assert_eq!(
+                output
+                    .state
+                    .add_point
+                    .previous_edges
+                    .iter()
+                    .flat_map(|pair| pair.iter().flat_map(|point| point.iter().copied()))
+                    .map(f32::to_bits)
+                    .collect::<Vec<_>>(),
+                state_bits(&run["rtv1_state_after"]).1,
+                "run {index} retained edge cache"
+            );
+            assert!(!output.state.add_point.initial_edge);
+            assert_eq!(
+                saved_history_state_bits(output.state.saved),
+                saved_history_state_bits(captured_glv1_state(
+                    run["glv1_poststate_hex"].as_str().unwrap()
+                )),
+                "run {index} complete GLV1 output state"
+            );
+            state = output.state;
         }
     }
 
