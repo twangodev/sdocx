@@ -1560,6 +1560,84 @@ mod tests {
     }
 
     #[test]
+    fn matches_native_v1_source_event_boundary_matrix() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-boundaries-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-inkpen-v1-native-event-boundaries-v1"
+        );
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 17);
+        let mut tools = std::collections::BTreeSet::new();
+        let mut no_curve_cases = 0;
+        for (name, case) in cases {
+            let input = native_caller_stroke(&case["input"]);
+            let curve_enabled = case["input"]["curve_enabled"].as_bool().unwrap();
+            tools.insert(case["input"]["tool_type"].as_u64().unwrap());
+            no_curve_cases += usize::from(!curve_enabled);
+            let ink = prepare_v1(
+                &input,
+                RuntimeContext {
+                    curve_enabled,
+                    screen_width: case["profile"]["width"].as_u64().unwrap() as u32,
+                    screen_height: case["profile"]["height"].as_u64().unwrap() as u32,
+                },
+            )
+            .unwrap();
+            let packed = ink
+                .points
+                .iter()
+                .zip(&ink.radii)
+                .flat_map(|(point, radius)| [point.x as f32, point.y as f32, *radius])
+                .flat_map(f32::to_le_bytes)
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            assert_eq!(packed, case["reuse"]["target_stream_bytes"], "{name}");
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                let ranges = &case["reuse"][if curve_enabled {
+                    "native_redraw_sample_ranges"
+                } else {
+                    "native_no_curve_line_ranges"
+                }];
+                let events = ranges
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| event["phase"] == phase)
+                    .filter(|event| !curve_enabled || event["method"] == "reDrawLine")
+                    .collect::<Vec<_>>();
+                let mut ends = vec![0];
+                for event in events {
+                    let end = event["after_record_count"].as_u64().unwrap() as usize;
+                    assert_eq!(event["after_stream_bytes"], &packed[..end * 24]);
+                    ends.push(end);
+                }
+                assert_eq!(ink.sample_ends, ends, "{name} {phase} source prefixes");
+                let terminal_method = if curve_enabled {
+                    "endPen"
+                } else {
+                    "endPen_NoCurve"
+                };
+                let terminal = case["reuse"]["native_redraw_sample_ranges"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|event| event["phase"] == phase && event["method"] == terminal_method)
+                    .unwrap();
+                let range = terminal["before_record_count"].as_u64().unwrap() as usize
+                    ..terminal["after_record_count"].as_u64().unwrap() as usize;
+                assert_eq!(ink.terminal, range, "{name} {phase} terminal");
+                assert_eq!(terminal["after_stream_bytes"], packed, "{name} {phase}");
+            }
+        }
+        assert_eq!(tools.into_iter().collect::<Vec<_>>(), [0, 1, 2, 3, 4]);
+        assert_eq!(no_curve_cases, 1);
+    }
+
+    #[test]
     fn matches_native_v1_reuse_source_event_boundaries() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v1-reuse-native.json"

@@ -243,6 +243,10 @@ pixel-dependent edge band prevents treating a fixed 1× contour as a general pai
 A [V1 reuse oracle](../conformance/inkpen-v1-reuse-native.json) checks source-event
 and terminal vector prefixes, short/long preceding strokes and distinct source
 objects. Rust matches the complete first/target streams and their native boundaries.
+A [17-case V1 boundary matrix](../conformance/inkpen-v1-boundaries-native.json)
+checks complete native Drawing/redraw vectors and source-event/terminal prefixes,
+including curved tools 0–4 and one no-curve tool1 control; Rust matches every word
+and cutoff. These synthetic setter controls do not establish serialized-note admission.
 General V4 admission, app display setup, device parity and exact scale-dependent
 coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
