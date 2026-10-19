@@ -1034,8 +1034,10 @@ def capture_one(color):
 
     blend = []
     for entry in draw_gl:
-        if entry["name"] in ("glBlendEquationSeparate", "glBlendFuncSeparate"):
+        if entry["name"] == "glBlendEquationSeparate":
             blend.append({"call": entry["name"], "values": entry["values"][:2]})
+        elif entry["name"] == "glBlendFuncSeparate":
+            blend.append({"call": entry["name"], "values": entry["values"][:4]})
         elif entry["name"] in ("glEnable", "glDisable"):
             blend.append({"call": entry["name"], "values": entry["args"][:1]})
         elif entry["name"] == "glColorMask":

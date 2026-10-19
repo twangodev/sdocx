@@ -297,6 +297,8 @@
             "call": "glBlendFuncSeparate",
             "values": [
               1,
+              771,
+              1,
               771
             ]
           },
@@ -325,6 +327,8 @@
           {
             "call": "glBlendFuncSeparate",
             "values": [
+              1,
+              771,
               1,
               771
             ]
@@ -642,6 +646,8 @@
             "call": "glBlendFuncSeparate",
             "values": [
               1,
+              771,
+              1,
               771
             ]
           },
@@ -670,6 +676,8 @@
           {
             "call": "glBlendFuncSeparate",
             "values": [
+              1,
+              771,
               1,
               771
             ]
