@@ -1638,6 +1638,41 @@ mod tests {
     }
 
     #[test]
+    fn curved_tool3_and_tool4_use_native_vectors_and_leave_no_curve_on_fallback() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-boundaries-native.json"
+        ))
+        .unwrap();
+        for tool in [3_u64, 4] {
+            let case = &fixture["cases"][format!("tool{tool}_five_1920x1080")];
+            let mut input = native_caller_stroke(&case["input"]);
+            input.rendering.as_mut().unwrap().style.color_argb = Some(0xff12_3456);
+            let prepared = crate::ink::prepare_inkpen_v1_for_page(&input)
+                .expect("curved tool has native source and paint evidence");
+            let packed = prepared
+                .points
+                .iter()
+                .zip(&prepared.radii)
+                .flat_map(|(point, radius)| [point.x as f32, point.y as f32, *radius])
+                .flat_map(f32::to_le_bytes)
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            assert_eq!(packed, case["reuse"]["target_stream_bytes"], "tool {tool}");
+            assert_eq!(prepared.argb, 0xff12_3456);
+            assert_eq!(
+                crate::prepare_stroke_for_page(&input, false).support,
+                crate::InkSupport::Reconstructed
+            );
+            input.rendering.as_mut().unwrap().properties.compressed = false;
+            assert!(crate::ink::prepare_inkpen_v1_for_page(&input).is_none());
+            assert_eq!(
+                crate::prepare_stroke_for_page(&input, false).support,
+                crate::InkSupport::Approximate
+            );
+        }
+    }
+
+    #[test]
     fn matches_native_v1_reuse_source_event_boundaries() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v1-reuse-native.json"
