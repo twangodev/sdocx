@@ -1,0 +1,84 @@
+{
+  "native_entry": "Composer captureBackground\u2192exportPDFPages\u2192updatePage",
+  "source_pdf_provenance": "quiz page 0; SHA-256 f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279",
+  "source_pdf_host_path": "quiz.pdf (host path input)",
+  "retained_pdf_record": {
+    "source_page": 0,
+    "note_rect": [
+      0,
+      0,
+      1812,
+      1485
+    ]
+  },
+  "note_canvas_host_input": [
+    1812,
+    15372
+  ],
+  "capture_pdf_record_count_calls": 1,
+  "capture_string_set_calls": 0,
+  "capture_return_register_uninterpreted": 1,
+  "add_pages_bridge_args": [
+    [
+      "composer_instance",
+      "retained_record.source_path",
+      null,
+      0,
+      0
+    ]
+  ],
+  "add_pages_bridge_result": 1,
+  "native_updatepage_args": [
+    [
+      "composer_instance",
+      0,
+      false,
+      true
+    ]
+  ],
+  "imported_paper_branch": {
+    "writer_opens": 1,
+    "drawpdf_calls": 0,
+    "pdf_resource_getter_calls": 0,
+    "remove_overlay_image_calls": 1,
+    "remove_pdf_overlay_calls": 1
+  },
+  "manual_background_controls": {
+    "note_extents": [
+      [
+        1812,
+        1485
+      ],
+      [
+        1812,
+        15372
+      ]
+    ],
+    "source_page_rect_host_input": [
+      0,
+      0,
+      726.2043,
+      595.44006
+    ],
+    "drawpdf_rects": [
+      [
+        0.0,
+        0.0,
+        726.2043,
+        595.1509
+      ],
+      [
+        0.0,
+        0.0,
+        726.2043,
+        6160.713
+      ]
+    ]
+  },
+  "host_boundaries": [
+    "PDF record list/count and AddPages bridge (bridge returns separately observed result; PDFium not run in this mode)",
+    "WPage width/height, adapter lifecycle, source page rectangle",
+    "DrawPDF sink; manual controls do not build an output PDF"
+  ],
+  "boundary": "Composer captureBackground, exportPDFPages, updatePage and imported-paper empty-path skip execute. Two direct updatePage controls use host-supplied manual background path, note extent and source page rectangle. Native Base String constructors build the path inputs; the PDF writer is opened, but this mode does not join or serialize its output."
+}
