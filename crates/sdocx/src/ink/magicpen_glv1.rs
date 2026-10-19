@@ -175,13 +175,16 @@ fn width_target(old: f32, size: f32, pressure: f32, factor: f32) -> f32 {
     };
     let candidate = size.mul_add(adjustment, old) * 0.5;
     let delta = candidate - old;
-    if delta > 2.0 {
+    let limited = if delta > 2.0 {
         old + 2.0
     } else if delta < -2.0 {
         old - 2.0
+    } else if candidate < old && old < 2.0 {
+        old - 0.5
     } else {
         candidate
-    }
+    };
+    limited.max(size / 10.0)
 }
 
 fn terminal_width_target(old: f32, size: f32, pressure: f32, factor: f32) -> f32 {
@@ -226,13 +229,36 @@ fn repeat_index(length: f32, interval: f32) -> usize {
     (scaled as usize).max(2) + 1
 }
 
+fn admit_source_events(points: &[[f32; 2]], pressure: &[f32]) -> (Vec<[f32; 2]>, Vec<f32>) {
+    assert_eq!(points.len(), pressure.len());
+    if points.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let mut admitted_points = vec![points[0]];
+    let mut admitted_pressure = vec![pressure[0]];
+    for (point, &point_pressure) in points.iter().zip(pressure).skip(1) {
+        let previous = *admitted_points.last().unwrap();
+        // Native source admission skips an event only when both axes are below 1.5.
+        if (point[0] - previous[0]).abs() < 1.5 && (point[1] - previous[1]).abs() < 1.5 {
+            continue;
+        }
+        admitted_points.push(*point);
+        admitted_pressure.push(point_pressure);
+    }
+    (admitted_points, admitted_pressure)
+}
+
 fn source_point(p: [f32; 2]) -> FPoint {
     FPoint { x: p[0], y: p[1] }
 }
 
 fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) -> Vec<[u32; 3]> {
     assert!(points.len() >= 2 && points.len() == pressure.len());
-    let size = source_size.max(0.4);
+    let (points, pressure) = admit_source_events(points, pressure);
+    if points.len() < 2 {
+        return Vec::new();
+    }
+    let size = source_size.clamp(0.4, 800.0);
     let p: Vec<_> = points.iter().copied().map(source_point).collect();
     let mut paths: Vec<(SourceCurve, f32, f32, bool, bool)> = Vec::new();
     let mut width = size * pressure[1];
@@ -362,7 +388,11 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
 
 fn source_glv1_no_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) -> Vec<[u32; 3]> {
     assert!(points.len() >= 2 && points.len() == pressure.len());
-    let size = source_size.max(0.4);
+    let (points, pressure) = admit_source_events(points, pressure);
+    if points.len() < 2 {
+        return Vec::new();
+    }
+    let size = source_size.clamp(0.4, 800.0);
     let mut output = Vec::new();
     let mut width = size * pressure[1];
     for edge in 1..points.len() {
@@ -431,7 +461,7 @@ mod tests {
         .unwrap();
         assert_eq!(fixture["schema"], "sdocx-magicpen-glv1-source-native-v1");
         let cases = fixture["cases"].as_array().unwrap();
-        assert_eq!(cases.len(), 26);
+        assert_eq!(cases.len(), 35);
         let mut seen = std::collections::BTreeSet::new();
         for case in cases {
             let id = case["id"].as_str().unwrap();

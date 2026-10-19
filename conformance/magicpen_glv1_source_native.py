@@ -13,9 +13,14 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = next(
+    parent
+    for parent in SCRIPT_DIR.parents
+    if (parent / "Cargo.toml").is_file() and (parent / "conformance").is_dir()
+)
 BASE = ROOT / "conformance/magicpen_saved_caller_native.py"
-FIXTURE = ROOT / "conformance/magicpen-glv1-source-native.json"
+FIXTURE = SCRIPT_DIR / "magicpen-glv1-source-native.json"
 BASE_SHA256 = "cd2d613e202e35be261316a433533cda1c2f0ee76db150c4cca20963c80ba59c"
 LIBRARIES = {
     "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
@@ -65,6 +70,18 @@ CASES = [
     ("capture_four_points_arbitrary", [(2, 3), (8, -1), (14, 7), (31, 4)], [.15, .35, .65, .95], [100, 117, 139, 181], 10, "set", True),
     ("capture_five_points_terminal_registers", [(2, 3), (8, -1), (14, 7), (31, 4), (42, 12)], [.15, .35, .65, .95, .55], [100, 117, 139, 181, 220], 10, "set", True),
     ("capture_six_points_state", [(2, 3), (8, -1), (14, 7), (31, 4), (42, 12), (55, -6)], [.15, .35, .65, .95, .55, .85], [100, 117, 139, 181, 220, 275], 10, "set", True),
+
+    # Nine native Drawing controls, recaptured under the explicit 1; setting.
+    ('seven_irregular', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 10, 'set', True),
+    ('seven_duplicate_mid', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (4.0, 0.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 10, 'set', True),
+    ('seven_subthreshold', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (4.400000095367432, 0.30000001192092896), (5.0, 0.4000000059604645), (9.0, 2.0), (18.0, 2.0)], [0.05000000074505806, 0.8999999761581421, 0.15000000596046448, 0.800000011920929, 0.20000000298023224, 1.0, 0.30000001192092896], [100, 107, 119, 133, 151, 177, 211], 10, 'set', True),
+    ('eight_duplicate_pressure', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (7.0, 3.0), (12.0, 4.0), (16.0, 0.0), (21.0, 2.0)], [0.15000000596046448, 0.949999988079071, 0.10000000149011612, 0.800000011920929, 0.25, 0.6499999761581421, 0.4000000059604645, 1.0], [100, 109, 123, 141, 160, 177, 199, 224], 10, 'set', True),
+    ('eight_subthreshold', [(0.0, 0.0), (1.0, 0.20000000298023224), (2.4000000953674316, 0.5), (3.0, 0.6000000238418579), (3.200000047683716, 0.699999988079071), (7.0, 1.0), (13.0, 4.0), (20.0, 2.0)], [0.8999999761581421, 0.10000000149011612, 0.800000011920929, 0.20000000298023224, 0.699999988079071, 0.30000001192092896, 0.949999988079071, 0.4000000059604645], [100, 108, 117, 128, 140, 155, 173, 194], 10, 'set', True),
+    ('size_zero', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 0, 'set', True),
+    ('size_floor', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 0.4, 'set', True),
+    ('size_800', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 800, 'set', True),
+    ('size_over800', [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [0.10000000149011612, 0.20000000298023224, 0.3499999940395355, 0.5, 0.699999988079071, 0.8500000238418579, 1.0], [100, 111, 127, 143, 162, 181, 203], 801, 'set', True),
+
 ]
 
 
@@ -129,6 +146,30 @@ def adapted_wrapper(case, output: Path) -> tuple[str, dict]:
     injected += "for _old, _new, _label in " + repr(replacements) + ":\n"
     injected += " if source.count(_old) != 1: raise RuntimeError(f'patch {_label}: expected one source anchor, found {source.count(_old)}')\n"
     injected += " source = source.replace(_old, _new, 1)\n"
+    event_anchor = "redraw_names=['SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)','SPen::MagicPenStrokeDrawableGLV2::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)']\n redraw_addrs={p.syms[name]:name for name in redraw_names}\n add_names=['SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)'];add_addrs={p.syms[name]:name for name in add_names}"
+    event_hook = r'''redraw_line_addr=p.syms['SPen::MagicPenStrokeDrawableGLV1::redrawLine(float, float, float, SPen::RectF*, long long)']
+redraw_end_addr=p.syms['SPen::MagicPenStrokeDrawableGLV1::redrawEndPen(float, float, float, SPen::RectF*, long long)']
+source_line_events=[];source_end_events=[];source_line_active=[];source_end_active=[]
+def _source_f32(obj,offset):return struct.unpack('<f',bytes(p.u.mem_read(obj+offset,4)))[0]
+def _source_state(obj):return {'width_plus144_f32':_source_f32(obj,144),'raw_distance_plus148_f32':_source_f32(obj,148),'last_x_plus296_f32':_source_f32(obj,296),'last_y_plus300_f32':_source_f32(obj,300),'control_x_plus312_f32':_source_f32(obj,312),'control_y_plus316_f32':_source_f32(obj,316),'pending_init_flag_plus156':p.get(obj+156,'B')[0],'alternating_baseline_flag_plus157':p.get(obj+157,'B')[0]}
+def _source_hook(u,a,z,d):
+ if a==redraw_line_addr:
+  obj=p.x(0);lr=u.reg_read(R.UC_ARM64_REG_LR)
+  source_line_active.append({'lr':lr,'obj':obj,'args_f32_u32_hex':[struct.pack('<I',u.reg_read(getattr(R,f'UC_ARM64_REG_S{i}'))).hex() for i in range(3)],'before':_source_state(obj),'addpoint_start':len(add_calls)})
+ elif a==redraw_end_addr:
+  obj=p.x(0);lr=u.reg_read(R.UC_ARM64_REG_LR)
+  source_end_active.append({'lr':lr,'obj':obj,'args_f32_u32_hex':[struct.pack('<I',u.reg_read(getattr(R,f'UC_ARM64_REG_S{i}'))).hex() for i in range(3)],'before':_source_state(obj),'addpoint_start':len(add_calls)})
+ elif source_line_active and a==source_line_active[-1]['lr']:
+  e=source_line_active.pop();obj=e['obj'];e['after']=_source_state(obj);e['addpoint_count']=len(add_calls)-e['addpoint_start'];e['threshold_admitted']=(abs(_source_f32(0,0))<0) ;source_line_events.append(e)
+ elif source_end_active and a==source_end_active[-1]['lr']:
+  e=source_end_active.pop();obj=e['obj'];e['after']=_source_state(obj);e['addpoint_count']=len(add_calls)-e['addpoint_start'];source_end_events.append(e)
+p.u.hook_add(UC_HOOK_CODE,_source_hook)'''
+    event_hook = event_hook.replace("e['threshold_admitted']=(abs(_source_f32(0,0))<0)", "e['threshold_admitted']=(abs(struct.unpack('<f',bytes.fromhex(e['args_f32_u32_hex'][0]))[0]-e['before']['last_x_plus296_f32'])>=1.5 or abs(struct.unpack('<f',bytes.fromhex(e['args_f32_u32_hex'][1]))[0]-e['before']['last_y_plus300_f32'])>=1.5)")
+    event_replace = event_anchor + "\n " + event_hook.replace("\n", "\n ")
+    injected += "assert source.count(" + repr(event_anchor) + ") == 1; source = source.replace(" + repr(event_anchor) + ", " + repr(event_replace) + ", 1)\n"
+    event_record_anchor = "records.append({'case':label,"
+    event_record_replacement = "records.append({'case':label,'source_event_trace':{'redraw_line_calls':source_line_events,'redraw_end_calls':source_end_events},"
+    injected += "assert source.count(" + repr(event_record_anchor) + ") == 1; source = source.replace(" + repr(event_record_anchor) + ", " + repr(event_record_replacement) + ", 1)\n"
     marker = 'exec(compile(source, str(BASE), "exec"), {"__name__": "__main__", "__file__": str(Path(__file__).resolve())})'
     wrapper = replace_once(wrapper, marker, injected + marker, "source adapter insertion")
     return wrapper, expected_arrays
@@ -159,6 +200,11 @@ def capture(case) -> dict:
             raise RuntimeError(f"native source-size getter differs for {name}")
         if row["native_model_metadata"] != {"tool_type": 2, "stroke_type": 0, "curve_enabled": curve, "color_argb": "0xff000000"}:
             raise RuntimeError(f"native metadata getter differs for {name}")
+        requested_size = struct.unpack("<f", struct.pack("<f", size if size >= 0 else 0))[0]
+        actual_pen_size = min(800.0, max(0.4, requested_size))
+        expected_pen_bits = struct.pack("<f", actual_pen_size).hex()
+        if row["native_pen_getsize_f32_bits"] != expected_pen_bits:
+            raise RuntimeError(f"selected native Pen GetSize differs for {name}: {row['native_pen_getsize_f32_bits']} != {expected_pen_bits}")
         if row["selected_drawable_class"] != "GLV1" or row["drawing_return"] != 1:
             raise RuntimeError(f"Drawing did not select/run GLV1 for {name}")
         native = row["native_rtv1_vector"]
@@ -189,6 +235,20 @@ def capture(case) -> dict:
                 "libraries": result["provenance"]["libraries"],
                 "helpers": result["provenance"]["helpers"],
                 "native_scope": row["evidence_scope"],
+                "source_getters": {
+                    "point_count": row["source_model_get_point_count"],
+                    "arrays": row["source_arrays"],
+                    "metadata": row["native_model_metadata"],
+                    "source_pen_size_f32_u32_hex": row["source_model_get_pen_size_f32_bits"],
+                    "selected_pen_get_size_f32_u32_hex": row["native_pen_getsize_f32_bits"],
+                    "selected_drawable_class": row["selected_drawable_class"],
+                },
+                "native_addpoint": {
+                    "record_count": row["rtv_addpoint_record_count"],
+                    "argument_words_f32_u32_hex": [word for call in row["rtv_addpoint_entries"] for word in call["float_words_s0_s2"]],
+                    "source_event_trace": row["source_event_trace"],
+                    "post_return_vector_bytes_le_hex": row["native_rtv1_vector"]["bytes_le_hex"],
+                },
             },
         }
 
@@ -210,6 +270,7 @@ def generated_fixture() -> dict:
             "size_word": "8-digit hexadecimal uint32 word; decoded from source getter byte encoding",
         },
         "provenance": {
+            "runner_sha256": sha256(Path(__file__).read_bytes()),
             "base_caller_sha256": cases[0]["capture"]["base_caller_sha256"],
             "libraries": LIBRARIES,
             "helpers": HELPERS,

@@ -372,8 +372,9 @@ The source-derived shader model matches transparent support and stays within
 three RGBA bytes on these host captures; it does not establish export parity.
 A [GLV1 source matrix](../conformance/magicpen-glv1-source-native.json)
 checks native source getters and complete XYZ streams; the test-only Rust model
-matches all 26 two- to six-point cases. Longer nearby-point strokes and sizes
-above 800 still differ, so general sampling and production admission remain open.
+matches all 35 two- to eight-point cases, including duplicate/nearby-event
+admission, native width transitions and the 0.4–800 size clamp. General sampling,
+replay boundaries and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. Version dispatch is observed; sampler reconstruction, paint and
