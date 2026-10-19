@@ -24,6 +24,8 @@ pub(super) struct SavedHistoryState {
     pub(super) accepted: P,
     pub(super) start: P,
     pub(super) control: P,
+    /// Retained drawable midpoint (+104/+108), updated by cubic endPen.
+    pub(super) midpoint: P,
 }
 
 #[derive(Clone, Debug)]
@@ -41,6 +43,124 @@ pub(super) struct EndPenOutput {
     /// Absent when native endPen takes the initial-point branch and builds no path.
     pub(super) path_length: Option<f32>,
     pub(super) point_extent: f32,
+    pub(super) state: SavedHistoryState,
+}
+
+/// Required saved ObjectStroke channels. Optional stylus arrays are kept as
+/// supplied; Base MotionEvent pairs tilt and orientation, zeroing both unless
+/// both arrays exist.
+pub(super) struct SavedObjectStrokeInput<'a> {
+    pub(super) points: &'a [[f32; 2]],
+    pub(super) pressures: &'a [f32],
+    pub(super) timestamps: &'a [i32],
+    pub(super) tilt: Option<&'a [f32]>,
+    pub(super) orientation: Option<&'a [f32]>,
+    pub(super) tool_type: i32,
+    pub(super) pen_size: f32,
+}
+
+/// Result of adapting one saved Model stroke through the MotionEvent history
+/// and terminal event split used by the Calligraphy GLV1 wrapper.
+pub(super) struct SavedObjectStrokeOutput {
+    pub(super) history: Option<SavedHistoryOutput>,
+    pub(super) terminal: Option<EndPenOutput>,
+    /// Combined actual AddPoint input records, with the common point extent.
+    pub(super) vectors: Vec<[f32; 4]>,
+    pub(super) extents: Vec<f32>,
+    pub(super) final_state: SavedHistoryState,
+    pub(super) event_time_ms: i64,
+    pub(super) event_pressure: f32,
+    pub(super) event_tilt: f32,
+    pub(super) event_orientation: f32,
+    pub(super) tool_type: i32,
+}
+
+/// Adapt the saved object's source arrays to Base MotionEvent history plus its
+/// separate terminal event. Callers must supply the drawable's retained state;
+/// this function does not assume every saved record starts from a new drawable.
+pub(super) fn saved_object_stroke_redraw(
+    input: SavedObjectStrokeInput<'_>,
+    retained: SavedHistoryState,
+) -> Option<SavedObjectStrokeOutput> {
+    let count = input.points.len();
+    if count == 0
+        || input.pressures.len() != count
+        || input.timestamps.len() != count
+        || input.tilt.is_some_and(|values| values.len() != count)
+        || input
+            .orientation
+            .is_some_and(|values| values.len() != count)
+        || !input.pen_size.is_finite()
+        || input.pen_size < 0.0
+    {
+        return None;
+    }
+    let paired_stylus = input.tilt.is_some() && input.orientation.is_some();
+    let event_tilt = if paired_stylus {
+        input.tilt?.last().copied()?
+    } else {
+        0.0
+    };
+    let event_orientation = if paired_stylus {
+        input.orientation?.last().copied()?
+    } else {
+        0.0
+    };
+    let event_time_ms = i64::from(*input.timestamps.last()?) - i64::from(input.timestamps[0]);
+    let history = if count > 1 {
+        let history_rows: Vec<[f32; 3]> = input.points[..count - 1]
+            .iter()
+            .enumerate()
+            .map(|(index, point)| {
+                let orientation = if paired_stylus {
+                    input.orientation.expect("paired optional channel")[index]
+                } else {
+                    0.0
+                };
+                [point[0], point[1], orientation]
+            })
+            .collect();
+        let prepared = prepare_saved_history(&history_rows, retained)?;
+        Some(saved_history_vectors(&history_rows, prepared)?)
+    } else {
+        None
+    };
+    let terminal = if let Some(history) = &history {
+        Some(terminal_end_pen_vectors(
+            history.state,
+            P {
+                x: input.points[count - 1][0],
+                y: input.points[count - 1][1],
+            },
+            input.pen_size,
+        )?)
+    } else {
+        None
+    };
+    let mut vectors = Vec::new();
+    if let Some(history) = &history {
+        vectors.extend(history.vectors.iter().copied());
+    }
+    if let Some(terminal) = &terminal {
+        vectors.extend(terminal.vectors.iter().copied());
+    }
+    let extent = (input.pen_size * 0.5).max(1.0);
+    let extents = vec![extent; vectors.len()];
+    let final_state = terminal
+        .as_ref()
+        .map_or(retained, |terminal| terminal.state);
+    Some(SavedObjectStrokeOutput {
+        history,
+        terminal,
+        vectors,
+        extents,
+        final_state,
+        event_time_ms,
+        event_pressure: *input.pressures.last()?,
+        event_tilt,
+        event_orientation,
+        tool_type: input.tool_type,
+    })
 }
 
 /// Apply RedrawPen's per-invocation initialization before its historical
@@ -66,7 +186,7 @@ pub(super) fn prepare_saved_history(
 /// drawable state and the final event endpoint. Its repeat scale uses full
 /// pen size; each emitted drawPoint uses half size and retains nib direction.
 pub(super) fn terminal_end_pen_vectors(
-    state: SavedHistoryState,
+    mut state: SavedHistoryState,
     endpoint: P,
     pen_size: f32,
 ) -> Option<EndPenOutput> {
@@ -83,13 +203,24 @@ pub(super) fn terminal_end_pen_vectors(
             ]],
             path_length: None,
             point_extent: (pen_size * 0.5).max(1.0),
+            state,
         });
     }
+    let midpoint = if state.nib.movement_armed {
+        // Native endPen replaces the retained midpoint with the terminal
+        // control/end midpoint before cubic subdivision.
+        let midpoint = state.control.mid(endpoint);
+        state.midpoint = midpoint;
+        Some(midpoint)
+    } else {
+        None
+    };
     let path = if state.nib.movement_armed {
+        let midpoint = midpoint?;
         TerminalPath::Cubic(TerminalCubic::new([
             state.start,
             state.control,
-            state.control.mid(endpoint),
+            midpoint,
             endpoint,
         ]))
     } else {
@@ -121,6 +252,7 @@ pub(super) fn terminal_end_pen_vectors(
         vectors,
         path_length: Some(length),
         point_extent: (pen_size * 0.5).max(1.0),
+        state,
     })
 }
 
@@ -313,6 +445,9 @@ pub(super) fn saved_history_vectors(
         state.accepted = current;
         output.sample_ends.push(output.vectors.len());
     }
+    // Native redrawLine epilogue (0x1ec0c..0x1ec28) copies its accepted
+    // position at +124 into both midpoint (+104) and path start (+88).
+    state.midpoint = state.start;
     output.state = state;
     Some(output)
 }
@@ -634,6 +769,132 @@ mod tests {
     fn rect_bits(rect: MeshRect) -> [u32; 8] {
         let [a, b, c, d] = rect.corners;
         [a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]].map(f32::to_bits)
+    }
+
+    fn captured_history_state(value: &serde_json::Value) -> SavedHistoryState {
+        let pair = |name: &str| -> [f32; 2] {
+            value[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|word| f32::from_bits(bits(word.as_str().unwrap())))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap()
+        };
+        SavedHistoryState {
+            nib: NibState {
+                angle_degrees: f32::from_bits(bits(value["angle_bits"].as_str().unwrap())),
+                direction: pair("direction_bits"),
+                initial_pending: value["flags"]["initial"].as_u64().unwrap() != 0,
+                movement_armed: value["flags"]["movement_armed"].as_u64().unwrap() != 0,
+            },
+            accepted: P {
+                x: pair("accepted_bits")[0],
+                y: pair("accepted_bits")[1],
+            },
+            start: P {
+                x: pair("path_start_bits")[0],
+                y: pair("path_start_bits")[1],
+            },
+            control: P {
+                x: pair("control_bits")[0],
+                y: pair("control_bits")[1],
+            },
+            midpoint: P {
+                x: pair("path_mid_bits")[0],
+                y: pair("path_mid_bits")[1],
+            },
+        }
+    }
+
+    fn saved_history_state_bits(
+        state: SavedHistoryState,
+    ) -> (
+        [u32; 2],
+        [u32; 2],
+        [u32; 2],
+        [u32; 2],
+        u32,
+        [u32; 2],
+        bool,
+        bool,
+    ) {
+        (
+            [state.accepted.x.to_bits(), state.accepted.y.to_bits()],
+            [state.start.x.to_bits(), state.start.y.to_bits()],
+            [state.control.x.to_bits(), state.control.y.to_bits()],
+            [state.midpoint.x.to_bits(), state.midpoint.y.to_bits()],
+            state.nib.angle_degrees.to_bits(),
+            state.nib.direction.map(f32::to_bits),
+            state.nib.initial_pending,
+            state.nib.movement_armed,
+        )
+    }
+
+    fn assert_saved_state_matches(
+        state: SavedHistoryState,
+        expected: &serde_json::Value,
+        label: &str,
+    ) {
+        assert_eq!(
+            saved_history_state_bits(state),
+            saved_history_state_bits(captured_history_state(expected)),
+            "{label}"
+        );
+    }
+
+    fn replay_saved_object(
+        rows_value: &serde_json::Value,
+        tilt_value: &serde_json::Value,
+        orientation_value: &serde_json::Value,
+        retained: SavedHistoryState,
+        tool_type: i32,
+    ) -> super::SavedObjectStrokeOutput {
+        let rows = rows_value.as_array().unwrap();
+        let mut points = Vec::with_capacity(rows.len());
+        let mut pressures = Vec::with_capacity(rows.len());
+        let mut timestamps = Vec::with_capacity(rows.len());
+        for row in rows {
+            let values = row.as_array().unwrap();
+            points.push([
+                values[0].as_f64().unwrap() as f32,
+                values[1].as_f64().unwrap() as f32,
+            ]);
+            pressures.push(values[2].as_f64().unwrap() as f32);
+            timestamps.push(values[3].as_i64().unwrap() as i32);
+        }
+        let optional_values = |value: &serde_json::Value| -> Option<Vec<f32>> {
+            if value.is_null() {
+                None
+            } else {
+                Some(
+                    value
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|item| item.as_f64().unwrap() as f32)
+                        .collect(),
+                )
+            }
+        };
+        let tilt = optional_values(tilt_value);
+        let orientation = optional_values(orientation_value);
+        super::saved_object_stroke_redraw(
+            super::SavedObjectStrokeInput {
+                points: &points,
+                pressures: &pressures,
+                timestamps: &timestamps,
+                tilt: tilt.as_deref(),
+                orientation: orientation.as_deref(),
+                tool_type,
+                // Captured GLV1 PenData settings size; this stays caller data,
+                // never inferred from stroke pressure or coordinates.
+                pen_size: 6.0,
+            },
+            retained,
+        )
+        .expect("valid captured saved ObjectStroke inputs")
     }
 
     #[test]
@@ -963,6 +1224,7 @@ mod tests {
                 accepted: zero,
                 start: zero,
                 control: zero,
+                midpoint: zero,
             },
         )
         .unwrap();
@@ -1043,6 +1305,7 @@ mod tests {
                 let accepted = read_pair("accepted_bits");
                 let start = read_pair("path_start_bits");
                 let control = read_pair("control_bits");
+                let midpoint = read_pair("path_mid_bits");
                 let flags = &entry["flags"];
                 let redraw_state = SavedHistoryState {
                     nib: NibState {
@@ -1062,6 +1325,10 @@ mod tests {
                     control: P {
                         x: control[0],
                         y: control[1],
+                    },
+                    midpoint: P {
+                        x: midpoint[0],
+                        y: midpoint[1],
                     },
                 };
                 let prepared = prepare_saved_history(&history, redraw_state).unwrap();
@@ -1091,12 +1358,17 @@ mod tests {
                         x: f32::from_bits(bits(state["control_bits"][0].as_str().unwrap())),
                         y: f32::from_bits(bits(state["control_bits"][1].as_str().unwrap())),
                     },
+                    midpoint: P {
+                        x: f32::from_bits(bits(state["path_mid_bits"][0].as_str().unwrap())),
+                        y: f32::from_bits(bits(state["path_mid_bits"][1].as_str().unwrap())),
+                    },
                 };
                 let state_bits = |state: SavedHistoryState| {
                     (
                         [state.accepted.x.to_bits(), state.accepted.y.to_bits()],
                         [state.start.x.to_bits(), state.start.y.to_bits()],
                         [state.control.x.to_bits(), state.control.y.to_bits()],
+                        [state.midpoint.x.to_bits(), state.midpoint.y.to_bits()],
                         state.nib.angle_degrees.to_bits(),
                         state.nib.direction.map(f32::to_bits),
                         state.nib.initial_pending,
@@ -1260,6 +1532,355 @@ mod tests {
     }
 
     #[test]
+    fn saved_object_wrapper_inputs_replay_actual_history_and_terminal_calls() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-wrapper-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-calligraphy-saved-wrapper-v1");
+
+        let compare_run = |output: &super::SavedObjectStrokeOutput,
+                           expected: &serde_json::Value,
+                           states: &serde_json::Value,
+                           label: &str| {
+            let expected_vectors = expected.as_array().unwrap();
+            let actual_vectors: Vec<[u32; 4]> = output
+                .vectors
+                .iter()
+                .map(|vector| vector.map(f32::to_bits))
+                .collect();
+            let actual_extents: Vec<u32> =
+                output.extents.iter().map(|value| value.to_bits()).collect();
+            let expected_values: Vec<[u32; 4]> = expected_vectors
+                .iter()
+                .map(|entry| {
+                    entry
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .take(4)
+                        .map(|word| bits(word.as_str().unwrap()))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap()
+                })
+                .collect();
+            let expected_extents: Vec<u32> = expected_vectors
+                .iter()
+                .map(|entry| bits(entry[4].as_str().unwrap()))
+                .collect();
+            assert_eq!(
+                actual_vectors, expected_values,
+                "{label} full Vector4 records"
+            );
+            assert_eq!(actual_extents, expected_extents, "{label} AddPoint extents");
+            let native_ends: Vec<usize> = states["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|sample| sample["add_point_end"].as_u64().unwrap() as usize)
+                .collect();
+            let actual_ends = output
+                .history
+                .as_ref()
+                .map_or(&[][..], |history| history.sample_ends.as_slice());
+            assert_eq!(
+                actual_ends, native_ends,
+                "{label} historical sample boundaries"
+            );
+            assert_eq!(
+                saved_history_state_bits(output.final_state),
+                saved_history_state_bits(captured_history_state(&states["state"])),
+                "{label} retained state"
+            );
+        };
+
+        let mut ids = Vec::new();
+        for case in fixture["cases"].as_array().unwrap() {
+            let id = case["id"].as_str().unwrap();
+            ids.push(id.to_owned());
+            let native = &case["native"];
+            let entry = native["native_drawable_states"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|state| state["phase"] == "redraw_entry")
+                .unwrap();
+            let retained = captured_history_state(entry);
+            let output = replay_saved_object(
+                &case["rows"],
+                &case["tilt"],
+                &case["orientation"],
+                retained,
+                native["saved_tool_type"].as_i64().unwrap() as i32,
+            );
+            compare_run(&output, &native["native_add_point_vectors"], native, id);
+            let rows = case["rows"].as_array().unwrap();
+            assert_eq!(
+                output.event_time_ms,
+                rows.last().unwrap()[3].as_i64().unwrap() - rows[0][3].as_i64().unwrap(),
+                "{id} Base GetEventTime"
+            );
+            assert_eq!(
+                output.event_pressure.to_bits(),
+                (rows.last().unwrap()[2].as_f64().unwrap() as f32).to_bits(),
+                "{id} terminal pressure"
+            );
+            assert_eq!(
+                output.tool_type,
+                native["saved_tool_type"].as_i64().unwrap() as i32,
+                "{id} saved tool"
+            );
+            let both_channels = !case["tilt"].is_null() && !case["orientation"].is_null();
+            if both_channels {
+                assert_eq!(
+                    output.event_tilt.to_bits(),
+                    (case["tilt"]
+                        .as_array()
+                        .unwrap()
+                        .last()
+                        .unwrap()
+                        .as_f64()
+                        .unwrap() as f32)
+                        .to_bits()
+                );
+                assert_eq!(
+                    output.event_orientation.to_bits(),
+                    (case["orientation"]
+                        .as_array()
+                        .unwrap()
+                        .last()
+                        .unwrap()
+                        .as_f64()
+                        .unwrap() as f32)
+                        .to_bits()
+                );
+            } else {
+                assert_eq!(
+                    output.event_tilt.to_bits(),
+                    0.0_f32.to_bits(),
+                    "{id} paired optional tilt default"
+                );
+                assert_eq!(
+                    output.event_orientation.to_bits(),
+                    0.0_f32.to_bits(),
+                    "{id} paired optional orientation default"
+                );
+            }
+            assert_eq!(
+                output.history.is_some(),
+                rows.len() > 1,
+                "{id} MotionEvent history presence"
+            );
+            assert_eq!(
+                output.terminal.is_some(),
+                rows.len() > 1,
+                "{id} terminal endPen presence"
+            );
+            if let Some(end_entry) = native["native_drawable_states"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|state| state["phase"] == "end_pen_entry")
+            {
+                assert_saved_state_matches(
+                    output.history.as_ref().unwrap().state,
+                    end_entry,
+                    &format!("{id} pre-endPen retained state"),
+                );
+                assert_saved_state_matches(
+                    output.terminal.as_ref().unwrap().state,
+                    &native["state"],
+                    &format!("{id} post-endPen retained state"),
+                );
+            }
+            let calls = &native["actual_base_model_call_counts"];
+            for getter in [
+                "SPen::ObjectStroke::GetToolType() const",
+                "SPen::ObjectStroke::GetPointCount() const",
+                "SPen::ObjectStroke::GetPoint() const",
+                "SPen::ObjectStroke::GetPressure() const",
+                "SPen::ObjectStroke::GetTimeStamp() const",
+                "SPen::ObjectStroke::GetTilt() const",
+                "SPen::ObjectStroke::GetOrientation() const",
+                "SPen::MotionEvent::GetHistorySize() const",
+                "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)",
+            ] {
+                assert!(
+                    calls[getter].as_u64().unwrap_or(0) > 0,
+                    "{id} native call missing: {getter}"
+                );
+            }
+
+            if !case["repeat_rows"].is_null() {
+                let repeat = &native["same_drawable_repeat"];
+                let repeat_entry = repeat["drawable_states"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|state| state["phase"] == "redraw_entry")
+                    .unwrap();
+                assert_eq!(
+                    saved_history_state_bits(captured_history_state(repeat_entry)),
+                    saved_history_state_bits(captured_history_state(&native["state"])),
+                    "{id} retained state entering second saved stroke"
+                );
+                let reused = replay_saved_object(
+                    &case["repeat_rows"],
+                    &case["repeat_tilt"],
+                    &case["repeat_orientation"],
+                    captured_history_state(repeat_entry),
+                    native["saved_tool_type"].as_i64().unwrap() as i32,
+                );
+                assert_eq!(
+                    reused.tool_type,
+                    native["saved_tool_type"].as_i64().unwrap() as i32
+                );
+                compare_run(
+                    &reused,
+                    &repeat["add_vectors"],
+                    repeat,
+                    &format!("{id} repeated stroke"),
+                );
+                let repeat_end_entry = repeat["drawable_states"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|state| state["phase"] == "end_pen_entry")
+                    .unwrap();
+                assert_saved_state_matches(
+                    reused.history.as_ref().unwrap().state,
+                    repeat_end_entry,
+                    &format!("{id} repeated pre-endPen state"),
+                );
+                assert_saved_state_matches(
+                    reused.terminal.as_ref().unwrap().state,
+                    &repeat["state"],
+                    &format!("{id} repeated post-endPen state"),
+                );
+                let fresh_control = fixture["cases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|other| other["id"] == "fresh-second-stroke-control")
+                    .unwrap();
+                let fresh_vectors = fresh_control["native"]["native_add_point_vectors"]
+                    .as_array()
+                    .unwrap();
+                assert_eq!(
+                    reused
+                        .vectors
+                        .iter()
+                        .map(|v| v.map(f32::to_bits))
+                        .collect::<Vec<_>>(),
+                    fresh_vectors
+                        .iter()
+                        .map(|entry| entry
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .take(4)
+                            .map(|word| bits(word.as_str().unwrap()))
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap())
+                        .collect::<Vec<[u32; 4]>>(),
+                    "{id} reused vector output vs fresh drawable control"
+                );
+                assert_eq!(
+                    reused
+                        .extents
+                        .iter()
+                        .map(|v| v.to_bits())
+                        .collect::<Vec<_>>(),
+                    fresh_vectors
+                        .iter()
+                        .map(|entry| bits(entry[4].as_str().unwrap()))
+                        .collect::<Vec<_>>(),
+                    "{id} reused extent output vs fresh drawable control"
+                );
+            }
+        }
+        assert_eq!(ids.len(), 9);
+    }
+
+    #[test]
+    fn saved_object_adapter_requires_native_array_lengths_and_nonempty_time_zero() {
+        let retained = SavedHistoryState {
+            nib: NibState::fresh(),
+            accepted: P { x: 0.0, y: 0.0 },
+            start: P { x: 0.0, y: 0.0 },
+            control: P { x: 0.0, y: 0.0 },
+            midpoint: P { x: 0.0, y: 0.0 },
+        };
+        let point = [[1.0, 2.0]];
+        let pressure = [0.5];
+        let timestamp = [100];
+        let mismatched_pressure = [];
+        let mismatched_tilt = [0.1, 0.2];
+        assert!(
+            super::saved_object_stroke_redraw(
+                super::SavedObjectStrokeInput {
+                    points: &point,
+                    pressures: &mismatched_pressure,
+                    timestamps: &timestamp,
+                    tilt: None,
+                    orientation: None,
+                    tool_type: 2,
+                    pen_size: 6.0,
+                },
+                retained,
+            )
+            .is_none()
+        );
+        assert!(
+            super::saved_object_stroke_redraw(
+                super::SavedObjectStrokeInput {
+                    points: &point,
+                    pressures: &pressure,
+                    timestamps: &[],
+                    tilt: None,
+                    orientation: None,
+                    tool_type: 2,
+                    pen_size: 6.0,
+                },
+                retained,
+            )
+            .is_none()
+        );
+        assert!(
+            super::saved_object_stroke_redraw(
+                super::SavedObjectStrokeInput {
+                    points: &point,
+                    pressures: &pressure,
+                    timestamps: &timestamp,
+                    tilt: Some(&mismatched_tilt),
+                    orientation: None,
+                    tool_type: 2,
+                    pen_size: 6.0,
+                },
+                retained,
+            )
+            .is_none()
+        );
+        assert!(
+            super::saved_object_stroke_redraw(
+                super::SavedObjectStrokeInput {
+                    points: &[],
+                    pressures: &[],
+                    timestamps: &[],
+                    tilt: None,
+                    orientation: None,
+                    tool_type: 2,
+                    pen_size: 6.0,
+                },
+                retained,
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
     fn native_terminal_endpen_samples_replay_from_saved_drawable_state() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../conformance/calligraphy-saved-native.json"
@@ -1306,6 +1927,10 @@ mod tests {
                     control: P {
                         x: control[0],
                         y: control[1],
+                    },
+                    midpoint: P {
+                        x: read_pair("path_mid_bits")[0],
+                        y: read_pair("path_mid_bits")[1],
                     },
                 };
                 let endpoint_bits: [f32; 2] = state["event_end_bits"]
@@ -1422,6 +2047,7 @@ mod tests {
                     x: pair("control")[0],
                     y: pair("control")[1],
                 },
+                midpoint: P { x: 0.0, y: 0.0 },
             },
         )
         .unwrap();
@@ -1480,6 +2106,7 @@ mod tests {
                     x: pair("control_bits")[0],
                     y: pair("control_bits")[1],
                 },
+                midpoint: P { x: 0.0, y: 0.0 },
             },
             P { x: 0.0, y: 0.0 },
             6.0,
