@@ -23,8 +23,9 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 mode.add_argument('--check-profile-invariance',action='store_true')
-parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','three_points_no_curve','four_points_curve','alternating_terminal_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','reuse_second','color_contract'),default='two_point_curve')
+parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','three_points_no_curve','four_points_curve','alternating_terminal_curve','stress_six_curve','stress_six_linear','stress_gate_alternation','stress_tool2','stress_size4','stress_size8','stress_size16','stress_size56','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','reuse_second','color_contract'),default='two_point_curve')
 parser.add_argument('--redraw-version',choices=('selected','v4'),default='selected',help='use the selected drawable vtable entry, or the explicit GLV4 diagnostic probe')
+parser.add_argument('--capture-transitions',action='store_true',help='include selected V1 redrawLine/endPen return snapshots in diagnostic output')
 parser.add_argument('--advanced-setting',choices=('none','4'),default='none',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
 parser.add_argument('--width',type=int,default=1920)
 parser.add_argument('--height',type=int,default=1080)
@@ -54,6 +55,14 @@ INPUT_CASES={
  'three_points_no_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0]],'size':4.0,'curve_enabled':False,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,8,16],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
  'four_points_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5,0.5],'timestamps':[0,8,16,24],'tilt':[0.0,0.0,0.0,0.0],'orientation':[0.0,0.0,0.0,0.0]},
  'alternating_terminal_curve': {'points':[[0.0,0.0],[10.0,0.0],[12.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,10,20],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
+ 'stress_six_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0],[42.0,20.0],[50.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'stress_six_linear': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0],[42.0,20.0],[50.0,25.0]],'size':4.0,'curve_enabled':False,'tool_type':0,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'stress_gate_alternation': {'points':[[0.0,0.0],[1.25,1.25],[2.25,2.25],[3.25,3.25],[4.25,4.25],[11.0,11.0],[11.75,11.75],[12.5,12.5],[22.0,22.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5]*9,'timestamps':[0,8,16,24,32,40,48,56,64],'tilt':[0.0]*9,'orientation':[0.0]*9},
+ 'stress_tool2': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':2,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
+ 'stress_size4': {'points':[[0.0,0.0],[100.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'stress_size8': {'points':[[0.0,0.0],[100.0,0.0]],'size':8.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'stress_size16': {'points':[[0.0,0.0],[100.0,0.0]],'size':16.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'stress_size56': {'points':[[0.0,0.0],[100.0,0.0]],'size':56.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
  'reuse_second': {'points':[[30.0,2.0],[31.25,2.5]],'size':4.25,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.6,0.8],'timestamps':[33,43],'tilt':[0.1,-0.2],'orientation':[0.3,0.5]},
  'color_contract': {'points':[[0.0,0.0],[2.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
 }
@@ -290,10 +299,38 @@ for _name,_address in p.syms.items():
 phase='setup'
 screen_resolution_calls=[]
 source_size_bits=None
+transition_boundaries=[]
+pending_transition_boundaries={}
+transition_targets_by_pc={}
+sampler_repeats=[]
+pending_sampler_repeats={}
+sampler_repeat_targets_by_pc={}
+for _name,_address in p.syms.items():
+ if _name.startswith(('SPen::ObliquePenStrokeDrawableGLV1::redrawLine(', 'SPen::ObliquePenStrokeDrawableGLV1::redrawLineNoCurve(', 'SPen::ObliquePenStrokeDrawableGLV1::endPen(')):
+  transition_targets_by_pc.setdefault(_address,[]).append(_name)
+ if _name=='SPen::ObliquePenStrokeDrawableGLV1::getRepeat(float, float)':
+  sampler_repeat_targets_by_pc.setdefault(_address,[]).append(_name)
 def rt_identity(address):
  if address not in rt_identity_by_address:
   rt_identity_by_address[address]=f'rt{len(rt_identity_by_address)}'
  return rt_identity_by_address[address]
+
+def transition_drawable_snapshot(u, address):
+ if not address:return None
+ rt=struct.unpack('<Q',u.mem_read(address+16,8))[0]
+ state={'receiver_80_176':bytes(u.mem_read(address+80,96)).hex(),'rt_addr':hex(rt) if rt else None}
+ if rt:
+  state['rt_344_360']=bytes(u.mem_read(rt+344,16)).hex()
+  vector=struct.unpack('<Q',u.mem_read(rt+264,8))[0]
+  state['vector_count_bytes']=0
+  if vector:
+   start,end,capacity=struct.unpack('<3Q',u.mem_read(vector,24)); size=end-start
+   if size>1_000_000:raise RuntimeError(f'invalid transition RT vector size {size}')
+   state['vector_count_bytes']=size
+ return state
+
+def phase_callback_count(target_phase):
+ return sum(row['phase']==target_phase for row in captured_callbacks)
 
 def snapshot_object_stroke(label, obj):
  p.call('SPen::ObjectStroke::GetPenSize() const',[obj]); size=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex()
@@ -369,6 +406,37 @@ def color_contract_projection(result):
  }
 
 def log_vcall(u,a,z,d):
+ if args.capture_transitions and a in pending_sampler_repeats:
+  row=pending_sampler_repeats.pop(a)
+  row['return_i32']=u.reg_read(R.UC_ARM64_REG_X0)
+  row['phase']=phase
+  sampler_repeats.append(row)
+ if args.capture_transitions and a in sampler_repeat_targets_by_pc:
+  name=sampler_repeat_targets_by_pc[a][0]
+  lr=u.reg_read(R.UC_ARM64_REG_LR)
+  length=struct.unpack('<f',struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)))[0]
+  size=struct.unpack('<f',struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S1)))[0]
+  pending_sampler_repeats[lr]={'method':name,'pc':hex(a),'return_pc_expected':hex(lr),'length_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex(),'length_f32':length,'size_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S1)).hex(),'size_f32':size}
+ if args.capture_transitions and pending_transition_boundaries.get(a):
+  row=pending_transition_boundaries[a].pop(0)
+  row['callback_index_end']=phase_callback_count(row['phase'])
+  row['receiver_after']=transition_drawable_snapshot(u,row['receiver'])
+  row['return_pc']=hex(a)
+  transition_boundaries.append(row)
+ if args.capture_transitions and a in transition_targets_by_pc:
+  names=transition_targets_by_pc[a]
+  receiver=u.reg_read(R.UC_ARM64_REG_X0)
+  lr=u.reg_read(R.UC_ARM64_REG_LR)
+  method_match=re.search(r'::(redrawLineNoCurve|redrawLine|endPen)\(',names[0])
+  row={'method':method_match.group(1) if method_match else names[0], 'signature':names[0], 'phase':phase,
+       'pc':hex(a), 'return_pc_expected':hex(lr), 'callback_index_start':phase_callback_count(phase),
+       'receiver':receiver, 'receiver_before':transition_drawable_snapshot(u,receiver),
+       'integer_args_x0_x3':[hex(u.reg_read(getattr(R,f'UC_ARM64_REG_X{i}'))) for i in range(4)],
+       'float_args_s0_s3':[hex(u.reg_read(getattr(R,f'UC_ARM64_REG_S{i}'))) for i in range(4)]}
+  if '::endPen(' in names[0]:
+   event=u.reg_read(R.UC_ARM64_REG_X1)
+   row['motion_event_entry_bytes']=bytes(u.mem_read(event,64)).hex() if event else None
+  pending_transition_boundaries.setdefault(lr,[]).append(row)
  if a in pending_motion_getters and pending_motion_getters[a]:
   call=pending_motion_getters[a].pop(0)
   call['return']={'x0':hex(u.reg_read(R.UC_ARM64_REG_X0)),'s0':hex(u.reg_read(R.UC_ARM64_REG_S0)),'d0':hex(u.reg_read(R.UC_ARM64_REG_D0))}
@@ -504,6 +572,20 @@ try:
  native_hashes['libSPenComposer.so']=hashlib.sha256((LIBS/'libSPenComposer.so').read_bytes()).hexdigest()
  traced_methods=[{k:v for k,v in row.items() if k in ('signatures','phase','pc','regs','motion_event_entry_bytes')} for row in native_draw_entries if any(token in name for name in row['signatures'] for token in ('::RedrawPen(','::endPen(','::drawPoint('))]
  result={'schema':'sdocx-oblique-saved-caller-native-case-v1','case_id':args.case,'profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':{'kind':'synthetic native ObjectStroke setter input; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.ObliquePen','stroke_type':input_case['stroke_type'],'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'pen_size_f32_bits':source_size_bits,'points_f32_bits':[[struct.pack('<f',v).hex() for v in xy] for xy in points],'pressure_f32_bits':[struct.pack('<f',v).hex() for v in input_case['pressure']],'timestamps_i32':input_case['timestamps'],'tilt_f32_bits':[struct.pack('<f',v).hex() for v in input_case['tilt']],'orientation_f32_bits':[struct.pack('<f',v).hex() for v in input_case['orientation']],'advanced_setting':('4;' if args.advanced_setting=='4' else None)},'native_calls':{'lifecycle_snapshots':lifecycle_snapshots,'first_drawable_version':first_version if args.two_stroke else None,'second_input':INPUT_CASES['reuse_second'] if args.two_stroke else None,'second_source_ObjectStroke_arrays':second_arrays if args.two_stroke else None,'ObjectDrawing::drawObjectStroke_return':1,'selected_drawable_object_redraw_return':1,'route':{'runner_mode':args.redraw_version,'advanced_setting':('4;' if args.advanced_setting=='4' else None),'drawing_selected_drawable_version':selected_drawable_version,'saved_redraw_invoked_version':('4' if args.redraw_version=='v4' else selected_drawable_version)},'source_ObjectStroke_arrays':source_object_arrays,'motion_event_getter_returns':native_motion_getter_returns,'loader':loader_calls,'pen_screen_resolution':screen_resolution_calls,'source_ObjectStroke_GetPenSize_f32_bits':source_size_bits,'ObjectStroke_getter_snapshots':object_stroke_snapshots,'selected_drawable_redraw_lifecycle_method_entries':traced_methods,'drawing_selected_rt_id':selected_rt_id,'phase_rt_ids':{ph:sorted({rt_identity(v) for v in addresses}) for ph,addresses in phase_rt_addresses.items()},'pen_GetSize_after_draw_f32_bits':pen_size_after_draw_bits,'drawable_getSize_f32_bits':drawable_size_bits,'drawable_getInverseScale_f32_bits':inverse_scale_bits},'callback_add_point_calls':callbacks,'phase_final_vectors':captured_final_vectors,'libraries':native_hashes,'host_boundaries':['ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height','context vslot +80 is an explicit identity color-conversion host callback','context vslots +144/+152 return explicit flags/version values 1 and 1.0','canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively'],'scope':'Native Drawing caller plus direct saved RedrawPen under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'}
+ if args.capture_transitions:
+  if args.redraw_version!='selected' or selected_drawable_version!='1': raise RuntimeError('transition capture is restricted to selected Oblique V1')
+  if any(pending_transition_boundaries.values()): raise RuntimeError('native transition return was not captured')
+  if pending_sampler_repeats: raise RuntimeError('native getRepeat return was not captured')
+  phase_names={row['phase'] for row in transition_boundaries}
+  if not {'draw_object_stroke','saved_redraw'} <= phase_names: raise RuntimeError('transition capture missing native draw phases')
+  phase_indices={}
+  for row in transition_boundaries:
+   row['phase_transition_index']=phase_indices.get(row['phase'],0)
+   phase_indices[row['phase']]=row['phase_transition_index']+1
+   if row['callback_index_end'] < row['callback_index_start']:
+    raise RuntimeError('native transition callback boundary regressed')
+  result['native_calls']['v1_transition_boundaries']=transition_boundaries
+  result['native_calls']['sampler_repeats']=sampler_repeats
  if args.case=='color_contract':
   result['input']['color_argb_u32']=f'0x{source_argb:08x}'
   result['native_calls']['color']={'ObjectStroke_GetColor_argb_u32':f'0x{native_argb:08x}','ObjectStroke_GetColorType_u32':native_color_type,'drawing_selected_rt_rgba_f32_bits':[struct.pack('<f',v).hex() for v in rt_color_rgba],'drawing_selected_rt_rgba_f32':list(rt_color_rgba),'drawing_selected_rt_rgba_bytes_le':rt_color_bytes.hex(),'context_color_conversion':'explicit identity host callback'}
