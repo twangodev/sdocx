@@ -331,7 +331,6 @@ pub(super) fn prepare(stroke: &crate::Stroke) -> Option<DefaultInk> {
     // Native Drawing applies Pen::SetSize before selecting this drawable; its
     // recovered clamp is [0.4, 800].
     let size = size.clamp(0.4, 800.0);
-    let _public_color_override = stroke.color?;
     // The shipped ObjectStroke overload creates this event natively, and its
     // Base default constructor initializes source to zero. That differs from
     // tool-2's source-0x1002 threshold branch.

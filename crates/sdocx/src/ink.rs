@@ -850,6 +850,27 @@ mod tests {
     }
 
     #[test]
+    fn defaultpen_missing_public_color_keeps_native_geometry_and_theme_paint() {
+        let mut stroke = defaultpen_stroke();
+        let colored_stroke = stroke.clone();
+        let colored =
+            prepare_stroke_for_context(&colored_stroke, false, InkRenderContext::CanonicalPage);
+        stroke.color = None;
+        stroke.rendering.as_mut().unwrap().style.color_argb = None;
+        for dark_mode in [false, true] {
+            let ordinary_paint = stroke_paint(&stroke, dark_mode);
+            let prepared =
+                prepare_stroke_for_context(&stroke, dark_mode, InkRenderContext::CanonicalPage);
+            assert_eq!(prepared.support, InkSupport::Reconstructed);
+            assert_eq!(prepared.points, colored.points);
+            assert_eq!(prepared.dot_radii, colored.dot_radii);
+            assert_eq!(prepared.ordered_disk_replay, colored.ordered_disk_replay);
+            assert_eq!(prepared.color, ordinary_paint.color);
+            assert_eq!(prepared.opacity, 1.0);
+        }
+    }
+
+    #[test]
     fn defaultpen_admission_matches_native_default_size_tools_and_clamps() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/defaultpen-admission-native.json"
