@@ -1061,6 +1061,10 @@ fn sha256_file(path: &Path) -> String {
         .to_owned()
 }
 
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
 unsafe extern "C" fn native_pdf_write_block(engine: Engine, _: u64, _: u32, data: *mut c_void) {
     let external = unsafe { &mut *data.cast::<External>() };
     let bytes = read_register(engine, REGISTER_X0 + 2) as usize;
@@ -1266,6 +1270,7 @@ pub(super) fn capture(
     overlay_png_path: Option<&Path>,
     expected_overlay_png_sha256: Option<&str>,
     body_writer_matrix: Option<(&Path, &Path, u32, u32)>,
+    pdf_image_adapter: Option<super::pdf_image_adapter::Input<'_>>,
 ) {
     verify_loaded_host_zlib();
     machine.prepare_pdfium_arena();
@@ -1650,6 +1655,7 @@ pub(super) fn capture(
         write(machine.engine, HANDLER_OBJECT, &IMPL_OBJECT.to_le_bytes());
         let writer_open = machine.call(SPENPDF_BASE + 0x7c844, &[HANDLER_OBJECT, 0, 0]);
         assert_eq!(writer_open, 1, "PdfiumExportHandler::OpenWriter failed");
+        let mut adapter_capture = None;
         let image_result = if let Some(png_path) = overlay_png_path {
             let expected = expected_overlay_png_sha256.expect("PNG capture requires an expected source hash");
             verify_library(png_path, expected);
@@ -1657,17 +1663,33 @@ pub(super) fn capture(
             assert!(png_name.len() <= 22, "PDFExportInfo short path supports at most 22 ASCII bytes (11 UTF-16 code units)");
             assert!(png_name.is_ascii(), "PDFExportInfo short path must be ASCII");
             const PROBE_DATA_BASE: u64 = 0x0901_0000;
-            let image_info = PROBE_DATA_BASE;
-            write(machine.engine, image_info, &[0; 128]);
-            let note_rect = [100.0_f32, 100.0, 300.0, 300.0];
-            write(machine.engine, image_info + 44, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
-            let scale = note_page_scale.expect("PNG capture requires the page scale");
-            write(machine.engine, image_info + 60, &scale.to_bits().to_le_bytes());
-            write(machine.engine, image_info + 64, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
-            write(machine.engine, image_info + 80, &[(png_name.len() as u8) * 2]);
-            write(machine.engine, image_info + 81, png_name.as_bytes());
-            write(machine.engine, image_info + 81 + png_name.len() as u64, &[0]);
-            let result = machine.call(SPENPDF_BASE + 0x82810, &[HANDLER_OBJECT, 0, image_info]);
+            adapter_capture = if let Some(input) = pdf_image_adapter {
+                assert_eq!(input.path, png_path, "native adapter path must be the pinned PNG input");
+                Some(super::pdf_image_adapter::populate(machine, input))
+            } else {
+                None
+            };
+            let image_info = if let Some(capture) = &adapter_capture {
+                capture.info
+            } else {
+                let image_info = PROBE_DATA_BASE;
+                write(machine.engine, image_info, &[0; 128]);
+                let note_rect = [100.0_f32, 100.0, 300.0, 300.0];
+                write(machine.engine, image_info + 44, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
+                let scale = note_page_scale.expect("PNG capture requires the page scale");
+                write(machine.engine, image_info + 60, &scale.to_bits().to_le_bytes());
+                write(machine.engine, image_info + 64, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
+                write(machine.engine, image_info + 80, &[(png_name.len() as u8) * 2]);
+                write(machine.engine, image_info + 81, png_name.as_bytes());
+                write(machine.engine, image_info + 81 + png_name.len() as u64, &[0]);
+                image_info
+            };
+            let note_rect = adapter_capture.as_ref().map_or([100.0_f32, 100.0, 300.0, 300.0], |capture| capture.destination_rect);
+            let result = if let Some(capture) = adapter_capture.as_mut() {
+                super::pdf_image_adapter::add_image(machine, HANDLER_OBJECT, capture)
+            } else {
+                machine.call(SPENPDF_BASE + 0x82810, &[HANDLER_OBJECT, 0, image_info])
+            };
             assert_eq!(result, 1, "PdfiumImageHandler::AddImage failed");
             let generated = machine.call(PDFIUM_BASE + 0x588ae4, &[page]);
             assert_eq!(generated, 1, "FPDFPage_GenerateContent after image insert failed");
@@ -1732,7 +1754,8 @@ pub(super) fn capture(
         let scale_json = note_page_scale.map_or_else(|| "null".to_owned(), |scale| scale.to_string());
         if let (Some((add_image_result, image_generate_content_result, image_rect)), Some(png_path)) = (image_result, overlay_png_path) {
             let png_sha256 = sha256_file(png_path);
-            println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy\",\"source_pdf_sha256\":\"{source_sha256}\",\"overlay_png_sha256\":\"{png_sha256}\",\"loaded_page_geometry\":[{loaded_width},{loaded_height}],\"source_rotation\":{source_rotation},\"writer_open\":{writer_open},\"image_add_result\":{add_image_result},\"image_generate_content_result\":{image_generate_content_result},\"note_page_image_rect\":{image_rect:?},\"page_scale\":{scale_json},\"writer_close\":{writer_close},\"export_executed\":true,\"export_result\":{export_result},\"export_result_semantics\":\"0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status\",\"export_output_path\":{:?},\"export_output_bytes\":{},\"export_output_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_path_points\":[{}],\"page_path_points\":[{}],\"handled_imports\":[{}],\"platform_events\":[{}],\"host_boundaries\":{{\"source_pdf_and_png\":\"external files admitted only by pinned SHA-256\",\"png_decode\":\"pinned APK libSPenLibpng executes; zlib inflate/checksum callbacks use pinned host libz\",\"image_rect\":\"synthetic note-space coordinates supplied by this harness\",\"path_points\":\"synthetic note-space coordinates composed on host using separately captured ratio\",\"filesystem\":\"bounded host file callbacks\",\"page_parse_insert_export\":\"pinned native PDFium and SPenPdf calls\"}}}}", output_path.display(), output.len(), output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
+            let image_adapter_field = adapter_capture.as_ref().map_or_else(String::new, |capture| format!(",\"image_adapter\":{{\"native_constructor\":true,\"native_set_image_string_rect\":true,\"native_set_rect\":true,\"native_set_scale\":true,\"info_pointer\":\"0x{:x}\",\"info_pointer_passed_to_add_image\":true,\"add_image_entry_info_pointer\":\"0x{:x}\",\"constructor_info_128_hex\":\"{}\",\"after_setters_info_128_hex\":\"{}\",\"destination_rect\":{:?},\"source_clip\":{:?},\"scale\":{},\"path_host_input\":{:?},\"path_provenance\":\"host input; native path field not decoded\",\"owns_path\":{}}}", capture.info, capture.add_image_entry_info.expect("AddImage entry pointer not captured"), hex(&capture.constructor_info), hex(&capture.after_setters_info), capture.destination_rect, capture.source_clip, capture.scale, capture.path, capture.owns_path));
+            println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy\",\"source_pdf_sha256\":\"{source_sha256}\",\"overlay_png_sha256\":\"{png_sha256}\",\"loaded_page_geometry\":[{loaded_width},{loaded_height}],\"source_rotation\":{source_rotation},\"writer_open\":{writer_open},\"image_add_result\":{add_image_result},\"image_generate_content_result\":{image_generate_content_result},\"note_page_image_rect\":{image_rect:?},\"page_scale\":{scale_json}{image_adapter_field},\"writer_close\":{writer_close},\"export_executed\":true,\"export_result\":{export_result},\"export_result_semantics\":\"0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status\",\"export_output_path\":{:?},\"export_output_bytes\":{},\"export_output_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_path_points\":[{}],\"page_path_points\":[{}],\"handled_imports\":[{}],\"platform_events\":[{}],\"host_boundaries\":{{\"source_pdf_and_png\":\"external files admitted only by pinned SHA-256\",\"png_decode\":\"pinned APK libSPenLibpng executes; zlib inflate/checksum callbacks use pinned host libz\",\"image_rect\":\"synthetic note-space coordinates supplied by this harness\",\"path_points\":\"synthetic note-space coordinates composed on host using separately captured ratio\",\"filesystem\":\"bounded host file callbacks\",\"page_parse_insert_export\":\"pinned native PDFium and SPenPdf calls\"}}}}", output_path.display(), output.len(), output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
             return;
         }
         println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumPathHandler::DrawPath -> CloseWriter -> PdfiumExportHandler::Export(inclusive page range 0..0) -> PDFFileWriter/FDPF_SaveAsCopy\",\"load_result\":{},\"loaded_width\":{},\"loaded_height\":{},\"source_rotation\":{},\"writer_open\":{},\"writer_close\":{},\"export_executed\":true,\"export_result\":{},\"output_bytes\":{},\"source_file_sha256\":\"{}\",\"output_file_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_page_scale\":{},\"note_points\":[{}],\"pdf_points\":[{}],\"coordinate_composition\":\"host composed supplied note points with the independently captured Composer ratio; body writer transform not executed\",\"handled_imports\":[{}],\"platform_events\":[{}]}}", load_result, loaded_width, loaded_height, source_rotation, writer_open, writer_close, export_result, output.len(), source_sha256, output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, scale_json, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));

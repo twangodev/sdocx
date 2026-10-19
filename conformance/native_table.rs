@@ -49,6 +49,8 @@ mod composer_pdf_paper_export;
 mod pdf_paper_single_segments;
 #[path = "native_table/pdfium_create_page_save.rs"]
 mod pdfium_create_page_save;
+#[path = "native_table/pdf_image_adapter.rs"]
+mod pdf_image_adapter;
 
 #[path = "native_table/shape_paths.rs"]
 mod shape_paths;
@@ -2079,6 +2081,7 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
             );
             return;
         }
@@ -2106,6 +2109,7 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
             );
             return;
         }
@@ -2121,6 +2125,7 @@ fn main() {
                 Path::new(&output),
                 None,
                 Some(Path::new(&source)),
+                None,
                 None,
                 None,
                 None,
@@ -2152,6 +2157,7 @@ fn main() {
                 None,
                 None,
                 Some((Path::new(&composer), Path::new(&base), note_width, note_height)),
+                None,
             );
             return;
         }
@@ -2178,6 +2184,45 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
+            );
+            return;
+        }
+        Some("--pdf-image-adapter-native") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let composer = std::env::args_os().nth(4).expect("libSPenComposer.so path required");
+            let source = std::env::args_os().nth(5).expect("source PDF path required");
+            let source_sha256 = std::env::args_os().nth(6).expect("source PDF SHA-256 required").into_string().expect("source SHA-256 must be UTF-8");
+            let png = std::env::args_os().nth(7).expect("PNG path required");
+            let png_sha256 = std::env::args_os().nth(8).expect("PNG SHA-256 required").into_string().expect("PNG SHA-256 must be UTF-8");
+            let parse_f32 = |index| std::env::args_os().nth(index).expect("geometry argument required").to_string_lossy().parse::<f32>().expect("geometry must be finite f32");
+            let destination_rect = [9, 10, 11, 12].map(parse_f32);
+            let source_clip = [13, 14, 15, 16].map(parse_f32);
+            let scale = parse_f32(17);
+            let output = std::env::args_os().nth(18).expect("output PDF path required");
+            verify_library(Path::new(&source), &source_sha256);
+            verify_library(Path::new(&png), &png_sha256);
+            let adapter = pdf_image_adapter::Input {
+                composer: Path::new(&composer),
+                path: Path::new(&png),
+                destination_rect,
+                source_clip,
+                scale,
+            };
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&path),
+                Path::new(&pdfium),
+                0,
+                Path::new(&output),
+                None,
+                Some(Path::new(&source)),
+                Some(&source_sha256),
+                Some(scale),
+                Some(Path::new(&png)),
+                Some(&png_sha256),
+                None,
+                Some(adapter),
             );
             return;
         }
@@ -2202,6 +2247,7 @@ fn main() {
                 Some(0.400775),
                 Some(Path::new(&overlay_png)),
                 Some(&overlay_png_sha256),
+                None,
                 None,
             );
             return;

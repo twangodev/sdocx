@@ -1,0 +1,1410 @@
+{
+  "cases": [
+    {
+      "case": "rotate_0_crop_origin_0_5",
+      "export_executed": true,
+      "export_output_bytes": 2080,
+      "export_output_path": "/tmp/sdocx-pia-output-0.pdf",
+      "export_output_sha256": "bd9d119eeff4edc452674441c4ce688fa99e20df474122d2ba1037b500c6a636",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        150,
+        115
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961302e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia0.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-0.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-0.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia0.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            1.9039733,
+            0.0,
+            0.0,
+            2.5386276,
+            2.0943708,
+            115.113136
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2080,
+        "output_sha256": "bd9d119eeff4edc452674441c4ce688fa99e20df474122d2ba1037b500c6a636",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            0,
+            5,
+            150,
+            120
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 0,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 524,
+      "source_pdf_sha256": "e7a9cdb5c17611bf7ee4be604ad90e984d4bd435a9aa0f3a22362197c0508db6",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 0,
+      "writer_close": 1,
+      "writer_open": 1
+    },
+    {
+      "case": "rotate_90_crop_origin_0_5",
+      "export_executed": true,
+      "export_output_bytes": 2100,
+      "export_output_path": "/tmp/sdocx-pia-output-1.pdf",
+      "export_output_sha256": "80ec804fc4a7f9cb37190844144213bc759e201907b032b386c7c5d48b4c933e",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        115,
+        150
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961312e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia1.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-1.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-1.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia1.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            -8.3225331e-08,
+            1.9039736,
+            -2.5386312,
+            -1.10967093e-07,
+            4.8868651,
+            7.0943708
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2100,
+        "output_sha256": "80ec804fc4a7f9cb37190844144213bc759e201907b032b386c7c5d48b4c933e",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            0,
+            5,
+            150,
+            120
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 90,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 525,
+      "source_pdf_sha256": "6e92278832402105779fe6a765dee53c9cd3a680c09e3926617da9b8b5530ef2",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 1,
+      "writer_close": 1,
+      "writer_open": 1
+    },
+    {
+      "case": "rotate_180_crop_origin_0_5",
+      "export_executed": true,
+      "export_output_bytes": 2105,
+      "export_output_path": "/tmp/sdocx-pia-output-2.pdf",
+      "export_output_sha256": "0a98076cb043e1c65bc3b4d0afde2f75a3b857d4bc6100d2df338ed962e29ad8",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        150,
+        115
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961322e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia2.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-2.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-2.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia2.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            -1.9039612,
+            -1.66449567e-07,
+            2.2193422e-07,
+            -2.5386314,
+            147.905624,
+            9.8868656
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2105,
+        "output_sha256": "0a98076cb043e1c65bc3b4d0afde2f75a3b857d4bc6100d2df338ed962e29ad8",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            0,
+            5,
+            150,
+            120
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 180,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 526,
+      "source_pdf_sha256": "ab055765faa07d5e1885eab0b436afb3a768d180a043f79fef040c29f092f329",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 2,
+      "writer_close": 1,
+      "writer_open": 1
+    },
+    {
+      "case": "rotate_270_crop_origin_0_5",
+      "export_executed": true,
+      "export_output_bytes": 2103,
+      "export_output_path": "/tmp/sdocx-pia-output-3.pdf",
+      "export_output_sha256": "386813bb0e3164f288f958311b7c480ee8bc7a185594a065b790f0df454609c0",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        115,
+        150
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961332e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia3.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-3.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-3.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia3.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            2.2704691e-08,
+            -1.9039764,
+            2.5386353,
+            3.0272922e-08,
+            145.113129,
+            117.905632
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2103,
+        "output_sha256": "386813bb0e3164f288f958311b7c480ee8bc7a185594a065b790f0df454609c0",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            0,
+            5,
+            150,
+            120
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 270,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 526,
+      "source_pdf_sha256": "5561da86a2d266062feb9e79fec35282af2445206debf0abc1a1d950f34aa74f",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 3,
+      "writer_close": 1,
+      "writer_open": 1
+    },
+    {
+      "case": "rotate_90_crop_origin_10_20",
+      "export_executed": true,
+      "export_output_bytes": 2105,
+      "export_output_path": "/tmp/sdocx-pia-output-4.pdf",
+      "export_output_sha256": "af50ffd7d14a00fb7b5d65c2c84817ae3ed11820d470933673557f64f26b7158",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        115,
+        150
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961342e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia4.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-4.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-4.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia4.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            -8.3225288e-08,
+            1.9039726,
+            -2.5386314,
+            -1.10967108e-07,
+            14.8868656,
+            22.094372
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2105,
+        "output_sha256": "af50ffd7d14a00fb7b5d65c2c84817ae3ed11820d470933673557f64f26b7158",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            10,
+            20,
+            160,
+            135
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 90,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 527,
+      "source_pdf_sha256": "625116d701f0fb35ce96da62aa54efb8d80926fd1b4c1820bfb3fa1fa1986ebe",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 1,
+      "writer_close": 1,
+      "writer_open": 1
+    },
+    {
+      "case": "rotate_270_crop_origin_10_20",
+      "export_executed": true,
+      "export_output_bytes": 2103,
+      "export_output_path": "/tmp/sdocx-pia-output-5.pdf",
+      "export_output_sha256": "a98dc484731e3f201b1a2e473b64e18249c7a8ab969d00362d7dd184688c7a27",
+      "export_result": 0,
+      "export_result_semantics": "0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status",
+      "handled_imports": [
+        "__android_log_print",
+        "__ctype_get_mb_cur_max@LIBC",
+        "__cxa_atexit@LIBC",
+        "__open_2@LIBC",
+        "__read_chk@LIBC",
+        "__strlen_chk@LIBC",
+        "__system_property_get@LIBC",
+        "__vsnprintf_chk@LIBC",
+        "atoi@LIBC",
+        "calloc@LIBC",
+        "clock_gettime@LIBC",
+        "compress",
+        "crc32",
+        "fclose@LIBC",
+        "fflush@LIBC",
+        "fileno@LIBC",
+        "fopen@LIBC",
+        "fread@LIBC",
+        "free@LIBC",
+        "frexpf@LIBC",
+        "fstat@LIBC",
+        "fwrite@LIBC",
+        "getauxval@LIBC",
+        "inflate",
+        "inflateEnd",
+        "inflateInit2_",
+        "iswdigit@LIBC",
+        "localtime@LIBC",
+        "lseek@LIBC",
+        "mbtowc@LIBC",
+        "memchr@LIBC",
+        "memcmp@LIBC",
+        "memcpy@LIBC",
+        "memmove@LIBC",
+        "memset@LIBC",
+        "mkdir@LIBC",
+        "newlocale@LIBC",
+        "opendir@LIBC",
+        "pthread_cond_broadcast@LIBC",
+        "pthread_mutex_init@LIBC",
+        "pthread_mutex_lock@LIBC",
+        "pthread_mutex_unlock@LIBC",
+        "pthread_mutexattr_destroy@LIBC",
+        "pthread_mutexattr_init@LIBC",
+        "pthread_mutexattr_settype@LIBC",
+        "setbuf@LIBC",
+        "setjmp@LIBC",
+        "sincosf@LIBC",
+        "stat@LIBC",
+        "strchr@LIBC",
+        "strcmp@LIBC",
+        "strlen@LIBC",
+        "syscall@LIBC",
+        "time@LIBC",
+        "uselocale@LIBC",
+        "vsnprintf@LIBC"
+      ],
+      "host_boundaries": {
+        "adapter_inputs": "destination rect, source clip and scale are explicit host inputs; they are not derived from BodyText dispatch",
+        "bitmap_overload": "SetImage(ISPBitmap*) and raster-batch production are not executed",
+        "image_bytes": "deterministic host-generated 1x1 RGBA PNG admitted by SHA-256",
+        "native_calls": "Composer adapter constructor, SetImage(String,RectF), SetRect, SetScale; PdfiumImageHandler::AddImage, content generation, writer close, Export and SaveAsCopy",
+        "source_fixture": "stdlib-generated PDF with asymmetric vector source content, CropBox, Rotate and UserUnit"
+      },
+      "host_inputs": {
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "host_zlib_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "image_add_result": 1,
+      "image_generate_content_result": 1,
+      "inflate_allocator_peak_bytes": 7160,
+      "inflate_streams": [
+        {
+          "calls": 1,
+          "consumed_bytes": 13,
+          "guest_zalloc": "0x5010e48",
+          "guest_zfree": "0x5010e58",
+          "host_bridge": "host_alloc_free",
+          "id": 1,
+          "produced_bytes": 5
+        }
+      ],
+      "inflate_total_produced_bytes": 5,
+      "loaded_page_geometry": [
+        115,
+        150
+      ],
+      "native_adapter_output": {
+        "add_image_entry_info_pointer": "0x600138f0",
+        "after_setters_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000004420000144200007c4200009a4259fa813d00000000000000000000803f0000803f1e2f746d702f7364706961352e706e6700ff0f62000000000000000000000000f0bf0e04000000001f0000000f000000",
+        "constructor_info_128_hex": "084256060000000000000000000000000000000000000000000000000000000000000000ffff7fffffff7fff000000000000000000000000000000000000803f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "destination_rect": [
+          33.0,
+          37.0,
+          63.0,
+          77.0
+        ],
+        "info_pointer": "0x600138f0",
+        "info_pointer_passed_to_add_image": true,
+        "native_constructor": true,
+        "native_set_image_string_rect": true,
+        "native_set_rect": true,
+        "native_set_scale": true,
+        "owns_path": false,
+        "path_host_input": "/tmp/sdpia5.png",
+        "path_provenance": "host input; native path field not decoded",
+        "scale": 0.06346578,
+        "source_clip": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "native_path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+      "note_page_image_rect": [
+        33.0,
+        37.0,
+        63.0,
+        77.0
+      ],
+      "note_path_points": [
+        [
+          100,
+          100
+        ],
+        [
+          300,
+          100
+        ],
+        [
+          200,
+          350
+        ]
+      ],
+      "overlay_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "page_path_points": [
+        [
+          6.346578,
+          6.346578
+        ],
+        [
+          19.039734,
+          6.346578
+        ],
+        [
+          12.693156,
+          22.213024
+        ]
+      ],
+      "page_scale": 0.06346578,
+      "platform_events": [
+        "android-property:ro.arch=empty",
+        "clock_gettime:deterministic-monotonic:clockid=0",
+        "ctype-mb-max:1-c-locale",
+        "getauxval:unavailable",
+        "host-file-open:/tmp/sdocx-pia-output-5.pdf:mode=wbe",
+        "host-file-open:/tmp/sdocx-pia-source-5.pdf:flags=0x20000",
+        "host-file-open:/tmp/sdpia5.png:mode=rb",
+        "host-mkdir-noop:pdfium_export/",
+        "host-mkdir-noop:pdfium_export/1342177280/",
+        "localtime:epoch-zero-utc",
+        "newlocale:C:mask=0x1fbf",
+        "opendir-unavailable:/system/fonts",
+        "pinned-libpng-inflateInit2-callsite:0x5022a9c",
+        "setbuf:unbuffered-host-file",
+        "setjmp-initial-zero-only",
+        "time:epoch-zero"
+      ],
+      "serialized_output": {
+        "image_placement_matrices_from_serialized_streams": [
+          [
+            2.270451e-08,
+            -1.9039612,
+            2.5386353,
+            3.0272922e-08,
+            155.113129,
+            132.905624
+          ]
+        ],
+        "image_xobject_count_including_masks": 2,
+        "output_bytes": 2103,
+        "output_sha256": "a98dc484731e3f201b1a2e473b64e18249c7a8ab969d00362d7dd184688c7a27",
+        "page_count": 1,
+        "page_object": 4,
+        "source_page_fields_retained": {
+          "crop_box": [
+            10,
+            20,
+            160,
+            135
+          ],
+          "media_box": [
+            -20,
+            -10,
+            180,
+            140
+          ],
+          "rotate_degrees": 270,
+          "user_unit": 2
+        },
+        "source_vector_content_retained": true
+      },
+      "source_pdf_bytes": 528,
+      "source_pdf_sha256": "cae38e8ce7f1320d3362a76e1e5f7f23bd1b462b849a08baa436976263488c9a",
+      "source_png_bytes": 70,
+      "source_png_sha256": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "source_rotation": 3,
+      "writer_close": 1,
+      "writer_open": 1
+    }
+  ],
+  "pinned_dso_sha256": {
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenLibpng.so": "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb",
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenPdf.so": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+    "libSPenPdfiumB.so": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "schema": "sdocx.pdf-image-adapter-native.v1",
+  "shifted_crop_origin_translation_delta": [
+    10.0,
+    15.0
+  ]
+}
