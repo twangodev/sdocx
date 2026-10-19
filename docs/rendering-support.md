@@ -266,8 +266,11 @@ its AddPages bridge does not join native PDF serialization.
 A [SingleX segmentation capture](../conformance/pdf-paper-single-segments.json)
 uses retained quiz dimensions with explicit host text/object queries; full
 export and final page appearance remain unverified.
-The note-to-PDF scale is host-composed; saved-note placement and production
-PDF-paper rendering remain outstanding.
+The [body-writer transform capture](../conformance/pdf-paper-body-writer-matrix.json)
+observes native note-to-PDF scale and marker rectangles for rotated pages with
+two CropBox origins, then calls PDFium matrix helpers separately. Native
+Drawing-to-insertion, saved-note placement and production PDF-paper rendering
+remain outstanding.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)
