@@ -26,7 +26,7 @@ mod marker2;
 #[cfg(test)]
 pub(crate) mod marker3;
 mod marker4;
-#[cfg(test)]
+// Oblique is admitted only for an explicit canonical page-vector context.
 mod oblique;
 mod path;
 #[cfg(test)]
@@ -154,10 +154,25 @@ pub struct CoverageMesh {
     pub bounds: Option<BoundingBox>,
 }
 
-/// Prepare Oblique's captured saved-redraw mesh for an explicit native input
-/// context. The saved curve mode and runtime inverse scale are separate
-/// inputs because they come from Drawing and Canvas state, not point samples.
-#[cfg(test)]
+/// Render preparation context whose coordinate contract is backed by the
+/// Standard PDF ObjectPDFWriter mode-0 matrix witness.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum InkRenderContext {
+    CanonicalPage,
+}
+
+/// Prepare native Oblique geometry only when the caller supplies a known
+/// renderer context. The public context-free API remains approximate.
+pub(crate) fn prepare_stroke_for_context<'a>(
+    stroke: &'a Stroke,
+    dark_mode: bool,
+    context: InkRenderContext,
+) -> PreparedStroke<'a> {
+    prepare_stroke_inner(stroke, dark_mode, Some(context))
+}
+
+/// Reconstruct the typed Oblique V4 geometry for an explicit saved/runtime
+/// input. The context-free public `prepare_stroke` API does not call this.
 pub(crate) fn prepare_oblique_mesh(
     points: &[crate::Point],
     size: f32,
@@ -165,6 +180,10 @@ pub(crate) fn prepare_oblique_mesh(
     tool_type: u32,
     inverse_scale: [f32; 2],
 ) -> Option<CoverageMesh> {
+    // Match the numeric core's defensive MAX_INPUT_POINTS allocation budget.
+    if points.len() > 65_536 {
+        return None;
+    }
     let input_points = points
         .iter()
         .map(|p| path::P {
@@ -263,11 +282,16 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 /// Prepare a verified native geometry profile when its saved inputs match.
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
+    prepare_stroke_inner(stroke, dark_mode, None)
+}
+
+fn prepare_stroke_inner(
+    stroke: &Stroke,
+    dark_mode: bool,
+    context: Option<InkRenderContext>,
+) -> PreparedStroke<'_> {
     let mut paint = stroke_paint(stroke, dark_mode);
-    #[cfg(test)]
-    let oblique = prepare_oblique_stroke(stroke);
-    #[cfg(not(test))]
-    let oblique: Option<(CoverageMesh, f64)> = None;
+    let oblique = context.and_then(|context| prepare_oblique_stroke(stroke, context));
     let mut fountain = fountain::prepare(stroke);
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
     let native = fountain
@@ -285,13 +309,13 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         });
     let rect = marker4::prepare(stroke);
     let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
-    let (points, sample_ends, dot_radii, opacity) = if let Some((_, opacity)) = oblique.as_ref() {
+    let (points, sample_ends, dot_radii, opacity) = if let Some(ink) = oblique.as_ref() {
         paint.segment_widths = None;
         (
             Cow::Borrowed(stroke.points.as_slice()),
             None,
             None,
-            *opacity,
+            ink.opacity,
         )
     } else if let Some((points, ends, radii, opacity)) = native {
         paint.segment_widths = None;
@@ -316,7 +340,13 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
                 .or_else(|| (name == "Eraser").then_some("Eraser"))
         })
         .and_then(|name| PEN_PROFILES.iter().find(|p| p.name == name));
-    let coverage_mesh = oblique.as_ref().map(|(mesh, _)| mesh.clone());
+    let (coverage_mesh, oblique_bounds, oblique_color, has_oblique) = match oblique {
+        Some(ink) => {
+            let bounds = ink.mesh.bounds;
+            (Some(ink.mesh), bounds, Some(ink.color), true)
+        }
+        None => (None, None, None, false),
+    };
     let mut bounds: Option<BoundingBox> = None;
     for (index, point) in points.iter().enumerate() {
         // A vertex belongs to its incoming and outgoing segment. Include both
@@ -359,7 +389,7 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         }
     }
     PreparedStroke {
-        support: if dot_radii.is_some() || oblique.is_some() {
+        support: if dot_radii.is_some() || has_oblique {
             InkSupport::Reconstructed
         } else {
             InkSupport::Approximate
@@ -372,11 +402,8 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         coverage_mesh,
         segment_widths: paint.segment_widths,
         width: paint.width,
-        bounds: oblique
-            .as_ref()
-            .and_then(|(mesh, _)| mesh.bounds)
-            .or(bounds),
-        color: paint.color,
+        bounds: oblique_bounds.or(bounds),
+        color: oblique_color.unwrap_or(paint.color),
         opacity,
         top_layer: stroke
             .rendering
@@ -386,8 +413,16 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
     }
 }
 
-#[cfg(test)]
-fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
+struct PreparedObliqueInk {
+    mesh: CoverageMesh,
+    opacity: f64,
+    color: String,
+}
+
+fn prepare_oblique_stroke(
+    stroke: &Stroke,
+    context: InkRenderContext,
+) -> Option<PreparedObliqueInk> {
     let rendering = stroke.rendering.as_ref()?;
     let name = rendering.pen_name.as_deref()?;
     if name.strip_prefix("com.samsung.android.sdk.pen.pen.preload.") != Some("ObliquePen") {
@@ -395,29 +430,51 @@ fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
     }
     if effective_oblique_version(rendering.advanced_settings.as_deref()) != Some(4)
         || effective_oblique_stroke_type(rendering.style.stroke_type_raw) != 0
+        || rendering.style.color_type_raw != Some(0)
+        || rendering.properties.fixed_width
+        || rendering.properties.replay_only
+        || rendering.properties.eraser
+        || rendering.properties.alpha_lock
+        || rendering.properties.fixed_opacity
+        || rendering.properties.rainbow_effect
+        || rendering.properties.straighten
+        || rendering.properties.reveal_mode
     {
         return None;
     }
-    let size = oblique_native_size(stroke.pen_width)?;
+    let size = oblique_native_size(rendering.style.pen_size?)?;
+    let argb = rendering.style.color_argb?;
     let tool_type = u32::from(rendering.tool_type_raw);
-    let mesh = prepare_oblique_mesh(
-        &stroke.points,
-        size,
-        rendering.properties.compressed,
-        tool_type,
-        [1.0, 1.0],
-    )?;
+    let mesh = match context {
+        // Standard ObjectPDFWriter mode 0 passes identity to DrawObjectList;
+        // the SVG scene also keeps page coordinates in its unzoomed viewBox.
+        InkRenderContext::CanonicalPage => prepare_oblique_mesh(
+            &stroke.points,
+            size,
+            rendering.properties.compressed,
+            tool_type,
+            [1.0, 1.0],
+        )?,
+    };
     let opacity = rendering
         .style
         .color_argb
         .map_or(1.0, |argb| f64::from((argb >> 24) as u8) / 255.0);
-    Some((mesh, opacity))
+    Some(PreparedObliqueInk {
+        mesh,
+        opacity,
+        color: format!(
+            "#{:02x}{:02x}{:02x}",
+            (argb >> 16) & 0xff,
+            (argb >> 8) & 0xff,
+            argb & 0xff,
+        ),
+    })
 }
 
 /// ObjectStroke defaults missing StrokeType to zero and maps stored values >=3
 /// to zero in GetStrokeType. Type zero is the only Drawing GL path that assigns
 /// the ISPPenCanvas consumed by Oblique V4's inverse-scale lookup.
-#[cfg(test)]
 fn effective_oblique_stroke_type(raw: Option<u16>) -> u16 {
     let raw = raw.unwrap_or(0);
     if raw >= 3 { 0 } else { raw }
@@ -425,12 +482,10 @@ fn effective_oblique_stroke_type(raw: Option<u16>) -> u16 {
 
 /// Model `Pen::SetSize` before V4's `FCVTZU` conversion. The setter clamps
 /// finite values to this range; mesh traversal has separate work budgets.
-#[cfg(test)]
 fn oblique_native_size(size: f32) -> Option<f32> {
     size.is_finite().then_some(size.clamp(0.4, 800.0))
 }
 
-#[cfg(test)]
 fn effective_oblique_version(setting: Option<&str>) -> Option<i32> {
     // Drawing applies the saved setting to the ObliquePen instance before
     // selecting its drawable. The plugin starts at V4; the inherited setter
@@ -451,7 +506,6 @@ fn effective_oblique_version(setting: Option<&str>) -> Option<i32> {
     Some(if parsed == 0 { 1 } else { parsed }.clamp(1, 4))
 }
 
-#[cfg(test)]
 fn native_atoi(token: &str) -> Option<i32> {
     let bytes = token.as_bytes();
     let mut index = 0;
@@ -508,7 +562,7 @@ mod tests {
                 replay_only: false,
                 stylus_channels: false,
                 eraser: false,
-                fixed_width: true,
+                fixed_width: false,
                 millisecond_timestamps: false,
                 top_layer_pen: false,
                 alpha_lock: false,
@@ -521,7 +575,8 @@ mod tests {
             },
             style: crate::StrokeStyle {
                 color_argb: Some(0x8033_6699),
-                fixed_width: Some(24.0),
+                color_type_raw: Some(0),
+                pen_size: Some(5.0),
                 stroke_type_raw: Some(0),
                 ..crate::StrokeStyle::default()
             },
@@ -552,12 +607,16 @@ mod tests {
         );
     }
     #[test]
-    fn oblique_admission_uses_saved_curve_bit_and_keeps_fixed_width_out_of_mesh() {
+    fn oblique_canonical_admission_checks_supported_settings_and_context() {
         let input = oblique_stroke();
-        let ink = prepare_stroke(&input, false);
+        let context_free = prepare_stroke(&input, false);
+        assert!(context_free.coverage_mesh.is_none());
+        assert_eq!(context_free.support, InkSupport::Approximate);
+        let ink = prepare_stroke_for_context(&input, false, InkRenderContext::CanonicalPage);
         assert_eq!(ink.profile, Some("ObliquePen"));
         assert!(std::ptr::eq(ink.points.as_ptr(), input.points.as_ptr()));
         assert_eq!(ink.opacity, 128.0 / 255.0);
+        assert_eq!(ink.color, "#336699");
         let mesh = ink.coverage_mesh.as_ref().expect("native Oblique mesh");
         assert!(!mesh.triangles.is_empty());
         assert_eq!(mesh.terminal_end, mesh.triangles.len());
@@ -565,18 +624,53 @@ mod tests {
         let same_tool_context = prepare_oblique_mesh(&input.points, 5.0, false, 0, [1.0, 1.0])
             .expect("normalized tool context");
         assert_eq!(mesh, &same_tool_context);
-        let mut no_fixed_width = input.clone();
-        let style = &mut no_fixed_width.rendering.as_mut().unwrap().style;
-        style.fixed_width = None;
-        no_fixed_width
+        let mut fixed_width = input.clone();
+        let style = &mut fixed_width.rendering.as_mut().unwrap().style;
+        style.fixed_width = Some(24.0);
+        fixed_width
             .rendering
             .as_mut()
             .unwrap()
             .properties
-            .fixed_width = false;
+            .fixed_width = true;
+        assert!(
+            prepare_stroke_for_context(&fixed_width, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none()
+        );
         assert_eq!(
             ink.coverage_mesh,
-            prepare_stroke(&no_fixed_width, false).coverage_mesh
+            prepare_oblique_mesh(&input.points, 5.0, false, 0, [1.0, 1.0])
+        );
+        let mut missing_size = input.clone();
+        missing_size.rendering.as_mut().unwrap().style.pen_size = None;
+        assert!(
+            prepare_stroke_for_context(&missing_size, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none()
+        );
+        let mut missing_color = input.clone();
+        missing_color.rendering.as_mut().unwrap().style.color_argb = None;
+        assert!(
+            prepare_stroke_for_context(&missing_color, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none()
+        );
+        let mut nonstandard_color_type = input.clone();
+        nonstandard_color_type
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_type_raw = Some(1);
+        assert!(
+            prepare_stroke_for_context(
+                &nonstandard_color_type,
+                false,
+                InkRenderContext::CanonicalPage,
+            )
+            .coverage_mesh
+            .is_none()
         );
         let mut absent_stroke_type = input.clone();
         absent_stroke_type
@@ -586,21 +680,26 @@ mod tests {
             .style
             .stroke_type_raw = None;
         assert!(
-            prepare_stroke(&absent_stroke_type, false)
+            prepare_stroke_for_context(
+                &absent_stroke_type,
+                false,
+                InkRenderContext::CanonicalPage,
+            )
                 .coverage_mesh
                 .is_some()
         );
         let mut high_size = input.clone();
-        high_size.pen_width = 1_000.0;
+        high_size.rendering.as_mut().unwrap().style.pen_size = Some(1_000.0);
         assert_eq!(
-            prepare_stroke(&high_size, false).coverage_mesh,
+            prepare_stroke_for_context(&high_size, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh,
             prepare_oblique_mesh(&high_size.points, 800.0, false, 0, [1.0, 1.0])
         );
 
         let mut other_version = input.clone();
         other_version.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
         assert!(
-            prepare_stroke(&other_version, false)
+            prepare_stroke_for_context(&other_version, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
                 .is_none()
         );
@@ -611,14 +710,14 @@ mod tests {
             .unwrap()
             .advanced_settings = None;
         assert!(
-            prepare_stroke(&missing_version, false)
+            prepare_stroke_for_context(&missing_version, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
                 .is_none()
         );
         let mut empty_version = input.clone();
         empty_version.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
         assert!(
-            prepare_stroke(&empty_version, false)
+            prepare_stroke_for_context(&empty_version, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
                 .is_some()
         );
@@ -629,18 +728,22 @@ mod tests {
             .unwrap()
             .advanced_settings = Some("9;".into());
         assert!(
-            prepare_stroke(&clamped_version, false)
+            prepare_stroke_for_context(&clamped_version, false, InkRenderContext::CanonicalPage,)
                 .coverage_mesh
                 .is_some()
         );
-        let mut other_route = input;
+        let mut other_route = input.clone();
         other_route
             .rendering
             .as_mut()
             .unwrap()
             .style
             .stroke_type_raw = Some(1);
-        assert!(prepare_stroke(&other_route, false).coverage_mesh.is_none());
+        assert!(
+            prepare_stroke_for_context(&other_route, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none()
+        );
         let mut unassigned_gl_canvas = other_route.clone();
         unassigned_gl_canvas
             .rendering
@@ -649,9 +752,13 @@ mod tests {
             .style
             .stroke_type_raw = Some(2);
         assert!(
-            prepare_stroke(&unassigned_gl_canvas, false)
-                .coverage_mesh
-                .is_none()
+            prepare_stroke_for_context(
+                &unassigned_gl_canvas,
+                false,
+                InkRenderContext::CanonicalPage,
+            )
+            .coverage_mesh
+            .is_none()
         );
         let mut getter_normalized_type = other_route;
         getter_normalized_type
@@ -661,10 +768,130 @@ mod tests {
             .style
             .stroke_type_raw = Some(3);
         assert!(
-            prepare_stroke(&getter_normalized_type, false)
-                .coverage_mesh
-                .is_some()
+            prepare_stroke_for_context(
+                &getter_normalized_type,
+                false,
+                InkRenderContext::CanonicalPage,
+            )
+            .coverage_mesh
+            .is_some()
         );
+
+        for effect in 0..6 {
+            let mut unsupported_effect = input.clone();
+            let properties = &mut unsupported_effect.rendering.as_mut().unwrap().properties;
+            match effect {
+                0 => properties.eraser = true,
+                1 => properties.alpha_lock = true,
+                2 => properties.fixed_opacity = true,
+                3 => properties.rainbow_effect = true,
+                4 => properties.straighten = true,
+                _ => properties.reveal_mode = true,
+            }
+            assert!(
+                prepare_stroke_for_context(
+                    &unsupported_effect,
+                    false,
+                    InkRenderContext::CanonicalPage,
+                )
+                .coverage_mesh
+                .is_none()
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_context_adapter_matches_native_advanced4_vectors() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique-saved-caller-advanced4-native.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_object().unwrap();
+        for (id, case) in cases {
+            let source = &case["input"];
+            let bits = |value: &serde_json::Value| {
+                let hex = value.as_str().unwrap().trim_start_matches("0x");
+                u32::from_le_bytes(std::array::from_fn(|index| {
+                    u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+                }))
+            };
+            let points = source["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|pair| {
+                    let pair = pair.as_array().unwrap();
+                    crate::Point {
+                        x: f64::from(f32::from_bits(bits(&pair[0]))),
+                        y: f64::from(f32::from_bits(bits(&pair[1]))),
+                    }
+                })
+                .collect::<Vec<_>>();
+            let size = f32::from_bits(bits(&source["pen_size_f32_bits"]));
+            // The saved-caller fixture captures V4 geometry state, not color
+            // style. Supply ordinary type-0 ARGB style data only to exercise
+            // this adapter's explicit native-style admission requirement.
+            let stroke = Stroke {
+                rendering: Some(crate::StrokeRendering {
+                    metadata: None,
+                    pen_name: source["pen_name"].as_str().map(str::to_owned),
+                    advanced_settings: source["advanced_setting"].as_str().map(str::to_owned),
+                    tool_type_raw: source["tool_type"].as_u64().unwrap() as u16,
+                    properties: crate::StrokeProperties {
+                        compressed: source["curve_enabled"].as_bool().unwrap(),
+                        replay_only: false,
+                        stylus_channels: false,
+                        eraser: false,
+                        fixed_width: false,
+                        millisecond_timestamps: false,
+                        top_layer_pen: false,
+                        alpha_lock: false,
+                        binary_added: true,
+                        generated: false,
+                        fixed_opacity: false,
+                        rainbow_effect: false,
+                        straighten: false,
+                        reveal_mode: false,
+                    },
+                    style: crate::StrokeStyle {
+                        color_argb: Some(0xff33_6699),
+                        color_type_raw: Some(0),
+                        pen_size: Some(size),
+                        stroke_type_raw: source["stroke_type"].as_u64().map(|v| v as u16),
+                        ..crate::StrokeStyle::default()
+                    },
+                }),
+                bbox: BoundingBox::default(),
+                points,
+                pressures: Vec::new(),
+                timestamps: Vec::new(),
+                tilts: Vec::new(),
+                orientations: Vec::new(),
+                color: None,
+                pen_width: size,
+            };
+            let prepared =
+                prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+            let mesh = prepared
+                .coverage_mesh
+                .as_ref()
+                .unwrap_or_else(|| panic!("{id}: canonical context rejected native V4 case"));
+            let actual = mesh
+                .triangles
+                .iter()
+                .flat_map(|triangle| triangle.vertices)
+                .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+                .flat_map(f32::to_le_bytes)
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            let expected = case["phase_final_vectors"]["draw_object_stroke"]["vector_bytes"]
+                .as_str()
+                .unwrap();
+            assert_eq!(
+                actual, expected,
+                "{id}: context adapter vs native callbacks"
+            );
+        }
     }
 
     #[test]

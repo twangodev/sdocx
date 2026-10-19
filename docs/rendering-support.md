@@ -167,14 +167,20 @@ production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
-coverage/compositing; Oblique still uses the generic pressure approximation in Rust.
+coverage/compositing. Production SVG/PDF uses the bounded V4 mesh in canonical
+page coordinates for ordinary strokes with explicit size/ARGB and color type 0;
+unsupported settings and Descendant objects retain the generic approximation.
+Source RGB/alpha and max coverage are preserved without image objects.
 The [native Draw oracle](../conformance/oblique-draw-native.json) also verifies
 explicit ARGB forwarding and executed MAX/source-over blend descriptors, with
 synthetic resource adapters and no device-pixel claim. The
 [reuse witness](../conformance/oblique-saved-caller-reuse-native.json) checks a
 three-point stroke followed by a short stroke on the same drawable/RT; the
-second callback stream and geometry match its fresh reference. General reuse
-and production renderer admission remain unverified.
+second callback stream and geometry match its fresh reference. Standalone
+`prepare_stroke` remains approximate because it lacks a canvas context. Fixed
+width, alternate stroke modes, arbitrary reuse and device pixel parity remain
+open; one paired host SVG/PDF export improves on the pre-integration renderer
+at four scales but retains raster-edge differences.
 
 ## Text and embedded layout
 

@@ -179,7 +179,7 @@ do not establish visible coverage. Full saved-stroke sampling, allocation
 growth, callback submission, cache behavior and visual parity remain outside
 this capture. A test-only Rust mesh core matches all corner/triangle bits;
 the expanded asymmetric and epsilon-neighbor cases check reciprocal/multiply
-rounding and the collapsed-segment gate. Production rendering remains approximate.
+rounding and the collapsed-segment gate. Production admission is bounded below.
 
 [`oblique_redraw_native.py`](../../conformance/oblique_redraw_native.py) adds
 four fresh saved-redraw captures through native sampling, endPen and mesh
@@ -201,3 +201,14 @@ and [InkPen's pressure/time width](inkpen-v4-findings.md). Current Rust
 `InkSupport::Approximate`. Retain those source channels and settings rather
 than truncating stored size, inventing saved nib directions or replacing
 original data with mesh/cache buffers.
+
+The production SVG/PDF renderer now supplies an explicit canonical-page context,
+backed by the [Standard canvas matrix capture](../../conformance/oblique-standard-pdf-matrix-native.json).
+Only effective V4, ordinary stroke type, explicit finite size/ARGB, color type 0
+and supported flags enter the bounded mesh path; Descendant objects keep the
+generic fallback. The context-free API remains approximate. The
+[reuse fixture](../../conformance/oblique-saved-caller-reuse-native.json) checks
+complete first/second native buffers against a fresh second-stroke reference.
+Public vector exports preserve source RGB/alpha and max coverage; paired host
+SVG/PDF rendering at four scales improves on the pre-integration approximation
+for one captured case. Host raster edges and Samsung-device parity remain open.

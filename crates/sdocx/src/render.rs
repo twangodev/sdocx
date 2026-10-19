@@ -3152,8 +3152,18 @@ fn render_stroke(
             | crate::ink::calligraphy::CalligraphyAdmission::Unsupported(_) => {}
         }
     }
-    let mut paint = crate::prepare_stroke(stroke, false);
-    paint.color = theme.foreground(stroke.color);
+    let mut paint = if native_allowed {
+        crate::ink::prepare_stroke_for_context(
+            stroke,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        )
+    } else {
+        crate::prepare_stroke(stroke, false)
+    };
+    if paint.coverage_mesh.is_none() {
+        paint.color = theme.foreground(stroke.color);
+    }
     if let Some(index) = replay_index {
         svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
             render_prepared_stroke(svg, &paint, true);
@@ -3166,7 +3176,6 @@ fn render_stroke(
 fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
     let color = &paint.color;
     let base_width = paint.width;
-    #[cfg(test)]
     if oblique::render(svg, paint, replay) {
         return;
     }
@@ -3427,6 +3436,85 @@ mod tests {
                 r: (argb >> 16) as u8,
                 g: (argb >> 8) as u8,
                 b: argb as u8,
+            }),
+            pen_width: pen_size,
+        }
+    }
+
+    fn oblique_saved_stroke() -> Stroke {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique-saved-caller-advanced4-native.json"
+        ))
+        .unwrap();
+        let input = &fixture["cases"]["two_point_at5"]["input"];
+        let float = |bits: &str| {
+            let bytes = std::array::from_fn(|index| {
+                u8::from_str_radix(&bits[index * 2..index * 2 + 2], 16).unwrap()
+            });
+            f32::from_le_bytes(bytes)
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: f64::from(float(pair[0].as_str().unwrap())),
+                y: f64::from(float(pair[1].as_str().unwrap())),
+            })
+            .collect::<Vec<_>>();
+        let pressures = input["pressure_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|bits| f64::from(float(bits.as_str().unwrap())))
+            .collect();
+        let argb = 0x8011_2233;
+        let pen_size = float(input["pen_size_f32_bits"].as_str().unwrap());
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: input["pen_name"].as_str().map(str::to_owned),
+                advanced_settings: input["advanced_setting"].as_str().map(str::to_owned),
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: StrokeProperties {
+                    compressed: input["curve_enabled"].as_bool().unwrap(),
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(pen_size),
+                    stroke_type_raw: Some(input["stroke_type"].as_u64().unwrap() as u16),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures,
+            timestamps: input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap())
+                .collect(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: Some(Color {
+                r: 0x11,
+                g: 0x22,
+                b: 0x33,
             }),
             pen_width: pen_size,
         }
@@ -3811,6 +3899,133 @@ mod tests {
                 .into(),
             ],
         }
+    }
+
+    #[test]
+    fn public_oblique_svg_uses_native_saved_mesh_color_and_replay_parts() {
+        let stroke = oblique_saved_stroke();
+        let sample_count = stroke.points.len();
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(Color {
+            r: 37,
+            g: 37,
+            b: 37,
+        });
+        page.objects = vec![stroke.into()];
+        let document = document(page);
+        let normal = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert!(normal.contains("mix-blend-mode:lighten"));
+        assert!(normal.contains("shape-rendering=\"crispEdges\""));
+        let document_svg = roxmltree::Document::parse(&normal).unwrap();
+        let opacity = document_svg
+            .descendants()
+            .find(|node| node.has_tag_name("g") && node.attribute("filter").is_some())
+            .unwrap()
+            .attribute("opacity")
+            .unwrap()
+            .parse::<f64>()
+            .unwrap();
+        assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
+        let matrix = document_svg
+            .descendants()
+            .find(|node| node.has_tag_name("feColorMatrix"))
+            .unwrap()
+            .attribute("values")
+            .unwrap()
+            .split_whitespace()
+            .map(|value| value.parse::<f64>().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(matrix.len(), 20);
+        assert!((matrix[4] - 17.0 / 255.0).abs() < 1e-6);
+        assert!((matrix[9] - 34.0 / 255.0).abs() < 1e-6);
+        assert!((matrix[14] - 51.0 / 255.0).abs() < 1e-6);
+
+        let layout = layout_document(&document);
+        let replay =
+            super::render_layout_page_replay_svg(&document, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg;
+        assert!(replay.contains("data-replay-stroke=\"0\""));
+        let parts = roxmltree::Document::parse(&replay)
+            .unwrap()
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .map(|value| value.parse::<usize>().unwrap())
+            .collect::<Vec<_>>();
+        assert!(!parts.is_empty());
+        assert!(parts.iter().all(|part| (1..=sample_count).contains(part)));
+        assert!(
+            parts.contains(&2),
+            "terminal field is attributed to the final saved sample"
+        );
+    }
+
+    #[test]
+    fn descendant_oblique_keeps_the_context_free_fallback() {
+        let stroke = oblique_saved_stroke();
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![crate::PageObject {
+            render_layer: crate::ObjectRenderLayer::Base,
+            source_offset: None,
+            content: crate::PageObjectContent::Descendant(Box::new(
+                crate::PageObjectContent::Stroke(stroke),
+            )),
+        }];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert!(!svg.contains("mix-blend-mode:lighten"));
+        assert!(!svg.contains("feColorMatrix"));
+        assert!(!svg.contains("sdocx-native-ink"));
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn public_oblique_pdf_lowers_the_saved_mesh_without_raster_images() {
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![oblique_saved_stroke().into()];
+        let bytes = crate::render_document_pdf(
+            &document(page),
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let images = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_dict().ok())
+            .filter(|dict| {
+                dict.get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .is_ok_and(|name| name == b"Image")
+            })
+            .count();
+        assert_eq!(images, 0);
+        let native_forms = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .filter(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .is_ok_and(|name| name == b"Form")
+            })
+            .filter(|stream| {
+                stream.decompressed_content().is_ok_and(|content| {
+                    content.windows(4).any(|window| window == b" rg ")
+                        && content.windows(2).any(|window| window == b" f")
+                })
+            })
+            .count();
+        assert!(
+            native_forms > 0,
+            "native coverage must lower into a colored PDF Form"
+        );
     }
 
     fn document(page: Page) -> Document {
