@@ -140,7 +140,10 @@ captures color, projection, paper scale and texture bindings across five explici
 profiles using mocked renderer resources and context. A [scale-producer replay](../conformance/pencil3-paper-scale-native.json)
 checks native `min(screen width,height) / 1440` through task dispatch to the RT
 field in four contexts; application paper inputs, paint and device pixels remain
-unverified. Production paint integration remains incomplete.
+unverified. A [bitmap-consumer replay](../conformance/pencil3-paper-consumer-native.json)
+joins the Drawing producer to the queued RT depth-map setter and cached dimensions.
+It explicitly initializes that RT and stops at a missing host framebuffer target;
+completed paint and production paint integration remain unverified.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime

@@ -106,6 +106,14 @@ four contexts. GLV3 `RedrawPen` computes `min(width,height) / 1440`
 0.75, 0.5, 1.0 and 0.75, including portrait. Context/bitmap adapters and queue
 scheduling are host supplied; this witness stops before paint.
 
+The [bitmap-consumer replay](../../conformance/pencil3-paper-consumer-native.json)
+joins native Drawing particle callbacks to the queued message's RT receiver,
+then executes its depth-map interface thunk and RTV1 setter. The synthetic
+320×180 ISPBitmap is stored at RT+248 and its dimensions at +256/+260.
+The harness explicitly calls native Init on the selected RT and runs the
+queue synchronously. Native Draw then faults at Graphics `0x8e0d0` because
+the host subbitmap has no framebuffer target; completed paint is not established.
+
 The paper bitmap is distinct from an [editable Painting source](painting-source-findings.md)
 and does not replace saved XY. No inspected route proves this runtime input
 is serialized in an ordinary stroke. Preserve original samples, optional
