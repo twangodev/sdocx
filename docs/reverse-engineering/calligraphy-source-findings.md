@@ -156,6 +156,15 @@ defaults (both zero unless both arrays exist), one-sample no-draw behavior and
 a reused-drawable control. Vector storage is supplied by the harness; trailing
 `movePen`, full Drawing dispatch and GPU output remain outside this capture.
 
+The [queued Draw fixture](../../conformance/calligraphy-draw-native.json) retains
+exact uploaded Vector4 bytes. The test-only
+[vector adapter](../../crates/sdocx/src/render/calligraphy.rs) preserves the 232,
+240, then 224 triangle order and maps the fourth core vertex lane to the native
+piecewise alpha gradient. Tests check captured vertex positions and gradient
+values, and SDK PDF export retains vector shadings with no image objects. Host
+GLES replay of matching buffers/shaders supports this transport; it does not
+establish Android device pixels or saved-profile admission.
+
 Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
 this profile borrows original samples with `InkSupport::Approximate`. Its
 [retained metadata](stroke-metadata-findings.md) and channels distinguish optional

@@ -124,7 +124,9 @@ captured saved-array conversion, initialization, history/endPen state, vectors
 and core/fringe buffers for fresh/reused cases. A native
 [queued Draw capture](../conformance/calligraphy-draw-native.json) checks buffer
 uploads, draw order, uniforms and GLES blend calls under explicit host callbacks.
-Caller admission, layer opacity and rendered vector paint remain outstanding.
+A test-only vector adapter preserves those uploaded triangles, native draw order
+and core alpha gradients through SVG/PDF without image objects. Caller admission,
+layer opacity, production integration and device pixel parity remain outstanding.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. A native
