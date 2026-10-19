@@ -28,6 +28,7 @@ const GLV10_OPACITY_TARGET_SMOOTHING: f32 = 0.6;
 const GLV10_OPACITY_PRIOR_WEIGHT: f32 = f32::from_bits(0x3ecc_cccc);
 const GLV10_RADIUS_STATE_FLOOR: f32 = 2.0;
 const GLV10_END_PEN_ALPHA_DISTANCE_SCALE: f32 = 60.0;
+const GLV10_PATH_PARAMETER_SCALE: f32 = f32::from_bits(0x3800_00fd);
 
 /// Settings traced from this fixture's fresh BrushPen constructor. The saved
 /// cases do not call the size setter, so these defaults are deliberately kept
@@ -78,7 +79,7 @@ const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile
 /// SmPath cubic representation selected by endPen's retained path flag.
 /// Subdivision and parameter interpolation mirror the pinned native cubic
 /// helper and the existing GLV1 cubic model.
-struct Cubic {
+pub(super) struct Cubic {
     p: [P; 4],
     segments: Vec<(f32, u16)>,
     length: f32,
@@ -184,7 +185,9 @@ impl Cubic {
     }
 }
 
-enum EndPath<'a> {
+#[derive(Clone, Copy)]
+pub(super) enum EndPath<'a> {
+    Line { from: P, to: P },
     Quad(&'a Quad),
     Cubic(&'a Cubic),
 }
@@ -192,6 +195,7 @@ enum EndPath<'a> {
 impl EndPath<'_> {
     fn length(&self) -> f32 {
         match self {
+            Self::Line { from, to } => to.sub(*from).len(),
             Self::Quad(path) => path.length,
             Self::Cubic(path) => path.length,
         }
@@ -199,6 +203,25 @@ impl EndPath<'_> {
 
     fn at(&self, distance: f32) -> P {
         match self {
+            Self::Line { from, to } => {
+                let length = to.sub(*from).len();
+                if length == 0.0 {
+                    *to
+                } else {
+                    // SmPath stores line endpoints as 15-bit path parameters.
+                    // getPosTan obtains t through helper_distanceToSegment's
+                    // separate f32 multiply/divide/add sequence, then uses a
+                    // fused vector FMLA for the point itself.
+                    let t1 = 32767.0_f32 * GLV10_PATH_PARAMETER_SCALE;
+                    let scaled = distance * t1;
+                    let divided = scaled / length;
+                    let t = 0.0_f32 + divided;
+                    P {
+                        x: (to.x - from.x).mul_add(t, from.x),
+                        y: (to.y - from.y).mul_add(t, from.y),
+                    }
+                }
+            }
             Self::Quad(path) => path.at(distance),
             Self::Cubic(path) => path.at(distance),
         }
@@ -206,9 +229,42 @@ impl EndPath<'_> {
 
     fn normalized_tangent(&self, distance: f32) -> P {
         match self {
+            Self::Line { from, to } => {
+                let delta = to.sub(*from);
+                let length = delta.len();
+                if length == 0.0 {
+                    P::default()
+                } else {
+                    P {
+                        x: delta.x / length,
+                        y: delta.y / length,
+                    }
+                }
+            }
             Self::Quad(path) => path.normalized_tangent(distance),
             Self::Cubic(path) => path.normalized_tangent(distance),
         }
+    }
+}
+
+enum DrawLinePath {
+    Line { from: P, to: P },
+    Quad(Quad),
+}
+
+impl DrawLinePath {
+    fn as_end_path(&self) -> EndPath<'_> {
+        match self {
+            Self::Line { from, to } => EndPath::Line {
+                from: *from,
+                to: *to,
+            },
+            Self::Quad(path) => EndPath::Quad(path),
+        }
+    }
+
+    fn length(&self) -> f32 {
+        self.as_end_path().length()
     }
 }
 
@@ -246,7 +302,7 @@ struct AdmittedMotionTransition {
     accepted_current: P,
     speed: f32,
     smoothed_speed: f32,
-    path: Quad,
+    path: DrawLinePath,
 }
 
 struct AdmittedMotionReplay {
@@ -295,6 +351,7 @@ fn admitted_motion_transitions(
     points: &[P],
     times: &[i64],
     tool_type: i32,
+    curve_enabled: bool,
 ) -> Option<AdmittedMotionReplay> {
     if points.len() < 3 || times.len() != points.len() {
         return None;
@@ -337,18 +394,23 @@ fn admitted_motion_transitions(
             flag226 = 1;
         }
 
-        let path = if has_accepted_path {
-            Quad::new(
+        let path = if !curve_enabled {
+            DrawLinePath::Line {
+                from: accepted_current,
+                to: current,
+            }
+        } else if has_accepted_path {
+            DrawLinePath::Quad(Quad::new(
                 accepted_previous.mid(accepted_current),
                 accepted_current,
                 accepted_current.mid(current),
-            )
+            ))
         } else {
-            Quad::new(
+            DrawLinePath::Quad(Quad::new(
                 accepted_current,
                 accepted_current,
                 accepted_current.mid(current),
-            )
+            ))
         };
         let previous_time = times[accepted_index];
         let current_time = times[event_index];
@@ -512,11 +574,12 @@ fn motion_end_state(
     points: &[P],
     times: &[i64],
     tool_type: i32,
+    curve_enabled: bool,
 ) -> Option<MotionEndState> {
     if !matches!(tool_type, 1 | 3) || points.len() < 3 || times.len() != points.len() {
         return None;
     }
-    let history = admitted_motion_transitions(profile, points, times, tool_type)?;
+    let history = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
     let accepted = history.transitions.last()?;
     let prior = accepted.speed;
     let last = points.len() - 1;
@@ -679,11 +742,12 @@ fn motion_history_radius_states(
     times: &[i64],
     pressures: &[f32],
     tool_type: i32,
+    curve_enabled: bool,
 ) -> Option<Vec<f32>> {
     if pressures.len() != points.len() {
         return None;
     }
-    let history = admitted_motion_transitions(profile, points, times, tool_type)?;
+    let history = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
     let first = history.transitions.first()?;
     let initial_pressure = motion_pressure(tool_type, pressures[first.event_index]);
     let mut radius = motion_radius_seed(profile, first.smoothed_speed, initial_pressure)? * 2.0;
@@ -720,8 +784,9 @@ fn motion_history_radius_state(
     times: &[i64],
     pressures: &[f32],
     tool_type: i32,
+    curve_enabled: bool,
 ) -> Option<f32> {
-    motion_history_radius_states(profile, points, times, pressures, tool_type)?
+    motion_history_radius_states(profile, points, times, pressures, tool_type, curve_enabled)?
         .last()
         .copied()
 }
@@ -781,7 +846,7 @@ pub(super) struct Output {
 /// state inputs assembled from the selected source profile before sampling.
 #[derive(Clone, Copy)]
 pub(super) struct DrawPointInput<'a> {
-    pub(super) path: &'a Quad,
+    pub(super) path: EndPath<'a>,
     pub(super) half_length: f32,
     pub(super) radius_start: f32,
     pub(super) radius_target: f32,
@@ -1053,6 +1118,8 @@ fn sample_motion_events(
     orientations: &[f32],
     tilts: &[f32],
     tool_type: i32,
+    curve_enabled: bool,
+    _fixed_opacity_enabled: bool,
 ) -> Option<Vec<AddPointInput>> {
     if gl_version != GL_VERSION
         || points.len() != times.len()
@@ -1062,9 +1129,10 @@ fn sample_motion_events(
     {
         return None;
     }
-    let replay = admitted_motion_transitions(profile, points, times, tool_type)?;
+    let replay = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
     let history = &replay.transitions;
-    let radius_states = motion_history_radius_states(profile, points, times, pressures, tool_type)?;
+    let radius_states =
+        motion_history_radius_states(profile, points, times, pressures, tool_type, curve_enabled)?;
     if history.len() != radius_states.len() {
         return None;
     }
@@ -1107,8 +1175,8 @@ fn sample_motion_events(
         let segment = sample_draw_point(
             gl_version,
             DrawPointInput {
-                path: &transition.path,
-                half_length: transition.path.length,
+                path: transition.path.as_end_path(),
+                half_length: transition.path.length(),
                 radius_start,
                 radius_target,
                 fixed_radius: profile
@@ -1130,8 +1198,8 @@ fn sample_motion_events(
         previous_width = width;
     }
 
-    if matches!(tool_type, 1 | 3) {
-        let end = motion_end_state(profile, points, times, tool_type)?;
+    if curve_enabled && matches!(tool_type, 1 | 3) {
+        let end = motion_end_state(profile, points, times, tool_type, curve_enabled)?;
         let terminal_pressure = motion_pressure(tool_type, pressures[pressures.len() - 1]);
         let target = motion_end_radius_target(profile, end.terminal_scalar, terminal_pressure)?;
         let radius_start = radius_states.last().copied()? * 0.5;
@@ -1168,6 +1236,8 @@ fn sample_object_stroke_wrapper(
     saved_size: f32,
     fixed_width: f32,
     fixed_width_enabled: bool,
+    curve_enabled: bool,
+    fixed_opacity_enabled: bool,
     points: &[P],
     times: &[i64],
     pressures: &[f32],
@@ -1180,7 +1250,6 @@ fn sample_object_stroke_wrapper(
         || points.len() != pressures.len()
         || points.len() != orientations.len()
         || points.len() != tilts.len()
-        || tool_type != 2
         || !saved_size.is_finite()
         || saved_size <= 0.0
         || !fixed_width.is_finite()
@@ -1211,6 +1280,8 @@ fn sample_object_stroke_wrapper(
         &orientations,
         &tilts,
         tool_type,
+        curve_enabled,
+        fixed_opacity_enabled,
     )
 }
 
@@ -1233,7 +1304,7 @@ pub(super) fn sample_first_motion_segment(
     sample_draw_point(
         gl_version,
         DrawPointInput {
-            path: &path,
+            path: EndPath::Quad(&path),
             half_length: path.length,
             radius_start,
             radius_target,
@@ -1488,6 +1559,7 @@ mod tests {
                         .map(|pressure| pressure.as_f64().unwrap() as f32)
                         .collect::<Vec<_>>(),
                     tool_type,
+                    true,
                 )
                 .unwrap();
                 // drawLine uses the just-updated drawable radius field, halved
@@ -1496,7 +1568,7 @@ mod tests {
                 let second = sample_draw_point(
                     GL_VERSION,
                     DrawPointInput {
-                        path: &path,
+                        path: EndPath::Quad(path),
                         half_length: path.length,
                         radius_start: radius_states[0] * 0.5,
                         radius_target: target,
@@ -1606,7 +1678,7 @@ mod tests {
                 .iter()
                 .map(|time| time.as_i64().unwrap())
                 .collect::<Vec<_>>();
-            let end_state = motion_end_state(profile, &points, &times, tool_type).unwrap();
+            let end_state = motion_end_state(profile, &points, &times, tool_type, true).unwrap();
             assert_eq!(
                 end_state.previous.x.to_bits(),
                 points[points.len() - 2].x.to_bits()
@@ -1645,7 +1717,7 @@ mod tests {
                 .map(|pressure| pressure.as_f64().unwrap() as f32)
                 .collect::<Vec<_>>();
             let radius_field =
-                motion_history_radius_state(profile, &points, &times, &pressures, tool_type)
+                motion_history_radius_state(profile, &points, &times, &pressures, tool_type, true)
                     .unwrap();
             let expected_radius_field = if case_index == 1 {
                 2.208_825_35_f32
@@ -1766,7 +1838,7 @@ mod tests {
                 .collect::<Vec<_>>();
             let tool_type = source["tool_type"].as_i64().unwrap() as i32;
             let radius =
-                motion_history_radius_state(profile, &points, &times, &pressures, tool_type)
+                motion_history_radius_state(profile, &points, &times, &pressures, tool_type, true)
                     .unwrap();
             assert_eq!(
                 radius.to_bits(),
@@ -1863,6 +1935,8 @@ mod tests {
                 &channels("orientations"),
                 &channels("tilts"),
                 tool_type,
+                true,
+                false,
             )
             .unwrap_or_else(|| {
                 panic!(
@@ -1944,6 +2018,8 @@ mod tests {
             let fixed_width = case["style_setters"]["native_fixed_width_enabled_input"]
                 .as_bool()
                 .unwrap();
+            let curve_enabled = input["curve_enabled"].as_bool().unwrap_or(true);
+            let fixed_opacity_enabled = input["fixed_opacity_enabled"].as_bool().unwrap_or(false);
             assert_eq!(case["native_admission"]["actual_getVersion"], GL_VERSION);
             assert_eq!(
                 case["object_setters_and_getters"]["native_saved_size_f32"]
@@ -1966,6 +2042,25 @@ mod tests {
                 case["style_setters"]["native_fixed_width_enabled_byte_offset_89"],
                 u8::from(fixed_width)
             );
+            assert_eq!(
+                case["object_setters_and_getters"]["native_curve_enabled"],
+                curve_enabled
+            );
+            assert_eq!(
+                case["object_setters_and_getters"]["native_fixed_opacity_enabled"],
+                fixed_opacity_enabled
+            );
+            if matches!(input["tool_type"].as_i64(), Some(1 | 3)) {
+                let terminal = &case["endPen_terminal_record"];
+                if curve_enabled {
+                    assert_eq!(terminal["selected_path_method"], "cubicTo");
+                    assert_eq!(terminal["emitted_addpoint_count"], 9);
+                } else {
+                    assert_eq!(terminal["selected_path_method"], "lineTo");
+                    assert_eq!(terminal["path_length_f32"], 0.0);
+                    assert_eq!(terminal["emitted_addpoint_count"], 0);
+                }
+            }
             let object_getters =
                 &case["object_setters_and_getters"]["native_channel_getter_import_calls"];
             for getter in [
@@ -2027,18 +2122,22 @@ mod tests {
                 find_getter("GetToolType(int) const")["return_x0"],
                 input["tool_type"]
             );
-            assert_eq!(
-                find_getter("GetPressure(int) const")["return_s0_f32"]
-                    .as_f64()
-                    .unwrap() as f32,
-                channels("pressures")[final_index]
-            );
+            if input["tool_type"] == 2 {
+                assert_eq!(
+                    find_getter("GetPressure(int) const")["return_s0_f32"]
+                        .as_f64()
+                        .unwrap() as f32,
+                    channels("pressures")[final_index]
+                );
+            }
             let samples = sample_object_stroke_wrapper(
                 GL_VERSION,
                 SAVED_GLV10_CONSTRUCTOR_PROFILE,
                 size,
                 fixed_width_size,
                 fixed_width,
+                curve_enabled,
+                fixed_opacity_enabled,
                 &points,
                 &times,
                 &channels("pressures"),
@@ -2117,10 +2216,7 @@ mod tests {
             }
             checked += 1;
         }
-        assert_eq!(
-            checked, 4,
-            "expected two saved sizes by two fixed-width states"
-        );
+        assert_eq!(checked, fixture["cases"].as_array().unwrap().len());
     }
 
     #[test]

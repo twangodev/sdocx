@@ -186,7 +186,7 @@ class TracedBrush(core.NativeBrush):
         super().hook(u, address, size, data)
 
 
-def setup_pen(n, size, fixed_width_enabled):
+def setup_pen(n, size, fixed_width_enabled, curve_enabled=True):
     pen, manager = n.alloc(256), n.alloc(128)
     queue, qvt = n.alloc(32), n.alloc(32)
     n.queue = queue
@@ -199,7 +199,7 @@ def setup_pen(n, size, fixed_width_enabled):
     n.call('SPen::Pen::SetSize(float)', [pen], [size])
     n.call('SPen::BrushPen::SetFixedWidth(float)', [pen], [size])
     n.call('SPen::BrushPen::SetFixedWidthEnabled(bool)', [pen, int(fixed_width_enabled)])
-    n.call('SPen::BrushPen::SetCurveEnabled(bool)', [pen, 1])
+    n.call('SPen::BrushPen::SetCurveEnabled(bool)', [pen, int(curve_enabled)])
     n.call(core.GET_SIZE, [pen])
     actual_size = n.f(0)
     n.call('SPen::BrushPen::GetFixedWidth()', [pen])
@@ -252,7 +252,7 @@ def setup_pen(n, size, fixed_width_enabled):
     }
 
 
-def run_case(size, fixed_width_enabled):
+def run_case(size, fixed_width_enabled, case=CASES):
     n = TracedBrush()
     n.import_calls = {}
     n.active_import = '<none>'
@@ -300,21 +300,31 @@ def run_case(size, fixed_width_enabled):
     n.call('SPen::ObjectStrokeImpl::ObjectStrokeImpl(SPen::ObjectStroke*)', [impl, obj])
     n.put(obj + 32, 'Q', impl)
     n.call('SPen::ObjectStroke::SetPenSize(float)', [obj], [size])
-    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)', [obj, CASES['tool_type']])
+    curve_enabled = bool(case.get('curve_enabled', True))
+    fixed_opacity_enabled = bool(case.get('fixed_opacity_enabled', False))
+    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)', [obj, case['tool_type']])
+    n.call('SPen::ObjectStroke::SetCurveEnabled(bool)', [obj, int(curve_enabled)])
+    n.call('SPen::ObjectStroke::SetFixedOpacityEnabled(bool)', [obj, int(fixed_opacity_enabled)])
     n.call('SPen::ObjectStroke::GetPenSize() const', [obj])
     saved_object_size = n.f(0)
     n.call('SPen::ObjectStroke::GetToolType() const', [obj])
     saved_tool = n.x(0)
-    if core.fbits(saved_object_size) != core.fbits(size) or saved_tool != CASES['tool_type']:
+    n.call('SPen::ObjectStroke::IsCurveEnabled() const', [obj])
+    saved_curve_enabled = bool(n.x(0))
+    n.call('SPen::ObjectStroke::IsFixedOpacityEnabled() const', [obj])
+    saved_fixed_opacity_enabled = bool(n.x(0))
+    if (core.fbits(saved_object_size) != core.fbits(size) or saved_tool != case['tool_type']
+            or saved_curve_enabled != curve_enabled
+            or saved_fixed_opacity_enabled != fixed_opacity_enabled):
         raise AssertionError('native ObjectStroke setter/getter round trip failed')
 
-    count = len(CASES['points'])
+    count = len(case['points'])
     channels = (
-        ('points', 'f' * (count * 2), [v for point in CASES['points'] for v in point], 8),
-        ('pressures', 'f' * count, CASES['pressures'], 4),
-        ('times', 'i' * count, CASES['times'], 4),
-        ('tilts', 'f' * count, CASES['tilts'], 4),
-        ('orientations', 'f' * count, CASES['orientations'], 4),
+        ('points', 'f' * (count * 2), [v for point in case['points'] for v in point], 8),
+        ('pressures', 'f' * count, case['pressures'], 4),
+        ('times', 'i' * count, case['times'], 4),
+        ('tilts', 'f' * count, case['tilts'], 4),
+        ('orientations', 'f' * count, case['orientations'], 4),
     )
     pointers = {}
     for key, fmt, values, width in channels:
@@ -328,10 +338,10 @@ def run_case(size, fixed_width_enabled):
         ptr = pointers[key]
         n.put(impl + offset, 'QQQ', ptr, ptr + count * width, ptr + count * width)
 
-    state = setup_pen(n, size, fixed_width_enabled)
+    state = setup_pen(n, size, fixed_width_enabled, curve_enabled)
     n.current_motion = {'source': 'native converted MotionEvent', 'count': count}
     n.current_object = {
-        'points': CASES['points'], 'tool_type': saved_tool,
+        'points': case['points'], 'tool_type': saved_tool,
         'version': state['version'], 'points_ptr': pointers['points'],
         'pressures_ptr': pointers['pressures'], 'times_ptr': pointers['times'],
         'tilts_ptr': pointers['tilts'], 'orientations_ptr': pointers['orientations'],
@@ -365,7 +375,7 @@ def run_case(size, fixed_width_enabled):
         raise AssertionError(f'ObjectStroke native channel getter coverage mismatch: {actual_getters}')
     if len(n.motion_event_constructors) != 1:
         raise AssertionError('saved ObjectStroke did not construct exactly one native MotionEvent')
-    expected_draw_pattern_count = 26 if size == 3.144 else 7
+    expected_draw_pattern_count = len(n.buffer_records)
     if (len(n.draw_pattern_calls) != expected_draw_pattern_count
             or len(n.draw_pattern_style_steps) != expected_draw_pattern_count):
         raise AssertionError('native drawPattern/style-step trace count mismatch')
@@ -385,14 +395,15 @@ def run_case(size, fixed_width_enabled):
         raise AssertionError('makeDrawPoint did not observe configured native style state')
     motion_ctor = n.motion_event_constructors[0]
     decoded = motion_ctor['pointer_coords_decoded_from_Base_getter_offsets']
-    expected_point = CASES['points'][-1]
-    expected_down_time = CASES['times'][0]
-    expected_event_time = CASES['times'][-1]
+    expected_point = case['points'][-1]
+    expected_down_time = case['times'][0]
+    expected_event_time = case['times'][-1]
     expected_motion_getters = {
         'SPen::MotionEvent::GetX(int) const': float(expected_point[0]),
         'SPen::MotionEvent::GetY(int) const': float(expected_point[1]),
-        'SPen::MotionEvent::GetPressure(int) const': CASES['pressures'][-1],
     }
+    if saved_tool == 2:
+        expected_motion_getters['SPen::MotionEvent::GetPressure(int) const'] = case['pressures'][-1]
     getter_values = {call['name']: call for call in n.motion_event_getters}
     if (motion_ctor['arguments_decoded']['down_time_ms_i64'] != expected_down_time
             or motion_ctor['arguments_decoded']['pointer_count_i32'] != 1
@@ -403,9 +414,9 @@ def run_case(size, fixed_width_enabled):
                     struct.pack('<d', decoded[key]) != struct.pack('<d', expected))
                    for key, expected in (
                 ('x_f64', expected_point[0]), ('y_f64', expected_point[1]),
-                ('pressure_f32', CASES['pressures'][-1]),
-                ('tilt_f32', CASES['tilts'][-1]),
-                ('orientation_f32', CASES['orientations'][-1])))):
+                ('pressure_f32', case['pressures'][-1]),
+                ('tilt_f32', case['tilts'][-1]),
+                ('orientation_f32', case['orientations'][-1])))):
         raise AssertionError('native ObjectStroke-to-MotionEvent conversion differs from declared final row')
     for name, expected in expected_motion_getters.items():
         call = getter_values.get(name)
@@ -422,17 +433,19 @@ def run_case(size, fixed_width_enabled):
     expected_motion_names = set(expected_motion_getters) | {
         'SPen::MotionEvent::GetEventTime() const',
         'SPen::MotionEvent::GetToolType(int) const'}
-    if len(n.motion_event_getters) != 5 or {call['name'] for call in n.motion_event_getters} != expected_motion_names:
-        raise AssertionError('native MotionEvent getter trace does not contain the expected five accesses')
+    if (len(n.motion_event_getters) != len(expected_motion_names)
+            or {call['name'] for call in n.motion_event_getters} != expected_motion_names):
+        raise AssertionError('native MotionEvent getter trace does not contain the expected accesses')
     expected_motion_calls = {
         'SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)': 1,
         'SPen::MotionEvent::GetX(int) const': 1,
         'SPen::MotionEvent::GetY(int) const': 1,
-        'SPen::MotionEvent::GetPressure(int) const': 1,
         'SPen::MotionEvent::GetToolType(int) const': 1,
         'SPen::MotionEvent::GetEventTime() const': 1,
         'SPen::MotionEvent::~MotionEvent()': 1,
     }
+    if saved_tool == 2:
+        expected_motion_calls['SPen::MotionEvent::GetPressure(int) const'] = 1
     actual_motion_calls = {name: n.import_calls.get(name, 0) for name in expected_motion_calls}
     if actual_motion_calls != expected_motion_calls:
         raise AssertionError(f'native MotionEvent method counts differ: {actual_motion_calls}')
@@ -440,13 +453,16 @@ def run_case(size, fixed_width_enabled):
         raise AssertionError('MotionEvent constructor/getter/destructor reached a host shim')
 
     return {
-        'label': f'size-{size:g}-fixed-width-{int(fixed_width_enabled)}',
-        'input': CASES,
+        'label': (f"tool-{case['tool_type']}-curve-{int(curve_enabled)}-fixed-opacity-"
+                  f"{int(fixed_opacity_enabled)}-size-{size:g}-fixed-width-{int(fixed_width_enabled)}"),
+        'input': dict(case),
         'style_setters': {
             'calls': ['SPen::Pen::SetSize(float)',
                       'SPen::BrushPen::SetFixedWidth(float)',
                       'SPen::BrushPen::SetFixedWidthEnabled(bool)',
                       'SPen::BrushPen::SetCurveEnabled(bool)'],
+            'curve_enabled_input': curve_enabled,
+            'fixed_opacity_enabled_input': fixed_opacity_enabled,
             'fixed_width_argument': size,
             'fixed_width_enabled_argument': fixed_width_enabled,
             'native_GetSize_f32': state['size'],
@@ -458,11 +474,17 @@ def run_case(size, fixed_width_enabled):
         'object_setters_and_getters': {
             'calls': ['SPen::ObjectStroke::SetPenSize(float)',
                       'SPen::ObjectStroke::SetToolType(SPen::ToolType)',
+                      'SPen::ObjectStroke::SetCurveEnabled(bool)',
+                      'SPen::ObjectStroke::SetFixedOpacityEnabled(bool)',
                       'SPen::ObjectStroke::GetPenSize() const',
-                      'SPen::ObjectStroke::GetToolType() const'],
+                      'SPen::ObjectStroke::GetToolType() const',
+                      'SPen::ObjectStroke::IsCurveEnabled() const',
+                      'SPen::ObjectStroke::IsFixedOpacityEnabled() const'],
             'native_saved_size_f32': saved_object_size,
             'native_saved_tool_type': saved_tool,
             'native_channel_getter_import_calls': actual_getters,
+            'native_curve_enabled': saved_curve_enabled,
+            'native_fixed_opacity_enabled': saved_fixed_opacity_enabled,
         },
         'native_admission': {
             'constructor': core.CTOR,
@@ -502,6 +524,12 @@ def main():
     if actual_hashes != EXPECTED:
         raise SystemExit('pinned BrushPen/Model input hash mismatch')
     cases = [run_case(size, enabled) for size, enabled in STYLE_CASES]
+    for tool_type in (1, 3):
+        for curve_enabled in (False, True):
+            case = dict(CASES, name=f'synthetic-tool-{tool_type}-curve-{int(curve_enabled)}',
+                        tool_type=tool_type, curve_enabled=curve_enabled,
+                        fixed_opacity_enabled=False, object_fixed_width_enabled=False)
+            cases.append(run_case(3.144, False, case))
     result = {
         'schema': 'sdocx-brushpen-saved-wrapper-native-v1',
         'artifact': 'Samsung Notes 4.4.45.37 ARM64 BrushPen',
@@ -517,7 +545,7 @@ def main():
         expected = json.loads(OUT.read_text())
         if json.dumps(result, sort_keys=True) != json.dumps(expected, sort_keys=True):
             raise SystemExit('native BrushPen saved-wrapper output differs from fixture')
-        print(f'BrushPen saved-wrapper oracle passed: {len(cases)} size/fixed-width configurations')
+        print(f'BrushPen saved-wrapper oracle passed: {len(cases)} source/style configurations')
 
 
 if __name__ == '__main__':
