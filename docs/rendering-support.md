@@ -350,7 +350,12 @@ native String-overload constructor/setters to PDFium image insertion and export
 for four rotations and shifted origins, with host-supplied placement and PNG.
 The [bitmap-overload capture](../conformance/pdf-image-bitmap-native.json) executes
 native bitmap methods, adapter and libpng encoding with synthetic pixels,
-simulated host GL and pinned host zlib. The native raster-batch producer and
+simulated host GL and pinned host zlib. The separate
+[RGBA bitmap capture](../conformance/pdf-image-rgba-native.json) executes native
+texture/subbitmap readback through actual host Mesa textures and framebuffers,
+then native adapter/libpng encoding. Two synthetic 2×2 controls preserve alpha
+and verify rounded, clamped RGB unpremultiplication, including zero alpha;
+queue scheduling and zlib remain host bridges. The native raster-batch producer and
 Drawing-to-insertion, saved-note placement and production PDF-paper rendering
 remain outstanding.
 
