@@ -155,7 +155,11 @@ captures null settings selecting V1 and empty settings selecting V4 under an
 explicit 1920×1080 display profile. The V4 numeric model reproduces the complete
 312-byte Drawing stream bit for bit, plus all streams in a
 [seven-case display matrix](../conformance/inkpen-display-profiles-native.json);
-null settings remain outside that model.
+null settings remain outside that model. A [nine-case size/tool capture](../conformance/inkpen-admission-native.json)
+checks omitted, zero, subminimum and oversized source sizes plus tool codes 0–4.
+The test-only model matches every captured callback word, using the saved style
+size (missing means zero) and native 0.4–800 clamp rather than the public width.
+Renderer reuse and vector edge coverage still require validation before production admission.
 The [property helper oracle](../conformance/object-stroke-curve-native.json)
 executes native property read/write and getter/setter controls, confirming
 serialized bit 0 selects curve state; full-record deserialization is not exercised.
