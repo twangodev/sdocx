@@ -14,14 +14,11 @@
           "shader_manager_object": "0x10037720"
         },
         "host_static_quad_upload": null,
-        "host_vector_pointer_handoff": {
-          "operation": "host writes selected native vector-object pointer into same RT +96 before native Update(true)",
-          "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
-          "vector_object": "0x10035ff0"
-        },
         "managed_queue": {
+          "canvas_get_data_queue_is_same_queue": true,
           "manager": "0x1002d750",
-          "native_SendDataToGPU_task_observed": false,
+          "native_SendDataToGPU_task_observed": true,
+          "native_SetBuffer_worker_task_observed": false,
           "native_SetMsgQueue_GetMsgQueue_verified": true,
           "queue": "0x1002d510"
         },
@@ -51,6 +48,440 @@
             "target": 34962
           }
         ],
+        "native_vector_handoff": {
+          "canvas_get_data_queue_returns": [
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            },
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            },
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            },
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            },
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            },
+            {
+              "post": "0x20001000",
+              "queue": "0x1002d510",
+              "vtable": "0x1002d550"
+            }
+          ],
+          "deferred_vector_lifetimes": [
+            {
+              "run": "0x104676c",
+              "task": "0x10036820",
+              "vtable": "0x10774c8"
+            },
+            {
+              "run": "0x1045e6c",
+              "task": "0x100368b0",
+              "vtable": "0x1077528"
+            },
+            {
+              "run": "0x104676c",
+              "task": "0x10037640",
+              "vtable": "0x10774c8"
+            },
+            {
+              "run": "0x1045e6c",
+              "task": "0x100376d0",
+              "vtable": "0x1077528"
+            }
+          ],
+          "executed_queue_tasks": [
+            {
+              "member_callback": "0x104a4a4",
+              "member_symbol": "SPen::PenDrawableRT::SetRedrawState(bool)",
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x0",
+              "run": "0x5028544",
+              "slots_after": {},
+              "slots_before": {},
+              "task": "0x10035ae0",
+              "vector_object": "0x1",
+              "vtable": "0x50428b8",
+              "words": "b8280405000000000000000000000000a058031000000000a4a40401000000000000000000000000010000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x104a558",
+              "member_symbol": "SPen::PenDrawableRT::SetPenData(float, int)",
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x0",
+              "run": "0x502856c",
+              "slots_after": {},
+              "slots_before": {},
+              "task": "0x10035b10",
+              "vector_object": "0xff00000041200000",
+              "vtable": "0x50428e8",
+              "words": "e8280405000000000000000000000000a05803100000000058a5040100000000000000000000000000002041000000ff00000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x104a4ac",
+              "member_symbol": "SPen::PenDrawableRT::SetRect(SPen::RectF)",
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x5028518",
+              "slots_after": {
+                "80": "0x10035ff0",
+                "88": "0x0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x10035ff0",
+                "88": "0x0",
+                "96": "0x0"
+              },
+              "task": "0x100367a0",
+              "vector_object": "0xc0800000c0800000",
+              "vtable": "0x5042888",
+              "words": "88280405000000000000000000000000a058031000000000aca40401000000000000000000000000000080c0000080c000000442000060410000000000000000"
+            },
+            {
+              "member_callback": "0x104a5c4",
+              "member_symbol": "SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)",
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x10506b4",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x0",
+                "96": "0x0"
+              },
+              "task": "0x100367e0",
+              "vector_object": "0x10035ff0",
+              "vtable": "0x10774f8",
+              "words": "f8740701000000000000000000000000a058031000000000c4a50401000000000000000000000000f05f03100000000000000000000000000000000000000000"
+            },
+            {
+              "deferred": true,
+              "member_callback": "0x0",
+              "member_symbol": null,
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x104676c",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x10036820",
+              "vector_object": "0x10000560",
+              "vtable": "0x10774c8",
+              "words": "c874070100000000000000000000000000000000000000000000000000000000a05803100000000060050010000000000000000000000000000060c05f1b79c0"
+            },
+            {
+              "deferred": true,
+              "member_callback": "0x0",
+              "member_symbol": null,
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x1045e6c",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x100368b0",
+              "vector_object": "0x0",
+              "vtable": "0x1077528",
+              "words": "28750701000000000000000000000000f05f03100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x1050fd0",
+              "member_symbol": null,
+              "phase": "draw_object_stroke",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x50287a8",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x100368d0",
+              "vector_object": "0x0",
+              "vtable": "0x5042918",
+              "words": "182904050000000000000000000000009005080100000000d00f0501000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x104a4a4",
+              "member_symbol": "SPen::PenDrawableRT::SetRedrawState(bool)",
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x5028544",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x10036900",
+              "vector_object": "0x1",
+              "vtable": "0x50428b8",
+              "words": "b8280405000000000000000000000000a058031000000000a4a40401000000000000000000000000010000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x104a558",
+              "member_symbol": "SPen::PenDrawableRT::SetPenData(float, int)",
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x502856c",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x10036930",
+              "vector_object": "0xff00000041200000",
+              "vtable": "0x50428e8",
+              "words": "e8280405000000000000000000000000a05803100000000058a5040100000000000000000000000000002041000000ff00000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x104a4ac",
+              "member_symbol": "SPen::PenDrawableRT::SetRect(SPen::RectF)",
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x5028518",
+              "slots_after": {
+                "80": "0x10036ed0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x10036ed0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x100375c0",
+              "vector_object": "0xc0800000c0800000",
+              "vtable": "0x5042888",
+              "words": "88280405000000000000000000000000a058031000000000aca40401000000000000000000000000000080c0000080c000000442000060410000000000000000"
+            },
+            {
+              "member_callback": "0x104a5c4",
+              "member_symbol": "SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)",
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x10506b4",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10035ff0",
+                "96": "0x0"
+              },
+              "task": "0x10037600",
+              "vector_object": "0x10036ed0",
+              "vtable": "0x10774f8",
+              "words": "f8740701000000000000000000000000a058031000000000c4a50401000000000000000000000000d06e03100000000000000000000000000000000000000000"
+            },
+            {
+              "deferred": true,
+              "member_callback": "0x0",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x104676c",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x10037640",
+              "vector_object": "0x10000560",
+              "vtable": "0x10774c8",
+              "words": "c874070100000000000000000000000000000000000000000000000000000000a05803100000000060050010000000000000000000000000000060c05f1b79c0"
+            },
+            {
+              "deferred": true,
+              "member_callback": "0x0",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x1045e6c",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x100376d0",
+              "vector_object": "0x0",
+              "vtable": "0x1077528",
+              "words": "28750701000000000000000000000000d06e03100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x1050fd0",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x50287a8",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x100376f0",
+              "vector_object": "0x0",
+              "vtable": "0x5042918",
+              "words": "182904050000000000000000000000009005080100000000d00f0501000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x408ab54",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x408d4b0",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x10050ca0",
+              "vector_object": "0x10050c70",
+              "vtable": "0x40cf400",
+              "words": "00f40c04000000000000000000000000600b05100000000054ab0804000000000000000000000000700c05100000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x0",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x4092444",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x10050f40",
+              "vector_object": "0x0",
+              "vtable": "0x40d00d8",
+              "words": "d8000d04000000000000000000000000508a04100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "member_callback": "0x408ce24",
+              "member_symbol": null,
+              "phase": "saved_redraw",
+              "queue": "0x1002d510",
+              "rt": "0x100358a0",
+              "run": "0x408d754",
+              "slots_after": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "slots_before": {
+                "80": "0x0",
+                "88": "0x10036ed0",
+                "96": "0x0"
+              },
+              "task": "0x10050f60",
+              "vector_object": "0x10050bd4",
+              "vtable": "0x40cf730",
+              "words": "30f70c04000000000000000000000000600b05100000000024ce0804000000000000000000000000d40b05100000000000000000000000000000000000000000"
+            }
+          ],
+          "operation": "native worker calls PenDrawableRT::SendDataToGPU on the selected RT, setting RT+88; native Update(false) consumes the saved stream",
+          "rt_slots_after_update": {
+            "80": "0x0",
+            "88": "0x10036ed0",
+            "96": "0x0"
+          },
+          "rt_slots_before_update": {
+            "80": "0x0",
+            "88": "0x10036ed0",
+            "96": "0x0"
+          },
+          "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+          "vector_object": "0x10036ed0",
+          "vector_sha256_at_update": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+        },
         "renderer_init_buffer_data": [
           {
             "buffer": 1,
@@ -240,13 +671,13 @@
           "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
         },
         "paint_helper": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
-        "runner": "1c41c56218fdf14c148883531a1b2f787503f5c032d263fbc22022ba8bc5cc4b",
+        "runner": "7a05db658343956af992823ee5a17622fa94a08c88152be9f39cee950eca4a79",
         "saved_caller": "c0b1657cdcf94bcf2c173ce68ed7817e55a4de246883b47265bb7b4d3f50dc04"
       },
       "host_boundaries": [
         "ObjectStroke/Model source is synthetic but the selected Drawing, InkPen native getters, MotionEvent calls, selected V4 RedrawPen and RT AddPoint stream are executed by the pinned caller oracle.",
-        "The full captured 312-byte native RT stream is handed to the same selected RT via an explicit host write to RT+96, then native Update(true) uploads it; no separate RT or geometry refeed is used.",
-        "The native PenGLDataManager is wired to the caller harness managed queue with SetMsgQueue/GetMsgQueue; SendDataToGPU asynchronous task execution is not claimed.",
+        "The saved-replay AddPoint stream is handed through the native caller queue: its worker invokes PenDrawableRT::SendDataToGPU on the same selected RT, populating RT+88; native Update(false) uploads it. RT+96 is not host-written.",
+        "The native PenGLDataManager and Canvas::GetDataQueue resolve to the caller queue. Native SendDataToGPU worker tasks execute; vector/deallocation cleanup tasks remain deferred and are not executed in this capture.",
         "Native Renderer factory, GraphicsObject buffer creation/upload/draw, InkPen RT Init/Draw, native PenCanvas/Bitmap creation and Mesa GLES calls execute; EGL creation/GL dispatch, queue/context setup, process max-texture-limit global and pixel readback are host-supplied.",
         "The zero-limit control reaches native exception allocation/throw with recorded origin and input pair, then enters unsupported std::get_unexpected/Unicorn fault; native exception unwinding is not claimed complete. The same request succeeds after setting Mesa-reported GL_MAX_TEXTURE_SIZE=16384 in the renderer limit pair.",
         "Target dimensions 128x64 are a synthetic Mesa output surface; caller screen profile is explicit synthetic 1920x1080. No Samsung device/export lifecycle or PDF parity is claimed.",
