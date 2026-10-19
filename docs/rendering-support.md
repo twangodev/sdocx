@@ -100,6 +100,9 @@ Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses;
 runtime paper coverage and vector paint integration remain outstanding.
 The test-only Marker3 V5 sampler checks stamp positions, radii and callback
 boundaries in ten [synthetic native cases](../conformance/marker3-saved-native.json).
+The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
+checks null selecting V1, empty/explicit settings selecting V5, source ARGB
+forwarding and linked XY streams; the V5 sampler excludes null settings.
 Its [positive paint capture](../conformance/marker3-paint-positive-native.json)
 executes native mask/composite draws on separate complete framebuffer targets
 in host Mesa, retaining the full RGBA hash and GL error checks. Points enter

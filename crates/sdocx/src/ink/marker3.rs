@@ -21,7 +21,9 @@ pub(crate) struct Ink {
 pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
     if !matches!(r.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
-        || r.advanced_settings.as_deref().is_some_and(|setting| setting != "5;")
+        // Drawing admits null settings to Marker3 V1; this V5 sampler is only
+        // valid for the observed empty and explicit `5;` settings.
+        || !matches!(r.advanced_settings.as_deref(), Some("" | "5;"))
         || r.properties.eraser
         || r.properties.rainbow_effect
         || r.properties.straighten
@@ -119,6 +121,7 @@ mod tests {
 
     #[derive(Deserialize)]
     struct Case {
+        id: String,
         input: Input,
         native: Native,
     }
@@ -140,8 +143,10 @@ mod tests {
     }
 
     fn fixture() -> Fixture {
-        serde_json::from_str(include_str!("../../../../conformance/marker3-saved-native.json"))
-            .unwrap()
+        serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-saved-native.json"
+        ))
+        .unwrap()
     }
 
     fn stroke(input: &Input) -> Stroke {
@@ -211,5 +216,213 @@ mod tests {
             }
         }
         assert_eq!(supported, 10, "native fixture support coverage changed");
+    }
+
+    fn f32_from_bits_hex(value: &str) -> f32 {
+        let bytes = bytes_from_hex(value);
+        f32::from_bits(u32::from_le_bytes(bytes.try_into().unwrap()))
+    }
+
+    fn bytes_from_hex(value: &str) -> Vec<u8> {
+        value
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect()
+    }
+
+    fn f32_array_from_hex(value: &str) -> Vec<f32> {
+        bytes_from_hex(value)
+            .chunks_exact(4)
+            .map(|bytes| f32::from_bits(u32::from_le_bytes(bytes.try_into().unwrap())))
+            .collect()
+    }
+
+    fn caller_fixture() -> serde_json::Value {
+        serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-saved-caller-native.json"
+        ))
+        .unwrap()
+    }
+
+    fn caller_stroke(case: &serde_json::Value) -> Stroke {
+        let input = &case["input"];
+        let source = &case["native_calls"]["source_ObjectStroke_arrays"];
+        let source_xy = f32_array_from_hex(source["points"]["data_hex"].as_str().unwrap());
+        let points = source_xy
+            .chunks_exact(2)
+            .map(|xy| Point {
+                x: f64::from(xy[0]),
+                y: f64::from(xy[1]),
+            })
+            .collect::<Vec<_>>();
+        let pressures: Vec<f64> =
+            f32_array_from_hex(source["pressures"]["data_hex"].as_str().unwrap())
+                .into_iter()
+                .map(f64::from)
+                .collect();
+        let timestamps = bytes_from_hex(source["timestamps"]["data_hex"].as_str().unwrap())
+            .chunks_exact(4)
+            .map(|bytes| i64::from(i32::from_le_bytes(bytes.try_into().unwrap())))
+            .collect();
+        let tilts = f32_array_from_hex(source["tilts"]["data_hex"].as_str().unwrap())
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let orientations = f32_array_from_hex(source["orientations"]["data_hex"].as_str().unwrap())
+            .into_iter()
+            .map(f64::from)
+            .collect();
+
+        let input_points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|xy| {
+                [
+                    f32_from_bits_hex(xy[0].as_str().unwrap()),
+                    f32_from_bits_hex(xy[1].as_str().unwrap()),
+                ]
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(source_xy.len(), input_points.len() * 2);
+        for (actual, expected) in source_xy.iter().zip(input_points.iter().flatten()) {
+            assert_eq!(actual.to_bits(), expected.to_bits());
+        }
+        assert_eq!(
+            pressures.len(),
+            source["pressures"]["count"].as_u64().unwrap() as usize
+        );
+
+        let advanced_settings = input["advanced_setting"].as_str().map(str::to_owned);
+        let width = f32_from_bits_hex(input["pen_size_f32_bits"].as_str().unwrap());
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some(input["pen_name"].as_str().unwrap().to_owned()),
+                advanced_settings,
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: StrokeProperties {
+                    compressed: false,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: true,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(
+                        u32::from_str_radix(
+                            input["color_argb"]
+                                .as_str()
+                                .unwrap()
+                                .trim_start_matches("0x"),
+                            16,
+                        )
+                        .unwrap(),
+                    ),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures,
+            timestamps,
+            tilts,
+            orientations,
+            color: None,
+            pen_width: width,
+        }
+    }
+
+    fn assert_caller_xy_matches(ink: &Ink, case: &serde_json::Value) {
+        let output = bytes_from_hex(
+            case["phase_final_vectors"]["saved_redraw"]["vector_bytes"]
+                .as_str()
+                .unwrap(),
+        );
+        assert_eq!(output.len() % 8, 0);
+        assert_eq!(ink.points.len(), output.len() / 8);
+        for (point, pair) in ink.points.iter().zip(output.chunks_exact(8)) {
+            let x = f32::from_bits(u32::from_le_bytes(pair[..4].try_into().unwrap()));
+            let y = f32::from_bits(u32::from_le_bytes(pair[4..].try_into().unwrap()));
+            assert_eq!((point.x as f32).to_bits(), x.to_bits());
+            assert_eq!((point.y as f32).to_bits(), y.to_bits());
+        }
+    }
+
+    fn assert_native_sample_ends(ink: &Ink, case_id: &str) {
+        let fixture: Fixture = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-saved-native.json"
+        ))
+        .unwrap();
+        let native_case = fixture
+            .cases
+            .into_iter()
+            .find(|case| case.id == case_id)
+            .unwrap();
+        assert_eq!(ink.sample_ends, native_case.native.sample_ends);
+    }
+
+    #[test]
+    fn actual_drawing_empty_and_v5_caller_cases_match_complete_v5_xy_and_boundaries() {
+        let fixture = caller_fixture();
+        let cases = &fixture["cases"];
+        for setting in ["empty", "5"] {
+            let key = format!("marker3_linked_saved1:{setting}:tool2:curve1");
+            let case = &cases[&key];
+            assert_eq!(
+                case["native_calls"]["route"]["drawing_selected_drawable_version"],
+                "5"
+            );
+            let expected_setting = if setting == "empty" { "" } else { "5;" };
+            assert_eq!(
+                case["native_calls"]["ObjectStroke_GetAdvancedPenSetting"]["utf8"],
+                expected_setting
+            );
+            let stroke = caller_stroke(case);
+            let ink = prepare(&stroke).unwrap();
+            assert_caller_xy_matches(&ink, case);
+            assert_native_sample_ends(&ink, "marker3-v5-saved-1");
+        }
+    }
+
+    #[test]
+    fn actual_drawing_null_v1_caller_is_not_admitted_to_v5_sampler() {
+        let fixture = caller_fixture();
+        let case = &fixture["cases"]["marker3_linked_saved1:null:tool2:curve1"];
+        assert_eq!(
+            case["native_calls"]["route"]["drawing_selected_drawable_version"],
+            "1"
+        );
+        assert!(
+            caller_stroke(case)
+                .rendering
+                .unwrap()
+                .advanced_settings
+                .is_none()
+        );
+        assert!(prepare(&caller_stroke(case)).is_none());
+    }
+
+    #[test]
+    fn actual_drawing_nontrivial_v5_caller_matches_complete_xy_and_boundaries() {
+        let fixture = caller_fixture();
+        let case = &fixture["cases"]["marker3_nontrivial_saved3:5:tool2:curve1"];
+        assert_eq!(
+            case["native_calls"]["route"]["drawing_selected_drawable_version"],
+            "5"
+        );
+        let ink = prepare(&caller_stroke(case)).unwrap();
+        assert_caller_xy_matches(&ink, case);
+        assert_native_sample_ends(&ink, "marker3-v5-saved-3");
     }
 }
