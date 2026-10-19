@@ -2038,6 +2038,8 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
+                None,
             );
             return;
         }
@@ -2062,6 +2064,8 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
+                None,
             );
             return;
         }
@@ -2077,6 +2081,8 @@ fn main() {
                 Path::new(&output),
                 None,
                 Some(Path::new(&source)),
+                None,
+                None,
                 None,
                 None,
             );
@@ -2102,6 +2108,32 @@ fn main() {
                 Some(Path::new(&source)),
                 Some(&expected_sha256),
                 Some(0.400775),
+                None,
+                None,
+            );
+            return;
+        }
+        Some("--pdfium-standard-export-image") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let source = std::env::args_os().nth(4).expect("source PDF path required");
+            let source_sha256 = std::env::args_os().nth(5).expect("source PDF SHA-256 required").into_string().expect("source PDF SHA-256 must be UTF-8");
+            let overlay_png = std::env::args_os().nth(6).expect("overlay PNG path required");
+            let overlay_png_sha256 = std::env::args_os().nth(7).expect("overlay PNG SHA-256 required").into_string().expect("overlay PNG SHA-256 must be UTF-8");
+            let output = std::env::args_os().nth(8).expect("export output PDF path required");
+            verify_library(Path::new(&source), &source_sha256);
+            verify_library(Path::new(&overlay_png), &overlay_png_sha256);
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&path),
+                Path::new(&pdfium),
+                0,
+                Path::new(&output),
+                None,
+                Some(Path::new(&source)),
+                Some(&source_sha256),
+                Some(0.400775),
+                Some(Path::new(&overlay_png)),
+                Some(&overlay_png_sha256),
             );
             return;
         }

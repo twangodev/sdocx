@@ -1,0 +1,99 @@
+{
+  "source_pdf_sha256": "f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279",
+  "overlay_png_sha256": "6aea666d9d95f1b887f9c777e1ef451208b666f69797d5c2bf4fa113bd44ea0d",
+  "native_libraries": {
+    "model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "pdfium": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+    "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "samsung_pdf": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+    "samsung_base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "samsung_libpng": "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb",
+    "host_libm": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    "host_zlib": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e"
+  },
+  "native_execution": {
+    "path": "PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy",
+    "loaded_page_geometry": [
+      726.2043,
+      595.44006
+    ],
+    "source_rotation": 0,
+    "writer_open": 1,
+    "image_add_result": 1,
+    "image_generate_content_result": 1,
+    "writer_close": 1,
+    "export_executed": true,
+    "export_result": 0,
+    "host_zlib_streams": [
+      {
+        "id": 1,
+        "guest_zalloc": "0x14e3270",
+        "guest_zfree": "0x14e3280",
+        "host_bridge": "host_zeroed_alloc_free",
+        "consumed_bytes": 45,
+        "produced_bytes": 42,
+        "calls": 1
+      },
+      {
+        "id": 2,
+        "guest_zalloc": "0x5010e48",
+        "guest_zfree": "0x5010e58",
+        "host_bridge": "host_alloc_free",
+        "consumed_bytes": 13,
+        "produced_bytes": 5,
+        "calls": 1
+      }
+    ],
+    "decode_produced_bytes": 47
+  },
+  "output": {
+    "sha256": "717f355b09a5b3edb610317c3c5d3f899b52cfd94ef06df0a4e04978946e6018",
+    "bytes": 355040,
+    "page_rect": [
+      0.0,
+      0.0,
+      726.2042846679688,
+      595.4400634765625
+    ],
+    "retained_source_image_digest": "20d42ab55b43f2075c88b0d76beef54e",
+    "overlay_pixel_rgba_hex": "1080f0ff",
+    "overlay_bbox": [
+      40.08877944946289,
+      40.10711669921875,
+      120.26632690429688,
+      120.3214111328125
+    ],
+    "overlay_bbox_expected_from_note_rect_and_scale": [
+      40.0775,
+      40.0775,
+      120.2325,
+      120.2325
+    ],
+    "vector_path_vertices": [
+      [
+        40.07749938964844,
+        40.0775146484375
+      ],
+      [
+        120.23249816894531,
+        40.0775146484375
+      ],
+      [
+        80.15499877929688,
+        140.271240234375
+      ],
+      [
+        40.07749938964844,
+        40.0775146484375
+      ]
+    ]
+  },
+  "host_boundaries": {
+    "source_and_overlay_files": "external inputs admitted only at their pinned SHA-256 values",
+    "image_rect_and_path": "synthetic note-space inputs supplied by this harness; the native AddImage and DrawPath handlers execute",
+    "PNG": "pinned Samsung libSPenLibpng executes; inflate/checksum calls use pinned host zlib with bounded allocators",
+    "filesystem": "host file callbacks and explicit deterministic platform callbacks",
+    "full_app_route": "Composer/body-writer coordinate transform and Android JNI route are not executed",
+    "pixel_scope": "retained source image digest and overlay PNG pixel equality are checked; arbitrary crop/outside-crop rendering is not claimed"
+  }
+}

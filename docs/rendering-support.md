@@ -219,8 +219,10 @@ recovered contracts to the current Rust model and verified vector PDF transport;
 a test-only SDK graft preserves the inline source graph and scoped vector
 resources. A [native source-PDF export probe](../conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
-vector path. Its note-to-PDF scale is host-composed; executed native placement
-and production PDF-paper rendering remain outstanding.
+vector path. A [PNG overlay capture](../conformance/pdf-paper-pdfium-image-export.json)
+also executes native PNG decoding and image placement for a synthetic rectangle.
+The note-to-PDF scale is host-composed; saved-note placement and production
+PDF-paper rendering remain outstanding.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)

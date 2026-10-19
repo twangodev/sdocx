@@ -3,6 +3,7 @@ use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::collections::{BTreeSet, HashMap};
 use std::ffi::{c_char, c_int, c_uint, c_void, CStr};
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::os::fd::AsRawFd;
 
 #[link(name = "m")]
 unsafe extern "C" {
@@ -22,12 +23,18 @@ unsafe extern "C" {
     ) -> i32;
     #[link_name = "inflateInit_"]
     fn host_inflate_init(stream: *mut ZStream, version: *const c_char, stream_size: c_int) -> c_int;
+    #[link_name = "inflateInit2_"]
+    fn host_inflate_init2(stream: *mut ZStream, window_bits: c_int, version: *const c_char, stream_size: c_int) -> c_int;
     #[link_name = "inflate"]
     fn host_inflate(stream: *mut ZStream, flush: c_int) -> c_int;
     #[link_name = "inflateEnd"]
     fn host_inflate_end(stream: *mut ZStream) -> c_int;
     #[link_name = "zlibVersion"]
     fn host_zlib_version() -> *const c_char;
+    #[link_name = "crc32"]
+    fn host_crc32(crc: u64, bytes: *const u8, length: c_uint) -> u64;
+    #[link_name = "adler32"]
+    fn host_adler32(adler: u64, bytes: *const u8, length: c_uint) -> u64;
 }
 
 const LIBZ_PATH: &str = "/usr/lib/x86_64-linux-gnu/libz.so.1";
@@ -102,17 +109,21 @@ struct ZallocLedger {
 struct ZallocContext {
     ledger: *mut ZallocLedger,
     stream_id: u64,
+    zeroed: bool,
 }
 
 const PDFIUM_BASE: u64 = 0x0100_0000;
 const LIBCPP_BASE: u64 = 0x0200_0000;
 const SPENPDF_BASE: u64 = 0x0300_0000;
 const SPENBASE_BASE: u64 = 0x0400_0000;
+const LIBPNG_BASE: u64 = 0x0500_0000;
+const LIBPNG_SHA256: &str = "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb";
 const PDF_WRITE_BLOCK_STUB: u64 = STUB + 0xf000;
 const STUB: u64 = 0x0800_0000;
-// Pinned PdfiumB offsets: the guest zalloc thunk forwards to zeroing
-// CallocOrDie2D; zfree forwards to free. The host bridge mirrors those
-// semantics with owned host allocations and never invokes guest code pointers.
+// Pinned PdfiumB offsets: its zalloc thunk forwards to zeroing CallocOrDie2D;
+// zfree forwards to free. The pinned libpng png_zalloc/png_zfree callbacks are
+// separately recognized below and bridged as ordinary malloc/free allocations.
+// Neither bridge invokes a guest function pointer as a host C function.
 const PDFIUM_ZALLOC: u64 = PDFIUM_BASE + 0x4e3270;
 const PDFIUM_ZFREE: u64 = PDFIUM_BASE + 0x4e3280;
 const C_LOCALE: u64 = STUB + 0x9200;
@@ -213,7 +224,9 @@ unsafe extern "C" fn zlib_host_alloc(
     let Ok(layout) = Layout::from_size_align(bytes.max(1), 16) else {
         return ptr::null_mut();
     };
-    let pointer = unsafe { alloc_zeroed(layout) };
+    let pointer = unsafe {
+        if context.zeroed { alloc_zeroed(layout) } else { std::alloc::alloc(layout) }
+    };
     if pointer.is_null() {
         return pointer.cast();
     }
@@ -368,6 +381,11 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
     let x1 = read_register(engine, REGISTER_X0 + 1);
     let x2 = read_register(engine, REGISTER_X0 + 2);
     external.handled_imports.insert(name.clone());
+    if name == "inflateInit2_" {
+        let caller = read_register(engine, REGISTER_X30);
+        assert!((LIBPNG_BASE..LIBPNG_BASE + 0x34_000).contains(&caller), "successful overlay decode expected pinned libpng caller, got {caller:#x}");
+        external.platform_events.insert(format!("pinned-libpng-inflateInit2-callsite:{caller:#x}"));
+    }
     let mut result = 0_u64;
     match name.trim_end_matches("@LIBC") {
         "memset" | "__memset_chk" => {
@@ -380,6 +398,13 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             write(engine, x0, &vec![x1 as u8; len]);
             result = x0;
         }
+        "setjmp" => {
+            // Only the successful PNG decode branch is in scope; a subsequent
+            // longjmp is rejected rather than turned into a normal return.
+            external.platform_events.insert("setjmp-initial-zero-only".into());
+            result = 0;
+        }
+        "longjmp" => panic!("libpng longjmp error recovery is outside the successful-decode capture"),
         "memcpy" | "memmove" | "__memcpy_chk" | "__memmove_chk" => {
             let len = if name.contains("_chk") {
                 x3(engine)
@@ -413,6 +438,17 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             result = compare_memory(engine, x0, x1, len) as i64 as u64;
         }
         "strcmp" => result = compare_c_strings(engine, x0, x1) as i64 as u64,
+        "strchr" => {
+            let bytes = cstring_bytes(engine, x0);
+            let needle = x1 as u8;
+            result = if let Some(index) = bytes.iter().position(|byte| *byte == needle) {
+                x0 + index as u64
+            } else if needle == 0 {
+                x0 + bytes.len() as u64
+            } else {
+                0
+            };
+        }
         "atoi" => {
             let bytes = cstring_bytes(engine, x0);
             let mut index = 0;
@@ -504,6 +540,12 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
         }
         "fclose" => { external.files.remove(&x0).expect("unknown FILE handle"); result = 0; }
         "feof" | "ferror" | "fflush" => result = 0,
+        "setbuf" => {
+            assert!(external.files.contains_key(&x0), "setbuf received unknown FILE handle {x0:#x}");
+            assert_eq!(x1, 0, "only unbuffered setbuf is admitted");
+            external.platform_events.insert("setbuf:unbuffered-host-file".into());
+        }
+        "fileno" => result = external.files.get(&x0).expect("unknown FILE handle").as_raw_fd() as u64,
         "access" | "faccessat" => {
             let path = if name == "faccessat@LIBC" { cstring(engine, x1) } else { cstring(engine, x0) };
             external.platform_events.insert(format!("host-access-unavailable:{path}"));
@@ -572,14 +614,16 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             let result = unsafe { hypotf(left, right) };
             register(engine, 136, u64::from(result.to_bits()));
         }
-        "inflateInit_" => {
-            assert_eq!(x2 as usize, std::mem::size_of::<ZStream>(), "guest z_stream size does not match host ABI");
-            let guest_version = cstring(engine, x1);
+        "inflateInit_" | "inflateInit2_" => {
+            let init2 = name == "inflateInit2_";
+            let version_pointer = if init2 { x2 } else { x1 };
+            let stream_size = if init2 { x3(engine) } else { x2 };
+            assert_eq!(stream_size as usize, std::mem::size_of::<ZStream>(), "guest z_stream size does not match host ABI");
+            let guest_version = cstring(engine, version_pointer);
             assert!(guest_version.starts_with("1."), "unsupported guest zlib version {guest_version:?}");
             let guest_zalloc = read_u64(engine, x0 + 64);
             let guest_zfree = read_u64(engine, x0 + 72);
             let guest_opaque = read_u64(engine, x0 + 80);
-            assert_eq!(guest_opaque, 0, "unsupported guest zlib allocator context");
             let host_version = std::ffi::CString::new(guest_version.as_bytes()).unwrap();
             let mut stream = Box::<ZStream>::default();
             let id = external.next_inflate_id;
@@ -588,11 +632,17 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
                 assert_eq!(guest_opaque, 0, "guest zlib opaque must be null with default allocators");
                 None
             } else {
-                assert_eq!(guest_zalloc, PDFIUM_ZALLOC, "unexpected guest zalloc function pointer");
-                assert_eq!(guest_zfree, PDFIUM_ZFREE, "unexpected guest zfree function pointer");
+                let zeroed = guest_zalloc == PDFIUM_ZALLOC && guest_zfree == PDFIUM_ZFREE && guest_opaque == 0;
+                // libSPenLibpng's pinned png_zalloc multiplies items*size then
+                // calls png_malloc_warn; png_zfree calls png_free.
+                let libpng_allocator = guest_zalloc == LIBPNG_BASE + 0x10e48
+                    && guest_zfree == LIBPNG_BASE + 0x10e58
+                    && (PDF_HEAP_BASE..PDF_HEAP_BASE + PDF_HEAP_SIZE).contains(&guest_opaque);
+                assert!(zeroed || libpng_allocator, "unsupported guest zlib allocator callbacks: alloc={guest_zalloc:#x} free={guest_zfree:#x} opaque={guest_opaque:#x}");
                 let mut context = Box::new(ZallocContext {
                     ledger: ptr::from_mut(&mut external.zalloc_ledger),
                     stream_id: id,
+                    zeroed,
                 });
                 stream.zalloc = Some(zlib_host_alloc);
                 stream.zfree = Some(zlib_host_free);
@@ -600,11 +650,11 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
                 Some(context)
             };
             result = unsafe {
-                host_inflate_init(
-                    stream.as_mut(),
-                    host_version.as_ptr(),
-                    std::mem::size_of::<ZStream>() as c_int,
-                ) as i64 as u64
+                (if init2 {
+                    host_inflate_init2(stream.as_mut(), x1 as c_int, host_version.as_ptr(), stream_size as c_int)
+                } else {
+                    host_inflate_init(stream.as_mut(), host_version.as_ptr(), stream_size as c_int)
+                }) as i64 as u64
             };
             assert_eq!(result as i64, 0, "pinned host inflateInit_ failed");
             external.inflates.insert(x0, InflateRecord {
@@ -661,6 +711,12 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             result = status as i64 as u64;
         }
         "inflateEnd" => {
+            if !external.inflates.contains_key(&x0) {
+                assert_eq!(read_u64(engine, x0 + 56), 0, "untracked inflateEnd has a live native zlib state outside the host bridge");
+                result = (-2_i32) as i64 as u64; // Z_STREAM_ERROR for an uninitialized z_stream.
+                register(engine, REGISTER_X0, result);
+                return;
+            }
             let mut record = external.inflates.remove(&x0).expect("inflateEnd called without matching init");
             assert!(record.calls > 0, "zlib stream ended without any inflate calls");
             assert!(record.zalloc_context.as_ref().is_none_or(|context| context.stream_id == record.id));
@@ -678,6 +734,18 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
                 produced: record.produced,
                 calls: record.calls,
             });
+        }
+        "crc32" | "adler32" => {
+            let len = x2 as usize;
+            assert!(len <= INFLATE_CHUNK_LIMIT, "checksum input chunk exceeds bound");
+            assert!(len == 0 || x1 != 0, "checksum received null input with nonzero length");
+            let mut bytes = vec![0_u8; len];
+            if len != 0 { check(unsafe { uc_mem_read(engine, x1, bytes.as_mut_ptr().cast(), len) }); }
+            let input = if x1 == 0 { ptr::null() } else { bytes.as_ptr() };
+            result = unsafe {
+                if name == "crc32" { host_crc32(x0, input, len as c_uint) }
+                else { host_adler32(x0, input, len as c_uint) }
+            };
         }
         "compress" => {
             let source_len = x3(engine) as usize;
@@ -1147,11 +1215,16 @@ fn bind_extra_dso(engine: Engine, path: &Path, base: u64, providers: &HashMap<St
         let symbol_value = u64::from_str_radix(fields[3], 16).unwrap_or(0);
         let name = symbol_version(fields[4]);
         let jump_slot = kind.contains("JUMP_SLOT");
-        let mut target = if symbol_value != 0 { base + symbol_value }
+        let png_zlib_call = path.file_name().is_some_and(|name| name == "libSPenLibpng.so")
+            && matches!(name, "inflateInit_" | "inflateInit2_" | "inflate" | "inflateEnd" | "crc32" | "adler32");
+        let mut target = if png_zlib_call || matches!(name, "calloc" | "free") { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
+        else if symbol_value != 0 { base + symbol_value }
         else if let Some(address) = providers.get(name) { *address }
-        else if matches!(name, "calloc" | "free") { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
         else if name == "__sF" { STUB + 0x9000 }
         else if name == "stdout" { STUB + 0x9010 }
+        else if name == "stderr" { STUB + 0x9020 }
+        else if matches!(name, "malloc" | "_Znwm" | "_ZnwmRKSt9nothrow_t") { NEW }
+        else if matches!(name, "free" | "_ZdlPv" | "_ZdaPv" | "_ZdlPvm" | "_ZdaPvm") { DELETE }
         else if jump_slot || function_imports.contains(name) { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
         else { panic!("unresolved {kind} data import {name} in {}", path.display()); };
         if kind.contains("ABS64") && fields.len() >= 7 {
@@ -1189,6 +1262,8 @@ pub(super) fn capture(
     standard_export_path: Option<&Path>,
     expected_source_sha256: Option<&str>,
     note_page_scale: Option<f32>,
+    overlay_png_path: Option<&Path>,
+    expected_overlay_png_sha256: Option<&str>,
 ) {
     verify_loaded_host_zlib();
     machine.prepare_pdfium_arena();
@@ -1205,6 +1280,16 @@ pub(super) fn capture(
         LIBCPP_BASE,
         "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
     );
+    let libpng = overlay_png_path.map(|_| pdfium.with_file_name("libSPenLibpng.so"));
+    if let Some(libpng) = &libpng { verify_library(libpng, LIBPNG_SHA256); }
+    if let Some(libpng) = &libpng {
+        map_library(
+            machine.engine,
+            libpng,
+            LIBPNG_BASE,
+            "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb",
+        );
+    }
     let (spenpdf, spenbase) = if standard_export_path.is_some() {
         let spenpdf = pdfium.with_file_name("libSPenPdf.so");
         let spenbase = pdfium.with_file_name("libSPenBase.so");
@@ -1269,6 +1354,7 @@ pub(super) fn capture(
             }
         }
     }
+    let libpng_symbols = libpng.as_ref().map(|path| exported_symbols(path, LIBPNG_BASE)).unwrap_or_default();
     let reloc = Command::new("readelf")
         .args(["-rW"])
         .arg(pdfium)
@@ -1321,6 +1407,8 @@ pub(super) fn capture(
             PDFIUM_BASE + value
         } else if local.contains_key(name) {
             PDFIUM_BASE + local[name]
+        } else if let Some(address) = libpng_symbols.get(name) {
+            *address
         } else {
             match name {
                 "_Znwm" | "_ZnwmRKSt9nothrow_t" | "malloc" => NEW,
@@ -1469,17 +1557,20 @@ pub(super) fn capture(
     }
     if let (Some(spenpdf), Some(spenbase)) = (&spenpdf, &spenbase) {
         let mut providers = HashMap::new();
-        for source in [
+        let mut provider_sources = vec![
             exported_symbols(spenpdf, SPENPDF_BASE),
             exported_symbols(spenbase, SPENBASE_BASE),
             exported_symbols(pdfium, PDFIUM_BASE),
             exported_symbols(&libcxx, LIBCPP_BASE),
             exported_symbols(model, 0),
-        ] {
+        ];
+        if let Some(libpng) = &libpng { provider_sources.push(exported_symbols(libpng, LIBPNG_BASE)); }
+        for source in provider_sources {
             for (name, address) in source { providers.entry(name).or_insert(address); }
         }
         bind_extra_dso(machine.engine, spenbase, SPENBASE_BASE, &providers, external.as_mut(), &mut next_stub);
         bind_extra_dso(machine.engine, spenpdf, SPENPDF_BASE, &providers, external.as_mut(), &mut next_stub);
+        if let Some(libpng) = &libpng { bind_extra_dso(machine.engine, libpng, LIBPNG_BASE, &providers, external.as_mut(), &mut next_stub); }
     }
     register(machine.engine, REGISTER_TPIDR_EL0, machine.tls_pointer);
 
@@ -1507,6 +1598,9 @@ pub(super) fn capture(
         const HANDLER_OBJECT: u64 = IMPL_OBJECT + 0xf000;
         const SOURCE_BASE: u64 = 0x3000_0000;
         check(unsafe { uc_mem_map(machine.engine, IMPL_OBJECT, 0x10000, 7) });
+        if overlay_png_path.is_some() {
+            check(unsafe { uc_mem_map(machine.engine, 0x0901_0000, 0x10000, 7) });
+        }
         machine.call(SPENPDF_BASE + 0x84354, &[IMPL_OBJECT]);
         check(unsafe { uc_mem_map(machine.engine, SOURCE_BASE, 0x10000, 7) });
         let source_name = source_path.to_string_lossy();
@@ -1526,6 +1620,29 @@ pub(super) fn capture(
         write(machine.engine, HANDLER_OBJECT, &IMPL_OBJECT.to_le_bytes());
         let writer_open = machine.call(SPENPDF_BASE + 0x7c844, &[HANDLER_OBJECT, 0, 0]);
         assert_eq!(writer_open, 1, "PdfiumExportHandler::OpenWriter failed");
+        let image_result = if let Some(png_path) = overlay_png_path {
+            let expected = expected_overlay_png_sha256.expect("PNG capture requires an expected source hash");
+            verify_library(png_path, expected);
+            let png_name = png_path.to_string_lossy();
+            assert!(png_name.len() <= 22, "PDFExportInfo short path supports at most 22 ASCII bytes (11 UTF-16 code units)");
+            assert!(png_name.is_ascii(), "PDFExportInfo short path must be ASCII");
+            const PROBE_DATA_BASE: u64 = 0x0901_0000;
+            let image_info = PROBE_DATA_BASE;
+            write(machine.engine, image_info, &[0; 128]);
+            let note_rect = [100.0_f32, 100.0, 300.0, 300.0];
+            write(machine.engine, image_info + 44, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
+            let scale = note_page_scale.expect("PNG capture requires the page scale");
+            write(machine.engine, image_info + 60, &scale.to_bits().to_le_bytes());
+            write(machine.engine, image_info + 64, unsafe { std::slice::from_raw_parts(note_rect.as_ptr().cast::<u8>(), 16) });
+            write(machine.engine, image_info + 80, &[(png_name.len() as u8) * 2]);
+            write(machine.engine, image_info + 81, png_name.as_bytes());
+            write(machine.engine, image_info + 81 + png_name.len() as u64, &[0]);
+            let result = machine.call(SPENPDF_BASE + 0x82810, &[HANDLER_OBJECT, 0, image_info]);
+            assert_eq!(result, 1, "PdfiumImageHandler::AddImage failed");
+            let generated = machine.call(PDFIUM_BASE + 0x588ae4, &[page]);
+            assert_eq!(generated, 1, "FPDFPage_GenerateContent after image insert failed");
+            Some((result, generated, note_rect))
+        } else { None };
         const PAINT: u64 = IMPL_OBJECT + 0xe000;
         const POINTS: u64 = IMPL_OBJECT + 0xd100;
         const VECTOR: u64 = IMPL_OBJECT + 0xd000;
@@ -1568,8 +1685,12 @@ pub(super) fn capture(
         let inflate_streams = external.completed_inflates.iter().map(|stream| {
             let host_bridge = if stream.guest_zalloc == 0 && stream.guest_zfree == 0 {
                 "host_zlib_default"
-            } else {
+            } else if stream.guest_zalloc == PDFIUM_ZALLOC && stream.guest_zfree == PDFIUM_ZFREE {
                 "host_zeroed_alloc_free"
+            } else {
+                assert_eq!(stream.guest_zalloc, LIBPNG_BASE + 0x10e48);
+                assert_eq!(stream.guest_zfree, LIBPNG_BASE + 0x10e58);
+                "host_alloc_free"
             };
             format!(
                 "{{\"id\":{},\"guest_zalloc\":\"0x{:x}\",\"guest_zfree\":\"0x{:x}\",\"host_bridge\":\"{host_bridge}\",\"consumed_bytes\":{},\"produced_bytes\":{},\"calls\":{}}}",
@@ -1579,6 +1700,11 @@ pub(super) fn capture(
         let note_points_json = note_points.iter().map(|(x, y)| format!("[{x},{y}]")).collect::<Vec<_>>().join(",");
         let emitted_points_json = emitted_points.iter().map(|(x, y)| format!("[{x},{y}]")).collect::<Vec<_>>().join(",");
         let scale_json = note_page_scale.map_or_else(|| "null".to_owned(), |scale| scale.to_string());
+        if let (Some((add_image_result, image_generate_content_result, image_rect)), Some(png_path)) = (image_result, overlay_png_path) {
+            let png_sha256 = sha256_file(png_path);
+            println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumImageHandler::AddImage -> FPDFPage_GenerateContent -> PdfiumPathHandler::DrawPath -> CloseWriter -> Export(range 0..0) -> FPDF_SaveAsCopy\",\"source_pdf_sha256\":\"{source_sha256}\",\"overlay_png_sha256\":\"{png_sha256}\",\"loaded_page_geometry\":[{loaded_width},{loaded_height}],\"source_rotation\":{source_rotation},\"writer_open\":{writer_open},\"image_add_result\":{add_image_result},\"image_generate_content_result\":{image_generate_content_result},\"note_page_image_rect\":{image_rect:?},\"page_scale\":{scale_json},\"writer_close\":{writer_close},\"export_executed\":true,\"export_result\":{export_result},\"export_result_semantics\":\"0 means FPDF_SaveAsCopy succeeded; the native wrapper closes the document on nonzero save status\",\"export_output_path\":{:?},\"export_output_bytes\":{},\"export_output_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_path_points\":[{}],\"page_path_points\":[{}],\"handled_imports\":[{}],\"platform_events\":[{}],\"host_boundaries\":{{\"source_pdf_and_png\":\"external files admitted only by pinned SHA-256\",\"png_decode\":\"pinned APK libSPenLibpng executes; zlib inflate/checksum callbacks use pinned host libz\",\"image_rect\":\"synthetic note-space coordinates supplied by this harness\",\"path_points\":\"synthetic note-space coordinates composed on host using separately captured ratio\",\"filesystem\":\"bounded host file callbacks\",\"page_parse_insert_export\":\"pinned native PDFium and SPenPdf calls\"}}}}", output_path.display(), output.len(), output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
+            return;
+        }
         println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumPathHandler::DrawPath -> CloseWriter -> PdfiumExportHandler::Export(inclusive page range 0..0) -> PDFFileWriter/FDPF_SaveAsCopy\",\"load_result\":{},\"loaded_width\":{},\"loaded_height\":{},\"source_rotation\":{},\"writer_open\":{},\"writer_close\":{},\"export_executed\":true,\"export_result\":{},\"output_bytes\":{},\"source_file_sha256\":\"{}\",\"output_file_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_page_scale\":{},\"note_points\":[{}],\"pdf_points\":[{}],\"coordinate_composition\":\"host composed supplied note points with the independently captured Composer ratio; body writer transform not executed\",\"handled_imports\":[{}],\"platform_events\":[{}]}}", load_result, loaded_width, loaded_height, source_rotation, writer_open, writer_close, export_result, output.len(), source_sha256, output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, scale_json, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
         return;
     }
