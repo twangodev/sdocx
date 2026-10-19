@@ -332,6 +332,10 @@ The [MagicPen Drawing caller](../conformance/magicpen-saved-caller-native.json)
 checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
 RTV1 vectors separately from callback arguments for synthetic Model inputs;
 texture paint and production vector integration remain unverified.
+The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
+checks seven setting states and captures five four-float records from synthetic
+Model input. Version dispatch is observed; sampler reconstruction, paint and
+production vector integration remain open.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
