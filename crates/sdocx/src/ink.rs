@@ -424,11 +424,11 @@ fn effective_oblique_stroke_type(raw: Option<u16>) -> u16 {
     if raw >= 3 { 0 } else { raw }
 }
 
-/// The saved adapter converts size with FCVTZU to u32. Keep only its modeled
-/// finite, nonnegative input domain; mesh traversal has separate work budgets.
+/// Model `Pen::SetSize` before V4's `FCVTZU` conversion. The setter clamps
+/// finite values to this range; mesh traversal has separate work budgets.
 #[cfg(test)]
 fn oblique_native_size(size: f32) -> Option<f32> {
-    (size.is_finite() && (0.0..4_294_967_296.0).contains(&size)).then_some(size)
+    size.is_finite().then_some(size.clamp(0.4, 800.0))
 }
 
 #[cfg(test)]
@@ -595,7 +595,7 @@ mod tests {
         high_size.pen_width = 1_000.0;
         assert_eq!(
             prepare_stroke(&high_size, false).coverage_mesh,
-            prepare_oblique_mesh(&high_size.points, 1_000.0, false, 0, [1.0, 1.0])
+            prepare_oblique_mesh(&high_size.points, 800.0, false, 0, [1.0, 1.0])
         );
 
         let mut other_version = input.clone();
@@ -669,12 +669,14 @@ mod tests {
     }
 
     #[test]
-    fn oblique_size_uses_native_conversion_domain_without_a_clamp() {
-        assert_eq!(oblique_native_size(0.1), Some(0.1_f32));
-        assert_eq!(oblique_native_size(1_000.0), Some(1_000.0_f32));
-        assert_eq!(oblique_native_size(-0.1), None);
+    fn oblique_size_applies_native_set_size_clamp_before_conversion() {
+        assert_eq!(oblique_native_size(0.1), Some(0.4_f32));
+        assert_eq!(oblique_native_size(0.4), Some(0.4_f32));
+        assert_eq!(oblique_native_size(1_000.0), Some(800.0_f32));
+        assert_eq!(oblique_native_size(800.0), Some(800.0_f32));
+        assert_eq!(oblique_native_size(-0.1), Some(0.4_f32));
         assert_eq!(oblique_native_size(f32::NAN), None);
-        assert_eq!(oblique_native_size(4_294_967_296.0), None);
+        assert_eq!(oblique_native_size(f32::INFINITY), None);
     }
 
     #[test]
