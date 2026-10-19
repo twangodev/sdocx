@@ -57,6 +57,7 @@ class TextureProbe(NativeBrush):
         self.draw_stubs = {}
         self.draw_capture = {'bindings': {}, 'events': []}
         self.blend_descriptor = None
+        self.blend_gl_calls = []
         self.state_stub = 0x20001160
         self.state_default_stub = 0x20001140
         self.device_caps = self.alloc(16)
@@ -86,6 +87,41 @@ class TextureProbe(NativeBrush):
         self.callbacks['glPixelStorei'] = self.gl_pixel_store
         self.callbacks['glTexSubImage2D'] = self.gl_tex_sub_image_2d
         self.callbacks['SPen::RendererFactory::CreateBlendStateObject(SPen::BlendStateDescriptor const&)'] = self.create_blend_state
+        self.callbacks['glBlendEquationSeparate'] = lambda: self.record_blend_gl('glBlendEquationSeparate', 2)
+        self.callbacks['glBlendFuncSeparate'] = lambda: self.record_blend_gl('glBlendFuncSeparate', 4)
+        self.callbacks['glEnable'] = lambda: self.record_blend_gl('glEnable', 1)
+        self.callbacks['glDisable'] = lambda: self.record_blend_gl('glDisable', 1)
+        self.callbacks['glColorMask'] = lambda: self.record_blend_gl('glColorMask', 4)
+
+    def record_blend_gl(self, name, count):
+        self.blend_gl_calls.append({'call': name, 'args': [self.x(i) for i in range(count)]})
+
+    def capture_native_blend_mapping(self):
+        if self.blend_descriptor is None:
+            raise RuntimeError('native Init did not provide a blend descriptor')
+        descriptor = self.alloc(32)
+        self.u.mem_write(descriptor, bytes.fromhex(self.blend_descriptor))
+        blend_object = self.alloc(40)
+        self.call('SPen::GLES::BlendStateObject::BlendStateObject(SPen::BlendStateDescriptor const&)',
+                  [blend_object, descriptor])
+        self.call('SPen::GLES::BlendStateObject::SetDescriptor(SPen::BlendStateDescriptor const&)',
+                  [blend_object, descriptor])
+        self.call('SPen::GLES::BlendStateObject::Activate()', [blend_object])
+        expected = [
+            {'call': 'glBlendEquationSeparate', 'args': [0x8006, 0x8006]},
+            {'call': 'glBlendFuncSeparate', 'args': [0x0302, 0x0303, 0x0001, 0x0303]},
+            {'call': 'glEnable', 'args': [0x0be2]},
+            {'call': 'glColorMask', 'args': [1, 1, 1, 1]},
+        ]
+        if self.blend_gl_calls != expected:
+            raise RuntimeError(f'native BlendStateObject mapping changed: {self.blend_gl_calls}')
+        return {'native_methods': [
+                    'SPen::GLES::BlendStateObject::BlendStateObject(SPen::BlendStateDescriptor const&)',
+                    'SPen::GLES::BlendStateObject::SetDescriptor(SPen::BlendStateDescriptor const&)',
+                    'SPen::GLES::BlendStateObject::Activate()'],
+                'input_descriptor_raw_32_bytes': self.blend_descriptor,
+                'gles_calls': self.blend_gl_calls,
+                'host_boundary': 'native BlendStateObject methods execute; GLES imports are intercepted'}
 
     def create_blend_state(self):
         descriptor = self.x(0)
@@ -506,6 +542,7 @@ class TextureProbe(NativeBrush):
             raise RuntimeError('native Init did not create the blend-state descriptor')
         if self.blend_descriptor != '0101000000000000000000000600000007000000010000000700000000000000':
             raise RuntimeError(f'native Init blend descriptor changed: {self.blend_descriptor}')
+        blend_mapping = self.capture_native_blend_mapping()
         return {
             'artifact': 'Samsung Notes 4.4.45.37 native BrushPen',
             'library_sha256': self.native_hashes,
@@ -528,6 +565,7 @@ class TextureProbe(NativeBrush):
                             'synthetic_inputs_and_native_bindings': draw_capture,
                             'init_blend_descriptor_raw_32_bytes': self.blend_descriptor,
                             'blend_descriptor_note': 'actual native Init input to intercepted CreateBlendStateObject; raw bytes only, not a GLES blend-state mapping'},
+            'native_blend_mapping': blend_mapping,
             'uploads': self.upload_records,
             'gl_calls': self.gl_calls,
             'host_boundaries': {

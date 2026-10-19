@@ -144,6 +144,48 @@
     "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
     "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
   },
+  "native_blend_mapping": {
+    "gles_calls": [
+      {
+        "args": [
+          32774,
+          32774
+        ],
+        "call": "glBlendEquationSeparate"
+      },
+      {
+        "args": [
+          770,
+          771,
+          1,
+          771
+        ],
+        "call": "glBlendFuncSeparate"
+      },
+      {
+        "args": [
+          3042
+        ],
+        "call": "glEnable"
+      },
+      {
+        "args": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "call": "glColorMask"
+      }
+    ],
+    "host_boundary": "native BlendStateObject methods execute; GLES imports are intercepted",
+    "input_descriptor_raw_32_bytes": "0101000000000000000000000600000007000000010000000700000000000000",
+    "native_methods": [
+      "SPen::GLES::BlendStateObject::BlendStateObject(SPen::BlendStateDescriptor const&)",
+      "SPen::GLES::BlendStateObject::SetDescriptor(SPen::BlendStateDescriptor const&)",
+      "SPen::GLES::BlendStateObject::Activate()"
+    ]
+  },
   "native_draw": {
     "blend_descriptor_note": "actual native Init input to intercepted CreateBlendStateObject; raw bytes only, not a GLES blend-state mapping",
     "entry_count": 1,
