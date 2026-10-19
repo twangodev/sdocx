@@ -115,8 +115,10 @@ and scales 1/2/4, checking uploaded XY against the saved caller buffers. Points
 enter directly at RTV1. A [joined Drawing paint capture](../conformance/marker3-joined-paint-native.json)
 retains the Drawing-selected RT and its original 176-byte vector through native
 Init/Update/Draw, with a full host-Mesa RGBA readback and 239 zero GL error checks.
-The host-wired queue executes native `SendDataToGPU` to transfer the vector;
-no host vector-slot assignment is needed. Renderer-message and vector-delete
+The [queue control](../conformance/marker3-queue-handoff-native.json) executes
+native `SendDataToGPU` with correct host queue wiring and detects missing
+dispatch with the wrong queue; no host vector-slot assignment is needed.
+In the joined paint capture, renderer-message and vector-delete
 tasks remain deferred; complete queue/lifetime integration, vector edge coverage
 and device pixel parity remain outstanding.
 DefaultPen's test-only sampler checks
