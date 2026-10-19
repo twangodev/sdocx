@@ -161,7 +161,10 @@ A [joined paint capture](../conformance/inkpen-joined-paint-native.json) execute
 native Renderer factories and RTV1 Init/Update/Draw, checking the 312-byte upload
 and full RGBA readbacks. With correct host queue wiring, native `SendDataToGPU`
 installs the saved vector and `Update(false)` uploads it without a host vector-slot
-write. Cleanup tasks remain deferred; Mesa-capability setup, actual device display
+write. A [three-color capture](../conformance/inkpen-color-native.json) checks an
+unchanged MAX mask and one source-over composite for zero, partial and opaque
+alpha under identity host color conversion. Cleanup tasks remain deferred;
+Mesa-capability setup, actual device display
 values and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
