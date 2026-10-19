@@ -210,8 +210,10 @@ validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
 a test-only SDK graft preserves the inline source graph and scoped vector
-resources. Native placement/asset binding and production PDF-paper rendering
-remain outstanding.
+resources. A [native source-PDF export probe](../conformance/pdf_paper_pdfium_quiz_source_native.py)
+preserves one retained document's image bytes and page geometry while adding a
+vector path. Its note-to-PDF scale is host-composed; executed native placement
+and production PDF-paper rendering remain outstanding.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)
