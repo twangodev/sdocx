@@ -968,6 +968,62 @@
         ],
         "drawable_getSize_f32_bits": "00008040",
         "drawing_selected_rt_id": "rt0",
+        "drawline_threshold_entries": [
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "draw_object_stroke",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "draw_object_stroke",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "draw_object_stroke",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "saved_redraw",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "saved_redraw",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "saved_redraw",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036cc0",
+            "receiver_minus_primary": 184347256
+          }
+        ],
         "loader": [
           {
             "flags": 2,
@@ -1077,6 +1133,30 @@
         "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::InkPen2StrokeDrawableGLV9::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
         "selected_drawable_object_redraw_return": 1,
         "selected_drawable_primary_vtable_id": "InkPen2StrokeDrawableGLV9",
+        "selected_drawable_redraw_entry_state": [
+          {
+            "alternation_plus_100_u8": 0,
+            "entry_pc": "0x504e1d0",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10036cc0",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "00000000",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000040",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          },
+          {
+            "alternation_plus_100_u8": 1,
+            "entry_pc": "0x504e1d0",
+            "phase": "saved_redraw",
+            "receiver_address": "0x10036cc0",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "409f383f",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000000",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          }
+        ],
         "selected_drawable_redraw_lifecycle_method_entries": [
           {
             "pc": "0x504e8d0",
@@ -2874,14 +2954,19 @@
           }
         ],
         "selected_drawable_state": {
-          "address_identity": "selected drawable returned from actual Drawing factory route",
+          "address": "0x10036cc0",
+          "alternation_plus_100_u8": 1,
+          "drawable_size_f32_bits": "00008040",
+          "drawable_vtable": "0x5068cd0",
+          "identity": "selected drawable returned from actual Drawing factory route",
           "inverse_scale_f32_bits": [
             "0000803f",
             "0000803f"
           ],
-          "raw_bytes_plus_44_4": "00000000",
-          "size_f32_bits": "00008040",
-          "vtable": "0x5068cd0"
+          "primary_object_plus_44_raw_bytes": "00000000",
+          "residual_plus_92_f32_bits": "409f383f",
+          "spacing_plus_88_f32_bits": "0000803f",
+          "tool_threshold_plus_96_f32_bits": "0000a041"
         },
         "separate_saved_RedrawPen_rect_f32_bits": "34bce8bf96bb38c0c6e3df41198fdf40",
         "source_ObjectStroke_GetPenSize_f32_bits": "00008040",
@@ -4931,6 +5016,26 @@
         ],
         "drawable_getSize_f32_bits": "0000803f",
         "drawing_selected_rt_id": "rt0",
+        "drawline_threshold_entries": [
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "draw_object_stroke",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036db0",
+            "receiver_minus_primary": 184347496
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "saved_redraw",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036db0",
+            "receiver_minus_primary": 184347496
+          }
+        ],
         "loader": [
           {
             "flags": 2,
@@ -5040,6 +5145,30 @@
         "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::InkPen2StrokeDrawableGLV9::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
         "selected_drawable_object_redraw_return": 1,
         "selected_drawable_primary_vtable_id": "InkPen2StrokeDrawableGLV9",
+        "selected_drawable_redraw_entry_state": [
+          {
+            "alternation_plus_100_u8": 0,
+            "entry_pc": "0x504e1d0",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10036db0",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "00000000",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000040",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          },
+          {
+            "alternation_plus_100_u8": 1,
+            "entry_pc": "0x504e1d0",
+            "phase": "saved_redraw",
+            "receiver_address": "0x10036db0",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "0000803f",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000000",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          }
+        ],
         "selected_drawable_redraw_lifecycle_method_entries": [
           {
             "pc": "0x504e8d0",
@@ -5429,14 +5558,19 @@
           }
         ],
         "selected_drawable_state": {
-          "address_identity": "selected drawable returned from actual Drawing factory route",
+          "address": "0x10036db0",
+          "alternation_plus_100_u8": 1,
+          "drawable_size_f32_bits": "0000803f",
+          "drawable_vtable": "0x5068cd0",
+          "identity": "selected drawable returned from actual Drawing factory route",
           "inverse_scale_f32_bits": [
             "0000803f",
             "0000803f"
           ],
-          "raw_bytes_plus_44_4": "00000000",
-          "size_f32_bits": "0000803f",
-          "vtable": "0x5068cd0"
+          "primary_object_plus_44_raw_bytes": "00000000",
+          "residual_plus_92_f32_bits": "0000803f",
+          "spacing_plus_88_f32_bits": "0000803f",
+          "tool_threshold_plus_96_f32_bits": "0000a041"
         },
         "separate_saved_RedrawPen_rect_f32_bits": "060080bfa38b1ec0d2458f40a38b1e40",
         "source_ObjectStroke_GetPenSize_f32_bits": "0000803f",
@@ -6078,6 +6212,26 @@
         ],
         "drawable_getSize_f32_bits": "0000803f",
         "drawing_selected_rt_id": "rt0",
+        "drawline_threshold_entries": [
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "draw_object_stroke",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036e60",
+            "receiver_minus_primary": 184347672
+          },
+          {
+            "entry_pc": "0x504dcb8",
+            "phase": "saved_redraw",
+            "plus44_tolerance_f32_bits": "00000000",
+            "plus96_tool_threshold_f32_bits": "0000a041",
+            "primary_drawable_address": "0x5068248",
+            "receiver_address": "0x10036e60",
+            "receiver_minus_primary": 184347672
+          }
+        ],
         "loader": [
           {
             "flags": 2,
@@ -6187,6 +6341,30 @@
         "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::InkPen2StrokeDrawableGLV9::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
         "selected_drawable_object_redraw_return": 1,
         "selected_drawable_primary_vtable_id": "InkPen2StrokeDrawableGLV9",
+        "selected_drawable_redraw_entry_state": [
+          {
+            "alternation_plus_100_u8": 0,
+            "entry_pc": "0x504e1d0",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10036e60",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "00000000",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000040",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          },
+          {
+            "alternation_plus_100_u8": 1,
+            "entry_pc": "0x504e1d0",
+            "phase": "saved_redraw",
+            "receiver_address": "0x10036e60",
+            "receiver_role": "primary V9 drawable after native non-virtual thunk adjustment",
+            "residual_plus_92_f32_bits": "0000803f",
+            "spacing_plus_88_f32_bits": "0000803f",
+            "tolerance_plus_44_f32_bits": "00000000",
+            "tool_threshold_plus_96_f32_bits": "0000a041"
+          }
+        ],
         "selected_drawable_redraw_lifecycle_method_entries": [
           {
             "pc": "0x504e8d0",
@@ -6576,14 +6754,19 @@
           }
         ],
         "selected_drawable_state": {
-          "address_identity": "selected drawable returned from actual Drawing factory route",
+          "address": "0x10036e60",
+          "alternation_plus_100_u8": 1,
+          "drawable_size_f32_bits": "0000803f",
+          "drawable_vtable": "0x5068cd0",
+          "identity": "selected drawable returned from actual Drawing factory route",
           "inverse_scale_f32_bits": [
             "0000803f",
             "0000803f"
           ],
-          "raw_bytes_plus_44_4": "00000000",
-          "size_f32_bits": "0000803f",
-          "vtable": "0x5068cd0"
+          "primary_object_plus_44_raw_bytes": "00000000",
+          "residual_plus_92_f32_bits": "0000803f",
+          "spacing_plus_88_f32_bits": "0000803f",
+          "tool_threshold_plus_96_f32_bits": "0000a041"
         },
         "separate_saved_RedrawPen_rect_f32_bits": "060080bfa38b1ec0d2458f40a38b1e40",
         "source_ObjectStroke_GetPenSize_f32_bits": "0000803f",
@@ -7222,6 +7405,7 @@
         "drawable_getInverseScale_f32_bits": null,
         "drawable_getSize_f32_bits": "0000803f",
         "drawing_selected_rt_id": "rt0",
+        "drawline_threshold_entries": [],
         "loader": [
           {
             "flags": 2,
@@ -7331,6 +7515,7 @@
         "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::InkPen2StrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
         "selected_drawable_object_redraw_return": 1,
         "selected_drawable_primary_vtable_id": "InkPen2StrokeDrawableGLV1",
+        "selected_drawable_redraw_entry_state": [],
         "selected_drawable_redraw_lifecycle_method_entries": [
           {
             "pc": "0x503f3f8",
@@ -7720,11 +7905,12 @@
           }
         ],
         "selected_drawable_state": {
-          "address_identity": "selected drawable returned from actual Drawing factory route",
+          "address": "0x100369f0",
+          "drawable_size_f32_bits": "0000803f",
+          "drawable_vtable": "0x5068410",
+          "identity": "selected drawable returned from actual Drawing factory route",
           "inverse_scale_f32_bits": null,
-          "raw_bytes_plus_44_4": "00000040",
-          "size_f32_bits": "0000803f",
-          "vtable": "0x5068410"
+          "primary_object_plus_44_raw_bytes": "00000040"
         },
         "separate_saved_RedrawPen_rect_f32_bits": "020020c0000040c0fdff9f4000004040",
         "source_ObjectStroke_GetPenSize_f32_bits": "0000803f",

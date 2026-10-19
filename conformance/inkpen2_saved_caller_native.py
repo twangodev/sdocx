@@ -263,9 +263,11 @@ native_motion_getter_returns=[]
 pending_motion_getters={}
 method_trace_names_by_pc={}
 inkpen2_buffer_events=[]
+drawable_threshold_entries=[]
+drawable_entry_snapshots=[]
 pending_inkpen2_buffer_returns={}
 for _name,_address in p.syms.items():
- oblique_method='InkPen2StrokeDrawableGLV' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawPoint(','::startPen(','::endPen('))
+ oblique_method='InkPen2StrokeDrawableGLV' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawLine(','::drawPoint(','::startPen(','::endPen('))
  motion_getter=_name.startswith('SPen::MotionEvent::Get') and ('()' in _name or '(int)' in _name)
  addpoint_method=_name.startswith('SPen::InkPen2StrokeDrawableRTV') and '::AddPoint(' in _name
  if oblique_method or motion_getter or addpoint_method:
@@ -336,6 +338,20 @@ def log_vcall(u,a,z,d):
    try:pointers[f'x{i}_head']=u.mem_read(ptr,96).hex() if ptr else None
    except Exception:pointers[f'x{i}_head']='unmapped'
   record={'signatures':method_trace_names_by_pc[a],'phase':phase,'pc':hex(a),'regs':regs,'pointer_heads':pointers}
+  if any(name.startswith('SPen::InkPen2StrokeDrawableGLV9::RedrawPen(') for name in method_trace_names_by_pc[a]):
+   this=u.reg_read(R.UC_ARM64_REG_X0)
+   snapshot={'phase':phase,'entry_pc':hex(a),'receiver_address':hex(this),'receiver_role':'primary V9 drawable after native non-virtual thunk adjustment'}
+   for label,offset in (('tolerance_plus_44_f32_bits',44),('spacing_plus_88_f32_bits',88),('residual_plus_92_f32_bits',92),('tool_threshold_plus_96_f32_bits',96)):
+    snapshot[label]=bytes(u.mem_read(this+offset,4)).hex()
+   snapshot['alternation_plus_100_u8']=u.mem_read(this+100,1)[0]
+   drawable_entry_snapshots.append(snapshot)
+  if any('::drawLine(' in name for name in method_trace_names_by_pc[a]):
+   this=u.reg_read(R.UC_ARM64_REG_X0)
+   record['drawline_plus44_threshold_f32_bits']=bytes(u.mem_read(this+44,4)).hex()
+   pen_ptr=factory_created_pens[-1] if factory_created_pens else 0
+   primary_ptr=struct.unpack('<Q',u.mem_read(pen_ptr+112,8))[0] if pen_ptr else 0
+   record['drawline_plus96_tool_threshold_f32_bits']=bytes(u.mem_read(this+96,4)).hex()
+   drawable_threshold_entries.append({'phase':phase,'entry_pc':hex(a),'receiver_address':hex(this),'primary_drawable_address':hex(primary_ptr) if primary_ptr else None,'receiver_minus_primary':this-primary_ptr if primary_ptr else None,'plus44_tolerance_f32_bits':record['drawline_plus44_threshold_f32_bits'],'plus96_tool_threshold_f32_bits':record['drawline_plus96_tool_threshold_f32_bits']})
   if any('::endPen(' in name for name in method_trace_names_by_pc[a]):
    event_ptr=u.reg_read(R.UC_ARM64_REG_X1)
    record['motion_event_entry_bytes']=u.mem_read(event_ptr,64).hex() if event_ptr else None
@@ -420,9 +436,9 @@ try:
  callbacks=[]
  p.call('SPen::InkPen2StrokeDrawableGL::getSize()', [actual_drawable]); drawable_size_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex()
  inverse_scale_bits=inverse_scale_observed
- drawable_native_state={'drawable_vtable':hex(selected_vptr),'drawable_size_f32_bits':drawable_size_bits,'raw_plus_44_f32_bits':bytes(p.u.mem_read(actual_drawable+44,4)).hex()}
+ drawable_native_state={'identity':'selected drawable returned from actual Drawing factory route','address':hex(actual_drawable),'drawable_vtable':hex(selected_vptr),'drawable_size_f32_bits':drawable_size_bits,'primary_object_plus_44_raw_bytes':bytes(p.u.mem_read(actual_drawable+44,4)).hex(),'inverse_scale_f32_bits':inverse_scale_bits}
  if selected_drawable_version=='9':
-  drawable_native_state.update({'spacing_plus_88_f32_bits':bytes(p.u.mem_read(actual_drawable+88,4)).hex(),'residual_plus_92_f32_bits':bytes(p.u.mem_read(actual_drawable+92,4)).hex(),'tool_threshold_plus_96_i32':struct.unpack('<i',p.u.mem_read(actual_drawable+96,4))[0],'alternation_plus_100_u8':p.u.mem_read(actual_drawable+100,1)[0]})
+  drawable_native_state.update({'spacing_plus_88_f32_bits':bytes(p.u.mem_read(actual_drawable+88,4)).hex(),'residual_plus_92_f32_bits':bytes(p.u.mem_read(actual_drawable+92,4)).hex(),'tool_threshold_plus_96_f32_bits':bytes(p.u.mem_read(actual_drawable+96,4)).hex(),'alternation_plus_100_u8':p.u.mem_read(actual_drawable+100,1)[0]})
  if screen_resolution_calls != [{'width':args.width,'height':args.height}]: raise RuntimeError(f'unexpected native screen profile calls: {screen_resolution_calls}')
  if any(pending_motion_getters.values()): raise RuntimeError(f'MotionEvent getter calls missed native returns: {pending_motion_getters}')
  p.call('SPen::ObjectStroke::GetStrokeType() const',[obj]); stroke=p.x(0)
@@ -432,9 +448,10 @@ try:
  traced_methods=[{k:v for k,v in row.items() if k in ('signatures','phase','pc','regs','motion_event_entry_bytes','pointer_heads')} for row in native_draw_entries if any(token in name for name in row['signatures'] for token in ('::RedrawPen(','::endPen(','::drawPoint('))]
  case_id=args.case+'_'+('null_v1' if args.advanced_setting=='null' else ('empty_v9' if args.advanced_setting=='empty' else 'explicit9_v9'))
  result={'schema':'sdocx-inkpen2-saved-caller-case-v1','case_id':case_id,'profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':{'kind':'synthetic native ObjectStroke setter input; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.InkPen2','stroke_type':stroke,'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'pen_size_f32_bits':source_size_bits,'points_f32_bits':[[struct.pack('<f',v).hex() for v in xy] for xy in points],'pressure_f32_bits':[struct.pack('<f',v).hex() for v in input_case['pressure']],'timestamps_i32':input_case['timestamps'],'tilt_f32_bits':[struct.pack('<f',v).hex() for v in input_case['tilt']],'orientation_f32_bits':[struct.pack('<f',v).hex() for v in input_case['orientation']],'advanced_setting_state':args.advanced_setting, 'advanced_setting':('9;' if args.advanced_setting=='9' else ('empty-string' if args.advanced_setting=='empty' else None)), 'advanced_getter_pointer_nonnull':bool(advanced_getter), 'advanced_getter_object_hex':advanced_getter_bytes, 'advanced_getter_utf8':advanced_utf8},'native_calls':{'ObjectDrawing::drawObjectStroke_return':draw_result,'selected_drawable_object_redraw_return':saved_redraw_result,'drawObjectStroke_rect_f32_bits':draw_rect,'separate_saved_RedrawPen_rect_f32_bits':saved_redraw_rect,'route':{'advanced_setting_state':args.advanced_setting, 'advanced_setting':('9;' if args.advanced_setting=='9' else ('empty-string' if args.advanced_setting=='empty' else None)), 'advanced_getter_pointer_nonnull':bool(advanced_getter), 'advanced_getter_object_hex':advanced_getter_bytes, 'advanced_getter_utf8':advanced_utf8,'drawing_selected_drawable_version':selected_drawable_version,'saved_redraw_invoked_version':selected_drawable_version},'source_ObjectStroke_arrays':source_object_arrays,'motion_event_getter_returns':native_motion_getter_returns,'loader':loader_calls,'pen_screen_resolution':screen_resolution_calls,'source_ObjectStroke_GetPenSize_f32_bits':source_size_bits,'ObjectStroke_getter_snapshots':object_stroke_snapshots,'selected_drawable_redraw_lifecycle_method_entries':traced_methods,'selected_drawable_state':drawable_native_state,'drawing_selected_rt_id':selected_rt_id,'pen_GetSize_after_draw_f32_bits':pen_size_after_draw_bits,'drawable_getSize_f32_bits':drawable_size_bits,'drawable_getInverseScale_f32_bits':inverse_scale_bits},'native_method_entries':traced_methods, 'callback_buffer_events':inkpen2_buffer_events,'libraries':native_hashes,'host_boundaries':['ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height','context vslot +80 is an explicit identity color-conversion host callback','context vslots +144/+152 return explicit flags/version values 1 and 1.0','canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/InkPen2 geometry execute natively'],'scope':'Native Drawing caller plus direct saved RedrawPen under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'}
+ result['native_calls']['drawline_threshold_entries']=drawable_threshold_entries
+ result['native_calls']['selected_drawable_redraw_entry_state']=drawable_entry_snapshots
  result['native_calls']['selected_drawable_object_redraw_entry']=selected_object_redraw_names[0] if selected_object_redraw_names else None
  result['native_calls']['selected_drawable_primary_vtable_id']='InkPen2StrokeDrawableGLV'+selected_drawable_version
- result['native_calls']['selected_drawable_state']={'address_identity':'selected drawable returned from actual Drawing factory route','vtable':hex(selected_vptr),'size_f32_bits':drawable_size_bits,'raw_bytes_plus_44_4':bytes(p.u.mem_read(actual_drawable+44,4)).hex(),'inverse_scale_f32_bits':inverse_scale_bits}
  result['scope']=f'Native Drawing caller plus direct RedrawPen through selected GLV{selected_drawable_version} vtable slot under an explicit synthetic profile. No serialized SDocx parser, device-default profile, renderer pixels, or SVG/PDF export.'
  encoded=json.dumps(result,indent=2,sort_keys=True)+'\n'
  if draw_result != 1 or saved_redraw_result != 1:
