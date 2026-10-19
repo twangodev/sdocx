@@ -9,7 +9,7 @@ const SPACING: f32 = 1.0;
 const REJECT_BELOW: f32 = 2.0;
 const ALTERNATE_BELOW: f32 = 20.0;
 
-pub(super) struct Ink {
+pub(crate) struct Ink {
     pub points: Vec<Point>,
     pub radii: Vec<f64>,
     /// Native redraw callback boundaries; a one-point stroke has `[1, 2]`
@@ -18,7 +18,7 @@ pub(super) struct Ink {
     pub sample_ends: Vec<usize>,
 }
 
-pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
+pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
     if !matches!(r.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || r.advanced_settings.as_deref().is_some_and(|setting| setting != "5;")

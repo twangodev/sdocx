@@ -35,6 +35,8 @@ pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
 mod harfrust;
 mod marker;
+#[cfg(all(test, feature = "serde"))]
+mod marker3;
 #[allow(dead_code)]
 mod oblique;
 pub use marker::PointMarkerTarget;
