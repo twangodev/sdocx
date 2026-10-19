@@ -109,8 +109,12 @@ in host Mesa, retaining the full RGBA hash and GL error checks. The
 [scale capture](../conformance/marker3-paint-scale-native.json) retains full masks
 and RGBA output for 17 linked-path and isolated-stamp cases across sizes 4/8/12
 and scales 1/2/4, checking uploaded XY against the saved caller buffers. Points
-enter directly at RTV1; saved-object paint integration, vector edge coverage and device
-pixel parity remain outstanding. DefaultPen's test-only sampler checks
+enter directly at RTV1. A [joined Drawing paint capture](../conformance/marker3-joined-paint-native.json)
+retains the Drawing-selected RT and its original 176-byte vector through native
+Init/Update/Draw, with a full host-Mesa RGBA readback and 239 zero GL error checks.
+The host explicitly reattaches the vector after Drawing clears its slots;
+natural queue handoff, vector edge coverage and device pixel parity remain outstanding.
+DefaultPen's test-only sampler checks
 position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
 Its [Drawing caller](../conformance/defaultpen-saved-caller-native.json) verifies
