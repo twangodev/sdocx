@@ -209,5 +209,7 @@ The [Drawing caller fixture](../../conformance/inkpen-saved-caller-native.json)
 also captures null settings selecting V1: the same synthetic four-point input
 emits 25 triples, versus V4's 26. V1 `reDrawLine` (`0x26fa8`) derives movement
 from distance; V4 (`0x30a38`) additionally uses elapsed time and display scale.
-The V4 numeric core therefore cannot serve V1 unchanged. V1 start/terminal
-state and a broader input matrix remain to be reconstructed before admission.
+The V4 numeric core therefore cannot serve V1 unchanged. The separate test-only
+V1 policy matches every callback word in fourteen [native matrix streams](../../conformance/inkpen-v1-saved-native.json),
+including no-curve and duplicate-point controls. Broader state and paint
+validation remain open before production admission.

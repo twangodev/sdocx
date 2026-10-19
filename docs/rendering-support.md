@@ -155,7 +155,10 @@ captures null settings selecting V1 and empty settings selecting V4 under an
 explicit 1920×1080 display profile. The V4 numeric model reproduces the complete
 312-byte Drawing stream bit for bit, plus all streams in a
 [seven-case display matrix](../conformance/inkpen-display-profiles-native.json);
-null settings remain outside that model. A [nine-case size/tool capture](../conformance/inkpen-admission-native.json)
+null settings remain outside that V4 model. A separate test-only V1 core matches
+all fourteen emitted streams in the [V1 matrix](../conformance/inkpen-v1-saved-native.json),
+including no-curve, duplicate-point, timing and display controls; Drawing rejects
+the separate one-point case before pen creation. A [nine-case size/tool capture](../conformance/inkpen-admission-native.json)
 checks omitted, zero, subminimum and oversized source sizes plus tool codes 0–4.
 The test-only model matches every captured callback word, using the saved style
 size (missing means zero) and native 0.4–800 clamp rather than the public width.
