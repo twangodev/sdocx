@@ -31,9 +31,19 @@ def init_with_model(self, library_dir, objdump, additional_libraries=()):
 NativeFountain.__init__=init_with_model
 n=None
 counts={}
+tool_getter_pending={}
+tool_getter_returns=[]
 original_calligraphy_hook=c.NativeCalligraphy.hook
 def calligraphy_hook(self,u,address,size,data):
+    if address in tool_getter_pending:
+        record=tool_getter_pending.pop(address)
+        record['return']=self.x(0)
+        tool_getter_returns.append(record)
     if address in counts and hasattr(self,'native_motion_calls'): self.native_motion_calls.append(counts[address])
+    if address==self.syms['SPen::MotionEvent::GetToolType(int) const']:
+        from unicorn import arm64_const as R
+        lr=u.reg_read(R.UC_ARM64_REG_LR)
+        tool_getter_pending[lr]={'pointer_index':self.x(1)}
     if address==self.redraw_address+0x34c and getattr(self,'wrapper_mode',False):
         from unicorn import arm64_const as R
         u.reg_write(R.UC_ARM64_REG_PC,self.redraw_address+0x354)
@@ -78,10 +88,6 @@ n.put(obj+32,'Q',impl)
 # Actual Model setters are used for saved size and tool. Constructor default
 # StrokeType remains zero; count and channel vectors model each decoded record.
 n.call('SPen::ObjectStroke::SetPenSize(float)', [obj], [6.0])
-n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)', [obj, 2])
-n.call('SPen::ObjectStroke::GetToolType() const', [obj])
-if n.x(0) != 2: raise RuntimeError(f'ObjectStroke SetToolType/GetToolType ABI mismatch: {n.x(0)}')
-saved_tool_type=n.x(0)
 n.call('SPen::ObjectStroke::GetStrokeType() const',[obj]); stroke_type=n.x(0)
 
 # Fixture vectors are installed into real ObjectStrokeImpl vector triplets;
@@ -89,6 +95,21 @@ n.call('SPen::ObjectStroke::GetStrokeType() const',[obj]); stroke_type=n.x(0)
 def run_case(case, obj, impl, rect, stroke_type):
     rows=case['rows']; count=len(rows)
     if not rows: raise ValueError('empty strokes are excluded: saved wrapper dereferences GetTimeStamp()[0] at 0x1ed04 before any zero-count return')
+    requested_tool_type=int(case.get('tool_type',2))
+    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,2])
+    reset_setter_return=n.x(0)
+    n.call('SPen::ObjectStroke::GetToolType() const',[obj])
+    reset_getter=n.x(0)
+    if reset_setter_return!=1 or reset_getter!=2:
+        raise RuntimeError(f"failed to reset native ObjectStroke tool type before {case['id']}")
+    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,requested_tool_type])
+    tool_setter_return=n.x(0)
+    n.call('SPen::ObjectStroke::GetToolType() const',[obj])
+    saved_tool_type=n.x(0)
+    tool_capture={'reset_to_2':{'setter_return':reset_setter_return,'getter':reset_getter},
+                  'requested':requested_tool_type,'setter_return':tool_setter_return,
+                  'getter':saved_tool_type,
+                  'boundary':'actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type'}
     n.native_motion_calls=[]; n.add_calls=[]; n.build_calls=[]; n.drawable_states=[]; n.orientation_reads=[]; n.sample_ends=[]; n.terminal_start=None; n.position_queries=[]; n.length_queries=[]; n.pending_position_returns={}; n.pending_length_returns={}; n.active_add_index=None; n.output_labels={}; n.current_size=6.0
     pen_data=n.alloc(0x100); settings=n.alloc(0x80); manager=n.alloc(0x80); drawable=n.alloc(0x600); n.drawable=drawable
     # Match the inherited Pen ABI used by the real Calligraphy style methods:
@@ -126,7 +147,7 @@ def run_case(case, obj, impl, rect, stroke_type):
         n.event_end={'x':points_rows[-1][0],'y':points_rows[-1][1],
                      'orientation':orientation_values[-1] if orientation_values else 0.0,
                      'pressure':points_rows[-1][2], 'tilt':tilt_values[-1] if tilt_values else 0.0,
-                     'time':points_rows[-1][3], 'tool':2}
+                     'time':points_rows[-1][3], 'tool':saved_tool_type}
         points=n.alloc(count2*8); pressures=n.alloc(count2*4); times=n.alloc(count2*4)
         tilt=n.alloc(count2*4) if tilt_values is not None else 0
         orient=n.alloc(count2*4) if orientation_values is not None else 0
@@ -140,7 +161,10 @@ def run_case(case, obj, impl, rect, stroke_type):
         n.put(impl+292,'f',6.0)
     set_stroke(rows,case['tilt'],case['orientation'])
     # exact Drawing dispatch subobject pointer; thunk adjusts this-8 into GLV1.
+    global tool_getter_returns
+    tool_getter_returns=[]
     ret=n.call('non-virtual thunk to SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)',[drawable+8,obj,rect],instruction_limit=3000000)
+    first_tool_reads=list(tool_getter_returns)
     first={'wrapper_return':n.x(0),'add_vectors':[[*point['vector_bits'],point['extent_bits']] for point in n.add_calls],
            'drawable_states':n.drawable_states,
            'sample_ends':n.sample_ends,'orientation_reads':n.orientation_reads,
@@ -149,10 +173,13 @@ def run_case(case, obj, impl, rect, stroke_type):
            'direction_bits':[n.get(drawable+276+4*i,'I')[0].to_bytes(4,'little').hex() for i in range(2)],
            'angle_bits':n.get(drawable+284,'I')[0].to_bytes(4,'little').hex(),'state':n.drawable_state(drawable)}
     repeat=None
+    repeat_tool_reads=[]
     if case.get('repeat_rows'):
         n.native_motion_calls=[]; n.add_calls=[]; n.build_calls=[]; n.drawable_states=[]; n.orientation_reads=[]; n.sample_ends=[]; n.terminal_start=None; n.active_add_index=None
         set_stroke(case['repeat_rows'],case.get('repeat_tilt'),case.get('repeat_orientation'))
+        tool_getter_returns=[]
         ret=n.call('non-virtual thunk to SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)',[drawable+8,obj,rect],instruction_limit=3000000)
+        repeat_tool_reads=list(tool_getter_returns)
         repeat={'wrapper_return':n.x(0),'add_vectors':[[*point['vector_bits'],point['extent_bits']] for point in n.add_calls],
                 'drawable_states':n.drawable_states,
                 'sample_ends':n.sample_ends,'orientation_reads':n.orientation_reads,
@@ -165,7 +192,9 @@ def run_case(case, obj, impl, rect, stroke_type):
             'native_drawable_states':first['drawable_states'],'sample_ends':first['sample_ends'],'orientation_reads':first['orientation_reads'],
             'native_add_point_vectors':first['add_vectors'],'direction_bits':first['direction_bits'],
             'angle_bits':first['angle_bits'],'state':first['state'],'build_call_count':first['build_call_count']}
-    return result,style_capture
+    if tool_getter_pending: raise RuntimeError('native MotionEvent tool getter did not return before wrapper completion')
+    tool_capture['motion_event_getter_values']={'first':first_tool_reads,'repeat':repeat_tool_reads}
+    return result,style_capture,tool_capture
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -180,12 +209,14 @@ def main():
     if fixture.get('source')!=expected: raise ValueError('fixture library provenance differs')
     results=[]; mismatches=[]
     for case in fixture['cases']:
-        result,style_capture=run_case(case,obj,impl,rect,stroke_type)
+        result,style_capture,tool_capture=run_case(case,obj,impl,rect,stroke_type)
         if args.check_fixture and case.get('native')!=result: mismatches.append(case['id'])
         if args.check_fixture and case.get('native_style')!=style_capture: mismatches.append(case['id']+' style')
+        if args.check_fixture and case.get('native_tool')!=tool_capture: mismatches.append(case['id']+' tool')
         if args.write_fixture:
             case['native']=result
             case['native_style']=style_capture
+            case['native_tool']=tool_capture
         results.append(result)
         print(f"{case['id']}: source={result['source_count']} AddPoint={len(result['native_add_point_vectors'])} wrapper={result['wrapper_return']}")
     if args.check_fixture and mismatches: raise SystemExit('native fixture mismatch: '+', '.join(mismatches))

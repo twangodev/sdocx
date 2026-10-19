@@ -26,7 +26,8 @@
     "model_setup": "ObjectStroke::SetToolType is called with the enum in integer W1 (2), then actual GetToolType must return 2. Fixture vectors use null-null-null triplets for absent optional channels; no raw tool field overwrite follows the setter.",
     "empty_count_boundary": "No zero-point case is run: saved wrapper loads timestamp[0] at 0x1ed04 before constructing MotionEvent or any zero-count return. Null empty-vector storage would fault at that load.",
     "source_event_split": "For N serialized points, the actual saved wrapper creates MotionEvent history of N-1 points plus the final point as the current terminal event; the six style cases retain the same three-point source arrays as three-samples.",
-    "style_capture": "Every case records native setter success and getter readback under native_style. New fixed-width cases exercise the actual saved wrapper and AddPoint path; fixed width is clamped by native output extent."
+    "style_capture": "Every case records native setter success and getter readback under native_style. New fixed-width cases exercise the actual saved wrapper and AddPoint path; fixed width is clamped by native output extent.",
+    "tool_type_capture": "Every case calls actual Model ObjectStroke::SetToolType with enum in integer W1, then actual GetToolType; the getter result is supplied to the actual Base MotionEvent source arrays. Values 5 and 65535 probe native setter behavior without assuming validation."
   },
   "cases": [
     {
@@ -147,6 +148,20 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [],
+          "repeat": []
+        }
       }
     },
     {
@@ -327,6 +342,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -635,6 +673,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -1101,6 +1162,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -1553,6 +1637,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -2012,6 +2119,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -2471,6 +2601,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -3390,6 +3543,38 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ]
+        }
       }
     },
     {
@@ -3870,6 +4055,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -4183,6 +4391,29 @@
           "fixed_width_bits": "00000040"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -4496,6 +4727,29 @@
           "fixed_width_bits": "0000003f"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -4809,6 +5063,29 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -5122,6 +5399,29 @@
           "fixed_width_bits": "000000c0"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -5435,6 +5735,29 @@
           "fixed_width_bits": "00000040"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     },
     {
@@ -5748,6 +6071,2388 @@
           "fixed_width_bits": "00000000"
         },
         "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-0",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 0,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-0",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 0,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 0,
+        "setter_return": 1,
+        "getter": 0,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 0
+            },
+            {
+              "pointer_index": 0,
+              "return": 0
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-1",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 1,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-1",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 1,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 1,
+        "setter_return": 1,
+        "getter": 1,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 1
+            },
+            {
+              "pointer_index": 0,
+              "return": 1
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-2",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 2,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-2",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 2,
+        "setter_return": 1,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-3",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 3,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-3",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 3,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 3,
+        "setter_return": 1,
+        "getter": 3,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 3
+            },
+            {
+              "pointer_index": 0,
+              "return": 3
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-4",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 4,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-4",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 4,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 4,
+        "setter_return": 1,
+        "getter": 4,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 4
+            },
+            {
+              "pointer_index": 0,
+              "return": 4
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-5",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 5,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-5",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 5,
+        "setter_return": 0,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
+      }
+    },
+    {
+      "id": "tool-type-65535",
+      "rows": [
+        [
+          0.0,
+          0.0,
+          0.5,
+          100
+        ],
+        [
+          4.5,
+          1.5,
+          0.65,
+          120
+        ],
+        [
+          9.0,
+          4.0,
+          0.75,
+          140
+        ]
+      ],
+      "tilt": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "orientation": [
+        0.1,
+        0.35,
+        0.7
+      ],
+      "tool_type": 65535,
+      "pen_style": {
+        "curve_enabled": false,
+        "fixed_width_enabled": false,
+        "fixed_width": 0.0
+      },
+      "native": {
+        "case": "tool-type-65535",
+        "source_count": 3,
+        "stroke_type": 0,
+        "saved_tool_type": 2,
+        "wrapper_return": 1,
+        "same_drawable_repeat": null,
+        "actual_base_model_call_counts": {
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetHistoricalOrientation(int) const": 1,
+          "SPen::MotionEvent::GetHistoricalX(int, int) const": 3,
+          "SPen::MotionEvent::GetHistoricalY(int, int) const": 3,
+          "SPen::MotionEvent::GetHistorySize() const": 1,
+          "SPen::MotionEvent::GetOrientation(int) const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetTilt(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 2,
+          "SPen::MotionEvent::GetX(int) const": 2,
+          "SPen::MotionEvent::GetY(int) const": 2,
+          "SPen::MotionEvent::MotionEvent(int, int, SPen::PointF const*, float const*, int, int const*, float const*, float const*, long long const*)": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 1
+        },
+        "native_drawable_states": [
+          {
+            "phase": "redraw_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            }
+          },
+          {
+            "phase": "history_loop_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "00000000",
+            "flags": {
+              "initial": 1,
+              "movement_armed": 1
+            }
+          },
+          {
+            "phase": "end_pen_entry",
+            "path_start_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "control_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "path_mid_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "accepted_bits": [
+              "00009040",
+              "0000c03f"
+            ],
+            "direction_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "angle_bits": "99e48b42",
+            "flags": {
+              "initial": 0,
+              "movement_armed": 0
+            },
+            "event_end_bits": [
+              "00001041",
+              "00008040"
+            ],
+            "size_bits": "0000c040"
+          }
+        ],
+        "sample_ends": [
+          {
+            "history_index": 1,
+            "add_point_end": 0
+          }
+        ],
+        "orientation_reads": [
+          1
+        ],
+        "native_add_point_vectors": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b313f",
+            "e55d723e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103bb13f",
+            "0b6df83e",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0440",
+            "25dd3e3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "103b3140",
+            "ab45823f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d4895d40",
+            "8da0a63f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4dec8440",
+            "3a7fcc3f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "ae139b40",
+            "afe1f33f",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "113bb140",
+            "f7630e40",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "7362c740",
+            "fb982340",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "d689dd40",
+            "e58f3940",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "37b1f340",
+            "b1485040",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ],
+          [
+            "4cec0441",
+            "64c36740",
+            "00000000",
+            "0000803f",
+            "00004040"
+          ]
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "99e48b42",
+        "state": {
+          "path_start_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "control_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "path_mid_bits": [
+            "00000000",
+            "00000000"
+          ],
+          "accepted_bits": [
+            "00009040",
+            "0000c03f"
+          ],
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "angle_bits": "99e48b42",
+          "flags": {
+            "initial": 0,
+            "movement_armed": 0
+          }
+        },
+        "build_call_count": 65
+      },
+      "native_style": {
+        "input": {
+          "curve_enabled": false,
+          "fixed_width_enabled": false,
+          "fixed_width": 0.0
+        },
+        "setter_returns": {
+          "curve_enabled": 1,
+          "fixed_width_enabled": 1,
+          "fixed_width": 1
+        },
+        "readback": {
+          "curve_enabled": 0,
+          "fixed_width_enabled": 0,
+          "fixed_width_bits": "00000000"
+        },
+        "receiver_boundary": "host Pen subobject +120 -> host PenData; actual native Calligraphy setters/getters execute"
+      },
+      "native_tool": {
+        "reset_to_2": {
+          "setter_return": 1,
+          "getter": 2
+        },
+        "requested": 65535,
+        "setter_return": 0,
+        "getter": 2,
+        "boundary": "actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type",
+        "motion_event_getter_values": {
+          "first": [
+            {
+              "pointer_index": 0,
+              "return": 2
+            },
+            {
+              "pointer_index": 0,
+              "return": 2
+            }
+          ],
+          "repeat": []
+        }
       }
     }
   ]

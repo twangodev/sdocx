@@ -2267,6 +2267,62 @@ mod tests {
             let id = case["id"].as_str().unwrap();
             ids.push(id.to_owned());
             let native = &case["native"];
+            let effective_tool = native["saved_tool_type"].as_i64().unwrap() as i32;
+            if let Some(tool) = case.get("tool_type") {
+                let requested_tool = tool.as_i64().unwrap() as i32;
+                let capture = &case["native_tool"];
+                assert_eq!(
+                    capture["requested"].as_i64().unwrap(),
+                    i64::from(requested_tool),
+                    "{id} requested tool"
+                );
+                assert_eq!(
+                    capture["reset_to_2"]["setter_return"].as_i64().unwrap(),
+                    1,
+                    "{id} baseline setter"
+                );
+                assert_eq!(
+                    capture["reset_to_2"]["getter"].as_i64().unwrap(),
+                    2,
+                    "{id} explicit baseline getter"
+                );
+                let accepted = (0..=4).contains(&requested_tool);
+                assert_eq!(
+                    capture["setter_return"].as_i64().unwrap(),
+                    i64::from(accepted),
+                    "{id} native setter status"
+                );
+                let captured_tool = capture["getter"].as_i64().unwrap() as i32;
+                assert_eq!(captured_tool, effective_tool, "{id} effective model getter");
+                assert_eq!(
+                    effective_tool,
+                    if accepted { requested_tool } else { 2 },
+                    "{id} stored tool after setter"
+                );
+                assert!(
+                    !capture["motion_event_getter_values"]["first"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty(),
+                    "{id} native MotionEvent tool reads were recorded"
+                );
+                assert_eq!(
+                    capture["motion_event_getter_values"]["first"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|entry| entry["return"].as_i64().unwrap() as i32)
+                        .collect::<Vec<_>>(),
+                    vec![
+                        effective_tool;
+                        capture["motion_event_getter_values"]["first"]
+                            .as_array()
+                            .unwrap()
+                            .len()
+                    ],
+                    "{id} MotionEvent tool getter values"
+                );
+            }
             let fixed_width = if let Some(style) = case.get("pen_style") {
                 let captured = &case["native_style"];
                 assert_eq!(captured["input"], *style, "{id} native style input");
@@ -2309,7 +2365,7 @@ mod tests {
                 &case["tilt"],
                 &case["orientation"],
                 retained,
-                native["saved_tool_type"].as_i64().unwrap() as i32,
+                effective_tool,
                 fixed_width,
             );
             compare_run(&output, &native["native_add_point_vectors"], native, id);
@@ -2500,7 +2556,7 @@ mod tests {
                 );
             }
         }
-        assert_eq!(ids.len(), 15);
+        assert_eq!(ids.len(), 22);
         for id in [
             "fixed-width-two",
             "fixed-width-half",
@@ -2510,6 +2566,14 @@ mod tests {
             "curve-enabled-fixed-width-disabled",
         ] {
             assert!(ids.iter().any(|captured| captured == id), "missing {id}");
+        }
+        for tool in 0..=4 {
+            let id = format!("tool-type-{tool}");
+            assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
+        }
+        for tool in [5, 65535] {
+            let id = format!("tool-type-{tool}");
+            assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
         }
     }
 
