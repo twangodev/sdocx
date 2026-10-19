@@ -37,6 +37,30 @@ fn marker_pixels(marker_id: u64) -> Vec<u8> {
     payload
 }
 
+fn marker_id_from_image(stream: &Stream) -> Option<u64> {
+    if stream.dict.get(b"Subtype").ok()?.as_name().ok()? != b"Image"
+        || stream.dict.get(b"Width").ok()?.as_i64().ok()? != i64::from(MARKER_WIDTH)
+        || stream.dict.get(b"Height").ok()?.as_i64().ok()? != i64::from(MARKER_HEIGHT)
+        || stream.dict.get(b"ColorSpace").ok()?.as_name().ok()? != b"DeviceRGB"
+        || stream.dict.get(b"BitsPerComponent").ok()?.as_i64().ok()? != 8
+        || stream.dict.has(b"SMask")
+    {
+        return None;
+    }
+
+    let payload = stream.decompressed_content().ok()?;
+    if payload.len() != 24 || &payload[..8] != b"SDOCXIF1" {
+        return None;
+    }
+    let marker_id = u64::from_le_bytes(payload[8..16].try_into().ok()?);
+    (payload[16..24]
+        == marker_id
+            .rotate_left(29)
+            .wrapping_add(0x9e37_79b9_7f4a_7c15)
+            .to_le_bytes())
+    .then_some(marker_id)
+}
+
 fn marker_png(marker_id: u64) -> Result<Vec<u8>, String> {
     let pixels = marker_pixels(marker_id);
     let mut png = Vec::new();
@@ -377,42 +401,6 @@ fn field_form(document: &mut Document, field: &PdfInkField<'_>) -> Result<Object
     )))
 }
 
-fn image_payload_matches(stream: &Stream, marker_id: u64) -> bool {
-    stream
-        .dict
-        .get(b"Subtype")
-        .ok()
-        .and_then(|value| value.as_name().ok())
-        == Some(b"Image")
-        && stream
-            .dict
-            .get(b"Width")
-            .ok()
-            .and_then(|value| value.as_i64().ok())
-            == Some(MARKER_WIDTH as i64)
-        && stream
-            .dict
-            .get(b"Height")
-            .ok()
-            .and_then(|value| value.as_i64().ok())
-            == Some(MARKER_HEIGHT as i64)
-        && stream
-            .dict
-            .get(b"ColorSpace")
-            .ok()
-            .and_then(|value| value.as_name().ok())
-            == Some(b"DeviceRGB")
-        && stream
-            .dict
-            .get(b"BitsPerComponent")
-            .ok()
-            .and_then(|value| value.as_i64().ok())
-            == Some(8)
-        && !stream.dict.has(b"SMask")
-        && stream.decompressed_content().ok().as_deref()
-            == Some(marker_pixels(marker_id).as_slice())
-}
-
 /// Replace exact registered marker Image XObjects with native field Forms.
 pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Result<Vec<u8>, String> {
     if fields.is_empty() {
@@ -427,16 +415,31 @@ pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Resul
                 field.marker_id
             ));
         }
-        let matches = document
-            .objects
-            .iter()
-            .filter_map(|(&id, object)| {
-                let Object::Stream(stream) = object else {
-                    return None;
-                };
-                image_payload_matches(stream, field.marker_id).then_some(id)
-            })
-            .collect::<Vec<ObjectId>>();
+    }
+
+    // Index only the original Image streams before adding any Forms/functions.
+    // This keeps matching linear in document objects plus marker count even
+    // when a page contains thousands of native fields.
+    let expected = ids;
+    let mut marker_objects: std::collections::HashMap<u64, Vec<ObjectId>> =
+        std::collections::HashMap::new();
+    for (&object_id, object) in &document.objects {
+        let Object::Stream(stream) = object else {
+            continue;
+        };
+        let Some(marker_id) = marker_id_from_image(stream) else {
+            continue;
+        };
+        if expected.contains(&marker_id) {
+            marker_objects.entry(marker_id).or_default().push(object_id);
+        }
+    }
+
+    for field in fields {
+        let matches = marker_objects
+            .get(&field.marker_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
         if matches.len() != 1 {
             return Err(format!(
                 "native ink marker {} matched {} Image XObjects",
@@ -465,6 +468,7 @@ pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Resul
 mod tests {
     use super::*;
     use crate::{CoverageTriangle, CoverageVertex};
+    use krilla::{Document as PdfDocument, page::PageSettings};
 
     fn mesh(vertices: [[f32; 3]; 3]) -> CoverageMesh {
         CoverageMesh {
@@ -476,6 +480,67 @@ mod tests {
             terminal_end: 1,
             bounds: None,
         }
+    }
+
+    fn marker_pdf(marker_id: u64, include_unrelated_image: bool) -> Vec<u8> {
+        let mut document = PdfDocument::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(20.0, 20.0).unwrap()));
+        let mut surface = page.surface();
+        emit_marker(
+            &mut surface,
+            marker_id,
+            BoundingBox {
+                x_min: 1.0,
+                y_min: 1.0,
+                x_max: 5.0,
+                y_max: 5.0,
+            },
+        )
+        .unwrap();
+        if include_unrelated_image {
+            surface.draw_image(
+                Image::from_rgba8(vec![255, 0, 0, 255], 1, 1),
+                Size::from_wh(1.0, 1.0).unwrap(),
+            );
+        }
+        surface.finish();
+        page.finish();
+        document.finish().unwrap()
+    }
+
+    fn field() -> (CoverageMesh, BoundingBox) {
+        let bounds = BoundingBox {
+            x_min: 1.0,
+            y_min: 1.0,
+            x_max: 5.0,
+            y_max: 5.0,
+        };
+        (
+            mesh([[1.0, 1.0, 0.0], [5.0, 1.0, 0.5], [1.0, 5.0, 1.0]]),
+            bounds,
+        )
+    }
+
+    fn image_count(document: &Document) -> usize {
+        document
+            .objects
+            .values()
+            .filter(|object| {
+                object
+                    .as_stream()
+                    .ok()
+                    .and_then(|stream| stream.dict.get(b"Subtype").ok())
+                    .and_then(|subtype| subtype.as_name().ok())
+                    == Some(b"Image")
+            })
+            .count()
+    }
+
+    fn save(document: &mut Document) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        document.save_to(&mut bytes).unwrap();
+        bytes
     }
 
     #[test]
@@ -565,5 +630,129 @@ mod tests {
         let triangles = triangles(&mesh).unwrap();
         assert!(plane(triangles[0]).3 != 0.0);
         assert!(!function_code(&triangles, bounds).unwrap().is_empty());
+    }
+
+    #[test]
+    fn marker_index_replaces_expected_payload_and_preserves_unrelated_images() {
+        let marker_id = 0x1234_5678;
+        let bytes = marker_pdf(marker_id, true);
+        let (mesh, bounds) = field();
+        let result = replace_markers(
+            &bytes,
+            &[PdfInkField {
+                marker_id,
+                mesh: &mesh,
+                color: [0x12, 0x34, 0x56],
+                bounds,
+            }],
+        )
+        .unwrap();
+        let document = Document::load_mem(&result).unwrap();
+        assert_eq!(image_count(&document), 1, "unrelated image must remain");
+        assert_eq!(
+            document
+                .objects
+                .values()
+                .filter_map(|object| object.as_stream().ok())
+                .filter(|stream| {
+                    stream
+                        .dict
+                        .get(b"Subtype")
+                        .ok()
+                        .and_then(|subtype| subtype.as_name().ok())
+                        == Some(b"Form")
+                })
+                .filter(|stream| {
+                    stream
+                        .decompressed_content()
+                        .ok()
+                        .is_some_and(|content| content.windows(4).any(|w| w == b" rg "))
+                })
+                .count(),
+            1,
+            "the marker must become one colored Form (Krilla may have other Forms)"
+        );
+    }
+
+    #[test]
+    fn marker_index_rejects_missing_and_duplicate_expected_payloads() {
+        let (mesh, bounds) = field();
+        let missing = replace_markers(
+            &marker_pdf(0, false),
+            &[PdfInkField {
+                marker_id: 1,
+                mesh: &mesh,
+                color: [0, 0, 0],
+                bounds,
+            }],
+        )
+        .unwrap_err();
+        assert!(missing.contains("marker 1 matched 0 Image XObjects"));
+
+        let mut document = Document::load_mem(&marker_pdf(0, false)).unwrap();
+        let marker = document
+            .objects
+            .values()
+            .find(|object| {
+                object
+                    .as_stream()
+                    .ok()
+                    .is_some_and(|stream| marker_id_from_image(stream) == Some(0))
+            })
+            .unwrap()
+            .clone();
+        document.add_object(marker);
+        let duplicate = replace_markers(
+            &save(&mut document),
+            &[PdfInkField {
+                marker_id: 0,
+                mesh: &mesh,
+                color: [0, 0, 0],
+                bounds,
+            }],
+        )
+        .unwrap_err();
+        assert!(duplicate.contains("marker 0 matched 2 Image XObjects"));
+    }
+
+    #[test]
+    fn marker_index_requires_magic_checksum_and_exact_image_shape() {
+        let mut stream = Stream::new(
+            Dictionary::from_iter([
+                (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
+                (b"Width".to_vec(), Object::Integer(MARKER_WIDTH as i64)),
+                (b"Height".to_vec(), Object::Integer(MARKER_HEIGHT as i64)),
+                (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+                (b"BitsPerComponent".to_vec(), Object::Integer(8)),
+            ]),
+            marker_pixels(7),
+        );
+        assert_eq!(marker_id_from_image(&stream), Some(7));
+
+        let mut bad_magic = stream.clone();
+        bad_magic.content[0] ^= 1;
+        assert_eq!(marker_id_from_image(&bad_magic), None);
+        let mut bad_checksum = stream.clone();
+        bad_checksum.content[23] ^= 1;
+        assert_eq!(marker_id_from_image(&bad_checksum), None);
+        stream.dict.set("Width", Object::Integer(7));
+        assert_eq!(marker_id_from_image(&stream), None);
+        let mut soft_mask = Stream::new(
+            Dictionary::from_iter([
+                (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
+                (b"Width".to_vec(), Object::Integer(MARKER_WIDTH as i64)),
+                (b"Height".to_vec(), Object::Integer(MARKER_HEIGHT as i64)),
+                (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+                (b"BitsPerComponent".to_vec(), Object::Integer(8)),
+                (b"SMask".to_vec(), Object::Null),
+            ]),
+            marker_pixels(7),
+        );
+        assert_eq!(marker_id_from_image(&soft_mask), None);
+        soft_mask.dict.remove(b"SMask");
+        soft_mask
+            .dict
+            .set("ColorSpace", Object::Name(b"DeviceGray".to_vec()));
+        assert_eq!(marker_id_from_image(&soft_mask), None);
     }
 }
