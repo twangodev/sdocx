@@ -22,6 +22,31 @@ struct Elf {
     binary: Vec<u8>,
     sections: Vec<[u8; 64]>,
 }
+
+const UNRESOLVED_STUB_BASE: u64 = 0x6800_0000;
+const UNRESOLVED_STUB_END: u64 = UNRESOLVED_STUB_BASE + 0x10_0000;
+const UNRESOLVED_STUB_STRIDE: u64 = 16;
+
+unsafe extern "C" fn unresolved_import(engine: Engine, address: u64, _: u32, data: *mut c_void) {
+    let name_address = data as usize as u64;
+    let length = read_u32(engine, name_address) as usize;
+    assert!(
+        length < 0x10000,
+        "invalid unresolved import diagnostic length"
+    );
+    let mut bytes = vec![0_u8; length];
+    check(unsafe {
+        uc_mem_read(
+            engine,
+            name_address + 4,
+            bytes.as_mut_ptr().cast(),
+            bytes.len(),
+        )
+    });
+    let name = String::from_utf8_lossy(&bytes);
+    panic!("executed unresolved native import {name} at {address:#x}");
+}
+
 impl Elf {
     fn new(path: &Path) -> Self {
         let binary = fs::read(path).unwrap();
@@ -65,7 +90,14 @@ impl Elf {
         let start = &self.binary[offset + name..];
         String::from_utf8(start[..start.iter().position(|b| *b == 0).unwrap()].to_vec()).unwrap()
     }
-    fn bind(&self, engine: Engine, base: u64, providers: &BTreeMap<String, u64>) {
+    fn bind(
+        &self,
+        engine: Engine,
+        base: u64,
+        providers: &BTreeMap<String, u64>,
+        next_stub: &mut u64,
+        next_name: &mut u64,
+    ) {
         for section in &self.sections {
             if u32::from_le_bytes(section[4..8].try_into().unwrap()) != 4 {
                 continue;
@@ -83,7 +115,8 @@ impl Elf {
                 {
                     continue;
                 }
-                if let Some(target) = providers.get(&self.name(symbols, symbol)) {
+                let name = self.name(symbols, symbol);
+                if let Some(target) = providers.get(&name) {
                     let addend = i64::from_le_bytes(relocation[16..24].try_into().unwrap());
                     let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
                     write(
@@ -91,6 +124,41 @@ impl Elf {
                         base + address,
                         &target.checked_add_signed(addend).unwrap().to_le_bytes(),
                     );
+                } else if info as u32 == 1026 {
+                    // Keep unresolved JUMP_SLOT imports callable only through
+                    // a named trap. Leaving their initial ELF value in place
+                    // can branch into an unrelated mapped DSO or model code.
+                    let stub = *next_stub;
+                    assert!(
+                        stub + UNRESOLVED_STUB_STRIDE <= UNRESOLVED_STUB_END,
+                        "unresolved import trap region exhausted while binding {name}"
+                    );
+                    *next_stub += UNRESOLVED_STUB_STRIDE;
+                    let name_size = (name.len() as u64 + 4 + 15) & !15;
+                    assert!(*next_name >= UNRESOLVED_STUB_BASE + name_size);
+                    *next_name -= name_size;
+                    assert!(
+                        stub + UNRESOLVED_STUB_STRIDE <= *next_name,
+                        "unresolved import trap arena exhausted while binding {name}"
+                    );
+                    write(engine, stub, &0xd65f03c0_u32.to_le_bytes());
+                    let mut encoded_name = (name.len() as u32).to_le_bytes().to_vec();
+                    encoded_name.extend_from_slice(name.as_bytes());
+                    write(engine, *next_name, &encoded_name);
+                    let mut hook = 0;
+                    check(unsafe {
+                        uc_hook_add(
+                            engine,
+                            &mut hook,
+                            4,
+                            unresolved_import as *mut c_void,
+                            *next_name as usize as *mut c_void,
+                            stub,
+                            stub,
+                        )
+                    });
+                    let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
+                    write(engine, base + address, &stub.to_le_bytes());
                 }
             }
         }
@@ -250,11 +318,44 @@ pub(super) fn initialize_with_bases(
     ] {
         providers.insert(name.to_owned(), RET);
     }
-    Elf::new(&model).bind(machine.engine, 0, &providers);
-    Elf::new(&base).bind(machine.engine, frames::BASE, &providers);
-    Elf::new(&cpp).bind(machine.engine, cpp_base, &providers);
-    Elf::new(paths.drawing).bind(machine.engine, DRAWING_BASE, &providers);
-    Elf::new(&body).bind(machine.engine, body_base, &providers);
+    check(unsafe { uc_mem_map(machine.engine, UNRESOLVED_STUB_BASE, 0x10_0000, 7) });
+    let mut next_stub = UNRESOLVED_STUB_BASE;
+    let mut next_name = UNRESOLVED_STUB_END;
+    Elf::new(&model).bind(
+        machine.engine,
+        0,
+        &providers,
+        &mut next_stub,
+        &mut next_name,
+    );
+    Elf::new(&base).bind(
+        machine.engine,
+        frames::BASE,
+        &providers,
+        &mut next_stub,
+        &mut next_name,
+    );
+    Elf::new(&cpp).bind(
+        machine.engine,
+        cpp_base,
+        &providers,
+        &mut next_stub,
+        &mut next_name,
+    );
+    Elf::new(paths.drawing).bind(
+        machine.engine,
+        DRAWING_BASE,
+        &providers,
+        &mut next_stub,
+        &mut next_name,
+    );
+    Elf::new(&body).bind(
+        machine.engine,
+        body_base,
+        &providers,
+        &mut next_stub,
+        &mut next_name,
+    );
     for plt in [0x47ac30, 0x47ac40, 0x020e55f0, 0x020e56f0, 0x020e5780] {
         bind_native(machine.engine, plt, NEW);
     }
