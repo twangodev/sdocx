@@ -2036,6 +2036,8 @@ fn main() {
                 Path::new(&output),
                 None,
                 None,
+                None,
+                None,
             );
             return;
         }
@@ -2058,6 +2060,8 @@ fn main() {
                 Path::new(&output),
                 Some(&source_bytes),
                 None,
+                None,
+                None,
             );
             return;
         }
@@ -2073,12 +2077,37 @@ fn main() {
                 Path::new(&output),
                 None,
                 Some(Path::new(&source)),
+                None,
+                None,
+            );
+            return;
+        }
+        Some("--pdfium-standard-export-source") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let source = std::env::args_os().nth(4).expect("source PDF path required");
+            let expected_sha256 = std::env::args_os()
+                .nth(5)
+                .expect("source PDF SHA-256 required")
+                .into_string()
+                .expect("source PDF SHA-256 must be UTF-8");
+            let output = std::env::args_os().nth(6).expect("output PDF path required");
+            verify_library(Path::new(&source), &expected_sha256);
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&path),
+                Path::new(&pdfium),
+                0,
+                Path::new(&output),
+                None,
+                Some(Path::new(&source)),
+                Some(&expected_sha256),
+                Some(0.400775),
             );
             return;
         }
         None => {}
         _ => panic!(
-            "expected --shape-paths, --pdf-paper-predicates, --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --table-background-transport, --widget-text-constructor, --text-cell-measurement, --text-cell-emission, --text-cell-source-inputs, --parsed-cell-text, --live-table-layout, --live-table-padding, --live-column-widths, --live-cell-images, --live-table-text-clipping, --bodytext-table-placement, --bodytext-table-placement-one-page-zero-height, --bodytext-table-placement-one-page-native-obstacles, --bodytext-page-ranges, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-object-feedback, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --shape-paths, --pdf-paper-predicates, --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --table-background-transport, --widget-text-constructor, --text-cell-measurement, --text-cell-emission, --text-cell-source-inputs, --parsed-cell-text, --live-table-layout, --live-table-padding, --live-column-widths, --live-cell-images, --live-table-text-clipping, --bodytext-table-placement, --bodytext-table-placement-one-page-zero-height, --bodytext-table-placement-one-page-native-obstacles, --bodytext-page-ranges, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-object-feedback, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

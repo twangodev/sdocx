@@ -1,5 +1,7 @@
 use super::*;
+use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::collections::{BTreeSet, HashMap};
+use std::ffi::{c_char, c_int, c_uint, c_void, CStr};
 use std::io::{Read, Seek, SeekFrom, Write};
 
 #[link(name = "m")]
@@ -18,6 +20,88 @@ unsafe extern "C" {
         source: *const u8,
         source_len: u64,
     ) -> i32;
+    #[link_name = "inflateInit_"]
+    fn host_inflate_init(stream: *mut ZStream, version: *const c_char, stream_size: c_int) -> c_int;
+    #[link_name = "inflate"]
+    fn host_inflate(stream: *mut ZStream, flush: c_int) -> c_int;
+    #[link_name = "inflateEnd"]
+    fn host_inflate_end(stream: *mut ZStream) -> c_int;
+    #[link_name = "zlibVersion"]
+    fn host_zlib_version() -> *const c_char;
+}
+
+const LIBZ_PATH: &str = "/usr/lib/x86_64-linux-gnu/libz.so.1";
+const LIBZ_SHA256: &str = "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e";
+const INFLATE_CHUNK_LIMIT: usize = 16 * 1024 * 1024;
+const INFLATE_STREAM_LIMIT: u64 = 64 * 1024 * 1024;
+const INFLATE_TOTAL_LIMIT: u64 = 128 * 1024 * 1024;
+
+type ZAlloc = Option<unsafe extern "C" fn(*mut c_void, c_uint, c_uint) -> *mut c_void>;
+type ZFree = Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>;
+
+// z_stream for the pinned x86_64 host zlib ABI. Guest callback pointers are
+// either null or validated against pinned guest thunks, never invoked as host code.
+#[repr(C)]
+struct ZStream {
+    next_in: *mut u8,
+    avail_in: c_uint,
+    total_in: u64,
+    next_out: *mut u8,
+    avail_out: c_uint,
+    total_out: u64,
+    msg: *mut c_char,
+    state: *mut c_void,
+    zalloc: ZAlloc,
+    zfree: ZFree,
+    opaque: *mut c_void,
+    data_type: c_int,
+    adler: u64,
+    reserved: u64,
+}
+
+impl Default for ZStream {
+    fn default() -> Self {
+        Self {
+            next_in: ptr::null_mut(), avail_in: 0, total_in: 0,
+            next_out: ptr::null_mut(), avail_out: 0, total_out: 0,
+            msg: ptr::null_mut(), state: ptr::null_mut(), zalloc: None,
+            zfree: None, opaque: ptr::null_mut(), data_type: 0, adler: 0,
+            reserved: 0,
+        }
+    }
+}
+
+struct InflateRecord {
+    id: u64,
+    stream: Box<ZStream>,
+    zalloc_context: Option<Box<ZallocContext>>,
+    guest_zalloc: u64,
+    guest_zfree: u64,
+    consumed: u64,
+    produced: u64,
+    calls: usize,
+}
+
+#[derive(Default)]
+struct InflateSummary {
+    id: u64,
+    guest_zalloc: u64,
+    guest_zfree: u64,
+    consumed: u64,
+    produced: u64,
+    calls: usize,
+}
+
+#[derive(Default)]
+struct ZallocLedger {
+    allocations: HashMap<usize, (Layout, u64)>,
+    active_bytes: usize,
+    peak_bytes: usize,
+}
+
+struct ZallocContext {
+    ledger: *mut ZallocLedger,
+    stream_id: u64,
 }
 
 const PDFIUM_BASE: u64 = 0x0100_0000;
@@ -26,6 +110,11 @@ const SPENPDF_BASE: u64 = 0x0300_0000;
 const SPENBASE_BASE: u64 = 0x0400_0000;
 const PDF_WRITE_BLOCK_STUB: u64 = STUB + 0xf000;
 const STUB: u64 = 0x0800_0000;
+// Pinned PdfiumB offsets: the guest zalloc thunk forwards to zeroing
+// CallocOrDie2D; zfree forwards to free. The host bridge mirrors those
+// semantics with owned host allocations and never invokes guest code pointers.
+const PDFIUM_ZALLOC: u64 = PDFIUM_BASE + 0x4e3270;
+const PDFIUM_ZFREE: u64 = PDFIUM_BASE + 0x4e3280;
 const C_LOCALE: u64 = STUB + 0x9200;
 const GLOBAL_C_LOCALE: u64 = STUB + 0x9210;
 const C_LOCALE_NAME: u64 = STUB + 0x9220;
@@ -44,6 +133,11 @@ struct External {
     tls: HashMap<u64, u64>,
     next_tls_key: u64,
     clock_calls: u64,
+    inflates: HashMap<u64, InflateRecord>,
+    next_inflate_id: u64,
+    inflate_total_produced: u64,
+    completed_inflates: Vec<InflateSummary>,
+    zalloc_ledger: ZallocLedger,
     pdf_bytes: Vec<u8>,
     write_calls: usize,
 }
@@ -102,6 +196,54 @@ fn compare_memory(engine: Engine, left: u64, right: u64, length: usize) -> i32 {
         .map(|(a, b)| i32::from(a) - i32::from(b))
         .find(|difference| *difference != 0)
         .unwrap_or(0)
+}
+
+unsafe extern "C" fn zlib_host_alloc(
+    opaque: *mut c_void,
+    items: c_uint,
+    size: c_uint,
+) -> *mut c_void {
+    let context = unsafe { &*opaque.cast::<ZallocContext>() };
+    let Some(bytes) = (items as usize).checked_mul(size as usize) else {
+        return ptr::null_mut();
+    };
+    if bytes > INFLATE_CHUNK_LIMIT {
+        return ptr::null_mut();
+    }
+    let Ok(layout) = Layout::from_size_align(bytes.max(1), 16) else {
+        return ptr::null_mut();
+    };
+    let pointer = unsafe { alloc_zeroed(layout) };
+    if pointer.is_null() {
+        return pointer.cast();
+    }
+    let ledger = unsafe { &mut *context.ledger };
+    assert!(
+        ledger
+            .allocations
+            .insert(pointer as usize, (layout, context.stream_id))
+            .is_none(),
+        "host zlib allocator reused a live address"
+    );
+    ledger.active_bytes = ledger.active_bytes.checked_add(layout.size()).unwrap();
+    assert!(ledger.active_bytes <= INFLATE_TOTAL_LIMIT as usize, "host zlib allocation budget exceeded");
+    ledger.peak_bytes = ledger.peak_bytes.max(ledger.active_bytes);
+    pointer.cast()
+}
+
+unsafe extern "C" fn zlib_host_free(opaque: *mut c_void, pointer: *mut c_void) {
+    if pointer.is_null() {
+        return;
+    }
+    let context = unsafe { &*opaque.cast::<ZallocContext>() };
+    let ledger = unsafe { &mut *context.ledger };
+    let (layout, stream_id) = ledger
+        .allocations
+        .remove(&(pointer as usize))
+        .expect("host zlib freed an allocation not returned by its bridge");
+    assert_eq!(stream_id, context.stream_id, "host zlib freed another stream's allocation");
+    ledger.active_bytes = ledger.active_bytes.checked_sub(layout.size()).unwrap();
+    unsafe { dealloc(pointer.cast(), layout) };
 }
 
 fn write_stat(engine: Engine, address: u64, size: u64) {
@@ -415,6 +557,113 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             let result = unsafe { hypotf(left, right) };
             register(engine, 136, u64::from(result.to_bits()));
         }
+        "inflateInit_" => {
+            assert_eq!(x2 as usize, std::mem::size_of::<ZStream>(), "guest z_stream size does not match host ABI");
+            let guest_version = cstring(engine, x1);
+            assert!(guest_version.starts_with("1."), "unsupported guest zlib version {guest_version:?}");
+            let guest_zalloc = read_u64(engine, x0 + 64);
+            let guest_zfree = read_u64(engine, x0 + 72);
+            let guest_opaque = read_u64(engine, x0 + 80);
+            assert_eq!(guest_opaque, 0, "unsupported guest zlib allocator context");
+            let host_version = std::ffi::CString::new(guest_version.as_bytes()).unwrap();
+            let mut stream = Box::<ZStream>::default();
+            let id = external.next_inflate_id;
+            external.next_inflate_id = external.next_inflate_id.checked_add(1).unwrap();
+            let zalloc_context = if guest_zalloc == 0 && guest_zfree == 0 {
+                assert_eq!(guest_opaque, 0, "guest zlib opaque must be null with default allocators");
+                None
+            } else {
+                assert_eq!(guest_zalloc, PDFIUM_ZALLOC, "unexpected guest zalloc function pointer");
+                assert_eq!(guest_zfree, PDFIUM_ZFREE, "unexpected guest zfree function pointer");
+                let mut context = Box::new(ZallocContext {
+                    ledger: ptr::from_mut(&mut external.zalloc_ledger),
+                    stream_id: id,
+                });
+                stream.zalloc = Some(zlib_host_alloc);
+                stream.zfree = Some(zlib_host_free);
+                stream.opaque = context.as_mut() as *mut ZallocContext as *mut c_void;
+                Some(context)
+            };
+            result = unsafe {
+                host_inflate_init(
+                    stream.as_mut(),
+                    host_version.as_ptr(),
+                    std::mem::size_of::<ZStream>() as c_int,
+                ) as i64 as u64
+            };
+            assert_eq!(result as i64, 0, "pinned host inflateInit_ failed");
+            external.inflates.insert(x0, InflateRecord {
+                id,
+                stream,
+                zalloc_context,
+                guest_zalloc,
+                guest_zfree,
+                consumed: 0,
+                produced: 0,
+                calls: 0,
+            });
+        }
+        "inflate" => {
+            let input_pointer = read_u64(engine, x0);
+            let input_length = read_u32(engine, x0 + 8) as usize;
+            let output_pointer = read_u64(engine, x0 + 24);
+            let output_length = read_u32(engine, x0 + 32) as usize;
+            assert!(input_length <= INFLATE_CHUNK_LIMIT && output_length <= INFLATE_CHUNK_LIMIT, "zlib chunk exceeds bounded host bridge");
+            let record = external.inflates.get_mut(&x0).expect("inflate called without matching init");
+            let next_consumed = record.consumed.checked_add(input_length as u64).expect("zlib input counter overflow");
+            assert!(next_consumed <= INFLATE_STREAM_LIMIT, "zlib input stream limit exceeded");
+            let mut input = vec![0_u8; input_length];
+            let mut output = vec![0_u8; output_length];
+            if input_length != 0 {
+                check(unsafe { uc_mem_read(engine, input_pointer, input.as_mut_ptr().cast(), input_length) });
+            }
+            let stream = record.stream.as_mut();
+            stream.next_in = input.as_mut_ptr();
+            stream.avail_in = input_length as c_uint;
+            stream.next_out = output.as_mut_ptr();
+            stream.avail_out = output_length as c_uint;
+            let status = unsafe { host_inflate(stream, x1 as c_int) };
+            assert!(matches!(status, -5 | 0 | 1), "unsupported pinned zlib inflate status {status}");
+            let consumed = input_length - stream.avail_in as usize;
+            let produced = output_length - stream.avail_out as usize;
+            record.consumed = record.consumed.checked_add(consumed as u64).unwrap();
+            record.produced = record.produced.checked_add(produced as u64).unwrap();
+            record.calls += 1;
+            external.inflate_total_produced = external.inflate_total_produced.checked_add(produced as u64).unwrap();
+            assert!(record.produced <= INFLATE_STREAM_LIMIT, "zlib output stream limit exceeded");
+            assert!(external.inflate_total_produced <= INFLATE_TOTAL_LIMIT, "total zlib output limit exceeded");
+            if produced != 0 {
+                write(engine, output_pointer, &output[..produced]);
+            }
+            write(engine, x0, &(input_pointer + consumed as u64).to_le_bytes());
+            write(engine, x0 + 8, &stream.avail_in.to_le_bytes());
+            write(engine, x0 + 16, &stream.total_in.to_le_bytes());
+            write(engine, x0 + 24, &(output_pointer + produced as u64).to_le_bytes());
+            write(engine, x0 + 32, &stream.avail_out.to_le_bytes());
+            write(engine, x0 + 40, &stream.total_out.to_le_bytes());
+            write(engine, x0 + 88, &stream.data_type.to_le_bytes());
+            write(engine, x0 + 96, &stream.adler.to_le_bytes());
+            result = status as i64 as u64;
+        }
+        "inflateEnd" => {
+            let mut record = external.inflates.remove(&x0).expect("inflateEnd called without matching init");
+            assert!(record.calls > 0, "zlib stream ended without any inflate calls");
+            assert!(record.zalloc_context.as_ref().is_none_or(|context| context.stream_id == record.id));
+            result = unsafe { host_inflate_end(record.stream.as_mut()) as i64 as u64 };
+            assert_eq!(result as i64, 0, "pinned host inflateEnd failed");
+            assert!(
+                external.zalloc_ledger.allocations.values().all(|(_, owner)| *owner != record.id),
+                "zlib stream leaked allocations through the host callback bridge"
+            );
+            external.completed_inflates.push(InflateSummary {
+                id: record.id,
+                guest_zalloc: record.guest_zalloc,
+                guest_zfree: record.guest_zfree,
+                consumed: record.consumed,
+                produced: record.produced,
+                calls: record.calls,
+            });
+        }
         "compress" => {
             let source_len = x3(engine) as usize;
             let mut source = vec![0; source_len];
@@ -689,6 +938,45 @@ fn x3(engine: Engine) -> u64 {
     read_register(engine, REGISTER_X0 + 3)
 }
 
+fn verify_loaded_host_zlib() {
+    let version = unsafe { CStr::from_ptr(host_zlib_version()) }
+        .to_str()
+        .expect("host zlib version is UTF-8");
+    assert_eq!(version, "1.3.1", "pinned host zlib version changed");
+    let symbol_address = host_inflate as *const () as usize;
+    let maps = std::fs::read_to_string("/proc/self/maps").expect("read host process mappings");
+    let loaded_path = maps
+        .lines()
+        .find_map(|line| {
+            let mut fields = line.split_whitespace();
+            let range = fields.next()?;
+            let (start, end) = range.split_once('-')?;
+            let start = usize::from_str_radix(start, 16).ok()?;
+            let end = usize::from_str_radix(end, 16).ok()?;
+            if !(start <= symbol_address && symbol_address < end) {
+                return None;
+            }
+            let path = line.split_whitespace().skip(5).collect::<Vec<_>>().join(" ");
+            (!path.is_empty() && path.starts_with('/')).then_some(path)
+        })
+        .expect("locate loaded host zlib mapping");
+    let expected = std::fs::canonicalize(LIBZ_PATH).expect("canonicalize pinned host zlib");
+    let actual = std::fs::canonicalize(&loaded_path).expect("canonicalize loaded host zlib");
+    assert_eq!(actual, expected, "linked zlib resolved to an unexpected library");
+    verify_library(&actual, LIBZ_SHA256);
+}
+
+fn sha256_file(path: &Path) -> String {
+    let digest = Command::new("sha256sum").arg(path).output().expect("hash native PDF output");
+    assert!(digest.status.success(), "sha256sum failed for {}", path.display());
+    String::from_utf8(digest.stdout)
+        .expect("sha256sum output is UTF-8")
+        .split_whitespace()
+        .next()
+        .expect("sha256sum digest present")
+        .to_owned()
+}
+
 unsafe extern "C" fn native_pdf_write_block(engine: Engine, _: u64, _: u32, data: *mut c_void) {
     let external = unsafe { &mut *data.cast::<External>() };
     let bytes = read_register(engine, REGISTER_X0 + 2) as usize;
@@ -883,7 +1171,10 @@ pub(super) fn capture(
     output_path: &Path,
     source_pdf: Option<&[u8]>,
     standard_export_path: Option<&Path>,
+    expected_source_sha256: Option<&str>,
+    note_page_scale: Option<f32>,
 ) {
+    verify_loaded_host_zlib();
     machine.prepare_pdfium_arena();
     map_library(
         machine.engine,
@@ -980,6 +1271,11 @@ pub(super) fn capture(
         tls: HashMap::new(),
         next_tls_key: 1,
         clock_calls: 0,
+        inflates: HashMap::new(),
+        next_inflate_id: 1,
+        inflate_total_produced: 0,
+        completed_inflates: Vec::new(),
+        zalloc_ledger: ZallocLedger::default(),
         pdf_bytes: Vec::new(),
         write_calls: 0,
     });
@@ -1183,6 +1479,9 @@ pub(super) fn capture(
     }
 
     if let (Some(spenpdf), Some(spenbase), Some(source_path)) = (&spenpdf, &spenbase, standard_export_path) {
+        if let Some(expected) = expected_source_sha256 {
+            verify_library(source_path, expected);
+        }
         run_init_array(machine.engine, spenbase, SPENBASE_BASE, |initializer| { machine.call(initializer, &[]); });
         run_init_array(machine.engine, spenpdf, SPENPDF_BASE, |initializer| { machine.call(initializer, &[]); });
         machine.call(PDFIUM_BASE + 0x5a5504, &[]);
@@ -1216,7 +1515,13 @@ pub(super) fn capture(
         machine.call(SPENPDF_BASE + 0x75854, &[PAINT, 0xff11_5cc9]);
         register(machine.engine, 136, f32::to_bits(0.0) as u64);
         machine.call(SPENPDF_BASE + 0x759f0, &[PAINT, 0]);
-        for (index, (x, y)) in [(17.25_f32, 29.5_f32), (93.75_f32, 46.5_f32), (61.25_f32, 109.75_f32)].into_iter().enumerate() {
+        let synthetic_points = [(17.25_f32, 29.5_f32), (93.75_f32, 46.5_f32), (61.25_f32, 109.75_f32)];
+        let note_points = [(100.0_f32, 100.0_f32), (300.0, 100.0), (200.0, 350.0)];
+        let emitted_points = note_page_scale.map_or(synthetic_points, |scale| {
+            assert!(scale.is_finite() && scale > 0.0);
+            note_points.map(|(x, y)| (x * scale, y * scale))
+        });
+        for (index, (x, y)) in emitted_points.into_iter().enumerate() {
             write(machine.engine, POINTS + index as u64 * 8, &x.to_le_bytes());
             write(machine.engine, POINTS + index as u64 * 8 + 4, &y.to_le_bytes());
         }
@@ -1232,9 +1537,31 @@ pub(super) fn capture(
         write(machine.engine, EXPORT_BASE + output_path.to_string_lossy().len() as u64, &[0]);
         let export_result = machine.call(SPENPDF_BASE + 0x7ca1c, &[HANDLER_OBJECT, EXPORT_BASE, 0, 0]);
         assert_eq!(export_result, 0, "PdfiumExportHandler::Export failed");
+        if let Some(expected) = expected_source_sha256 {
+            verify_library(source_path, expected);
+        }
         let output = std::fs::read(output_path).expect("Samsung Export output");
         assert!(!output.is_empty(), "Samsung Export emitted no file bytes");
-        println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumPathHandler::DrawPath -> CloseWriter -> PdfiumExportHandler::Export(inclusive page range 0..0) -> PDFFileWriter/FDPF_SaveAsCopy\",\"load_result\":{},\"loaded_width\":{},\"loaded_height\":{},\"source_rotation\":{},\"writer_open\":{},\"writer_close\":{},\"export_result\":{},\"output_bytes\":{},\"handled_imports\":[{}],\"platform_events\":[{}]}}", load_result, loaded_width, loaded_height, source_rotation, writer_open, writer_close, export_result, output.len(), external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
+        assert!(external.inflates.is_empty(), "native export left host zlib streams active");
+        assert!(external.zalloc_ledger.allocations.is_empty(), "native export leaked host zlib allocations");
+        assert_eq!(external.zalloc_ledger.active_bytes, 0, "native export left zlib allocator bytes live");
+        let output_sha256 = sha256_file(output_path);
+        let source_sha256 = sha256_file(source_path);
+        let inflate_streams = external.completed_inflates.iter().map(|stream| {
+            let host_bridge = if stream.guest_zalloc == 0 && stream.guest_zfree == 0 {
+                "host_zlib_default"
+            } else {
+                "host_zeroed_alloc_free"
+            };
+            format!(
+                "{{\"id\":{},\"guest_zalloc\":\"0x{:x}\",\"guest_zfree\":\"0x{:x}\",\"host_bridge\":\"{host_bridge}\",\"consumed_bytes\":{},\"produced_bytes\":{},\"calls\":{}}}",
+                stream.id, stream.guest_zalloc, stream.guest_zfree, stream.consumed, stream.produced, stream.calls
+            )
+        }).collect::<Vec<_>>().join(",");
+        let note_points_json = note_points.iter().map(|(x, y)| format!("[{x},{y}]")).collect::<Vec<_>>().join(",");
+        let emitted_points_json = emitted_points.iter().map(|(x, y)| format!("[{x},{y}]")).collect::<Vec<_>>().join(",");
+        let scale_json = note_page_scale.map_or_else(|| "null".to_owned(), |scale| scale.to_string());
+        println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumPathHandler::DrawPath -> CloseWriter -> PdfiumExportHandler::Export(inclusive page range 0..0) -> PDFFileWriter/FDPF_SaveAsCopy\",\"load_result\":{},\"loaded_width\":{},\"loaded_height\":{},\"source_rotation\":{},\"writer_open\":{},\"writer_close\":{},\"export_executed\":true,\"export_result\":{},\"output_bytes\":{},\"source_file_sha256\":\"{}\",\"output_file_sha256\":\"{}\",\"host_zlib_sha256\":\"{}\",\"inflate_total_produced_bytes\":{},\"inflate_allocator_peak_bytes\":{},\"inflate_streams\":[{}],\"note_page_scale\":{},\"note_points\":[{}],\"pdf_points\":[{}],\"coordinate_composition\":\"host composed supplied note points with the independently captured Composer ratio; body writer transform not executed\",\"handled_imports\":[{}],\"platform_events\":[{}]}}", load_result, loaded_width, loaded_height, source_rotation, writer_open, writer_close, export_result, output.len(), source_sha256, output_sha256, LIBZ_SHA256, external.inflate_total_produced, external.zalloc_ledger.peak_bytes, inflate_streams, scale_json, note_points_json, emitted_points_json, external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
         return;
     }
 

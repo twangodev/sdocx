@@ -18,6 +18,7 @@ SPENPDF_SHA256 = "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f
 SPENBASE_SHA256 = "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
 LIBM_PATH = Path("/usr/lib/x86_64-linux-gnu/libm.so.6")
 LIBM_SHA256 = "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"
+LIBZ_SHA256 = "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e"
 sys.path.insert(0, str(ROOT / "conformance"))
 from pdf_paper_pdfium_source_overlay_native import source_output, source_pdf
 
@@ -60,7 +61,15 @@ def capture() -> dict:
         native = json.loads(run.stdout)
         if "PdfiumExportHandler::Export(inclusive page range 0..0)" not in native["native_path"]:
             raise SystemExit(f"rotation {rotation}: native StandardPDF export path was not executed")
+        if native.get("export_executed") is not True or native.get("export_result") != 0:
+            raise SystemExit(f"rotation {rotation}: native Export execution did not succeed")
         pdf = output_path.read_bytes()
+        if native.get("source_file_sha256") != hashlib.sha256(source_bytes).hexdigest():
+            raise SystemExit(f"rotation {rotation}: native source file hash differs")
+        if native.get("output_file_sha256") != sha(output_path):
+            raise SystemExit(f"rotation {rotation}: native output file hash differs")
+        if native.get("host_zlib_sha256") != LIBZ_SHA256:
+            raise SystemExit("pinned host zlib hash differs")
         case = source_output(pdf, rotation, hashlib.sha256(source_bytes).hexdigest(), output_path, native)
         case["output_file_sha256"] = sha(output_path)
         cases.append(case)
@@ -73,6 +82,7 @@ def capture() -> dict:
         "samsung_pdf_library_sha256": SPENPDF_SHA256,
         "samsung_base_library_sha256": SPENBASE_SHA256,
         "host_libm_sha256": LIBM_SHA256,
+        "host_zlib_sha256": LIBZ_SHA256,
         "cases": cases,
         "evidence_boundary": (
             "Executes the pinned Samsung PdfiumImpl constructor, file-backed Open, LoadPage, "
@@ -82,7 +92,8 @@ def capture() -> dict:
             "prove the original vector path and tested boxes, rotation and UserUnit survive this "
             "one-page fixture while the Samsung vector overlay is serialized in the retained page. "
             "The host supplies file I/O and selected deterministic C/libm/platform callbacks; "
-            "single-thread synchronization is a no-op and unknown imports abort. This does not "
+            "the host zlib identity is pinned and unknown imports abort. Single-thread synchronization "
+            "is a no-op. This does not "
             "prove arbitrary-PDF preservation, Android rendering parity, or execution of the full app/JNI route."
         ),
     }
