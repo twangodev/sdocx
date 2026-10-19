@@ -131,10 +131,11 @@ using native body-normalized sampling state. General caller/runtime state,
 shape modes and paint integration remain open. The
 [RTV3 paint capture](../conformance/inkpen2-paint-native.json) checks native
 MAX coverage, source-over color and final composition in six synthetic host
-Mesa cases, including source ARGB opacity controls. A test-only paint model
-matches all three full-target readbacks. These cases explicitly enable the
-alternate paint branch; saved Drawing-to-paint integration and device parity
-remain unverified.
+Mesa cases, plus four direct-branch source-over cases. Both include source ARGB
+opacity controls. A test-only paint model matches every full-target readback;
+direct same-color overlap accumulates while the alternate branch preserves
+its MAX result. Saved Drawing-to-paint integration and device parity remain
+unverified.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
