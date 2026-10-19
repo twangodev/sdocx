@@ -424,6 +424,10 @@ def generate(path):
         {"id": "coincident_curve_tool3_nonorigin", "points": [[17.0, 23.0]] * 5, "size": 4.0, "curve_enabled": True, "tool_type": 3},
         {"id": "no_curve_duplicate_nonorigin_tool3", "points": [[5.0, 9.0], [5.0, 9.0], [13.0, 9.0], [13.0, 9.0]], "size": 6.0, "curve_enabled": False, "tool_type": 3},
         {"id": "curve_zero_quad_followed_by_move_tool1", "points": [[5.0, 9.0]] * 5 + [[100.0, 9.0]], "size": 4.0, "curve_enabled": True, "tool_type": 1},
+        # Exact synthetic geometry input used by the Oblique MAX SVG transport
+        # test.  This keeps its native redraw evidence separate from the paint
+        # wrapper (color/opacity) and from saved-document caller state.
+        {"id": "svg_transport_synthetic_tool2", "points": [[8.0, 12.0], [23.0, 15.0], [39.0, 10.0]], "timestamps": [0, 8, 16], "size": 5.0, "curve_enabled": True, "tool_type": 2, "inverse_scale": [1.0, 1.0]},
     ]
     native = []
     for case in cases:
