@@ -180,8 +180,9 @@ remain open; host captures and vector-only PDFs do not establish full parity.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](../conformance/airbrush-saved-caller-native.json)
-selects V1 for null settings and V2 for empty settings, with identical 416-byte
-streams under an explicit 1920×1080 display profile and recorded native color forwarding. A native
+selects V1 for null settings and V2 for empty settings. The numeric model matches
+both 416-byte streams bit for bit under an explicit 1920×1080 display profile;
+native color forwarding is recorded separately. A native
 [texture capture](../conformance/airbrush-texture-native.json) now checks Renderer
 allocation, nearest/clamped sampling and exact GL upload bytes. An
 [instanced Draw capture](../conformance/airbrush-draw-native.json) checks native

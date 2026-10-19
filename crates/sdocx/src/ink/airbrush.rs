@@ -213,4 +213,117 @@ mod tests {
             }
         }
     }
+
+    fn little_endian_f32(hex: &str) -> f32 {
+        let bytes: Vec<u8> = hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        f32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    #[test]
+    fn saved_caller_records_match_from_model_points_and_drawable_size() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-saved-caller-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_object().unwrap().values() {
+            let input = &case["input"];
+            match input["advanced_setting_mode"].as_str().unwrap() {
+                "unset" => {
+                    assert_eq!(
+                        input["advanced_setting_mutation"],
+                        "SetAdvancedPenSetting was omitted; native getter returned null"
+                    );
+                    assert!(input["native_model_getter_snapshot"]["advanced_setting"].is_null());
+                    assert_eq!(
+                        case["native_selection"]["selected_drawable_profile_version"],
+                        1
+                    );
+                }
+                "explicit-empty" => {
+                    assert_eq!(
+                        input["advanced_setting_mutation"],
+                        "SetAdvancedPenSetting was called with empty String"
+                    );
+                    assert_eq!(
+                        input["native_model_getter_snapshot"]["advanced_setting"],
+                        ""
+                    );
+                    assert_eq!(
+                        case["native_selection"]["selected_drawable_profile_version"],
+                        2
+                    );
+                }
+                other => panic!("unexpected setting mode {other}"),
+            }
+            let encoded = input["source_arrays"]["points"]["data_hex"]
+                .as_str()
+                .unwrap();
+            let bytes: Vec<u8> = encoded
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            let points: Vec<P> = bytes
+                .chunks_exact(8)
+                .map(|point| P {
+                    x: f32::from_le_bytes(point[..4].try_into().unwrap()),
+                    y: f32::from_le_bytes(point[4..].try_into().unwrap()),
+                })
+                .collect();
+            let output = saved_redraw(Input {
+                history: &points[..points.len() - 1],
+                endpoint: *points.last().unwrap(),
+                size: little_endian_f32(input["size_f32_bits"].as_str().unwrap()),
+                runtime: Runtime { counter_seed: 0 },
+            })
+            .unwrap();
+            assert_eq!(
+                little_endian_f32(input["size_f32_bits"].as_str().unwrap()).to_bits(),
+                little_endian_f32(case["native_selection"]["size_f32_bits"].as_str().unwrap())
+                    .to_bits(),
+                "{} Model versus selected drawable size",
+                case["case_id"]
+            );
+            let expected: Vec<[u32; 4]> = case["producer"]["append_rows"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|row| {
+                    let bytes: Vec<u8> = row["delta_bytes"]
+                        .as_str()
+                        .unwrap()
+                        .as_bytes()
+                        .chunks_exact(2)
+                        .map(|pair| {
+                            u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
+                        })
+                        .collect();
+                    std::array::from_fn(|i| {
+                        u32::from_le_bytes(bytes[i * 4..i * 4 + 4].try_into().unwrap())
+                    })
+                })
+                .collect();
+            let actual: Vec<[u32; 4]> = output
+                .stamps
+                .iter()
+                .map(|stamp| stamp.values.map(f32::to_bits))
+                .collect();
+            assert_eq!(actual.len(), expected.len(), "{} count", case["case_id"]);
+            assert_eq!(actual, expected, "{}", case["case_id"]);
+            let actual_buffer: Vec<u8> = output
+                .stamps
+                .iter()
+                .flat_map(|stamp| stamp.values.into_iter().flat_map(f32::to_le_bytes))
+                .collect();
+            let actual_hex: String = actual_buffer
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            assert_eq!(actual_hex, case["producer"]["buffer_hex"]);
+        }
+    }
 }
