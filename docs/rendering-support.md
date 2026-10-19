@@ -179,8 +179,10 @@ The [same-object capture](../conformance/brushpen-same-run-native.json) checks
 26 native-generated records through native upload and host paint, including
 a full-stream unused-atlas-cell control. The [handoff capture](../conformance/brushpen-handoff-native.json)
 also completes native endPen and callback destruction, then executes the queued
-`SendDataToGPU` task. A later canvas task remains blocked by its host adapter;
-full queue completion, general style/caller admission, vector paint, production
+`SendDataToGPU` task. The [queued paint capture](../conformance/brushpen-queue-native.json)
+completes native clip setup, upload, draw and deferred vector deletion with a
+distinct cleared native canvas on host Mesa. Its style/color and scheduling are
+explicit host inputs; general caller admission, vector paint, production
 integration and Samsung device parity remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
@@ -298,7 +300,9 @@ two CropBox origins, then calls PDFium matrix helpers separately. The
 [image-adapter capture](../conformance/pdf-image-adapter-native.json) joins the
 native String-overload constructor/setters to PDFium image insertion and export
 for four rotations and shifted origins, with host-supplied placement and PNG.
-The bitmap overload and native raster-batch producer remain unverified. Native
+The [bitmap-overload capture](../conformance/pdf-image-bitmap-native.json) executes
+native bitmap methods, adapter and libpng encoding with synthetic pixels,
+simulated host GL and pinned host zlib. The native raster-batch producer and
 Drawing-to-insertion, saved-note placement and production PDF-paper rendering
 remain outstanding.
 
