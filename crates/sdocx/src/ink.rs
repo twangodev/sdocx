@@ -5,6 +5,8 @@ use std::borrow::Cow;
 mod airbrush;
 #[cfg(test)]
 mod brushpen;
+#[cfg(test)]
+mod chinesebrush_glv123;
 pub(crate) mod calligraphy;
 
 #[cfg(test)]

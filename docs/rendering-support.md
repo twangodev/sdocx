@@ -378,8 +378,10 @@ admission, native width transitions and the 0.4–800 size clamp. General sampli
 replay boundaries and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
-Model input. Version dispatch is observed; sampler reconstruction, paint and
-production vector integration remain open.
+Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
+retains complete four-lane streams for 44 three- and five-event controls across
+GLV1/2/3; the test-only Rust model matches every word in those bounded families.
+Arbitrary-length sampling, paint and production vector integration remain open.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
