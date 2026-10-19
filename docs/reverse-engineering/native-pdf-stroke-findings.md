@@ -175,11 +175,26 @@ bool in `w1`. The three synthetic cases emit 19, 7 and 19 circles; the
 source-derived 161-point V14 case emits 20. The seven-circle case uses raw
 settings `18;0;100;`, whose Drawing selection is V16.
 
-This confirms an internal native vector contract, with the inherited host
-context and adapter boundaries recorded in the fixture. It does not establish
-PDFium serialization, device pixels or use by Standard, print or another
-public Notes export mode. These circles therefore do not replace the GL
-coverage contract or serve as a device-export reference.
+The native helper overrides saved tolerance: V14 `GetDrawnPointData`
+(FountainPen `0x730ac`) sets `1.5`, while V16 (`0x78ed8`) sets float32 `2.6`.
+Both set repeat distance `0.82` and enter redraw with collection flag false.
+For the 161-point witness, the PDF's 20 circle triples exactly match the prefix
+of the 22 native GL/Rust dots at tolerance `1.5`; source-tolerance GL/Rust
+instead produce 24 dots. The complete saved-GL stream is a separate contract.
+
+There is also a backend limitation. In pinned `libSPenPdf.so`,
+`PDFEnginePdfium::CreatePDFPath` (`0x73270`) returns null, and its `Circle`
+(`0x73288`) is a bare return. `PDFPath::Circle` (`0x66500`) forwards through
+engine slot `+704`, whose PDFium vtable relocation at `0xb06c0` identifies that
+stub. These generic path-building entrypoints do not establish serialized
+circle geometry; the separate implemented `PdfiumPathHandler` route is not
+exercised by the mocked sink oracle.
+
+This confirms native command emission, with host context and adapter boundaries
+recorded in the fixture. It does not establish PDFium serialization, device
+pixels or use by Standard, print or another public Notes export mode. These
+circles therefore do not replace the GL coverage contract or serve as a
+device-export reference.
 
 ## SDK behavior and evidence limits
 

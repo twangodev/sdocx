@@ -1,7 +1,8 @@
 {
   "boundary_caveats": [
     "ObjectStroke is reconstructed explicitly through native Model setters; the saved frame is not loaded by this oracle.",
-    "Composer PDFPenFactory, PDFFountainPen constructor/verified vtable dispatch, PDFPen::getDrawPointData, and the selected initialized FountainPen plugin method execute natively.",
+    "Composer PDFPenFactory, PDFFountainPen constructor/verified vtable dispatch, PDFPen::getDrawPointData, selected initialized FountainPen plugin method, and one native redraw entry execute.",
+    "Native plugin redraw fields are captured live at this=drawable: +44 effective tolerance, +96 repeat, and W3 boolean. These active plugin values may override the source saved tolerance.",
     "IPDFWriter, PDFPath, and PDFPaint are mocked virtual sink objects; no PDFium writer or PDF document is run.",
     "No public Samsung Notes JNI/UI/export-file reachability is established.",
     "Runtime setup borrows fountain_saved_caller_native.py and its declared host stubs/callbacks, allocator, contexts, and dlopen/dlsym bindings; Composer Android-only imports are fail-stop traps.",
@@ -22,6 +23,24 @@
   "pdf_fountain_vtable_address_point": "0x65658e0",
   "pdf_fountain_vtable_elf_symbol": "_ZTVN4SPen14PDFFountainPenE",
   "pdf_fountain_vtable_value_address": "0x65658d0",
+  "pdf_sampling_contract": {
+    "GLV14": {
+      "effective_tolerance_f32_bits": "3fc00000",
+      "redraw_mode_w3": 0,
+      "repeat_f32_bits": "3f51eb85",
+      "repeat_field_offset": "0x60",
+      "tolerance_field_offset": "0x2c"
+    },
+    "GLV16": {
+      "effective_tolerance_f32_bits": "40266666",
+      "redraw_mode_w3": 0,
+      "repeat_f32_bits": "3f51eb85",
+      "repeat_field_offset": "0x60",
+      "tolerance_field_offset": "0x2c"
+    },
+    "evidence": "runtime entry capture in every case; getters/field stores statically confirmed by pinned libSPenFountainPen.so disassembly",
+    "observation": "selected FountainPen native GetDrawnPointData calls redraw once; the actual redraw receiver carries the recorded fields and W3=false."
+  },
   "pdf_sha256": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
   "pdf_sink_abi": {
     "evidence": "libSPenPdf.so exported PDFWriter/PDFPath/PDFPaint vtables and method relocations",
@@ -435,6 +454,18 @@
         "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
         "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
       ],
+      "native_plugin_redraw": [
+        {
+          "effective_pen_tolerance_f32_bits": "3fc00000",
+          "mode_w3": 0,
+          "profile": "V14",
+          "rect": "0x200eed98",
+          "repeat_f32_bits": "3f51eb85",
+          "stroke": "0x10032ad0",
+          "symbol": "SPen::FountainPenStrokeDrawableGLV14::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)",
+          "this": "0x10036000"
+        }
+      ],
       "native_success": 1,
       "saved_color_getter": "0xff336699",
       "sink_circle_command_count": 19,
@@ -666,6 +697,18 @@
       "native_entry_trace": [
         "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
         "FountainPenStrokeDrawableGLV16::GetDrawnPointData thunk"
+      ],
+      "native_plugin_redraw": [
+        {
+          "effective_pen_tolerance_f32_bits": "40266666",
+          "mode_w3": 0,
+          "profile": "V16",
+          "rect": "0x200eed98",
+          "repeat_f32_bits": "3f51eb85",
+          "stroke": "0x10037340",
+          "symbol": "SPen::FountainPenStrokeDrawableGLV16::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)",
+          "this": "0x1003aa80"
+        }
       ],
       "native_success": 1,
       "saved_color_getter": "0xff336699",
@@ -1018,6 +1061,18 @@
       "native_entry_trace": [
         "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
         "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
+      ],
+      "native_plugin_redraw": [
+        {
+          "effective_pen_tolerance_f32_bits": "3fc00000",
+          "mode_w3": 0,
+          "profile": "V14",
+          "rect": "0x200eed98",
+          "repeat_f32_bits": "3f51eb85",
+          "stroke": "0x1003bb70",
+          "symbol": "SPen::FountainPenStrokeDrawableGLV14::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)",
+          "this": "0x1003f0a0"
+        }
       ],
       "native_success": 1,
       "saved_color_getter": "0xffaa2244",
@@ -2658,6 +2713,18 @@
         "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
         "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
       ],
+      "native_plugin_redraw": [
+        {
+          "effective_pen_tolerance_f32_bits": "3fc00000",
+          "mode_w3": 0,
+          "profile": "V14",
+          "rect": "0x200eed98",
+          "repeat_f32_bits": "3f51eb85",
+          "stroke": "0x100403e0",
+          "symbol": "SPen::FountainPenStrokeDrawableGLV14::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)",
+          "this": "0x10046610"
+        }
+      ],
       "native_success": 1,
       "saved_color_getter": "0xff000000",
       "sink_circle_command_count": 20,
@@ -2708,5 +2775,5 @@
       "prepared_entry_index": 1445
     }
   },
-  "source_sha256": "2a5d7ca1d535ce43e0d179b10043688cdb4e22a9bf8f75785640f7dc87339f25"
+  "source_sha256": "281b8a9f202ea3812d05b63df731376916c45a7fed35db28c4e28d30c15f7076"
 }
