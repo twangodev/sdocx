@@ -90,7 +90,11 @@ pub(super) fn render(
     let mut fringe_paths = Vec::with_capacity(mesh.fringe_224.len());
     for triangle in &mesh.fringe_224 {
         let points = transformed(triangle, viewport)?;
-        if !zero_area(points) {
+        if zero_area(points) {
+            if !zero_area(native_points(triangle)) {
+                return Err(AdapterError::UnrepresentableGradient);
+            }
+        } else {
             fringe_paths.push(
                 Path::new()
                     .data(path_data(points))
@@ -142,6 +146,10 @@ fn zero_area(points: [[f64; 2]; 3]) -> bool {
     area == 0.0
 }
 
+fn native_points(triangle: &NativeTriangle) -> [[f64; 2]; 3] {
+    triangle.0.map(|vertex| vertex.position.map(f64::from))
+}
+
 fn native_alpha(w: f64) -> f64 {
     ((0.5 - (0.5 - w).abs()) / 0.3).clamp(0.0, 1.0)
 }
@@ -154,6 +162,9 @@ fn core_path(
 ) -> Result<(Option<LinearGradient>, Option<Path>), AdapterError> {
     let points = transformed(triangle, viewport)?;
     if zero_area(points) {
+        if !zero_area(native_points(triangle)) {
+            return Err(AdapterError::UnrepresentableGradient);
+        }
         return Ok((None, None));
     }
     let data = path_data(points);
@@ -609,6 +620,42 @@ mod tests {
         };
         let svg = test_scene(&mesh);
         assert!(!svg.contains("<path"));
+    }
+
+    #[test]
+    fn transformed_collapses_fail_closed_for_core_constant_and_fringe_triangles() {
+        let viewport = Viewport {
+            origin: [1e17, 1e17],
+            scale: [1.0, 1.0],
+            ..Viewport::default()
+        };
+        let valid = tri([[64.0, 64.0, 0.1], [128.0, 64.0, 0.5], [64.0, 128.0, 0.9]]);
+        let varying = tri([[0.0, 0.0, 0.1], [1.0, 0.0, 0.5], [0.0, 1.0, 0.9]]);
+        let constant = tri([[0.0, 0.0, 0.5], [1.0, 0.0, 0.5], [0.0, 1.0, 0.5]]);
+        for mesh in [
+            NativeMeshBatch {
+                core_232: vec![valid, varying],
+                ..Default::default()
+            },
+            NativeMeshBatch {
+                core_232: vec![valid, constant],
+                ..Default::default()
+            },
+            NativeMeshBatch {
+                core_232: vec![valid],
+                fringe_224: vec![constant],
+                ..Default::default()
+            },
+        ] {
+            let mut scene = Scene::new(super::super::vector::Svg::new().width(64).height(64));
+            assert_eq!(
+                render(&mut scene, &mesh, viewport),
+                Err(AdapterError::UnrepresentableGradient)
+            );
+            let svg = scene.finish();
+            assert!(!svg.contains("<defs"));
+            assert!(!svg.contains("<path"));
+        }
     }
 
     #[test]
