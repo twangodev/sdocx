@@ -1036,6 +1036,39 @@ mod tests {
     }
 
     #[test]
+    fn v3_particle_size_controls_match_native_addpoint_arguments() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-v3-particle-controls-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "pencil3-v3-particle-controls-native-v1");
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 11);
+        for case in cases {
+            let size = case["size"].as_f64().unwrap() as f32;
+            let point = std::array::from_fn(|i| case["point"][i].as_f64().unwrap() as f32);
+            let alpha = case["alpha"].as_f64().unwrap() as f32;
+            let mut rng = V3PrivateRandom::new();
+            let particle = rng.particle(point, size, alpha).attributes;
+            let actual = [
+                particle[0],
+                particle[1],
+                particle[3],
+                particle[2] * 2.0,
+                particle[4],
+            ];
+            for (lane, value) in actual.iter().enumerate() {
+                assert_eq!(
+                    u64::from(value.to_bits()),
+                    case["native_addpoint_u32"][lane].as_u64().unwrap(),
+                    "size {size}, native AddPoint lane {lane}"
+                );
+            }
+            assert_eq!(rng.state, prefixed_hex_u64(&case["native_final_state"]));
+        }
+    }
+
+    #[test]
     fn v3_private_particle_kernel_matches_both_native_redraw_phases_and_resets() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/pencil3-v3-native.json"

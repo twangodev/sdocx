@@ -1,0 +1,229 @@
+{
+  "binary_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Pencil3": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "caller_wrapper_sha256": "4445fc15a87ee64c9a39c6fb55481328f5931e5a7b48d8da220189b633111405",
+  "cases": [
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 31,
+      "native_addpoint_u32": [
+        1094556058,
+        3236639539,
+        1096810496,
+        1065353216,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x41f80000",
+      "size": 0.0
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 31,
+      "native_addpoint_u32": [
+        1094556058,
+        3236639539,
+        1096810496,
+        1066192077,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x41f9ae15",
+      "size": 0.1
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 31,
+      "native_addpoint_u32": [
+        1094556058,
+        3236639539,
+        1096810496,
+        1068708659,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x41ffae14",
+      "size": 0.4
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 34,
+      "native_addpoint_u32": [
+        1094320128,
+        3235223961,
+        1096810496,
+        1073741824,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x42080000",
+      "size": 1.0
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 54,
+      "native_addpoint_u32": [
+        1095578419,
+        3237111398,
+        1096810496,
+        1084225487,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x425bf5c3",
+      "size": 3.999
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 55,
+      "native_addpoint_u32": [
+        1095552205,
+        3238212403,
+        1096810496,
+        1084227584,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x425c0000",
+      "size": 4.0
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 55,
+      "native_addpoint_u32": [
+        1095552205,
+        3238212403,
+        1096810496,
+        1084229681,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x425c051f",
+      "size": 4.001
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 85,
+      "native_addpoint_u32": [
+        1094765773,
+        3237897830,
+        1096810496,
+        1093664768,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x42aa0000",
+      "size": 10.0
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 216,
+      "native_addpoint_u32": [
+        1091331686,
+        3234280243,
+        1096810496,
+        1108659405,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x43580000",
+      "size": 36.2
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 4030,
+      "native_addpoint_u32": [
+        3266127462,
+        3256241356,
+        1096810496,
+        1145569280,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x457be000",
+      "size": 799.0
+    },
+    {
+      "all_lanes_match": true,
+      "alpha": 0.3700000047683716,
+      "divisor": 4035,
+      "native_addpoint_u32": [
+        3266143846,
+        1094241488,
+        1096810496,
+        1145585664,
+        1052602532
+      ],
+      "native_final_state": "0x1beabfb18be873a",
+      "point": [
+        12.125,
+        -7.375
+      ],
+      "range_f32_bits": "0x457c3000",
+      "size": 800.0
+    }
+  ],
+  "runner_sha256": "0c5bc55b1f8a91ee5dde1a59419ef86453edb1fc0ffb2d1ed83fc1f2f9a668f2",
+  "schema": "pencil3-v3-particle-controls-native-v1",
+  "scope": "Direct native V3 drawPoint on Drawing-created object; RTV1 AddPoint intercepted at import boundary (no native buffer access); nonnegative finite size controls, private state reset to 1 by host per case. No saved sampler or pixel claim."
+}
