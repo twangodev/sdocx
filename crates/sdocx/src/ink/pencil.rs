@@ -355,7 +355,7 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
     } else {
         0.5
     };
-    let terminal_alpha = terminal_pressure / 1.5;
+    let terminal_alpha = terminal_pressure.clamp(0.1, 0.6) / 1.5;
     let terminal = *stroke.points.last().unwrap();
     let (line, _) = line_particles_with_phase(
         midpoint,
@@ -695,6 +695,90 @@ mod tests {
                     ),
                 );
             }
+        }
+    }
+
+    #[test]
+    fn saved_v1_drawing_caller_matches_full_native_particle_and_rng_streams() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["straight_curve_tool2_null"];
+        assert_eq!(case["route"]["selected_drawable_vtable_id"], "v1");
+        assert_eq!(case["input"]["tool_type"].as_i64(), Some(2));
+        assert_eq!(case["profile"]["width"].as_u64(), Some(1920));
+        assert_eq!(case["profile"]["height"].as_u64(), Some(1080));
+
+        let bits = |value: &Value| {
+            let value = value.as_str().unwrap();
+            let bytes: [u8; 4] = std::array::from_fn(|index| {
+                u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap()
+            });
+            u32::from_le_bytes(bytes)
+        };
+        let floats = |value: &Value| {
+            value
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f32::from_bits(bits(value)))
+                .collect::<Vec<_>>()
+        };
+        let input = &case["input"];
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| {
+                [
+                    f32::from_bits(bits(&point[0])),
+                    f32::from_bits(bits(&point[1])),
+                ]
+            })
+            .collect();
+        let stroke = SavedStroke {
+            points,
+            pressures: floats(&input["pressure_f32_bits"]),
+            timestamps: input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap() as i32)
+                .collect(),
+            tilts: Some(floats(&input["tilt_f32_bits"])),
+            orientations: Some(floats(&input["orientation_f32_bits"])),
+            tool_type: input["tool_type"].as_i64().unwrap() as i32,
+            size: f32::from_bits(bits(&input["pen_size_f32_bits"])),
+        };
+        let mut rng = BionicRandom::seeded(1);
+        let particles = saved_redraw_particles(&stroke, &mut rng);
+        let expected = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+            .as_array()
+            .unwrap();
+        assert_eq!(particles.len(), 48);
+        assert_eq!(expected.len(), particles.len() * 5);
+        for (index, actual) in particles
+            .iter()
+            .flat_map(|particle| particle.attributes)
+            .enumerate()
+        {
+            assert_eq!(
+                actual.to_bits(),
+                bits(&expected[index]),
+                "native Drawing V1 attribute word {index}"
+            );
+        }
+
+        let native_random = &case["rng"]["by_phase"]["draw_object_stroke"]["rand_values"];
+        assert_eq!(native_random.as_array().unwrap().len(), particles.len() * 3);
+        let mut rng = BionicRandom::seeded(1);
+        for (index, expected) in native_random.as_array().unwrap().iter().enumerate() {
+            assert_eq!(
+                rng.next(),
+                expected.as_u64().unwrap() as u32,
+                "native rand {index}"
+            );
         }
     }
 
