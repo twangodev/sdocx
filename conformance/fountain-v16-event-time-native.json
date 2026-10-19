@@ -1,0 +1,2553 @@
+{
+  "cases": [
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "offset_no_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1000a7d0",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "b0f200100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "e0f300100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1000cff0"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x1000cff0"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x1000d3a0"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x1000d3a0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1000dd40",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1000a950"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x1000dd40",
+      "selected_pen": "0x1000cff0",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "cdcccc3d",
+        "00000000",
+        "cdcc4c3e",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        100,
+        110,
+        120
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x1000d280",
+          "lr": "0x78798",
+          "manager": "0x1000d270",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1000a950"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x1000dd40",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x1000dd40",
+            "0x6e",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x1000d00c",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "b0f30010",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x1000dd40",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x1000f3b0",
+            "0x1000f3b0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x1000dd40",
+            "0x6e",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x1000f3b0",
+            "0x1000f3b0",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "e0f40010",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x1000dd40",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x1000f4e0",
+            "0x1000f4e0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x1000dd40",
+          "rect": "0x200eed60",
+          "stroke": "0x1000a950"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x1000dd40",
+          "rect": "0x200eee90",
+          "stroke": "0x1000a950"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000403f",
+            "0000803f"
+          ],
+          "receiver": "0x1000ead0"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x1000d240",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x1000d240",
+          "mode": 1,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x1000d240",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x1000d240",
+          "mode": 2,
+          "phase": "endPen",
+          "result_s0": "0000c03f",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "zero_no_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1000f760",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x0",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "e03e01100000000014000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x0",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "604001100000000014000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10011b60"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x10011b60"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x10011f10"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x10011f10"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x100128b0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1000f900"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x100128b0",
+      "selected_pen": "0x10011b60",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          10,
+          20
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "cdcccc3d",
+        "00000000",
+        "cdcc4c3e",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        0,
+        10,
+        20
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10011df0",
+          "lr": "0x78798",
+          "manager": "0x10011de0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1000f900"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x100128b0",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x100128b0",
+            "0xa",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x10011b7c",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "e03f0110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x100128b0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10013fe0",
+            "0x10013fe0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x100128b0",
+            "0xa",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x10013fe0",
+            "0x10013fe0",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "60410110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x100128b0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10014160",
+            "0x10014160",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x100128b0",
+          "rect": "0x200eed60",
+          "stroke": "0x1000f900"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x100128b0",
+          "rect": "0x200eee90",
+          "stroke": "0x1000f900"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "00002040",
+            "0000803f"
+          ],
+          "receiver": "0x10013640"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x10011db0",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 0,
+          "time_x1_i64": 0
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x10011db0",
+          "mode": 1,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x10011db0",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 0,
+          "time_x1_i64": 0
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x10011db0",
+          "mode": 2,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "negative_no_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x100143e0",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0xffffffffffffff9c",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "208b011000000000b0ffffffffffffff0000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0xffffffffffffff9c",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "a08c011000000000b0ffffffffffffff0000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x100167a0"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x100167a0"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x10016b50"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x10016b50"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x100174f0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10014540"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x100174f0",
+      "selected_pen": "0x100167a0",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          -100,
+          -90,
+          -80
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "cdcccc3d",
+        "00000000",
+        "cdcc4c3e",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        -100,
+        -90,
+        -80
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10016a30",
+          "lr": "0x78798",
+          "manager": "0x10016a20",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x10014540"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x100174f0",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x100174f0",
+            "0xffffffffffffffa6",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x100167bc",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "208c0110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x100174f0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10018c20",
+            "0x10018c20",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x100174f0",
+            "0xffffffffffffffa6",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x10018c20",
+            "0x10018c20",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "a08d0110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x100174f0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10018da0",
+            "0x10018da0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x100174f0",
+          "rect": "0x200eed60",
+          "stroke": "0x10014540"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x100174f0",
+          "rect": "0x200eee90",
+          "stroke": "0x10014540"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "00002040",
+            "0000803f"
+          ],
+          "receiver": "0x10018280"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x100169f0",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 18446744073709551516,
+          "time_x1_i64": -100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x100169f0",
+          "mode": 1,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x100169f0",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 18446744073709551516,
+          "time_x1_i64": -100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x100169f0",
+          "mode": 2,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "duplicate_no_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10019020",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "e0d701100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "10d901100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1001b460"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x1001b460"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x1001b810"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x1001b810"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1001c1b0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10019200"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x1001c1b0",
+      "selected_pen": "0x1001b460",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          100,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "cdcccc3d",
+        "00000000",
+        "cdcc4c3e",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        100,
+        100,
+        120
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x1001b6f0",
+          "lr": "0x78798",
+          "manager": "0x1001b6e0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x10019200"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x1001c1b0",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x1001c1b0",
+            "0x64",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x1001b47c",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "e0d80110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x1001c1b0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x1001d8e0",
+            "0x1001d8e0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x1001c1b0",
+            "0x64",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x1001d8e0",
+            "0x1001d8e0",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "10da0110",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x1001c1b0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x1001da10",
+            "0x1001da10",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x1001c1b0",
+          "rect": "0x200eed60",
+          "stroke": "0x10019200"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x1001c1b0",
+          "rect": "0x200eee90",
+          "stroke": "0x10019200"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000403f",
+            "0000803f"
+          ],
+          "receiver": "0x1001cf40"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x1001b6b0",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x1001b6b0",
+          "mode": 1,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x1001b6b0",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x1001b6b0",
+          "mode": 2,
+          "phase": "endPen",
+          "result_s0": "0000c03f",
+          "time_x1": 20,
+          "time_x1_i64": 20
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "reverse_no_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1001dc90",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x78",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "d02302100000000064000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x78",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "002502100000000064000000000000000000000000000000000000000000803f000000000000000000000000ffffffff000000a09999c93f0000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10020050"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x10020050"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x10020400"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x10020400"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10020da0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1001ddf0"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10020da0",
+      "selected_pen": "0x10020050",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          120,
+          110,
+          100
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "cdcccc3d",
+        "00000000",
+        "cdcc4c3e",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        120,
+        110,
+        100
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x100202e0",
+          "lr": "0x78798",
+          "manager": "0x100202d0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1001ddf0"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x10020da0",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x10020da0",
+            "0x6e",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x1002006c",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "d0240210",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x10020da0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x100224d0",
+            "0x100224d0",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "cdcccc3d",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x10020da0",
+            "0x6e",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x100224d0",
+            "0x100224d0",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "00260210",
+            "0b000000",
+            "0000803f",
+            "cdcccc3d"
+          ],
+          "args_x0_x7": [
+            "0x10020da0",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10022600",
+            "0x10022600",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x10020da0",
+          "rect": "0x200eed60",
+          "stroke": "0x1001ddf0"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x10020da0",
+          "rect": "0x200eee90",
+          "stroke": "0x1001ddf0"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000403f",
+            "0000803f"
+          ],
+          "receiver": "0x10021b30"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x100202a0",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 120,
+          "time_x1_i64": 120
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 18446744073709551596,
+          "return_x0_i64": -20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 18446744073709551596,
+          "return_x0_i64": -20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x100202a0",
+          "mode": 1,
+          "phase": "endPen",
+          "result_s0": "0000a040",
+          "time_x1": 18446744073709551596,
+          "time_x1_i64": -20
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x100202a0",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 120,
+          "time_x1_i64": 120
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 18446744073709551596,
+          "return_x0_i64": -20,
+          "this": "0x200eec38"
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x77478",
+          "phase": "endPen_event_time",
+          "return_x0": 18446744073709551596,
+          "return_x0_i64": -20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "0000a040",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x77494",
+          "manager": "0x100202a0",
+          "mode": 2,
+          "phase": "endPen",
+          "result_s0": "0000c03f",
+          "time_x1": 18446744073709551596,
+          "time_x1_i64": -20
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "offset_accepted_line",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10022880",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "motion_event_constructor_trace": [
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "607002100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff00000000000020400000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        },
+        {
+          "args_x0_x7": [
+            "0x200eec38",
+            "0x64",
+            "0x1",
+            "0x1",
+            "0x200eec88",
+            "0x200eec40",
+            "0x0",
+            "0x0"
+          ],
+          "kind": "MotionEvent::MotionEvent",
+          "lr": "0x78df8",
+          "object_raw_96_bytes": "907102100000000078000000000000000000000000000000000000000000803f000000000000000000000000ffffffff00000000000020400000000000000000000000000000000000000000000000000000000002000000f0debc9a78563412",
+          "phase": "return",
+          "this": "0x200eec38"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10024c40"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x10024c40"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x10024ff0"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x10024ff0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10025990",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x100229e0"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10025990",
+      "selected_pen": "0x10024c40",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "40800000",
+          "00000000",
+          "41000000",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "source_points_f32_bits": [
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000041",
+        "00000000"
+      ],
+      "source_pressures_f32_bits": [
+        "9a99993e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "source_timestamps_i32": [
+        100,
+        110,
+        120
+      ],
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10024ed0",
+          "lr": "0x78798",
+          "manager": "0x10024ec0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x100229e0"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x10025990",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_flow_entries": [
+        {
+          "args_s0_s3": [
+            "00008040",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x10025990",
+            "0x6e",
+            "0x0",
+            "0x200eed60",
+            "0x1",
+            "0x10024c5c",
+            "0x3",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "60710210",
+            "0b000000",
+            "0000803f",
+            "676606c0"
+          ],
+          "args_x0_x7": [
+            "0x10025990",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10027160",
+            "0x10027160",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        },
+        {
+          "args_s0_s3": [
+            "00008040",
+            "00000000",
+            "9a99193f",
+            "00000000"
+          ],
+          "args_x0_x7": [
+            "0x10025990",
+            "0x6e",
+            "0x0",
+            "0x200eee90",
+            "0x1",
+            "0x10027160",
+            "0x10027160",
+            "0x0"
+          ],
+          "lr": "0x78d48",
+          "method": "drawLine",
+          "pc": "0x77fd4"
+        },
+        {
+          "args_s0_s3": [
+            "90720210",
+            "0b000000",
+            "0000803f",
+            "0000803f"
+          ],
+          "args_x0_x7": [
+            "0x10025990",
+            "0x200eec38",
+            "0x200eec28",
+            "0x1",
+            "0x0",
+            "0x10027290",
+            "0x10027290",
+            "0x0"
+          ],
+          "lr": "0x78e10",
+          "method": "endPen",
+          "pc": "0x772e0"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x10025990",
+          "rect": "0x200eed60",
+          "stroke": "0x100229e0"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x10025990",
+          "rect": "0x200eee90",
+          "stroke": "0x100229e0"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "9a99993f",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "6022ac3e",
+            "00000000",
+            "3433d33f",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "6022ac3f",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "07611440",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "51703c40",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "ac476940",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "8b738d40",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "48a7a840",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "103fc640",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "df3ae640",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        },
+        {
+          "float_words_s0_s3": [
+            "00000041",
+            "00000000",
+            "67660640",
+            "0000803f"
+          ],
+          "receiver": "0x10026720"
+        }
+      ],
+      "v16_width_trace": [
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x10024e90",
+          "mode": 1,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "args_s0_s3": [
+            "00008040",
+            "00000000",
+            "67668640",
+            "0000c03f"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78310",
+          "manager": "0x10024e90",
+          "mode": 1,
+          "phase": "drawLine",
+          "result_s0": "67668640",
+          "time_x1": 110,
+          "time_x1_i64": 110
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        },
+        {
+          "args_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000c03f",
+            "00000000"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78c0c",
+          "manager": "0x10024e90",
+          "mode": 2,
+          "phase": "redraw_initial",
+          "result_s0": "0000c03f",
+          "time_x1": 100,
+          "time_x1_i64": 100
+        },
+        {
+          "args_s0_s3": [
+            "00008040",
+            "00000000",
+            "67668640",
+            "0000c03f"
+          ],
+          "call_type_w2": 0,
+          "kind": "getSmoothedWidthFromList",
+          "lr": "0x78310",
+          "manager": "0x10024e90",
+          "mode": 2,
+          "phase": "drawLine",
+          "result_s0": "67668640",
+          "time_x1": 110,
+          "time_x1_i64": 110
+        },
+        {
+          "kind": "MotionEvent::GetEventTime",
+          "lr": "0x773ac",
+          "phase": "endPen_event_time",
+          "return_x0": 20,
+          "return_x0_i64": 20,
+          "this": "0x200eec38"
+        }
+      ]
+    }
+  ],
+  "curve_enabled": true,
+  "initial_tolerance_f32_bits": "00003040",
+  "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+  "pen_size_f32_bits": "00002041",
+  "profile": [
+    1920,
+    1080
+  ],
+  "provenance": {
+    "helpers": {
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "host_boundary": "Actual native ObjectStroke Model arrays, Drawing selection, GLV16 RedrawPen/redraw, MotionEvent constructor/GetEventTime, WidthSmoothManager helper and its mode/time/raw input/result execute. RTV5 arguments are captured at the pinned runner PLT host callback boundary; no RTV5 body/GPU raster claim.",
+    "in_memory_patch_anchors": [
+      {
+        "anchor": "caller-argparse",
+        "count": 1,
+        "new_sha256": "d69bf049af94091d3e1154d6dee8477d219e5d8876c42e27bf1a3ced66cae76a",
+        "old_sha256": "70766d86b647c618bc6b17dcfb34caac8d5abf04993148e868c7cfc859477abb"
+      },
+      {
+        "anchor": "capture-RTV5-host-import-boundary",
+        "count": 1,
+        "new_sha256": "2413b232c07873078acdf97928a2be4436c54a9ede7e9a5bd8eedabcdd01f557",
+        "old_sha256": "eb59838de787d7502840a1a5a1489c901b077bead453eda495232496f30b0801"
+      },
+      {
+        "anchor": "v16-case-matrix",
+        "count": 1,
+        "new_sha256": "5de379c5a0c4cf64a77861680618bb85f93a3481cb0a2ed3efb0709a8dfd52c4",
+        "old_sha256": "fbb72f231f4ccac7a9e7ba975529dab43a144e83e6b14db40d3201597c774bc1"
+      },
+      {
+        "anchor": "source-motion-channels",
+        "count": 1,
+        "new_sha256": "332cee0865ade6f3eb7d2b843cdd70978cd1bd19d3b143f9fd49283e387188c5",
+        "old_sha256": "de0047c75197daf7a2aa3d49e06462cd616578b5fc7f8c5f6686a451eae2bf5d"
+      },
+      {
+        "anchor": "tolerance-set-getter-capture",
+        "count": 1,
+        "new_sha256": "99418d8a1cfba227c6deff1132034bf325e0e6e76fe7b8c17df687d81f284c93",
+        "old_sha256": "d7858b7a5b5e1316474ac0d7932c5cd9721cb1875b276b1d167c9282e4030759"
+      },
+      {
+        "anchor": "native-tolerance-trace-addresses",
+        "count": 1,
+        "new_sha256": "d3b69a21dbe811b5c1973b52236b880a0e09fe899942bd1a483f8733e56fc6c6",
+        "old_sha256": "16e46df34fcfa47c03d5d4e8b3553f9e45addc4ea5a8c09bf4379569237d1d08"
+      },
+      {
+        "anchor": "event-time-width-native-hooks",
+        "count": 1,
+        "new_sha256": "6a0191209d56668c1040b5181ca7a46fe006e83eebd6d59528910b8422436dd3",
+        "old_sha256": "8b0642720218df4027e2bfa54b6a4682f40de685c66cd0485e978358ce1345c9"
+      },
+      {
+        "anchor": "getter-return-store-observation",
+        "count": 1,
+        "new_sha256": "54b9e7bf35690737436cb98371c05b599e84b0382efadbddb09a079e0ef8edb1",
+        "old_sha256": "fd313a2c6b51f924b886e7ed3c1d1c67433601a16883e2b5cdd242448b192105"
+      },
+      {
+        "anchor": "remove-event-time-hooks-after-case",
+        "count": 1,
+        "new_sha256": "4bcd57a2311407117cc92bf97c9aedfacc68bfca62e096f5a2ce8ad7df658e9e",
+        "old_sha256": "067840570d9811a36083557aeb00b0249247d5fe5809ca53089bb383ac30016f"
+      },
+      {
+        "anchor": "per-case-tolerance-fields",
+        "count": 1,
+        "new_sha256": "1be127dc8cfaad8a16197edc1ee5e9e3de35b6216daa42ff3364a995c2ad4fe5",
+        "old_sha256": "9f6b8f822104672ee3f2ed9a3ef52cee5115c6218f24351636ffbacc9afcc761"
+      }
+    ],
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_contract": {
+      "MotionEvent_GetEventTime_instructions": [
+        "ldr x8,[x0]",
+        "ldr x9,[x8,#48]",
+        "ldr x8,[x8,#16]",
+        "ldr x9,[x9]",
+        "ldr x9,[x9]",
+        "sub x0,x9,x8",
+        "ret"
+      ],
+      "MotionEvent_GetEventTime_rva": "Base+0xc0634",
+      "WidthSmoothManager_getSmoothedWidthFromList_rva": "PenCommon+0x58f18",
+      "native_width_callsite_lr": {
+        "drawLine": "0x78310",
+        "endPen": "0x77494",
+        "redraw_initial_seed": "0x78c0c",
+        "startPen": "0x76c78"
+      },
+      "time_semantics": "Native GetEventTime returns the latest event timestamp minus MotionEvent downTime as a signed 64-bit subtraction."
+    },
+    "runner": "conformance/fountain_saved_caller_native.py",
+    "runner_executed_source_sha256": "b8c2d4e7723d9d223b327f9c38eb0bf9f879d5f6403b154a754ead5f8554ddd8",
+    "runner_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+    "wrapper_sha256": "04880dfc22e62965dcde272076e25665a12c8e9229cc92f0bec4f2a86ff25c7c"
+  },
+  "schema": "sdocx-fountain-v16-event-time-v1",
+  "stroke_type": 0,
+  "tool_type": 2
+}
