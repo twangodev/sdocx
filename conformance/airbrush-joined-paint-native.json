@@ -122,6 +122,270 @@
         }
       ],
       "native_draw": {
+        "active_draw_program_contract": {
+          "active_interface": {
+            "attributes": [
+              {
+                "location": 0,
+                "name": "vertex",
+                "size": 1,
+                "type": 35666
+              },
+              {
+                "location": 1,
+                "name": "transform",
+                "size": 1,
+                "type": 35666
+              }
+            ],
+            "uniforms": [
+              {
+                "location": 0,
+                "name": "ProjectionMatrix",
+                "size": 1,
+                "type": 35676
+              },
+              {
+                "location": 1,
+                "name": "sampler0",
+                "size": 1,
+                "type": 35678
+              },
+              {
+                "location": 2,
+                "name": "inputColor",
+                "size": 1,
+                "type": 35666
+              }
+            ]
+          },
+          "active_texture": 33984,
+          "bound_sampler_object": {
+            "mesa_id": 1,
+            "native_id": 100,
+            "parameters": {
+              "mag_filter": 9728,
+              "min_filter": 9728,
+              "wrap_s": 33071,
+              "wrap_t": 33071
+            }
+          },
+          "effective_min_filter_requires_mipmaps": false,
+          "effective_sampling_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "generation": 1,
+          "level0_defined_for_pattern_texture": true,
+          "mipmap_generation_calls": [],
+          "nearest_clamp_contract_matches_live_state": true,
+          "pattern_texture": 1,
+          "pattern_upload": {
+            "bytes": 36864,
+            "format": 6408,
+            "height": 96,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "texture": 1,
+            "type": 5121,
+            "width": 96
+          },
+          "program": 3,
+          "sampler0_unit": 0,
+          "sampling_completeness_under_captured_effective_min_filter": true,
+          "sampling_query_gl_errors": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "sampling_setup_calls": [
+            {
+              "call": "glGenSamplers",
+              "mesa": [
+                1
+              ],
+              "native": [
+                100
+              ]
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10242,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10243,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10240,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10241,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 33082,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 33083,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10240,
+              "value": 9728
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10241,
+              "value": 9728
+            },
+            {
+              "call": "glGenSamplers",
+              "mesa": [
+                2
+              ],
+              "native": [
+                101
+              ]
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10242,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10243,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10240,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10241,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 33082,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 33083,
+              "value": 0
+            },
+            {
+              "call": "glBindSampler",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "unit": 0
+            }
+          ],
+          "source_bytes": {
+            "35632": 218,
+            "35633": 386
+          },
+          "source_hashes": {
+            "35632": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+            "35633": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+          },
+          "texture_level_setup_calls": [
+            {
+              "active_texture": 33984,
+              "call": "glTexImage2D",
+              "format": 6408,
+              "hasPixels": false,
+              "height": 96,
+              "internalFormat": 32856,
+              "level": 0,
+              "pixelBytes": 0,
+              "pixelsSha256": null,
+              "target": 3553,
+              "texture": 1,
+              "type": 5121,
+              "width": 96
+            }
+          ],
+          "texture_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          },
+          "transform_buffer": {
+            "state": {
+              "array_buffer": 2,
+              "divisor": 1,
+              "enabled": 1,
+              "size": 4,
+              "stride": 16,
+              "type": 5126
+            },
+            "upload": {
+              "bytes": 416,
+              "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+            }
+          },
+          "vertex_buffer": {
+            "state": {
+              "array_buffer": 1,
+              "divisor": 0,
+              "enabled": 1,
+              "size": 4,
+              "stride": 16,
+              "type": 5126
+            },
+            "upload": {
+              "bytes": 64,
+              "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4"
+            }
+          }
+        },
         "attributes": [
           {
             "args": [
@@ -145,6 +409,7 @@
               16,
               0
             ],
+            "array_buffer": 1,
             "call": "glVertexAttribPointer"
           },
           {
@@ -176,6 +441,7 @@
               16,
               0
             ],
+            "array_buffer": 2,
             "call": "glVertexAttribPointer"
           },
           {
@@ -231,16 +497,19 @@
         ],
         "buffer_uploads": [
           {
+            "buffer": 1,
             "data_hex": "0000c0bf0000c0bf000000000000803f0000c0bf0000c03f00000000000000000000c03f0000c0bf0000803f0000803f0000c03f0000c03f0000803f00000000",
             "sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
             "size": 64
           },
           {
+            "buffer": 2,
             "data_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
             "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
             "size": 416
           },
           {
+            "buffer": 1,
             "data_hex": "4c37c9bf4c37c9bf000000000000803f4c37c9bf4c37c93f00000000000000004c37c93f4c37c9bf0000803f0000803f4c37c93f4c37c93f0000803f00000000",
             "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4",
             "size": 64
@@ -248,6 +517,270 @@
         ],
         "calls": [
           {
+            "active_program_contract": {
+              "active_interface": {
+                "attributes": [
+                  {
+                    "location": 0,
+                    "name": "vertex",
+                    "size": 1,
+                    "type": 35666
+                  },
+                  {
+                    "location": 1,
+                    "name": "transform",
+                    "size": 1,
+                    "type": 35666
+                  }
+                ],
+                "uniforms": [
+                  {
+                    "location": 0,
+                    "name": "ProjectionMatrix",
+                    "size": 1,
+                    "type": 35676
+                  },
+                  {
+                    "location": 1,
+                    "name": "sampler0",
+                    "size": 1,
+                    "type": 35678
+                  },
+                  {
+                    "location": 2,
+                    "name": "inputColor",
+                    "size": 1,
+                    "type": 35666
+                  }
+                ]
+              },
+              "active_texture": 33984,
+              "bound_sampler_object": {
+                "mesa_id": 1,
+                "native_id": 100,
+                "parameters": {
+                  "mag_filter": 9728,
+                  "min_filter": 9728,
+                  "wrap_s": 33071,
+                  "wrap_t": 33071
+                }
+              },
+              "effective_min_filter_requires_mipmaps": false,
+              "effective_sampling_parameters": {
+                "mag_filter": 9728,
+                "min_filter": 9728,
+                "wrap_s": 33071,
+                "wrap_t": 33071
+              },
+              "generation": 1,
+              "level0_defined_for_pattern_texture": true,
+              "mipmap_generation_calls": [],
+              "nearest_clamp_contract_matches_live_state": true,
+              "pattern_texture": 1,
+              "pattern_upload": {
+                "bytes": 36864,
+                "format": 6408,
+                "height": 96,
+                "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+                "texture": 1,
+                "type": 5121,
+                "width": 96
+              },
+              "program": 3,
+              "sampler0_unit": 0,
+              "sampling_completeness_under_captured_effective_min_filter": true,
+              "sampling_query_gl_errors": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "sampling_setup_calls": [
+                {
+                  "call": "glGenSamplers",
+                  "mesa": [
+                    1
+                  ],
+                  "native": [
+                    100
+                  ]
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10242,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10243,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10240,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10241,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 33082,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 33083,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10240,
+                  "value": 9728
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10241,
+                  "value": 9728
+                },
+                {
+                  "call": "glGenSamplers",
+                  "mesa": [
+                    2
+                  ],
+                  "native": [
+                    101
+                  ]
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10242,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10243,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10240,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10241,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 33082,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 33083,
+                  "value": 0
+                },
+                {
+                  "call": "glBindSampler",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "unit": 0
+                }
+              ],
+              "source_bytes": {
+                "35632": 218,
+                "35633": 386
+              },
+              "source_hashes": {
+                "35632": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+                "35633": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+              },
+              "texture_level_setup_calls": [
+                {
+                  "active_texture": 33984,
+                  "call": "glTexImage2D",
+                  "format": 6408,
+                  "hasPixels": false,
+                  "height": 96,
+                  "internalFormat": 32856,
+                  "level": 0,
+                  "pixelBytes": 0,
+                  "pixelsSha256": null,
+                  "target": 3553,
+                  "texture": 1,
+                  "type": 5121,
+                  "width": 96
+                }
+              ],
+              "texture_parameters": {
+                "base_level": 0,
+                "mag_filter": 9729,
+                "max_level": 1000,
+                "min_filter": 9986,
+                "wrap_s": 10497,
+                "wrap_t": 10497
+              },
+              "transform_buffer": {
+                "state": {
+                  "array_buffer": 2,
+                  "divisor": 1,
+                  "enabled": 1,
+                  "size": 4,
+                  "stride": 16,
+                  "type": 5126
+                },
+                "upload": {
+                  "bytes": 416,
+                  "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+                }
+              },
+              "vertex_buffer": {
+                "state": {
+                  "array_buffer": 1,
+                  "divisor": 0,
+                  "enabled": 1,
+                  "size": 4,
+                  "stride": 16,
+                  "type": 5126
+                },
+                "upload": {
+                  "bytes": 64,
+                  "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4"
+                }
+              }
+            },
             "call": "glDrawArraysInstanced",
             "state": {
               "activeTexture": 33984,
@@ -273,21 +806,111 @@
           "after_update": 0,
           "before_readback": 0
         },
+        "program_link_generations": [
+          {
+            "attached_shader_generations": [
+              {
+                "generation": 1,
+                "shader_type": 35633,
+                "source_bytes": 386,
+                "source_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+              },
+              {
+                "generation": 2,
+                "shader_type": 35632,
+                "source_bytes": 218,
+                "source_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+              }
+            ],
+            "generation": 1,
+            "link_status": 1,
+            "linked": true
+          },
+          {
+            "attached_shader_generations": [
+              {
+                "generation": 3,
+                "shader_type": 35633,
+                "source_bytes": 204,
+                "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+              },
+              {
+                "generation": 4,
+                "shader_type": 35632,
+                "source_bytes": 334,
+                "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+              }
+            ],
+            "generation": 2,
+            "link_status": 1,
+            "linked": true
+          }
+        ],
         "rt_rgba_f32": [
           0.42352941632270813,
           0.8666666746139526,
           0.5607843399047852,
           0.19607843458652496
         ],
-        "shaders": {
-          "1": [
-            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
-          ],
-          "2": [
-            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
-          ]
-        },
-        "texture_sampled_by_captured_fragment_shader": false,
+        "shader_compilations": [
+          {
+            "compile_status": 1,
+            "generation": 1,
+            "shader_type": 35633,
+            "source_bytes": 386,
+            "source_parts": [
+              "precision highp float; uniform mat4 ProjectionMatrix; attribute vec4 vertex; attribute vec4 transform; varying vec2 vUV; void main(void) { mat4 modelMatrix = mat4( transform.w, transform.z, 0.0, 0.0, -transform.z, transform.w, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, transform.x, transform.y, 0.0, 1.0); gl_Position = ProjectionMatrix * modelMatrix * vec4(vertex.xy, 0.0, 1.0); vUV = vertex.zw; }"
+            ],
+            "source_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+          },
+          {
+            "compile_status": 1,
+            "generation": 2,
+            "shader_type": 35632,
+            "source_bytes": 218,
+            "source_parts": [
+              "precision highp float; uniform sampler2D sampler0; uniform vec4 inputColor; varying vec2 vUV; void main(void) { float pattern = texture2D(sampler0, vUV).r; gl_FragColor = vec4(inputColor.rgb, inputColor.a * pattern); }"
+            ],
+            "source_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+          },
+          {
+            "compile_status": 1,
+            "generation": 3,
+            "shader_type": 35633,
+            "source_bytes": 204,
+            "source_parts": [
+              "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+            ],
+            "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+          },
+          {
+            "compile_status": 1,
+            "generation": 4,
+            "shader_type": 35632,
+            "source_bytes": 334,
+            "source_parts": [
+              "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+            ],
+            "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+          }
+        ],
+        "texture_sampled_by_captured_fragment_shader": true,
+        "texture_uploads": [
+          {
+            "active_texture": 33984,
+            "bytes": 36864,
+            "format": 6408,
+            "height": 96,
+            "level": 0,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "target": 3553,
+            "texture": 1,
+            "type": 5121,
+            "width": 96,
+            "x": 0,
+            "y": 0
+          }
+        ],
         "uniform_calls": [
           {
             "call": "glUniformMatrix4fv",
@@ -408,6 +1031,8 @@
       },
       "readback_rgba8": {
         "bytes": 262144,
+        "changed_pixels_from_pre_draw": 20,
+        "changed_pixels_sha256": "d36a0a393b1911550a2f4c9323db4f733bf5bb551d715f32bc7e074b47ceda7d",
         "first_nonzero_pixels": [
           [
             1,
@@ -546,6 +1171,29 @@
         "zlib_base64": "eNrt0DsOAVEAAMBnn/VPaLAREYmCEAka31ai0iAKlWhcwQlc2wXcYGeOMCGE0D+Mj/vP+Ts6LS6xUqoGID+SJOlOevPZffua3tavtF5uSIF8yZaDzfyxe2er4bZQjEUjkB+xnFbas/5yet08691WzwjkSyEmsdZpZjGNJRsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAPz8vHAsc"
       },
       "render_target": {
+        "before_draw_readback": {
+          "bytes": 262144,
+          "nonzero_pixels": 0,
+          "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+          "state": {
+            "draw_fbo": [
+              1
+            ],
+            "pack_alignment": [
+              4
+            ],
+            "read_buffer": 36064,
+            "read_fbo": [
+              1
+            ],
+            "viewport": [
+              0,
+              0,
+              256,
+              256
+            ]
+          }
+        },
         "color_attachment": 2,
         "color_attachment_query_object": 2,
         "color_write_mask": [
@@ -559,14 +1207,17 @@
         "framebuffer": 1,
         "framebuffer_complete_status": 36053,
         "gl_tex_image_call": {
+          "active_texture": 33984,
           "call": "glTexImage2D",
           "format": 6408,
           "hasPixels": true,
           "height": 256,
           "internalFormat": 32856,
+          "level": 0,
           "pixelBytes": 262144,
           "pixelsSha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
           "target": 3553,
+          "texture": 2,
           "type": 5121,
           "width": 256
         },
@@ -699,7 +1350,7 @@
         ]
       },
       "repeated_stability": {
-        "semantic_signature_sha256": "d687d7b6154cdb2185e55dbe4ab3c14eff457aa93973ab9b50adca46a3b553a7",
+        "semantic_signature_sha256": "3dd74644a8fae1c72750611ebb40eedae8dcac5f6017635ca2ea266b13439a14",
         "successful_runs": 2
       },
       "source_argb_u32": "0xff6cdd8f",
@@ -727,7 +1378,7 @@
           "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
           "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
         },
-        "runner": "bc12f38b52a4ebbc55ab60b2f56e08d202a5e71bedfd80a18f8fcbab96e895c6"
+        "runner": "332633ecdbd09da77f9463496c83bda9a9a6cf27c6d377ec3b4b6051cf62f699"
       }
     },
     {
@@ -852,6 +1503,270 @@
         }
       ],
       "native_draw": {
+        "active_draw_program_contract": {
+          "active_interface": {
+            "attributes": [
+              {
+                "location": 0,
+                "name": "vertex",
+                "size": 1,
+                "type": 35666
+              },
+              {
+                "location": 1,
+                "name": "transform",
+                "size": 1,
+                "type": 35666
+              }
+            ],
+            "uniforms": [
+              {
+                "location": 0,
+                "name": "ProjectionMatrix",
+                "size": 1,
+                "type": 35676
+              },
+              {
+                "location": 1,
+                "name": "sampler0",
+                "size": 1,
+                "type": 35678
+              },
+              {
+                "location": 2,
+                "name": "inputColor",
+                "size": 1,
+                "type": 35666
+              }
+            ]
+          },
+          "active_texture": 33984,
+          "bound_sampler_object": {
+            "mesa_id": 1,
+            "native_id": 100,
+            "parameters": {
+              "mag_filter": 9728,
+              "min_filter": 9728,
+              "wrap_s": 33071,
+              "wrap_t": 33071
+            }
+          },
+          "effective_min_filter_requires_mipmaps": false,
+          "effective_sampling_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "generation": 1,
+          "level0_defined_for_pattern_texture": true,
+          "mipmap_generation_calls": [],
+          "nearest_clamp_contract_matches_live_state": true,
+          "pattern_texture": 1,
+          "pattern_upload": {
+            "bytes": 36864,
+            "format": 6408,
+            "height": 96,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "texture": 1,
+            "type": 5121,
+            "width": 96
+          },
+          "program": 3,
+          "sampler0_unit": 0,
+          "sampling_completeness_under_captured_effective_min_filter": true,
+          "sampling_query_gl_errors": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "sampling_setup_calls": [
+            {
+              "call": "glGenSamplers",
+              "mesa": [
+                1
+              ],
+              "native": [
+                100
+              ]
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10242,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10243,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10240,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10241,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 33082,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 33083,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10240,
+              "value": 9728
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "pname": 10241,
+              "value": 9728
+            },
+            {
+              "call": "glGenSamplers",
+              "mesa": [
+                2
+              ],
+              "native": [
+                101
+              ]
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10242,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10243,
+              "value": 33071
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10240,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 10241,
+              "value": 9729
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 33082,
+              "value": 0
+            },
+            {
+              "call": "glSamplerParameteri",
+              "mesaSampler": 2,
+              "nativeSampler": 101,
+              "pname": 33083,
+              "value": 0
+            },
+            {
+              "call": "glBindSampler",
+              "mesaSampler": 1,
+              "nativeSampler": 100,
+              "unit": 0
+            }
+          ],
+          "source_bytes": {
+            "35632": 218,
+            "35633": 386
+          },
+          "source_hashes": {
+            "35632": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+            "35633": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+          },
+          "texture_level_setup_calls": [
+            {
+              "active_texture": 33984,
+              "call": "glTexImage2D",
+              "format": 6408,
+              "hasPixels": false,
+              "height": 96,
+              "internalFormat": 32856,
+              "level": 0,
+              "pixelBytes": 0,
+              "pixelsSha256": null,
+              "target": 3553,
+              "texture": 1,
+              "type": 5121,
+              "width": 96
+            }
+          ],
+          "texture_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          },
+          "transform_buffer": {
+            "state": {
+              "array_buffer": 2,
+              "divisor": 1,
+              "enabled": 1,
+              "size": 4,
+              "stride": 16,
+              "type": 5126
+            },
+            "upload": {
+              "bytes": 416,
+              "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+            }
+          },
+          "vertex_buffer": {
+            "state": {
+              "array_buffer": 1,
+              "divisor": 0,
+              "enabled": 1,
+              "size": 4,
+              "stride": 16,
+              "type": 5126
+            },
+            "upload": {
+              "bytes": 64,
+              "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4"
+            }
+          }
+        },
         "attributes": [
           {
             "args": [
@@ -875,6 +1790,7 @@
               16,
               0
             ],
+            "array_buffer": 1,
             "call": "glVertexAttribPointer"
           },
           {
@@ -906,6 +1822,7 @@
               16,
               0
             ],
+            "array_buffer": 2,
             "call": "glVertexAttribPointer"
           },
           {
@@ -961,16 +1878,19 @@
         ],
         "buffer_uploads": [
           {
+            "buffer": 1,
             "data_hex": "0000c0bf0000c0bf000000000000803f0000c0bf0000c03f00000000000000000000c03f0000c0bf0000803f0000803f0000c03f0000c03f0000803f00000000",
             "sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
             "size": 64
           },
           {
+            "buffer": 2,
             "data_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
             "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
             "size": 416
           },
           {
+            "buffer": 1,
             "data_hex": "4c37c9bf4c37c9bf000000000000803f4c37c9bf4c37c93f00000000000000004c37c93f4c37c9bf0000803f0000803f4c37c93f4c37c93f0000803f00000000",
             "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4",
             "size": 64
@@ -978,6 +1898,270 @@
         ],
         "calls": [
           {
+            "active_program_contract": {
+              "active_interface": {
+                "attributes": [
+                  {
+                    "location": 0,
+                    "name": "vertex",
+                    "size": 1,
+                    "type": 35666
+                  },
+                  {
+                    "location": 1,
+                    "name": "transform",
+                    "size": 1,
+                    "type": 35666
+                  }
+                ],
+                "uniforms": [
+                  {
+                    "location": 0,
+                    "name": "ProjectionMatrix",
+                    "size": 1,
+                    "type": 35676
+                  },
+                  {
+                    "location": 1,
+                    "name": "sampler0",
+                    "size": 1,
+                    "type": 35678
+                  },
+                  {
+                    "location": 2,
+                    "name": "inputColor",
+                    "size": 1,
+                    "type": 35666
+                  }
+                ]
+              },
+              "active_texture": 33984,
+              "bound_sampler_object": {
+                "mesa_id": 1,
+                "native_id": 100,
+                "parameters": {
+                  "mag_filter": 9728,
+                  "min_filter": 9728,
+                  "wrap_s": 33071,
+                  "wrap_t": 33071
+                }
+              },
+              "effective_min_filter_requires_mipmaps": false,
+              "effective_sampling_parameters": {
+                "mag_filter": 9728,
+                "min_filter": 9728,
+                "wrap_s": 33071,
+                "wrap_t": 33071
+              },
+              "generation": 1,
+              "level0_defined_for_pattern_texture": true,
+              "mipmap_generation_calls": [],
+              "nearest_clamp_contract_matches_live_state": true,
+              "pattern_texture": 1,
+              "pattern_upload": {
+                "bytes": 36864,
+                "format": 6408,
+                "height": 96,
+                "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+                "texture": 1,
+                "type": 5121,
+                "width": 96
+              },
+              "program": 3,
+              "sampler0_unit": 0,
+              "sampling_completeness_under_captured_effective_min_filter": true,
+              "sampling_query_gl_errors": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "sampling_setup_calls": [
+                {
+                  "call": "glGenSamplers",
+                  "mesa": [
+                    1
+                  ],
+                  "native": [
+                    100
+                  ]
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10242,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10243,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10240,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10241,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 33082,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 33083,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10240,
+                  "value": 9728
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "pname": 10241,
+                  "value": 9728
+                },
+                {
+                  "call": "glGenSamplers",
+                  "mesa": [
+                    2
+                  ],
+                  "native": [
+                    101
+                  ]
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10242,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10243,
+                  "value": 33071
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10240,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 10241,
+                  "value": 9729
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 33082,
+                  "value": 0
+                },
+                {
+                  "call": "glSamplerParameteri",
+                  "mesaSampler": 2,
+                  "nativeSampler": 101,
+                  "pname": 33083,
+                  "value": 0
+                },
+                {
+                  "call": "glBindSampler",
+                  "mesaSampler": 1,
+                  "nativeSampler": 100,
+                  "unit": 0
+                }
+              ],
+              "source_bytes": {
+                "35632": 218,
+                "35633": 386
+              },
+              "source_hashes": {
+                "35632": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+                "35633": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+              },
+              "texture_level_setup_calls": [
+                {
+                  "active_texture": 33984,
+                  "call": "glTexImage2D",
+                  "format": 6408,
+                  "hasPixels": false,
+                  "height": 96,
+                  "internalFormat": 32856,
+                  "level": 0,
+                  "pixelBytes": 0,
+                  "pixelsSha256": null,
+                  "target": 3553,
+                  "texture": 1,
+                  "type": 5121,
+                  "width": 96
+                }
+              ],
+              "texture_parameters": {
+                "base_level": 0,
+                "mag_filter": 9729,
+                "max_level": 1000,
+                "min_filter": 9986,
+                "wrap_s": 10497,
+                "wrap_t": 10497
+              },
+              "transform_buffer": {
+                "state": {
+                  "array_buffer": 2,
+                  "divisor": 1,
+                  "enabled": 1,
+                  "size": 4,
+                  "stride": 16,
+                  "type": 5126
+                },
+                "upload": {
+                  "bytes": 416,
+                  "sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+                }
+              },
+              "vertex_buffer": {
+                "state": {
+                  "array_buffer": 1,
+                  "divisor": 0,
+                  "enabled": 1,
+                  "size": 4,
+                  "stride": 16,
+                  "type": 5126
+                },
+                "upload": {
+                  "bytes": 64,
+                  "sha256": "42abc3f9f4506a6347eaf857927fa53f97e316a2f6c5038f979e3a1252a237b4"
+                }
+              }
+            },
             "call": "glDrawArraysInstanced",
             "state": {
               "activeTexture": 33984,
@@ -1003,21 +2187,111 @@
           "after_update": 0,
           "before_readback": 0
         },
+        "program_link_generations": [
+          {
+            "attached_shader_generations": [
+              {
+                "generation": 1,
+                "shader_type": 35633,
+                "source_bytes": 386,
+                "source_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+              },
+              {
+                "generation": 2,
+                "shader_type": 35632,
+                "source_bytes": 218,
+                "source_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+              }
+            ],
+            "generation": 1,
+            "link_status": 1,
+            "linked": true
+          },
+          {
+            "attached_shader_generations": [
+              {
+                "generation": 3,
+                "shader_type": 35633,
+                "source_bytes": 204,
+                "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+              },
+              {
+                "generation": 4,
+                "shader_type": 35632,
+                "source_bytes": 334,
+                "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+              }
+            ],
+            "generation": 2,
+            "link_status": 1,
+            "linked": true
+          }
+        ],
         "rt_rgba_f32": [
           0.42352941632270813,
           0.8666666746139526,
           0.5607843399047852,
           0.0117647061124444
         ],
-        "shaders": {
-          "1": [
-            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
-          ],
-          "2": [
-            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
-          ]
-        },
-        "texture_sampled_by_captured_fragment_shader": false,
+        "shader_compilations": [
+          {
+            "compile_status": 1,
+            "generation": 1,
+            "shader_type": 35633,
+            "source_bytes": 386,
+            "source_parts": [
+              "precision highp float; uniform mat4 ProjectionMatrix; attribute vec4 vertex; attribute vec4 transform; varying vec2 vUV; void main(void) { mat4 modelMatrix = mat4( transform.w, transform.z, 0.0, 0.0, -transform.z, transform.w, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, transform.x, transform.y, 0.0, 1.0); gl_Position = ProjectionMatrix * modelMatrix * vec4(vertex.xy, 0.0, 1.0); vUV = vertex.zw; }"
+            ],
+            "source_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece"
+          },
+          {
+            "compile_status": 1,
+            "generation": 2,
+            "shader_type": 35632,
+            "source_bytes": 218,
+            "source_parts": [
+              "precision highp float; uniform sampler2D sampler0; uniform vec4 inputColor; varying vec2 vUV; void main(void) { float pattern = texture2D(sampler0, vUV).r; gl_FragColor = vec4(inputColor.rgb, inputColor.a * pattern); }"
+            ],
+            "source_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+          },
+          {
+            "compile_status": 1,
+            "generation": 3,
+            "shader_type": 35633,
+            "source_bytes": 204,
+            "source_parts": [
+              "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+            ],
+            "source_sha256": "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d"
+          },
+          {
+            "compile_status": 1,
+            "generation": 4,
+            "shader_type": 35632,
+            "source_bytes": 334,
+            "source_parts": [
+              "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+            ],
+            "source_sha256": "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+          }
+        ],
+        "texture_sampled_by_captured_fragment_shader": true,
+        "texture_uploads": [
+          {
+            "active_texture": 33984,
+            "bytes": 36864,
+            "format": 6408,
+            "height": 96,
+            "level": 0,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "target": 3553,
+            "texture": 1,
+            "type": 5121,
+            "width": 96,
+            "x": 0,
+            "y": 0
+          }
+        ],
         "uniform_calls": [
           {
             "call": "glUniformMatrix4fv",
@@ -1138,6 +2412,8 @@
       },
       "readback_rgba8": {
         "bytes": 262144,
+        "changed_pixels_from_pre_draw": 13,
+        "changed_pixels_sha256": "2352144878cae31d3d2e14b7db49157b81fe27001e2b4a4c6e4157907f6a2174",
         "first_nonzero_pixels": [
           [
             1,
@@ -1276,6 +2552,29 @@
         "zlib_base64": "eNrt1skRgDAMBEEJGwvnnzDHnwjUHcI8tjbisdbKfe2YcwbQz/Gos7JWiQENjTG+DZjDD4DGG/D+ATGgocwUAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPhzAzBeALs="
       },
       "render_target": {
+        "before_draw_readback": {
+          "bytes": 262144,
+          "nonzero_pixels": 0,
+          "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+          "state": {
+            "draw_fbo": [
+              1
+            ],
+            "pack_alignment": [
+              4
+            ],
+            "read_buffer": 36064,
+            "read_fbo": [
+              1
+            ],
+            "viewport": [
+              0,
+              0,
+              256,
+              256
+            ]
+          }
+        },
         "color_attachment": 2,
         "color_attachment_query_object": 2,
         "color_write_mask": [
@@ -1289,14 +2588,17 @@
         "framebuffer": 1,
         "framebuffer_complete_status": 36053,
         "gl_tex_image_call": {
+          "active_texture": 33984,
           "call": "glTexImage2D",
           "format": 6408,
           "hasPixels": true,
           "height": 256,
           "internalFormat": 32856,
+          "level": 0,
           "pixelBytes": 262144,
           "pixelsSha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
           "target": 3553,
+          "texture": 2,
           "type": 5121,
           "width": 256
         },
@@ -1429,7 +2731,7 @@
         ]
       },
       "repeated_stability": {
-        "semantic_signature_sha256": "b9329263866ac2bd7f6943fbed0e1a3fb1660906a95fcc2ba318fd41b3ea96d6",
+        "semantic_signature_sha256": "62d8a4b90312bd9366e9d9c75223f58689eec10105eb71957e9c0f79d5b2d031",
         "successful_runs": 2
       },
       "source_argb_u32": "0x006cdd8f",
@@ -1457,7 +2759,7 @@
           "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
           "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
         },
-        "runner": "bc12f38b52a4ebbc55ab60b2f56e08d202a5e71bedfd80a18f8fcbab96e895c6"
+        "runner": "332633ecdbd09da77f9463496c83bda9a9a6cf27c6d377ec3b4b6051cf62f699"
       }
     }
   ],

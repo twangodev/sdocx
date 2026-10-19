@@ -224,10 +224,11 @@ allocation, nearest/clamped sampling and exact GL upload bytes. An
 [instanced Draw capture](../conformance/airbrush-draw-native.json) checks native
 buffer uploads, attributes and blend calls with a separately captured stamp
 stream injected by the host. A [joined paint capture](../conformance/airbrush-joined-paint-native.json)
-checks the Drawing-produced vector through native task-body publication and upload.
-Its current generic shader has no per-instance stamp input, so the RGBA readbacks
-are diagnostic rather than an AirBrush appearance reference. Intended shader
-selection, general admission, vector paint and device parity remain outstanding.
+checks the Drawing-produced vector through native task-body publication, upload
+and full RGBA readback. Link-time shader snapshots and live interface/sampler
+queries verify the native shader and nearest/clamped pattern; the target is zero
+before Draw. Scheduling and Renderer capabilities are host-supplied; general
+admission, vector paint and device parity remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. The separate
 [Drawing caller](../conformance/brushpen-saved-caller-native.json) selects GLV10
