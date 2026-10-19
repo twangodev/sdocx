@@ -37,9 +37,13 @@ mod marker;
 mod oblique;
 pub use marker::PointMarkerTarget;
 mod native_body_pages;
+#[cfg(feature = "pdf")]
+mod native_ink;
 mod placed;
 mod table;
 mod text;
+#[cfg(feature = "pdf")]
+pub(crate) use native_ink::NativeInkRegistry;
 #[cfg(feature = "pdf")]
 pub(crate) use text::native::{NativePdfPainter, NativeTextRegistry};
 mod theme;
@@ -371,6 +375,7 @@ fn render_layout_page(
 pub(crate) struct RenderedScene {
     pub page: RenderedPage,
     pub text: text::native::NativeTextRegistry,
+    pub ink: native_ink::NativeInkRegistry,
     pub text_error: Option<String>,
 }
 
@@ -429,6 +434,7 @@ impl DocumentTextCache {
                 let (mut page, mut scene) =
                     self.prepare_page(document, page, options, false, fonts, true, observer);
                 let text = scene.take_native_text();
+                let ink = scene.take_native_ink();
                 let text_error = scene.take_native_text_error();
                 observer(Progress::pending(ProgressStage::Finalizing));
                 page.svg = scene.finish();
@@ -440,6 +446,7 @@ impl DocumentTextCache {
                 RenderedScene {
                     page,
                     text,
+                    ink,
                     text_error,
                 }
             })

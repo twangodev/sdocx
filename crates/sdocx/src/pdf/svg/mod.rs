@@ -51,12 +51,23 @@ pub(super) trait SurfaceExt {
     /// Draw a `usvg` tree onto a surface with the given size and settings.
     fn draw_svg(&mut self, tree: &Tree, size: Size, svg_settings: SvgSettings) -> Option<()>;
 
+    #[cfg(test)]
     fn draw_svg_with_text(
         &mut self,
         tree: &Tree,
         size: Size,
         svg_settings: SvgSettings,
         hook: &mut TextHook<'_>,
+    ) -> Result<(), SvgError>;
+
+    fn draw_svg_with_text_and_ink(
+        &mut self,
+        tree: &Tree,
+        size: Size,
+        svg_settings: SvgSettings,
+        text_hook: &mut TextHook<'_>,
+        ink_ids: &std::collections::HashSet<String>,
+        ink_hook: &mut InkHook<'_>,
     ) -> Result<(), SvgError>;
 }
 
@@ -65,6 +76,7 @@ pub(super) enum SvgError {
     Text(String),
     Image(String),
     Filter(String),
+    Ink(String),
 }
 
 pub(super) fn raster_image(kind: &usvg::ImageKind) -> Result<Option<krilla::image::Image>, String> {
@@ -83,12 +95,14 @@ pub(super) fn raster_image(kind: &usvg::ImageKind) -> Result<Option<krilla::imag
 
 pub(super) type TextHook<'a> =
     dyn FnMut(&usvg::Text, &mut Surface<'_>) -> Result<bool, String> + 'a;
+pub(super) type InkHook<'a> = dyn FnMut(&usvg::Group, &mut Surface<'_>) -> Result<(), String> + 'a;
 
 impl SurfaceExt for Surface<'_> {
     fn draw_svg(&mut self, tree: &Tree, size: Size, svg_settings: SvgSettings) -> Option<()> {
-        draw_svg(self, tree, size, svg_settings, None).ok()
+        draw_svg(self, tree, size, svg_settings, None, None, None).ok()
     }
 
+    #[cfg(test)]
     fn draw_svg_with_text(
         &mut self,
         tree: &Tree,
@@ -96,16 +110,38 @@ impl SurfaceExt for Surface<'_> {
         svg_settings: SvgSettings,
         hook: &mut TextHook<'_>,
     ) -> Result<(), SvgError> {
-        draw_svg(self, tree, size, svg_settings, Some(hook))
+        draw_svg(self, tree, size, svg_settings, Some(hook), None, None)
+    }
+
+    fn draw_svg_with_text_and_ink(
+        &mut self,
+        tree: &Tree,
+        size: Size,
+        svg_settings: SvgSettings,
+        text_hook: &mut TextHook<'_>,
+        ink_ids: &std::collections::HashSet<String>,
+        ink_hook: &mut InkHook<'_>,
+    ) -> Result<(), SvgError> {
+        draw_svg(
+            self,
+            tree,
+            size,
+            svg_settings,
+            Some(text_hook),
+            Some(ink_ids),
+            Some(ink_hook),
+        )
     }
 }
 
-fn draw_svg(
+fn draw_svg<'h, 'o>(
     surface: &mut Surface<'_>,
     tree: &Tree,
     size: Size,
     svg_settings: SvgSettings,
-    hook: Option<&mut TextHook<'_>>,
+    hook: Option<&'h mut TextHook<'o>>,
+    ink_ids: Option<&'h std::collections::HashSet<String>>,
+    ink_hook: Option<&'h mut InkHook<'o>>,
 ) -> Result<(), SvgError> {
     let old_fill = surface.get_fill().cloned();
     let old_stroke = surface.get_stroke().cloned();
@@ -121,7 +157,7 @@ fn draw_svg(
             .to_clip_path(),
         &FillRule::NonZero,
     );
-    let result = render_tree_with_text(tree, svg_settings, surface, hook);
+    let result = render_tree_with_text(tree, svg_settings, surface, hook, ink_ids, ink_hook);
     surface.pop();
     surface.pop();
 
@@ -135,6 +171,8 @@ struct ProcessContext<'a, 'h, 'o> {
     pub(super) fonts: Fonts<'a>,
     svg_settings: SvgSettings,
     text_hook: Option<&'h mut TextHook<'o>>,
+    ink_ids: Option<&'h std::collections::HashSet<String>>,
+    ink_hook: Option<&'h mut InkHook<'o>>,
     error: Option<SvgError>,
 }
 
@@ -144,6 +182,8 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             fonts: Fonts::new(tree_fontdb),
             svg_settings,
             text_hook: None,
+            ink_ids: None,
+            ink_hook: None,
             error: None,
         }
     }
@@ -159,17 +199,37 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             None | Some(Ok(false)) => text::render(node, surface, self),
         }
     }
+
+    pub(super) fn has_native_ink(&self, group: &usvg::Group) -> bool {
+        self.ink_ids.is_some_and(|ids| ids.contains(group.id()))
+    }
+
+    pub(super) fn render_native_ink(&mut self, group: &usvg::Group, surface: &mut Surface<'_>) {
+        if let Some(hook) = self.ink_hook.as_deref_mut() {
+            if let Err(error) = hook(group, surface) {
+                self.error = Some(SvgError::Ink(error));
+            }
+        } else {
+            self.error = Some(SvgError::Ink(
+                "registered native ink group has no renderer".into(),
+            ));
+        }
+    }
 }
 
-fn render_tree_with_text(
+fn render_tree_with_text<'h, 'o>(
     tree: &Tree,
     svg_settings: SvgSettings,
     surface: &mut Surface<'_>,
-    hook: Option<&mut TextHook<'_>>,
+    hook: Option<&'h mut TextHook<'o>>,
+    ink_ids: Option<&'h std::collections::HashSet<String>>,
+    ink_hook: Option<&'h mut InkHook<'o>>,
 ) -> Result<(), SvgError> {
     let mut db = tree.fontdb().clone();
     let mut fc = ProcessContext::new(Arc::make_mut(&mut db), svg_settings);
     fc.text_hook = hook;
+    fc.ink_ids = ink_ids;
+    fc.ink_hook = ink_hook;
     group::render(tree.root(), surface, &mut fc);
     fc.error.map_or(Ok(()), Err)
 }
@@ -264,6 +324,81 @@ mod tests {
         assert_eq!(surface.cur_transform(), before);
         assert!(surface.get_fill().is_none());
         surface.pop();
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn typed_ink_group_is_intercepted_before_filtered_children_in_draw_order() {
+        let tree = tree(
+            r#"<text id="before" x="1" y="20">A</text><defs><filter id="unsupported"><feGaussianBlur stdDeviation="2"/></filter></defs><g id="typed-ink" transform="translate(7 11)" opacity="0.5" filter="url(#unsupported)"><text id="child" x="1" y="20">B</text></g><text id="after" x="1" y="80">C</text>"#,
+        );
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(200.0, 200.0).unwrap()));
+        let mut surface = page.surface();
+        let ink_ids = std::collections::HashSet::from(["typed-ink".to_owned()]);
+        let order = std::cell::RefCell::new(Vec::new());
+        surface
+            .draw_svg_with_text_and_ink(
+                &tree,
+                Size::from_wh(200.0, 200.0).unwrap(),
+                SvgSettings {
+                    reject_rasterized_filters: true,
+                    ..Default::default()
+                },
+                &mut |text, _| {
+                    order.borrow_mut().push(text.id().to_owned());
+                    Ok(true)
+                },
+                &ink_ids,
+                &mut |group, surface| {
+                    assert_eq!(group.id(), "typed-ink");
+                    assert_eq!(group.opacity().get(), 0.5);
+                    assert_eq!(
+                        group.transform(),
+                        usvg::tiny_skia_path::Transform::from_translate(7.0, 11.0)
+                    );
+                    // Opacity isolates this group into a Form; its transform
+                    // is therefore on the Form invocation, outside this local
+                    // drawing surface.
+                    assert_eq!(surface.cur_transform(), Transform::identity());
+                    order.borrow_mut().push("ink".to_owned());
+                    Ok(())
+                },
+            )
+            .unwrap();
+        assert_eq!(*order.borrow(), ["before", "ink", "after"]);
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn typed_ink_hook_failure_restores_surface_state() {
+        let tree = tree(
+            r#"<defs><filter id="unsupported"><feGaussianBlur stdDeviation="2"/></filter></defs><g id="typed-ink" transform="translate(7 11)" opacity="0.5" filter="url(#unsupported)"><text id="child" x="1" y="20">B</text></g>"#,
+        );
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(200.0, 200.0).unwrap()));
+        let mut surface = page.surface();
+        let before = surface.cur_transform();
+        let ink_ids = std::collections::HashSet::from(["typed-ink".to_owned()]);
+        let result = surface.draw_svg_with_text_and_ink(
+            &tree,
+            Size::from_wh(200.0, 200.0).unwrap(),
+            SvgSettings {
+                reject_rasterized_filters: true,
+                ..Default::default()
+            },
+            &mut |_, _| Ok(false),
+            &ink_ids,
+            &mut |_, _| Err("invalid typed field".into()),
+        );
+        assert_eq!(result, Err(SvgError::Ink("invalid typed field".into())));
+        assert_eq!(surface.cur_transform(), before);
         surface.finish();
         page.finish();
         document.finish().unwrap();

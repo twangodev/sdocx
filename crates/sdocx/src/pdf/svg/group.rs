@@ -13,7 +13,8 @@ pub(super) fn render(
     if process_context.error.is_some() {
         return;
     }
-    if !group.filters().is_empty() {
+    let native_ink = process_context.has_native_ink(group);
+    if !group.filters().is_empty() && !native_ink {
         filter::render(group, surface, process_context);
         return;
     }
@@ -51,11 +52,15 @@ pub(super) fn render(
         pop_count += 1
     }
 
-    for child in group.children() {
-        if process_context.error.is_some() {
-            break;
+    if native_ink {
+        process_context.render_native_ink(group, surface);
+    } else {
+        for child in group.children() {
+            if process_context.error.is_some() {
+                break;
+            }
+            render_node(child, surface, process_context);
         }
-        render_node(child, surface, process_context);
     }
 
     for _ in 0..pop_count {

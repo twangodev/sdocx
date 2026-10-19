@@ -361,6 +361,7 @@ fn captured_parent_placement_activates_only_the_native_per_run_text_clips() {
                         paint_diagnostics: Vec::new(),
                     },
                     text: registry,
+                    ink: Default::default(),
                     text_error: None,
                 };
                 let pdf = crate::pdf::render_native_scene_pdf_for_test(

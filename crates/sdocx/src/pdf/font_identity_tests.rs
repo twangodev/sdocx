@@ -81,6 +81,7 @@ fn retained_text_keeps_its_font_when_svg_parsing_uses_a_different_database() {
         [PdfPage {
             page: &scene.page,
             text: Some(&scene.text),
+            ink: Some(&scene.ink),
             text_error: None,
         }],
         &different_fonts(),

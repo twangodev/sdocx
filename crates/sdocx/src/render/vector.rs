@@ -155,6 +155,8 @@ pub(super) struct Scene {
     #[cfg(feature = "pdf")]
     native_text: Option<super::text::native::NativeTextRegistry>,
     #[cfg(feature = "pdf")]
+    native_ink: Option<super::native_ink::NativeInkRegistry>,
+    #[cfg(feature = "pdf")]
     native_text_error: Option<String>,
 }
 impl Scene {
@@ -167,12 +169,15 @@ impl Scene {
             #[cfg(feature = "pdf")]
             native_text: None,
             #[cfg(feature = "pdf")]
+            native_ink: None,
+            #[cfg(feature = "pdf")]
             native_text_error: None,
         }
     }
     #[cfg(feature = "pdf")]
     pub fn retain_text(&mut self) {
         self.native_text = Some(Default::default());
+        self.native_ink = Some(Default::default());
     }
     pub fn retains_text(&self) -> bool {
         #[cfg(feature = "pdf")]
@@ -224,6 +229,14 @@ impl Scene {
     #[cfg(feature = "pdf")]
     pub fn take_native_text(&mut self) -> super::text::native::NativeTextRegistry {
         self.native_text.take().expect("retained text scene")
+    }
+    #[cfg(feature = "pdf")]
+    pub fn native_ink(&mut self) -> &mut super::native_ink::NativeInkRegistry {
+        self.native_ink.as_mut().expect("retained PDF scene")
+    }
+    #[cfg(feature = "pdf")]
+    pub fn take_native_ink(&mut self) -> super::native_ink::NativeInkRegistry {
+        self.native_ink.take().expect("retained PDF scene")
     }
     #[cfg(feature = "pdf")]
     pub fn reject_native_text(&mut self, message: String) {
@@ -439,6 +452,11 @@ impl Svg {
     }
 }
 impl Group {
+    #[cfg(feature = "pdf")]
+    pub fn native_ink_id(mut self, id: super::native_ink::NativeInkId) -> Self {
+        self.0.attr("id", id.svg_id());
+        self
+    }
     pub fn blend(mut self, mode: Blend) -> Self {
         self.0.style("mix-blend-mode", mode.text());
         self

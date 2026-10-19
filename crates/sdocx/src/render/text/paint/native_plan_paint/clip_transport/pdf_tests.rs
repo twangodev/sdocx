@@ -214,6 +214,7 @@ fn scoped_native_svg_clips_reach_retained_pdf_glyphs_and_restore_neighbors() {
             });
         let second = carrier(&mut scene, "B", 'M', &faces[1], [90.0, 100.0], 19.0);
         let registry = scene.take_native_text();
+        let ink = scene.take_native_ink();
         let scene = RenderedScene {
             page: RenderedPage {
                 source_page_index: 0,
@@ -226,6 +227,7 @@ fn scoped_native_svg_clips_reach_retained_pdf_glyphs_and_restore_neighbors() {
                 paint_diagnostics: Vec::new(),
             },
             text: registry,
+            ink,
             text_error: None,
         };
         let mut options = PdfOptions::from_font_book(&fonts);

@@ -95,65 +95,87 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
         }
     }
 
+    #[cfg(feature = "pdf")]
+    if svg.retains_text() && paint.opacity == 0.0 {
+        // A fully transparent field has no PDF-visible contribution; omit it
+        // before the usvg tree can prune its carrier ID.
+        return true;
+    }
+
+    #[cfg(feature = "pdf")]
+    let native_ink_id = if svg.retains_text() {
+        match svg
+            .native_ink()
+            .register(&mesh, [color.0, color.1, color.2], paint.opacity)
+        {
+            Ok(id) => Some(id),
+            Err(_) => return false,
+        }
+    } else {
+        None
+    };
+
     svg.scope(definitions, |_| {});
-    svg.scope(
-        Group::new().filtered(&filter).opacity(paint.opacity),
-        |svg| {
-            svg.scope(Group::new().isolated(), |svg| {
-                // Keep the black field first: it is the opaque destination for
-                // max/lighten coverage, not a translucent accumulation.
-                svg.push(
-                    Rectangle::new()
-                        .x(x)
-                        .y(y)
-                        .width(width)
-                        .height(height)
-                        .fill(Paint::BLACK),
-                );
-                for (index, field) in &fields {
-                    if matches!(field, Field::Empty) {
-                        continue;
-                    }
-                    let Some(triangle) = mesh.triangles.get(*index) else {
-                        continue;
-                    };
-                    let data = triangle_path(triangle);
-                    let sample = replay_sample(mesh, *index, paint.points.len());
-                    let group = Group::new()
-                        .blend(Blend::Lighten)
-                        .isolated()
-                        .replay_part(replay.then_some(ReplayPart(sample + 1)));
-                    let (black, gray) = match field {
-                        Field::White => (
-                            Path::new()
-                                .fill(Paint::BLACK)
-                                .crisp_edges()
-                                .data(data.clone()),
-                            Path::new()
-                                .fill(Paint::from_hex("#ffffff"))
-                                .crisp_edges()
-                                .data(data),
-                        ),
-                        Field::Gradient(id) => (
-                            Path::new()
-                                .fill(Paint::BLACK)
-                                .crisp_edges()
-                                .data(data.clone()),
-                            Path::new()
-                                .fill(Paint::Gradient(*id))
-                                .crisp_edges()
-                                .data(data),
-                        ),
-                        Field::Empty => unreachable!(),
-                    };
-                    svg.scope(group, |svg| {
-                        svg.push(black);
-                        svg.push(gray);
-                    });
+    let mut outer_group = Group::new().filtered(&filter).opacity(paint.opacity);
+    #[cfg(feature = "pdf")]
+    if let Some(id) = native_ink_id {
+        outer_group = outer_group.native_ink_id(id);
+    }
+    svg.scope(outer_group, |svg| {
+        svg.scope(Group::new().isolated(), |svg| {
+            // Keep the black field first: it is the opaque destination for
+            // max/lighten coverage, not a translucent accumulation.
+            svg.push(
+                Rectangle::new()
+                    .x(x)
+                    .y(y)
+                    .width(width)
+                    .height(height)
+                    .fill(Paint::BLACK),
+            );
+            for (index, field) in &fields {
+                if matches!(field, Field::Empty) {
+                    continue;
                 }
-            });
-        },
-    );
+                let Some(triangle) = mesh.triangles.get(*index) else {
+                    continue;
+                };
+                let data = triangle_path(triangle);
+                let sample = replay_sample(mesh, *index, paint.points.len());
+                let group = Group::new()
+                    .blend(Blend::Lighten)
+                    .isolated()
+                    .replay_part(replay.then_some(ReplayPart(sample + 1)));
+                let (black, gray) = match field {
+                    Field::White => (
+                        Path::new()
+                            .fill(Paint::BLACK)
+                            .crisp_edges()
+                            .data(data.clone()),
+                        Path::new()
+                            .fill(Paint::from_hex("#ffffff"))
+                            .crisp_edges()
+                            .data(data),
+                    ),
+                    Field::Gradient(id) => (
+                        Path::new()
+                            .fill(Paint::BLACK)
+                            .crisp_edges()
+                            .data(data.clone()),
+                        Path::new()
+                            .fill(Paint::Gradient(*id))
+                            .crisp_edges()
+                            .data(data),
+                    ),
+                    Field::Empty => unreachable!(),
+                };
+                svg.scope(group, |svg| {
+                    svg.push(black);
+                    svg.push(gray);
+                });
+            }
+        });
+    });
     true
 }
 
@@ -385,5 +407,34 @@ mod tests {
         let x1: f64 = gradient.attribute("x1").unwrap().parse().unwrap();
         let x2: f64 = gradient.attribute("x2").unwrap().parse().unwrap();
         assert!((x2 - x1 - 8.0).abs() < 1e-9);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn transparent_retained_field_is_omitted_before_carrier_pruning() {
+        let points = [Point { x: 8.0, y: 12.0 }, Point { x: 23.0, y: 15.0 }];
+        let mesh = crate::ink::prepare_oblique_mesh(&points, 5.0, true, 2, [1.0, 1.0])
+            .expect("bounded native geometry");
+        let paint = PreparedStroke {
+            points: Cow::Borrowed(&points),
+            sample_ends: None,
+            dot_radii: None,
+            dot_directions: None,
+            rect_stamp: None,
+            coverage_mesh: Some(mesh.clone()),
+            segment_widths: None,
+            width: 5.0,
+            bounds: mesh.bounds,
+            color: "#336699".into(),
+            opacity: 0.0,
+            top_layer: false,
+            profile: Some("ObliquePen"),
+            support: crate::InkSupport::Reconstructed,
+        };
+        let mut svg = Scene::new(super::super::vector::Svg::new());
+        svg.retain_text();
+        assert!(render(&mut svg, &paint, false));
+        assert!(svg.take_native_ink().is_empty());
+        assert!(!svg.finish().contains("filter"));
     }
 }

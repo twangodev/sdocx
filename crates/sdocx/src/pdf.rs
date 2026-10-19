@@ -12,6 +12,7 @@ use krilla::{
     tagging::{TagGroup, TagTree},
 };
 
+mod ink_field;
 mod svg;
 
 #[cfg(test)]
@@ -21,10 +22,10 @@ mod font_identity_tests;
 #[path = "pdf/paper.rs"]
 mod paper;
 
-use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
+use crate::render::{DocumentTextCache, NativeInkRegistry, NativePdfPainter, NativeTextRegistry};
 use crate::{
-    Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic, PaintDiagnostic, RenderOptions,
-    RenderedPage, TextDiagnostic,
+    BoundingBox, CoverageMesh, Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic,
+    PaintDiagnostic, RenderOptions, RenderedPage, TextDiagnostic,
     fonts::{FontBook, NativeFontNameConfig, SvgFontFamilies},
 };
 
@@ -259,6 +260,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
         scenes.iter().map(|scene| PdfPage {
             page: &scene.page,
             text: Some(&scene.text),
+            ink: Some(&scene.ink),
             text_error: scene.text_error.as_deref(),
         }),
         &pdf_options,
@@ -288,6 +290,7 @@ pub fn render_svg_pages_pdf(
         pages.iter().map(|page| PdfPage {
             page,
             text: None,
+            ink: None,
             text_error: None,
         }),
         options,
@@ -297,6 +300,7 @@ pub fn render_svg_pages_pdf(
 struct PdfPage<'a> {
     page: &'a RenderedPage,
     text: Option<&'a NativeTextRegistry>,
+    ink: Option<&'a NativeInkRegistry>,
     text_error: Option<&'a str>,
 }
 
@@ -309,6 +313,7 @@ pub(crate) fn render_native_scene_pdf_for_test(
         [PdfPage {
             page: &scene.page,
             text: Some(&scene.text),
+            ink: Some(&scene.ink),
             text_error: scene.text_error.as_deref(),
         }],
         options,
@@ -343,6 +348,7 @@ fn render_pages_pdf_with_progress<'a>(
     let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;
+    let mut ink_fields: Vec<(u64, CoverageMesh, [u8; 3], BoundingBox)> = Vec::new();
     let pages = pages.into_iter();
     let (lower, upper) = pages.size_hint();
     let total = (upper == Some(lower)).then_some(lower);
@@ -444,8 +450,19 @@ fn render_pages_pdf_with_progress<'a>(
         let mut surface = page.surface();
         if let Some(registry) = source.text {
             retained_text = true;
-            let page_tags = draw_retained_page(&mut surface, &tree, size, registry, &mut painter)
-                .map_err(|error| match error {
+            let ink = source.ink.ok_or_else(|| {
+                PdfError::Conversion("retained PDF scene has no native ink registry".into())
+            })?;
+            let page_tags = draw_retained_page(
+                &mut surface,
+                &tree,
+                size,
+                registry,
+                ink,
+                page_index,
+                &mut painter,
+            )
+            .map_err(|error| match error {
                 SvgError::Text(message) => PdfError::UnsupportedText {
                     page_index,
                     message,
@@ -457,9 +474,18 @@ fn render_pages_pdf_with_progress<'a>(
                 SvgError::Filter(message) => {
                     PdfError::Conversion(format!("page {page_index}: {message}"))
                 }
+                SvgError::Ink(message) => PdfError::Conversion(format!(
+                    "page {page_index}: native ink lowering failed: {message}"
+                )),
             })?;
             for tag in page_tags {
                 tags.push(tag);
+            }
+            for (id, entry) in ink.iter() {
+                let marker_id = id.marker_id(page_index).ok_or_else(|| {
+                    PdfError::Conversion("native ink marker ID exceeds supported range".into())
+                })?;
+                ink_fields.push((marker_id, entry.mesh.clone(), entry.color, entry.bounds));
             }
         } else {
             surface
@@ -477,8 +503,26 @@ fn render_pages_pdf_with_progress<'a>(
         pdf.set_tag_tree(tags);
     }
     observer(Progress::pending(ProgressStage::Finalizing));
-    pdf.finish()
-        .map_err(|error| PdfError::Conversion(error.to_string()))
+    let bytes = pdf
+        .finish()
+        .map_err(|error| PdfError::Conversion(error.to_string()))?;
+    if ink_fields.is_empty() {
+        // Keep ordinary SVG/text exports byte-for-byte as Krilla serialized
+        // them; only PDFs with registered marker images need lopdf rewriting.
+        return Ok(bytes);
+    }
+    let fields = ink_fields
+        .iter()
+        .map(|(marker_id, mesh, color, bounds)| ink_field::PdfInkField {
+            marker_id: *marker_id,
+            mesh,
+            color: *color,
+            bounds: *bounds,
+        })
+        .collect::<Vec<_>>();
+    ink_field::replace_markers(&bytes, &fields).map_err(|error| {
+        PdfError::Conversion(format!("native ink PDF replacement failed: {error}"))
+    })
 }
 
 fn draw_retained_page(
@@ -486,6 +530,8 @@ fn draw_retained_page(
     tree: &usvg::Tree,
     size: Size,
     registry: &NativeTextRegistry,
+    ink_registry: &NativeInkRegistry,
+    page_index: usize,
     painter: &mut NativePdfPainter,
 ) -> Result<Vec<TagGroup>, SvgError> {
     let mut nodes = HashMap::with_capacity(registry.len());
@@ -498,8 +544,46 @@ fn draw_retained_page(
         };
         nodes.insert(text.as_ref() as *const usvg::Text, (id, block));
     }
+    let mut ink_entries = HashMap::with_capacity(ink_registry.len());
+    for (id, entry) in ink_registry.iter() {
+        let count = count_node_ids(tree.root(), &id.svg_id());
+        if count != 1 {
+            return Err(SvgError::Ink(if count == 0 {
+                format!("retained native ink {} was pruned from SVG", id.svg_id())
+            } else {
+                format!("retained native ink {} has duplicate SVG IDs", id.svg_id())
+            }));
+        }
+        let Some(usvg::Node::Group(group)) = tree.node_by_id(&id.svg_id()) else {
+            return Err(SvgError::Ink(format!(
+                "retained native ink {} was lost during SVG parsing",
+                id.svg_id()
+            )));
+        };
+        ink_entries.insert(group.id().to_owned(), (id, entry));
+    }
+    let ink_ids = ink_entries
+        .keys()
+        .cloned()
+        .collect::<std::collections::HashSet<_>>();
+    let mut painted_ink = std::collections::HashSet::with_capacity(ink_entries.len());
     let mut tags = HashMap::with_capacity(registry.len());
-    surface.draw_svg_with_text(
+    let mut ink_hook = |group: &usvg::Group, surface: &mut krilla::surface::Surface<'_>| {
+        let Some((id, entry)) = ink_entries.get(group.id()) else {
+            return Err("native ink group identity disappeared during traversal".into());
+        };
+        if group.opacity().get().to_bits() != (entry.opacity as f32).to_bits() {
+            return Err("native ink SVG opacity no longer matches its typed record".into());
+        }
+        if !painted_ink.insert(id.svg_id()) {
+            return Err("native ink group was encountered more than once".into());
+        }
+        let marker_id = id
+            .marker_id(page_index)
+            .ok_or("native ink marker ID exceeds the supported page or entry range")?;
+        ink_field::emit_marker(surface, marker_id, entry.bounds)
+    };
+    surface.draw_svg_with_text_and_ink(
         tree,
         size,
         SvgSettings {
@@ -520,7 +604,14 @@ fn draw_retained_page(
             tags.insert(id, tag);
             Ok(true)
         },
+        &ink_ids,
+        &mut ink_hook,
     )?;
+    if painted_ink.len() != ink_registry.len() {
+        return Err(SvgError::Ink(
+            "a registered native ink group was skipped by SVG traversal".into(),
+        ));
+    }
     registry
         .ordered_ids()
         .into_iter()
@@ -530,6 +621,19 @@ fn draw_retained_page(
             })
         })
         .collect()
+}
+
+fn count_node_ids(group: &usvg::Group, id: &str) -> usize {
+    group
+        .children()
+        .iter()
+        .fold(usize::from(group.id() == id), |count, child| {
+            count
+                + match child {
+                    usvg::Node::Group(child_group) => count_node_ids(child_group, id),
+                    _ => usize::from(child.id() == id),
+                }
+        })
 }
 
 fn validate_png(bytes: &[u8]) -> Result<(), String> {
@@ -552,6 +656,293 @@ fn validate_png(bytes: &[u8]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn native_ink_registry() -> NativeInkRegistry {
+        let mesh = CoverageMesh {
+            triangles: vec![crate::CoverageTriangle {
+                vertices: [
+                    crate::CoverageVertex {
+                        x: 10.0,
+                        y: 10.0,
+                        coverage: 0.0,
+                    },
+                    crate::CoverageVertex {
+                        x: 30.0,
+                        y: 10.0,
+                        coverage: 0.5,
+                    },
+                    crate::CoverageVertex {
+                        x: 10.0,
+                        y: 30.0,
+                        coverage: 1.0,
+                    },
+                ],
+            }],
+            sample_ends: vec![1],
+            terminal_start: 1,
+            terminal_end: 1,
+            bounds: Some(BoundingBox {
+                x_min: 10.0,
+                y_min: 10.0,
+                x_max: 30.0,
+                y_max: 30.0,
+            }),
+        };
+        let mut registry = NativeInkRegistry::default();
+        registry.register(&mesh, [0x33, 0x66, 0x99], 0.5).unwrap();
+        registry
+    }
+
+    #[test]
+    fn retained_pdf_rejects_a_registered_but_pruned_native_ink_id() {
+        let tree = usvg::Tree::from_str(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><g id="other"/></svg>"#,
+            &usvg::Options::default(),
+        )
+        .unwrap();
+        let mut document = PdfDocument::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+        let mut surface = page.surface();
+        let result = draw_retained_page(
+            &mut surface,
+            &tree,
+            Size::from_wh(100.0, 100.0).unwrap(),
+            &NativeTextRegistry::default(),
+            &native_ink_registry(),
+            0,
+            &mut NativePdfPainter::new(72.0),
+        );
+        assert!(
+            matches!(result, Err(SvgError::Ink(message)) if message.contains("pruned from SVG"))
+        );
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn retained_pdf_rejects_duplicate_native_ink_svg_ids() {
+        let id = "sdocx-native-ink-0";
+        let tree = usvg::Tree::from_str(
+            &format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><g id="{id}"/><g id="{id}"/></svg>"#
+            ),
+            &usvg::Options::default(),
+        )
+        .unwrap();
+        assert_eq!(count_node_ids(tree.root(), id), 2);
+        let mut document = PdfDocument::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+        let mut surface = page.surface();
+        let result = draw_retained_page(
+            &mut surface,
+            &tree,
+            Size::from_wh(100.0, 100.0).unwrap(),
+            &NativeTextRegistry::default(),
+            &native_ink_registry(),
+            0,
+            &mut NativePdfPainter::new(72.0),
+        );
+        assert!(
+            matches!(result, Err(SvgError::Ink(message)) if message.contains("duplicate SVG IDs"))
+        );
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn retained_pdf_replaces_only_typed_ink_marker_and_keeps_real_images() {
+        // The typed field is wholly outside the 100x100 SVG viewport. usvg
+        // retains it, and the root clip must continue to hide the replacement
+        // Form at the same invocation site.
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><filter id="fx"><feGaussianBlur stdDeviation="1"/></filter></defs><image x="1" y="1" width="4" height="3" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAGElEQVR4nGP4z8DwH4SRIJoAlA8EDGAMAGPrGef+nm3iAAAAAElFTkSuQmCC"/><g id="sdocx-native-ink-0" transform="translate(200 0)" opacity="0.5" filter="url(#fx)"><path d="M10 10L30 10L10 30Z" fill="#808080"/></g></svg>"##;
+        let page = RenderedPage {
+            source_page_index: 0,
+            width: 100,
+            height: 100,
+            svg: svg.into(),
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+        };
+        let ink = native_ink_registry();
+        let bytes = render_pages_pdf(
+            [PdfPage {
+                page: &page,
+                text: Some(&NativeTextRegistry::default()),
+                ink: Some(&ink),
+                text_error: None,
+            }],
+            &PdfOptions::default(),
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let (images, forms) = pdf
+            .objects
+            .values()
+            .fold((0, 0), |(images, forms), object| {
+                let Ok(stream) = object.as_stream() else {
+                    return (images, forms);
+                };
+                match stream.dict.get(b"Subtype").and_then(lopdf::Object::as_name) {
+                    Ok(b"Image") => (images + 1, forms),
+                    Ok(b"Form") => (images, forms + 1),
+                    _ => (images, forms),
+                }
+            });
+        assert_eq!(images, 1, "only the original source image remains");
+        assert!(
+            forms >= 1,
+            "the typed ink marker was replaced by a PDF Form"
+        );
+    }
+
+    #[test]
+    fn retained_pdf_qualifies_local_ink_ids_across_pages() {
+        let svg = |color: &str| {
+            format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><filter id="fx"><feGaussianBlur stdDeviation="1"/></filter></defs><g id="sdocx-native-ink-0" opacity="0.5" filter="url(#fx)"><path d="M10 10L30 10L10 30Z" fill="{color}"/></g></svg>"##
+            )
+        };
+        let page = |svg: String| RenderedPage {
+            source_page_index: 0,
+            width: 100,
+            height: 100,
+            svg,
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+        };
+        let red_page = page(svg("#ff0000"));
+        let blue_page = page(svg("#0000ff"));
+        // Both pages deliberately register local ID 0 with the same geometry,
+        // but their distinct colors must survive marker replacement separately.
+        let mut red_ink = NativeInkRegistry::default();
+        red_ink
+            .register(
+                &native_ink_registry().iter().next().unwrap().1.mesh,
+                [255, 0, 0],
+                0.5,
+            )
+            .unwrap();
+        let mut blue_ink = NativeInkRegistry::default();
+        blue_ink
+            .register(&red_ink.iter().next().unwrap().1.mesh, [0, 0, 255], 0.5)
+            .unwrap();
+        assert_eq!(
+            red_ink.iter().next().unwrap().0.svg_id(),
+            "sdocx-native-ink-0"
+        );
+        assert_eq!(
+            blue_ink.iter().next().unwrap().0.svg_id(),
+            "sdocx-native-ink-0"
+        );
+        assert_ne!(
+            red_ink.iter().next().unwrap().0.marker_id(0),
+            blue_ink.iter().next().unwrap().0.marker_id(1)
+        );
+
+        let text = NativeTextRegistry::default();
+        let bytes = render_pages_pdf(
+            [
+                PdfPage {
+                    page: &red_page,
+                    text: Some(&text),
+                    ink: Some(&red_ink),
+                    text_error: None,
+                },
+                PdfPage {
+                    page: &blue_page,
+                    text: Some(&text),
+                    ink: Some(&blue_ink),
+                    text_error: None,
+                },
+            ],
+            &PdfOptions::default(),
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let pages = pdf.get_pages();
+        assert_eq!(pages.len(), 2);
+
+        fn collect_form_colors(
+            pdf: &lopdf::Document,
+            xobjects: &lopdf::Dictionary,
+            visited: &mut std::collections::HashSet<lopdf::ObjectId>,
+            colors: &mut Vec<String>,
+        ) {
+            for object in xobjects.iter().map(|(_, object)| object) {
+                let (id, object) = pdf.dereference(object).unwrap();
+                if let Some(id) = id
+                    && !visited.insert(id)
+                {
+                    continue;
+                }
+                let Ok(stream) = object.as_stream() else {
+                    continue;
+                };
+                if stream.dict.get(b"Subtype").unwrap().as_name().unwrap() != b"Form" {
+                    continue;
+                }
+                let content = String::from_utf8(stream.decompressed_content().unwrap()).unwrap();
+                if content.contains(" rg ") {
+                    colors.push(content);
+                }
+                if let Ok(resources) = stream.dict.get(b"Resources") {
+                    let (_, resources) = pdf.dereference(resources).unwrap();
+                    if let Ok(xobjects) = resources.as_dict().and_then(|r| r.get(b"XObject")) {
+                        let (_, xobjects) = pdf.dereference(xobjects).unwrap();
+                        collect_form_colors(pdf, xobjects.as_dict().unwrap(), visited, colors);
+                    }
+                }
+            }
+        }
+        let page_form_color = |page_number: u32| {
+            let page_dict = pdf.get_dictionary(pages[&page_number]).unwrap();
+            let (_, resources) = pdf
+                .dereference(page_dict.get(b"Resources").unwrap())
+                .unwrap();
+            let resources = resources.as_dict().unwrap();
+            let (_, xobjects) = pdf.dereference(resources.get(b"XObject").unwrap()).unwrap();
+            let mut colors = Vec::new();
+            collect_form_colors(
+                &pdf,
+                xobjects.as_dict().unwrap(),
+                &mut std::collections::HashSet::new(),
+                &mut colors,
+            );
+            assert_eq!(colors.len(), 1, "each page must reference one field Form");
+            colors.pop().unwrap()
+        };
+        let red = page_form_color(1);
+        let blue = page_form_color(2);
+        assert!(
+            red.contains("1 0 0 rg"),
+            "first page has its red field form: {red}"
+        );
+        assert!(
+            blue.contains("0 0 1 rg"),
+            "second page has its blue field form: {blue}"
+        );
+        assert_ne!(
+            red, blue,
+            "page resource targets must not alias by local ID"
+        );
+        assert!(
+            pdf.objects.values().all(|object| object
+                .as_stream()
+                .ok()
+                .and_then(|stream| stream.dict.get(b"Subtype").ok())
+                .and_then(|subtype| subtype.as_name().ok())
+                != Some(b"Image")),
+            "all per-page markers must be removed after replacement"
+        );
+    }
 
     #[test]
     fn default_options_preserve_native_font_configuration() {
