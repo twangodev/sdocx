@@ -12,7 +12,7 @@ import oblique_canvas_native as oc
 import elf_plt
 from unicorn import arm64_const as R
 from unicorn import UC_HOOK_CODE
-LIBS=ROOT/'scratch/apk-analysis-native/arm64-v8a'; MODEL=LIBS/'libSPenModel.so'; BASE=0x7000000
+LIBS=ROOT/'scratch/apk-analysis-native/arm64-v8a'; MODEL=LIBS/'libSPenModel.so'; BASE=0x7000000; OBLIQUE_BASE=0x5000000
 FIXTURE=ROOT/'conformance/oblique-saved-caller-native.json'
 SELECTED_VERSION_FIXTURE=ROOT/'conformance/oblique-saved-caller-selected-native.json'
 ADVANCED4_FIXTURE=ROOT/'conformance/oblique-saved-caller-advanced4-native.json'
@@ -23,7 +23,7 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 mode.add_argument('--check-profile-invariance',action='store_true')
-parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','three_points_no_curve','four_points_curve','alternating_terminal_curve','stress_six_curve','stress_six_linear','stress_gate_alternation','stress_tool2','stress_size4','stress_size8','stress_size16','stress_size56','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','edge_linear_duplicates_sub5','edge_curve_duplicates_sub5','edge_both_axis_gate','edge_curve_exact5','edge_alternating_short_long','edge_tool1_same_mesh','edge_tool3_same_mesh','reuse_second','color_contract'),default='two_point_curve')
+parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','three_points_no_curve','four_points_curve','alternating_terminal_curve','stress_six_curve','stress_six_linear','stress_gate_alternation','stress_tool2','stress_size4','stress_size8','stress_size16','stress_size56','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','edge_linear_duplicates_sub5','edge_curve_duplicates_sub5','edge_both_axis_gate','edge_curve_exact5','edge_alternating_short_long','edge_tool1_same_mesh','edge_tool3_same_mesh','tool1_linear_same_mesh','tool1_curve_duplicates_sub5','tool1_curve_alternating_short_long','tool1_curve_49_999','tool1_curve_50_000','tool1_curve_50_001','tool1_linear_short_long','tool3_curve_short_long','tool3_linear_same_mesh','reuse_second','color_contract'),default='two_point_curve')
 parser.add_argument('--redraw-version',choices=('selected','v4'),default='selected',help='use the selected drawable vtable entry, or the explicit GLV4 diagnostic probe')
 parser.add_argument('--capture-transitions',action='store_true',help='include selected V1 redrawLine/endPen return snapshots in diagnostic output')
 parser.add_argument('--advanced-setting',choices=('none','4'),default='none',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
@@ -72,6 +72,24 @@ INPUT_CASES={
  'edge_alternating_short_long': {'points':[[0.0,0.0],[8.0,0.0],[9.0,0.0],[17.0,0.0],[18.0,0.0],[26.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
  'edge_tool1_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
  'edge_tool3_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':True,'tool_type':3,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
+ 'tool1_linear_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':False,'tool_type':1,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
+ 'tool1_curve_duplicates_sub5': {'points':[[10.0,20.0],[10.0,20.0],[11.25,21.25],[12.5,22.5],[14.0,22.5],[18.0,22.5]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool1_curve_alternating_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool1_curve_49_999': {'points':[[0.0,0.0],[49.999,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_curve_50_000': {'points':[[0.0,0.0],[50.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_curve_50_001': {'points':[[0.0,0.0],[50.001,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_linear_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':False,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool3_curve_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':3,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool3_linear_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':False,'tool_type':3,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
+ 'tool1_linear_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':False,'tool_type':1,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
+ 'tool1_curve_duplicates_sub5': {'points':[[10.0,20.0],[10.0,20.0],[11.25,21.25],[12.5,22.5],[14.0,22.5],[18.0,22.5]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool1_curve_alternating_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool1_curve_49_999': {'points':[[0.0,0.0],[49.999,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_curve_50_000': {'points':[[0.0,0.0],[50.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_curve_50_001': {'points':[[0.0,0.0],[50.001,0.0]],'size':4.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[0.5,0.5],'timestamps':[0,10],'tilt':[0.0,0.0],'orientation':[0.0,0.0]},
+ 'tool1_linear_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':False,'tool_type':1,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool3_curve_short_long': {'points':[[0.0,0.0],[60.0,0.0],[61.0,0.0],[121.0,0.0],[122.0,0.0],[182.0,0.0]],'size':4.0,'curve_enabled':True,'tool_type':3,'stroke_type':0,'pressure':[0.5]*6,'timestamps':[0,8,16,24,32,40],'tilt':[0.0]*6,'orientation':[0.0]*6},
+ 'tool3_linear_same_mesh': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0],[34.0,25.0]],'size':4.0,'curve_enabled':False,'tool_type':3,'stroke_type':0,'pressure':[0.5]*4,'timestamps':[0,8,16,24],'tilt':[0.0]*4,'orientation':[0.0]*4},
  'reuse_second': {'points':[[30.0,2.0],[31.25,2.5]],'size':4.25,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.6,0.8],'timestamps':[33,43],'tilt':[0.1,-0.2],'orientation':[0.3,0.5]},
  'color_contract': {'points':[[0.0,0.0],[2.0,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
 }
@@ -299,6 +317,10 @@ selected_rt_id=None
 native_draw_entries=[]
 native_motion_getter_returns=[]
 pending_motion_getters={}
+v1_tool_dispatch_sites=[]
+v1_redrawline_threshold_sites=[]
+v1_redrawline_axis_gate_sites=[]
+last_v1_tool_dispatch={}
 method_trace_names_by_pc={}
 for _name,_address in p.syms.items():
  oblique_method='ObliquePenStrokeDrawableGLV' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawPoint(','::startPen(','::endPen('))
@@ -415,6 +437,22 @@ def color_contract_projection(result):
  }
 
 def log_vcall(u,a,z,d):
+ if args.capture_transitions and a==OBLIQUE_BASE+0x39454:
+  row={'phase':phase,'pc':hex(a),'site':'redraw(ObjectStroke): ObjectStroke::GetToolType return','tool_type_return_w0':u.reg_read(R.UC_ARM64_REG_W0),'source_ObjectStroke_x25':hex(u.reg_read(R.UC_ARM64_REG_X25))}
+  last_v1_tool_dispatch[phase]=row
+  v1_tool_dispatch_sites.append(row)
+ if args.capture_transitions and a==OBLIQUE_BASE+0x3946c:
+  v1_tool_dispatch_sites.append({'phase':phase,'pc':hex(a),'site':'redraw(ObjectStroke): post-fcsel threshold before receiver+96 store','selected_threshold_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex(),'alternate_threshold_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S1)).hex(),'nzcv':hex(u.reg_read(R.UC_ARM64_REG_NZCV)),'receiver_x21':hex(u.reg_read(R.UC_ARM64_REG_X21)),'preceding_tool_dispatch':last_v1_tool_dispatch.get(phase)})
+ if args.capture_transitions and a==OBLIQUE_BASE+0x39470:
+  receiver=u.reg_read(R.UC_ARM64_REG_X21)
+  v1_tool_dispatch_sites.append({'phase':phase,'pc':hex(a),'site':'redraw(ObjectStroke): receiver+96 after threshold store','receiver_threshold_f32_bits':bytes(u.mem_read(receiver+96,4)).hex(),'receiver_x21':hex(receiver)})
+ if args.capture_transitions and a==OBLIQUE_BASE+0x38c70:
+  receiver=u.reg_read(R.UC_ARM64_REG_X19)
+  nzcv=u.reg_read(R.UC_ARM64_REG_NZCV)
+  v1_redrawline_threshold_sites.append({'phase':phase,'pc':hex(a),'receiver':hex(receiver),'distance_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S2)).hex(),'threshold_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S3)).hex(),'pre_gate_flags_byte_88':u.mem_read(receiver+88,1).hex(),'pre_alternation_byte_89':u.mem_read(receiver+89,1).hex(),'nzcv':hex(nzcv),'b_pl_taken':not bool(nzcv & 0x80000000)})
+ if args.capture_transitions and a==OBLIQUE_BASE+0x38c44:
+  nzcv=u.reg_read(R.UC_ARM64_REG_NZCV)
+  v1_redrawline_axis_gate_sites.append({'phase':phase,'pc':hex(a),'dx_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S3)).hex(),'dy_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S6)).hex(),'nzcv':hex(nzcv),'both_axis_gate_taken':bool(nzcv & 0x80000000)})
  if args.capture_transitions and a in pending_sampler_repeats:
   row=pending_sampler_repeats.pop(a)
   row['return_i32']=u.reg_read(R.UC_ARM64_REG_X0)
@@ -609,6 +647,9 @@ try:
    if row['callback_index_end'] < row['callback_index_start']:
     raise RuntimeError('native transition callback boundary regressed')
   result['native_calls']['v1_transition_boundaries']=transition_boundaries
+  result['native_calls']['v1_tool_dispatch_sites']=v1_tool_dispatch_sites
+  result['native_calls']['v1_redrawline_threshold_sites']=v1_redrawline_threshold_sites
+  result['native_calls']['v1_redrawline_axis_gate_sites']=v1_redrawline_axis_gate_sites
   result['native_calls']['sampler_repeats']=sampler_repeats
  if args.case=='color_contract':
   result['input']['color_argb_u32']=f'0x{source_argb:08x}'

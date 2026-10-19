@@ -3437,6 +3437,6 @@
   "scope": "synthetic native ObjectStroke caller with actual native Drawing and selected V1/V4 saved redraw; not serialized SDocx input or Samsung app/device export policy",
   "source_hashes": {
     "object-stroke-defaults-native.json": "b4142701a6e5ffc2c3a87653a4bea167d267279fe26211ee4f5e371442b331dc",
-    "oblique_saved_caller_native.py": "733e70ff9fe8194e5f056fc5094a462e7a3639094399e09f230de0d38c41ae23"
+    "oblique_saved_caller_native.py": "86541be7969e93eb508cee76c1edfaf166ff9a9290fb9c0c7f2108ff18eb8ea0"
   }
 }
