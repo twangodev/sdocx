@@ -102,7 +102,9 @@ Test-only samplers check Marker3 V5 stamp positions, radii and callback boundari
 in ten [synthetic native cases](../conformance/marker3-saved-native.json), and
 DefaultPen position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
-Caller admission and vector paint remain outstanding.
+DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
+native blend setup and shader text that replaces input alpha with screen-space
+coverage. Caller admission and vector paint remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one
@@ -237,6 +239,9 @@ also executes native PNG decoding and image placement for a synthetic rectangle.
 A [Composer branch capture](../conformance/pdf-paper-composer-export.json) verifies
 the imported-paper DrawPDF skip and two manual-background extent controls;
 its AddPages bridge does not join native PDF serialization.
+A [SingleX segmentation capture](../conformance/pdf-paper-single-segments.json)
+uses retained quiz dimensions with explicit host text/object queries; full
+export and final page appearance remain unverified.
 The note-to-PDF scale is host-composed; saved-note placement and production
 PDF-paper rendering remain outstanding.
 
