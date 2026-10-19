@@ -215,7 +215,9 @@ and full RGBA readbacks. With correct host queue wiring, native `SendDataToGPU`
 installs the saved vector and `Update(false)` uploads it without a host vector-slot
 write. A [three-color capture](../conformance/inkpen-color-native.json) checks an
 unchanged MAX mask and one source-over composite for zero, partial and opaque
-alpha under identity host color conversion. The
+alpha under identity host color conversion. A [V1 joined capture](../conformance/inkpen-v1-joined-paint-native.json)
+checks null settings, the unchanged 300-byte upload and partial-alpha paint on
+the same Drawing-selected RT. The
 [scalar derivative check](../conformance/inkpen_coverage_scalar.py) reproduces
 all 32,768 bytes of the captured 128×64 MAX mask using fine 2×2 differences.
 This is one host Mesa witness, not a universal device derivative contract.
