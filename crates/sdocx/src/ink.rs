@@ -28,7 +28,6 @@ pub(crate) mod marker3;
 mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
 mod oblique;
-#[cfg(test)]
 mod oblique_v1;
 mod path;
 #[cfg(test)]
@@ -163,8 +162,8 @@ pub(crate) enum InkRenderContext {
     CanonicalPage,
 }
 
-/// Prepare native Oblique geometry only when the caller supplies a known
-/// renderer context. The public context-free API remains approximate.
+/// Prepare native Oblique V1/V4 geometry only for canonical page export. The
+/// public context-free API remains approximate.
 pub(crate) fn prepare_stroke_for_context<'a>(
     stroke: &'a Stroke,
     dark_mode: bool,
@@ -260,8 +259,8 @@ pub struct PreparedStroke<'a> {
     pub dot_directions: Option<Vec<crate::Point>>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub rect_stamp: Option<RectStamp>,
-    /// Native Oblique V4 coverage mesh when prepared with an explicit runtime
-    /// contract. Original source samples remain in `points`.
+    /// Native Oblique V1/V4 coverage mesh when prepared for canonical page
+    /// export. Original source samples remain in `points`.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub coverage_mesh: Option<CoverageMesh>,
     pub segment_widths: Option<Vec<f64>>,
@@ -430,7 +429,8 @@ fn prepare_oblique_stroke(
     if name.strip_prefix("com.samsung.android.sdk.pen.pen.preload.") != Some("ObliquePen") {
         return None;
     }
-    if effective_oblique_version(rendering.advanced_settings.as_deref()) != Some(4)
+    let version = effective_oblique_version(rendering.advanced_settings.as_deref())?;
+    if !matches!(version, 1 | 4)
         || effective_oblique_stroke_type(rendering.style.stroke_type_raw) != 0
         || rendering.style.color_type_raw != Some(0)
         || rendering.properties.fixed_width
@@ -447,16 +447,30 @@ fn prepare_oblique_stroke(
     let size = oblique_native_size(rendering.style.pen_size?)?;
     let argb = rendering.style.color_argb?;
     let tool_type = u32::from(rendering.tool_type_raw);
-    let mesh = match context {
+    if version == 1
+        && (tool_type != 0
+            && tool_type != 2
+            || rendering.properties.top_layer_pen
+            || rendering.style.fixed_width.is_some())
+    {
+        return None;
+    }
+    let mesh = match (context, version) {
         // Standard ObjectPDFWriter mode 0 passes identity to DrawObjectList;
         // the SVG scene also keeps page coordinates in its unzoomed viewBox.
-        InkRenderContext::CanonicalPage => prepare_oblique_mesh(
+        (InkRenderContext::CanonicalPage, 4) => prepare_oblique_mesh(
             &stroke.points,
             size,
             rendering.properties.compressed,
             tool_type,
             [1.0, 1.0],
         )?,
+        (InkRenderContext::CanonicalPage, 1) => prepare_oblique_v1_mesh(
+            &stroke.points,
+            size,
+            rendering.properties.compressed,
+        )?,
+        _ => return None,
     };
     let opacity = rendering
         .style
@@ -471,6 +485,78 @@ fn prepare_oblique_stroke(
             (argb >> 8) & 0xff,
             argb & 0xff,
         ),
+    })
+}
+
+fn prepare_oblique_v1_mesh(
+    points: &[crate::Point],
+    size: f32,
+    curve_enabled: bool,
+) -> Option<CoverageMesh> {
+    if points.len() > 65_536
+        || points
+            .iter()
+            .any(|point| !point.x.is_finite() || !point.y.is_finite())
+    {
+        return None;
+    }
+    let input_points = points
+        .iter()
+        .map(|point| path::P::from(*point))
+        .collect::<Vec<_>>();
+    if input_points.iter().any(|point| !point.x.is_finite() || !point.y.is_finite()) {
+        return None;
+    }
+    let callbacks = oblique_v1::prepare_selected_v1_stream(&input_points, size, curve_enabled)?;
+    let runtime = oblique::ObliqueRuntime {
+        k: oblique::DEFAULT_K,
+        inverse_scale: [1.0, 1.0],
+    };
+    let native = oblique::prepare_addpoint_stream_with_boundaries(
+        &callbacks.pairs,
+        size as u32,
+        runtime,
+        &callbacks.redraw_line_ends,
+        callbacks.terminal_start,
+    )?;
+    if native.triangles.is_empty() {
+        return None;
+    }
+    let triangles = native
+        .triangles
+        .into_iter()
+        .map(|triangle| CoverageTriangle {
+            vertices: triangle.0.map(|vertex| CoverageVertex {
+                x: vertex.position.x,
+                y: vertex.position.y,
+                coverage: vertex.coverage,
+            }),
+        })
+        .collect::<Vec<_>>();
+    let mut bounds: Option<BoundingBox> = None;
+    for vertex in triangles.iter().flat_map(|triangle| triangle.vertices) {
+        let next = BoundingBox {
+            x_min: f64::from(vertex.x),
+            y_min: f64::from(vertex.y),
+            x_max: f64::from(vertex.x),
+            y_max: f64::from(vertex.y),
+        };
+        if let Some(old) = &mut bounds {
+            old.x_min = old.x_min.min(next.x_min);
+            old.y_min = old.y_min.min(next.y_min);
+            old.x_max = old.x_max.max(next.x_max);
+            old.y_max = old.y_max.max(next.y_max);
+        } else {
+            bounds = Some(next);
+        }
+    }
+    let terminal_end = triangles.len();
+    Some(CoverageMesh {
+        triangles,
+        sample_ends: native.sample_ends,
+        terminal_start: native.terminal_start,
+        terminal_end,
+        bounds,
     })
 }
 
@@ -779,6 +865,34 @@ mod tests {
             .is_some()
         );
 
+        let mut v1_tool = input.clone();
+        {
+            let rendering = v1_tool.rendering.as_mut().unwrap();
+            rendering.advanced_settings = None;
+            rendering.tool_type_raw = 1;
+        }
+        assert!(
+            prepare_stroke_for_context(&v1_tool, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none(),
+            "V1 tool 1 is outside the captured profile"
+        );
+        {
+            let rendering = v1_tool.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = 2;
+            rendering.properties.compressed = false;
+        }
+        v1_tool.points = vec![
+            crate::Point { x: 0.0, y: 0.0 },
+            crate::Point { x: 0.5, y: 0.0 },
+        ];
+        assert!(
+            prepare_stroke_for_context(&v1_tool, false, InkRenderContext::CanonicalPage,)
+                .coverage_mesh
+                .is_none(),
+            "short V1 no-curve transitions stay on the fallback"
+        );
+
         for effect in 0..6 {
             let mut unsupported_effect = input.clone();
             let properties = &mut unsupported_effect.rendering.as_mut().unwrap().properties;
@@ -800,6 +914,90 @@ mod tests {
                 .is_none()
             );
         }
+    }
+
+    #[test]
+    fn canonical_v1_adapter_matches_selected_native_full_vector() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/oblique-saved-caller-selected-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["three_points_curve"];
+        let input = &case["input"];
+        let bits = |value: &serde_json::Value| {
+            let hex = value.as_str().unwrap().trim_start_matches("0x");
+            u32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| {
+                let pair = pair.as_array().unwrap();
+                crate::Point {
+                    x: f64::from(f32::from_bits(bits(&pair[0]))),
+                    y: f64::from(f32::from_bits(bits(&pair[1]))),
+                }
+            })
+            .collect::<Vec<_>>();
+        let size = f32::from_bits(bits(&input["pen_size_f32_bits"]));
+        let stroke = Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                pen_name: input["pen_name"].as_str().map(str::to_owned),
+                advanced_settings: None,
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: crate::StrokeProperties {
+                    compressed: input["curve_enabled"].as_bool().unwrap(),
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: Some(0xff33_6699),
+                    color_type_raw: Some(0),
+                    pen_size: Some(size),
+                    stroke_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures: Vec::new(),
+            timestamps: Vec::new(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: None,
+            pen_width: size,
+        };
+        let prepared = prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+        let mesh = prepared.coverage_mesh.expect("selected V1 canonical mesh");
+        assert_eq!(mesh.sample_ends.len(), stroke.points.len() - 1);
+        assert_eq!(mesh.terminal_end, mesh.triangles.len());
+        let actual = mesh
+            .triangles
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .flat_map(|vertex| [vertex.x, vertex.y, vertex.coverage])
+            .flat_map(f32::to_le_bytes)
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let expected = case["phase_final_vectors"]["draw_object_stroke"]["vector_bytes"]
+            .as_str()
+            .unwrap();
+        assert_eq!(actual, expected, "full V1 native AddPoint vector");
     }
 
     #[test]

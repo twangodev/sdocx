@@ -214,12 +214,16 @@ open. Paired host exports improve on the pre-integration renderer, but broader
 light-background PDF cases show material coverage/color differences at low
 raster scales; SVG stays close in those captures. PDF transport remains under
 investigation.
-The selected V1 route remains test-only. Its
+Selected V1 now uses the shared RTV1 vector transport in canonical page
+coordinates for ordinary tool-0/2 strokes with explicit size/ARGB and color type
+0, excluding fixed width and effects. Short or duplicate curve-disabled
+segments retain the generic approximation. The
 [stress oracle](../conformance/oblique-v1-stress-native.json) and source-derived
-model match both phases' callback pairs, return-state boundaries and complete
-mesh buffers across 16 synthetic geometry cases. Public caller admission and
-paired native GLES versus SVG/PDF comparisons at 1×/2×, including overlap and
-partial opacity, remain required before production integration.
+model match callback pairs, return-state boundaries and complete mesh buffers
+across 16 synthetic geometry cases. Paired 1×/2× SVG checks against vendor shader
+replay are close; vector-only PDFs retain material active-region errors.
+That replay and the host-modeled overlap controls do not establish native
+multi-stroke paint, device pixels or complete parity.
 
 ## Text and embedded layout
 

@@ -1,4 +1,4 @@
-//! Bounded test-only model of the selected Oblique GLV1 saved sampler.
+//! Bounded model of the selected Oblique GLV1 saved sampler.
 //!
 //! This covers sixteen synthetic saved-caller witnesses with tool 0 or 2,
 //! including curve-disabled, alternating terminal, and longer stress paths.
@@ -222,7 +222,12 @@ fn append_sampled_path(
     samples: impl IntoIterator<Item = P>,
 ) -> Option<()> {
     for current in samples {
-        if output.len() >= MAX_SAMPLES {
+        if output.len() >= MAX_SAMPLES
+            || !current.x.is_finite()
+            || !current.y.is_finite()
+            || !rt_previous.x.is_finite()
+            || !rt_previous.y.is_finite()
+        {
             return None;
         }
         output.push((*rt_previous, current));
@@ -232,30 +237,62 @@ fn append_sampled_path(
 }
 
 fn append_direct_point(output: &mut Vec<(P, P)>, rt_previous: P, current: P) -> Option<()> {
-    if output.len() >= MAX_SAMPLES {
+    if output.len() >= MAX_SAMPLES
+        || !rt_previous.x.is_finite()
+        || !rt_previous.y.is_finite()
+        || !current.x.is_finite()
+        || !current.y.is_finite()
+    {
         return None;
     }
     output.push((rt_previous, current));
     Some(())
 }
 
-struct CallbackStream {
-    pairs: Vec<(P, P)>,
-    redraw_line_ends: Vec<usize>,
-    redraw_line_rt: Vec<P>,
-    terminal_start: usize,
-    terminal_end: usize,
-    final_rt_previous: P,
+pub(super) struct V1CallbackStream {
+    pub(super) pairs: Vec<(P, P)>,
+    /// Exclusive callback count at each native `redrawLine` return.
+    pub(super) redraw_line_ends: Vec<usize>,
+    #[cfg(test)]
+    pub(super) redraw_line_rt: Vec<P>,
+    pub(super) terminal_start: usize,
+    #[cfg(test)]
+    pub(super) terminal_end: usize,
+    #[cfg(test)]
+    pub(super) final_rt_previous: P,
 }
 
 /// Model the traced redrawLine/endPen state transitions for the narrow
 /// selected V1 profile represented by the saved-caller and stress cases.
-fn selected_v1_callback_stream(
+pub(super) fn prepare_selected_v1_stream(
     points: &[P],
     size: f32,
     curve_enabled: bool,
-) -> Option<CallbackStream> {
-    if points.len() < 2 || points.len() > MAX_INPUT_POINTS || !size.is_finite() || size <= 0.0 {
+) -> Option<V1CallbackStream> {
+    if points.len() < 2
+        || points.len() > MAX_INPUT_POINTS
+        || points.iter().any(|p| !p.x.is_finite() || !p.y.is_finite())
+        || !size.is_finite()
+        || size <= 0.0
+    {
+        return None;
+    }
+    // The native path arithmetic is f32. Reject source differences or lengths
+    // that overflow before sampling or allocating the callback stream.
+    if points.windows(2).any(|pair| {
+        let dx = pair[1].x - pair[0].x;
+        let dy = pair[1].y - pair[0].y;
+        !dx.is_finite() || !dy.is_finite() || !dx.hypot(dy).is_finite()
+    }) {
+        return None;
+    }
+    if !curve_enabled
+        && points
+            .windows(2)
+            .any(|pair| pair[1].sub(pair[0]).len() < SHORT_PATH)
+    {
+        // Short or duplicate no-curve transitions have not been captured;
+        // leave those strokes on the existing approximate renderer.
         return None;
     }
     let mut output = Vec::new();
@@ -278,13 +315,17 @@ fn selected_v1_callback_stream(
         // The no-curve endPen line is zero length at the final source point;
         // getPosTan fails, then the direct endpoint draw updates RT +344.
         append_direct_point(&mut output, rt_previous, *points.last()?)?;
+        #[cfg(test)]
         let terminal_end = output.len();
-        return (output.len() <= MAX_SAMPLES).then_some(CallbackStream {
+        return (output.len() <= MAX_SAMPLES).then_some(V1CallbackStream {
             pairs: output,
             redraw_line_ends,
+            #[cfg(test)]
             redraw_line_rt,
             terminal_start,
+            #[cfg(test)]
             terminal_end,
+            #[cfg(test)]
             final_rt_previous: rt_previous,
         });
     }
@@ -372,12 +413,15 @@ fn selected_v1_callback_stream(
             quadratic_terminal_samples(start, control, *points.last()?, size, terminal_budget)?,
         )?;
     }
-    (output.len() <= MAX_SAMPLES).then_some(CallbackStream {
+    (output.len() <= MAX_SAMPLES).then_some(V1CallbackStream {
+        #[cfg(test)]
         terminal_end: output.len(),
         pairs: output,
         redraw_line_ends,
+        #[cfg(test)]
         redraw_line_rt,
         terminal_start,
+        #[cfg(test)]
         final_rt_previous: rt_previous,
     })
 }
@@ -483,7 +527,7 @@ mod tests {
         }
     }
 
-    fn assert_native_transitions(stream: &CallbackStream, case: &Value, phase: &str, name: &str) {
+    fn assert_native_transitions(stream: &V1CallbackStream, case: &Value, phase: &str, name: &str) {
         let Some(transitions) = case["transitions"].as_array() else {
             return;
         };
@@ -612,7 +656,7 @@ mod tests {
             assert_eq!(source["advanced_setting"], Value::Null, "{case_name}");
             let points = fixture_points(source);
             let size = f32::from_bits(bits(&source["pen_size_f32_bits"]));
-            let stream = selected_v1_callback_stream(
+            let stream = prepare_selected_v1_stream(
                 &points,
                 size,
                 source["curve_enabled"].as_bool().unwrap(),
@@ -671,7 +715,7 @@ mod tests {
             };
             let source = &case["input"];
             let points = fixture_points(source);
-            let stream = selected_v1_callback_stream(
+            let stream = prepare_selected_v1_stream(
                 &points,
                 f32::from_bits(bits(&source["pen_size_f32_bits"])),
                 source["curve_enabled"].as_bool().unwrap(),

@@ -3443,12 +3443,20 @@ mod tests {
         }
     }
 
-    fn oblique_saved_stroke() -> Stroke {
-        let fixture: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/oblique-saved-caller-advanced4-native.json"
-        ))
-        .unwrap();
-        let input = &fixture["cases"]["two_point_at5"]["input"];
+    fn oblique_saved_stroke(selected_v1: bool) -> Stroke {
+        let (fixture, case) = if selected_v1 {
+            (
+                include_str!("../../../conformance/oblique-saved-caller-selected-native.json"),
+                "three_points_curve",
+            )
+        } else {
+            (
+                include_str!("../../../conformance/oblique-saved-caller-advanced4-native.json"),
+                "two_point_at5",
+            )
+        };
+        let fixture: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        let input = &fixture["cases"][case]["input"];
         let float = |bits: &str| {
             let bytes = std::array::from_fn(|index| {
                 u8::from_str_radix(&bits[index * 2..index * 2 + 2], 16).unwrap()
@@ -3905,129 +3913,139 @@ mod tests {
 
     #[test]
     fn public_oblique_svg_uses_native_saved_mesh_color_and_replay_parts() {
-        let stroke = oblique_saved_stroke();
-        let sample_count = stroke.points.len();
-        let mut page = page_with_uncolored_stroke();
-        page.background_color = Some(Color {
-            r: 37,
-            g: 37,
-            b: 37,
-        });
-        page.objects = vec![stroke.into()];
-        let document = document(page);
-        let normal = render_document_svg(&document, &RenderOptions::default())
-            .remove(0)
-            .svg;
-        assert!(normal.contains("mix-blend-mode:lighten"));
-        assert!(normal.contains("shape-rendering=\"crispEdges\""));
-        let document_svg = roxmltree::Document::parse(&normal).unwrap();
-        let opacity = document_svg
-            .descendants()
-            .find(|node| node.has_tag_name("g") && node.attribute("filter").is_some())
-            .unwrap()
-            .attribute("opacity")
-            .unwrap()
-            .parse::<f64>()
-            .unwrap();
-        assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
-        let matrix = document_svg
-            .descendants()
-            .find(|node| node.has_tag_name("feColorMatrix"))
-            .unwrap()
-            .attribute("values")
-            .unwrap()
-            .split_whitespace()
-            .map(|value| value.parse::<f64>().unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(matrix.len(), 20);
-        assert!((matrix[4] - 17.0 / 255.0).abs() < 1e-6);
-        assert!((matrix[9] - 34.0 / 255.0).abs() < 1e-6);
-        assert!((matrix[14] - 51.0 / 255.0).abs() < 1e-6);
-
-        let layout = layout_document(&document);
-        let replay =
-            super::render_layout_page_replay_svg(&document, &layout, 0, &RenderOptions::default())
-                .unwrap()
+        for selected_v1 in [false, true] {
+            let stroke = oblique_saved_stroke(selected_v1);
+            let sample_count = stroke.points.len();
+            let mut page = page_with_uncolored_stroke();
+            page.background_color = Some(Color {
+                r: 37,
+                g: 37,
+                b: 37,
+            });
+            page.objects = vec![stroke.into()];
+            let document = document(page);
+            let normal = render_document_svg(&document, &RenderOptions::default())
+                .remove(0)
                 .svg;
-        assert!(replay.contains("data-replay-stroke=\"0\""));
-        let parts = roxmltree::Document::parse(&replay)
+            assert!(normal.contains("mix-blend-mode:lighten"));
+            assert!(normal.contains("shape-rendering=\"crispEdges\""));
+            let document_svg = roxmltree::Document::parse(&normal).unwrap();
+            let opacity = document_svg
+                .descendants()
+                .find(|node| node.has_tag_name("g") && node.attribute("filter").is_some())
+                .unwrap()
+                .attribute("opacity")
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
+            let matrix = document_svg
+                .descendants()
+                .find(|node| node.has_tag_name("feColorMatrix"))
+                .unwrap()
+                .attribute("values")
+                .unwrap()
+                .split_whitespace()
+                .map(|value| value.parse::<f64>().unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(matrix.len(), 20);
+            assert!((matrix[4] - 17.0 / 255.0).abs() < 1e-6);
+            assert!((matrix[9] - 34.0 / 255.0).abs() < 1e-6);
+            assert!((matrix[14] - 51.0 / 255.0).abs() < 1e-6);
+
+            let layout = layout_document(&document);
+            let replay = super::render_layout_page_replay_svg(
+                &document,
+                &layout,
+                0,
+                &RenderOptions::default(),
+            )
             .unwrap()
-            .descendants()
-            .filter_map(|node| node.attribute("data-replay-part"))
-            .map(|value| value.parse::<usize>().unwrap())
-            .collect::<Vec<_>>();
-        assert!(!parts.is_empty());
-        assert!(parts.iter().all(|part| (1..=sample_count).contains(part)));
-        assert!(
-            parts.contains(&2),
-            "terminal field is attributed to the final saved sample"
-        );
+            .svg;
+            assert!(replay.contains("data-replay-stroke=\"0\""));
+            let parts = roxmltree::Document::parse(&replay)
+                .unwrap()
+                .descendants()
+                .filter_map(|node| node.attribute("data-replay-part"))
+                .map(|value| value.parse::<usize>().unwrap())
+                .collect::<Vec<_>>();
+            assert!(!parts.is_empty());
+            assert!(parts.iter().all(|part| (1..=sample_count).contains(part)));
+            assert!(
+                parts.contains(&sample_count),
+                "terminal field is attributed to the final saved sample"
+            );
+        }
     }
 
     #[test]
     fn descendant_oblique_keeps_the_context_free_fallback() {
-        let stroke = oblique_saved_stroke();
-        let mut page = page_with_uncolored_stroke();
-        page.objects = vec![crate::PageObject {
-            render_layer: crate::ObjectRenderLayer::Base,
-            source_offset: None,
-            content: crate::PageObjectContent::Descendant(Box::new(
-                crate::PageObjectContent::Stroke(stroke),
-            )),
-        }];
-        let svg = render_document_svg(&document(page), &RenderOptions::default())
-            .remove(0)
-            .svg;
-        assert!(!svg.contains("mix-blend-mode:lighten"));
-        assert!(!svg.contains("feColorMatrix"));
-        assert!(!svg.contains("sdocx-native-ink"));
+        for selected_v1 in [false, true] {
+            let stroke = oblique_saved_stroke(selected_v1);
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![crate::PageObject {
+                render_layer: crate::ObjectRenderLayer::Base,
+                source_offset: None,
+                content: crate::PageObjectContent::Descendant(Box::new(
+                    crate::PageObjectContent::Stroke(stroke),
+                )),
+            }];
+            let svg = render_document_svg(&document(page), &RenderOptions::default())
+                .remove(0)
+                .svg;
+            assert!(!svg.contains("mix-blend-mode:lighten"));
+            assert!(!svg.contains("feColorMatrix"));
+            assert!(!svg.contains("sdocx-native-ink"));
+        }
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn public_oblique_pdf_lowers_the_saved_mesh_without_raster_images() {
-        let mut page = page_with_uncolored_stroke();
-        page.objects = vec![oblique_saved_stroke().into()];
-        let bytes = crate::render_document_pdf(
-            &document(page),
-            &RenderOptions::default(),
-            &crate::PdfOptions::default(),
-        )
-        .unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let images = pdf
-            .objects
-            .values()
-            .filter_map(|object| object.as_dict().ok())
-            .filter(|dict| {
-                dict.get(b"Subtype")
-                    .and_then(lopdf::Object::as_name)
-                    .is_ok_and(|name| name == b"Image")
-            })
-            .count();
-        assert_eq!(images, 0);
-        let native_forms = pdf
-            .objects
-            .values()
-            .filter_map(|object| object.as_stream().ok())
-            .filter(|stream| {
-                stream
-                    .dict
-                    .get(b"Subtype")
-                    .and_then(lopdf::Object::as_name)
-                    .is_ok_and(|name| name == b"Form")
-            })
-            .filter(|stream| {
-                stream.decompressed_content().is_ok_and(|content| {
-                    content.windows(4).any(|window| window == b" rg ")
-                        && content.windows(2).any(|window| window == b" f")
+        for selected_v1 in [false, true] {
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![oblique_saved_stroke(selected_v1).into()];
+            let bytes = crate::render_document_pdf(
+                &document(page),
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let images = pdf
+                .objects
+                .values()
+                .filter_map(|object| object.as_dict().ok())
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
                 })
-            })
-            .count();
-        assert!(
-            native_forms > 0,
-            "native coverage must lower into a colored PDF Form"
-        );
+                .count();
+            assert_eq!(images, 0);
+            let native_forms = pdf
+                .objects
+                .values()
+                .filter_map(|object| object.as_stream().ok())
+                .filter(|stream| {
+                    stream
+                        .dict
+                        .get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Form")
+                })
+                .filter(|stream| {
+                    stream.decompressed_content().is_ok_and(|content| {
+                        content.windows(4).any(|window| window == b" rg ")
+                            && content.windows(2).any(|window| window == b" f")
+                    })
+                })
+                .count();
+            assert!(
+                native_forms > 0,
+                "native coverage must lower into a colored PDF Form"
+            );
+        }
     }
 
     fn document(page: Page) -> Document {

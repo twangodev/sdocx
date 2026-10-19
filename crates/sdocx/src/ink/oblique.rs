@@ -473,8 +473,64 @@ fn append_segment(
     Some(())
 }
 
+/// Native RTV1 triangle output plus source callback return boundaries.
+pub(super) struct PreparedAddPointStream {
+    pub(super) triangles: Vec<CoverageTriangle>,
+    pub(super) sample_ends: Vec<usize>,
+    pub(super) terminal_start: usize,
+}
+
+/// Run native RTV1 AddPoint geometry over a bounded V1 source callback stream.
+pub(super) fn prepare_addpoint_stream_with_boundaries(
+    callbacks: &[(P, P)],
+    size: u32,
+    runtime: ObliqueRuntime,
+    sample_end_callbacks: &[usize],
+    terminal_start_callback: usize,
+) -> Option<PreparedAddPointStream> {
+    if callbacks.len() > MAX_PATH_SAMPLES
+        || sample_end_callbacks.windows(2).any(|w| w[0] > w[1])
+        || sample_end_callbacks.iter().any(|&end| end > callbacks.len())
+        || terminal_start_callback > callbacks.len()
+        || !runtime.k.is_finite()
+        || runtime.inverse_scale.iter().any(|value| !value.is_finite() || *value == 0.0)
+    {
+        return None;
+    }
+    let mut triangles = Vec::new();
+    let mut sample_ends = Vec::with_capacity(sample_end_callbacks.len());
+    let mut boundary_index = 0;
+    let mut terminal_start = (terminal_start_callback == 0).then_some(0);
+    while sample_end_callbacks.get(boundary_index) == Some(&0) {
+        sample_ends.push(0);
+        boundary_index += 1;
+    }
+    for (index, &(previous, current)) in callbacks.iter().enumerate() {
+        if !previous.x.is_finite() || !previous.y.is_finite() || !current.x.is_finite() || !current.y.is_finite() {
+            return None;
+        }
+        append_segment(&mut triangles, size, runtime, previous, current)?;
+        let callback_end = index + 1;
+        if callback_end == terminal_start_callback {
+            terminal_start = Some(triangles.len());
+        }
+        while sample_end_callbacks.get(boundary_index) == Some(&callback_end) {
+            sample_ends.push(triangles.len());
+            boundary_index += 1;
+        }
+    }
+    if boundary_index != sample_end_callbacks.len() {
+        return None;
+    }
+    Some(PreparedAddPointStream {
+        triangles,
+        sample_ends,
+        terminal_start: terminal_start?,
+    })
+}
+
 /// Exercise the native RTV1 AddPoint mesh kernel on an explicit callback
-/// sequence. This is test-only because it does not model drawable admission.
+/// sequence. This helper keeps the native output limit applied per append.
 #[cfg(test)]
 pub(super) fn prepare_addpoint_stream(
     callbacks: &[(P, P)],
