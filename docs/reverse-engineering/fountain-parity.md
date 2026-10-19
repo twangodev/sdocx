@@ -36,6 +36,14 @@ without the native device-pixel fringe; V16 expresses radial coverage at
 canonical unit inverse scale. Small-field PDF sampling, zoom-dependent coverage
 and native device pixels remain unverified.
 
+The [thin-stamp oracle](../../conformance/fountain-v14-fringe-native.json)
+separates fresh native paint at each scale from zooming an existing export.
+For radius 0.1, scales 1×/2×/4× produce document extents 1/0.5/0.25
+and width-alpha factors 0.2/0.4/0.8: outer extent stays one device pixel while
+strength changes. A fixed export field does not recompute these parameters
+when zoomed. Fringe comparisons must name their target inverse scale and
+distinguish fresh scale-specific paint from viewer zoom.
+
 The [V14 Drawing defaults](../../conformance/fountain-v14-defaults-native.json)
 use saved style size, default it to zero before the native 0.4–800 clamp, and
 default omitted tolerance to zero. Six cases match all prepared geometry lanes.
