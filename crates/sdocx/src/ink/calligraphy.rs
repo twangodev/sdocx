@@ -445,6 +445,7 @@ pub(super) fn saved_history_vectors(
         sample_ends: Vec::with_capacity(history.len().saturating_sub(1)),
         state,
     };
+    let mut redrew_line = false;
     for &[x, y, orientation] in history.iter().skip(1) {
         let current = P { x, y };
         let dx = (x - state.accepted.x).abs();
@@ -453,6 +454,7 @@ pub(super) fn saved_history_vectors(
             output.sample_ends.push(output.vectors.len());
             continue;
         }
+        redrew_line = true;
         if !state.nib.movement_armed {
             state.nib.movement_armed = true;
         } else if state.nib.initial_pending {
@@ -508,9 +510,13 @@ pub(super) fn saved_history_vectors(
         state.accepted = current;
         output.sample_ends.push(output.vectors.len());
     }
-    // Native redrawLine epilogue (0x1ec0c..0x1ec28) copies its accepted
-    // position at +124 into both midpoint (+104) and path start (+88).
-    state.midpoint = state.start;
+    // A history record rejected by the 1.5-pixel gate returns before the
+    // midpoint epilogue, so +104 stays retained. An admitted redrawLine
+    // epilogue copies its accepted position into midpoint (+104) and path
+    // start (+88).
+    if redrew_line {
+        state.midpoint = state.start;
+    }
     output.state = state;
     Some(output)
 }
@@ -728,6 +734,12 @@ pub(super) fn saved_object_stroke_mesh(
     input: SavedObjectStrokeInput<'_>,
     mut state: CalligraphyState,
 ) -> Option<SavedObjectStrokeMeshOutput> {
+    if input.points.len() >= 2 {
+        // RedrawPen starts each multi-record stroke at its first saved point,
+        // rearms the initial edge, and retains RTV1's previous-edge cache.
+        state.add_point.center = input.points[0];
+        state.add_point.initial_edge = true;
+    }
     let stroke = saved_object_stroke_redraw(input, state.saved)?;
     let mut add_points = Vec::with_capacity(stroke.vectors.len());
     let mut buffers = MeshBuffers::default();
@@ -1245,33 +1257,35 @@ mod tests {
                 .map(|word| bits(std::str::from_utf8(word).unwrap()))
                 .collect()
         };
-        let compare_stream = |name: &str| {
-            let capture = &case["native_capture"][name];
-            let actual = super::saved_object_stroke_mesh(input, super::CalligraphyState::fresh())
+        let compare_capture = |label: &str,
+                               capture: &serde_json::Value,
+                               stream_input: SavedObjectStrokeInput<'_>,
+                               state: super::CalligraphyState| {
+            let actual = super::saved_object_stroke_mesh(stream_input, state)
                 .expect("captured Model channels are accepted by saved mesh producer");
             let add_points = capture["add_points"].as_array().unwrap();
             let build_calls = capture["build_calls"].as_array().unwrap();
             assert_eq!(
                 actual.add_points.len(),
                 add_points.len(),
-                "{name} AddPoint calls"
+                "{label} AddPoint calls"
             );
             assert_eq!(
                 build_calls.len(),
                 add_points.len() * 5,
-                "{name} buildMesh calls"
+                "{label} buildMesh calls"
             );
             let mut build_cursor = 0;
             for (index, (frame, native)) in actual.add_points.iter().zip(add_points).enumerate() {
                 assert_eq!(
                     frame.input.vector.map(f32::to_bits),
                     parse_words(native["vector_bytes"].as_str().unwrap()).as_slice(),
-                    "{name} AddPoint {index} Vector4"
+                    "{label} AddPoint {index} Vector4"
                 );
                 assert_eq!(
                     frame.input.extent.to_bits(),
                     bits(native["extent_bits"].as_str().unwrap()),
-                    "{name} AddPoint {index} extent"
+                    "{label} AddPoint {index} extent"
                 );
                 let state = &native["pre_state"];
                 let center: [u32; 2] = state["center_bits"]
@@ -1285,12 +1299,12 @@ mod tests {
                 assert_eq!(
                     frame.input.gate_center.map(f32::to_bits),
                     center,
-                    "{name} AddPoint {index} center"
+                    "{label} AddPoint {index} center"
                 );
                 assert_eq!(
                     frame.input.initial_edge,
                     state["initial_flag"].as_u64().unwrap() != 0,
-                    "{name} AddPoint {index} initial flag"
+                    "{label} AddPoint {index} initial flag"
                 );
                 let expected_edges: Vec<u32> = state["edge_state_bits"]
                     .as_array()
@@ -1307,19 +1321,19 @@ mod tests {
                     .collect();
                 assert_eq!(
                     actual_edges, expected_edges,
-                    "{name} AddPoint {index} edge cache"
+                    "{label} AddPoint {index} edge cache"
                 );
                 let geometry = frame.geometry.expect("all captured AddPoint calls build");
                 for (slot, rect) in geometry.rectangles.iter().enumerate() {
                     assert_eq!(
                         rect_bits(*rect).as_slice(),
                         parse_words(build_calls[build_cursor]["rect"].as_str().unwrap()).as_slice(),
-                        "{name} AddPoint {index} buildMesh slot {slot}"
+                        "{label} AddPoint {index} buildMesh slot {slot}"
                     );
                     build_cursor += 1;
                 }
             }
-            assert_eq!(build_cursor, build_calls.len());
+            assert_eq!(build_cursor, build_calls.len(), "{label} buildMesh count");
             let lanes = [
                 &actual.buffers.core,
                 // Native capture slots follow first-seen BuildMesh output
@@ -1353,27 +1367,204 @@ mod tests {
                     .chunks_exact(2)
                     .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                     .collect();
-                assert_eq!(actual_bytes, expected_bytes, "{name} RTV1 buffer {slot}");
+                assert_eq!(actual_bytes, expected_bytes, "{label} RTV1 buffer {slot}");
             }
-            assert_eq!(actual.stroke.event_time_ms, 30, "{name} MotionEvent time");
+            let last = stream_input.points.len() - 1;
+            assert_eq!(
+                actual.stroke.event_time_ms,
+                i64::from(stream_input.timestamps[last] - stream_input.timestamps[0]),
+                "{label} MotionEvent time"
+            );
             assert_eq!(
                 actual.stroke.event_pressure.to_bits(),
-                pressures[2].to_bits()
+                stream_input.pressures[last].to_bits(),
+                "{label} terminal pressure"
             );
-            assert_eq!(actual.stroke.event_tilt.to_bits(), tilt[2].to_bits());
+            let (expected_tilt, expected_orientation) =
+                match (stream_input.tilt, stream_input.orientation) {
+                    (Some(tilt), Some(orientation)) => (tilt[last], orientation[last]),
+                    _ => (0.0, 0.0),
+                };
+            assert_eq!(
+                actual.stroke.event_tilt.to_bits(),
+                expected_tilt.to_bits(),
+                "{label} terminal tilt"
+            );
             assert_eq!(
                 actual.stroke.event_orientation.to_bits(),
-                orientation[2].to_bits()
+                expected_orientation.to_bits(),
+                "{label} terminal orientation"
             );
-            assert_eq!(actual.stroke.tool_type, 2);
-            actual.state
+            assert_eq!(
+                actual.stroke.tool_type, stream_input.tool_type,
+                "{label} tool type"
+            );
+            actual
         };
-        let first_state = compare_stream("first_draw");
-        let fresh_state = compare_stream("fresh_drawing");
+        let first_capture = &case["native_capture"]["first_draw"];
+        let first_output = compare_capture(
+            "first_draw",
+            first_capture,
+            input,
+            super::CalligraphyState::fresh(),
+        );
+        let fresh_output = compare_capture(
+            "fresh_drawing",
+            &case["native_capture"]["fresh_drawing"],
+            input,
+            super::CalligraphyState::fresh(),
+        );
         assert_eq!(
-            saved_history_state_bits(first_state.saved),
-            saved_history_state_bits(fresh_state.saved),
+            saved_history_state_bits(first_output.state.saved),
+            saved_history_state_bits(fresh_output.state.saved),
             "independent new Drawings reach the same saved state"
+        );
+
+        let raw_state = |hex: &str| -> super::SavedHistoryState {
+            let bytes: Vec<u8> = hex
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            let f32_at = |offset: usize| {
+                f32::from_bits(u32::from_le_bytes(
+                    bytes[offset..offset + 4].try_into().unwrap(),
+                ))
+            };
+            super::SavedHistoryState {
+                nib: super::NibState {
+                    angle_degrees: f32_at(284),
+                    direction: [f32_at(276), f32_at(280)],
+                    initial_pending: bytes[80] != 0,
+                    movement_armed: bytes[272] != 0,
+                },
+                accepted: P {
+                    x: f32_at(116),
+                    y: f32_at(120),
+                },
+                start: P {
+                    x: f32_at(88),
+                    y: f32_at(92),
+                },
+                control: P {
+                    x: f32_at(96),
+                    y: f32_at(100),
+                },
+                midpoint: P {
+                    x: f32_at(104),
+                    y: f32_at(108),
+                },
+            }
+        };
+        let reused = &case["reused_drawing_streams"];
+        let same_stroke = &reused["same_stroke_repeat"];
+        let same_entry = &same_stroke["redraw_sessions"][0];
+        assert_eq!(
+            saved_history_state_bits(first_output.state.saved),
+            saved_history_state_bits(raw_state(
+                reused["original_three_point_fresh_drawing"]["capture"]["redraw_sessions"]
+                    .as_array()
+                    .unwrap()
+                    .last()
+                    .unwrap()["glv1_state_after_hex"]
+                    .as_str()
+                    .unwrap()
+            )),
+            "first producer state matches full native GLV1 state after first drawing"
+        );
+        assert_eq!(
+            saved_history_state_bits(first_output.state.saved),
+            saved_history_state_bits(raw_state(
+                same_entry["glv1_state_before_hex"].as_str().unwrap()
+            )),
+            "same-drawing repeat entry retains complete saved GLV1 state"
+        );
+        let repeated_output =
+            compare_capture("same_stroke_repeat", same_stroke, input, first_output.state);
+        assert_eq!(
+            saved_history_state_bits(repeated_output.state.saved),
+            saved_history_state_bits(raw_state(
+                same_entry["glv1_state_after_hex"].as_str().unwrap()
+            )),
+            "repeated producer state matches full native GLV1 state after redraw"
+        );
+
+        let short = &reused["different_short_stroke"];
+        let short_input = &short["input"];
+        let decode_f32_bytes = |value: &serde_json::Value| -> Vec<f32> {
+            let hex = value.as_str().unwrap();
+            hex.as_bytes()
+                .chunks_exact(8)
+                .map(|word| f32::from_bits(bits(std::str::from_utf8(word).unwrap())))
+                .collect()
+        };
+        let short_xy = decode_f32_bytes(&short_input["point_bytes_f32_le"]);
+        let short_points: Vec<[f32; 2]> = short_xy
+            .chunks_exact(2)
+            .map(|point| [point[0], point[1]])
+            .collect();
+        let short_pressures = decode_f32_bytes(&short_input["pressure_bytes_f32_le"]);
+        let short_tilt = decode_f32_bytes(&short_input["tilt_bytes_f32_le"]);
+        let short_orientation = decode_f32_bytes(&short_input["orientation_bytes_f32_le"]);
+        let short_timestamps: Vec<i32> = short_input["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_i64().unwrap() as i32)
+            .collect();
+        let short_stream_input = SavedObjectStrokeInput {
+            points: &short_points,
+            pressures: &short_pressures,
+            timestamps: &short_timestamps,
+            tilt: Some(&short_tilt),
+            orientation: Some(&short_orientation),
+            tool_type: short_input["tool_type"].as_i64().unwrap() as i32,
+            pen_size: f32::from_bits(bits(short_input["pen_size_f32_bits"].as_str().unwrap())),
+            fixed_width: None,
+        };
+        assert_eq!(
+            short_points.len(),
+            2,
+            "captured short stream has two source points"
+        );
+        let short_entry = &short["same_drawing_capture"]["redraw_sessions"][0];
+        assert_eq!(
+            saved_history_state_bits(repeated_output.state.saved),
+            saved_history_state_bits(raw_state(
+                short_entry["glv1_state_before_hex"].as_str().unwrap()
+            )),
+            "different-short-stroke entry retains full prior GLV1 state"
+        );
+        let short_reused = compare_capture(
+            "different_short_stroke_same_drawing",
+            &short["same_drawing_capture"],
+            short_stream_input,
+            repeated_output.state,
+        );
+        let short_native_after = raw_state(short_entry["glv1_state_after_hex"].as_str().unwrap());
+        let short_typed_after = short_reused.state.saved;
+        assert_eq!(
+            saved_history_state_bits(short_typed_after),
+            saved_history_state_bits(short_native_after),
+            "short stroke full saved state after admitted-history gating"
+        );
+        assert_eq!(
+            short_reused.add_points.len(),
+            1,
+            "native short stream emits one AddPoint"
+        );
+
+        let fresh_capture = &short["fresh_drawing_capture"];
+        let short_fresh = compare_capture(
+            "different_short_stroke_fresh_drawing",
+            fresh_capture,
+            short_stream_input,
+            super::CalligraphyState::fresh(),
+        );
+        assert_eq!(
+            short_fresh.add_points.len(),
+            1,
+            "fresh short stream emits one AddPoint"
         );
     }
 
