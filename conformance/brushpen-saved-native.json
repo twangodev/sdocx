@@ -12,6 +12,38 @@
     "RTV1_AddPoint": "SPen::BrushPenStrokeDrawableRTV1::AddPoint",
     "RTV1_Update_instance_count": "float32_count / 11"
   },
+  "native_numeric_constants": {
+    "initial_width": {
+      "bytes_le": "b81e453f",
+      "elf_address": "0x28028",
+      "storage_type": "f32",
+      "value": 0.7699999809265137
+    },
+    "radius_bias": {
+      "bytes_le": "c3f5285c8fc2d53f",
+      "elf_address": "0x280b0",
+      "storage_type": "f64",
+      "value": 0.34
+    },
+    "radius_prior_weight": {
+      "bytes_le": "cccccc3e",
+      "elf_address": "0x28034",
+      "storage_type": "f32",
+      "value": 0.3999999761581421
+    },
+    "radius_seed_scale": {
+      "bytes_le": "00000000d7a3e83f",
+      "elf_address": "0x280c8",
+      "storage_type": "f64",
+      "value": 0.7699999809265137
+    },
+    "radius_smoothing": {
+      "bytes_le": "9a99193f",
+      "elf_address": "0x2800c",
+      "storage_type": "f32",
+      "value": 0.6000000238418579
+    }
+  },
   "shader_resources": {
     "RTV1_fragment_elf_address": "0x3e69a",
     "RTV1_fragment_source": "#version 300 es \n precision highp float; uniform sampler2D sampler0; uniform sampler2D sampler1; uniform vec4 inputColor; uniform float numTiles; uniform vec2 grain; uniform vec2 grainOffset; in vec2 offset; in float opacity; in vec2 tilt; in vec2 direction; in vec2 fragCoord; const float radius = 0.5; vec2 center = vec2(0.5, 0.5); out vec4 FragColor; void main(void) { vec2 texCoord = vec2(fragCoord.s / numTiles + offset.x, (1.0 - fragCoord.t) / numTiles + offset.y); float a = texture(sampler0, texCoord).r; if (a == 0.0) discard; vec2 grainTexCoord = vec2((gl_FragCoord.x - grainOffset.x) / grain.x, (gl_FragCoord.y - grainOffset.y) / grain.y); float grainAlpha = texture(sampler1, grainTexCoord).r; if (grainAlpha <= 0.0) discard; float mag = dot(vec2(fragCoord.s - 0.5, 0.5 - fragCoord.t), tilt) / 0.5; float gradationMin = abs(dot(direction, tilt)) + 0.5; if (gradationMin > 1.0) gradationMin = 1.0; float gradationAlpha = (gradationMin - 1.0) / 2.0*mag + (1.0 + gradationMin) / 2.0; float alpha = a * opacity * gradationAlpha; if (alpha <= 0.0) discard; alpha = alpha * alpha + alpha * grainAlpha * (1.0 - alpha); if (alpha <= 0.0) discard; float dist = distance(center, fragCoord.xy); float pixelDist = fwidth(dist) * 1.0; float smoothAlpha = 1.0 - clamp((dist - (radius - pixelDist)) / pixelDist, 0.0, 1.0); if (smoothAlpha <= 0.0) discard; FragColor = vec4(inputColor.xyz, alpha * smoothAlpha) ; }",

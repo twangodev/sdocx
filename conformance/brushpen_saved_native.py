@@ -91,6 +91,35 @@ def elf_string(path, address, limit=16384):
     raise ValueError(f'ELF address {address:#x} is outside file-backed PT_LOAD segments: {path}')
 
 
+def numeric_constants():
+    """Retain exact native storage, including widened float32 constants."""
+    blob = (LIB / 'libSPenBrushPen.so').read_bytes()
+    if hashlib.sha256(blob).hexdigest() != HASHES['BrushPen']:
+        raise AssertionError('BrushPen numeric-constant source hash changed')
+    phoff = struct.unpack_from('<Q', blob, 32)[0]
+    stride, count = struct.unpack_from('<HH', blob, 54)
+    result = {}
+    for name, address, fmt in (
+            ('radius_smoothing', 0x2800c, '<f'),
+            ('radius_prior_weight', 0x28034, '<f'),
+            ('initial_width', 0x28028, '<f'),
+            ('radius_bias', 0x280b0, '<d'),
+            ('radius_seed_scale', 0x280c8, '<d')):
+        size = struct.calcsize(fmt)
+        for index in range(count):
+            kind, _, offset, base, _, length, _, _ = struct.unpack_from(
+                '<II6Q', blob, phoff + index * stride)
+            if kind == 1 and base <= address and address + size <= base + length:
+                raw = blob[offset + address - base:offset + address - base + size]
+                result[name] = {'elf_address': hex(address), 'bytes_le': raw.hex(),
+                                'storage_type': 'f32' if size == 4 else 'f64',
+                                'value': struct.unpack(fmt, raw)[0]}
+                break
+        else:
+            raise AssertionError(f'numeric constant {name} is not file-backed')
+    return result
+
+
 class NativeBrush(NativeFountain):
     def __init__(self):
         self.host_boundary_calls = {}
@@ -759,6 +788,7 @@ def main():
     result = {'artifact': 'Samsung Notes 4.4.45.37 native BrushPen',
               'evidence_scope': 'Synthetic saved-style inputs execute the fresh-constructor-selected native GL version and RTV1 geometry writer. No captured BrushPen device witness, GPU texture upload, shader execution, or pixels.',
               'library_sha256': HASHES,
+              'native_numeric_constants': numeric_constants(),
               'shader_resources': {
                   'RTV1_vertex_elf_address': hex(0x3e374),
                   'RTV1_vertex_source': elf_string(LIB / 'libSPenBrushPen.so', 0x3e374),
