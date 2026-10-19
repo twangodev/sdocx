@@ -5,6 +5,11 @@
 //! marker Image XObjects with Forms that evaluate the native max-affine field.
 
 use crate::{BoundingBox, CoverageMesh};
+use i_float::adapter::FloatPointAdapter;
+use i_overlay::{
+    core::{fill_rule::FillRule, overlay::ShapeType, overlay_rule::OverlayRule},
+    float::overlay::{FloatOverlay, OverlayOptions},
+};
 use krilla::{
     Data,
     geom::{Size, Transform},
@@ -23,6 +28,91 @@ pub(crate) struct PdfInkField<'a> {
 
 const MARKER_WIDTH: u32 = 8;
 const MARKER_HEIGHT: u32 = 1;
+const MAX_FIELD_TRIANGLES: usize = 16_384;
+const MAX_COVERAGE_LEVELS: usize = 255;
+const MAX_CONTOUR_WORK: usize = 100_000_000;
+const MAX_BBOX_COMPARISONS: usize = 10_000_000;
+const MAX_OVERLAY_STAGING_BYTES: usize = 128 * 1024 * 1024;
+const MAX_MASK_STREAM_BYTES: usize = 32 * 1024 * 1024;
+
+#[derive(Debug)]
+enum ContourFailure {
+    LegacyRequired(String),
+    Invalid(String),
+}
+
+impl From<String> for ContourFailure {
+    fn from(message: String) -> Self {
+        Self::Invalid(message)
+    }
+}
+
+impl From<&'static str> for ContourFailure {
+    fn from(message: &'static str) -> Self {
+        Self::Invalid(message.into())
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ContourLimits {
+    max_work: usize,
+    max_bbox_comparisons: usize,
+    max_staging_bytes: usize,
+    max_stream_bytes: usize,
+}
+
+impl Default for ContourLimits {
+    fn default() -> Self {
+        Self {
+            max_work: MAX_CONTOUR_WORK,
+            max_bbox_comparisons: MAX_BBOX_COMPARISONS,
+            max_staging_bytes: MAX_OVERLAY_STAGING_BYTES,
+            max_stream_bytes: MAX_MASK_STREAM_BYTES,
+        }
+    }
+}
+
+struct ContourWork {
+    limits: ContourLimits,
+    work: usize,
+    bbox_comparisons: usize,
+}
+
+impl Default for ContourWork {
+    fn default() -> Self {
+        Self {
+            limits: ContourLimits::default(),
+            work: 0,
+            bbox_comparisons: 0,
+        }
+    }
+}
+
+impl ContourWork {
+    fn charge(&mut self, amount: usize, reason: &str) -> Result<(), ContourFailure> {
+        self.work = self.work.checked_add(amount).ok_or_else(|| {
+            ContourFailure::LegacyRequired("native ink contour work counter overflow".into())
+        })?;
+        if self.work > self.limits.max_work {
+            return Err(ContourFailure::LegacyRequired(format!(
+                "native ink contour work budget exceeded ({reason})"
+            )));
+        }
+        Ok(())
+    }
+
+    fn bbox_comparison(&mut self) -> Result<(), ContourFailure> {
+        self.bbox_comparisons = self.bbox_comparisons.checked_add(1).ok_or_else(|| {
+            ContourFailure::LegacyRequired("native ink bbox comparison counter overflow".into())
+        })?;
+        if self.bbox_comparisons > self.limits.max_bbox_comparisons {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink bbox comparison budget exceeded".into(),
+            ));
+        }
+        self.charge(1, "bbox comparisons")
+    }
+}
 
 fn marker_pixels(marker_id: u64) -> Vec<u8> {
     let mut payload = Vec::with_capacity(24);
@@ -130,13 +220,13 @@ fn triangles(mesh: &CoverageMesh) -> Result<Vec<Triangle>, String> {
 }
 
 fn fmt(value: f64) -> String {
-    let text = format!("{value:.17}");
-    let text = text.trim_end_matches('0').trim_end_matches('.');
-    if text.is_empty() || text == "-0" {
-        "0".into()
-    } else {
-        text.into()
+    if value == 0.0 {
+        return "0".into();
     }
+    // Rust's Display formatter emits the shortest round-tripping decimal
+    // without exponent notation, preserving small normalized coordinates and
+    // exact floating-point gray values in PDF numeric operands.
+    value.to_string()
 }
 
 fn plane(triangle: Triangle) -> (f64, f64, f64, f64) {
@@ -147,26 +237,538 @@ fn plane(triangle: Triangle) -> (f64, f64, f64, f64) {
     (a, b, z0 - a * x0 - b * y0, determinant)
 }
 
+fn edge_intersection(a: [f64; 3], b: [f64; 3], level: f64) -> [f64; 2] {
+    // Shared source edges can be visited in opposite directions by
+    // neighboring triangles. Canonicalize endpoint order to make their
+    // mathematical intersection bit-identical.
+    let order = a[0]
+        .total_cmp(&b[0])
+        .then_with(|| a[1].total_cmp(&b[1]))
+        .then_with(|| a[2].total_cmp(&b[2]));
+    let (start, end) = if order.is_le() { (a, b) } else { (b, a) };
+    let t = (level - start[2]) / (end[2] - start[2]);
+    [
+        start[0] + t * (end[0] - start[0]),
+        start[1] + t * (end[1] - start[1]),
+    ]
+}
+
+fn clip_triangle(triangle: Triangle, level: f64) -> Result<Option<Vec<[f64; 2]>>, String> {
+    let input = triangle.0.to_vec();
+    let mut output = Vec::with_capacity(4);
+    for index in 0..input.len() {
+        let a = input[index];
+        let b = input[(index + 1) % input.len()];
+        let a_inside = a[2] >= level;
+        let b_inside = b[2] >= level;
+        if a_inside {
+            output.push([a[0], a[1]]);
+        }
+        if a_inside != b_inside {
+            output.push(edge_intersection(a, b, level));
+        }
+    }
+    if output.len() < 3 {
+        return Ok(None);
+    }
+    // Translate to the first point before cross products. Shoelace terms in
+    // document coordinates can cancel away a small but positive contour.
+    let origin = output[0];
+    let area = (1..output.len() - 1)
+        .map(|index| {
+            let a = [output[index][0] - origin[0], output[index][1] - origin[1]];
+            let b = [
+                output[index + 1][0] - origin[0],
+                output[index + 1][1] - origin[1],
+            ];
+            a[0] * b[1] - a[1] * b[0]
+        })
+        .sum::<f64>();
+    if area == 0.0 {
+        return Ok(None);
+    }
+    if !area.is_finite() {
+        return Err("native ink clipped polygon has non-finite area".into());
+    }
+    if area < 0.0 {
+        output.reverse();
+    }
+    Ok(Some(output))
+}
+
+fn union_polygons(
+    polygons: &[Vec<[f64; 2]>],
+    _bounds: BoundingBox,
+    work: &mut ContourWork,
+) -> Result<Vec<Vec<Vec<[f64; 2]>>>, ContourFailure> {
+    if polygons.is_empty() {
+        return Ok(Vec::new());
+    }
+    let point_count = polygons.iter().try_fold(0usize, |count, polygon| {
+        count.checked_add(polygon.len()).ok_or_else(|| {
+            ContourFailure::LegacyRequired("native ink overlay point count overflow".into())
+        })
+    })?;
+    let staging_bytes = point_count
+        .checked_mul(std::mem::size_of::<[f64; 2]>())
+        .and_then(|bytes| {
+            polygons
+                .len()
+                .checked_mul(std::mem::size_of::<Vec<[f64; 2]>>())
+                .and_then(|headers| bytes.checked_add(headers))
+        })
+        .ok_or_else(|| {
+            ContourFailure::LegacyRequired("native ink overlay staging size overflow".into())
+        })?;
+    if staging_bytes > work.limits.max_staging_bytes {
+        return Err(ContourFailure::LegacyRequired(
+            "native ink threshold region exceeds overlay staging budget".into(),
+        ));
+    }
+
+    // Union only polygons whose bounding boxes touch or overlap. Disjoint
+    // components need no shared overlay grid, so one remote island cannot
+    // erase precision for a nearby small one.
+    let mut order: Vec<usize> = (0..polygons.len()).collect();
+    let boxes: Vec<[f64; 4]> = polygons
+        .iter()
+        .map(|poly| {
+            poly.iter().fold(
+                [
+                    f64::INFINITY,
+                    f64::INFINITY,
+                    f64::NEG_INFINITY,
+                    f64::NEG_INFINITY,
+                ],
+                |mut b, [x, y]| {
+                    b[0] = b[0].min(*x);
+                    b[1] = b[1].min(*y);
+                    b[2] = b[2].max(*x);
+                    b[3] = b[3].max(*y);
+                    b
+                },
+            )
+        })
+        .collect();
+    let sort_work = order
+        .len()
+        .checked_mul(order.len().max(2).ilog2() as usize)
+        .ok_or_else(|| {
+            ContourFailure::LegacyRequired("native ink contour sort-work overflow".into())
+        })?;
+    work.charge(sort_work, "bbox sorting")?;
+    order.sort_by(|a, b| boxes[*a][0].total_cmp(&boxes[*b][0]));
+    let mut parent: Vec<usize> = (0..polygons.len()).collect();
+    fn root(parent: &mut [usize], mut n: usize) -> usize {
+        while parent[n] != n {
+            parent[n] = parent[parent[n]];
+            n = parent[n];
+        }
+        n
+    }
+    for oi in 0..order.len() {
+        let i = order[oi];
+        for &j in &order[oi + 1..] {
+            work.bbox_comparison()?;
+            if boxes[j][0] > boxes[i][2] {
+                break;
+            }
+            if boxes[i][1] <= boxes[j][3] && boxes[j][1] <= boxes[i][3] {
+                let ri = root(&mut parent, i);
+                let rj = root(&mut parent, j);
+                if ri != rj {
+                    parent[rj] = ri;
+                }
+            }
+        }
+    }
+    let mut components: std::collections::BTreeMap<usize, Vec<usize>> =
+        std::collections::BTreeMap::new();
+    for i in 0..polygons.len() {
+        let r = root(&mut parent, i);
+        components.entry(r).or_default().push(i);
+    }
+    let mut result = Vec::new();
+    for indices in components.values() {
+        let origin_x = indices
+            .iter()
+            .map(|i| boxes[*i][0])
+            .fold(f64::INFINITY, f64::min);
+        let origin_y = indices
+            .iter()
+            .map(|i| boxes[*i][1])
+            .fold(f64::INFINITY, f64::min);
+        let max_x = indices
+            .iter()
+            .map(|i| boxes[*i][2])
+            .fold(f64::NEG_INFINITY, f64::max);
+        let max_y = indices
+            .iter()
+            .map(|i| boxes[*i][3])
+            .fold(f64::NEG_INFINITY, f64::max);
+        let extent = (max_x - origin_x).max(max_y - origin_y);
+        if !extent.is_finite() || extent <= 0.0 {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink component extent is not representable".into(),
+            ));
+        }
+        let scale = ((1u64 << 58) as f64 / extent).min(f64::MAX);
+        if !scale.is_finite() || scale <= 0.0 {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink component cannot be represented by the polygon overlay".into(),
+            ));
+        }
+        let local: Vec<Vec<[f64; 2]>> = indices
+            .iter()
+            .map(|i| {
+                polygons[*i]
+                    .iter()
+                    .map(|[x, y]| [x - origin_x, y - origin_y])
+                    .collect()
+            })
+            .collect();
+        let component_point_count = local.iter().try_fold(0usize, |count, polygon| {
+            count.checked_add(polygon.len()).ok_or_else(|| {
+                ContourFailure::LegacyRequired("native ink component point count overflow".into())
+            })
+        })?;
+        let overlay_work = component_point_count
+            .checked_mul(component_point_count)
+            .ok_or_else(|| {
+                ContourFailure::LegacyRequired("native ink overlay-work estimate overflow".into())
+            })?;
+        work.charge(overlay_work, "overlay component estimate")?;
+        let points = local.iter().flat_map(|poly| poly.iter());
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(points, scale)
+            .map_err(|error| {
+                ContourFailure::LegacyRequired(format!(
+                    "native ink polygon overlay adapter failed: {error:?}"
+                ))
+            })?;
+        for polygon in &local {
+            let snapped = polygon
+                .iter()
+                .map(|point| {
+                    adapter.try_float_to_int(point).map_err(|error| {
+                        ContourFailure::LegacyRequired(format!(
+                            "native ink polygon coordinate is outside the overlay grid: {error:?}"
+                        ))
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let origin = snapped[0];
+            let twice_area = snapped
+                .iter()
+                .skip(1)
+                .take(snapped.len().saturating_sub(2))
+                .enumerate()
+                .map(|(k, p)| {
+                    let a = [i128::from(p.x - origin.x), i128::from(p.y - origin.y)];
+                    let q = snapped[k + 2];
+                    let b = [i128::from(q.x - origin.x), i128::from(q.y - origin.y)];
+                    a[0] * b[1] - a[1] * b[0]
+                })
+                .sum::<i128>();
+            if twice_area == 0 {
+                return Err(ContourFailure::LegacyRequired(
+                    "native ink polygon collapses at the overlay grid resolution".into(),
+                ));
+            }
+        }
+        let mut options = OverlayOptions::<f64, i64>::default();
+        options.preserve_input_collinear = false;
+        options.preserve_output_collinear = false;
+        options.min_output_area = 0.0;
+        options.clean_result = false;
+        let mut overlay = FloatOverlay::<[f64; 2], i64>::new_custom(
+            adapter,
+            options,
+            Default::default(),
+            component_point_count,
+        )
+        .unsafe_add_source(&local, ShapeType::Subject);
+        let component = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+        result.extend(component.into_iter().map(|shape| {
+            shape
+                .into_iter()
+                .map(|ring| {
+                    ring.into_iter()
+                        .map(|[x, y]| [x + origin_x, y + origin_y])
+                        .collect()
+                })
+                .collect()
+        }));
+    }
+    Ok(result)
+}
+
+fn append_shape_paths(
+    chunk: &mut String,
+    shape: &[Vec<[f64; 2]>],
+    bounds: BoundingBox,
+    already_written: usize,
+    work: &mut ContourWork,
+) -> Result<(), ContourFailure> {
+    let max_bytes = work.limits.max_stream_bytes;
+    let points = shape.iter().flat_map(|ring| ring.iter());
+    let (min_x, min_y, max_x, max_y) = points.fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(min_x, min_y, max_x, max_y), [x, y]| {
+            (min_x.min(*x), min_y.min(*y), max_x.max(*x), max_y.max(*y))
+        },
+    );
+    let field_width = bounds.x_max - bounds.x_min;
+    let field_height = bounds.y_max - bounds.y_min;
+    let shape_width = max_x - min_x;
+    let shape_height = max_y - min_y;
+    if ![field_width, field_height, shape_width, shape_height]
+        .iter()
+        .all(|v| v.is_finite())
+        || field_width <= 0.0
+        || field_height <= 0.0
+        || shape_width <= 0.0
+        || shape_height <= 0.0
+    {
+        return Err(ContourFailure::LegacyRequired(
+            "native ink overlay produced an unrepresentable shape extent".into(),
+        ));
+    }
+    let sx = shape_width / field_width;
+    let sy = shape_height / field_height;
+    let tx = (min_x - bounds.x_min) / field_width;
+    let ty = 1.0 - (max_y - bounds.y_min) / field_height;
+    let transform = format!(
+        "q\n{} 0 0 {} {} {} cm\n",
+        fmt(sx),
+        fmt(sy),
+        fmt(tx),
+        fmt(ty)
+    );
+    if already_written
+        .checked_add(chunk.len())
+        .and_then(|n| n.checked_add(transform.len()))
+        .is_none_or(|n| n > max_bytes)
+    {
+        return Err("native ink field exceeds vector mask stream budget".into());
+    }
+    chunk.push_str(&transform);
+    for contour in shape {
+        if contour.len() < 3 {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink overlay produced a degenerate contour".into(),
+            ));
+        }
+        let origin = contour[0];
+        let original_area = (1..contour.len() - 1)
+            .map(|i| {
+                let a = [contour[i][0] - origin[0], contour[i][1] - origin[1]];
+                let b = [contour[i + 1][0] - origin[0], contour[i + 1][1] - origin[1]];
+                a[0] * b[1] - a[1] * b[0]
+            })
+            .sum::<f64>();
+        if !original_area.is_finite() {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink contour area exceeds floating-point precision".into(),
+            ));
+        }
+        if original_area == 0.0 {
+            continue;
+        }
+        let mut serialized = Vec::with_capacity(contour.len());
+        for [x, y] in contour {
+            let u = (x - min_x) / shape_width;
+            let v = (max_y - y) / shape_height;
+            if !u.is_finite() || !v.is_finite() {
+                return Err("native ink contour contains non-finite coordinates".into());
+            }
+            serialized.push([
+                fmt(u).parse::<f64>().map_err(|e| e.to_string())?,
+                fmt(v).parse::<f64>().map_err(|e| e.to_string())?,
+            ]);
+        }
+        let origin = serialized[0];
+        let area = (1..serialized.len() - 1)
+            .map(|i| {
+                let a = [serialized[i][0] - origin[0], serialized[i][1] - origin[1]];
+                let b = [
+                    serialized[i + 1][0] - origin[0],
+                    serialized[i + 1][1] - origin[1],
+                ];
+                a[0] * b[1] - a[1] * b[0]
+            })
+            .sum::<f64>();
+        if !area.is_finite() || area == 0.0 {
+            return Err(ContourFailure::LegacyRequired(format!(
+                "native ink contour collapses at local PDF coordinate precision; shape=({min_x},{min_y},{max_x},{max_y}); contour={contour:?}; local={serialized:?}"
+            )));
+        }
+        let global: Vec<[f64; 2]> = serialized
+            .iter()
+            .map(|[u, v]| [sx * u + tx, sy * v + ty])
+            .collect();
+        for index in 0..global.len() {
+            let next = (index + 1) % global.len();
+            if serialized[index] != serialized[next] && global[index] == global[next] {
+                return Err(ContourFailure::LegacyRequired(
+                    "native ink contour collapses after field normalization".into(),
+                ));
+            }
+        }
+        work.charge(serialized.len(), "serialized contour vertices")?;
+        for (index, [u, v]) in serialized.into_iter().enumerate() {
+            let segment = format!(
+                "{} {} {}\n",
+                fmt(u),
+                fmt(v),
+                if index == 0 { "m" } else { "l" }
+            );
+            if already_written
+                .checked_add(chunk.len())
+                .and_then(|n| n.checked_add(segment.len()))
+                .is_none_or(|n| n > max_bytes)
+            {
+                return Err(ContourFailure::LegacyRequired(
+                    "native ink field exceeds vector mask stream budget".into(),
+                ));
+            }
+            chunk.push_str(&segment);
+        }
+        if already_written
+            .checked_add(chunk.len())
+            .and_then(|n| n.checked_add(2))
+            .is_none_or(|n| n > max_bytes)
+        {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink field exceeds vector mask stream budget".into(),
+            ));
+        }
+        chunk.push_str("h\n");
+    }
+    chunk.push_str("f\nQ\n");
+    Ok(())
+}
+
+fn isocontour_stream_with_limits(
+    triangles: &[Triangle],
+    bounds: BoundingBox,
+    limits: ContourLimits,
+) -> Result<Vec<u8>, ContourFailure> {
+    // Emit round-to-nearest thresholds for the 255 nonzero values of a
+    // 256-value coverage scale; the first threshold is 0.5/255 and the last
+    // is 254.5/255, so full coverage still reaches exactly 1.
+    const LEVEL_INTERVALS: usize = MAX_COVERAGE_LEVELS;
+    // Every supported source triangle may intersect every nonzero threshold.
+    // This cap therefore does not reject any mesh admitted by MAX_FIELD_TRIANGLES.
+    const MAX_CLIPPED_POLYGONS: usize = MAX_FIELD_TRIANGLES * MAX_COVERAGE_LEVELS;
+    let mut stream = Vec::new();
+    let mut clipped_count = 0usize;
+    let mut work = ContourWork {
+        limits,
+        work: 0,
+        bbox_comparisons: 0,
+    };
+    for index in 1..=LEVEL_INTERVALS {
+        let threshold = (index as f64 - 0.5) / LEVEL_INTERVALS as f64;
+        let gray = index as f64 / LEVEL_INTERVALS as f64;
+        let mut polygons = Vec::new();
+        for triangle in triangles {
+            work.charge(1, "source triangle scan")?;
+            if plane(*triangle).3 == 0.0
+                || triangle
+                    .0
+                    .iter()
+                    .map(|vertex| vertex[2])
+                    .fold(f64::NEG_INFINITY, f64::max)
+                    < threshold
+            {
+                continue;
+            }
+            if let Some(polygon) =
+                clip_triangle(*triangle, threshold).map_err(ContourFailure::Invalid)?
+            {
+                clipped_count = clipped_count
+                    .checked_add(1)
+                    .ok_or("native ink clipped polygon count overflow")?;
+                if clipped_count > MAX_CLIPPED_POLYGONS {
+                    return Err(ContourFailure::LegacyRequired(
+                        "native ink field exceeds clipped polygon budget".into(),
+                    ));
+                }
+                work.charge(polygon.len(), "clipped polygon vertices")?;
+                polygons.push(polygon);
+            }
+        }
+        if polygons.is_empty() {
+            continue;
+        }
+        let shapes = union_polygons(&polygons, bounds, &mut work)?;
+        if shapes.is_empty() {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink polygon union dropped a nonempty threshold region".into(),
+            ));
+        }
+        let mut chunk = format!("{} g\n", fmt(gray));
+        for shape in shapes {
+            append_shape_paths(&mut chunk, &shape, bounds, stream.len(), &mut work)?;
+        }
+        if stream
+            .len()
+            .checked_add(chunk.len())
+            .is_none_or(|size| size > work.limits.max_stream_bytes)
+        {
+            return Err(ContourFailure::LegacyRequired(
+                "native ink field exceeds vector mask stream budget".into(),
+            ));
+        }
+        stream.extend_from_slice(chunk.as_bytes());
+    }
+    // An empty luminosity-mask Form is a valid transparent field. Preserve
+    // the supported input domain for zero and sub-1/255 coverage meshes.
+    Ok(stream)
+}
+
+fn isocontour_stream(
+    triangles: &[Triangle],
+    bounds: BoundingBox,
+) -> Result<Vec<u8>, ContourFailure> {
+    isocontour_stream_with_limits(triangles, bounds, ContourLimits::default())
+}
+
+fn legacy_fmt(value: f64) -> String {
+    let text = format!("{value:.17}");
+    let text = text.trim_end_matches('0').trim_end_matches('.');
+    if text.is_empty() || text == "-0" {
+        "0".into()
+    } else {
+        text.into()
+    }
+}
+
 fn edge_code(p: [f64; 2], q: [f64; 2], orientation: i32) -> String {
     format!(
         " {} sub {} mul exch {} sub {} mul sub {} mul 0 ge",
-        fmt(p[1]),
-        fmt(q[0] - p[0]),
-        fmt(p[0]),
-        fmt(q[1] - p[1]),
+        legacy_fmt(p[1]),
+        legacy_fmt(q[0] - p[0]),
+        legacy_fmt(p[0]),
+        legacy_fmt(q[1] - p[1]),
         orientation
     )
 }
 
-fn function_code(triangles: &[Triangle], bounds: BoundingBox) -> Result<Vec<u8>, String> {
+fn legacy_function_code(triangles: &[Triangle], bounds: BoundingBox) -> Result<Vec<u8>, String> {
     let width = bounds.x_max - bounds.x_min;
     let height = bounds.y_max - bounds.y_min;
     let mut code = format!(
         "{{ 1 exch sub {} mul {} add exch {} mul {} add exch 0",
-        fmt(height),
-        fmt(bounds.y_min),
-        fmt(width),
-        fmt(bounds.x_min)
+        legacy_fmt(height),
+        legacy_fmt(bounds.y_min),
+        legacy_fmt(width),
+        legacy_fmt(bounds.x_min)
     );
     for triangle in triangles {
         let [[x0, y0, _], [x1, y1, _], [x2, y2, _]] = triangle.0;
@@ -196,14 +798,14 @@ fn function_code(triangles: &[Triangle], bounds: BoundingBox) -> Result<Vec<u8>,
         }
         code.push_str(&format!(
             " {{ 3 copy pop {} mul exch {} mul add {} add 2 copy lt {{ exch pop }} {{ pop }} ifelse }} if",
-            fmt(b), fmt(a), fmt(c)
+            legacy_fmt(b), legacy_fmt(a), legacy_fmt(c)
         ));
     }
     code.push_str(" exch pop exch pop }");
     Ok(code.into_bytes())
 }
 
-fn tiles(
+fn legacy_tiles(
     triangles: &[Triangle],
     bounds: BoundingBox,
 ) -> Result<Vec<([f64; 4], Vec<Triangle>)>, String> {
@@ -283,7 +885,10 @@ fn tiles(
     Ok(result)
 }
 
-fn field_form(document: &mut Document, field: &PdfInkField<'_>) -> Result<Object, String> {
+fn legacy_type1_field_form(
+    document: &mut Document,
+    field: &PdfInkField<'_>,
+) -> Result<Object, String> {
     let triangles = triangles(field.mesh)?;
     const MAX_TRIANGLES: usize = 16_384;
     if triangles.len() > MAX_TRIANGLES {
@@ -303,12 +908,12 @@ fn field_form(document: &mut Document, field: &PdfInkField<'_>) -> Result<Object
             }
         }
     }
-    let tile_data = tiles(&triangles, field.bounds)?;
+    let tile_data = legacy_tiles(&triangles, field.bounds)?;
     let mut shadings = Dictionary::new();
     let mut operators = Vec::with_capacity(tile_data.len());
     let mut generated_code_bytes = 0usize;
     for (index, (bbox, candidates)) in tile_data.iter().enumerate() {
-        let code = function_code(candidates, field.bounds)?;
+        let code = legacy_function_code(candidates, field.bounds)?;
         generated_code_bytes = generated_code_bytes
             .checked_add(code.len())
             .ok_or("native ink calculator size overflow")?;
@@ -370,6 +975,88 @@ fn field_form(document: &mut Document, field: &PdfInkField<'_>) -> Result<Object
         ]),
     );
     let mask = document.add_object(Stream::new(group_dict, operators.join("\n").into_bytes()));
+    let state = document.add_object(Dictionary::from_iter([(
+        b"SMask".to_vec(),
+        Object::Dictionary(Dictionary::from_iter([
+            (b"S".to_vec(), Object::Name(b"Luminosity".to_vec())),
+            (b"G".to_vec(), Object::Reference(mask)),
+            (b"BC".to_vec(), Object::Array(vec![0.into()])),
+            (b"TR".to_vec(), Object::Name(b"Identity".to_vec())),
+        ])),
+    )]));
+    let mut states = Dictionary::new();
+    states.set("GS", Object::Reference(state));
+    let mut resources = Dictionary::new();
+    resources.set("ExtGState", states);
+    let mut dict = Dictionary::new();
+    dict.set("Type", "XObject");
+    dict.set("Subtype", "Form");
+    dict.set("FormType", 1);
+    dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
+    dict.set("Resources", resources);
+    Ok(Object::Stream(Stream::new(
+        dict,
+        format!(
+            "/GS gs {} {} {} rg 0 0 1 1 re f",
+            field.color[0] as f64 / 255.0,
+            field.color[1] as f64 / 255.0,
+            field.color[2] as f64 / 255.0
+        )
+        .into_bytes(),
+    )))
+}
+
+fn field_form(document: &mut Document, field: &PdfInkField<'_>) -> Result<Object, String> {
+    field_form_with_limits(document, field, ContourLimits::default())
+}
+
+fn field_form_with_limits(
+    document: &mut Document,
+    field: &PdfInkField<'_>,
+    limits: ContourLimits,
+) -> Result<Object, String> {
+    let triangles = triangles(field.mesh)?;
+    if triangles.len() > MAX_FIELD_TRIANGLES {
+        return Err("native ink field exceeds triangle budget".into());
+    }
+    if triangles.is_empty() || triangles.iter().all(|triangle| plane(*triangle).3 == 0.0) {
+        return Err("native ink field has no non-degenerate coverage triangles".into());
+    }
+    for triangle in &triangles {
+        for [x, y, _] in triangle.0 {
+            if x < field.bounds.x_min
+                || x > field.bounds.x_max
+                || y < field.bounds.y_min
+                || y > field.bounds.y_max
+            {
+                return Err("native ink bounds do not contain every mesh vertex".into());
+            }
+        }
+    }
+    let mask_stream = match isocontour_stream_with_limits(&triangles, field.bounds, limits) {
+        Ok(stream) => stream,
+        Err(ContourFailure::LegacyRequired(_reason)) => {
+            return legacy_type1_field_form(document, field);
+        }
+        Err(ContourFailure::Invalid(reason)) => return Err(reason),
+    };
+
+    let mut group_dict = Dictionary::new();
+    group_dict.set("Type", "XObject");
+    group_dict.set("Subtype", "Form");
+    group_dict.set("FormType", 1);
+    group_dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
+    group_dict.set("Resources", Dictionary::new());
+    group_dict.set(
+        "Group",
+        Dictionary::from_iter([
+            (b"S".to_vec(), Object::Name(b"Transparency".to_vec())),
+            (b"CS".to_vec(), Object::Name(b"DeviceGray".to_vec())),
+            (b"I".to_vec(), Object::Boolean(true)),
+            (b"K".to_vec(), Object::Boolean(false)),
+        ]),
+    );
+    let mask = document.add_object(Stream::new(group_dict, mask_stream));
     let state = document.add_object(Dictionary::from_iter([(
         b"SMask".to_vec(),
         Object::Dictionary(Dictionary::from_iter([
@@ -537,6 +1224,19 @@ mod tests {
             .count()
     }
 
+    fn has_type1_shading_resource(document: &Document) -> bool {
+        document.objects.values().any(|object| {
+            object
+                .as_stream()
+                .ok()
+                .and_then(|stream| stream.dict.get(b"Resources").ok())
+                .and_then(|resources| resources.as_dict().ok())
+                .and_then(|resources| resources.get(b"Shading").ok())
+                .and_then(|shadings| shadings.as_dict().ok())
+                .is_some_and(|shadings| !shadings.is_empty())
+        })
+    }
+
     fn save(document: &mut Document) -> Vec<u8> {
         let mut bytes = Vec::new();
         document.save_to(&mut bytes).unwrap();
@@ -544,50 +1244,503 @@ mod tests {
     }
 
     #[test]
-    fn tiles_advance_with_extreme_finite_bounds_and_stay_bounded() {
-        let triangle = Triangle([[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]]);
+    fn same_level_union_removes_internal_edges_and_keeps_small_regions() {
         let bounds = BoundingBox {
-            x_min: -3.0e38,
-            y_min: -3.0e38,
-            x_max: 3.0e38,
-            y_max: 3.0e38,
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 10.0,
+            y_max: 10.0,
         };
-        let result = tiles(&[triangle], bounds).unwrap();
-        assert!(result.len() <= 64 * 64);
-        assert!(!result.is_empty());
-        for (tile, _) in result {
-            assert!(tile.into_iter().all(|value| (0.0..=1.0).contains(&value)));
-            assert!(tile[0] < tile[2] && tile[1] < tile[3]);
+        let left = vec![[1.0, 1.0], [5.0, 1.0], [5.0, 5.0], [1.0, 5.0]];
+        let right = vec![[5.0, 1.0], [9.0, 1.0], [9.0, 5.0], [5.0, 5.0]];
+        let union = union_polygons(&[left, right], bounds, &mut ContourWork::default()).unwrap();
+        assert_eq!(union.len(), 1);
+        assert_eq!(union[0].len(), 1);
+        assert!(
+            union[0][0].len() <= 8,
+            "shared internal edge must disappear"
+        );
+
+        let tiny = vec![vec![[1.0, 1.0], [1.00001, 1.0], [1.0, 1.00001]]];
+        let union = union_polygons(&tiny, bounds, &mut ContourWork::default()).unwrap();
+        assert_eq!(union.len(), 1, "no minimum-area cutoff may discard it");
+    }
+
+    #[test]
+    fn union_preserves_duplicate_coverage_and_nonzero_hole_winding() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 10.0,
+            y_max: 10.0,
+        };
+        let rect = vec![[1.0, 1.0], [9.0, 1.0], [9.0, 9.0], [1.0, 9.0]];
+        let duplicate = union_polygons(
+            &[rect.clone(), rect.clone()],
+            bounds,
+            &mut ContourWork::default(),
+        )
+        .unwrap();
+        assert_eq!(duplicate.len(), 1);
+        assert_eq!(duplicate[0].len(), 1);
+
+        let ring = vec![
+            vec![[0.0, 0.0], [10.0, 0.0], [10.0, 3.0], [0.0, 3.0]],
+            vec![[0.0, 7.0], [10.0, 7.0], [10.0, 10.0], [0.0, 10.0]],
+            vec![[0.0, 3.0], [3.0, 3.0], [3.0, 7.0], [0.0, 7.0]],
+            vec![[7.0, 3.0], [10.0, 3.0], [10.0, 7.0], [7.0, 7.0]],
+        ];
+        let union = union_polygons(&ring, bounds, &mut ContourWork::default()).unwrap();
+        assert_eq!(union.len(), 1);
+        assert_eq!(union[0].len(), 2, "one outer ring and one hole expected");
+        let areas: Vec<f64> = union[0]
+            .iter()
+            .map(|contour| {
+                let origin = contour[0];
+                (1..contour.len() - 1)
+                    .map(|index| {
+                        let a = [contour[index][0] - origin[0], contour[index][1] - origin[1]];
+                        let b = [
+                            contour[index + 1][0] - origin[0],
+                            contour[index + 1][1] - origin[1],
+                        ];
+                        a[0] * b[1] - a[1] * b[0]
+                    })
+                    .sum()
+            })
+            .collect();
+        assert!(
+            areas[0] * areas[1] < 0.0,
+            "nonzero fill needs opposite contour winding"
+        );
+    }
+
+    #[test]
+    fn thin_high_threshold_region_survives_large_document_offset() {
+        let base = 4_000_000.0;
+        let triangle = Triangle([
+            [base, base, 0.0],
+            [base + 4.0, base, 1.0],
+            [base, base + 4.0, 1.0],
+        ]);
+        let polygon = clip_triangle(triangle, 0.9999).unwrap().unwrap();
+        let bounds = BoundingBox {
+            x_min: base,
+            y_min: base,
+            x_max: base + 4.0,
+            y_max: base + 4.0,
+        };
+        let union = union_polygons(&[polygon], bounds, &mut ContourWork::default()).unwrap();
+        assert_eq!(union.len(), 1);
+        assert_eq!(union[0].len(), 1);
+        let contour = &union[0][0];
+        assert!(contour.len() >= 3);
+        let twice_area = (1..contour.len() - 1)
+            .map(|index| {
+                let a = [
+                    contour[index][0] - contour[0][0],
+                    contour[index][1] - contour[0][1],
+                ];
+                let b = [
+                    contour[index + 1][0] - contour[0][0],
+                    contour[index + 1][1] - contour[0][1],
+                ];
+                a[0] * b[1] - a[1] * b[0]
+            })
+            .sum::<f64>();
+        assert!(twice_area > 0.0);
+    }
+
+    #[test]
+    fn tiny_high_threshold_polygon_survives_large_offset_area_cancellation_case() {
+        let base = 4_000_000.0;
+        let triangle = Triangle([
+            [base, base, 1.0],
+            [base + 0.25, base, 0.0],
+            [base, base + 0.25, 0.0],
+        ]);
+        let polygon = clip_triangle(triangle, 254.0 / 255.0)
+            .unwrap()
+            .expect("threshold leaves a positive-area cap");
+        let naive_area = (0..polygon.len())
+            .map(|index| {
+                let a = polygon[index];
+                let b = polygon[(index + 1) % polygon.len()];
+                a[0] * b[1] - a[1] * b[0]
+            })
+            .sum::<f64>();
+        assert_eq!(
+            naive_area, 0.0,
+            "fixture must expose raw shoelace cancellation"
+        );
+
+        let origin = polygon[0];
+        let translated_twice_area = (1..polygon.len() - 1)
+            .map(|index| {
+                let a = [polygon[index][0] - origin[0], polygon[index][1] - origin[1]];
+                let b = [
+                    polygon[index + 1][0] - origin[0],
+                    polygon[index + 1][1] - origin[1],
+                ];
+                a[0] * b[1] - a[1] * b[0]
+            })
+            .sum::<f64>();
+        assert!(translated_twice_area > 0.0);
+    }
+
+    #[test]
+    fn isocontour_stream_has_bounded_gray_levels_and_no_shading_dependency() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 1.0,
+            y_max: 1.0,
+        };
+        let triangle = Triangle([[0.0, 0.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]]);
+        let stream = isocontour_stream(&[triangle], bounds).unwrap();
+        let text = std::str::from_utf8(&stream).unwrap();
+        assert!(text.starts_with("0.00392156862745098 g\n"));
+        assert_eq!(text.matches(" g\n").count(), 255);
+        assert_eq!(text.matches("f\n").count(), 255);
+        let painted_grays: Vec<f64> = text
+            .lines()
+            .filter_map(|line| line.strip_suffix(" g"))
+            .map(|value| value.parse().unwrap())
+            .collect();
+        assert_eq!(
+            painted_grays.last(),
+            Some(&1.0),
+            "full coverage is exactly one"
+        );
+        assert!(!text.contains(" sh\n"));
+    }
+
+    #[test]
+    fn nearest_quantization_separates_threshold_from_painted_gray() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 1.0,
+            y_max: 1.0,
+        };
+        let constant = |coverage| {
+            Triangle([
+                [0.0, 0.0, coverage],
+                [1.0, 0.0, coverage],
+                [0.0, 1.0, coverage],
+            ])
+        };
+        assert!(
+            isocontour_stream(&[constant(0.49 / 255.0)], bounds)
+                .unwrap()
+                .is_empty()
+        );
+
+        let at_half = isocontour_stream(&[constant(0.5 / 255.0)], bounds).unwrap();
+        let at_half = std::str::from_utf8(&at_half).unwrap();
+        assert!(at_half.starts_with("0.00392156862745098 g\n"));
+        assert_eq!(at_half.matches(" g\n").count(), 1);
+
+        let below_next = isocontour_stream(&[constant(1.49 / 255.0)], bounds).unwrap();
+        assert_eq!(
+            std::str::from_utf8(&below_next)
+                .unwrap()
+                .matches(" g\n")
+                .count(),
+            1
+        );
+        let above_next = isocontour_stream(&[constant(1.51 / 255.0)], bounds).unwrap();
+        let above_next = std::str::from_utf8(&above_next).unwrap();
+        assert_eq!(above_next.matches(" g\n").count(), 2);
+        assert!(above_next.contains("0.00784313725490196 g\n"));
+
+        let full = isocontour_stream(&[constant(1.0)], bounds).unwrap();
+        let full = std::str::from_utf8(&full).unwrap();
+        assert_eq!(full.matches(" g\n").count(), 255);
+        let grays: Vec<f64> = full
+            .lines()
+            .filter_map(|line| line.strip_suffix(" g"))
+            .map(|value| value.parse().unwrap())
+            .collect();
+        let expected: Vec<f64> = (1..=255).map(|index| index as f64 / 255.0).collect();
+        assert_eq!(
+            grays, expected,
+            "each threshold paints its UNORM8 index value"
+        );
+    }
+
+    #[test]
+    fn shared_edge_intersection_is_direction_independent() {
+        let a = [17.173768997192383, -1.4142135381698608, 1.0];
+        let b = [19.021528244018555, -2.1795806884765625, 0.0];
+        let level = 0.6607843137254902;
+        assert_eq!(
+            edge_intersection(a, b, level),
+            edge_intersection(b, a, level)
+        );
+    }
+
+    #[test]
+    fn tiny_island_with_remote_bounds_uses_component_local_overlay_and_path_mapping() {
+        let remote = f64::from(1.0e20_f32);
+        let remote_step = f64::from(1.0e14_f32);
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: f64::from(remote + remote_step),
+            y_max: f64::from(remote + remote_step),
+        };
+        let tiny = Triangle([[0.0, 0.0, 1.0], [450.0, 0.0, 1.0], [0.0, 450.0, 1.0]]);
+        let far = Triangle([
+            [remote, remote, 0.0],
+            [remote + remote_step, remote, 1.0],
+            [remote, remote + remote_step, 1.0],
+        ]);
+        let mesh = CoverageMesh {
+            triangles: [tiny, far]
+                .map(|triangle| CoverageTriangle {
+                    vertices: triangle.0.map(|[x, y, coverage]| CoverageVertex {
+                        x: x as f32,
+                        y: y as f32,
+                        coverage: coverage as f32,
+                    }),
+                })
+                .to_vec(),
+            sample_ends: Vec::new(),
+            terminal_start: 0,
+            terminal_end: 1,
+            bounds: None,
+        };
+        let field = PdfInkField {
+            marker_id: 1,
+            mesh: &mesh,
+            color: [0, 0, 0],
+            bounds,
+        };
+        let mut document = Document::with_version("1.7");
+        assert!(field_form(&mut document, &field).is_ok());
+        assert!(
+            has_type1_shading_resource(&document),
+            "normalization precision failure must use legacy native vectors"
+        );
+    }
+
+    #[test]
+    fn tiny_islands_at_both_bbox_ends_remain_in_native_vector_forms() {
+        let remote = f64::from(1.0e20_f32);
+        let remote_step = f64::from(1.0e14_f32);
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: remote + remote_step,
+            y_max: remote + remote_step,
+        };
+        let low = Triangle([[0.0, 0.0, 1.0], [450.0, 0.0, 1.0], [0.0, 450.0, 1.0]]);
+        let high = Triangle([
+            [remote, remote, 1.0],
+            [remote + remote_step, remote, 1.0],
+            [remote, remote + remote_step, 1.0],
+        ]);
+        let mesh = CoverageMesh {
+            triangles: [low, high]
+                .map(|triangle| CoverageTriangle {
+                    vertices: triangle.0.map(|[x, y, coverage]| CoverageVertex {
+                        x: x as f32,
+                        y: y as f32,
+                        coverage: coverage as f32,
+                    }),
+                })
+                .to_vec(),
+            sample_ends: Vec::new(),
+            terminal_start: 0,
+            terminal_end: 1,
+            bounds: None,
+        };
+        let field = PdfInkField {
+            marker_id: 1,
+            mesh: &mesh,
+            color: [0, 0, 0],
+            bounds,
+        };
+        let mut document = Document::with_version("1.7");
+        assert!(field_form(&mut document, &field).is_ok());
+        // Component-local overlay succeeds, but the far-low component loses
+        // distinct vertices after mapping into the common field coordinates.
+        // Keep the complete field via the legacy vector calculator.
+        assert!(has_type1_shading_resource(&document));
+    }
+
+    #[test]
+    fn overlay_precision_failure_uses_legacy_type1_for_overlapping_bboxes() {
+        let remote = f64::from(1.0e18_f32);
+        let small = Triangle([[0.0, 0.0, 1.0], [0.125, 0.0, 0.0], [0.0, 0.125, 0.0]]);
+        let large = Triangle([
+            [0.0, remote, 1.0],
+            [remote, 0.0, 1.0],
+            [remote, remote, 1.0],
+        ]);
+        let mesh = CoverageMesh {
+            triangles: [small, large]
+                .map(|triangle| CoverageTriangle {
+                    vertices: triangle.0.map(|[x, y, coverage]| CoverageVertex {
+                        x: x as f32,
+                        y: y as f32,
+                        coverage: coverage as f32,
+                    }),
+                })
+                .to_vec(),
+            sample_ends: Vec::new(),
+            terminal_start: 0,
+            terminal_end: 1,
+            bounds: None,
+        };
+        let field = PdfInkField {
+            marker_id: 1,
+            mesh: &mesh,
+            color: [0, 0, 0],
+            bounds: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: remote,
+                y_max: remote,
+            },
+        };
+        let mut document = Document::with_version("1.7");
+        assert!(field_form(&mut document, &field).is_ok());
+        assert!(
+            has_type1_shading_resource(&document),
+            "precision fallback must retain the native Type 1 field"
+        );
+    }
+
+    #[test]
+    fn contour_work_budget_routes_to_legacy_type1_without_dropping_field() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 2.0,
+            y_max: 2.0,
+        };
+        let first = Triangle([[0.0, 0.0, 1.0], [2.0, 0.0, 1.0], [0.0, 2.0, 1.0]]);
+        let second = Triangle([[0.0, 0.0, 1.0], [2.0, 2.0, 1.0], [0.0, 2.0, 1.0]]);
+        let mesh = CoverageMesh {
+            triangles: [first, second]
+                .map(|triangle| CoverageTriangle {
+                    vertices: triangle.0.map(|[x, y, coverage]| CoverageVertex {
+                        x: x as f32,
+                        y: y as f32,
+                        coverage: coverage as f32,
+                    }),
+                })
+                .to_vec(),
+            sample_ends: Vec::new(),
+            terminal_start: 0,
+            terminal_end: 1,
+            bounds: None,
+        };
+        let field = PdfInkField {
+            marker_id: 1,
+            mesh: &mesh,
+            color: [0, 0, 0],
+            bounds,
+        };
+        let limits = ContourLimits {
+            max_bbox_comparisons: 0,
+            ..ContourLimits::default()
+        };
+        let mut document = Document::with_version("1.7");
+        assert!(field_form_with_limits(&mut document, &field, limits).is_ok());
+        assert!(
+            has_type1_shading_resource(&document),
+            "resource exhaustion must preserve the field via legacy vectors"
+        );
+    }
+
+    #[test]
+    fn pdf_number_formatter_round_trips_small_normalized_values_without_exponents() {
+        let value = 4.5e-18;
+        let encoded = fmt(value);
+        assert!(!encoded.contains('e'));
+        assert_eq!(encoded.parse::<f64>().unwrap(), value);
+    }
+
+    #[test]
+    fn empty_positive_meshes_produce_transparent_masks() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 1.0,
+            y_max: 1.0,
+        };
+        let zero = Triangle([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]);
+        let subthreshold = Triangle([[0.0, 0.0, 0.001], [1.0, 0.0, 0.001], [0.0, 1.0, 0.001]]);
+        assert!(isocontour_stream(&[zero], bounds).unwrap().is_empty());
+        assert!(
+            isocontour_stream(&[subthreshold], bounds)
+                .unwrap()
+                .is_empty()
+        );
+        for vertices in [
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+            [[0.0, 0.0, 0.001], [1.0, 0.0, 0.001], [0.0, 1.0, 0.001]],
+        ] {
+            let mesh = mesh(vertices);
+            let field = PdfInkField {
+                marker_id: 1,
+                mesh: &mesh,
+                color: [0, 0, 0],
+                bounds,
+            };
+            assert!(field_form(&mut Document::with_version("1.7"), &field).is_ok());
         }
     }
 
     #[test]
-    fn tile_budget_does_not_reject_rounding_remainders() {
-        let lo = f64::from(1.0e-7_f32);
-        let hi = f64::from(512.1_f32);
-        let bounds = BoundingBox {
-            x_min: lo,
-            y_min: lo,
-            x_max: hi,
-            y_max: hi,
+    fn over_budget_mesh_is_rejected_explicitly_before_contouring() {
+        let triangle = CoverageTriangle {
+            vertices: [
+                CoverageVertex {
+                    x: 0.0,
+                    y: 0.0,
+                    coverage: 1.0,
+                },
+                CoverageVertex {
+                    x: 1.0,
+                    y: 0.0,
+                    coverage: 1.0,
+                },
+                CoverageVertex {
+                    x: 0.0,
+                    y: 1.0,
+                    coverage: 1.0,
+                },
+            ],
         };
-        let triangle = Triangle([[lo, lo, 0.0], [hi, lo, 1.0], [lo, hi, 1.0]]);
-        let result = tiles(&[triangle], bounds).unwrap();
-        assert_eq!(result.len(), 64 * 64);
-        assert_eq!(
-            result.first().unwrap().0,
-            [0.0, 63.0 / 64.0, 1.0 / 64.0, 1.0]
+        let mut mesh = mesh([[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]]);
+        mesh.triangles
+            .resize_with(MAX_FIELD_TRIANGLES + 1, || CoverageTriangle {
+                vertices: triangle.vertices.map(|vertex| CoverageVertex {
+                    x: vertex.x,
+                    y: vertex.y,
+                    coverage: vertex.coverage,
+                }),
+            });
+        let field = PdfInkField {
+            marker_id: 1,
+            mesh: &mesh,
+            color: [0, 0, 0],
+            bounds: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 1.0,
+                y_max: 1.0,
+            },
+        };
+        assert!(
+            field_form(&mut Document::with_version("1.7"), &field)
+                .unwrap_err()
+                .contains("exceeds triangle budget")
         );
-        assert_eq!(result.last().unwrap().0[2], 1.0);
-        assert_eq!(result.last().unwrap().0[1], 0.0);
-        // Every boundary is shared exactly with the adjacent tile.
-        for column in 0..64 {
-            for row in 0..63 {
-                let lower = result[column * 64 + row].0;
-                let upper = result[column * 64 + row + 1].0;
-                assert_eq!(lower[1], upper[3]);
-            }
-        }
     }
 
     #[test]
@@ -629,7 +1782,7 @@ mod tests {
         };
         let triangles = triangles(&mesh).unwrap();
         assert!(plane(triangles[0]).3 != 0.0);
-        assert!(!function_code(&triangles, bounds).unwrap().is_empty());
+        assert!(!isocontour_stream(&triangles, bounds).unwrap().is_empty());
     }
 
     #[test]

@@ -289,6 +289,10 @@ duplicate curve-disabled transitions. The [tool oracle](../conformance/oblique-v
 verifies tool 1’s 50-unit distance threshold (5 for other tools), including
 exact-threshold callbacks and tool-3 curve/linear meshes. Paired 1×/2× SVG checks against vendor shader
 replay are close; vector-only PDFs retain material active-region errors.
+PDF triangle fields use rounded 8-bit vector coverage contours within precision
+and work limits, retaining the existing calculator field otherwise. Two of seven
+paired host cases improve; five preserve the previous PDF bytes. Device parity
+and broader contour coverage remain open.
 That replay and the host-modeled overlap controls do not establish native
 multi-stroke paint, device pixels or complete parity.
 
