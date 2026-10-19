@@ -15,9 +15,9 @@ libraries use the same APK's accepted source pins.
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 
 This covers selected MontblancCalligraphyPen V1, one ordinary saved object,
-its orientation/extent consumers and generated geometry. It does not establish
-native execution, numerical or visual parity, complete SVG contours, shaders,
-other profiles or multistroke appearance. Existing [pen selection](pen-selection-findings.md),
+its orientation/extent consumers and generated geometry. The static analysis
+below is supplemented by the bounded native captures described at the end;
+neither establishes complete visual parity, other profiles or device pixels. Existing [pen selection](pen-selection-findings.md),
 [recording](stroke-recording-findings.md) and [Painting sources](painting-source-findings.md)
 establish the separate registry, stored channels and editable-source boundaries.
 
@@ -151,18 +151,26 @@ register probe, not a naturally selected caller extent.
 
 The [saved-wrapper capture](../../conformance/calligraphy-saved-wrapper-native.json)
 executes native Model getters, the secondary saved-redraw thunk and Base
-MotionEvent construction/accessors. Fifteen cases establish paired tilt/orientation
+MotionEvent construction/accessors. Thirty cases establish paired tilt/orientation
 defaults (both zero unless both arrays exist), one-sample no-draw behavior and
 a reused-drawable control. Native setter-driven fixed-width cases override the
 half-size extent with `max(fixedWidth, 1)`; disabled fixed width retains
-`max(penSize / 2, 1)`. Vector storage is supplied by the harness; trailing
+`max(penSize / 2, 1)`. Separate raw-field witnesses execute the native getter:
+raw tools 0–4 remain unchanged and values ≥5 map to 0. Setter rejection instead
+leaves the prior field unchanged; it does not describe binary-loader behavior.
+Vector storage is supplied by the harness; trailing
 `movePen`, full Drawing dispatch and GPU output remain outside this capture.
 
 The [Drawing caller capture](../../conformance/calligraphy-saved-caller-native.json)
 executes native pen lookup and saved redraw under an explicit host context.
 Sequential strokes reset the RTV1 initial flag and center while retaining edge
-words. It records complete repeated/short-stroke meshes and fresh controls;
-outer list batching and complete Rust post-call state remain separate gates.
+words. It records complete repeated/short-stroke meshes and fresh controls. A
+two-stroke native `DrawObjectList` case reuses one drawable and copies all three
+mesh buffers at each redraw return. Rust replay matches both strokes’ complete
+GLV1 state, AddPoint records, build rectangles and buffer words while chaining
+returned state. Constructor flags +80/+272 start false (`0x1d7b0`/`0x1d7e0`);
+saved redraw rearms them before sampling. Exporter batch ownership and
+production traversal still require separate integration.
 
 The [queued Draw fixture](../../conformance/calligraphy-draw-native.json) retains
 exact uploaded Vector4 bytes. The test-only
