@@ -1335,6 +1335,83 @@ mod tests {
     }
 
     #[test]
+    fn matches_native_v1_reuse_source_event_boundaries() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-reuse-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-inkpen-v1-reuse-native-v1");
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 4);
+        for (name, case) in cases {
+            let reuse = &case["reuse"];
+            let mut first_input = case["input"].clone();
+            for (channel, values) in reuse["first_input"].as_object().unwrap() {
+                first_input[channel] = values.clone();
+            }
+            for (input, phase, stream_key) in [
+                (&first_input, "draw_object_stroke", "first_stream_bytes"),
+                (
+                    &case["input"],
+                    reuse["target_draw_phase"].as_str().unwrap(),
+                    "target_stream_bytes",
+                ),
+            ] {
+                let source = native_caller_stroke(input);
+                let ink = prepare_v1(
+                    &source,
+                    RuntimeContext {
+                        curve_enabled: input["curve_enabled"].as_bool().unwrap(),
+                        screen_width: case["profile"]["width"].as_u64().unwrap() as u32,
+                        screen_height: case["profile"]["height"].as_u64().unwrap() as u32,
+                    },
+                )
+                .unwrap();
+                let events = reuse["native_redraw_sample_ranges"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| event["phase"] == phase)
+                    .collect::<Vec<_>>();
+                let mut native_ends = vec![0];
+                for event in &events {
+                    if event["method"] == "reDrawLine" {
+                        assert_eq!(event["source_history_index"], native_ends.len());
+                        native_ends.push(event["after_record_count"].as_u64().unwrap() as usize);
+                    }
+                }
+                assert_eq!(ink.sample_ends, native_ends, "{name} {phase} history");
+                let terminal = events.last().unwrap();
+                assert_eq!(terminal["method"], "endPen");
+                let native_terminal = terminal["before_record_count"].as_u64().unwrap() as usize
+                    ..terminal["after_record_count"].as_u64().unwrap() as usize;
+                assert_eq!(ink.terminal, native_terminal, "{name} {phase} terminal");
+                let packed = ink
+                    .points
+                    .iter()
+                    .zip(&ink.radii)
+                    .flat_map(|(point, radius)| [point.x as f32, point.y as f32, *radius])
+                    .flat_map(f32::to_le_bytes)
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>();
+                assert_eq!(
+                    packed,
+                    reuse[stream_key].as_str().unwrap(),
+                    "{name} {phase}"
+                );
+                for event in events {
+                    let end = event["after_count_bytes"].as_u64().unwrap() as usize * 2;
+                    assert_eq!(
+                        event["after_stream_bytes"].as_str().unwrap(),
+                        &packed[..end],
+                        "{name} {phase} native vector prefix"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn matches_native_v1_saved_matrix_and_rejects_preselection_singlepoint() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v1-saved-native.json"

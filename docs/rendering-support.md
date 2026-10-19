@@ -230,6 +230,9 @@ This is one host Mesa witness, not a universal device derivative contract.
 A [V1 scale replay](../conformance/inkpen-v1-scale-native.json) checks fresh
 1×/2×/4× native Draw targets and separate identity-transform controls. Its
 pixel-dependent edge band prevents treating a fixed 1× contour as a general paint law.
+A [V1 reuse oracle](../conformance/inkpen-v1-reuse-native.json) checks source-event
+and terminal vector prefixes, short/long preceding strokes and distinct source
+objects. Rust matches the complete first/target streams and their native boundaries.
 Cleanup tasks, Mesa-capability setup, actual device display
 values and production admission remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
