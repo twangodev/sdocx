@@ -1637,6 +1637,126 @@ mod tests {
         assert_eq!(no_curve_cases, 1);
     }
 
+    fn decode_hex_bytes(text: &str) -> Vec<u8> {
+        text.as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn matches_native_v1_no_curve_tools_3_and_4_full_streams_and_event_ranges() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-nocurve-tool34-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-inkpen-v1-nocurve-tool34-native-fixture-v1"
+        );
+        assert_eq!(fixture["cases"].as_object().unwrap().len(), 10);
+        let defaults = serde_json::json!({
+            "pen_width": 4.0,
+            "rendering": {
+                "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+                "advanced_settings": "null",
+                "tool_type_raw": 0,
+                "properties": {"stylus_channels": false, "fixed_width": false},
+                "style": {}
+            },
+            "points": [], "pressures": [], "timestamps": [], "tilts": [], "orientations": []
+        });
+
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let native = &case["native"];
+            assert_eq!(case["curve_enabled"], false, "{name} curve input");
+            assert!(
+                matches!(case["tool_type_raw"].as_u64(), Some(3 | 4)),
+                "{name} tool"
+            );
+            assert_eq!(
+                native["input"]["curve_enabled"], false,
+                "{name} native curve getter"
+            );
+            assert_eq!(
+                native["input"]["tool_type"], case["tool_type_raw"],
+                "{name} native tool getter"
+            );
+
+            let input = stroke(&defaults, case);
+            let resolution = case["screen_resolution"].as_array().unwrap();
+            let ink = prepare_v1(
+                &input,
+                RuntimeContext {
+                    curve_enabled: false,
+                    screen_width: resolution[0].as_u64().unwrap() as u32,
+                    screen_height: resolution[1].as_u64().unwrap() as u32,
+                },
+            )
+            .unwrap_or_else(|| panic!("{name}: V1 model rejected source case"));
+
+            let raw = decode_hex_bytes(native["reuse"]["target_stream_bytes"].as_str().unwrap());
+            let mut modeled = Vec::with_capacity(ink.points.len() * 12);
+            for (index, point) in ink.points.iter().enumerate() {
+                modeled.extend_from_slice(&(point.x as f32).to_bits().to_le_bytes());
+                modeled.extend_from_slice(&(point.y as f32).to_bits().to_le_bytes());
+                modeled.extend_from_slice(&ink.radii[index].to_bits().to_le_bytes());
+            }
+            assert_eq!(modeled, raw, "{name}: complete native XYZ/radius stream");
+
+            for phase in native["event_boundary_summary"].as_array().unwrap() {
+                let ends: Vec<usize> = phase["sample_ends"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_u64().unwrap() as usize)
+                    .collect();
+                assert_eq!(
+                    ink.sample_ends, ends,
+                    "{name}: native per-segment sample ends"
+                );
+                assert_eq!(
+                    ink.terminal.start,
+                    phase["terminal"][0].as_u64().unwrap() as usize,
+                    "{name}: terminal range start"
+                );
+                assert_eq!(
+                    ink.terminal.end,
+                    phase["terminal"][1].as_u64().unwrap() as usize,
+                    "{name}: terminal range end"
+                );
+            }
+
+            let segments = native["reuse"]["native_no_curve_line_ranges"]
+                .as_array()
+                .unwrap();
+            for phase_name in ["draw_object_stroke", "saved_redraw"] {
+                let phase_events: Vec<_> = segments
+                    .iter()
+                    .filter(|event| event["phase"] == phase_name)
+                    .collect();
+                assert_eq!(
+                    phase_events.len() + 1,
+                    input.points.len(),
+                    "{name}/{phase_name} segment count"
+                );
+                for (index, event) in phase_events.iter().enumerate() {
+                    let end = event["after_record_count"].as_u64().unwrap() as usize;
+                    assert_eq!(
+                        end,
+                        ink.sample_ends[index + 1],
+                        "{name}/{phase_name} event boundary {index}"
+                    );
+                    assert_eq!(
+                        decode_hex_bytes(event["after_stream_bytes"].as_str().unwrap()),
+                        raw[..end * 12],
+                        "{name}/{phase_name} native prefix {index}"
+                    );
+                }
+            }
+        }
+    }
+
     #[test]
     fn curved_tool3_and_tool4_use_native_vectors_and_leave_no_curve_on_fallback() {
         let fixture: Value = serde_json::from_str(include_str!(

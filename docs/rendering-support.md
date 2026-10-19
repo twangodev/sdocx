@@ -254,6 +254,9 @@ A [17-case V1 boundary matrix](../conformance/inkpen-v1-boundaries-native.json)
 checks complete native Drawing/redraw vectors and source-event/terminal prefixes,
 including curved tools 0–4 and one no-curve tool1 control; Rust matches every word
 and cutoff. These synthetic setter controls do not establish serialized-note admission.
+A [ten-case no-curve tool-3/4 capture](../conformance/inkpen-v1-nocurve-tool34-native.json)
+checks pressure and size boundaries; Rust matches complete vectors and native
+event cutoffs. Production admission still awaits paired paint/export validation.
 General V4 admission, app display setup, device parity and exact scale-dependent
 coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
