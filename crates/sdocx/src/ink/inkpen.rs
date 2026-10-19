@@ -467,12 +467,14 @@ fn path_emission(
 /// not select the Drawing caller's StrokeType branch or infer runtime state.
 pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
     let r = s.rendering.as_ref()?;
+    // Model's missing size is zero; the native Pen setter supplies the clamp.
+    let requested_size = r.style.pen_size.unwrap_or(0.);
     let screen_min_dimension = context.screen_width.min(context.screen_height);
     if context.screen_width > i32::MAX as u32
         || context.screen_height > i32::MAX as u32
         || r.pen_name.as_deref() != Some(PEN)
         || !matches!(r.advanced_settings.as_deref(), Some("") | Some("4;"))
-        || !(1..=3).contains(&r.tool_type_raw)
+        || r.tool_type_raw > 4
         || r.properties.eraser
         || (r.properties.fixed_width
             && r.style
@@ -486,8 +488,8 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
         || s.points.len() != s.timestamps.len()
         || (!s.tilts.is_empty() && s.tilts.len() != s.points.len())
         || (!s.orientations.is_empty() && s.orientations.len() != s.points.len())
-        || !s.pen_width.is_finite()
-        || s.pen_width <= 0.
+        || !requested_size.is_finite()
+        || requested_size < 0.
         || s.points.iter().any(|p| {
             !p.x.is_finite()
                 || !p.y.is_finite()
@@ -501,7 +503,7 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
     {
         return None;
     }
-    let size = s.pen_width.clamp(0.4, 800.);
+    let size = requested_size.clamp(0.4, 800.);
     let first: P = s.points[0].into();
     let raw_pressure = s.pressures[0] as f32;
     let pressure = if r.tool_type_raw == 1 || (context.curve_enabled && r.tool_type_raw == 3) {
@@ -647,6 +649,7 @@ mod tests {
                     reveal_mode: false,
                 },
                 style: StrokeStyle {
+                    pen_size: Some(data["pen_width"].as_f64().unwrap() as f32),
                     fixed_width: pen
                         .get("style")
                         .and_then(|style| style.get("fixed_width"))
@@ -1034,6 +1037,64 @@ mod tests {
                     curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
                     screen_width: width,
                     screen_height: height,
+                },
+            )
+            .unwrap_or_else(|| panic!("{name} V4 caller input must be admitted"));
+            let drawing = &case["streams"]["draw_object_stroke"];
+            let saved = &case["streams"]["saved_redraw"];
+            let stream = drawing["values_f32_bits"].as_array().unwrap();
+            assert_eq!(stream.len() % 3, 0, "{name} native triples");
+            assert_eq!(ink.points.len(), stream.len() / 3, "{name} total count");
+            assert_eq!(drawing["callback_count"], ink.points.len(), "{name}");
+            assert_eq!(saved["same_bytes_as_drawing_phase"], true, "{name}");
+            assert_eq!(saved["sha256"], drawing["sha256"], "{name}");
+
+            for (i, point) in ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[i * 3].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} x"
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[i * 3 + 1].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} y"
+                );
+                assert_eq!(
+                    ink.radii[i].to_bits(),
+                    native_f32(stream[i * 3 + 2].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} radius"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn matches_all_native_size_tool_admission_callback_bits() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-admission-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-inkpen-v4-size-tool-admission-v1");
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 9);
+
+        for (name, case) in cases {
+            assert_eq!(case["route"]["selected_drawable_vtable_id"], "v4", "{name}");
+            let resolution = &case["screen_resolution"][0];
+            let mut input = native_caller_stroke(&case["input"]);
+            if name == "size_omitted" {
+                input.rendering.as_mut().unwrap().style.pen_size = None;
+                input.pen_width = 0.8;
+            } else if name == "size_ten" {
+                input.pen_width = 99.;
+            }
+            let ink = prepare(
+                &input,
+                RuntimeContext {
+                    curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                    screen_width: resolution["width"].as_u64().unwrap() as u32,
+                    screen_height: resolution["height"].as_u64().unwrap() as u32,
                 },
             )
             .unwrap_or_else(|| panic!("{name} V4 caller input must be admitted"));
