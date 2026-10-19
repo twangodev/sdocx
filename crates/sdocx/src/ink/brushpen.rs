@@ -1,10 +1,11 @@
 //! Test-only BrushPen GLV10 -> RTV1 instance packing.
 //!
-//! The saved-native oracle executes the pinned GLV10 redraw path and records
-//! the arguments at each RTV1 `AddPoint` call. This leaf replays the captured
-//! synthetic MotionEvent history through path construction, radius and opacity
-//! state, and stamp sampling, then models the 11-float record written by that call. Its
-//! constructor profile and supported event shapes are deliberately narrow;
+//! The saved-native oracles execute the pinned GLV10 redraw path and record
+//! the arguments at each RTV1 `AddPoint` call. This leaf replays captured
+//! MotionEvent and ObjectStroke source channels through path construction,
+//! radius and opacity state, and stamp sampling, then models the 11-float
+//! records written by those calls. Constructor profiles and event shapes are
+//! narrow;
 //! saved device samples, GPU resources, shader execution, and pixels are
 //! outside this module.
 
@@ -44,6 +45,8 @@ struct Glv10RuntimeProfile {
     initial_motion_width: f32,
     first_draw_width: f32,
     steady_draw_width: f32,
+    fixed_width_enabled: bool,
+    fixed_width: f32,
     constructor_pen_angle: f32,
     constructor_pen_tilt: f32,
     neutral_tilt_min: f32,
@@ -63,6 +66,8 @@ const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile
     initial_motion_width: 0.77,
     first_draw_width: 0.88,
     steady_draw_width: 1.0,
+    fixed_width_enabled: false,
+    fixed_width: 0.0,
     constructor_pen_angle: -0.05,
     constructor_pen_tilt: 0.68,
     neutral_tilt_min: 0.0001,
@@ -772,18 +777,15 @@ pub(super) struct Output {
 
 /// Native `makeDrawPoint` state after `drawLine` has built an SmPath.
 ///
-/// The path and radius endpoints are explicit native-state inputs. For the
-/// first synthetic neutral MotionEvent profile, native tracing establishes a
-/// collinear quadratic from `(0, 0)` through `(0, 0)` to `(2, 1)`, with a
-/// start radius of `0.287913084` and target radius `1`. Other event/style
-/// profiles must establish their own path and radius state before using this
-/// sampler.
+/// The path, radius, opacity, and fixed-width endpoints are explicit native
+/// state inputs assembled from the selected source profile before sampling.
 #[derive(Clone, Copy)]
 pub(super) struct DrawPointInput<'a> {
     pub(super) path: &'a Quad,
     pub(super) half_length: f32,
     pub(super) radius_start: f32,
     pub(super) radius_target: f32,
+    pub(super) fixed_radius: Option<f32>,
     pub(super) opacity_start: i32,
     pub(super) opacity_target: i32,
     pub(super) tilt: [f32; 2],
@@ -867,6 +869,9 @@ pub(super) fn sample_draw_point(
         || input.radius_start <= 0.0
         || !input.radius_target.is_finite()
         || input.radius_target <= 0.0
+        || input
+            .fixed_radius
+            .is_some_and(|radius| !radius.is_finite() || radius <= 0.0)
         || !input.tilt.into_iter().all(f32::is_finite)
         || !input.point_offset.into_iter().all(f32::is_finite)
     {
@@ -888,7 +893,7 @@ pub(super) fn sample_draw_point(
             vector: [
                 input.point_offset[0].mul_add(offset_scale, point.x),
                 input.point_offset[1].mul_add(offset_scale, point.y),
-                offset_scale,
+                input.fixed_radius.unwrap_or(offset_scale),
                 // drawPattern's multiply-high reduction wraps its counter at
                 // seven before passing the texture index to AddPoint.
                 ((input.pattern_start + samples.len()) % 7) as f32,
@@ -1077,12 +1082,16 @@ fn sample_motion_events(
         } else {
             profile.steady_draw_width
         };
-        let opacity_target = motion_opacity_target(
-            transition.smoothed_speed,
-            interpolation,
-            width,
-            prior_opacity,
-        )?;
+        let opacity_target = if profile.fixed_width_enabled {
+            255
+        } else {
+            motion_opacity_target(
+                transition.smoothed_speed,
+                interpolation,
+                width,
+                prior_opacity,
+            )?
+        };
         let radius_start = if index == 0 {
             motion_radius_seed(profile, transition.smoothed_speed, pressure)?
         } else {
@@ -1102,10 +1111,17 @@ fn sample_motion_events(
                 half_length: transition.path.length,
                 radius_start,
                 radius_target,
+                fixed_radius: profile
+                    .fixed_width_enabled
+                    .then_some(profile.fixed_width * 0.5),
                 opacity_start: prior_opacity,
                 opacity_target,
                 tilt,
-                point_offset: tilt,
+                point_offset: if profile.fixed_width_enabled {
+                    [0.0; 2]
+                } else {
+                    tilt
+                },
                 pattern_start: samples.len(),
             },
         )?;
@@ -1142,6 +1158,62 @@ fn sample_motion_events(
     Some(samples)
 }
 
+/// Replay the ObjectStroke wrapper's source iteration. Its redraw loop calls
+/// drawLine for every point after the initial row, then passes the last row to
+/// endPen; in the captured tool-2 cases that call emits no stamps. A duplicate final
+/// row therefore closes the history window without adding a synthetic line.
+fn sample_object_stroke_wrapper(
+    gl_version: u32,
+    constructor_profile: Glv10RuntimeProfile,
+    saved_size: f32,
+    fixed_width: f32,
+    fixed_width_enabled: bool,
+    points: &[P],
+    times: &[i64],
+    pressures: &[f32],
+    orientations: &[f32],
+    tilts: &[f32],
+    tool_type: i32,
+) -> Option<Vec<AddPointInput>> {
+    if points.len() < 2
+        || points.len() != times.len()
+        || points.len() != pressures.len()
+        || points.len() != orientations.len()
+        || points.len() != tilts.len()
+        || tool_type != 2
+        || !saved_size.is_finite()
+        || saved_size <= 0.0
+        || !fixed_width.is_finite()
+        || fixed_width < 0.0
+    {
+        return None;
+    }
+    let mut profile = constructor_profile;
+    profile.runtime_size = saved_size;
+    profile.fixed_width_enabled = fixed_width_enabled;
+    profile.fixed_width = fixed_width;
+    let mut points = points.to_vec();
+    let mut times = times.to_vec();
+    let mut pressures = pressures.to_vec();
+    let mut orientations = orientations.to_vec();
+    let mut tilts = tilts.to_vec();
+    points.push(*points.last()?);
+    times.push(*times.last()?);
+    pressures.push(*pressures.last()?);
+    orientations.push(*orientations.last()?);
+    tilts.push(*tilts.last()?);
+    sample_motion_events(
+        gl_version,
+        profile,
+        &points,
+        &times,
+        &pressures,
+        &orientations,
+        &tilts,
+        tool_type,
+    )
+}
+
 /// Reconstruct one explicitly parameterized first GLV10 MotionEvent segment.
 /// Source-driven multi-event replay is provided by `sample_motion_events`.
 pub(super) fn sample_first_motion_segment(
@@ -1165,6 +1237,7 @@ pub(super) fn sample_first_motion_segment(
             half_length: path.length,
             radius_start,
             radius_target,
+            fixed_radius: None,
             opacity_start: opacity.trunc() as i32,
             opacity_target: opacity.trunc() as i32,
             tilt,
@@ -1427,6 +1500,7 @@ mod tests {
                         half_length: path.length,
                         radius_start: radius_states[0] * 0.5,
                         radius_target: target,
+                        fixed_radius: None,
                         opacity_start: 255,
                         opacity_target: 255,
                         tilt,
@@ -1825,6 +1899,227 @@ mod tests {
         assert!(
             mismatches.is_empty(),
             "source parity mismatches: {mismatches:?}"
+        );
+    }
+
+    #[test]
+    fn glv10_object_stroke_source_reconstructs_all_saved_wrapper_profiles() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/brushpen-saved-wrapper-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-brushpen-saved-wrapper-native-v1");
+        let mut checked = 0;
+        for case in fixture["cases"].as_array().unwrap() {
+            let input = &case["input"];
+            let channels = |field: &str| {
+                input[field]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_f64().unwrap() as f32)
+                    .collect::<Vec<_>>()
+            };
+            let points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| P {
+                    x: point[0].as_f64().unwrap() as f32,
+                    y: point[1].as_f64().unwrap() as f32,
+                })
+                .collect::<Vec<_>>();
+            let times = input["times"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|time| time.as_i64().unwrap())
+                .collect::<Vec<_>>();
+            let size = case["style_setters"]["native_GetSize_f32"]
+                .as_f64()
+                .unwrap() as f32;
+            let fixed_width_size = case["style_setters"]["native_GetFixedWidth_f32"]
+                .as_f64()
+                .unwrap() as f32;
+            let fixed_width = case["style_setters"]["native_fixed_width_enabled_input"]
+                .as_bool()
+                .unwrap();
+            assert_eq!(case["native_admission"]["actual_getVersion"], GL_VERSION);
+            assert_eq!(
+                case["object_setters_and_getters"]["native_saved_size_f32"]
+                    .as_f64()
+                    .unwrap() as f32,
+                size
+            );
+            assert_eq!(
+                case["object_setters_and_getters"]["native_saved_tool_type"],
+                input["tool_type"]
+            );
+            assert_eq!(
+                fixed_width_size.to_bits(),
+                (case["style_setters"]["fixed_width_argument"]
+                    .as_f64()
+                    .unwrap() as f32)
+                    .to_bits()
+            );
+            assert_eq!(
+                case["style_setters"]["native_fixed_width_enabled_byte_offset_89"],
+                u8::from(fixed_width)
+            );
+            let object_getters =
+                &case["object_setters_and_getters"]["native_channel_getter_import_calls"];
+            for getter in [
+                "SPen::ObjectStroke::GetOrientation() const",
+                "SPen::ObjectStroke::GetPoint() const",
+                "SPen::ObjectStroke::GetPointCount() const",
+                "SPen::ObjectStroke::GetPressure() const",
+                "SPen::ObjectStroke::GetTilt() const",
+                "SPen::ObjectStroke::GetTimeStamp() const",
+            ] {
+                assert_eq!(object_getters[getter], 1, "{getter}");
+            }
+            let final_index = points.len() - 1;
+            let motion_ctor = &case["native_MotionEvent_constructor_calls"][0];
+            assert_eq!(
+                motion_ctor["arguments_decoded"]["down_time_ms_i64"],
+                times[0]
+            );
+            let coords = &motion_ctor["pointer_coords_decoded_from_Base_getter_offsets"];
+            assert_eq!(coords["event_time_i64_ms"], times[final_index]);
+            assert_eq!(
+                coords["x_f64"].as_f64().unwrap() as f32,
+                points[final_index].x
+            );
+            assert_eq!(
+                coords["y_f64"].as_f64().unwrap() as f32,
+                points[final_index].y
+            );
+            assert_eq!(
+                coords["pressure_f32"].as_f64().unwrap() as f32,
+                channels("pressures")[final_index]
+            );
+            let getter_returns = case["native_MotionEvent_getter_returns"]
+                .as_array()
+                .unwrap();
+            let find_getter = |suffix: &str| {
+                getter_returns
+                    .iter()
+                    .find(|getter| getter["name"].as_str().unwrap().ends_with(suffix))
+                    .unwrap()
+            };
+            assert_eq!(
+                find_getter("GetEventTime() const")["return_x0"],
+                times[final_index] - times[0]
+            );
+            assert_eq!(
+                find_getter("GetX(int) const")["return_d0_f64"]
+                    .as_f64()
+                    .unwrap() as f32,
+                points[final_index].x
+            );
+            assert_eq!(
+                find_getter("GetY(int) const")["return_d0_f64"]
+                    .as_f64()
+                    .unwrap() as f32,
+                points[final_index].y
+            );
+            assert_eq!(
+                find_getter("GetToolType(int) const")["return_x0"],
+                input["tool_type"]
+            );
+            assert_eq!(
+                find_getter("GetPressure(int) const")["return_s0_f32"]
+                    .as_f64()
+                    .unwrap() as f32,
+                channels("pressures")[final_index]
+            );
+            let samples = sample_object_stroke_wrapper(
+                GL_VERSION,
+                SAVED_GLV10_CONSTRUCTOR_PROFILE,
+                size,
+                fixed_width_size,
+                fixed_width,
+                &points,
+                &times,
+                &channels("pressures"),
+                &channels("orientations"),
+                &channels("tilts"),
+                input["tool_type"].as_i64().unwrap() as i32,
+            )
+            .unwrap();
+            let records = case["native_AddPoint_records"].as_array().unwrap();
+            assert_eq!(samples.len(), records.len(), "{} count", case["label"]);
+            let draw_calls = case["native_drawPattern_calls"].as_array().unwrap();
+            let style_steps = case["native_drawPattern_style_transition_steps"]
+                .as_array()
+                .unwrap();
+            assert_eq!(
+                draw_calls.len(),
+                records.len(),
+                "{} DrawPattern calls",
+                case["label"]
+            );
+            assert_eq!(
+                style_steps.len(),
+                records.len(),
+                "{} style steps",
+                case["label"]
+            );
+            let packed = sampled_instances(GL_VERSION, &samples).unwrap();
+            for (index, ((actual, expected), (draw_call, style_step))) in packed
+                .instances
+                .iter()
+                .zip(records)
+                .zip(draw_calls.iter().zip(style_steps))
+                .enumerate()
+            {
+                let expected = expected["instance_bits_le"].as_array().unwrap();
+                let working_radius = style_step["working_radius_s14_f32"].as_f64().unwrap() as f32;
+                let derived_radius = if fixed_width {
+                    fixed_width_size * 0.5_f32
+                } else {
+                    (draw_call["radius_argument_s0_f32"].as_f64().unwrap() as f32).max(1.0)
+                };
+                let input_opacity = draw_call["input_opacity_u32"].as_u64().unwrap() as u32;
+                let derived_opacity = if fixed_width { 255 } else { input_opacity };
+                assert_eq!(
+                    actual.values[2].to_bits(),
+                    working_radius.to_bits(),
+                    "{} DrawPattern S14 at call {index}",
+                    case["label"]
+                );
+                assert_eq!(
+                    working_radius.to_bits(),
+                    derived_radius.to_bits(),
+                    "{} S14 from fixed-width/radius input at call {index}",
+                    case["label"]
+                );
+                assert_eq!(
+                    style_step["working_opacity_w20_u32"].as_u64().unwrap() as u32,
+                    derived_opacity,
+                    "{} DrawPattern W20 opacity at call {index}",
+                    case["label"]
+                );
+                assert_eq!(
+                    samples[index].opacity.to_bits(),
+                    (derived_opacity as f32).to_bits(),
+                    "{} sampled opacity at call {index}",
+                    case["label"]
+                );
+                for word in 0..11 {
+                    assert_eq!(
+                        actual.values[word].to_bits(),
+                        f32_bits(&expected[word]).to_bits(),
+                        "{} instance {index} word {word}",
+                        case["label"]
+                    );
+                }
+            }
+            checked += 1;
+        }
+        assert_eq!(
+            checked, 4,
+            "expected two saved sizes by two fixed-width states"
         );
     }
 
