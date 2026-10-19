@@ -85,9 +85,12 @@ V4 inverse-scale lookup (`0x4045c`) uses canvas slot 216. Graphics
 `GetModelMatrix` (`0xae4dc`) reads model matrix `+0xd8`, separately from the
 canvas matrix. Optional Drawing matrices can reach both canvases through
 `SetMatrix` (`0x80274`/`0x80290`). Composer's inspected bitmap-backed stroke
-PDF exporter builds a translation-only matrix (`0x34f788`–`0x34f7ec`), but
-the final matrix at the pen call and other caller policies still need runtime
-verification before general production admission.
+PDF exporter builds a translation-only matrix (`0x34f788`–`0x34f7ec`). The
+[native canvas capture](../../conformance/oblique-canvas-native.json) executes
+that fragment, Drawing matrix application, native `SetCanvas`, and Oblique's
+model-matrix query: translation yields inverse scale `[1,1]`, while basis scale
+`[2,4]` yields `[0.5,0.25]`. Factory/resource callbacks remain synthetic and
+object paint is suppressed; full export and other caller policies remain open.
 
 Saved curve/fixed-enable/fixed-value really reach the morphable interface.
 Primary slot 288 (`0x6c328`) → `GetMorphable`, `0x36b00`, returns plugin +96;
