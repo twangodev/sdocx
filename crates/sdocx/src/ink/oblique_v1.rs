@@ -184,24 +184,46 @@ fn cubic_terminal_samples(start: P, control: P, end: P, size: f32) -> Option<Vec
     Some(out)
 }
 
+fn append_sampled_path(
+    output: &mut Vec<(P, P)>,
+    rt_previous: &mut P,
+    samples: impl IntoIterator<Item = P>,
+) {
+    for current in samples {
+        output.push((*rt_previous, current));
+        *rt_previous = current;
+    }
+}
+
+fn append_direct_point(output: &mut Vec<(P, P)>, rt_previous: P, current: P) {
+    output.push((rt_previous, current));
+}
+
 /// Model the traced redrawLine/endPen state transitions for the narrow
 /// selected V1 profile represented by the eight saved-caller cases.
-fn selected_v1_samples(points: &[P], size: f32, curve_enabled: bool) -> Option<Vec<P>> {
+fn selected_v1_callback_pairs(points: &[P], size: f32, curve_enabled: bool) -> Option<Vec<(P, P)>> {
     if points.len() < 2 || points.len() > 4 || !size.is_finite() || size <= 0.0 {
         return None;
     }
+    let mut output = Vec::new();
+    let mut rt_previous = *points.first()?;
     if !curve_enabled {
-        let mut output = Vec::new();
         for pair in points.windows(2) {
-            output.extend(line_path_samples(pair[0], pair[1], size)?);
-            output.push(pair[1]);
+            append_sampled_path(
+                &mut output,
+                &mut rt_previous,
+                line_path_samples(pair[0], pair[1], size)?,
+            );
+            // redrawLineNoCurve's direct endpoint draw is followed by an
+            // explicit RT +344 update at 0x38f38–0x38f44.
+            append_direct_point(&mut output, rt_previous, pair[1]);
+            rt_previous = pair[1];
         }
         // The no-curve endPen line is zero length at the final source point;
-        // getPosTan fails and the unconditional endpoint draw remains.
-        output.push(*points.last()?);
+        // getPosTan fails, then the direct endpoint draw updates RT +344.
+        append_direct_point(&mut output, rt_previous, *points.last()?);
         return (output.len() <= MAX_SAMPLES).then_some(output);
     }
-    let mut output = Vec::new();
     let mut previous = points[0];
     let mut start = points[0];
     let mut control = points[0];
@@ -242,11 +264,11 @@ fn selected_v1_samples(points: &[P], size: f32, curve_enabled: bool) -> Option<V
 
         let endpoint = control.mid(current);
         let path_samples = quadratic_path_samples(start, control, endpoint, size)?;
-        output.extend(path_samples.iter().copied());
+        append_sampled_path(&mut output, &mut rt_previous, path_samples.iter().copied());
         // The saved V1 redraw loop passes the endpoint flag to each
-        // redrawLine call, so every generated quadratic path gets this direct
-        // endpoint draw after its repeat-count interior samples.
-        output.push(endpoint);
+        // redrawLine call. This direct endpoint AddPoint does not update RT
+        // +344, which remains the last successful getPosTan sample.
+        append_direct_point(&mut output, rt_previous, endpoint);
         // The next path starts at the last successful getPosTan position,
         // while the stored control advances to the raw current source point.
         if let Some(last) = path_samples.last() {
@@ -258,23 +280,28 @@ fn selected_v1_samples(points: &[P], size: f32, curve_enabled: bool) -> Option<V
     }
 
     if needs_control {
-        output.push(last_accepted);
+        // endPen's one-point fallback calls drawPoint directly and leaves
+        // RT +344 unchanged.
+        append_direct_point(&mut output, rt_previous, last_accepted);
     } else if alternate {
-        output.extend(cubic_terminal_samples(
-            start,
-            control,
-            *points.last()?,
-            size,
-        )?);
+        append_sampled_path(
+            &mut output,
+            &mut rt_previous,
+            cubic_terminal_samples(start, control, *points.last()?, size)?,
+        );
     } else {
-        output.extend(quadratic_terminal_samples(
-            start,
-            control,
-            *points.last()?,
-            size,
-        )?);
+        append_sampled_path(
+            &mut output,
+            &mut rt_previous,
+            quadratic_terminal_samples(start, control, *points.last()?, size)?,
+        );
     }
     (output.len() <= MAX_SAMPLES).then_some(output)
+}
+
+fn selected_v1_samples(points: &[P], size: f32, curve_enabled: bool) -> Option<Vec<P>> {
+    selected_v1_callback_pairs(points, size, curve_enabled)
+        .map(|pairs| pairs.into_iter().map(|(_, current)| current).collect())
 }
 
 #[cfg(test)]
@@ -306,6 +333,43 @@ mod tests {
                 }
             })
             .collect()
+    }
+
+    fn assert_vector_buffer(
+        triangles: &[super::super::oblique::CoverageTriangle],
+        case: &Value,
+        phase: &str,
+        case_name: &str,
+    ) {
+        let actual: Vec<u32> = triangles
+            .iter()
+            .flat_map(|triangle| {
+                triangle.0.iter().flat_map(|vertex| {
+                    [
+                        vertex.position.x.to_bits(),
+                        vertex.position.y.to_bits(),
+                        vertex.coverage.to_bits(),
+                    ]
+                })
+            })
+            .collect();
+        let native_hex = case["phase_final_vectors"][phase]["vector_bytes"]
+            .as_str()
+            .unwrap();
+        assert_eq!(native_hex.len() % 8, 0, "{case_name} {phase} bytes");
+        assert_eq!(
+            actual.len() * 8,
+            native_hex.len(),
+            "{case_name} {phase} full vector byte length"
+        );
+        for (index, value) in actual.iter().enumerate() {
+            let offset = index * 8;
+            let native = u32::from_le_bytes(std::array::from_fn(|byte| {
+                u8::from_str_radix(&native_hex[offset + byte * 2..offset + byte * 2 + 2], 16)
+                    .unwrap()
+            }));
+            assert_eq!(*value, native, "{case_name} {phase} float {index}");
+        }
     }
 
     #[test]
@@ -375,8 +439,9 @@ mod tests {
         ] {
             let case = &fixture["cases"][case_name];
             let source = &case["input"];
-            let samples = selected_v1_samples(
-                &fixture_points(source),
+            let points = fixture_points(source);
+            let modeled_callbacks = selected_v1_callback_pairs(
+                &points,
                 f32::from_bits(bits(&source["pen_size_f32_bits"])),
                 source["curve_enabled"].as_bool().unwrap(),
             )
@@ -388,7 +453,11 @@ mod tests {
                     .iter()
                     .filter(|call| call["phase"] == phase)
                     .collect();
-                assert_eq!(callbacks.len(), samples.len(), "{case_name} {phase}");
+                assert_eq!(
+                    callbacks.len(),
+                    modeled_callbacks.len(),
+                    "{case_name} {phase}"
+                );
                 let first = callbacks.first().unwrap();
                 let size = first["stored_size_u32"].as_u64().unwrap() as u32;
                 let runtime = super::super::oblique::ObliqueRuntime {
@@ -399,11 +468,20 @@ mod tests {
                     ],
                 };
 
-                // Previous points are oracle inputs here. This verifies the shared
-                // mesh kernel, not independently reconstructed sampler resets.
-                let mut callback_geometry = Vec::with_capacity(callbacks.len());
-                for (index, (sample, callback)) in samples.iter().zip(&callbacks).enumerate() {
+                for (index, ((modeled_previous, sample), callback)) in
+                    modeled_callbacks.iter().zip(&callbacks).enumerate()
+                {
                     let prior = &callback["previous_xy_bits"];
+                    assert_eq!(
+                        modeled_previous.x.to_bits(),
+                        bits(&prior[0]),
+                        "{case_name} {phase} callback {index} modeled previous x"
+                    );
+                    assert_eq!(
+                        modeled_previous.y.to_bits(),
+                        bits(&prior[1]),
+                        "{case_name} {phase} callback {index} modeled previous y"
+                    );
                     assert_eq!(
                         sample.x.to_bits(),
                         word_bits(&callback["xy_bits"][0]),
@@ -431,53 +509,72 @@ mod tests {
                             "{case_name} {phase} callback {index} inverse scale {axis}"
                         );
                     }
-                    callback_geometry.push((
-                        P {
-                            x: f32::from_bits(bits(&prior[0])),
-                            y: f32::from_bits(bits(&prior[1])),
-                        },
-                        *sample,
-                    ));
                 }
 
                 let triangles = super::super::oblique::prepare_addpoint_stream(
-                    &callback_geometry,
+                    &modeled_callbacks,
                     size,
                     runtime,
                 )
                 .unwrap();
-                let actual: Vec<u32> = triangles
+                assert_vector_buffer(&triangles, case, phase, case_name);
+            }
+        }
+    }
+
+    #[test]
+    fn rtv1_geometry_kernel_matches_captured_native_callback_arguments() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/oblique-saved-caller-selected-native.json"
+        ))
+        .unwrap();
+        for case_name in [
+            "two_point_curve",
+            "two_point_near",
+            "two_point_far",
+            "two_point_offset",
+            "three_points_curve",
+            "three_points_no_curve",
+            "four_points_curve",
+            "alternating_terminal_curve",
+        ] {
+            let case = &fixture["cases"][case_name];
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                let callbacks: Vec<_> = case["callback_add_point_calls"]
+                    .as_array()
+                    .unwrap()
                     .iter()
-                    .flat_map(|triangle| {
-                        triangle.0.iter().flat_map(|vertex| {
-                            [
-                                vertex.position.x.to_bits(),
-                                vertex.position.y.to_bits(),
-                                vertex.coverage.to_bits(),
-                            ]
-                        })
+                    .filter(|call| call["phase"] == phase)
+                    .collect();
+                let first = callbacks.first().unwrap();
+                let runtime = super::super::oblique::ObliqueRuntime {
+                    k: f32::from_bits(bits(&first["k_bits"])),
+                    inverse_scale: [
+                        f32::from_bits(bits(&first["inverse_scale_bits"][0])),
+                        f32::from_bits(bits(&first["inverse_scale_bits"][1])),
+                    ],
+                };
+                let size = first["stored_size_u32"].as_u64().unwrap() as u32;
+                let pairs: Vec<_> = callbacks
+                    .iter()
+                    .map(|call| {
+                        let previous = &call["previous_xy_bits"];
+                        let current = &call["xy_bits"];
+                        (
+                            P {
+                                x: f32::from_bits(bits(&previous[0])),
+                                y: f32::from_bits(bits(&previous[1])),
+                            },
+                            P {
+                                x: f32::from_bits(word_bits(&current[0])),
+                                y: f32::from_bits(word_bits(&current[1])),
+                            },
+                        )
                     })
                     .collect();
-                let native_hex = case["phase_final_vectors"][phase]["vector_bytes"]
-                    .as_str()
-                    .unwrap();
-                assert_eq!(native_hex.len() % 8, 0, "{case_name} {phase} bytes");
-                assert_eq!(
-                    actual.len() * 8,
-                    native_hex.len(),
-                    "{case_name} {phase} full vector byte length"
-                );
-                for (index, value) in actual.iter().enumerate() {
-                    let offset = index * 8;
-                    let native = u32::from_le_bytes(std::array::from_fn(|byte| {
-                        u8::from_str_radix(
-                            &native_hex[offset + byte * 2..offset + byte * 2 + 2],
-                            16,
-                        )
-                        .unwrap()
-                    }));
-                    assert_eq!(*value, native, "{case_name} {phase} float {index}");
-                }
+                let triangles =
+                    super::super::oblique::prepare_addpoint_stream(&pairs, size, runtime).unwrap();
+                assert_vector_buffer(&triangles, case, phase, case_name);
             }
         }
     }
