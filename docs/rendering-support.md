@@ -105,8 +105,11 @@ checks null selecting V1, empty/explicit settings selecting V5, source ARGB
 forwarding and linked XY streams; the V5 sampler excludes null settings.
 Its [positive paint capture](../conformance/marker3-paint-positive-native.json)
 executes native mask/composite draws on separate complete framebuffer targets
-in host Mesa, retaining the full RGBA hash and GL error checks. Points enter
-directly at RTV1; saved-object paint integration, vector edge coverage and device
+in host Mesa, retaining the full RGBA hash and GL error checks. The
+[scale capture](../conformance/marker3-paint-scale-native.json) retains full masks
+and RGBA output for 17 linked-path and isolated-stamp cases across sizes 4/8/12
+and scales 1/2/4, checking uploaded XY against the saved caller buffers. Points
+enter directly at RTV1; saved-object paint integration, vector edge coverage and device
 pixel parity remain outstanding. DefaultPen's test-only sampler checks
 position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
