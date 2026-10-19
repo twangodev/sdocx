@@ -98,10 +98,11 @@ separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses;
 runtime paper coverage and vector paint integration remain outstanding.
-Marker3 V5 has a test-only sampler matching stamp positions, radii and callback
-boundaries in ten synthetic
-[native saved-redraw cases](../conformance/marker3-saved-native.json).
-Caller admission and mask/composite paint remain outstanding.
+Test-only samplers check Marker3 V5 stamp positions, radii and callback boundaries
+in ten [synthetic native cases](../conformance/marker3-saved-native.json), and
+DefaultPen position/radius streams in sixteen synthetic
+[cases including degenerate paths](../conformance/defaultpen-saved-native.json).
+Caller admission and vector paint remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one
