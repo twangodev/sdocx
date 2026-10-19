@@ -197,22 +197,26 @@ fn tiles(
     }
     let mut result = Vec::new();
     let mut candidate_references = 0usize;
-    let mut x = bounds.x_min;
-    while x < bounds.x_max {
-        let x1 = if bounds.x_max - x <= step {
+    // Indexed boundaries avoid an accumulated rounding remainder creating a
+    // 65th tile on an axis that should have exactly 64 subdivisions.
+    let columns = ((width / step).ceil() as usize).clamp(1, MAX_AXIS_TILES);
+    let rows = ((height / step).ceil() as usize).clamp(1, MAX_AXIS_TILES);
+    for column in 0..columns {
+        let x = bounds.x_min + column as f64 * step;
+        let x1 = if column + 1 == columns {
             bounds.x_max
         } else {
-            x + step
+            bounds.x_min + (column + 1) as f64 * step
         };
         if !x1.is_finite() || x1 <= x {
             return Err("native ink x tiling did not advance".into());
         }
-        let mut y = bounds.y_min;
-        while y < bounds.y_max {
-            let y1 = if bounds.y_max - y <= step {
+        for row in 0..rows {
+            let y = bounds.y_min + row as f64 * step;
+            let y1 = if row + 1 == rows {
                 bounds.y_max
             } else {
-                y + step
+                bounds.y_min + (row + 1) as f64 * step
             };
             if !y1.is_finite() || y1 <= y {
                 return Err("native ink y tiling did not advance".into());
@@ -247,9 +251,7 @@ fn tiles(
                     return Err("native ink field exceeds tile budget".into());
                 }
             }
-            y = y1;
         }
-        x = x1;
     }
     if result.is_empty() {
         return Err("native ink field has no non-degenerate coverage triangles".into());
@@ -487,7 +489,40 @@ mod tests {
         };
         let result = tiles(&[triangle], bounds).unwrap();
         assert!(result.len() <= 64 * 64);
-        assert_eq!(result.len(), 1);
+        assert!(!result.is_empty());
+        for (tile, _) in result {
+            assert!(tile.into_iter().all(|value| (0.0..=1.0).contains(&value)));
+            assert!(tile[0] < tile[2] && tile[1] < tile[3]);
+        }
+    }
+
+    #[test]
+    fn tile_budget_does_not_reject_rounding_remainders() {
+        let lo = f64::from(1.0e-7_f32);
+        let hi = f64::from(512.1_f32);
+        let bounds = BoundingBox {
+            x_min: lo,
+            y_min: lo,
+            x_max: hi,
+            y_max: hi,
+        };
+        let triangle = Triangle([[lo, lo, 0.0], [hi, lo, 1.0], [lo, hi, 1.0]]);
+        let result = tiles(&[triangle], bounds).unwrap();
+        assert_eq!(result.len(), 64 * 64);
+        assert_eq!(
+            result.first().unwrap().0,
+            [0.0, 63.0 / 64.0, 1.0 / 64.0, 1.0]
+        );
+        assert_eq!(result.last().unwrap().0[2], 1.0);
+        assert_eq!(result.last().unwrap().0[1], 0.0);
+        // Every boundary is shared exactly with the adjacent tile.
+        for column in 0..64 {
+            for row in 0..63 {
+                let lower = result[column * 64 + row].0;
+                let upper = result[column * 64 + row + 1].0;
+                assert_eq!(lower[1], upper[3]);
+            }
+        }
     }
 
     #[test]
