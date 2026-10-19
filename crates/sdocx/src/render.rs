@@ -20,6 +20,8 @@ use vector::{
 };
 
 mod arrows;
+#[cfg(test)]
+mod calligraphy;
 mod code;
 mod embedded;
 pub mod fonts;

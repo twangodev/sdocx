@@ -452,6 +452,11 @@ impl Svg {
     }
 }
 impl Group {
+    #[cfg(test)]
+    pub fn linear_rgb(mut self) -> Self {
+        self.0.attr("color-interpolation", "linearRGB");
+        self
+    }
     #[cfg(feature = "pdf")]
     pub fn native_ink_id(mut self, id: super::native_ink::NativeInkId) -> Self {
         self.0.attr("id", id.svg_id());
