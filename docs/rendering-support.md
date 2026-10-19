@@ -81,7 +81,7 @@ outer SDK loading is not exercised.
 
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
-| Fountain V14, saved `14;` | Reconstructed stamps/directions; vector directional shading, mask and maximum blending; tools 1–3 and fixed width | Executed native geometry fixtures and real-document comparisons. Native partial-alpha appearance still differs; Firefox masks fail. |
+| Fountain V14, saved `14;` | Reconstructed stamps/directions; vector directional shading, mask and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [six host shader field captures](../conformance/fountain-v14-field-native.json). Device-pixel fringe and partial-alpha appearance still differ; Firefox masks fail. |
 | Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry and scalar coverage checks; V16 SVG witnesses render in Chromium and Firefox, and PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified; PDF raster samples differ from SVG. This setting selects drawing V16, not V18. |
 | Marker2 | Sampled circular stamps, constant radius and saved alpha | Static native tracing and synthetic arithmetic controls; V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 V7, saved `7;` | Stylus midpoint sampling and fractional rounded rectangular tip | Executed native geometry fixtures and isolated real-document appearance evidence; public support remains approximate because filtering/zoom coverage differ. |

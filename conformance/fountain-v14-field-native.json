@@ -1,0 +1,692 @@
+{
+  "schema": "sdocx-fountain-v14-field-native-v1",
+  "provenance": {
+    "app": "Samsung Notes 4.4.45.37 ARM64",
+    "source_document": "tmp/stroke-conformance/handwritten.sdocx",
+    "source_document_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "source_prepared_records": "tmp/vector-parity-plan/fountain-real-parity-next/handwritten-prepared.json",
+    "source_prepared_records_sha256": "902c7ed24ae68672051e3ccbbcf66ded545f51ac344eadbae4ba01d4442a78c6",
+    "interpretation": "Embedded point/radius/direction triples are prepared V14 real-stroke stamp inputs, not synthetic motion events. They are replayed through the actual exported RTV4::AddPoint method at inverse scales 1, 1/2, and 1/4. The source document and prepared corpus are provenance only and are not read during fixture replay."
+  },
+  "native_library_sha256": {
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+  },
+  "native_addpoint_symbol": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+  "native_addpoint_rva": "0x9de50",
+  "helper_sha256": {
+    "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+  },
+  "input_cases_sha256": "8f07c48d455305a24b3d788b0648d1c771d4dd80bddf91b0c6c2d38fd706fd88",
+  "shader_fixture_provenance": {
+    "source": "native-raster-shaders.json / hash-pinned libSPenFountainPen.so",
+    "source_sha256": "8cf9d5357ebb022af7adc800d81bd02169434f1c41a7786133d82e413942cb6c",
+    "embedded_shader_sha256": "26d7ac797b9a65f5e40ae6fe09007aefbbc98148314f9c9b336af4301cb05147"
+  },
+  "source_cases": [
+    {
+      "name": "low_radius_saved_stroke_123",
+      "radius_class": "low",
+      "source_prepared_entry_index": 123,
+      "source_stamp_start_index": 0,
+      "advanced_settings": "14;",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+      "tool_type_raw": 2,
+      "stamps": [
+        {
+          "point": [
+            194.35992431640625,
+            623.7794189453125
+          ],
+          "radius": 0.9234865307807922,
+          "direction": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "point": [
+            194.76905822753906,
+            623.94140625
+          ],
+          "radius": 0.9234865307807922,
+          "direction": [
+            0.9872443079948425,
+            -0.1592130959033966
+          ]
+        },
+        {
+          "point": [
+            195.8918914794922,
+            623.7235717773438
+          ],
+          "radius": 0.9234865307807922,
+          "direction": [
+            0.9782320261001587,
+            -0.2075142115354538
+          ]
+        }
+      ]
+    },
+    {
+      "name": "normal_radius_saved_stroke_0",
+      "radius_class": "normal",
+      "source_prepared_entry_index": 0,
+      "source_stamp_start_index": 17,
+      "advanced_settings": "14;",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+      "tool_type_raw": 2,
+      "stamps": [
+        {
+          "point": [
+            87.09881591796875,
+            96.6568832397461
+          ],
+          "radius": 2.414461851119995,
+          "direction": [
+            0.02659768797457218,
+            0.9996461272239685
+          ]
+        },
+        {
+          "point": [
+            87.11506652832031,
+            97.46949005126953
+          ],
+          "radius": 2.4518017768859863,
+          "direction": [
+            0.013571108691394329,
+            0.9999079704284668
+          ]
+        },
+        {
+          "point": [
+            87.12114715576172,
+            98.30247497558594
+          ],
+          "radius": 2.4891417026519775,
+          "direction": [
+            0.001167310867458582,
+            0.9999992847442627
+          ]
+        }
+      ]
+    }
+  ],
+  "shader_sources": {
+    "vertex": "#version 300 es \n precision highp float; layout(location = 0) in vec2 aRectPoint; layout(location = 1) in vec2 aCalcurateData; layout(location = 2) in vec4 aPointInfo; layout(location = 3) in vec2 aDirection; layout(location = 4) in float transparency; layout(location = 5) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { vec2 normal; normal.x = aDirection.y; normal.y = -aDirection.x; vec2 position = aPointInfo.xy + aCalcurateData.x * (aDirection + normal * aCalcurateData.y) * aPointInfo.zw; gl_Position = ProjectionMatrix * vec4(position, 0.0, 1.0); fragCoord = vec2(aRectPoint.x, aRectPoint.y); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }",
+    "fragment": "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; const float gradLength = 0.25; const float alphaRange = 0.93; out vec4 FragColor; void main(void) { float distY = abs(center.y - fragCoord.y); float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0); float dist = distance(center, fragCoord); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * gradAlpha * alpha; FragColor = vec4(inputColor.rgb, 1.0) * pointAlpha; }"
+  },
+  "target_profile": {
+    "viewport_px": [
+      64,
+      64
+    ],
+    "display_scales_px_per_doc_unit": [
+      1,
+      2,
+      4
+    ],
+    "blend_equation": "GL_MAX",
+    "blend_func": [
+      "GL_ONE",
+      "GL_ONE"
+    ],
+    "input_color_rgba": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "description": "Explicit host SwiftShader replay of the unmodified embedded native GLSL; not a Samsung-device GPU profile."
+  },
+  "captures": [
+    {
+      "case": "low_radius_saved_stroke_123",
+      "scale": 1,
+      "inverse_scale_document_units_per_pixel": [
+        1.0,
+        1.0
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "245c4243",
+          "e2f11b44",
+          "ce34b63f",
+          "ce34b63f",
+          "00000000",
+          "0000803f",
+          "0000803f",
+          "da51183e",
+          "0000803f"
+        ],
+        [
+          "e1c44243",
+          "40fc1b44",
+          "ce34b63f",
+          "ce34b63f",
+          "0bbc7c3f",
+          "c20823be",
+          "0000803f",
+          "da51183e",
+          "0000803f"
+        ],
+        [
+          "53e44343",
+          "4fee1b44",
+          "ce34b63f",
+          "ce34b63f",
+          "6a6d7a3f",
+          "9b7e54be",
+          "0000803f",
+          "da51183e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "f828a70c58bc9999898a08a912b2f582b1570a59c9b2de613c2bb85124b480c0",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 1.4234864711761475,
+          "inner_radius_device_px": 0.42348648192039207,
+          "radial_transition_width_device_px": 0.9999999892557554
+        },
+        {
+          "outer_extent_device_px": 1.4234864711761475,
+          "inner_radius_device_px": 0.42348648192039207,
+          "radial_transition_width_device_px": 0.9999999892557554
+        },
+        {
+          "outer_extent_device_px": 1.4234864711761475,
+          "inner_radius_device_px": 0.42348648192039207,
+          "radial_transition_width_device_px": 0.9999999892557554
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "9427b2bc4336963023d5d1879906655772a21056484d6e3b3fc937d2ea1daf4a",
+        "zlib_base64": "eNrt00EVABAAREElVFFBZXc1JHFhOziaafDf2y0FAAAAAAAAAHgxYsaOFj/2n1jR48cN1PAEAAAAAAAAAF5dVlgWaQ=="
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "9427b2bc4336963023d5d1879906655772a21056484d6e3b3fc937d2ea1daf4a",
+        "zlib_base64": "eNrt00EVABAAREElVFFBZXc1JHFhOziaafDf2y0FAAAAAAAAAHgxYsaOFj/2n1jR48cN1PAEAAAAAAAAAF5dVlgWaQ=="
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    },
+    {
+      "case": "low_radius_saved_stroke_123",
+      "scale": 2,
+      "inverse_scale_document_units_per_pixel": [
+        0.5,
+        0.5
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "245c4243",
+          "e2f11b44",
+          "ce34963f",
+          "ce34963f",
+          "00000000",
+          "0000803f",
+          "0000803f",
+          "5fec923e",
+          "0000803f"
+        ],
+        [
+          "e1c44243",
+          "40fc1b44",
+          "ce34963f",
+          "ce34963f",
+          "0bbc7c3f",
+          "c20823be",
+          "0000803f",
+          "5fec923e",
+          "0000803f"
+        ],
+        [
+          "53e44343",
+          "4fee1b44",
+          "ce34963f",
+          "ce34963f",
+          "6a6d7a3f",
+          "9b7e54be",
+          "0000803f",
+          "5fec923e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "d18b1c7711cf66161bfa06115fcc813e7de0470af6bb253d443b1dc168d8937e",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 2.346972942352295,
+          "inner_radius_device_px": 1.3469729195365119,
+          "radial_transition_width_device_px": 1.000000022815783
+        },
+        {
+          "outer_extent_device_px": 2.346972942352295,
+          "inner_radius_device_px": 1.3469729195365119,
+          "radial_transition_width_device_px": 1.000000022815783
+        },
+        {
+          "outer_extent_device_px": 2.346972942352295,
+          "inner_radius_device_px": 1.3469729195365119,
+          "radial_transition_width_device_px": 1.000000022815783
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "42472b0175bf5c0eda4e2503edecb407947c1ee21e3b004f468f1a2f442a1f06",
+        "zlib_base64": "eNrt1DENgwAYhFEMYKIKmiAKSXUAYxWwI4ERGWxwTcrGBOP/noMvuVzTAAAAAAAAAMB97/j89bHEGl1U6J9jvzBG5f4pKu3/17zFEN+osv/TK9rwiAAAAAAAAADPHAblVD0="
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "42472b0175bf5c0eda4e2503edecb407947c1ee21e3b004f468f1a2f442a1f06",
+        "zlib_base64": "eNrt1DENgwAYhFEMYKIKmiAKSXUAYxWwI4ERGWxwTcrGBOP/noMvuVzTAAAAAAAAAMB97/j89bHEGl1U6J9jvzBG5f4pKu3/17zFEN+osv/TK9rwiAAAAAAAAADPHAblVD0="
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    },
+    {
+      "case": "low_radius_saved_stroke_123",
+      "scale": 4,
+      "inverse_scale_document_units_per_pixel": [
+        0.25,
+        0.25
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "245c4243",
+          "e2f11b44",
+          "ce34863f",
+          "ce34863f",
+          "00000000",
+          "0000803f",
+          "0000803f",
+          "aaf5c23e",
+          "0000803f"
+        ],
+        [
+          "e1c44243",
+          "40fc1b44",
+          "ce34863f",
+          "ce34863f",
+          "0bbc7c3f",
+          "c20823be",
+          "0000803f",
+          "aaf5c23e",
+          "0000803f"
+        ],
+        [
+          "53e44343",
+          "4fee1b44",
+          "ce34863f",
+          "ce34863f",
+          "6a6d7a3f",
+          "9b7e54be",
+          "0000803f",
+          "aaf5c23e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "bd9fe60430f50bc18f223edc3b57ee42a069d472b3a89f95420544fd052d0f46",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 4.19394588470459,
+          "inner_radius_device_px": 3.1939457733445806,
+          "radial_transition_width_device_px": 1.0000001113600092
+        },
+        {
+          "outer_extent_device_px": 4.19394588470459,
+          "inner_radius_device_px": 3.1939457733445806,
+          "radial_transition_width_device_px": 1.0000001113600092
+        },
+        {
+          "outer_extent_device_px": 4.19394588470459,
+          "inner_radius_device_px": 3.1939457733445806,
+          "radial_transition_width_device_px": 1.0000001113600092
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "39954171a58535ce2df2c3a69da963136f26aba870bbbfd234b99b2fcb4fe573",
+        "zlib_base64": "eNrt1iEKAlEQh/GtnsAuFk8gBrF4BLNgFKPFG+gFPIAWr+ARNNrEJB7BpOn5LezCY2GDbHv7/dJ70/4wzEyWSZIkSZIkSZIkSVIzfUwK+busb3HHC0d0kVr2HW6FBwLeOCNUHNBBKtkXCDU+qNauGCKV/CeEPzwxR1vz5z2xRBv6v84UKc6/cvbFvoj/e6S6/zaIs17QwwprjJD6HTDADGN4FUmSJEmSJEmSJEnN/ADgikeQ"
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "39954171a58535ce2df2c3a69da963136f26aba870bbbfd234b99b2fcb4fe573",
+        "zlib_base64": "eNrt1iEKAlEQh/GtnsAuFk8gBrF4BLNgFKPFG+gFPIAWr+ARNNrEJB7BpOn5LezCY2GDbHv7/dJ70/4wzEyWSZIkSZIkSZIkSVIzfUwK+busb3HHC0d0kVr2HW6FBwLeOCNUHNBBKtkXCDU+qNauGCKV/CeEPzwxR1vz5z2xRBv6v84UKc6/cvbFvoj/e6S6/zaIs17QwwprjJD6HTDADGN4FUmSJEmSJEmSJEnN/ADgikeQ"
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    },
+    {
+      "case": "normal_radius_saved_stroke_0",
+      "scale": 1,
+      "inverse_scale_document_units_per_pixel": [
+        1.0,
+        1.0
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "9832ae42",
+          "5350c142",
+          "8b863a40",
+          "8b863a40",
+          "65e3d93c",
+          "cfe87f3f",
+          "0000803f",
+          "8429a83e",
+          "0000803f"
+        ],
+        [
+          "ea3aae42",
+          "61f0c242",
+          "52ea3c40",
+          "52ea3c40",
+          "5b595e3c",
+          "f8f97f3f",
+          "0000803f",
+          "f845a93e",
+          "0000803f"
+        ],
+        [
+          "073eae42",
+          "de9ac442",
+          "194e3f40",
+          "194e3f40",
+          "7400993a",
+          "f4ff7f3f",
+          "0000803f",
+          "505baa3e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "6b5a98fccc7e73d17645f56811182e7b9bedfb960d1885cf2fd74b68667c2d23",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 2.914461851119995,
+          "inner_radius_device_px": 1.9144618377419533,
+          "radial_transition_width_device_px": 1.0000000133780418
+        },
+        {
+          "outer_extent_device_px": 2.9518017768859863,
+          "inner_radius_device_px": 1.9518018486903657,
+          "radial_transition_width_device_px": 0.9999999281956207
+        },
+        {
+          "outer_extent_device_px": 2.9891417026519775,
+          "inner_radius_device_px": 1.989141737383079,
+          "radial_transition_width_device_px": 0.9999999652688984
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "c15d0d2226da8aee5f6aaf5810efef4d71a8084e84310121c46cacdbafbd920f",
+        "zlib_base64": "eNrt1iEOwkAQhtEmnINwqDrCEVDFVPVmWBIOVFND/02q1lI378lxXzKZ3WEAAAAAAAAA4F/XuEXF9nesscU3KrU/4tdpsyr9z+j7p6jSP0ffv0SV/jH6/ntUugGv+BzaPlR8Ay4HPwEAAAAAAAA4xw480mVd"
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "c15d0d2226da8aee5f6aaf5810efef4d71a8084e84310121c46cacdbafbd920f",
+        "zlib_base64": "eNrt1iEOwkAQhtEmnINwqDrCEVDFVPVmWBIOVFND/02q1lI378lxXzKZ3WEAAAAAAAAA4F/XuEXF9nesscU3KrU/4tdpsyr9z+j7p6jSP0ffv0SV/jH6/ntUugGv+BzaPlR8Ay4HPwEAAAAAAAA4xw480mVd"
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    },
+    {
+      "case": "normal_radius_saved_stroke_0",
+      "scale": 2,
+      "inverse_scale_document_units_per_pixel": [
+        0.5,
+        0.5
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "9832ae42",
+          "5350c142",
+          "8b862a40",
+          "8b862a40",
+          "65e3d93c",
+          "cfe87f3f",
+          "0000803f",
+          "d5f5cf3e",
+          "0000803f"
+        ],
+        [
+          "ea3aae42",
+          "61f0c242",
+          "52ea2c40",
+          "52ea2c40",
+          "5b595e3c",
+          "f8f97f3f",
+          "0000803f",
+          "cc9fd03e",
+          "0000803f"
+        ],
+        [
+          "073eae42",
+          "de9ac442",
+          "194e2f40",
+          "194e2f40",
+          "7400993a",
+          "f4ff7f3f",
+          "0000803f",
+          "2145d13e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "499715f260b3f5a632c0885f0e2c142120af734a0b4fa8407c86231b71d8e84f",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 5.32892370223999,
+          "inner_radius_device_px": 4.3289237208129805,
+          "radial_transition_width_device_px": 0.9999999814270097
+        },
+        {
+          "outer_extent_device_px": 5.403603553771973,
+          "inner_radius_device_px": 4.403603530775172,
+          "radial_transition_width_device_px": 1.000000022996801
+        },
+        {
+          "outer_extent_device_px": 5.478283405303955,
+          "inner_radius_device_px": 4.4782834328814545,
+          "radial_transition_width_device_px": 0.9999999724225006
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "eede9c1cc1963667f9a98520dafc459b37874e3fff2a5edf5af7720453974305",
+        "zlib_base64": "eNrt1zEOQVEQQNFPp5RYiUKhphCxEyv4EZtQKaxBIhKJqNUaSktgB7gvUWjkFVTz7qmnuVPNVJUkSZIkSZIkSZKkX7TRwxgT9NFBCe0DrLHBFjvscUDaR+T2Lp4ZaSZq/xK5/jQTtf+EXH+asT+mK3L9d5Tcf0PU/tSW638gav8Ruf4LovZPkeuvEfkGWuD8xQol3MBDzDD/MEIDpfxAqbX11oRfoSRJkiRJkiRJ//MCD7+NfA=="
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "eede9c1cc1963667f9a98520dafc459b37874e3fff2a5edf5af7720453974305",
+        "zlib_base64": "eNrt1zEOQVEQQNFPp5RYiUKhphCxEyv4EZtQKaxBIhKJqNUaSktgB7gvUWjkFVTz7qmnuVPNVJUkSZIkSZIkSZKkX7TRwxgT9NFBCe0DrLHBFjvscUDaR+T2Lp4ZaSZq/xK5/jQTtf+EXH+asT+mK3L9d5Tcf0PU/tSW638gav8Ruf4LovZPkeuvEfkGWuD8xQol3MBDzDD/MEIDpfxAqbX11oRfoSRJkiRJkiRJ//MCD7+NfA=="
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    },
+    {
+      "case": "normal_radius_saved_stroke_0",
+      "scale": 4,
+      "inverse_scale_document_units_per_pixel": [
+        0.25,
+        0.25
+      ],
+      "native_AddPoint_record_f32_le_hex_words": [
+        [
+          "9832ae42",
+          "5350c142",
+          "8b862240",
+          "8b862240",
+          "65e3d93c",
+          "cfe87f3f",
+          "0000803f",
+          "3dcce63e",
+          "0000803f"
+        ],
+        [
+          "ea3aae42",
+          "61f0c242",
+          "52ea2440",
+          "52ea2440",
+          "5b595e3c",
+          "f8f97f3f",
+          "0000803f",
+          "bb29e73e",
+          "0000803f"
+        ],
+        [
+          "073eae42",
+          "de9ac442",
+          "194e2740",
+          "194e2740",
+          "7400993a",
+          "f4ff7f3f",
+          "0000803f",
+          "8d84e73e",
+          "0000803f"
+        ]
+      ],
+      "native_packed_records_sha256": "e2b0af8d9c015b17958614a7956354f236f5b4c32e8c666f30b637ac3a2b1ada",
+      "record_count": 3,
+      "radial_extent_diagnostics": [
+        {
+          "outer_extent_device_px": 10.15784740447998,
+          "inner_radius_device_px": 9.157847236188843,
+          "radial_transition_width_device_px": 1.0000001682911375
+        },
+        {
+          "outer_extent_device_px": 10.307207107543945,
+          "inner_radius_device_px": 9.307207093747252,
+          "radial_transition_width_device_px": 1.0000000137966936
+        },
+        {
+          "outer_extent_device_px": 10.45656681060791,
+          "inner_radius_device_px": 9.456566787903569,
+          "radial_transition_width_device_px": 1.0000000227043415
+        }
+      ],
+      "shader_rgba8": {
+        "byte_count": 16384,
+        "sha256": "ef028eebdf4ac8f344912297a5ebd1ef0c6feb353386f21e731676da1bd645fc",
+        "zlib_base64": "eNrt2c8rZWEcx/HjV2HDWCilkFiwkA3/gJWFJbPQIAtbyh9gQU0zMjNRNnayshDChPF7b+FHFrpXETKjoVGzvN7fuivdsriPxff4vDa37qmn3p3n1Hm+J4pERERERERERERERLKXixJUoArVqEQZ7Fpcu/PQjI/oxif0oBd96If9tiIfcWq3+zyMz/iCrxjHBL7hO35gElMYQS3i0N6ABaxiDT+xjg1s4he2sYNd7OMA9l8TPLcXYg+XuMI1bnCLO/zGH9zjLx7wiH94whGK4LXf9noqS7aGx3a7b/+Rbb+t4XEPdCIViK31Hve+52dgDqH6bS31+zKNUP327uCt395zQvWfwVv/FkL1J+Ctfx6h+k/grf8QqYC8nY2TCNlfCk/9xwjZXwBP/XbmDdV+Dm/P/xBC9c/AW7/N9EL1t8HjGdhmWtm2r8Dz/MfmWxcvJF+RSDtFHTzPwGyOOYtlLL1i8YUWxGEGWo4BjGUwmsEgahDFTD3aYd8AujLoQCNyEMWYzfM+oDzNvv0UIxIRERERERGRN/EMBrkeSw=="
+      },
+      "scalar_rgba8": {
+        "byte_count": 16384,
+        "sha256": "ef028eebdf4ac8f344912297a5ebd1ef0c6feb353386f21e731676da1bd645fc",
+        "zlib_base64": "eNrt2c8rZWEcx/HjV2HDWCilkFiwkA3/gJWFJbPQIAtbyh9gQU0zMjNRNnayshDChPF7b+FHFrpXETKjoVGzvN7fuivdsriPxff4vDa37qmn3p3n1Hm+J4pERERERERERERERLKXixJUoArVqEQZ7Fpcu/PQjI/oxif0oBd96If9tiIfcWq3+zyMz/iCrxjHBL7hO35gElMYQS3i0N6ABaxiDT+xjg1s4he2sYNd7OMA9l8TPLcXYg+XuMI1bnCLO/zGH9zjLx7wiH94whGK4LXf9noqS7aGx3a7b/+Rbb+t4XEPdCIViK31Hve+52dgDqH6bS31+zKNUP327uCt395zQvWfwVv/FkL1J+Ctfx6h+k/grf8QqYC8nY2TCNlfCk/9xwjZXwBP/XbmDdV+Dm/P/xBC9c/AW7/N9EL1t8HjGdhmWtm2r8Dz/MfmWxcvJF+RSDtFHTzPwGyOOYtlLL1i8YUWxGEGWo4BjGUwmsEgahDFTD3aYd8AujLoQCNyEMWYzfM+oDzNvv0UIxIRERERERGRN/EMBrkeSw=="
+      },
+      "max_shader_vs_scalar_byte_error": 0,
+      "mean_shader_vs_scalar_byte_error": 0,
+      "active_shader_vs_scalar_mean_abs_error": 0,
+      "gl_error": 0
+    }
+  ],
+  "host_gl": {
+    "webgl": {
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shading_language": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "unmasked_vendor": "Google Inc. (Google)",
+      "unmasked_renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "subpixel_bits": 4,
+      "context_attributes": {
+        "alpha": true,
+        "antialias": false,
+        "depth": true,
+        "desynchronized": false,
+        "failIfMajorPerformanceCaveat": false,
+        "powerPreference": "default",
+        "premultipliedAlpha": false,
+        "preserveDrawingBuffer": true,
+        "stencil": false,
+        "xrCompatible": false
+      }
+    },
+    "toolchain": {
+      "node_version": "25.9.0",
+      "node_executable": {
+        "path": "/home/jding/.nvm/versions/node/v25.9.0/bin/node",
+        "sha256": "7fd113446e9171a28885227b3c275ff965b2fd1f45ccf1fb3a1c20308f34e627"
+      },
+      "chromium_version": "153.0.8010.12",
+      "chromium_executable": {
+        "path": "/home/jding/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+        "sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
+      },
+      "playwright_test_version": "1.63.0",
+      "playwright_entrypoint": {
+        "path": "/home/jding/RustroverProjects/sdocx/web/node_modules/@playwright/test/index.mjs",
+        "sha256": "ec8997c2e5cea26befc76e7bf990750e96babb16977673a9ff3b5c0575d01e48"
+      },
+      "playwright_package_metadata": {
+        "path": "/home/jding/RustroverProjects/sdocx/web/node_modules/@playwright/test/package.json",
+        "sha256": "5587f932b8979b6889654b60e3c28aeb7ca0abbac00eec8c176c939a16149536"
+      },
+      "nm_version": "GNU nm (GNU Binutils for Debian) 2.44",
+      "nm_executable": {
+        "path": "/usr/bin/x86_64-linux-gnu-nm",
+        "sha256": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+      },
+      "objdump_version": "GNU objdump (GNU Binutils for Debian) 2.44",
+      "objdump_executable": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump",
+        "sha256": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb"
+      }
+    }
+  },
+  "shader_sources_pinned_dso_evidence": {
+    "vertex": {
+      "symbol": "SPen::FountainPenStrokeShaderV4::szVertexShader",
+      "mangled_symbol": "_ZN4SPen25FountainPenStrokeShaderV414szVertexShaderE",
+      "rva": "0x40c58",
+      "file_offset": "0x40c58",
+      "nul_terminated_byte_count": 784,
+      "cstring_sha256": "abc0381ae7b521a0d46afe56640043692e4da19a9b1aab65936fc8df843ed47f"
+    },
+    "fragment": {
+      "symbol": "SPen::FountainPenStrokeShaderV4::szFragmentShader",
+      "mangled_symbol": "_ZN4SPen25FountainPenStrokeShaderV416szFragmentShaderE",
+      "rva": "0x40f68",
+      "file_offset": "0x40f68",
+      "nul_terminated_byte_count": 716,
+      "cstring_sha256": "bf37ca2a9e23eff95e41bebc76ed3eb4617ea8a64db436b19ac9242c4a7cc290"
+    },
+    "native_constructor_route": {
+      "constructor": "SPen::FountainPenStrokeShaderV4::FountainPenStrokeShaderV4()",
+      "constructor_rva": "0xa34ac",
+      "source_load_instructions_rva": "0xa34d0",
+      "source_got_slots_rva": [
+        "0xd6190",
+        "0xd6198"
+      ],
+      "create_shader_program_call_rva": "0xa34e8",
+      "call_target": "SPen::RendererFactory::CreateShaderProgram(char const*, char const*, char const*)",
+      "evidence": "ELF bytes show two GOT loads and a direct PLT call; runtime replay verifies source C-string bytes, while the host WebGL compile is not a native CreateShader interception."
+    }
+  },
+  "runner_sha256": "6891169bb01da9ad6442ee6e103b38b8670b9de9e22767aa006a6033b2a4f7c3",
+  "host_boundaries": [
+    "Native RTV4::AddPoint executes from hash-pinned ARM64 libSPenFountainPen.so through the tracked fountain_native Unicorn loader; source point/radius/direction triples are embedded prepared real V14 stamps.",
+    "Recovered unmodified V4 vertex/fragment shaders execute in Chromium SwiftShader WebGL2. GL_MAX with ONE/ONE, white input color, 64x64 target and viewport projection are explicit host replay settings.",
+    "A scalar fragment-center reference models the native GLSL and GL_MAX composite; the WebGL target is not Samsung device GLES and does not claim device pixels, app canvas projection, stroke-wide public export parity, or PDF backend parity."
+  ]
+}
