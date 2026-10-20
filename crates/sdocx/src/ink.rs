@@ -365,6 +365,8 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct PreparedInkPen2V9 {
+    /// Native enhanced-AA policy: MAX coverage, otherwise ordered source-over.
+    pub enhanced_antialias: bool,
     /// Ordered native records: center, ellipse radii, edge, coverage, RGB.
     pub records: Vec<[f32; 9]>,
     /// Exclusive record count after each source event; terminal suffix folded

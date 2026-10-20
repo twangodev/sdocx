@@ -14,11 +14,10 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 use vector::{
-    Anchor, Blend, Circle, Clip, ClipPath, ColorValue, Data, Definitions, Ellipse, FontFamily,
-    Gradient, Group, Image, Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path,
-    Polygon, RadialGradient, Rectangle, ReplayPart, ReplayPath, Scene, Stop, StrokeIndex, Styled,
-    Svg, TSpan, Text, TextAnchor, TextDecoration, Transform, ViewBox, color_hex, coordinate,
-    decimal,
+    Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
+    Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle, ReplayPart,
+    ReplayPath, Scene, StrokeIndex, Styled, Svg, TSpan, Text, TextAnchor, TextDecoration,
+    Transform, ViewBox, color_hex, coordinate, decimal,
 };
 
 mod arrows;
@@ -30,6 +29,7 @@ mod fountain;
 mod geometry;
 mod gradient;
 mod image_crop;
+mod inkpen2_vector;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 mod paint_diagnostic;
 pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
@@ -84,16 +84,19 @@ pub enum RenderColorMode {
 
 /// Explicit host policy for fresh-draw InkPen2 V9 vector reconstruction.
 ///
-/// Selecting this profile opts into the captured direct source-over paint route:
-/// enhanced antialiasing is disabled, the page-space transform is identity, and
-/// each stroke starts with fresh drawable state. Screen dimensions provide the
-/// native resolution input. This is a reconstruction policy, not a claim about
-/// Samsung Notes' device defaults or its canvas setup.
+/// Selecting this profile opts into the captured InkPen2 V9 paint route with
+/// identity page transform and fresh drawable state. Screen dimensions provide
+/// the native resolution input. `enhanced_antialias` selects the captured
+/// MAX-coverage paint path; this is an explicit host choice, not a claim
+/// about Samsung Notes' device policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct InkPen2RenderProfile {
     pub screen_width: u32,
     pub screen_height: u32,
+    /// Select the captured enhanced antialiasing paint route.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub enhanced_antialias: bool,
 }
 
 /// Options controlling Svg rendering.
@@ -101,8 +104,9 @@ pub struct InkPen2RenderProfile {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct RenderOptions {
-    /// Explicit InkPen2 V9 source-over profile. `None` preserves fallback behavior;
-    /// `Some` opts into fresh state, identity page transform, and enhanced-AA disabled.
+    /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
+    /// `Some` opts into fresh state and identity page transform; the profile
+    /// explicitly selects its enhanced-antialiasing paint route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen2_profile: Option<InkPen2RenderProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
@@ -3524,6 +3528,7 @@ const MAX_INKPEN2_SOURCE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_INKPEN2_OUTPUT_RECORDS: usize = 32_768;
 const MAX_INKPEN2_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const INKPEN2_MARKUP_BUDGET_PER_RECORD: usize = 1024;
+const INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES: usize = 4096;
 
 /// Prepare exact V9 records for the explicitly configured fresh-draw host profile.
 fn prepare_inkpen2_v9(
@@ -3630,7 +3635,8 @@ fn prepare_inkpen2_v9(
     let markup_bytes = output
         .vertices
         .len()
-        .checked_mul(INKPEN2_MARKUP_BUDGET_PER_RECORD);
+        .checked_mul(INKPEN2_MARKUP_BUDGET_PER_RECORD)
+        .and_then(|bytes| bytes.checked_add(INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES));
     if output.vertices.len() > MAX_INKPEN2_OUTPUT_RECORDS
         || output_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_OUTPUT_RECORDS * 36)
         || markup_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_ESTIMATED_MARKUP_BYTES)
@@ -3643,6 +3649,14 @@ fn prepare_inkpen2_v9(
     {
         return None;
     }
+    if output.vertices.iter().any(|record| {
+        record.iter().any(|value| !value.is_finite())
+            || record[2] <= 0.0
+            || record[3] <= 0.0
+            || !(0.0..=1.0).contains(&record[5])
+    }) {
+        return None;
+    }
     if output.vertices.is_empty() {
         return None;
     }
@@ -3651,10 +3665,10 @@ fn prepare_inkpen2_v9(
     let mut bounds: Option<BoundingBox> = None;
     for [cx, cy, rx, ry, ..] in &output.vertices {
         let current = BoundingBox {
-            x_min: f64::from(*cx - *rx),
-            y_min: f64::from(*cy - *ry),
-            x_max: f64::from(*cx + *rx),
-            y_max: f64::from(*cy + *ry),
+            x_min: f64::from(*cx) - f64::from(*rx),
+            y_min: f64::from(*cy) - f64::from(*ry),
+            x_max: f64::from(*cx) + f64::from(*rx),
+            y_max: f64::from(*cy) + f64::from(*ry),
         };
         if let Some(old) = &mut bounds {
             old.x_min = old.x_min.min(current.x_min);
@@ -3674,6 +3688,7 @@ fn prepare_inkpen2_v9(
         sample_ends,
         color,
         opacity: f64::from((argb >> 24) as u8 as f32 / 255.0),
+        enhanced_antialias: profile.enhanced_antialias,
         bounds: bounds?,
     })
 }
@@ -3683,45 +3698,7 @@ fn render_inkpen2_v9(
     ink: &crate::ink::PreparedInkPen2V9,
     replay_index: Option<usize>,
 ) {
-    let draw = |svg: &mut Scene| {
-        for (index, vertex) in ink.records.iter().enumerate() {
-            let [cx, cy, rx, ry, edge, coverage, ..] = *vertex;
-            // Keep the native nine-float records untouched for diagnostics;
-            // page theme adaptation applies to their shared RGB paint only.
-            let color = ColorValue::Rgb(ink.color);
-            let id = svg.definition::<Gradient>();
-            let opacity = f64::from(coverage * ink.opacity as f32);
-            let stop = (edge * 2.0).clamp(0.0, 1.0);
-            let matrix = Transform::matrix_unrounded([
-                f64::from(rx),
-                0.0,
-                0.0,
-                f64::from(ry),
-                f64::from(cx),
-                f64::from(cy),
-            ]);
-            let gradient = RadialGradient::new(&id)
-                .cx(0)
-                .cy(0)
-                .r(1)
-                .add(Stop::new(0, color).opacity(opacity))
-                .add(Stop::new(stop, color).opacity(opacity))
-                .add(Stop::new(1, color).opacity(0));
-            let replay_part = replay_index.map(|_| ReplayPart(index + 1));
-            svg.push(
-                Group::new()
-                    .transformed(matrix)
-                    .add(Definitions::new().add(gradient))
-                    .replay_part(replay_part)
-                    .add(Circle::new().cx(0).cy(0).r(1).fill(Paint::Gradient(id))),
-            );
-        }
-    };
-    if let Some(index) = replay_index {
-        svg.scope(Group::new().replay_stroke(StrokeIndex(index)), draw);
-    } else {
-        draw(svg);
-    }
+    inkpen2_vector::render(svg, ink, replay_index);
 }
 
 /// Prepare replay metadata with the same resolved page theme and explicit
@@ -4008,6 +3985,91 @@ mod tests {
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
     };
+
+    #[test]
+    fn inkpen2_profile_legacy_serde_defaults_enhanced_antialias_off() {
+        let profile: InkPen2RenderProfile =
+            serde_json::from_str(r#"{"screen_width":1920,"screen_height":1080}"#).unwrap();
+        assert!(!profile.enhanced_antialias);
+    }
+
+    #[test]
+    fn inkpen2_enhanced_aa_keeps_max_coverage_and_applies_source_alpha_once() {
+        let mut base = inkpen2_color_stroke(0xff33_6699, None);
+        base.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 16.0, y: 3.0 },
+            Point { x: 24.0, y: 3.0 },
+        ];
+        base.timestamps = vec![100, 110, 120, 130];
+        base.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        base.tilts = vec![0.0; 4];
+        base.orientations = vec![0.0; 4];
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: true,
+        };
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            color_mode: RenderColorMode::Light,
+            ..RenderOptions::default()
+        };
+        let mut control_records = None;
+        for alpha in [255_u8, 128, 0] {
+            let opacity = f64::from(f32::from(alpha) / 255.0);
+            let argb = (u32::from(alpha) << 24) | 0x0033_6699;
+            let stroke = Stroke {
+                rendering: Some(StrokeRendering {
+                    style: StrokeStyle {
+                        color_argb: Some(argb),
+                        ..base.rendering.as_ref().unwrap().style.clone()
+                    },
+                    ..base.rendering.as_ref().unwrap().clone()
+                }),
+                ..base.clone()
+            };
+            let prepared =
+                prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                    .expect("AA V9 profile admits the captured overlapping source geometry");
+            assert!(prepared.enhanced_antialias);
+            assert_eq!(prepared.opacity, opacity);
+            if let Some(records) = &control_records {
+                assert_eq!(
+                    prepared.records, *records,
+                    "ARGB alpha does not alter coverage"
+                );
+            } else {
+                control_records = Some(prepared.records.clone());
+            }
+
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let svg = render_document_svg(&document(page), &options)[0]
+                .svg
+                .clone();
+            if alpha == 0 {
+                assert!(!svg.contains("<filter"));
+                assert!(!svg.contains("mix-blend-mode:lighten"));
+            } else {
+                assert!(svg.contains("<filter"));
+                assert!(svg.contains("feColorMatrix"));
+                assert!(svg.contains("mix-blend-mode:lighten"));
+                let root = roxmltree::Document::parse(&svg).unwrap();
+                let colorizer = root
+                    .descendants()
+                    .find(|node| node.attribute("filter").is_some())
+                    .expect("one filtered MAX colorizer group");
+                let group_opacity = colorizer
+                    .attribute("opacity")
+                    .unwrap_or("1")
+                    .parse::<f64>()
+                    .unwrap();
+                assert!((group_opacity - opacity).abs() < 1e-7);
+            }
+        }
+    }
 
     fn calligraphy_stroke(source: &serde_json::Value) -> Stroke {
         let floats = |bits_key: &str, bytes_key: &str| {
@@ -4598,6 +4660,53 @@ mod tests {
                 .and_then(|dict| dict.get(b"Shading").ok())
                 .is_some()
         }));
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn public_inkpen2_enhanced_aa_pdf_has_no_raster_image_fallback() {
+        let mut stroke = inkpen2_color_stroke(0x80_336699, None);
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 16.0, y: 3.0 },
+            Point { x: 24.0, y: 3.0 },
+        ];
+        stroke.timestamps = vec![100, 110, 120, 130];
+        stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        stroke.tilts = vec![0.0; 4];
+        stroke.orientations = vec![0.0; 4];
+        let mut page = page_with_uncolored_stroke();
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: true,
+        };
+        assert!(
+            prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                .is_some_and(|ink| ink.enhanced_antialias),
+            "the PDF case must take the enhanced-AA profile"
+        );
+        page.objects = vec![stroke.into()];
+        let document = document(page);
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let bytes =
+            crate::render_document_pdf(&document, &options, &crate::PdfOptions::default()).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let images = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_dict().ok())
+            .filter(|dict| {
+                dict.get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .is_ok_and(|name| name == b"Image")
+            })
+            .count();
+        assert_eq!(images, 0, "enhanced-AA profile must remain vector-only");
     }
 
     #[test]
@@ -5856,6 +5965,7 @@ mod tests {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,
             screen_height: 1080,
+            enhanced_antialias: false,
         };
         let make_stroke = |points: &[[f64; 2]], times: &[i64], pressures: &[f64], curve: bool| {
             let mut stroke = inkpen2_color_stroke(0xff000000, None);
@@ -5984,6 +6094,7 @@ mod tests {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,
             screen_height: 1080,
+            enhanced_antialias: false,
         };
         let prepared = prepare_stroke_for_page_with_theme(
             &stroke,
@@ -6071,6 +6182,7 @@ mod tests {
             inkpen2_profile: Some(InkPen2RenderProfile {
                 screen_width: 1920,
                 screen_height: 1080,
+                enhanced_antialias: false,
             }),
             ..RenderOptions::default()
         };
@@ -6097,6 +6209,7 @@ mod tests {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,
             screen_height: 1080,
+            enhanced_antialias: false,
         };
         let mut stroke = inkpen2_color_stroke(0xff000000, None);
         stroke.points = vec![
@@ -6121,6 +6234,7 @@ mod tests {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,
             screen_height: 1080,
+            enhanced_antialias: false,
         };
         let black = inkpen2_color_stroke(0xff00_0000, None);
         let light =
@@ -6252,6 +6366,7 @@ mod tests {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,
             screen_height: 1080,
+            enhanced_antialias: false,
         };
         let mut stroke = inkpen2_color_stroke(0x80_336699, None);
         // Duplicate samples exercise equal adjacent event cutoffs; the terminal
@@ -6316,6 +6431,29 @@ mod tests {
             .map(|part| part.parse().unwrap())
             .collect();
         assert_eq!(actual_parts, all_parts);
+
+        let enhanced_options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                enhanced_antialias: true,
+                ..profile
+            }),
+            ..RenderOptions::default()
+        };
+        let enhanced_replay = render_layout_page_replay_svg(
+            &document,
+            &layout_document(&document),
+            0,
+            &enhanced_options,
+        )
+        .unwrap()
+        .svg;
+        let enhanced_parts: Vec<usize> = roxmltree::Document::parse(&enhanced_replay)
+            .unwrap()
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .map(|part| part.parse().unwrap())
+            .collect();
+        assert_eq!(enhanced_parts, all_parts, "AA keeps native source cutoffs");
 
         let legacy = prepare_stroke_for_page_with_theme(&stroke, theme, &RenderOptions::default());
         assert!(
