@@ -14,6 +14,7 @@ pub(in crate::render) use native_page_layout::layout_native_page_text;
 
 use crate::render::RenderTheme;
 use crate::render::marker::{PreparedMarker, marker_center_y};
+use crate::text_index::Paragraph;
 use crate::{
     BoundingBox, BulletType, LineSpacingType, ParagraphAlignment, ParagraphBullet,
     ParagraphLineSpacing, PredefinedTextStyle,
@@ -1086,7 +1087,19 @@ fn try_layout_text_with_context(
     });
     let content_left = frame.bbox.x_min + margins[0];
     let content_width = outer_width - margins[0] - margins[2];
-    let paragraphs = styled.index.display_paragraphs().collect::<Vec<_>>();
+    let mut paragraphs = styled.index.display_paragraphs().collect::<Vec<_>>();
+    if paragraphs.is_empty()
+        && styled.index.is_empty()
+        && paragraph_layout(text_box, 0, settings)
+            .bullet
+            .is_some_and(|bullet| !matches!(bullet.kind, BulletType::None | BulletType::Other(_)))
+        && let Some(paragraph) = styled.index.native_paragraphs().next()
+    {
+        paragraphs.push(Paragraph {
+            physical: paragraph.physical,
+            content: paragraph.content,
+        });
+    }
     let paragraph_layouts = paragraphs
         .iter()
         .map(|paragraph| {
@@ -2188,6 +2201,46 @@ mod tests {
                 .flat_map(u32::to_le_bytes)
                 .collect(),
         });
+    }
+
+    #[test]
+    fn empty_arrow_bullet_keeps_empty_source_and_positions_existing_marker() {
+        let mut content = text("");
+        add_point_bullet(&mut content);
+        content.paragraphs[0].payload[..4].copy_from_slice(&1_u32.to_le_bytes());
+
+        let plan = measure(&content, &[]);
+
+        assert!(content.text.is_empty());
+        assert_eq!(plan.lines.len(), 1);
+        assert!(plan.lines[0].line.source.is_empty());
+        assert_eq!(plan.lines[0].marker.as_ref().unwrap().source, 0);
+    }
+
+    #[test]
+    fn space_arrow_bullet_keeps_original_character_and_marker() {
+        let mut content = text(" ");
+        add_point_bullet(&mut content);
+        content.paragraphs[0].payload[..4].copy_from_slice(&1_u32.to_le_bytes());
+
+        let plan = measure(&content, &[]);
+
+        assert_eq!(content.text, " ");
+        assert_eq!(plan.lines.len(), 1);
+        assert_eq!(plan.lines[0].line.source, 0..1);
+        assert_eq!(plan.lines[0].marker.as_ref().unwrap().source, 0);
+    }
+
+    #[test]
+    fn empty_none_bullet_does_not_create_a_marker_line() {
+        let mut content = text("");
+        add_point_bullet(&mut content);
+        content.paragraphs[0].payload[..4].copy_from_slice(&0_u32.to_le_bytes());
+
+        let plan = measure(&content, &[]);
+
+        assert!(content.text.is_empty());
+        assert!(plan.lines.is_empty());
     }
 
     #[test]

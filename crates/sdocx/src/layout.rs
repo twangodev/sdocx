@@ -3,7 +3,10 @@ use std::sync::Arc;
 
 use crate::PageObjectContent;
 use crate::text_index::TextIndex;
-use crate::types::{Document, Page, PageElement, RichTextBox, RichTextObjectContent};
+use crate::types::{
+    BulletType, Document, Page, PageElement, RichTextBox, RichTextObjectContent,
+    RichTextParagraphType,
+};
 
 /// A presentation-oriented view of a parsed document.
 ///
@@ -501,7 +504,9 @@ pub fn layout_document_with_progress(
                 let mut range = stored_range.clone();
                 trim_inspection_lf(index, &mut range, source_page_index);
                 if let Some(mut slice) = note_text.slice_indexed(index, range.clone())
-                    && (!slice.text.is_empty() || reflow_source.is_some())
+                    && (!slice.text.is_empty()
+                        || reflow_source.is_some()
+                        || has_supported_bullet(&slice, 0))
                 {
                     translate_continuing_objects(
                         &mut slice,
@@ -542,6 +547,19 @@ pub fn layout_document_with_progress(
         stored_page_count: document.pages.len(),
         omitted_trailing_blank_page,
     }
+}
+
+fn has_supported_bullet(text_box: &RichTextBox, paragraph_index: u32) -> bool {
+    text_box
+        .paragraphs
+        .iter()
+        .rfind(|paragraph| {
+            paragraph.kind == RichTextParagraphType::Bullet
+                && paragraph.start_paragraph <= paragraph_index
+                && paragraph.end_paragraph > paragraph_index
+        })
+        .and_then(|paragraph| paragraph.bullet())
+        .is_some_and(|bullet| !matches!(bullet.kind, BulletType::None | BulletType::Other(_)))
 }
 
 fn omits_trailing_blank_page(document: &Document) -> bool {
@@ -940,6 +958,53 @@ mod tests {
     fn capture(document: &Document, page: usize) -> Option<super::BodyTextCaptureWindow> {
         let index = TextIndex::new(&document.metadata.note_text.as_ref()?.text);
         native_capture_window(document, &index, page)
+    }
+
+    #[test]
+    fn saved_empty_bullet_body_keeps_its_inspection_owner() {
+        let mut document = capture_document("", &[(0, 0)]);
+        let body = document.metadata.note_text.as_mut().unwrap();
+        body.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::Bullet,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32, 1, 0, 1]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect(),
+        });
+
+        let layout = layout_document(&document);
+        let page = &layout.pages[0];
+        let slice = page.body_text_slice().expect("empty bullet body owner");
+        assert_eq!(slice.source_range, 0..0);
+        let PageObjectContent::Element(PageElement::TextBox(text_box)) =
+            &page.page.objects[slice.object_index].content
+        else {
+            panic!("inspection owner is a text box");
+        };
+        assert!(text_box.text.is_empty());
+        assert_eq!(text_box.paragraphs.len(), 1);
+        assert_eq!(
+            text_box.paragraphs[0].bullet().unwrap().kind,
+            crate::BulletType::Arrow
+        );
+        let body = document.metadata.note_text.as_mut().unwrap();
+        let mut override_bullet = body.paragraphs[0].clone();
+        override_bullet.payload[..4].copy_from_slice(&0_u32.to_le_bytes());
+        body.paragraphs.push(override_bullet);
+        assert!(
+            layout_document(&document).pages[0]
+                .body_text_slice()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn saved_empty_unbulleted_body_still_has_no_inspection_owner() {
+        let document = capture_document("", &[(0, 0)]);
+        let layout = layout_document(&document);
+        assert!(layout.pages[0].body_text_slice().is_none());
     }
 
     #[test]

@@ -4271,13 +4271,13 @@ mod tests {
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
-        RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
-        layout_document,
+        RichTextParagraph, RichTextParagraphType, RichTextSection, RichTextSpan, RichTextSpanType,
+        Stroke, StrokeProperties, StrokeRendering, StrokeStyle, layout_document,
     };
     #[cfg(feature = "pdf")]
     use crate::{
         MediaAsset, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType,
-        PageObjectContent, PlacedImage, RichTextObjectContent, RichTextObjectSpan, RichTextSection,
+        PageObjectContent, PlacedImage, RichTextObjectContent, RichTextObjectSpan,
     };
 
     #[cfg(all(feature = "pdf", feature = "serde"))]
@@ -6701,6 +6701,97 @@ mod tests {
                 orientation: Some(0),
                 ..DocumentMetadata::default()
             },
+        }
+    }
+
+    fn empty_bullet_body(kind: u32) -> RichTextBox {
+        RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: String::new(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: Some(18.0),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: vec![RichTextParagraph {
+                kind: RichTextParagraphType::Bullet,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: [kind, 1, 0, 1]
+                    .into_iter()
+                    .flat_map(u32::to_le_bytes)
+                    .collect(),
+            }],
+            object_spans: Vec::new(),
+            text_sections: vec![RichTextSection {
+                start_utf16: 0,
+                length_utf16: 0,
+            }],
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    #[test]
+    fn empty_arrow_body_marker_survives_svg_replay_and_pdf() {
+        let mut page = page_with_uncolored_stroke();
+        page.objects.clear();
+        let mut source = document(page);
+        source.metadata.page_mode = Some(0);
+        source.metadata.note_text = Some(empty_bullet_body(1));
+        let layout = layout_document(&source);
+        assert!(layout.pages[0].body_text_slice().is_some());
+
+        let normal = render_document_svg(&source, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let replay =
+            super::render_layout_page_replay_svg(&source, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg;
+        assert!(
+            normal.contains("<circle"),
+            "empty Arrow marker missing from SVG"
+        );
+        assert!(
+            replay.contains("<circle"),
+            "empty Arrow marker missing from replay"
+        );
+
+        #[cfg(feature = "pdf")]
+        {
+            let arrow = crate::render_document_pdf(
+                &source,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            let arrow = lopdf::Document::load_mem(&arrow).unwrap();
+            let arrow_page = *arrow.get_pages().values().next().unwrap();
+            let arrow_content = arrow.get_page_content(arrow_page).unwrap();
+            assert!(
+                lopdf::content::Content::decode(&arrow_content)
+                    .unwrap()
+                    .operations
+                    .iter()
+                    .any(|operation| operation.operator == "c"),
+                "the marker's curved path must survive PDF lowering"
+            );
+
+            let mut no_bullet = source.clone();
+            no_bullet.metadata.note_text = Some(empty_bullet_body(0));
+            let blank = crate::render_document_pdf(
+                &no_bullet,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            let blank = lopdf::Document::load_mem(&blank).unwrap();
+            let blank_page = *blank.get_pages().values().next().unwrap();
+            assert_ne!(arrow_content, blank.get_page_content(blank_page).unwrap());
         }
     }
 
