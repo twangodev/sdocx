@@ -149,10 +149,14 @@ impl<'a> Core<'a> {
             return None;
         }
         let count = (quotient as i32).checked_add(1)?;
-        if count <= 0 {
-            return None;
-        }
-        let increment = (self.radius - old) / count as f32;
+        // Native commits the speed/radius and time state even when residual
+        // spacing leaves no stamp on this segment. Avoid rejecting that
+        // zero-emission transition; its radius increment is unused.
+        let increment = if count > 0 {
+            (self.radius - old) / count as f32
+        } else {
+            0.0
+        };
         let mut distance = self.residual;
         let mut radius = old;
         let mut n = 0;
@@ -1183,5 +1187,77 @@ mod tests {
         assert_eq!(output_bits(&long_tool1), output_bits(&fresh_tool1));
         assert_eq!(output_bits(&short_tool2), output_bits(&fresh_tool2));
         assert_eq!(output_bits(&long_tool2), output_bits(&fresh_tool2));
+    }
+
+    #[test]
+    fn repeated_coincident_sample_commits_state_and_matches_native_solid_stream() {
+        // Captured from the pinned InkPen2 V9 saved Drawing caller with a fresh
+        // drawable: points (0,0),(0,0),(8,0), times 0,1,2, size 4, curve on,
+        // tool 2, inverse scale 1, spacing 1, DrawLine tolerance 0, 1920x1080.
+        // Native capture SHA-256: 30bf493d257960f1f898d887ff81e107050179f1f2539b9254dcd4d3bea742cb.
+        // InkPen2 DSO SHA-256: 61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c.
+        // A zero-length first segment emits no stamp but still updates the
+        // smoothing state used to size the following segment.
+        let points = [
+            P { x: 0.0, y: 0.0 },
+            P { x: 0.0, y: 0.0 },
+            P { x: 8.0, y: 0.0 },
+        ];
+        let times = [0, 1, 2];
+        let tools = [2, 2, 2];
+        let pressures = [0.5, 0.5, 0.5];
+        let actual = redraw(Input {
+            points: &points,
+            times: &times,
+            tools: &tools,
+            pressures: &pressures,
+            rgb: [0, 0, 0],
+            size: 4.0,
+            curve_enabled: true,
+            is_shape: false,
+            runtime: Runtime {
+                inverse_scale: [1.0, 1.0],
+                spacing: 1.0,
+                tolerance: 0.0,
+                tool_threshold: 20.0,
+                resolution_min: 1080,
+                initial_alternation: false,
+                initial_time: 0,
+            },
+        })
+        .expect("native zero-length transition is supported");
+        let expected: [[u32; 9]; 9] = [
+            [
+                0x3f7ffbf4, 0x00000000, 0x401a2e8b, 0x401a2e8b, 0x3e95bc60, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x3fe38c67, 0x00000000, 0x4019e059, 0x4019e059, 0x3e958660, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x4031c686, 0x00000000, 0x40199227, 0x40199227, 0x3e955029, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x407ffff4, 0x00000000, 0x401943f5, 0x401943f5, 0x3e9519bb, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x40a71c2a, 0x00000000, 0x4018f5c2, 0x4018f5c2, 0x3e94e314, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x40c71bfe, 0x00000000, 0x4018f5c2, 0x4018f5c2, 0x3e94e314, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x40dfff7f, 0x00000000, 0x4018f5c2, 0x4018f5c2, 0x3e94e314, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x41000000, 0x00000000, 0x4018f5c2, 0x4018f5c2, 0x3e94e314, 0x3f800000, 0, 0, 0,
+            ],
+            [
+                0x41000000, 0x00000000, 0x4018f5c2, 0x4018f5c2, 0x3e94e314, 0x3f800000, 0, 0, 0,
+            ],
+        ];
+        assert_eq!(actual.vertices.len(), expected.len());
+        for (record, bits) in actual.vertices.iter().zip(expected) {
+            assert_eq!(record.map(f32::to_bits), bits);
+        }
     }
 }
