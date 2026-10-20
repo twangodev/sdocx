@@ -8708,7 +8708,7 @@ mod tests {
         let mut cache = super::DocumentTextCache::default();
         let requests = [
             super::PageSceneRequest::full_page(&layout.pages[0]),
-            super::PageSceneRequest::sliced(&layout.pages[0], 30, 40, false).unwrap(),
+            super::PageSceneRequest::sliced(&layout.pages[0], 30, 40, true).unwrap(),
         ];
         let scenes = cache.render_layout_page_scene_requests(
             &document,
@@ -8750,6 +8750,81 @@ mod tests {
         }
         assert!(slice_ink.bounds.y_min < 70.0 && slice_ink.bounds.y_max > 30.0);
         assert!(scenes[1].page.svg.contains("id=\"sdocx-native-ink-0\""));
+
+        let pdf_options = crate::pdf::PdfOptions::from_font_book(&fonts);
+        let full_pdf =
+            crate::pdf::render_scenes_pdf_with_progress(&scenes[..1], &pdf_options, &mut |_| {})
+                .unwrap();
+        let slice_pdf =
+            crate::pdf::render_scenes_pdf_with_progress(&scenes[1..], &pdf_options, &mut |_| {})
+                .unwrap();
+        let assert_field_form = |bytes: &[u8], expected_height: f64| {
+            let pdf = lopdf::Document::load_mem(bytes).unwrap();
+            assert_eq!(pdf.get_pages().len(), 1);
+            let page_id = *pdf.get_pages().values().next().unwrap();
+            let page = pdf.get_dictionary(page_id).unwrap();
+            let media_box = page.get(b"MediaBox").unwrap().as_array().unwrap();
+            let coordinates = media_box
+                .iter()
+                .map(|value| match value {
+                    lopdf::Object::Integer(value) => *value as f64,
+                    lopdf::Object::Real(value) => f64::from(*value),
+                    _ => panic!("unexpected MediaBox coordinate: {value:?}"),
+                })
+                .collect::<Vec<_>>();
+            assert!((coordinates[2] - coordinates[0] - 75.0).abs() < 0.01);
+            assert!((coordinates[3] - coordinates[1] - expected_height).abs() < 0.01);
+
+            let field_forms = pdf
+                .objects
+                .values()
+                .filter_map(|object| object.as_stream().ok())
+                .filter(|stream| {
+                    stream
+                        .dict
+                        .get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Form")
+                        && stream
+                            .dict
+                            .get(b"BBox")
+                            .and_then(lopdf::Object::as_array)
+                            .is_ok_and(|bbox| {
+                                bbox.len() == 4
+                                    && bbox.iter().zip([0.0, 0.0, 1.0, 1.0]).all(
+                                        |(value, expected)| match value {
+                                            lopdf::Object::Integer(value) => {
+                                                *value as f64 == expected
+                                            }
+                                            lopdf::Object::Real(value) => {
+                                                f64::from(*value) == expected
+                                            }
+                                            _ => false,
+                                        },
+                                    )
+                            })
+                        && stream.decompressed_content().is_ok_and(|content| {
+                            let marker_operator = b" rg 0 0 1 1 re f";
+                            content
+                                .windows(marker_operator.len())
+                                .any(|window| window == marker_operator)
+                        })
+                })
+                .count();
+            assert_eq!(
+                field_forms, 1,
+                "serialized PDF contains one native ink field Form"
+            );
+        };
+        assert_field_form(&full_pdf, 75.0);
+        assert_field_form(&slice_pdf, 30.0);
+
+        if let Some(directory) = std::env::var_os("SDOCX_SLICE_INK_ARTIFACTS") {
+            let directory = std::path::PathBuf::from(directory);
+            std::fs::create_dir_all(&directory).unwrap();
+            std::fs::write(directory.join("full-page.pdf"), &full_pdf).unwrap();
+            std::fs::write(directory.join("slice-y30-h40.pdf"), &slice_pdf).unwrap();
+        }
     }
 
     #[cfg(feature = "pdf")]
