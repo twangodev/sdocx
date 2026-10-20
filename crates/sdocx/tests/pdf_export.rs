@@ -408,6 +408,53 @@ fn selected_document() -> sdocx::Document {
     }
 }
 
+#[cfg(feature = "serde")]
+#[test]
+fn selected_layout_pdf_refuses_retained_pdf_paper_before_source_admission() {
+    let mut document = selected_document();
+    document.pages[1].background.pdf_paper = Some(vec![
+        serde_json::from_value(serde_json::json!({
+            "media_id": -1000,
+            "page_index": -7,
+            "rectangle": {"Unspecified": vec![0; 16]},
+        }))
+        .unwrap(),
+    ]);
+    let layout = sdocx::layout_document(&document);
+    let fonts = sdocx::fonts::FontBook::default();
+
+    assert!(
+        render_layout_pages_pdf_with_fonts(
+            &document,
+            &layout,
+            &[0],
+            &Default::default(),
+            &PdfOptions::default(),
+            &fonts,
+        )
+        .is_ok(),
+        "an ordinary selected page remains exportable"
+    );
+
+    let error = render_layout_pages_pdf_with_fonts(
+        &document,
+        &layout,
+        &[1],
+        &Default::default(),
+        &PdfOptions::default(),
+        &fonts,
+    )
+    .unwrap_err();
+    assert!(matches!(
+        error,
+        PdfError::UnsupportedPdfPaper {
+            output_page_index: 0,
+            source_page_index: 1,
+            record_count: 1,
+        }
+    ));
+}
+
 #[test]
 fn selected_layout_pages_preserve_requested_order_and_duplicates() {
     let document = selected_document();

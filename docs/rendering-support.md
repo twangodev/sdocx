@@ -603,8 +603,9 @@ parse warnings were PDF-backed paper in two local research notes. Rust now retai
 all ordered signed PDF records, version-dependent rectangles and raw template type;
 modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
-PDF-backed paper remains unrendered; retained records and bytes do not certify PDF
-validity or native composition.
+PDF-backed paper remains unrendered; PDF export rejects selected pages containing
+retained paper records rather than omitting their backgrounds. SVG previews still
+omit them. Retained bytes do not certify PDF validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
 test-only Rust assembly preserves selected source pages, scoped vector resources

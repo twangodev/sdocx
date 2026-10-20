@@ -163,6 +163,14 @@ pub enum PdfError {
     InvalidPageSize { page_index: usize },
     #[error("visible page index {page_index} is out of bounds")]
     InvalidPageIndex { page_index: usize },
+    #[error(
+        "cannot export output page {output_page_index} (source page {source_page_index}): {record_count} retained PDF paper record(s) are not supported by this export route"
+    )]
+    UnsupportedPdfPaper {
+        output_page_index: usize,
+        source_page_index: usize,
+        record_count: usize,
+    },
     #[error("unsupported retained text on page {page_index}: {message}")]
     UnsupportedText { page_index: usize, message: String },
     #[error("invalid SVG on page {page_index}: {message}")]
@@ -277,6 +285,21 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
                 .ok_or(PdfError::InvalidPageIndex { page_index })
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
+    for (output_page_index, layout_page) in selected_pages.iter().enumerate() {
+        let record_count = layout_page
+            .page
+            .background
+            .pdf_paper
+            .as_ref()
+            .map_or(0, Vec::len);
+        if record_count > 0 {
+            return Err(PdfError::UnsupportedPdfPaper {
+                output_page_index,
+                source_page_index: layout_page.source_page_index,
+                record_count,
+            });
+        }
+    }
     let scenes =
         cache.render_layout_page_scenes(document, &selected_pages, render_options, fonts, observer);
     let bytes = render_scenes_pdf_with_progress(&scenes, &pdf_options, observer)?;
