@@ -6,104 +6,254 @@ use super::vector::{
 use crate::PreparedStroke;
 use std::collections::HashMap;
 
-pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
-    if paint.profile == Some("FountainPen")
-        && paint.dot_radii.is_some()
-        && paint.dot_directions.is_none()
-    {
-        return render_v16(svg, paint, replay);
+pub(super) fn render(
+    svg: &mut Scene,
+    paint: &PreparedStroke<'_>,
+    replay: bool,
+    slice: Option<crate::render::PageSlice>,
+) -> bool {
+    let Some(plan) = PaintPlan::prepare(paint) else {
+        return false;
+    };
+    if slice.is_some_and(|slice| slice.fountain_paint_culling_enabled() && plan.outside(slice)) {
+        return true;
     }
-    let (Some(directions), Some(radii), Some(bounds)) =
-        (&paint.dot_directions, &paint.dot_radii, paint.bounds)
-    else {
-        return false;
-    };
-    let Some(color) = parse_rgb(&paint.color) else {
-        return false;
-    };
-    let gradient = svg.definition::<Gradient>();
-    let filter = svg.definition::<Filter>();
-    let x = bounds.x_min - 1.;
-    let y = bounds.y_min - 1.;
-    let width = bounds.x_max - bounds.x_min + 2.;
-    let height = bounds.y_max - bounds.y_min + 2.;
-    let ramp = LinearGradient::new(&gradient)
-        .x1(-1)
-        .x2(1)
-        .y1(0)
-        .y2(0)
-        .add(Stop::new(0, ColorValue::gray(0.07)))
-        .add(Stop::new(0.25, ColorValue::WHITE))
-        .add(Stop::new(0.75, ColorValue::WHITE))
-        .add(Stop::new(1, ColorValue::gray(0.07)));
-    let matrix = ColorMatrix::matrix([
-        0.,
-        0.,
-        0.,
-        0.,
-        f64::from(color.r) / 255.,
-        0.,
-        0.,
-        0.,
-        0.,
-        f64::from(color.g) / 255.,
-        0.,
-        0.,
-        0.,
-        0.,
-        f64::from(color.b) / 255.,
-        1.,
-        0.,
-        0.,
-        0.,
-        0.,
-    ]);
-    svg.scope(
-        Definitions::new().add(ramp).add(
-            SvgFilter::new(&filter)
-                .region(x, y, width, height)
-                .add(matrix),
-        ),
-        |_| {},
-    );
-    svg.scope(
-        Group::new().filtered(&filter).opacity(paint.opacity),
-        |svg| {
-            svg.scope(Group::new().isolated(), |svg| {
-                svg.push(
-                    super::vector::Rectangle::new()
-                        .x(x)
-                        .y(y)
-                        .width(width)
-                        .height(height)
-                        .fill(Paint::BLACK),
-                );
-                // Opaque Lighten stamps implement maximum coverage without alpha accumulation.
-                for (index, ((point, radius), direction)) in
-                    paint.points.iter().zip(radii).zip(directions).enumerate()
-                {
-                    let dx = direction.x * radius;
-                    let dy = direction.y * radius;
-                    svg.push(
-                        Group::new()
-                            .blend(Blend::Lighten)
-                            .replay_part(replay.then_some(ReplayPart(index + 1)))
-                            .add(
-                                Circle::new()
-                                    .r(1)
-                                    .fill(Paint::Gradient(gradient))
-                                    .transformed(Transform::matrix(
-                                        [dx, dy, -dy, dx, point.x, point.y],
-                                        7,
-                                        4,
-                                    )),
-                            ),
-                    );
-                }
-            });
-        },
-    );
+    plan.emit(svg, paint, replay);
     true
+}
+
+enum PaintPlan {
+    V14(V14Plan),
+    V16(V16Plan),
+}
+
+struct V14Plan {
+    color: crate::Color,
+    region: (f64, f64, f64, f64),
+    stamps: Vec<V14Stamp>,
+    y_bounds: Option<(f64, f64)>,
+}
+
+#[derive(Clone, Copy)]
+struct V14Stamp {
+    point: crate::Point,
+    dx: f64,
+    dy: f64,
+}
+
+struct V16Plan {
+    color: crate::Color,
+    stamps: Vec<V16Stamp>,
+    y_bounds: Option<(f64, f64)>,
+}
+
+impl PaintPlan {
+    fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
+        if paint.profile == Some("FountainPen")
+            && paint.dot_radii.is_some()
+            && paint.dot_directions.is_none()
+        {
+            Some(Self::V16(V16Plan::prepare(paint)?))
+        } else {
+            Some(Self::V14(V14Plan::prepare(paint)?))
+        }
+    }
+
+    fn outside(&self, slice: crate::render::PageSlice) -> bool {
+        let bounds = match self {
+            Self::V14(plan) => plan.y_bounds,
+            Self::V16(plan) => plan.y_bounds,
+        };
+        let Some((min_y, max_y)) = bounds else {
+            return false;
+        };
+        let slice_min = f64::from(slice.y());
+        let slice_max = slice_min + f64::from(slice.height());
+        max_y < slice_min || min_y > slice_max
+    }
+
+    fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
+        match self {
+            Self::V14(plan) => plan.emit(svg, paint, replay),
+            Self::V16(plan) => plan.emit(svg, paint, replay),
+        }
+    }
+}
+
+impl V14Plan {
+    fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
+        let (Some(directions), Some(radii), Some(bounds)) =
+            (&paint.dot_directions, &paint.dot_radii, paint.bounds)
+        else {
+            return None;
+        };
+        let color = parse_rgb(&paint.color)?;
+        let region = (
+            bounds.x_min - 1.,
+            bounds.y_min - 1.,
+            bounds.x_max - bounds.x_min + 2.,
+            bounds.y_max - bounds.y_min + 2.,
+        );
+        let mut stamps =
+            Vec::with_capacity(paint.points.len().min(radii.len()).min(directions.len()));
+        let mut y_bounds: Option<(f64, f64)> = None;
+        let mut bounds_known = region.0.is_finite()
+            && region.1.is_finite()
+            && region.2.is_finite()
+            && region.3.is_finite()
+            && region.2 > 0.0
+            && region.3 > 0.0;
+        for ((point, radius), direction) in paint.points.iter().zip(radii).zip(directions) {
+            let dx = direction.x * radius;
+            let dy = direction.y * radius;
+            stamps.push(V14Stamp {
+                point: *point,
+                dx,
+                dy,
+            });
+            let (Some(_tx), Some(ty)) = (
+                svg_number(point.x, 4).and_then(f32_number),
+                svg_number(point.y, 4).and_then(f32_number),
+            ) else {
+                bounds_known = false;
+                continue;
+            };
+            let (Some(a), Some(b), Some(c), Some(d)) = (
+                svg_number(dx, 7).and_then(f32_number),
+                svg_number(dy, 7).and_then(f32_number),
+                svg_number(-dy, 7).and_then(f32_number),
+                svg_number(dx, 7).and_then(f32_number),
+            ) else {
+                bounds_known = false;
+                continue;
+            };
+            let extent = next_up(a.hypot(c).max(b.hypot(d)));
+            let low = next_down(next_down(ty) - extent);
+            let high = next_up(next_up(ty) + extent);
+            y_bounds = Some(match y_bounds {
+                Some((min_y, max_y)) => (min_y.min(f64::from(low)), max_y.max(f64::from(high))),
+                None => (f64::from(low), f64::from(high)),
+            });
+        }
+        if !bounds_known {
+            y_bounds = None;
+        }
+        Some(Self {
+            color,
+            region,
+            stamps,
+            y_bounds,
+        })
+    }
+
+    fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
+        let (x, y, width, height) = self.region;
+        let gradient = svg.definition::<Gradient>();
+        let filter = svg.definition::<Filter>();
+        let ramp = LinearGradient::new(&gradient)
+            .x1(-1)
+            .x2(1)
+            .y1(0)
+            .y2(0)
+            .add(Stop::new(0, ColorValue::gray(0.07)))
+            .add(Stop::new(0.25, ColorValue::WHITE))
+            .add(Stop::new(0.75, ColorValue::WHITE))
+            .add(Stop::new(1, ColorValue::gray(0.07)));
+        let matrix = ColorMatrix::matrix([
+            0.,
+            0.,
+            0.,
+            0.,
+            f64::from(self.color.r) / 255.,
+            0.,
+            0.,
+            0.,
+            0.,
+            f64::from(self.color.g) / 255.,
+            0.,
+            0.,
+            0.,
+            0.,
+            f64::from(self.color.b) / 255.,
+            1.,
+            0.,
+            0.,
+            0.,
+            0.,
+        ]);
+        svg.scope(
+            Definitions::new().add(ramp).add(
+                SvgFilter::new(&filter)
+                    .region(x, y, width, height)
+                    .add(matrix),
+            ),
+            |_| {},
+        );
+        svg.scope(
+            Group::new().filtered(&filter).opacity(paint.opacity),
+            |svg| {
+                svg.scope(Group::new().isolated(), |svg| {
+                    svg.push(
+                        super::vector::Rectangle::new()
+                            .x(x)
+                            .y(y)
+                            .width(width)
+                            .height(height)
+                            .fill(Paint::BLACK),
+                    );
+                    for (index, stamp) in self.stamps.iter().enumerate() {
+                        svg.push(
+                            Group::new()
+                                .blend(Blend::Lighten)
+                                .replay_part(replay.then_some(ReplayPart(index + 1)))
+                                .add(
+                                    Circle::new()
+                                        .r(1)
+                                        .fill(Paint::Gradient(gradient))
+                                        .transformed(Transform::matrix(
+                                            [
+                                                stamp.dx,
+                                                stamp.dy,
+                                                -stamp.dy,
+                                                stamp.dx,
+                                                stamp.point.x,
+                                                stamp.point.y,
+                                            ],
+                                            7,
+                                            4,
+                                        )),
+                                ),
+                        );
+                    }
+                });
+            },
+        );
+    }
+}
+
+fn svg_number(value: f64, places: usize) -> Option<f64> {
+    format!("{value:.places$}").parse().ok()
+}
+
+fn f32_number(value: f64) -> Option<f32> {
+    let value = value as f32;
+    value.is_finite().then_some(value)
+}
+
+fn next_up(value: f32) -> f32 {
+    if value.is_nan() || value == f32::INFINITY {
+        value
+    } else if value == 0.0 {
+        f32::from_bits(1)
+    } else if value > 0.0 {
+        f32::from_bits(value.to_bits() + 1)
+    } else {
+        f32::from_bits(value.to_bits() - 1)
+    }
+}
+
+fn next_down(value: f32) -> f32 {
+    -next_up(-value)
 }
 
 #[derive(Clone, Copy)]
@@ -112,120 +262,142 @@ struct V16Stamp {
     y: f32,
     extent_x: f32,
     extent_y: f32,
-    gradient: usize,
+    gradient_key: (u32, u32),
 }
 
 /// Retain the V16 RTV5 radial coverage as vector gradients at canonical unit
 /// inverse scale. This is the saved shader equation, not a device-pixel match
 /// for arbitrary SVG zoom or PDF viewing scale.
-fn render_v16(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
-    let (Some(radii), Some(_bounds)) = (&paint.dot_radii, paint.bounds) else {
-        return false;
-    };
-    if radii.len() != paint.points.len()
-        || radii.is_empty()
-        || !paint.opacity.is_finite()
-        || !(0.0..=1.0).contains(&paint.opacity)
-    {
-        return false;
-    }
-    let Some(color) = parse_rgb(&paint.color) else {
-        return false;
-    };
-
-    // RTV5::AddPoint float32 arithmetic at sx=sy=1, in native instruction
-    // order: rx/ry, min and factor, width compensation, extents, then inner.
-    // A gradient is shared only when both shader coverage parameters have
-    // identical f32 bits.
-    let mut unique = Vec::<(u32, u32, super::vector::Definition<Gradient>)>::new();
-    let mut indices = HashMap::<(u32, u32), usize>::new();
-    let mut stamps = Vec::with_capacity(radii.len());
-    for (point, radius) in paint.points.iter().zip(radii) {
-        let radius = *radius as f32;
-        if !radius.is_finite() || radius <= 0. {
-            return false;
-        }
-        let rx = radius / 1.0_f32;
-        let ry = radius / 1.0_f32;
-        let minimum = rx.min(ry);
-        let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
-        let alpha = 1.0 / factor;
-        let extent_x = rx * factor.max(1.0) + 0.5;
-        let extent_y = ry * factor.max(1.0) + 0.5;
-        let maximum = extent_x.max(extent_y);
-        let inner = 0.5 * (maximum - 1.0) / maximum;
-        let x = point.x as f32;
-        let y = point.y as f32;
-        if !x.is_finite()
-            || !y.is_finite()
-            || !extent_x.is_finite()
-            || !extent_y.is_finite()
-            || !inner.is_finite()
-        {
-            return false;
-        }
-        let key = (alpha.to_bits(), inner.to_bits());
-        let gradient = if let Some(&index) = indices.get(&key) {
-            index
-        } else {
-            let index = unique.len();
-            unique.push((key.0, key.1, svg.definition::<Gradient>()));
-            indices.insert(key, index);
-            index
+impl V16Plan {
+    fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
+        let (Some(radii), Some(_bounds)) = (&paint.dot_radii, paint.bounds) else {
+            return None;
         };
-        stamps.push(V16Stamp {
-            x,
-            y,
-            extent_x,
-            extent_y,
-            gradient,
+        if radii.len() != paint.points.len()
+            || radii.is_empty()
+            || !paint.opacity.is_finite()
+            || !(0.0..=1.0).contains(&paint.opacity)
+        {
+            return None;
+        }
+        let color = parse_rgb(&paint.color)?;
+
+        // RTV5::AddPoint float32 arithmetic at sx=sy=1, in native instruction
+        // order: rx/ry, min and factor, width compensation, extents, then inner.
+        // A gradient is shared only when both shader coverage parameters have
+        // identical f32 bits.
+        let mut stamps = Vec::with_capacity(radii.len());
+        let mut y_bounds: Option<(f64, f64)> = None;
+        for (point, radius) in paint.points.iter().zip(radii) {
+            let radius = *radius as f32;
+            if !radius.is_finite() || radius <= 0. {
+                return None;
+            }
+            let rx = radius / 1.0_f32;
+            let ry = radius / 1.0_f32;
+            let minimum = rx.min(ry);
+            let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
+            let alpha = 1.0 / factor;
+            let extent_x = rx * factor.max(1.0) + 0.5;
+            let extent_y = ry * factor.max(1.0) + 0.5;
+            let maximum = extent_x.max(extent_y);
+            let inner = 0.5 * (maximum - 1.0) / maximum;
+            let x = point.x as f32;
+            let y = point.y as f32;
+            if !x.is_finite()
+                || !y.is_finite()
+                || !extent_x.is_finite()
+                || !extent_y.is_finite()
+                || !inner.is_finite()
+            {
+                return None;
+            }
+            let key = (alpha.to_bits(), inner.to_bits());
+            y_bounds = Some(match y_bounds {
+                Some((min_y, max_y)) => (
+                    min_y.min(f64::from(next_down(y - extent_y))),
+                    max_y.max(f64::from(next_up(y + extent_y))),
+                ),
+                None => (
+                    f64::from(next_down(y - extent_y)),
+                    f64::from(next_up(y + extent_y)),
+                ),
+            });
+            stamps.push(V16Stamp {
+                x,
+                y,
+                extent_x,
+                extent_y,
+                gradient_key: key,
+            });
+        }
+
+        Some(Self {
+            color,
+            stamps,
+            y_bounds,
+        })
+    }
+
+    fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
+        let mut unique = Vec::<(u32, u32, super::vector::Definition<Gradient>)>::new();
+        let mut indices = HashMap::<(u32, u32), usize>::new();
+        for stamp in &self.stamps {
+            let key = stamp.gradient_key;
+            indices.entry(key).or_insert_with(|| {
+                let index = unique.len();
+                unique.push((key.0, key.1, svg.definition::<Gradient>()));
+                index
+            });
+        }
+        let mut definitions = Definitions::new();
+        for (alpha_bits, inner_bits, id) in &unique {
+            let alpha = f32::from_bits(*alpha_bits);
+            let inner = f32::from_bits(*inner_bits);
+            let source_alpha = alpha * paint.opacity as f32;
+            let mut gradient = RadialGradient::new(id)
+                .cx(0)
+                .cy(0)
+                .r(1)
+                .add(Stop::new(0, ColorValue::Rgb(self.color)).opacity(source_alpha));
+            if inner > 0. {
+                gradient = gradient.add(
+                    Stop::new(inner + inner, ColorValue::Rgb(self.color)).opacity(source_alpha),
+                );
+            }
+            definitions =
+                definitions.add(gradient.add(Stop::new(1, ColorValue::Rgb(self.color)).opacity(0)));
+        }
+        svg.scope(definitions, |_| {});
+        svg.scope(Group::new(), |svg| {
+            // RTV5 submits each instance with source-over blending. Keep the
+            // per-instance ARGB alpha in its radial field so overlaps accumulate
+            // in draw order; applying it to this parent group would apply it once
+            // after the instances have already combined.
+            for (index, stamp) in self.stamps.iter().enumerate() {
+                let Some(&gradient_index) = indices.get(&stamp.gradient_key) else {
+                    continue;
+                };
+                let Some((_, _, gradient)) = unique.get(gradient_index) else {
+                    continue;
+                };
+                let transform = Transform::matrix_unrounded([
+                    stamp.extent_x as f64,
+                    0.,
+                    0.,
+                    stamp.extent_y as f64,
+                    stamp.x as f64,
+                    stamp.y as f64,
+                ]);
+                svg.push(
+                    Group::new()
+                        .replay_part(replay.then_some(ReplayPart(index + 1)))
+                        .transformed(transform)
+                        .add(Circle::new().r(1).fill(Paint::Gradient(*gradient))),
+                );
+            }
         });
     }
-
-    let mut definitions = Definitions::new();
-    for (alpha_bits, inner_bits, id) in &unique {
-        let alpha = f32::from_bits(*alpha_bits);
-        let inner = f32::from_bits(*inner_bits);
-        let source_alpha = alpha * paint.opacity as f32;
-        let mut gradient = RadialGradient::new(id)
-            .cx(0)
-            .cy(0)
-            .r(1)
-            .add(Stop::new(0, ColorValue::Rgb(color)).opacity(source_alpha));
-        if inner > 0. {
-            gradient = gradient
-                .add(Stop::new(inner + inner, ColorValue::Rgb(color)).opacity(source_alpha));
-        }
-        definitions =
-            definitions.add(gradient.add(Stop::new(1, ColorValue::Rgb(color)).opacity(0)));
-    }
-    svg.scope(definitions, |_| {});
-    svg.scope(Group::new(), |svg| {
-        // RTV5 submits each instance with source-over blending. Keep the
-        // per-instance ARGB alpha in its radial field so overlaps accumulate
-        // in draw order; applying it to this parent group would apply it once
-        // after the instances have already combined.
-        for (index, stamp) in stamps.iter().enumerate() {
-            let Some((_, _, gradient)) = unique.get(stamp.gradient) else {
-                continue;
-            };
-            let transform = Transform::matrix_unrounded([
-                stamp.extent_x as f64,
-                0.,
-                0.,
-                stamp.extent_y as f64,
-                stamp.x as f64,
-                stamp.y as f64,
-            ]);
-            svg.push(
-                Group::new()
-                    .replay_part(replay.then_some(ReplayPart(index + 1)))
-                    .transformed(transform)
-                    .add(Circle::new().r(1).fill(Paint::Gradient(*gradient))),
-            );
-        }
-    });
-    true
 }
 
 fn parse_rgb(value: &str) -> Option<crate::Color> {
@@ -274,7 +446,7 @@ mod tests {
         paint.color = color.into();
         paint.opacity = 0.6;
         let mut svg = Scene::new(Svg::new().width(64).height(64));
-        assert!(render(&mut svg, &paint, replay));
+        assert!(render(&mut svg, &paint, replay, None));
         svg.finish()
     }
 
@@ -313,8 +485,49 @@ mod tests {
         paint.color = "#1a1a1a".into();
         paint.opacity = opacity;
         let mut svg = Scene::new(Svg::new().width(64).height(64));
-        assert!(render(&mut svg, &paint, replay));
+        assert!(render(&mut svg, &paint, replay, None));
         svg.finish()
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v16_slice_bounds_include_shader_fringe_and_touching_edges() {
+        use crate::{LayoutPage, Page};
+
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let mut paint = crate::prepare_stroke(&stroke, false);
+        paint.profile = Some("FountainPen");
+        paint.points = Cow::Owned(vec![Point { x: 10.0, y: 10.0 }]);
+        paint.dot_radii = Some(vec![0.25]);
+        paint.dot_directions = None;
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 20.0,
+            y_max: 20.0,
+        });
+        let page = LayoutPage {
+            page: Page {
+                uuid: "slice-test".to_owned(),
+                width: 100,
+                height: 100,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: Vec::new(),
+            },
+            source_page_index: 0,
+            body_text: None,
+        };
+        let touching = crate::render::PageSlice::new_for_page(&page, 11, 10, false).unwrap();
+        let separated = crate::render::PageSlice::new_for_page(&page, 12, 10, false).unwrap();
+        let plan = PaintPlan::prepare(&paint).unwrap();
+        assert!(!plan.outside(touching), "the V16 +0.5 extent touches y=11");
+        assert!(plan.outside(separated), "the V16 fringe ends before y=12");
     }
 
     #[test]
@@ -733,6 +946,7 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
+                None,
                 None,
                 None,
             );

@@ -48,6 +48,7 @@ pub use marker::PointMarkerTarget;
 mod native_body_pages;
 #[cfg(feature = "pdf")]
 mod native_ink;
+mod pdf_slice;
 mod placed;
 mod table;
 mod text;
@@ -255,7 +256,7 @@ impl DocumentTextCache {
         observer(Progress::pending(ProgressStage::Preparing));
         self.bind(document, options, fonts);
         let (mut rendered, scene) =
-            self.prepare_page(document, page, options, false, fonts, false, observer);
+            self.prepare_page(document, page, options, false, fonts, false, None, observer);
         observer(Progress::pending(ProgressStage::Finalizing));
         rendered.svg = scene.finish();
         Some(rendered)
@@ -429,6 +430,10 @@ pub(crate) struct RenderedScene {
     pub text_error: Option<String>,
 }
 
+#[cfg(feature = "pdf")]
+pub(crate) use pdf_slice::PageSceneRequest;
+pub(crate) use pdf_slice::PageSlice;
+
 impl DocumentTextCache {
     fn render_page(
         &mut self,
@@ -457,6 +462,7 @@ impl DocumentTextCache {
             replay,
             fonts,
             false,
+            None,
             &mut |_| {},
         );
         RenderedPage {
@@ -474,15 +480,41 @@ impl DocumentTextCache {
         fonts: &fonts::FontBook,
         observer: &mut dyn FnMut(Progress),
     ) -> Vec<RenderedScene> {
+        let requests = pages
+            .iter()
+            .map(|layout_page| PageSceneRequest::full_page(layout_page))
+            .collect::<Vec<_>>();
+        self.render_layout_page_scene_requests(document, &requests, options, fonts, observer)
+    }
+
+    #[cfg(feature = "pdf")]
+    pub(crate) fn render_layout_page_scene_requests(
+        &mut self,
+        document: &Document,
+        requests: &[PageSceneRequest<'_>],
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+        observer: &mut dyn FnMut(Progress),
+    ) -> Vec<RenderedScene> {
         observer(Progress::pending(ProgressStage::Preparing));
         self.bind(document, options, fonts);
-        pages
+        requests
             .iter()
             .enumerate()
-            .map(|(index, page)| {
+            .map(|(index, request)| {
                 observer(Progress::pending(ProgressStage::Preparing));
-                let (mut page, mut scene) =
-                    self.prepare_page(document, page, options, false, fonts, true, observer);
+                let layout_page = request.layout_page();
+                let slice = request.slice();
+                let (mut page, mut scene) = self.prepare_page(
+                    document,
+                    layout_page,
+                    options,
+                    false,
+                    fonts,
+                    true,
+                    slice,
+                    observer,
+                );
                 let text = scene.take_native_text();
                 let ink = scene.take_native_ink();
                 let text_error = scene.take_native_text_error();
@@ -491,7 +523,7 @@ impl DocumentTextCache {
                 observer(Progress::new(
                     ProgressStage::Pages,
                     index + 1,
-                    Some(pages.len()),
+                    Some(requests.len()),
                 ));
                 RenderedScene {
                     page,
@@ -512,6 +544,7 @@ impl DocumentTextCache {
         replay: bool,
         fonts: &fonts::FontBook,
         retain_text: bool,
+        slice: Option<PageSlice>,
         observer: &mut dyn FnMut(Progress),
     ) -> (RenderedPage, Scene) {
         let page = &layout_page.page;
@@ -529,7 +562,8 @@ impl DocumentTextCache {
                 settings,
             ));
         observer(Progress::pending(ProgressStage::Preparing));
-        let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer, self);
+        let body_text =
+            PreparedBodyText::new(document, layout_page, theme, &text_renderer, self, slice);
         let mut svg = render_page_contents_svg(
             page,
             &document.metadata,
@@ -541,13 +575,14 @@ impl DocumentTextCache {
             retain_text,
             options.inkpen2_profile,
             options.pencil3_profile,
+            slice,
             observer,
         );
         (
             RenderedPage {
                 source_page_index: layout_page.source_page_index,
                 width: page.width,
-                height: page.height,
+                height: slice.map_or(page.height, PageSlice::height),
                 svg: String::new(),
                 text_diagnostics: text_renderer.diagnostics(),
                 object_diagnostics: text_renderer.object_diagnostics(),
@@ -583,6 +618,7 @@ impl PreparedBodyText {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
         cache: &mut DocumentTextCache,
+        slice: Option<PageSlice>,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
         let (text, first_page_index, last_page_index) =
@@ -629,6 +665,18 @@ impl PreparedBodyText {
             .iter()
             .map(|page| f64::from(page.height))
             .sum::<f64>();
+        // Keep native overshooting tail geometry in the root SVG/canvas, but
+        // select body text only from this physical note page. Otherwise a
+        // fallback plan without certified native line ownership can admit
+        // next-page glyphs into this page's retained-text registry before the
+        // physical-page clip hides their paint.
+        let slice_y = slice.map_or(0, PageSlice::y);
+        let text_end = slice.map_or(page.page.height, |slice| {
+            slice
+                .y()
+                .saturating_add(slice.height())
+                .min(page.page.height)
+        });
         Some(Self {
             plan,
             source_page_index: page.source_page_index,
@@ -637,8 +685,8 @@ impl PreparedBodyText {
             viewport: Viewport::new(BoundingBox {
                 x_min: 0.0,
                 x_max: f64::from(page.page.width),
-                y_min: page_top,
-                y_max: page_top + f64::from(page.page.height),
+                y_min: page_top + f64::from(slice_y),
+                y_max: page_top + f64::from(text_end),
             }),
         })
     }
@@ -923,15 +971,16 @@ fn render_page_contents_svg(
     retain_text: bool,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
-    let vb_y = 0.0;
+    let vb_y = f64::from(slice.map_or(0, PageSlice::y));
     let vb_w = page.width as f64;
-    let vb_h = page.height as f64;
+    let vb_h = f64::from(slice.map_or(page.height, PageSlice::height));
     let svg_w = page.width;
-    let svg_h = page.height;
+    let svg_h = slice.map_or(page.height, PageSlice::height);
 
     let mut svg = Scene::new(
         Svg::new()
@@ -945,16 +994,21 @@ fn render_page_contents_svg(
     }
     #[cfg(not(feature = "pdf"))]
     let _ = retain_text;
-    svg.push(
-        Rectangle::new()
-            .x(vb_x)
-            .y(vb_y)
-            .width(vb_w)
-            .height(vb_h)
-            .fill(Paint::from_hex(&bg)),
-    );
+    let include_canvas = slice.is_none_or(PageSlice::include_canvas);
+    if include_canvas {
+        svg.push(
+            Rectangle::new()
+                .x(vb_x)
+                .y(vb_y)
+                .width(vb_w)
+                .height(vb_h)
+                .fill(Paint::from_hex(&bg)),
+        );
+    }
 
-    if let Ok(Some(pattern)) = crate::page_background::template_pattern(page, metadata) {
+    if include_canvas
+        && let Ok(Some(pattern)) = crate::page_background::template_pattern(page, metadata)
+    {
         match pattern {
             crate::page_background::TemplatePattern::Dots(dots) => {
                 render_dot_background(&mut svg, page, dots, theme)
@@ -975,6 +1029,7 @@ fn render_page_contents_svg(
         body_text,
         inkpen2_profile,
         pencil3_profile,
+        slice,
     };
     let total = page.composed_objects().count();
     let mut progress = WorkProgress::new(observer, ProgressStage::Rendering, total);
@@ -1008,6 +1063,7 @@ struct CompositionContext<'a> {
     body_text: Option<&'a PreparedBodyText>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    slice: Option<PageSlice>,
 }
 
 fn render_pass(
@@ -1070,6 +1126,7 @@ fn render_object(
                 [context.page.width, context.page.height],
                 context.inkpen2_profile,
                 context.pencil3_profile,
+                context.slice,
             );
             *stroke_index += 1;
         }
@@ -3228,6 +3285,7 @@ fn render_stroke(
     viewport: [u32; 2],
     inkpen2_profile: Option<InkPen2RenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    slice: Option<PageSlice>,
 ) {
     // Saved ObjectDrawing admission requires at least two source points before
     // pen-name dispatch. Keep the context-free prepare_stroke compatibility
@@ -3347,12 +3405,13 @@ fn render_stroke(
         };
         paint.color = theme.foreground(color);
     }
+    let slice = if native_allowed { slice } else { None };
     if let Some(index) = replay_index {
         svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
-            render_prepared_stroke(svg, &paint, true);
+            render_prepared_stroke(svg, &paint, true, slice);
         });
     } else {
-        render_prepared_stroke(svg, &paint, false);
+        render_prepared_stroke(svg, &paint, false, slice);
     }
 }
 
@@ -3930,12 +3989,17 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
     prepared
 }
 
-fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
+fn render_prepared_stroke(
+    svg: &mut Scene,
+    paint: &crate::PreparedStroke<'_>,
+    replay: bool,
+    slice: Option<PageSlice>,
+) {
     let color = &paint.color;
     if oblique::render(svg, paint, replay) {
         return;
     }
-    if fountain::render(svg, paint, replay) {
+    if fountain::render(svg, paint, replay, slice) {
         return;
     }
     let mut invalid_ordered_replay = false;
@@ -4183,6 +4247,198 @@ mod tests {
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
     };
+
+    #[cfg(all(feature = "pdf", feature = "serde"))]
+    #[test]
+    #[ignore = "large actual-source slice raster oracle; set SDOCX_QUIZ_SDOCX and SDOCX_CS61_SDOCX"]
+    fn actual_fountain_slice_culling_matches_same_viewport_without_culling() {
+        fn intervals(case: &str) -> Vec<(u32, u32)> {
+            match case {
+                "quiz" => std::iter::once((0, 1485))
+                    .chain((0..10).map(|index| (1485 + index * 1527, 1527)))
+                    .collect(),
+                "cs61" => vec![
+                    (0, 1397),
+                    (1397, 1397),
+                    (2794, 1398),
+                    (4192, 1398),
+                    (5590, 1397),
+                    (6987, 1398),
+                    (8385, 1398),
+                    (9783, 1397),
+                    (11180, 1398),
+                    (12578, 1398),
+                    (13976, 1397),
+                    (15373, 1398),
+                    (16771, 1398),
+                    (18169, 1397),
+                    (19566, 1398),
+                    (20964, 1398),
+                    (22362, 1398),
+                    (23760, 1397),
+                    (25157, 1397),
+                    (26554, 1398),
+                ],
+                _ => panic!("unknown actual fixture {case}"),
+            }
+        }
+
+        fn raster(svg: &str, width: u32, height: u32) -> resvg::tiny_skia::Pixmap {
+            let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default())
+                .expect("rendered slice SVG parses");
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(width, height)
+                .expect("slice raster dimensions fit memory");
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap
+        }
+
+        fn assert_native_ink_equal(expected: &super::RenderedScene, actual: &super::RenderedScene) {
+            let expected_entries = expected.ink.iter().collect::<Vec<_>>();
+            let actual_entries = actual.ink.iter().collect::<Vec<_>>();
+            assert_eq!(expected_entries.len(), actual_entries.len());
+            for ((expected_id, expected), (actual_id, actual)) in
+                expected_entries.into_iter().zip(actual_entries)
+            {
+                assert_eq!(expected_id, actual_id);
+                assert_eq!(expected.bounds, actual.bounds);
+                assert_eq!(expected.opacity.to_bits(), actual.opacity.to_bits());
+                match (&expected.payload, &actual.payload) {
+                    (
+                        crate::render::native_ink::NativeInkPayload::Mesh {
+                            mesh: expected_mesh,
+                            color: expected_color,
+                        },
+                        crate::render::native_ink::NativeInkPayload::Mesh {
+                            mesh: actual_mesh,
+                            color: actual_color,
+                        },
+                    ) => {
+                        assert_eq!(expected_color, actual_color);
+                        assert_eq!(expected_mesh, actual_mesh);
+                    }
+                    (
+                        crate::render::native_ink::NativeInkPayload::Radial {
+                            records: expected_records,
+                            saved_alpha: expected_alpha,
+                            enhanced_antialias: expected_enhanced,
+                        },
+                        crate::render::native_ink::NativeInkPayload::Radial {
+                            records: actual_records,
+                            saved_alpha: actual_alpha,
+                            enhanced_antialias: actual_enhanced,
+                        },
+                    ) => {
+                        assert_eq!(expected_records, actual_records);
+                        assert_eq!(expected_alpha.to_bits(), actual_alpha.to_bits());
+                        assert_eq!(expected_enhanced, actual_enhanced);
+                    }
+                    _ => panic!("native ink payload route changed"),
+                }
+            }
+        }
+
+        let artifact_dir =
+            std::env::var_os("SDOCX_SLICE_EQUIVALENCE_ARTIFACTS").map(std::path::PathBuf::from);
+        for (case, variable) in [("quiz", "SDOCX_QUIZ_SDOCX"), ("cs61", "SDOCX_CS61_SDOCX")] {
+            let path = std::env::var_os(variable)
+                .unwrap_or_else(|| panic!("set {variable} to the actual {case} fixture"));
+            let document = crate::parse(&path).expect("actual source note parses");
+            let layout = layout_document(&document);
+            assert_eq!(
+                layout.pages.len(),
+                1,
+                "fixture must remain one visible page"
+            );
+            let layout_page = &layout.pages[0];
+            let options = RenderOptions::default();
+            let fonts = super::fonts::FontBook::default();
+            let mut cache = super::DocumentTextCache::default();
+
+            for (index, (y, height)) in intervals(case).into_iter().enumerate() {
+                let request = super::PageSceneRequest::sliced(layout_page, y, height, false)
+                    .expect("captured native slice is valid");
+                let requests = [request.with_fountain_paint_culling(false), request];
+                let scenes = cache.render_layout_page_scene_requests(
+                    &document,
+                    &requests,
+                    &options,
+                    &fonts,
+                    &mut |_| {},
+                );
+                let (without_culling, with_culling) = (&scenes[0], &scenes[1]);
+                assert_eq!(without_culling.page.width, with_culling.page.width);
+                assert_eq!(without_culling.page.height, with_culling.page.height);
+                assert_eq!(
+                    without_culling.page.text_diagnostics,
+                    with_culling.page.text_diagnostics
+                );
+                assert_eq!(
+                    without_culling.page.object_diagnostics,
+                    with_culling.page.object_diagnostics
+                );
+                assert_eq!(
+                    without_culling.page.geometry_diagnostics,
+                    with_culling.page.geometry_diagnostics
+                );
+                assert_eq!(
+                    without_culling.page.paint_diagnostics,
+                    with_culling.page.paint_diagnostics
+                );
+                assert_eq!(without_culling.text.len(), with_culling.text.len());
+                assert_native_ink_equal(without_culling, with_culling);
+
+                let width = with_culling.page.width;
+                let pixmap_without_culling = raster(&without_culling.page.svg, width, height);
+                let pixmap_with_culling = raster(&with_culling.page.svg, width, height);
+                let reference_circles = without_culling.page.svg.matches("<circle ").count();
+                let culled_circles = with_culling.page.svg.matches("<circle ").count();
+                assert!(
+                    culled_circles < reference_circles,
+                    "{case} slice {index} [{y}, {}) did not cull any Fountain stamps",
+                    y + height
+                );
+                if pixmap_without_culling.data() != pixmap_with_culling.data() {
+                    if let Some(directory) = &artifact_dir {
+                        std::fs::create_dir_all(directory).unwrap();
+                        let stem = format!("{case}-slice-{index:02}-y{y}-h{height}");
+                        std::fs::write(
+                            directory.join(format!("{stem}-reference.svg")),
+                            &without_culling.page.svg,
+                        )
+                        .unwrap();
+                        std::fs::write(
+                            directory.join(format!("{stem}-culled.svg")),
+                            &with_culling.page.svg,
+                        )
+                        .unwrap();
+                        pixmap_without_culling
+                            .save_png(directory.join(format!("{stem}-reference.png")))
+                            .unwrap();
+                        pixmap_with_culling
+                            .save_png(directory.join(format!("{stem}-culled.png")))
+                            .unwrap();
+                    }
+                    let first_difference = pixmap_without_culling
+                        .data()
+                        .iter()
+                        .zip(pixmap_with_culling.data())
+                        .position(|(left, right)| left != right)
+                        .unwrap();
+                    panic!(
+                        "{case} slice {index} [{y}, {}) differs at byte {first_difference}",
+                        y + height
+                    );
+                }
+                eprintln!(
+                    "slice-equivalence case={case} index={index} y={y} height={height} circles={reference_circles}->{culled_circles} pixels=exact",
+                );
+            }
+        }
+    }
 
     #[cfg(feature = "pdf")]
     fn pdf_object_dictionary(object: &lopdf::Object) -> Option<&lopdf::Dictionary> {
@@ -8199,6 +8455,392 @@ mod tests {
             assert!(scenes.iter().all(|scene| scene.text_error.is_none()));
             assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
         }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn pdf_page_slices_keep_note_coordinates_canvas_policy_and_retained_text() {
+        let document = preparation_document();
+        let layout = layout_document(&document);
+        let layout_page = &layout.pages[0];
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let mut cache = super::DocumentTextCache::default();
+
+        let full_svg = cache
+            .render_layout_page_svg(&document, &layout, 0, &options, &fonts)
+            .unwrap();
+        assert_eq!(full_svg.height, layout_page.page.height);
+        let full_request = [super::PageSceneRequest::full_page(layout_page)];
+        let full_scene = cache.render_layout_page_scene_requests(
+            &document,
+            &full_request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert_eq!(full_scene[0].page.height, layout_page.page.height);
+        let full_view_box = roxmltree::Document::parse(&full_scene[0].page.svg).unwrap();
+        assert_eq!(
+            view_box_numbers(full_view_box.root_element()),
+            vec![
+                0.0,
+                0.0,
+                f64::from(layout_page.page.width),
+                f64::from(layout_page.page.height),
+            ]
+        );
+        assert!(
+            full_scene[0].text.len() > 0,
+            "fixture should retain body glyphs"
+        );
+
+        let cut_line_top = cache.plans[0]
+            .1
+            .layout
+            .lines
+            .get(1)
+            .expect("fixture has multiple body lines")
+            .top;
+        let y = cut_line_top.floor() as u32;
+        assert!(y > 0, "fixture must exercise a nonzero body slice");
+        let height = (layout_page.page.height - y).min(60);
+        let overlay_request =
+            [super::PageSceneRequest::sliced(layout_page, y, height, false).unwrap()];
+        let overlay = cache.render_layout_page_scene_requests(
+            &document,
+            &overlay_request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert_eq!(overlay[0].page.height, height);
+        let xml = roxmltree::Document::parse(&overlay[0].page.svg).unwrap();
+        assert_eq!(
+            view_box_numbers(xml.root_element()),
+            vec![
+                0.0,
+                f64::from(y),
+                f64::from(layout_page.page.width),
+                f64::from(height),
+            ]
+        );
+        assert!(
+            !xml.root_element()
+                .children()
+                .any(|node| node.has_tag_name("rect"))
+        );
+        assert!(
+            overlay[0].text.len() > 0,
+            "visible slice should retain glyphs"
+        );
+        let glyph_keys = |scene: &super::RenderedScene| {
+            scene
+                .text
+                .iter()
+                .flat_map(|(_, block)| block.runs.iter())
+                .flat_map(|run| run.glyphs.iter())
+                .map(|glyph| (glyph.glyph_id, glyph.origin, glyph.source.clone()))
+                .collect::<Vec<_>>()
+        };
+        let full_glyphs = glyph_keys(&full_scene[0]);
+        let overlay_glyphs = glyph_keys(&overlay[0]);
+        assert!(
+            overlay_glyphs
+                .iter()
+                .any(|glyph| full_glyphs.contains(glyph)),
+            "visible slice retains a glyph at the same absolute note coordinate"
+        );
+
+        let legacy_full = cache.render_layout_page_scenes(
+            &document,
+            &[layout_page],
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert_eq!(legacy_full[0].page.svg, full_scene[0].page.svg);
+
+        let tail_request = [super::PageSceneRequest::sliced(layout_page, 80, 40, true).unwrap()];
+        let tail = cache.render_layout_page_scene_requests(
+            &document,
+            &tail_request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert_eq!(tail[0].page.height, 40);
+        let xml = roxmltree::Document::parse(&tail[0].page.svg).unwrap();
+        assert_eq!(
+            view_box_numbers(xml.root_element()),
+            vec![0.0, 80.0, f64::from(layout_page.page.width), 40.0,]
+        );
+        let canvas = xml
+            .root_element()
+            .children()
+            .find(|node| node.has_tag_name("rect"))
+            .expect("ordinary continuation keeps its canvas");
+        assert_eq!(number_attribute(canvas, "y"), 80.0);
+        assert_eq!(number_attribute(canvas, "height"), 40.0);
+
+        let full_pdf = crate::pdf::render_scenes_pdf_with_progress(
+            &full_scene,
+            &crate::pdf::PdfOptions::from_font_book(&fonts),
+            &mut |_| {},
+        )
+        .unwrap();
+        let pdf = crate::pdf::render_scenes_pdf_with_progress(
+            &overlay,
+            &crate::pdf::PdfOptions::from_font_book(&fonts),
+            &mut |_| {},
+        )
+        .unwrap();
+        let full_origins = tagged_text_origins(&full_pdf);
+        let slice_origins = tagged_text_origins(&pdf);
+        let expected_y_delta =
+            (f64::from(height) - f64::from(layout_page.page.height) + f64::from(y)) * 0.75;
+        assert!(
+            full_origins.iter().any(|(full_text, full_origin)| {
+                slice_origins.iter().any(|(slice_text, slice_origin)| {
+                    full_text == slice_text
+                        && (full_origin[0] - slice_origin[0]).abs() < 0.02
+                        && ((slice_origin[1] - full_origin[1]) - expected_y_delta).abs() < 0.02
+                })
+            }),
+            "PDF text matrix should be rebased by the slice root viewBox"
+        );
+        let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+        assert_eq!(parsed.get_pages().len(), 1);
+        let root_id = parsed.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        assert!(
+            parsed
+                .get_dictionary(root_id)
+                .unwrap()
+                .has(b"StructTreeRoot")
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn overshooting_slice_keeps_canvas_tail_without_retaining_out_of_page_glyphs() {
+        let mut document = preparation_document();
+        // Disable the certified native page-line map, so the slice viewport is
+        // the authority that keeps another physical page's text out.
+        document.metadata.page_mode = Some(1);
+        let layout = layout_document(&document);
+        assert!(layout.pages.len() >= 2);
+        let options = RenderOptions::default();
+        let fonts = super::fonts::FontBook::default();
+        let mut cache = super::DocumentTextCache::default();
+        let requests = [
+            super::PageSceneRequest::sliced(&layout.pages[0], 80, 40, true).unwrap(),
+            super::PageSceneRequest::full_page(&layout.pages[0]),
+            super::PageSceneRequest::full_page(&layout.pages[1]),
+        ];
+        let scenes = cache.render_layout_page_scene_requests(
+            &document,
+            &requests,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        let glyph_keys = |scene: &super::RenderedScene| {
+            scene
+                .text
+                .iter()
+                .flat_map(|(_, block)| block.runs.iter())
+                .flat_map(|run| run.glyphs.iter())
+                .map(|glyph| (glyph.glyph_id, glyph.origin, glyph.source.clone()))
+                .collect::<Vec<_>>()
+        };
+        let tail_glyphs = glyph_keys(&scenes[0]);
+        let first_page_glyphs = glyph_keys(&scenes[1]);
+        let next_page_glyphs = glyph_keys(&scenes[2]);
+        assert!(
+            !tail_glyphs.is_empty(),
+            "tail includes its visible body line"
+        );
+        assert!(
+            !next_page_glyphs.is_empty(),
+            "second physical page retains its body glyphs"
+        );
+        assert!(
+            !first_page_glyphs.is_empty(),
+            "first physical page retains its body glyphs"
+        );
+        assert!(
+            tail_glyphs
+                .iter()
+                .all(|glyph| first_page_glyphs.contains(glyph)),
+            "overshooting slice does not retain glyphs beyond the current page's full-page registry"
+        );
+
+        // The clip is only for body selection: output viewBox and canvas still
+        // span the native 80..120 tail even though the note page ends at 100.
+        assert_eq!(scenes[0].page.height, 40);
+        let xml = roxmltree::Document::parse(&scenes[0].page.svg).unwrap();
+        assert_eq!(
+            view_box_numbers(xml.root_element()),
+            vec![0.0, 80.0, f64::from(layout.pages[0].page.width), 40.0,]
+        );
+        let canvas = xml
+            .root_element()
+            .children()
+            .find(|node| node.has_tag_name("rect"))
+            .expect("ordinary continuation retains its canvas");
+        assert_eq!(number_attribute(canvas, "y"), 80.0);
+        assert_eq!(number_attribute(canvas, "height"), 40.0);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn nonzero_slice_preserves_native_oblique_ink_marker_and_payload() {
+        let mut page = page_with_uncolored_stroke();
+        let mut stroke = oblique_saved_stroke(false);
+        for point in &mut stroke.points {
+            point.y += 40.0;
+        }
+        page.objects = vec![stroke.into()];
+        let document = document(page);
+        let layout = layout_document(&document);
+        let options = RenderOptions::default();
+        let fonts = super::fonts::FontBook::default();
+        let mut cache = super::DocumentTextCache::default();
+        let requests = [
+            super::PageSceneRequest::full_page(&layout.pages[0]),
+            super::PageSceneRequest::sliced(&layout.pages[0], 30, 40, false).unwrap(),
+        ];
+        let scenes = cache.render_layout_page_scene_requests(
+            &document,
+            &requests,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert_eq!(
+            scenes[0].ink.len(),
+            1,
+            "full scene registers native oblique ink"
+        );
+        assert_eq!(
+            scenes[1].ink.len(),
+            1,
+            "intersecting slice retains native ink"
+        );
+        let (full_id, full_ink) = scenes[0].ink.iter().next().unwrap();
+        let (slice_id, slice_ink) = scenes[1].ink.iter().next().unwrap();
+        assert_eq!(full_id.marker_id(0), slice_id.marker_id(0));
+        assert_eq!(full_ink.bounds, slice_ink.bounds);
+        assert_eq!(full_ink.opacity.to_bits(), slice_ink.opacity.to_bits());
+        match (&full_ink.payload, &slice_ink.payload) {
+            (
+                crate::render::native_ink::NativeInkPayload::Mesh {
+                    mesh: full_mesh,
+                    color: full_color,
+                },
+                crate::render::native_ink::NativeInkPayload::Mesh {
+                    mesh: slice_mesh,
+                    color: slice_color,
+                },
+            ) => {
+                assert_eq!(full_mesh, slice_mesh);
+                assert_eq!(full_color, slice_color);
+            }
+            _ => panic!("slice changed the retained native ink payload kind"),
+        }
+        assert!(slice_ink.bounds.y_min < 70.0 && slice_ink.bounds.y_max > 30.0);
+        assert!(scenes[1].page.svg.contains("id=\"sdocx-native-ink-0\""));
+    }
+
+    #[cfg(feature = "pdf")]
+    fn view_box_numbers(root: roxmltree::Node<'_, '_>) -> Vec<f64> {
+        root.attribute("viewBox")
+            .unwrap()
+            .split_whitespace()
+            .map(|component| component.parse().unwrap())
+            .collect()
+    }
+
+    #[cfg(feature = "pdf")]
+    fn number_attribute(node: roxmltree::Node<'_, '_>, name: &str) -> f64 {
+        node.attribute(name).unwrap().parse().unwrap()
+    }
+
+    #[cfg(feature = "pdf")]
+    fn tagged_text_origins(bytes: &[u8]) -> Vec<(Vec<u8>, [f64; 2])> {
+        let pdf = lopdf::Document::load_mem(bytes).unwrap();
+        let page_id = *pdf.get_pages().values().next().unwrap();
+        let content =
+            lopdf::content::Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+        let number = |object: &lopdf::Object| match object {
+            lopdf::Object::Integer(value) => *value as f64,
+            lopdf::Object::Real(value) => f64::from(*value),
+            _ => panic!("expected PDF numeric operand, got {object:?}"),
+        };
+        let mut ctm = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        let mut graphics_stack = Vec::new();
+        let mut tags: Vec<Option<Vec<u8>>> = Vec::new();
+        let mut origins = Vec::new();
+        for operation in content.operations {
+            match operation.operator.as_str() {
+                "q" => graphics_stack.push(ctm),
+                "Q" => ctm = graphics_stack.pop().unwrap(),
+                "cm" => {
+                    let next: [f64; 6] = operation
+                        .operands
+                        .iter()
+                        .map(number)
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    let [a, b, c, d, e, f] = ctm;
+                    let [na, nb, nc, nd, ne, nf] = next;
+                    ctm = [
+                        a * na + c * nb,
+                        b * na + d * nb,
+                        a * nc + c * nd,
+                        b * nc + d * nd,
+                        a * ne + c * nf + e,
+                        b * ne + d * nf + f,
+                    ];
+                }
+                "BDC" => {
+                    let actual = operation
+                        .operands
+                        .get(1)
+                        .and_then(|properties| properties.as_dict().ok())
+                        .and_then(|properties| properties.get(b"ActualText").ok())
+                        .and_then(|text| text.as_str().ok())
+                        .map(<[u8]>::to_vec);
+                    tags.push(actual.or_else(|| tags.last().cloned().flatten()));
+                }
+                "BMC" => tags.push(tags.last().cloned().flatten()),
+                "EMC" => {
+                    tags.pop().unwrap();
+                }
+                "Tm" => {
+                    let Some(actual_text) = tags.last().and_then(Option::as_ref) else {
+                        continue;
+                    };
+                    let [_, _, _, _, x, y]: [f64; 6] = operation
+                        .operands
+                        .iter()
+                        .map(number)
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    origins.push((
+                        actual_text.clone(),
+                        [
+                            ctm[0] * x + ctm[2] * y + ctm[4],
+                            ctm[1] * x + ctm[3] * y + ctm[5],
+                        ],
+                    ));
+                }
+                _ => {}
+            }
+        }
+        origins
     }
 
     #[test]

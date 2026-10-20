@@ -279,16 +279,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
         .collect::<Result<Vec<_>, PdfError>>()?;
     let scenes =
         cache.render_layout_page_scenes(document, &selected_pages, render_options, fonts, observer);
-    let bytes = render_pages_pdf_with_progress(
-        scenes.iter().map(|scene| PdfPage {
-            page: &scene.page,
-            text: Some(&scene.text),
-            ink: Some(&scene.ink),
-            text_error: scene.text_error.as_deref(),
-        }),
-        &pdf_options,
-        observer,
-    )?;
+    let bytes = render_scenes_pdf_with_progress(&scenes, &pdf_options, observer)?;
     let pages = page_indices
         .iter()
         .copied()
@@ -348,6 +339,23 @@ fn render_pages_pdf<'a>(
     options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
     render_pages_pdf_with_progress(pages, options, &mut |_| {})
+}
+
+pub(crate) fn render_scenes_pdf_with_progress(
+    scenes: &[crate::render::RenderedScene],
+    options: &PdfOptions,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<Vec<u8>, PdfError> {
+    render_pages_pdf_with_progress(
+        scenes.iter().map(|scene| PdfPage {
+            page: &scene.page,
+            text: Some(&scene.text),
+            ink: Some(&scene.ink),
+            text_error: scene.text_error.as_deref(),
+        }),
+        options,
+        observer,
+    )
 }
 
 fn render_pages_pdf_with_progress<'a>(
