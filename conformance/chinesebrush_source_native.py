@@ -14,7 +14,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "conformance/chinesebrush_saved_caller_native.py"
 BASE_SHA256 = "576846a4a060e3ee11eede9a3b9c626bcdb7b96a07d83a8305f119b628f3b27a"
-FIXTURE = ROOT / "conformance/chinesebrush-source-native.json"
+FIXTURE = Path(__file__).with_name("chinesebrush-source-native.json")
 RUNTIME_PINS = {
     "scratch/apk-analysis-runtime/python/unicorn/__init__.py": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b",
     "scratch/apk-analysis-runtime/python/unicorn/unicorn_py3/unicorn.py": "62ffe84341f4288e309040e06555b81798031817d32fd19a945e250813f872f0",
@@ -97,6 +97,29 @@ SOURCE_CASES = {
     for name, (selector, curve, version) in CASES.items()
 }
 SOURCE_CASES.update(THREE_CASES)
+
+# Eight additional frozen source cases exercise arbitrary event counts, tool-1
+# routing, and the selected native Pen size clamp.
+EXTRA_POINTS = [[0.0, 0.0], [6.0, 3.0], [9.0, 12.0], [17.0, 13.0], [23.0, 15.0], [31.0, 18.0], [36.0, 28.0], [45.0, 34.0]]
+EXTRA_PRESSURES = [0.3, 0.55, 0.75, 0.35, 0.95, 0.5, 0.7, 0.4]
+EXTRA_TIMES = [300, 311, 324, 338, 355, 376, 390, 407]
+for _name, _selector, _version, _count, _size, _tool in (
+    ("proto2-v1", "one", 1, 2, 3.144, 2),
+    ("proto4-v2", "two", 2, 4, 3.144, 2),
+    ("proto6-v3", "three", 3, 6, 3.144, 2),
+    ("proto7-v2", "two", 2, 7, 3.144, 2),
+    ("proto8-v3", "three", 3, 8, 3.144, 2),
+    ("long-tool1-v3", "three", 3, 8, 3.144, 1),
+    ("size-low-v2", "two", 2, 5, 0.1, 2),
+    ("size-high-v3", "three", 3, 5, 900.0, 2),
+):
+    SOURCE_CASES[_name] = (
+        _selector,
+        three_source(EXTRA_POINTS[:_count], EXTRA_PRESSURES[:_count], EXTRA_TIMES[:_count], size=_size, tool=_tool, curve=True),
+        1920,
+        1080,
+        _version,
+    )
 
 
 def sha(path):
@@ -215,9 +238,15 @@ def check_native_input(case_id, value, spec, selector):
     require(len(rows) == producer["callback_count"], "callback count")
     for i, row in enumerate(rows):
         require(row["before_count_bytes"] == i * 16 and row["after_count_bytes"] == (i + 1) * 16, "append offsets")
-        require(len(bytes.fromhex(row["delta_bytes"])) == 16, "complete four-lane append")
-        require(len(row["float_args"]) == 5, "callback register snapshot")
-        require(row["vector4_arg_bytes"][:24] == row["delta_bytes"][:24], "XYZ argument-to-vector join")
+        delta = bytes.fromhex(row["delta_bytes"])
+        vector = bytes.fromhex(row["vector4_arg_bytes"])
+        require(len(delta) == 16, "native append record is exactly four float32 lanes / 16 bytes")
+        require(len(row["float_args"]) == 5, "diagnostic FP register snapshot")
+        require(len(vector) == 16, "Vector4 callback input is exactly four float32 lanes")
+        require(vector[:12] == delta[:12], "XYZ callback input-to-record join")
+        scalar = bytes.fromhex(row["scalar_s0_f32_bits"])
+        require(len(scalar) == 4, "separate scalar callback input is one float32")
+        require(row["float_args"][0] == f"0x{int.from_bytes(scalar, 'little'):08x}", "scalar callback input register")
     raw = bytes.fromhex(producer["buffer_hex"])
     require(raw == b"".join(bytes.fromhex(row["delta_bytes"]) for row in rows), "complete append stream")
     require(len(raw) == producer["buffer_bytes"] == len(rows) * 16, "buffer extent")
@@ -293,7 +322,7 @@ def main():
         "source": SOURCE,
         "cases": captures,
         "case_index": index,
-        "boundary": "Synthetic three- and five-event ObjectStroke sources; pinned native Model getters, ObjectDrawing version dispatch, selected ChineseBrush GLV1/2/3 redraw, and RTV1 AddPoint execute. No app-deserialized stroke, renderer, GLES, or PDF claim.",
+        "boundary": "Synthetic three-, five-, and two/four/six/seven/eight-event ObjectStroke sources; pinned native Model getters, ObjectDrawing version dispatch, selected ChineseBrush GLV1/2/3 redraw, and RTV1 AddPoint execute. No app-deserialized stroke, renderer, GLES, or PDF claim.",
     }
     encoded = json.dumps(fixture, indent=2, sort_keys=True) + "\n"
     if args.write_fixture:

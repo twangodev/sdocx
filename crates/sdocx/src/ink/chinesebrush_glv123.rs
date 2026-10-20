@@ -1,8 +1,7 @@
 //! Bounded source-driven numeric model for ChineseBrush GLV1/2/3 calls.
 //!
-//! This module is test evidence only. It covers the pinned synthetic three- and
-//! five-event Drawing fixtures, not saved-note parsing, renderer state, or pen
-//! admission.
+//! Test evidence for pinned synthetic two- to eight-event Drawing fixtures.
+//! Saved-note parsing, renderer state and production admission remain separate.
 
 use super::path::{P, Quad};
 
@@ -190,167 +189,11 @@ fn factor(speed: f32) -> f32 {
     }
 }
 
-fn event_speed(points: &[P], times: &[i32], event: usize, width: i32, height: i32) -> f32 {
-    let dt = times[event] - times[event - 1];
-    let dt = if times[event - 1] == 0 || dt <= 0 {
-        50000.0
-    } else {
-        dt as f32
-    };
-    let scale = 1440.0 / width.min(height) as f32;
-    (points[event].sub(points[event - 1]).len() * 10000.0 / dt) * scale
-}
-
-fn model_three(
-    points: &[P],
-    pressure: &[f32],
-    times: &[i32],
-    size: f32,
-    version: i32,
-    width: i32,
-    height: i32,
-    tool: i32,
-    curve: bool,
-) -> Vec<[f32; 5]> {
-    assert_eq!(points.len(), 3);
-    let gate = if version == 1 || version == 2 {
-        4.0
-    } else {
-        width.min(height) as f32 / 360.0
-    };
-    let mut accepted = Vec::new();
-    let mut previous = points[0];
-    let mut previous_time = times[0];
-    let mut speed = 0.0;
-    for i in 1..points.len() {
-        let delta = points[i].sub(previous);
-        if delta.x.abs() < gate && delta.y.abs() < gate {
-            continue;
-        }
-        if version != 1 {
-            let elapsed = times[i] - previous_time;
-            let elapsed = if previous_time == 0 || elapsed <= 0 {
-                50000.0
-            } else {
-                elapsed as f32
-            };
-            speed = (delta.len() * 10000.0 / elapsed) * (1440.0 / width.min(height) as f32);
-        }
-        accepted.push(i);
-        previous = points[i];
-        previous_time = times[i];
-    }
-
-    if version == 1 {
-        let p = effective_pressure(*pressure.last().unwrap(), tool);
-        if accepted.is_empty() {
-            return vec![[
-                points[0].x,
-                points[0].y,
-                size * 0.25,
-                0.0,
-                (50.0 + p * 100.0) as i32 as f32,
-            ]];
-        }
-        // GLV1's first admitted drawLine call initializes the drawable width
-        // and scalar from that event. Later accepted events update the path
-        // and terminal target, but do not replace this seed before repeat
-        // selection (native width bands are selected from the seeded width).
-        let seed_pressure = effective_pressure(pressure[accepted[0]], tool);
-        let prior = size * seed_pressure;
-        let index = f32_trunc(20.0 + seed_pressure * 100.0);
-        let target = if curve {
-            dab_size(p, 1.0, size, prior)
-        } else {
-            size * p
-        };
-        let final_width = target.max(size / 10.0);
-        let path = if curve {
-            let seed = accepted[0];
-            let end = *accepted.last().unwrap();
-            if accepted.len() == 1 {
-                Path::Quad(points[0], points[end], points[end])
-            } else {
-                Path::Cubic([
-                    points[0],
-                    points[seed],
-                    points[seed].mid(points[end]),
-                    points[end],
-                ])
-            }
-        } else {
-            Path::Line(points[0], points[2])
-        };
-        let repeat = repeat_index(path.length(), prior.min(target) as i32);
-        let start_index = if curve {
-            index
-        } else {
-            f32_trunc(100.0 + p * 100.0)
-        };
-        let target_index = f32_trunc((if curve { 50.0 } else { 100.0 }) + p * 100.0);
-        let mut out = Vec::new();
-        let mut phase = 0;
-        emit_path(
-            &mut out,
-            path,
-            repeat,
-            usize::from(curve),
-            prior,
-            final_width,
-            repeat,
-            start_index,
-            target_index,
-            repeat,
-            &mut phase,
-        );
-        return out;
-    }
-
-    if !curve {
-        return model_line(points, pressure, size, version, width, height, tool);
-    }
-    if accepted.is_empty() {
-        let p = effective_pressure(*pressure.last().unwrap(), tool);
-        let index = f32_trunc(50.0 + p * 100.0) as f32;
-        return vec![[points[0].x, points[0].y, size * 0.25, 0.0, index]];
-    }
-
-    let seed = accepted[0];
-    let seed_pressure = effective_pressure(pressure[seed], tool);
-    let prior = size * seed_pressure;
-    let index = f32_trunc(20.0 + seed_pressure * 100.0);
-    let p = effective_pressure(*pressure.last().unwrap(), tool);
-    let target = calculated_width(dab_size(p, factor(speed), size, prior), prior, size);
-    let path = if seed == 1 {
-        Path::Cubic([points[0], points[1], points[1].mid(points[2]), points[2]])
-    } else {
-        Path::Quad(points[0], points[2], points[2])
-    };
-    let repeat = repeat_index(path.length(), prior.min(target) as i32);
-    let target_index = f32_trunc(50.0 + p * 100.0);
-    let mut phase = 0;
-    let mut out = Vec::new();
-    emit_path(
-        &mut out,
-        path,
-        repeat,
-        1,
-        prior,
-        target,
-        repeat,
-        index,
-        target_index,
-        repeat,
-        &mut phase,
-    );
-    out
-}
-
 fn effective_pressure(pressure: f32, tool: i32) -> f32 {
     if tool == 1 { 0.5 } else { pressure.min(1.0) }
 }
 
-fn packed_w(phase: f32, scalar: f32) -> f32 {
+pub fn packed_w(phase: f32, scalar: f32) -> f32 {
     (phase as f64).mul_add(1.0, scalar as f64 * 0.001) as f32
 }
 
@@ -380,66 +223,6 @@ fn emit_path(
         width += width_step;
         index += index_step;
     }
-}
-
-fn model_curve(
-    points: &[P],
-    pressure: &[f32],
-    times: &[i32],
-    size: f32,
-    version: i32,
-    width: i32,
-    height: i32,
-    tool: i32,
-) -> Vec<[f32; 5]> {
-    if points.len() == 3 {
-        return model_three(
-            points, pressure, times, size, version, width, height, tool, true,
-        );
-    }
-    assert_eq!(points.len(), 5);
-    let mut prior = size * effective_pressure(pressure[1], 2);
-    let mut index = f32_trunc(20.0 + effective_pressure(pressure[1], 2) * 100.0);
-    let mut phase = 0;
-    let mut out = Vec::new();
-    let middle = points[1].mid(points[3]);
-    let factor1 = if version == 1 {
-        let d = points[2].sub(points[3]).len();
-        factor(d)
-    } else {
-        factor(event_speed(points, times, 3, width, height))
-    };
-    let target1 = calculated_width(
-        dab_size(effective_pressure(pressure[3], 2), factor1, size, prior),
-        prior,
-        size,
-    );
-    let first = Path::Quad(points[0], points[1], middle);
-    let repeat1 = repeat_index(first.length(), prior.min(target1) as i32);
-    let index1 = f32_trunc(100.0 + effective_pressure(pressure[3], 2) * 100.0);
-    emit_path(
-        &mut out, first, repeat1, 0, prior, target1, repeat1, index, index1, repeat1, &mut phase,
-    );
-    prior = target1;
-    index = index1;
-
-    let factor2 = if version == 1 {
-        factor(points[3].sub(points[4]).len())
-    } else {
-        factor(event_speed(points, times, 4, width, height))
-    };
-    let target2 = calculated_width(
-        dab_size(effective_pressure(pressure[4], 2), factor2, size, prior),
-        prior,
-        size,
-    );
-    let cubic = Path::Cubic([middle, points[3], points[3].mid(points[4]), points[4]]);
-    let repeat2 = repeat_index(cubic.length(), prior.min(target2) as i32);
-    let index2 = f32_trunc(50.0 + effective_pressure(pressure[4], 2) * 100.0);
-    emit_path(
-        &mut out, cubic, repeat2, 1, prior, target2, repeat2, index, index2, repeat2, &mut phase,
-    );
-    out
 }
 
 fn model_line(
@@ -511,6 +294,171 @@ fn model_line(
     out
 }
 
+pub fn model_event_loop(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    curve: bool,
+) -> Vec<[f32; 5]> {
+    let points: Vec<P> = xy.iter().map(|p| P { x: p[0], y: p[1] }).collect();
+    assert_eq!(points.len(), pressure.len());
+    assert_eq!(points.len(), times.len());
+    if !curve {
+        return model_line(&points, pressure, size, version, width, height, tool);
+    }
+    let gate = if version <= 2 {
+        4.0
+    } else {
+        width.min(height) as f32 / 360.0
+    };
+    let mut accepted = Vec::new();
+    let mut previous = 0usize;
+    let mut speeds = vec![0.0_f32; points.len()];
+    for i in 1..points.len() {
+        let delta = points[i].sub(points[previous]);
+        if delta.x.abs() < gate && delta.y.abs() < gate {
+            continue;
+        }
+        if version == 1 {
+            speeds[i] = 1.0;
+        } else {
+            let dt = times[i] - times[previous];
+            let dt = if times[previous] == 0 || dt <= 0 {
+                50000.0
+            } else {
+                dt as f32
+            };
+            speeds[i] = (delta.len() * 10000.0 / dt) * (1440.0 / width.min(height) as f32);
+        }
+        accepted.push(i);
+        previous = i;
+    }
+    if accepted.is_empty() {
+        let p = effective_pressure(*pressure.last().unwrap(), tool);
+        return vec![[
+            points[0].x,
+            points[0].y,
+            size * 0.25,
+            0.0,
+            (50.0 + p * 100.0) as i32 as f32,
+        ]];
+    }
+    let seed = accepted[0];
+    let seed_pressure = effective_pressure(pressure[seed], tool);
+    let mut prior = size * seed_pressure;
+    let mut index = f32_trunc(20.0 + seed_pressure * 100.0);
+    let mut phase = 0;
+    let mut out = Vec::new();
+    let mut start = points[0];
+    let mut j = 0;
+    while j + 2 < accepted.len() {
+        let control = accepted[j];
+        let lookahead = accepted[j + 2];
+        let endpoint = points[control].mid(points[lookahead]);
+        let path = Path::Quad(start, points[control], endpoint);
+        let p = effective_pressure(pressure[lookahead], tool);
+        let f = if version == 1 {
+            factor(points[lookahead].sub(points[accepted[j + 1]]).len())
+        } else {
+            factor(speeds[lookahead])
+        };
+        let target = calculated_width(dab_size(p, f, size, prior), prior, size);
+        let repeat = repeat_index(path.length(), prior.min(target) as i32);
+        let target_index = f32_trunc(100.0 + p * 100.0);
+        emit_path(
+            &mut out,
+            path,
+            repeat,
+            0,
+            prior,
+            target,
+            repeat,
+            index,
+            target_index,
+            repeat,
+            &mut phase,
+        );
+        start = endpoint;
+        prior = target;
+        index = target_index;
+        j += 2;
+    }
+    let m = accepted.len();
+    let (path, extra) = if m % 2 == 0 {
+        let a = accepted[m - 2];
+        let b = accepted[m - 1];
+        (
+            Path::Cubic([start, points[a], points[a].mid(points[b]), points[b]]),
+            1,
+        )
+    } else {
+        let a = accepted[m - 1];
+        (Path::Quad(start, points[a], points[a]), 1)
+    };
+    let event = accepted[m - 1];
+    let p = effective_pressure(pressure[event], tool);
+    let f = if version == 1 {
+        if m <= 2 {
+            1.0
+        } else {
+            factor(points[event].sub(points[accepted[m - 2]]).len())
+        }
+    } else {
+        factor(speeds[event])
+    };
+    let target = if version == 1 && m <= 2 {
+        dab_size(p, f, size, prior).max(size / 10.0)
+    } else {
+        calculated_width(dab_size(p, f, size, prior), prior, size)
+    };
+    let repeat = repeat_index(path.length(), prior.min(target) as i32);
+    let target_index = f32_trunc(50.0 + p * 100.0);
+    emit_path(
+        &mut out,
+        path,
+        repeat,
+        extra,
+        prior,
+        target,
+        repeat,
+        index,
+        target_index,
+        repeat,
+        &mut phase,
+    );
+    out
+}
+
+pub fn run_model(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    curve: bool,
+) -> Vec<[f32; 5]> {
+    // Native selected Pen::SetSize clamps the requested size before RedrawPen.
+    model_event_loop(
+        xy,
+        pressure,
+        times,
+        size.clamp(0.4, 800.0),
+        version,
+        width,
+        height,
+        tool,
+        curve,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -578,7 +526,7 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(fixture["schema"], "chinesebrush-source-native-v1");
-        assert_eq!(fixture["cases"].as_object().unwrap().len(), 44);
+        assert_eq!(fixture["cases"].as_object().unwrap().len(), 52);
         for (name, case) in fixture["cases"].as_object().unwrap() {
             let input = &case["input"];
             let (points, pressure, times) = source_arrays(input);
@@ -591,31 +539,36 @@ mod tests {
             let profile = &case["profile"];
             let w = profile["width"].as_i64().unwrap() as i32;
             let h = profile["height"].as_i64().unwrap() as i32;
-            let predicted = if input["curve_enabled"].as_bool().unwrap() {
-                model_curve(
-                    &points,
-                    &pressure,
-                    &times,
-                    size,
-                    version,
-                    w,
-                    h,
-                    input["tool_type"].as_i64().unwrap() as i32,
-                )
-            } else {
-                model_line(
-                    &points,
-                    &pressure,
-                    size,
-                    version,
-                    w,
-                    h,
-                    input["tool_type"].as_i64().unwrap() as i32,
-                )
-            };
+            let xy: Vec<[f32; 2]> = points.iter().map(|p| [p.x, p.y]).collect();
+            let predicted = run_model(
+                &xy,
+                &pressure,
+                &times,
+                size,
+                version,
+                w,
+                h,
+                input["tool_type"].as_i64().unwrap() as i32,
+                input["curve_enabled"].as_bool().unwrap(),
+            );
             let rows = case["producer"]["append_rows"].as_array().unwrap();
             assert_eq!(predicted.len(), rows.len(), "{name}");
+            let joined: Vec<u8> = rows
+                .iter()
+                .flat_map(|row| hex_bytes(row["delta_bytes"].as_str().unwrap()))
+                .collect();
+            assert_eq!(joined.len(), rows.len() * 16, "{name} buffer length");
+            assert_eq!(
+                joined,
+                hex_bytes(case["producer"]["buffer_hex"].as_str().unwrap()),
+                "{name} complete buffer"
+            );
             for (i, (point, row)) in predicted.iter().zip(rows).enumerate() {
+                assert_eq!(
+                    expected_words(row, "scalar_s0_f32_bits"),
+                    vec![point[4].to_bits()],
+                    "{name} scalar {i}"
+                );
                 let actual_arg = expected_words(row, "vector4_arg_bytes");
                 let actual_delta = expected_words(row, "delta_bytes");
                 let vector_expected: Vec<u32> = point[..4].iter().map(|v| v.to_bits()).collect();

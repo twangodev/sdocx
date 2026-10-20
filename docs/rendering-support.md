@@ -382,12 +382,16 @@ sampling, replay boundaries and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
-retains complete four-lane streams for 44 three- and five-event controls across
-GLV1/2/3; the test-only Rust model matches every word in those bounded families.
+retains complete four-lane streams for 52 two- to eight-event controls across
+GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
+inputs and every packed stream word in these bounded captures.
 A [reuse matrix](../conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
 target streams after short, long and different preludes and version changes,
-with explicit host lifecycle adapters. Arbitrary-length sampling, paint and
-production vector integration remain open.
+with explicit host lifecycle adapters. A bounded
+[GLV3 paint replay](../conformance/chinesebrush-paint-native.json) joins the
+synthetic source stream to native queued VBO/color uploads, texture bytes and a
+full host Mesa readback. This does not establish device or export parity;
+arbitrary-length sampling and production vector integration remain open.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
