@@ -50,7 +50,7 @@ mod placed;
 mod table;
 mod text;
 #[cfg(feature = "pdf")]
-pub(crate) use native_ink::NativeInkRegistry;
+pub(crate) use native_ink::{NativeInkPayload, NativeInkRegistry};
 #[cfg(feature = "pdf")]
 pub(crate) use text::native::{NativePdfPainter, NativeTextRegistry};
 mod theme;
@@ -3687,6 +3687,7 @@ fn prepare_inkpen2_v9(
         .map(|color| theme.foreground_color(color))
         .unwrap_or_else(|| argb_color(argb));
     Some(crate::ink::PreparedInkPen2V9 {
+        per_stamp_rgb: false,
         records: output.vertices,
         sample_ends,
         color,
@@ -3994,6 +3995,143 @@ mod tests {
         let profile: InkPen2RenderProfile =
             serde_json::from_str(r#"{"screen_width":1920,"screen_height":1080}"#).unwrap();
         assert!(!profile.enhanced_antialias);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_native_gradient_records_reach_retained_vector_pdf() {
+        use super::vector::{Group, Scene, Styled, Svg, Transform};
+        use crate::ink::inkpen2::{Input, Rainbow, Runtime, redraw, source_point};
+        use sha2::Digest;
+
+        let points = [(0., 0.), (8., 0.), (16., 3.), (24., 3.)].map(|(x, y)| source_point(x, y));
+        let output = redraw(Input {
+            points: &points,
+            times: &[0, 10, 20, 30],
+            tools: &[2; 4],
+            pressures: &[0.2, 0.4, 0.6, 0.8],
+            rgb: [51, 102, 153],
+            rainbow: Some(Rainbow {
+                distance: 5,
+                offset: 2.5,
+                palette_argb: &[0xffff0000, 0xff0000ff],
+            }),
+            size: 4.,
+            curve_enabled: true,
+            is_shape: false,
+            runtime: Runtime {
+                inverse_scale: [1., 1.],
+                spacing: 1.,
+                tolerance: 0.,
+                tool_threshold: 20.,
+                resolution_min: 1080,
+                initial_alternation: false,
+                initial_time: 0,
+            },
+        })
+        .unwrap();
+        let bytes: Vec<_> = output
+            .vertices
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        assert_eq!(bytes.len(), 900);
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(&bytes)),
+            "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+        );
+        let mut bounds = BoundingBox {
+            x_min: f64::INFINITY,
+            y_min: f64::INFINITY,
+            x_max: f64::NEG_INFINITY,
+            y_max: f64::NEG_INFINITY,
+        };
+        for &[x, y, rx, ry, ..] in &output.vertices {
+            bounds.x_min = bounds.x_min.min(f64::from(x) - f64::from(rx));
+            bounds.y_min = bounds.y_min.min(f64::from(y) - f64::from(ry));
+            bounds.x_max = bounds.x_max.max(f64::from(x) + f64::from(rx));
+            bounds.y_max = bounds.y_max.max(f64::from(y) + f64::from(ry));
+        }
+        // Optional paired-export artifacts; ordinary tests stay entirely in memory.
+        let artifact_dir = std::env::var_os("SDOCX_INKPEN2_PDF_DIR").map(std::path::PathBuf::from);
+        if let Some(dir) = &artifact_dir {
+            std::fs::create_dir(dir).unwrap();
+        }
+        let options =
+            crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
+        for enhanced in [false, true] {
+            for alpha in [0_u8, 128, 255] {
+                for scale in [1, 2, 4] {
+                    let ink = crate::PreparedInkPen2V9 {
+                        per_stamp_rgb: true,
+                        enhanced_antialias: enhanced,
+                        records: output.vertices.clone(),
+                        sample_ends: output.sample_ends.clone(),
+                        color: Color {
+                            r: 51,
+                            g: 102,
+                            b: 153,
+                        },
+                        opacity: f64::from(f32::from(alpha) / 255.),
+                        bounds,
+                    };
+                    let mut scene = Scene::new(Svg::new().width(128).height(96));
+                    scene.retain_text();
+                    scene.scope(
+                        Group::new().transformed(Transform::matrix_unrounded([
+                            f64::from(scale),
+                            0.,
+                            0.,
+                            -f64::from(scale),
+                            0.,
+                            96.,
+                        ])),
+                        |scene| super::inkpen2_vector::render(scene, &ink, None),
+                    );
+                    let text = scene.take_native_text();
+                    let registered = scene.take_native_ink();
+                    assert_eq!(registered.len(), usize::from(alpha != 0));
+                    let text_error = scene.take_native_text_error();
+                    assert!(text_error.is_none(), "{text_error:?}");
+                    let svg = scene.finish();
+                    let retained = super::RenderedScene {
+                        page: super::RenderedPage {
+                            source_page_index: 0,
+                            width: 128,
+                            height: 96,
+                            svg: svg.clone(),
+                            text_diagnostics: vec![],
+                            object_diagnostics: vec![],
+                            geometry_diagnostics: vec![],
+                            paint_diagnostics: vec![],
+                        },
+                        text,
+                        ink: registered,
+                        text_error,
+                    };
+                    let pdf =
+                        crate::pdf::render_native_scene_pdf_for_test(&retained, &options).unwrap();
+                    let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+                    assert_eq!(parsed.get_pages().len(), 1);
+                    assert!(
+                        !parsed
+                            .objects
+                            .values()
+                            .any(|object| object
+                                .as_stream()
+                                .is_ok_and(|stream| stream.dict.get(b"Subtype").is_ok_and(|v| v
+                                    .as_name()
+                                    .is_ok_and(|name| name == b"Image"))))
+                    );
+                    if let Some(dir) = &artifact_dir {
+                        let name = format!("scale{scale}_aa{}_alpha{alpha}", u8::from(enhanced));
+                        std::fs::write(dir.join(format!("{name}.pdf")), &pdf).unwrap();
+                        std::fs::write(dir.join(format!("{name}.svg")), &svg).unwrap();
+                    }
+                }
+            }
+        }
     }
 
     #[test]

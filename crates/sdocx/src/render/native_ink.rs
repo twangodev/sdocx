@@ -22,12 +22,25 @@ impl NativeInkId {
 }
 
 #[derive(Debug, Clone)]
+pub(crate) enum NativeInkPayload {
+    Mesh {
+        mesh: CoverageMesh,
+        color: [u8; 3],
+    },
+    Radial {
+        records: Vec<[f32; 9]>,
+        saved_alpha: f32,
+        enhanced_antialias: bool,
+    },
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct NativeInk {
-    pub(crate) mesh: CoverageMesh,
-    pub(crate) color: [u8; 3],
+    pub(crate) payload: NativeInkPayload,
     pub(crate) bounds: BoundingBox,
-    /// Kept separate from alpha in the source color, which the PDF lowering
-    /// applies once at the intercepted SVG group boundary.
+    /// Applied once at the intercepted SVG group boundary. Enhanced radial
+    /// fields use saved alpha here and in their color recurrence; direct fields
+    /// use opacity 1 because their mask already contains per-stamp saved alpha.
     pub(crate) opacity: f64,
 }
 
@@ -89,10 +102,39 @@ impl NativeInkRegistry {
 
         let id = NativeInkId(self.entries.len());
         self.entries.push(NativeInk {
-            mesh: mesh.clone(),
-            color,
+            payload: NativeInkPayload::Mesh {
+                mesh: mesh.clone(),
+                color,
+            },
             bounds,
             opacity,
+        });
+        Ok(id)
+    }
+
+    pub(crate) fn register_radial(
+        &mut self,
+        records: &[[f32; 9]],
+        bounds: BoundingBox,
+        saved_alpha: f32,
+        enhanced_antialias: bool,
+    ) -> Result<NativeInkId, String> {
+        // Preflight the exact compiler before publishing an SVG ID or cloning
+        // records. An unsupported field cannot leave a partial registration.
+        crate::pdf::validate_radial_ink(records, bounds, saved_alpha, enhanced_antialias)?;
+        let id = NativeInkId(self.entries.len());
+        self.entries.push(NativeInk {
+            payload: NativeInkPayload::Radial {
+                records: records.to_vec(),
+                saved_alpha,
+                enhanced_antialias,
+            },
+            bounds,
+            opacity: if enhanced_antialias {
+                f64::from(saved_alpha)
+            } else {
+                1.0
+            },
         });
         Ok(id)
     }
@@ -161,9 +203,70 @@ mod tests {
         assert_eq!(second.svg_id(), "sdocx-native-ink-1");
         let entries = registry.iter().collect::<Vec<_>>();
         assert_eq!(entries.len(), 2);
-        assert_eq!(entries[0].1.color, [0x33, 0x66, 0x99]);
+        assert!(matches!(
+            &entries[0].1.payload,
+            NativeInkPayload::Mesh {
+                color: [0x33, 0x66, 0x99],
+                ..
+            }
+        ));
         assert_eq!(entries[0].1.bounds.x_min, 2.0);
         assert_eq!(entries[0].1.opacity, 0.5);
+    }
+
+    #[test]
+    fn radial_registration_preserves_records_and_owns_outer_alpha_once() {
+        let records = [[2., 3., 1., 2., 0.25, 0.8, 1., 0., 0.]];
+        let bounds = BoundingBox {
+            x_min: 1.,
+            y_min: 1.,
+            x_max: 3.,
+            y_max: 5.,
+        };
+        let alpha = 128.0_f32 / 255.;
+        let mut registry = NativeInkRegistry::default();
+        registry
+            .register_radial(&records, bounds, alpha, true)
+            .unwrap();
+        registry
+            .register_radial(&records, bounds, alpha, false)
+            .unwrap();
+        let entries: Vec<_> = registry.iter().collect();
+        assert_eq!(entries[0].1.opacity, f64::from(alpha));
+        assert_eq!(entries[1].1.opacity, 1.);
+        for ((_, entry), enhanced) in entries.iter().zip([true, false]) {
+            let NativeInkPayload::Radial {
+                records: retained,
+                saved_alpha,
+                enhanced_antialias,
+            } = &entry.payload
+            else {
+                panic!("expected radial field");
+            };
+            assert_eq!(retained, &records);
+            assert_eq!(*saved_alpha, alpha);
+            assert_eq!(*enhanced_antialias, enhanced);
+        }
+    }
+
+    #[test]
+    fn radial_preflight_failure_leaves_registry_and_ids_untouched() {
+        let mut registry = NativeInkRegistry::default();
+        let invalid = [[2., 3., 1., 2., 0.5, 0.8, 1., 0., 0.]];
+        let bounds = BoundingBox {
+            x_min: 1.,
+            y_min: 1.,
+            x_max: 3.,
+            y_max: 5.,
+        };
+        assert!(
+            registry
+                .register_radial(&invalid, bounds, 0.5, true)
+                .is_err()
+        );
+        assert!(registry.is_empty());
+        let first = registry.register(&mesh(), [1, 2, 3], 1.).unwrap();
+        assert_eq!(first.svg_id(), "sdocx-native-ink-0");
     }
 
     #[test]

@@ -22,14 +22,34 @@ mod font_identity_tests;
 #[path = "pdf/paper.rs"]
 mod paper;
 
-use crate::render::{DocumentTextCache, NativeInkRegistry, NativePdfPainter, NativeTextRegistry};
+use crate::render::{
+    DocumentTextCache, NativeInkPayload, NativeInkRegistry, NativePdfPainter, NativeTextRegistry,
+};
 use crate::{
-    BoundingBox, CoverageMesh, Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic,
-    PaintDiagnostic, RenderOptions, RenderedPage, TextDiagnostic,
+    Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic, PaintDiagnostic, RenderOptions,
+    RenderedPage, TextDiagnostic,
     fonts::{FontBook, NativeFontNameConfig, SvgFontFamilies},
 };
 
 pub use usvg::fontdb;
+
+pub(crate) fn validate_radial_ink(
+    records: &[[f32; 9]],
+    bounds: crate::BoundingBox,
+    saved_alpha: f32,
+    enhanced_antialias: bool,
+) -> Result<(), String> {
+    ink_field::validate_radial(
+        records,
+        saved_alpha,
+        if enhanced_antialias {
+            ink_field::PdfRadialCoverage::EnhancedMax
+        } else {
+            ink_field::PdfRadialCoverage::DirectSourceOver
+        },
+        bounds,
+    )
+}
 
 const PDF_POINTS_PER_INCH: f32 = 72.0;
 const MAX_PDF_PAGE_POINTS: f32 = 14_400.0;
@@ -348,7 +368,7 @@ fn render_pages_pdf_with_progress<'a>(
     let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;
-    let mut ink_fields: Vec<(u64, CoverageMesh, [u8; 3], BoundingBox)> = Vec::new();
+    let mut ink_fields = Vec::new();
     let pages = pages.into_iter();
     let (lower, upper) = pages.size_hint();
     let total = (upper == Some(lower)).then_some(lower);
@@ -485,7 +505,7 @@ fn render_pages_pdf_with_progress<'a>(
                 let marker_id = id.marker_id(page_index).ok_or_else(|| {
                     PdfError::Conversion("native ink marker ID exceeds supported range".into())
                 })?;
-                ink_fields.push((marker_id, entry.mesh.clone(), entry.color, entry.bounds));
+                ink_fields.push((marker_id, entry.payload.clone(), entry.bounds));
             }
         } else {
             surface
@@ -513,11 +533,25 @@ fn render_pages_pdf_with_progress<'a>(
     }
     let fields = ink_fields
         .iter()
-        .map(|(marker_id, mesh, color, bounds)| ink_field::PdfInkField {
-            marker_id: *marker_id,
-            mesh,
-            color: *color,
-            bounds: *bounds,
+        .map(|(marker_id, payload, bounds)| match payload {
+            NativeInkPayload::Mesh { mesh, color } => {
+                ink_field::PdfInkField::mesh(*marker_id, mesh, *color, *bounds)
+            }
+            NativeInkPayload::Radial {
+                records,
+                saved_alpha,
+                enhanced_antialias,
+            } => ink_field::PdfInkField::radial(
+                *marker_id,
+                records,
+                *saved_alpha,
+                if *enhanced_antialias {
+                    ink_field::PdfRadialCoverage::EnhancedMax
+                } else {
+                    ink_field::PdfRadialCoverage::DirectSourceOver
+                },
+                *bounds,
+            ),
         })
         .collect::<Vec<_>>();
     ink_field::replace_markers(&bytes, &fields).map_err(|error| {
@@ -656,6 +690,7 @@ fn validate_png(bytes: &[u8]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{BoundingBox, CoverageMesh};
 
     fn native_ink_registry() -> NativeInkRegistry {
         let mesh = CoverageMesh {
@@ -822,18 +857,15 @@ mod tests {
         let blue_page = page(svg("#0000ff"));
         // Both pages deliberately register local ID 0 with the same geometry,
         // but their distinct colors must survive marker replacement separately.
+        let source_ink = native_ink_registry();
+        let NativeInkPayload::Mesh { mesh, .. } = &source_ink.iter().next().unwrap().1.payload
+        else {
+            panic!("expected source mesh");
+        };
         let mut red_ink = NativeInkRegistry::default();
-        red_ink
-            .register(
-                &native_ink_registry().iter().next().unwrap().1.mesh,
-                [255, 0, 0],
-                0.5,
-            )
-            .unwrap();
+        red_ink.register(mesh, [255, 0, 0], 0.5).unwrap();
         let mut blue_ink = NativeInkRegistry::default();
-        blue_ink
-            .register(&red_ink.iter().next().unwrap().1.mesh, [0, 0, 255], 0.5)
-            .unwrap();
+        blue_ink.register(mesh, [0, 0, 255], 0.5).unwrap();
         assert_eq!(
             red_ink.iter().next().unwrap().0.svg_id(),
             "sdocx-native-ink-0"

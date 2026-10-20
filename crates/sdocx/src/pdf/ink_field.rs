@@ -1,8 +1,8 @@
-//! PDF-native transport for registered grayscale ink coverage fields.
+//! PDF-native transport for registered ink coverage and color fields.
 //!
 //! The SVG renderer emits an opaque, unique image marker at the exact paint
 //! position. After Krilla serializes the page, this module replaces only those
-//! marker Image XObjects with Forms that evaluate the native max-affine field.
+//! marker Image XObjects with Forms that evaluate the retained field.
 
 use crate::{BoundingBox, CoverageMesh};
 use i_float::adapter::FloatPointAdapter;
@@ -18,12 +18,79 @@ use krilla::{
 };
 use lopdf::{Dictionary, Document, Object, ObjectId, Stream};
 
+#[path = "ink_field/radial.rs"]
+mod radial;
+
+pub(crate) use radial::{PdfRadialCoverage, PdfRadialRecord};
+
+/// Validate a native radial payload before it is retained by the page
+/// registry. This performs all normalization and Type 4 size checks without
+/// mutating a PDF document.
+pub(crate) fn validate_radial(
+    records: &[PdfRadialRecord],
+    saved_alpha: f32,
+    coverage: PdfRadialCoverage,
+    bounds: BoundingBox,
+) -> Result<(), String> {
+    radial::compile(
+        records,
+        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+        saved_alpha,
+        coverage,
+    )
+    .map(|_| ())
+}
+
 /// Native coverage field retained alongside its unique in-stream marker.
 pub(crate) struct PdfInkField<'a> {
     pub marker_id: u64,
-    pub mesh: &'a CoverageMesh,
-    pub color: [u8; 3],
     pub bounds: BoundingBox,
+    pub payload: PdfInkPayload<'a>,
+}
+
+pub(crate) enum PdfInkPayload<'a> {
+    Mesh {
+        mesh: &'a CoverageMesh,
+        color: [u8; 3],
+    },
+    Radial {
+        records: &'a [PdfRadialRecord],
+        saved_alpha: f32,
+        coverage: PdfRadialCoverage,
+    },
+}
+
+impl<'a> PdfInkField<'a> {
+    pub(crate) fn mesh(
+        marker_id: u64,
+        mesh: &'a CoverageMesh,
+        color: [u8; 3],
+        bounds: BoundingBox,
+    ) -> Self {
+        Self {
+            marker_id,
+            bounds,
+            payload: PdfInkPayload::Mesh { mesh, color },
+        }
+    }
+
+    pub(crate) fn radial(
+        marker_id: u64,
+        records: &'a [PdfRadialRecord],
+        saved_alpha: f32,
+        coverage: PdfRadialCoverage,
+        bounds: BoundingBox,
+    ) -> Self {
+        Self {
+            marker_id,
+            bounds,
+            payload: PdfInkPayload::Radial {
+                records,
+                saved_alpha,
+                coverage,
+            },
+        }
+    }
 }
 
 const MARKER_WIDTH: u32 = 8;
@@ -814,6 +881,7 @@ fn isocontour_stream_with_limits(
     Ok(stream)
 }
 
+#[cfg(test)]
 fn isocontour_stream(
     triangles: &[Triangle],
     bounds: BoundingBox,
@@ -969,9 +1037,11 @@ fn legacy_tiles(
 
 fn legacy_type1_field_form(
     document: &mut Document,
-    field: &PdfInkField<'_>,
+    mesh: &CoverageMesh,
+    color: [u8; 3],
+    bounds: BoundingBox,
 ) -> Result<Object, String> {
-    let triangles = triangles(field.mesh)?;
+    let triangles = triangles(mesh)?;
     const MAX_TRIANGLES: usize = 16_384;
     if triangles.len() > MAX_TRIANGLES {
         return Err("native ink field exceeds triangle budget".into());
@@ -981,21 +1051,17 @@ fn legacy_type1_field_form(
     }
     for triangle in &triangles {
         for [x, y, _] in triangle.0 {
-            if x < field.bounds.x_min
-                || x > field.bounds.x_max
-                || y < field.bounds.y_min
-                || y > field.bounds.y_max
-            {
+            if x < bounds.x_min || x > bounds.x_max || y < bounds.y_min || y > bounds.y_max {
                 return Err("native ink bounds do not contain every mesh vertex".into());
             }
         }
     }
-    let tile_data = legacy_tiles(&triangles, field.bounds)?;
+    let tile_data = legacy_tiles(&triangles, bounds)?;
     let mut shadings = Dictionary::new();
     let mut operators = Vec::with_capacity(tile_data.len());
     let mut generated_code_bytes = 0usize;
     for (index, (bbox, candidates)) in tile_data.iter().enumerate() {
-        let code = legacy_function_code(candidates, field.bounds)?;
+        let code = legacy_function_code(candidates, bounds)?;
         generated_code_bytes = generated_code_bytes
             .checked_add(code.len())
             .ok_or("native ink calculator size overflow")?;
@@ -1080,9 +1146,9 @@ fn legacy_type1_field_form(
         dict,
         format!(
             "/GS gs {} {} {} rg 0 0 1 1 re f",
-            field.color[0] as f64 / 255.0,
-            field.color[1] as f64 / 255.0,
-            field.color[2] as f64 / 255.0
+            color[0] as f64 / 255.0,
+            color[1] as f64 / 255.0,
+            color[2] as f64 / 255.0
         )
         .into_bytes(),
     )))
@@ -1097,7 +1163,26 @@ fn field_form_with_limits(
     field: &PdfInkField<'_>,
     limits: ContourLimits,
 ) -> Result<Object, String> {
-    let triangles = triangles(field.mesh)?;
+    match &field.payload {
+        PdfInkPayload::Mesh { mesh, color } => {
+            mesh_field_form_with_limits(document, mesh, *color, field.bounds, limits)
+        }
+        PdfInkPayload::Radial {
+            records,
+            saved_alpha,
+            coverage,
+        } => radial_field_form(document, records, *saved_alpha, *coverage, field.bounds),
+    }
+}
+
+fn mesh_field_form_with_limits(
+    document: &mut Document,
+    mesh: &CoverageMesh,
+    color: [u8; 3],
+    bounds: BoundingBox,
+    limits: ContourLimits,
+) -> Result<Object, String> {
+    let triangles = triangles(mesh)?;
     if triangles.len() > MAX_FIELD_TRIANGLES {
         return Err("native ink field exceeds triangle budget".into());
     }
@@ -1106,19 +1191,15 @@ fn field_form_with_limits(
     }
     for triangle in &triangles {
         for [x, y, _] in triangle.0 {
-            if x < field.bounds.x_min
-                || x > field.bounds.x_max
-                || y < field.bounds.y_min
-                || y > field.bounds.y_max
-            {
+            if x < bounds.x_min || x > bounds.x_max || y < bounds.y_min || y > bounds.y_max {
                 return Err("native ink bounds do not contain every mesh vertex".into());
             }
         }
     }
-    let mask_stream = match isocontour_stream_with_limits(&triangles, field.bounds, limits) {
+    let mask_stream = match isocontour_stream_with_limits(&triangles, bounds, limits) {
         Ok(stream) => stream,
         Err(ContourFailure::LegacyRequired(_reason)) => {
-            return legacy_type1_field_form(document, field);
+            return legacy_type1_field_form(document, mesh, color, bounds);
         }
         Err(ContourFailure::Invalid(reason)) => return Err(reason),
     };
@@ -1162,11 +1243,126 @@ fn field_form_with_limits(
         dict,
         format!(
             "/GS gs {} {} {} rg 0 0 1 1 re f",
-            field.color[0] as f64 / 255.0,
-            field.color[1] as f64 / 255.0,
-            field.color[2] as f64 / 255.0
+            color[0] as f64 / 255.0,
+            color[1] as f64 / 255.0,
+            color[2] as f64 / 255.0
         )
         .into_bytes(),
+    )))
+}
+
+fn radial_field_form(
+    document: &mut Document,
+    records: &[PdfRadialRecord],
+    saved_alpha: f32,
+    coverage: PdfRadialCoverage,
+    bounds: BoundingBox,
+) -> Result<Object, String> {
+    // Compile and validate both programs before adding any objects. If this
+    // field is not representable, the caller discards the in-memory PDF and
+    // keeps the original serialized bytes unchanged.
+    let program = radial::compile(
+        records,
+        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+        saved_alpha,
+        coverage,
+    )?;
+    let function_domain = Object::Array(vec![0.into(), 1.into(), 0.into(), 1.into()]);
+    let rgb_function = document.add_object(Stream::new(
+        Dictionary::from_iter([
+            (b"FunctionType".to_vec(), Object::Integer(4)),
+            (b"Domain".to_vec(), function_domain.clone()),
+            (
+                b"Range".to_vec(),
+                Object::Array(vec![
+                    0.into(),
+                    1.into(),
+                    0.into(),
+                    1.into(),
+                    0.into(),
+                    1.into(),
+                ]),
+            ),
+        ]),
+        program.rgb,
+    ));
+    let rgb_shading = document.add_object(Dictionary::from_iter([
+        (b"ShadingType".to_vec(), Object::Integer(1)),
+        (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+        (b"Domain".to_vec(), function_domain.clone()),
+        (b"Function".to_vec(), Object::Reference(rgb_function)),
+    ]));
+    let mask_function = document.add_object(Stream::new(
+        Dictionary::from_iter([
+            (b"FunctionType".to_vec(), Object::Integer(4)),
+            (b"Domain".to_vec(), function_domain.clone()),
+            (b"Range".to_vec(), Object::Array(vec![0.into(), 1.into()])),
+        ]),
+        program.mask,
+    ));
+    let mask_shading = document.add_object(Dictionary::from_iter([
+        (b"ShadingType".to_vec(), Object::Integer(1)),
+        (b"ColorSpace".to_vec(), Object::Name(b"DeviceGray".to_vec())),
+        (b"Domain".to_vec(), function_domain),
+        (b"Function".to_vec(), Object::Reference(mask_function)),
+    ]));
+
+    let mut mask_resources = Dictionary::new();
+    mask_resources.set(
+        "Shading",
+        Dictionary::from_iter([(b"M".to_vec(), Object::Reference(mask_shading))]),
+    );
+    let mask_group = Dictionary::from_iter([
+        (b"S".to_vec(), Object::Name(b"Transparency".to_vec())),
+        (b"CS".to_vec(), Object::Name(b"DeviceGray".to_vec())),
+        (b"I".to_vec(), Object::Boolean(true)),
+        (b"K".to_vec(), Object::Boolean(false)),
+    ]);
+    let mask = document.add_object(Stream::new(
+        Dictionary::from_iter([
+            (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+            (b"Subtype".to_vec(), Object::Name(b"Form".to_vec())),
+            (b"FormType".to_vec(), Object::Integer(1)),
+            (
+                b"BBox".to_vec(),
+                Object::Array(vec![0.into(), 0.into(), 1.into(), 1.into()]),
+            ),
+            (b"Resources".to_vec(), Object::Dictionary(mask_resources)),
+            (b"Group".to_vec(), Object::Dictionary(mask_group)),
+        ]),
+        b"/M sh".to_vec(),
+    ));
+
+    let soft_mask = Dictionary::from_iter([
+        (b"S".to_vec(), Object::Name(b"Luminosity".to_vec())),
+        (b"G".to_vec(), Object::Reference(mask)),
+        (b"BC".to_vec(), Object::Array(vec![0.into()])),
+        (b"TR".to_vec(), Object::Name(b"Identity".to_vec())),
+    ]);
+    let state = document.add_object(Dictionary::from_iter([(
+        b"SMask".to_vec(),
+        Object::Dictionary(soft_mask),
+    )]));
+    let mut states = Dictionary::new();
+    states.set("GS", Object::Reference(state));
+    let mut form_resources = Dictionary::new();
+    form_resources.set("ExtGState", states);
+    form_resources.set(
+        "Shading",
+        Dictionary::from_iter([(b"C".to_vec(), Object::Reference(rgb_shading))]),
+    );
+    Ok(Object::Stream(Stream::new(
+        Dictionary::from_iter([
+            (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+            (b"Subtype".to_vec(), Object::Name(b"Form".to_vec())),
+            (b"FormType".to_vec(), Object::Integer(1)),
+            (
+                b"BBox".to_vec(),
+                Object::Array(vec![0.into(), 0.into(), 1.into(), 1.into()]),
+            ),
+            (b"Resources".to_vec(), Object::Dictionary(form_resources)),
+        ]),
+        b"/GS gs\n/C sh".to_vec(),
     )))
 }
 
@@ -1238,6 +1434,14 @@ mod tests {
     use super::*;
     use crate::{CoverageTriangle, CoverageVertex};
     use krilla::{Document as PdfDocument, page::PageSettings};
+
+    fn calculator_numbers_are_fixed(code: &[u8]) -> bool {
+        std::str::from_utf8(code).is_ok_and(|code| {
+            code.split_whitespace()
+                .filter(|token| token.parse::<f64>().is_ok())
+                .all(|token| !token.contains('e') && !token.contains('E'))
+        })
+    }
 
     fn mesh(vertices: [[f32; 3]; 3]) -> CoverageMesh {
         CoverageMesh {
@@ -1593,12 +1797,7 @@ mod tests {
             terminal_end: 1,
             bounds: None,
         };
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds,
-        };
+        let field = PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds);
         let mut document = Document::with_version("1.7");
         assert!(field_form(&mut document, &field).is_ok());
         assert!(
@@ -1638,12 +1837,7 @@ mod tests {
             terminal_end: 1,
             bounds: None,
         };
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds,
-        };
+        let field = PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds);
         let mut document = Document::with_version("1.7");
         assert!(field_form(&mut document, &field).is_ok());
         // Component-local overlay succeeds, but the far-low component loses
@@ -1676,17 +1870,17 @@ mod tests {
             terminal_end: 1,
             bounds: None,
         };
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds: BoundingBox {
+        let field = PdfInkField::mesh(
+            1,
+            &mesh,
+            [0, 0, 0],
+            BoundingBox {
                 x_min: 0.0,
                 y_min: 0.0,
                 x_max: remote,
                 y_max: remote,
             },
-        };
+        );
         let mut document = Document::with_version("1.7");
         assert!(field_form(&mut document, &field).is_ok());
         assert!(
@@ -1735,12 +1929,7 @@ mod tests {
                 .expect_err("adapter round trip must reject material local-geometry loss");
             assert!(matches!(error, ContourFailure::LegacyRequired(_)));
 
-            let field = PdfInkField {
-                marker_id: 1,
-                mesh: &mesh_data,
-                color: [0, 0, 0],
-                bounds,
-            };
+            let field = PdfInkField::mesh(1, &mesh_data, [0, 0, 0], bounds);
             let mut document = Document::with_version("1.7");
             assert!(field_form(&mut document, &field).is_ok());
             assert!(
@@ -1750,17 +1939,17 @@ mod tests {
         }
 
         let normal = mesh([[0.0, 0.0, 1.0], [10_000.0, 0.0, 1.0], [0.0, 10_000.0, 1.0]]);
-        let normal_field = PdfInkField {
-            marker_id: 2,
-            mesh: &normal,
-            color: [0, 0, 0],
-            bounds: BoundingBox {
+        let normal_field = PdfInkField::mesh(
+            2,
+            &normal,
+            [0, 0, 0],
+            BoundingBox {
                 x_min: 0.0,
                 y_min: 0.0,
                 x_max: 10_000.0,
                 y_max: 10_000.0,
             },
-        };
+        );
         let mut normal_document = Document::with_version("1.7");
         assert!(field_form(&mut normal_document, &normal_field).is_ok());
         assert!(
@@ -1794,12 +1983,7 @@ mod tests {
             terminal_end: 1,
             bounds: None,
         };
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds,
-        };
+        let field = PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds);
         let limits = ContourLimits {
             max_bbox_comparisons: 0,
             ..ContourLimits::default()
@@ -1841,12 +2025,7 @@ mod tests {
             [[0.0, 0.0, 0.001], [1.0, 0.0, 0.001], [0.0, 1.0, 0.001]],
         ] {
             let mesh = mesh(vertices);
-            let field = PdfInkField {
-                marker_id: 1,
-                mesh: &mesh,
-                color: [0, 0, 0],
-                bounds,
-            };
+            let field = PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds);
             assert!(field_form(&mut Document::with_version("1.7"), &field).is_ok());
         }
     }
@@ -1881,17 +2060,17 @@ mod tests {
                     coverage: vertex.coverage,
                 }),
             });
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds: BoundingBox {
+        let field = PdfInkField::mesh(
+            1,
+            &mesh,
+            [0, 0, 0],
+            BoundingBox {
                 x_min: 0.0,
                 y_min: 0.0,
                 x_max: 1.0,
                 y_max: 1.0,
             },
-        };
+        );
         assert!(
             field_form(&mut Document::with_version("1.7"), &field)
                 .unwrap_err()
@@ -1908,17 +2087,96 @@ mod tests {
             x_max: 2.0,
             y_max: 2.0,
         };
-        let field = PdfInkField {
-            marker_id: 1,
-            mesh: &mesh,
-            color: [0, 0, 0],
-            bounds,
-        };
+        let field = PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds);
         assert!(
             field_form(&mut Document::with_version("1.7"), &field)
                 .unwrap_err()
                 .contains("no non-degenerate")
         );
+    }
+
+    #[test]
+    fn radial_payload_uses_bounded_type4_forms_for_native_max_and_direct_modes() {
+        let records: [PdfRadialRecord; 25] = std::array::from_fn(|index| {
+            let n = index as f32;
+            [
+                0.1 + n * 0.03,
+                0.5,
+                0.02,
+                0.1,
+                0.08 + n * 0.001,
+                0.9,
+                (index % 3 == 0) as u8 as f32 * 0.8,
+                (index % 3 == 1) as u8 as f32 * 0.6,
+                (index % 3 == 2) as u8 as f32 * 0.7,
+            ]
+        });
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 1.0,
+            y_max: 1.0,
+        };
+        for mode in [
+            PdfRadialCoverage::DirectSourceOver,
+            PdfRadialCoverage::EnhancedMax,
+        ] {
+            let field = PdfInkField::radial(7, &records, 128.0 / 255.0, mode, bounds);
+            let mut document = Document::with_version("1.7");
+            let form = field_form(&mut document, &field).unwrap();
+            assert_eq!(
+                form.as_stream()
+                    .unwrap()
+                    .dict
+                    .get(b"Subtype")
+                    .unwrap()
+                    .as_name()
+                    .unwrap(),
+                b"Form"
+            );
+            let functions = document
+                .objects
+                .values()
+                .filter_map(|object| object.as_stream().ok())
+                .filter(|stream| {
+                    stream
+                        .dict
+                        .get(b"FunctionType")
+                        .ok()
+                        .and_then(|value| value.as_i64().ok())
+                        == Some(4)
+                })
+                .map(|stream| stream.decompressed_content().unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(functions.len(), 2);
+            assert!(
+                functions
+                    .iter()
+                    .all(|code| calculator_numbers_are_fixed(code))
+            );
+        }
+    }
+
+    #[test]
+    fn radial_preflight_failure_does_not_add_partial_pdf_objects() {
+        let mut records = [[0.5, 0.5, 0.25, 0.25, 0.1, 1.0, 0.2, 0.4, 0.6]; 1];
+        records[0][2] = f32::NAN;
+        let field = PdfInkField::radial(
+            1,
+            &records,
+            0.5,
+            PdfRadialCoverage::EnhancedMax,
+            BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 1.0,
+                y_max: 1.0,
+            },
+        );
+        let mut document = Document::with_version("1.7");
+        let before = document.objects.len();
+        assert!(field_form(&mut document, &field).is_err());
+        assert_eq!(document.objects.len(), before);
     }
 
     #[test]
@@ -1948,12 +2206,12 @@ mod tests {
         let (mesh, bounds) = field();
         let result = replace_markers(
             &bytes,
-            &[PdfInkField {
+            &[PdfInkField::mesh(
                 marker_id,
-                mesh: &mesh,
-                color: [0x12, 0x34, 0x56],
+                &mesh,
+                [0x12, 0x34, 0x56],
                 bounds,
-            }],
+            )],
         )
         .unwrap();
         let document = Document::load_mem(&result).unwrap();
@@ -1988,12 +2246,7 @@ mod tests {
         let (mesh, bounds) = field();
         let missing = replace_markers(
             &marker_pdf(0, false),
-            &[PdfInkField {
-                marker_id: 1,
-                mesh: &mesh,
-                color: [0, 0, 0],
-                bounds,
-            }],
+            &[PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds)],
         )
         .unwrap_err();
         assert!(missing.contains("marker 1 matched 0 Image XObjects"));
@@ -2013,12 +2266,7 @@ mod tests {
         document.add_object(marker);
         let duplicate = replace_markers(
             &save(&mut document),
-            &[PdfInkField {
-                marker_id: 0,
-                mesh: &mesh,
-                color: [0, 0, 0],
-                bounds,
-            }],
+            &[PdfInkField::mesh(0, &mesh, [0, 0, 0], bounds)],
         )
         .unwrap_err();
         assert!(duplicate.contains("marker 0 matched 2 Image XObjects"));

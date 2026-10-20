@@ -58,6 +58,7 @@ pub struct UnitInterval(Number);
 #[derive(Clone, Copy)]
 pub enum ColorValue {
     Rgb(crate::Color),
+    RgbComponents([UnitInterval; 3]),
     Gray(UnitInterval),
 }
 impl ColorValue {
@@ -84,9 +85,27 @@ impl ColorValue {
             .filter(|number| (0.0..=1.0).contains(&number.value()))
             .map(|number| Self::Gray(UnitInterval(number)))
     }
+    /// Build an sRGB color from normalized channels without quantizing to bytes.
+    pub fn rgb_components(red: f64, green: f64, blue: f64) -> Option<Self> {
+        [red, green, blue]
+            .map(|value| {
+                Number::new(value)
+                    .filter(|number| (0.0..=1.0).contains(&number.value()))
+                    .map(UnitInterval)
+            })
+            .into_iter()
+            .collect::<Option<Vec<_>>>()?
+            .try_into()
+            .ok()
+            .map(Self::RgbComponents)
+    }
     pub(super) fn text(self) -> String {
         match self {
             Self::Rgb(color) => color_hex(&color),
+            Self::RgbComponents(channels) => {
+                let [red, green, blue] = channels.map(|channel| channel.0.value() * 100.);
+                format!("rgb({red}%,{green}%,{blue}%)")
+            }
             Self::Gray(level) => {
                 let percent = level.0.value() * 100.;
                 format!("rgb({percent:.9}%,{percent:.9}%,{percent:.9}%)")
@@ -121,6 +140,19 @@ impl Paint {
 
 pub fn color_hex(color: &crate::Color) -> String {
     format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ColorValue;
+
+    #[test]
+    fn normalized_rgb_components_keep_fractional_channels() {
+        let color = ColorValue::rgb_components(0.123_456_789, 0.5, 1.0).unwrap();
+        assert_eq!(color.text(), "rgb(12.3456789%,50%,100%)");
+        assert!(ColorValue::rgb_components(-0.01, 0.5, 1.0).is_none());
+        assert!(ColorValue::rgb_components(0.0, f64::NAN, 1.0).is_none());
+    }
 }
 
 macro_rules! keywords {

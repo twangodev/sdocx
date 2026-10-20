@@ -365,6 +365,9 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct PreparedInkPen2V9 {
+    /// Use the native RGB lanes per stamp instead of the resolved uniform color.
+    /// Active-gradient public admission remains gated while transport is checked.
+    pub per_stamp_rgb: bool,
     /// Native enhanced-AA policy: MAX coverage, otherwise ordered source-over.
     pub enhanced_antialias: bool,
     /// Ordered native records: center, ellipse radii, edge, coverage, RGB.
