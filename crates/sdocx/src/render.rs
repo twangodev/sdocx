@@ -8628,6 +8628,114 @@ mod tests {
         );
     }
 
+    // Bounded source-to-line check against a controlled native image-line receipt.
+    // It checks SDK layout against the captured native image line observation,
+    // without asserting a generic native line-query adapter.
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn continuous_body_image_line_matches_native_cut_receipt() {
+        let mut body = theme_test_text();
+        body.text = format!("{}\u{fffc}\n\n\n", "\n".repeat(112));
+        body.font_size = Some(17.0); // logical size; density=3 and delta=-5 -> 36 px.
+        body.margins = Some([16.0, 10.0, 16.0, 10.0]);
+        body.object_spans = vec![RichTextObjectSpan {
+            object_type: ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                bbox: BoundingBox {
+                    x_min: 48.0,
+                    y_min: 5473.2021484375,
+                    x_max: 567.4820556640625,
+                    y_max: 6154.56396484375,
+                },
+                rotation_degrees: None,
+                media_id: Some(0),
+                media_index: Some(0),
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            }))),
+            text_index_utf16: 112,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        }];
+        let mut page = page_with_uncolored_stroke();
+        page.width = 1812;
+        page.height = 15372;
+        let mut document = document(page);
+        document.metadata.page_mode = Some(1);
+        document.metadata.default_page_dimensions = Some((1080, 1527));
+        document.metadata.flow_dimensions = Some((1080, 9162));
+        document.metadata.flow_page_padding = Some((0, 24));
+        document.metadata.body_font_size_delta = Some(-5);
+        document.metadata.note_text = Some(body);
+
+        let layout = layout_document(&document);
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let mut cache = super::DocumentTextCache::default();
+        let _ = cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
+        let plan = &cache
+            .plans
+            .first()
+            .expect("continuous body plan prepared")
+            .1;
+        let source = &plan.text.text;
+        let utf16 = source.encode_utf16().collect::<Vec<_>>();
+        let char_to_utf16 = |character: usize| -> usize {
+            source.chars().take(character).map(char::len_utf16).sum()
+        };
+        assert_eq!(utf16.len(), 116);
+        assert_eq!(utf16[112], 0xfffc);
+        assert_eq!(plan.layout.lines.len(), 116);
+        let selected = plan
+            .layout
+            .lines
+            .iter()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                (line.top <= 6066.0 && line.bottom >= 6065.0).then_some((index, line))
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(selected.len(), 1);
+        let (index, line) = selected[0];
+        assert_eq!(index, 112);
+        assert_eq!(line.line.source, 112..113);
+        let selected_utf16 =
+            char_to_utf16(line.line.source.start)..char_to_utf16(line.line.source.end);
+        assert_eq!(selected_utf16, 112..113);
+        assert!(super::text::native_text_range_has_visible_content(
+            &utf16,
+            selected_utf16,
+            &[],
+        ));
+        assert_eq!((line.top as f32).to_bits(), 1168837030);
+        assert_eq!((line.bottom as f32).to_bits(), 1170258266);
+        assert!((line.baseline - 6154.56884765625).abs() < 0.001);
+        // Full-width bands from the same native receipt. This checks this
+        // source's line boxes, not a general native line-selection adapter.
+        for (top, bottom, visible) in [
+            (5424.60595703125, 5473.2060546875, false),
+            (5473.2060546875, 5474.2060546875, true),
+            (6154., 6155., true),
+            (6166.1689453125, 6167.1689453125, true),
+            (6167.1689453125, 6168.1689453125, false),
+            (6215.76904296875, 6216.76904296875, false),
+        ] {
+            let candidate = plan.layout.lines.iter().any(|line| {
+                line.top < bottom
+                    && line.bottom > top
+                    && super::text::native_text_range_has_visible_content(
+                        &utf16,
+                        char_to_utf16(line.line.source.start)..char_to_utf16(line.line.source.end),
+                        &[],
+                    )
+            });
+            assert_eq!(candidate, visible, "band {top}..{bottom}");
+        }
+    }
+
     #[cfg(feature = "pdf")]
     #[test]
     fn single_page_continuous_uses_full_source_without_replacing_inspection_slice() {
