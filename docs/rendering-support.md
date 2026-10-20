@@ -377,8 +377,10 @@ matches all 35 two- to eight-point cases, including duplicate/nearby-event
 admission, native width transitions and the 0.4–800 size clamp. A
 [NoCurve event matrix](../conformance/magicpen-nocurve-source-events-native.json)
 adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
-ranges and direct-dot fallback, with exact complete streams. General curved
-sampling, replay boundaries and production vector admission remain open.
+ranges and direct-dot fallback, with exact complete streams. A separate
+[curved event capture](../conformance/magicpen-curved-source-events-native.json)
+records line/terminal callback ranges for five bounded inputs. General curved
+sampling, replay reconstruction and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
