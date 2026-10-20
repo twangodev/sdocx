@@ -977,6 +977,13 @@ fn ensure_catalog_context_supported(doc: &Document) -> Result<(), String> {
         match key.as_slice() {
             b"Type" | b"Pages" | b"Version" | b"OCProperties" | b"Metadata" | b"OutputIntents"
             | b"Lang" | b"ViewerPreferences" | b"MarkInfo" => {}
+            b"Names" => validate_catalog_names(doc, value)?,
+            b"OpenAction" => validate_catalog_open_action(doc, value)?,
+            b"PageMode" => {
+                if !matches!(deref(doc, value)?, Object::Name(_)) {
+                    return Err("source PDF catalog /PageMode must be a name".into());
+                }
+            }
             b"StructTreeRoot" => {
                 let structure = obj_dict(doc, value)?;
                 let nonempty_k = match structure.get(b"K") {
@@ -1003,6 +1010,158 @@ fn ensure_catalog_context_supported(doc: &Document) -> Result<(), String> {
                     String::from_utf8_lossy(key)
                 ));
             }
+        }
+    }
+    Ok(())
+}
+
+/// The single-source catalog copier can safely retain the /Dests name tree:
+/// GraphCloner remaps selected page references and rejects dangling ones.
+/// Other name-tree contexts (JavaScript, embedded files, etc.) need their own
+/// merge/remapping policy and remain explicit admission errors.
+fn validate_catalog_names(doc: &Document, value: &Object) -> Result<(), String> {
+    let names = obj_dict(doc, value)?;
+    if names.iter().any(|(key, _)| key != b"Dests") {
+        return Err("source PDF catalog /Names contains an unsupported name-tree context".into());
+    }
+    if let Ok(dests) = names.get(b"Dests") {
+        validate_destination_name_tree(doc, dests, &mut HashSet::new(), 0)?;
+    }
+    Ok(())
+}
+
+fn validate_destination_name_tree(
+    doc: &Document,
+    object: &Object,
+    seen: &mut HashSet<ObjectId>,
+    depth: usize,
+) -> Result<(), String> {
+    if depth > 64 {
+        return Err("source PDF destination name tree nesting exceeds 64".into());
+    }
+    if let Object::Reference(id) = object
+        && !seen.insert(*id)
+    {
+        return Err("cycle or repeated node in source PDF destination name tree".into());
+    }
+    let node = deref(doc, object)?
+        .as_dict()
+        .map_err(|e| format!("source PDF destination name-tree node is not a dictionary: {e}"))?;
+    if node
+        .iter()
+        .any(|(key, _)| key != b"Names" && key != b"Kids" && key != b"Limits")
+    {
+        return Err("source PDF destination name tree has unsupported node entries".into());
+    }
+    let names = node.get(b"Names").ok();
+    let kids = node.get(b"Kids").ok();
+    if names.is_some() == kids.is_some() {
+        return Err(
+            "source PDF destination name-tree node must have exactly one of /Names or /Kids".into(),
+        );
+    }
+    if let Some(names) = names {
+        let names = deref(doc, names)?
+            .as_array()
+            .map_err(|e| format!("source PDF destination name-tree /Names is not an array: {e}"))?;
+        if names.len() % 2 != 0 {
+            return Err("source PDF destination name-tree /Names has an odd item count".into());
+        }
+        for pair in names.as_chunks::<2>().0 {
+            let name = &pair[0];
+            if !matches!(deref(doc, name)?, Object::String(_, _) | Object::Name(_)) {
+                return Err("source PDF destination name-tree key is not a string or name".into());
+            }
+            validate_destination_value(doc, &pair[1])?;
+        }
+    } else if let Some(kids) = kids {
+        let kids = deref(doc, kids)?
+            .as_array()
+            .map_err(|e| format!("source PDF destination name-tree /Kids is not an array: {e}"))?;
+        for child in kids {
+            validate_destination_name_tree(doc, child, seen, depth + 1)?;
+        }
+    }
+    if let Ok(limits) = node.get(b"Limits") {
+        let limits = deref(doc, limits)?.as_array().map_err(|e| {
+            format!("source PDF destination name-tree /Limits is not an array: {e}")
+        })?;
+        if limits.len() != 2
+            || limits
+                .iter()
+                .any(|value| !matches!(deref(doc, value), Ok(Object::String(_, _))))
+        {
+            return Err("source PDF destination name-tree /Limits must contain two strings".into());
+        }
+    }
+    Ok(())
+}
+
+fn validate_destination_value(doc: &Document, value: &Object) -> Result<(), String> {
+    let destination = match deref(doc, value)? {
+        Object::Array(items) => items,
+        Object::Dictionary(dict) => {
+            if dict.iter().any(|(key, _)| key != b"D") {
+                return Err("source PDF destination dictionary has unsupported entries".into());
+            }
+            deref(
+                doc,
+                dict.get(b"D")
+                    .map_err(|e| format!("source PDF destination dictionary has no /D: {e}"))?,
+            )?
+            .as_array()
+            .map_err(|e| format!("source PDF destination dictionary /D is not an array: {e}"))?
+        }
+        _ => {
+            return Err(
+                "source PDF named destination is not an array or destination dictionary".into(),
+            );
+        }
+    };
+    if destination.is_empty() || !matches!(destination.first(), Some(Object::Reference(_))) {
+        return Err("source PDF destination array must begin with a page reference".into());
+    }
+    Ok(())
+}
+
+fn validate_catalog_open_action(doc: &Document, value: &Object) -> Result<(), String> {
+    let action = obj_dict(doc, value).map_err(|_| {
+        "source PDF catalog /OpenAction must be a supported /GoTo action".to_owned()
+    })?;
+    if action
+        .iter()
+        .any(|(key, _)| key != b"Type" && key != b"S" && key != b"D")
+    {
+        return Err("source PDF catalog /OpenAction has unsupported action entries".into());
+    }
+    if let Some(action_type) = action.get(b"Type").ok()
+        && deref(doc, action_type)?.as_name().ok() != Some(b"Action".as_slice())
+    {
+        return Err("source PDF catalog /OpenAction /Type must be /Action".into());
+    }
+    let action_kind = action
+        .get(b"S")
+        .map_err(|e| format!("source PDF catalog /OpenAction has no /S action type: {e}"))?;
+    if deref(doc, action_kind)?.as_name().ok() != Some(b"GoTo".as_slice()) {
+        return Err("source PDF catalog /OpenAction must use /S /GoTo".into());
+    }
+    let destination = action
+        .get(b"D")
+        .map_err(|e| format!("source PDF catalog /OpenAction has no /D destination: {e}"))?;
+    match deref(doc, destination)? {
+        Object::Array(items) if !items.is_empty() => {
+            if !matches!(items.first(), Some(Object::Reference(_))) {
+                return Err(
+                    "source PDF /OpenAction GoTo destination must begin with a page reference"
+                        .into(),
+                );
+            }
+        }
+        Object::Name(_) | Object::String(_, _) => {}
+        _ => {
+            return Err(
+                "source PDF /OpenAction GoTo /D must be a destination array or name".into(),
+            );
         }
     }
     Ok(())
@@ -2282,6 +2441,99 @@ mod tests {
         bytes
     }
 
+    fn source_with_catalog_destinations() -> Vec<u8> {
+        let mut pdf = Document::load_mem(&source_pdf()).unwrap();
+        let pages = pdf.get_pages();
+        let first = pages[&1];
+        let second = pages[&2];
+        let first_leaf = pdf.add_object(dictionary! {
+            "Names" => vec![
+                Object::string_literal("first"),
+                dictionary! {
+                    "D" => vec![first.into(), Object::Name(b"Fit".to_vec())],
+                }
+                .into(),
+            ],
+            "Limits" => vec![Object::string_literal("first"), Object::string_literal("first")],
+        });
+        let second_leaf = pdf.add_object(dictionary! {
+            "Names" => vec![
+                Object::string_literal("second"),
+                dictionary! {
+                    "D" => vec![second.into(), Object::Name(b"Fit".to_vec())],
+                }
+                .into(),
+            ],
+            "Limits" => vec![Object::string_literal("second"), Object::string_literal("second")],
+        });
+        let dest_tree = pdf.add_object(dictionary! {
+            "Kids" => vec![first_leaf.into(), second_leaf.into()],
+            "Limits" => vec![Object::string_literal("first"), Object::string_literal("second")],
+        });
+        let open_action = pdf.add_object(dictionary! {
+            "Type" => "Action", "S" => "GoTo",
+            "D" => vec![second.into(), Object::Name(b"Fit".to_vec())],
+        });
+        let catalog_id = pdf.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        let catalog = pdf
+            .get_object_mut(catalog_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap();
+        catalog.set("Names", dictionary! { "Dests" => dest_tree });
+        catalog.set("OpenAction", open_action);
+        catalog.set("PageMode", "UseOutlines");
+        let mut bytes = Vec::new();
+        pdf.save_to(&mut bytes).unwrap();
+        bytes
+    }
+
+    fn imported_spec(source_page_index: i32, overlay_bytes: &[u8]) -> OutputPage<'_> {
+        OutputPage::Imported {
+            source_key: "paper",
+            source_page_index,
+            overlay_bytes,
+            overlay_page_number: 1,
+            display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            clip: [0.0, 0.0, 100.0, 80.0],
+        }
+    }
+
+    fn catalog_named_destination(doc: &Document, name: &[u8]) -> ObjectId {
+        fn find(doc: &Document, node: &Object, name: &[u8]) -> Option<ObjectId> {
+            let dict = obj_dict(doc, node).ok()?;
+            if let Ok(items) = dict.get(b"Names") {
+                let items = deref(doc, items).ok()?.as_array().ok()?;
+                for pair in items.as_chunks::<2>().0 {
+                    if deref(doc, &pair[0]).ok()?.as_str().ok()? == name {
+                        let value = deref(doc, &pair[1]).ok()?;
+                        let destination = match value {
+                            Object::Array(items) => items,
+                            Object::Dictionary(dict) => {
+                                deref(doc, dict.get(b"D").ok()?).ok()?.as_array().ok()?
+                            }
+                            _ => return None,
+                        };
+                        return destination.first()?.as_reference().ok();
+                    }
+                }
+            }
+            if let Ok(kids) = dict.get(b"Kids") {
+                for child in deref(doc, kids).ok()?.as_array().ok()? {
+                    if let Some(page) = find(doc, child, name) {
+                        return Some(page);
+                    }
+                }
+            }
+            None
+        }
+        let catalog_id = doc.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        let catalog = doc.get_dictionary(catalog_id).unwrap();
+        let names = catalog.get(b"Names").unwrap();
+        let names = obj_dict(doc, names).unwrap();
+        find(doc, names.get(b"Dests").unwrap(), name).expect("named destination")
+    }
+
     fn archive_metadata(
         resources: &[(&str, Option<u32>, &[u8])],
         manifest: Option<&[(u32, &str)]>,
@@ -2987,6 +3239,136 @@ mod tests {
             properties.get(b"Layer").unwrap().as_reference().unwrap(),
             ocg
         );
+    }
+
+    #[test]
+    fn assembler_remaps_single_source_catalog_destinations_for_reordered_duplicates() {
+        let source = source_with_catalog_destinations();
+        let overlay = sdk_noop_overlay_pdf();
+        let output = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper",
+                bytes: &source,
+            }],
+            &[
+                imported_spec(1, &overlay),
+                imported_spec(0, &overlay),
+                imported_spec(1, &overlay),
+            ],
+        )
+        .unwrap();
+        let output = Document::load_mem(&output).unwrap();
+        let output_pages = output.get_pages();
+        let output_page_ids = output_pages.values().copied().collect::<Vec<_>>();
+        let catalog_id = output.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        let catalog = output.get_dictionary(catalog_id).unwrap();
+
+        let action = obj_dict(&output, catalog.get(b"OpenAction").unwrap()).unwrap();
+        assert_eq!(action.get(b"S").unwrap().as_name().unwrap(), b"GoTo");
+        let open_destination = deref(&output, action.get(b"D").unwrap())
+            .unwrap()
+            .as_array()
+            .unwrap();
+        assert_eq!(
+            open_destination[0].as_reference().unwrap(),
+            output_page_ids[0],
+            "OpenAction targets the first output occurrence of its source page"
+        );
+        assert_eq!(
+            catalog.get(b"PageMode").unwrap().as_name().unwrap(),
+            b"UseOutlines"
+        );
+        assert_eq!(
+            catalog_named_destination(&output, b"first"),
+            output_page_ids[1]
+        );
+        assert_eq!(
+            catalog_named_destination(&output, b"second"),
+            output_page_ids[0],
+            "named destinations also target the first output occurrence"
+        );
+    }
+
+    #[test]
+    fn assembler_rejects_catalog_references_to_unselected_pages() {
+        let source = source_with_catalog_destinations();
+        let overlay = sdk_noop_overlay_pdf();
+        let error = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper",
+                bytes: &source,
+            }],
+            &[imported_spec(0, &overlay)],
+        )
+        .unwrap_err();
+        assert!(error.contains("unselected page"), "{error}");
+    }
+
+    #[test]
+    fn catalog_admission_rejects_unsupported_name_and_open_action_contexts() {
+        let source = source_with_catalog_destinations();
+        let mut unsupported_names = Document::load_mem(&source).unwrap();
+        let catalog_id = unsupported_names
+            .trailer
+            .get(b"Root")
+            .unwrap()
+            .as_reference()
+            .unwrap();
+        unsupported_names
+            .get_object_mut(catalog_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set(
+                "Names",
+                dictionary! { "Dests" => Dictionary::new(), "JavaScript" => Dictionary::new() },
+            );
+        assert!(
+            ensure_catalog_context_supported(&unsupported_names)
+                .unwrap_err()
+                .contains("unsupported name-tree context")
+        );
+
+        let mut unsupported_action = Document::load_mem(&source).unwrap();
+        let catalog_id = unsupported_action
+            .trailer
+            .get(b"Root")
+            .unwrap()
+            .as_reference()
+            .unwrap();
+        let action_id = unsupported_action.add_object(dictionary! {
+            "S" => "URI", "URI" => Object::string_literal("https://example.invalid/"),
+        });
+        unsupported_action
+            .get_object_mut(catalog_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set("OpenAction", action_id);
+        assert!(
+            ensure_catalog_context_supported(&unsupported_action)
+                .unwrap_err()
+                .contains("unsupported action entries")
+        );
+
+        let mut named_action = Document::load_mem(&source).unwrap();
+        let catalog_id = named_action
+            .trailer
+            .get(b"Root")
+            .unwrap()
+            .as_reference()
+            .unwrap();
+        let action_id = named_action.add_object(dictionary! {
+            "S" => "GoTo", "D" => Object::string_literal("first"),
+        });
+        named_action
+            .get_object_mut(catalog_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set("OpenAction", action_id);
+        ensure_catalog_context_supported(&named_action)
+            .expect("named GoTo destinations are retained as name/string references");
     }
 
     #[test]
