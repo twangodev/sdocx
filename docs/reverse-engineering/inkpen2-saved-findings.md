@@ -264,13 +264,20 @@ Twelve joined native gradient draws (1×/2×/4×, AA off/on, alpha 128/255)
 regenerate the same 900-byte VBO. Reconstructing the six enhanced final frames
 from their captured M/C stage bytes matches alpha exactly and RGB within one
 byte; this verifies the stage law, not public vector transport or a general bound.
-Experimental PDF Type 4 RGB shading plus a separate MAX luminosity mask can
-express this field without images. Two-/three-stamp order and alpha controls
-match the analytic reference within 1–2 bytes in PDFium; MuPDF retains larger
-low-scale sampling errors. Source-derived 25-record SVGs match native support
+An internal Rust PDF route retains the nine-float records and uses Type 4 RGB
+shading with a separate q/MAX luminosity mask, without images. Its staged limit
+is 512 records and 1 MiB of calculator code; active-gradient admission stays off.
+Rust tests execute the generated programs against the source-over/normalization
+law and check retained vector export of the native 900-byte stream at three
+scales and zero/partial/opaque alpha. This does not establish pixel parity.
+Two-/three-stamp scratch controls match the analytic reference within 1–2 bytes
+in PDFium. Across the twelve 25-record exports, direct MuPDF evaluation of the
+emitted mask functions matches the analytic field within 0.005 alpha byte;
+rasterized shading/soft-mask output still differs materially at low scales.
+Source-derived 25-record SVGs match native support
 in resvg/Chromium with active-ROI MAE 0.294–1.309, but Firefox's mask subtree
 fails to MAX-combine the stamps. The generic PDF filter path embeds a raster;
-cross-browser masking and a validated vector PDF lowering remain admission gaps.
+cross-browser masking and native-referenced PDF appearance remain admission gaps.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,

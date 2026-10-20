@@ -307,6 +307,9 @@ Nine enhanced-AA controls (1×/2×/4×, alpha 0/128/255) retain the same native 
 The enhanced projection improves SVG and partial-alpha PDF error against those
 native frames compared with selecting the direct route. Opaque PDF error is
 worse at 1×/2× and better at 4×; zero-alpha output is blank and PDFs remain vector-only.
+Active rainbow stays outside public admission. An internal per-record RGB route
+retains vector PDF shading and separate q/MAX masks; native-referenced PDF
+appearance and cross-renderer SVG masking remain unresolved.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
