@@ -459,14 +459,23 @@ GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
 An [adversarial extension](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-extension-native.json)
 adds 24 cases for pressure, size and method-specific speed/width precision;
-the model matches all 953 records across the combined 76 cases.
+Rust checks match 1,468 native records across 98 cases, with generated
+long/short controls extending coverage through 128 events, including
+rejected terminal movements and zero-time speed seeding. Bounded sampling
+checks source channels and output budgets; terminal geometry retains the raw
+endpoint and pressure while V2/V3 widths retain accepted-move speed.
 A [reuse matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
 target streams after short, long and different preludes and version changes,
 with explicit host lifecycle adapters. A bounded
 [GLV3 paint replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-paint-native.json) joins the
 synthetic source stream to native queued VBO/color uploads, texture bytes and a
 full host Mesa readback. This does not establish device or export parity;
-arbitrary-length sampling and production vector integration remain open.
+production vector integration and broader source validation remain open.
+Live program/sampler queries identify the alpha-atlas shader and native nearest/
+clamp sampling. Opaque, partial and zero source-alpha controls produce identical
+host readbacks. Fixed-logical-page zoom controls are host-selected; SVG/PDF
+intrinsic-texture prototypes improve on matched generic lines, with edge and
+consumer-sampling residuals. These prototypes are not production paint.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES

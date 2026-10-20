@@ -1,9 +1,26 @@
 //! Bounded source-driven numeric model for ChineseBrush GLV1/2/3 calls.
 //!
-//! Test evidence for pinned synthetic two- to eight-event Drawing fixtures.
+//! Test evidence for pinned synthetic source-event Drawing fixtures.
 //! Saved-note parsing, renderer state and production admission remain separate.
 
 use super::path::{P, Quad};
+
+/// Hard work limits for callers that admit saved source into this sampler.
+pub const MAX_SOURCE_EVENTS: usize = 65_536;
+pub const MAX_OUTPUT_RECORDS: usize = 1_000_000;
+// Native pressure has only an upper clamp. Bound negative values so width
+// interpolation and scalar-index deltas remain finite and within i32 range at
+// size <= 800, while preserving the captured negative-pressure cases.
+const MIN_SOURCE_PRESSURE: f32 = -1_000_000.0;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SampleError {
+    InvalidSource,
+    UnsupportedProfile,
+    OutputBudgetExceeded,
+    AllocationFailed,
+    DegeneratePath,
+}
 
 struct Cubic {
     p: [P; 4],
@@ -142,7 +159,7 @@ fn repeat_index(length: f32, width: i32) -> usize {
     } else {
         length / 10.0
     };
-    (scaled as usize).max(2) + 1
+    (scaled as usize).max(2).saturating_add(1)
 }
 
 fn dab_size(pressure: f32, factor: f32, size: f32, prior: f32) -> f32 {
@@ -235,9 +252,8 @@ pub fn packed_w(phase: f32, scalar: f32) -> f32 {
     (phase as f64).mul_add(1.0, scalar as f64 * 0.001) as f32
 }
 
-// Keep the native sampler's explicit path, repeat, width, and index state.
 #[allow(clippy::too_many_arguments)]
-fn emit_path(
+fn emit_path_limited(
     out: &mut Vec<[f32; 5]>,
     path: Path,
     repeat: usize,
@@ -249,8 +265,27 @@ fn emit_path(
     index_target: i32,
     index_steps: usize,
     phase: &mut usize,
-) {
+    record_limit: usize,
+) -> Result<(), SampleError> {
+    let count = repeat
+        .checked_add(extra)
+        .ok_or(SampleError::OutputBudgetExceeded)?;
+    let new_len = out
+        .len()
+        .checked_add(count)
+        .ok_or(SampleError::OutputBudgetExceeded)?;
+    if new_len > record_limit {
+        return Err(SampleError::OutputBudgetExceeded);
+    }
     let length = path.length();
+    if !length.is_finite() || length <= 0.0 {
+        // Flattening a closed, subpixel curve can leave no parameter segments.
+        // Reject it rather than inventing a native position or indexing an
+        // empty segment table.
+        return Err(SampleError::DegeneratePath);
+    }
+    out.try_reserve_exact(count)
+        .map_err(|_| SampleError::AllocationFailed)?;
     let step = length / repeat as f32;
     let width_step = (width_target - width) / width_steps as f32;
     let index_step = (index_target - index) / index_steps as i32;
@@ -263,8 +298,10 @@ fn emit_path(
         width += width_step;
         index += index_step;
     }
+    Ok(())
 }
 
+#[allow(clippy::too_many_arguments)] // Explicit native source/context plus output budget.
 fn model_line(
     points: &[P],
     pressure: &[f32],
@@ -273,7 +310,8 @@ fn model_line(
     width: i32,
     height: i32,
     tool: i32,
-) -> Vec<[f32; 5]> {
+    record_limit: usize,
+) -> Result<Vec<[f32; 5]>, SampleError> {
     let gate = if version == 1 || version == 2 {
         4.0
     } else {
@@ -291,13 +329,16 @@ fn model_line(
     }
     if accepted.is_empty() {
         let p = effective_pressure(*pressure.last().unwrap(), tool);
-        return vec![[
+        if record_limit == 0 {
+            return Err(SampleError::OutputBudgetExceeded);
+        }
+        return Ok(vec![[
             points[0].x,
             points[0].y,
             size * 0.25,
             0.0,
             (50.0 + p * 100.0) as i32 as f32,
-        ]];
+        ]]);
     }
     let seed = accepted[0];
     let scalar = f32_trunc(100.0 + effective_pressure(pressure[seed], tool) * 100.0) as f32;
@@ -315,7 +356,7 @@ fn model_line(
         let path = Path::Line(start, points[event]);
         let length = path.length();
         let repeat = repeat_index(length, width_state.min(target) as i32);
-        emit_path(
+        emit_path_limited(
             &mut out,
             path,
             repeat,
@@ -327,11 +368,12 @@ fn model_line(
             scalar_index,
             repeat,
             &mut phase,
-        );
+            record_limit,
+        )?;
         width_state = target;
         start = points[event];
     }
-    out
+    Ok(out)
 }
 
 // This boundary mirrors the source arrays and explicit native profile.
@@ -346,12 +388,22 @@ pub fn model_event_loop(
     height: i32,
     tool: i32,
     curve: bool,
-) -> Vec<[f32; 5]> {
+    record_limit: usize,
+) -> Result<Vec<[f32; 5]>, SampleError> {
     let points: Vec<P> = xy.iter().map(|p| P { x: p[0], y: p[1] }).collect();
     assert_eq!(points.len(), pressure.len());
     assert_eq!(points.len(), times.len());
     if !curve {
-        return model_line(&points, pressure, size, version, width, height, tool);
+        return model_line(
+            &points,
+            pressure,
+            size,
+            version,
+            width,
+            height,
+            tool,
+            record_limit,
+        );
     }
     let gate = if version <= 2 {
         4.0
@@ -382,13 +434,16 @@ pub fn model_event_loop(
     }
     if accepted.is_empty() {
         let p = effective_pressure(*pressure.last().unwrap(), tool);
-        return vec![[
+        if record_limit == 0 {
+            return Err(SampleError::OutputBudgetExceeded);
+        }
+        return Ok(vec![[
             points[0].x,
             points[0].y,
             size * 0.25,
             0.0,
             (50.0 + p * 100.0) as i32 as f32,
-        ]];
+        ]]);
     }
     let seed = accepted[0];
     let seed_pressure = effective_pressure(pressure[seed], tool);
@@ -413,7 +468,7 @@ pub fn model_event_loop(
         let target = calculated_width(dab_size(p, f, size, prior), prior, size);
         let repeat = repeat_index(path.length(), prior.min(target) as i32);
         let target_index = f32_trunc(100.0 + p * 100.0);
-        emit_path(
+        emit_path_limited(
             &mut out,
             path,
             repeat,
@@ -425,34 +480,52 @@ pub fn model_event_loop(
             target_index,
             repeat,
             &mut phase,
-        );
+            record_limit,
+        )?;
         start = endpoint;
         prior = target;
         index = target_index;
         j += 2;
     }
     let m = accepted.len();
+    let accepted_last = accepted[m - 1];
+    let raw_last = points.len() - 1;
+    // Native endPen rereads the raw MotionEvent even when drawLine rejected it.
+    let use_raw_terminal = raw_last != accepted_last;
+    let terminal_point = if use_raw_terminal {
+        raw_last
+    } else {
+        accepted_last
+    };
     let (path, extra) = if m % 2 == 0 {
         let a = accepted[m - 2];
-        let b = accepted[m - 1];
+        let b = terminal_point;
         (
             Path::Cubic([start, points[a], points[a].mid(points[b]), points[b]]),
             1,
         )
     } else {
-        let a = accepted[m - 1];
-        (Path::Quad(start, points[a], points[a]), 1)
+        (
+            Path::Quad(start, points[accepted_last], points[terminal_point]),
+            1,
+        )
     };
-    let event = accepted[m - 1];
+    let event = terminal_point;
     let p = effective_pressure(pressure[event], tool);
     let terminal_speed = if version == 1 {
         if m <= 2 {
             1.0
+        } else if use_raw_terminal {
+            points[accepted_last].sub(points[accepted[m - 2]]).len()
         } else {
-            points[event].sub(points[accepted[m - 2]]).len()
+            let previous = accepted[m - 2];
+            points[event].sub(points[previous]).len()
         }
     } else {
-        speeds[event]
+        // endPen reads the speed stored by the last accepted drawLine. A raw
+        // terminal MotionEvent contributes geometry and pressure, but does
+        // not update that state because it did not pass the move gate.
+        speeds[accepted_last]
     };
     let f = if version == 1 && m <= 2 {
         1.0
@@ -466,7 +539,7 @@ pub fn model_event_loop(
     };
     let repeat = repeat_index(path.length(), prior.min(target) as i32);
     let target_index = f32_trunc(50.0 + p * 100.0);
-    emit_path(
+    emit_path_limited(
         &mut out,
         path,
         repeat,
@@ -478,8 +551,9 @@ pub fn model_event_loop(
         target_index,
         repeat,
         &mut phase,
-    );
-    out
+        record_limit,
+    )?;
+    Ok(out)
 }
 
 // Keep the compatibility wrapper's source and runtime parameters explicit.
@@ -506,6 +580,53 @@ pub fn run_model(
         height,
         tool,
         curve,
+        usize::MAX,
+    )
+    .expect("compatibility model sampling failed")
+}
+
+/// Produce exact GLV1/2/3 records while enforcing a cumulative output budget.
+/// The budget is checked for each whole path before reserving or emitting it.
+/// Source-event boundaries are intentionally not returned: current native
+/// fixtures capture append order but do not attribute rows to source events.
+#[allow(clippy::too_many_arguments)]
+pub fn run_model_bounded(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    curve: bool,
+    record_limit: usize,
+) -> Result<Vec<[f32; 5]>, SampleError> {
+    let len = xy.len();
+    if len == 0 || len > MAX_SOURCE_EVENTS || pressure.len() != len || times.len() != len {
+        return Err(SampleError::InvalidSource);
+    }
+    if !(1..=3).contains(&version) || width <= 0 || height <= 0 || !(0..=3).contains(&tool) {
+        return Err(SampleError::UnsupportedProfile);
+    }
+    if !size.is_finite()
+        || xy.iter().flatten().any(|v| !v.is_finite())
+        || xy.iter().flatten().any(|v| v.abs() > 1.0e18)
+        // Native traces include negative pressure values; keep them, while
+        // bounding their magnitude so size/pressure width arithmetic stays finite.
+        || pressure
+            .iter()
+            .any(|v| !v.is_finite() || *v < MIN_SOURCE_PRESSURE)
+        || (i64::from(*times.iter().max().expect("nonempty timestamps"))
+            - i64::from(*times.iter().min().expect("nonempty timestamps")))
+            > i64::from(i32::MAX)
+    {
+        return Err(SampleError::InvalidSource);
+    }
+    let limit = record_limit.min(MAX_OUTPUT_RECORDS);
+    let safe_size = size.clamp(0.4, 800.0);
+    model_event_loop(
+        xy, pressure, times, safe_size, version, width, height, tool, curve, limit,
     )
 }
 
@@ -513,6 +634,7 @@ pub fn run_model(
 mod tests {
     use super::*;
     use serde_json::Value;
+    use sha2::{Digest, Sha256};
 
     fn words(hex: &str) -> Vec<u32> {
         hex.as_bytes()
@@ -583,6 +705,107 @@ mod tests {
             .collect()
     }
 
+    fn digest_hex(bytes: &[u8]) -> String {
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    fn stress_source(count: usize, shifted: bool) -> (Vec<[f32; 2]>, Vec<f32>, Vec<i32>) {
+        let mut points64: Vec<[f64; 2]> = Vec::with_capacity(count);
+        for i in 0..count {
+            if i > 0 && i % 17 == 0 {
+                points64.push(points64[i - 1]);
+            } else if i > 0 && i % 19 == 0 {
+                let [x, y] = points64[i - 1];
+                points64.push([x + 0.05_f64, y - 0.03_f64]);
+            } else {
+                points64.push([
+                    i as f64 * 1.35_f64,
+                    (i % 9) as f64 * 1.1_f64 + (i / 9) as f64 * 0.4_f64,
+                ]);
+            }
+        }
+        let points: Vec<[f32; 2]> = points64
+            .into_iter()
+            .map(|[x, y]| {
+                if shifted {
+                    [(x + 120.0_f64) as f32, (y + 80.0_f64) as f32]
+                } else {
+                    [x as f32, y as f32]
+                }
+            })
+            .collect();
+        let pressure_values = [0.12_f64, 0.35, 0.62, 0.88, 0.48, 0.73];
+        let pressure = (0..count)
+            .map(|i| pressure_values[i % pressure_values.len()] as f32)
+            .collect();
+        let mut ticks = 200_i32;
+        let times = (0..count)
+            .map(|i| {
+                let current = ticks;
+                ticks += [11, 13, 17, 23, 29][i % 5] + if i % 23 == 22 { 19 } else { 0 };
+                current
+            })
+            .collect();
+        (points, pressure, times)
+    }
+
+    fn source_input_sha256(xy: &[[f32; 2]], pressure: &[f32], times: &[i32]) -> String {
+        let mut bytes = Vec::with_capacity(xy.len() * 12);
+        for [x, y] in xy {
+            bytes.extend_from_slice(&x.to_le_bytes());
+            bytes.extend_from_slice(&y.to_le_bytes());
+        }
+        for value in pressure {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        for value in times {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        digest_hex(&bytes)
+    }
+
+    fn check_native_trace(
+        name: &str,
+        xy: &[[f32; 2]],
+        pressure: &[f32],
+        times: &[i32],
+        profile: (f32, i32),
+        expected: (usize, &str, &str),
+    ) {
+        let (size, version) = profile;
+        let (count, input_sha, output_sha) = expected;
+        assert_eq!(
+            source_input_sha256(xy, pressure, times),
+            input_sha,
+            "{name} source bytes"
+        );
+        let sample = |limit| {
+            run_model_bounded(
+                xy, pressure, times, size, version, 1920, 1080, 2, true, limit,
+            )
+        };
+        let output = sample(count).unwrap_or_else(|error| panic!("{name} exact budget: {error:?}"));
+        assert_eq!(output.len(), count, "{name} record count");
+        let packed: Vec<u8> = output
+            .iter()
+            .flat_map(|r| {
+                [r[0], r[1], r[2], packed_w(r[3], r[4])]
+                    .into_iter()
+                    .flat_map(f32::to_le_bytes)
+            })
+            .collect();
+        assert_eq!(
+            digest_hex(&packed),
+            output_sha,
+            "{name} complete packed stream"
+        );
+        assert_eq!(
+            sample(count - 1),
+            Err(SampleError::OutputBudgetExceeded),
+            "{name} one-below budget"
+        );
+    }
+
     fn check_fixture(fixture: &Value) -> usize {
         let mut record_count = 0;
         for (name, case) in fixture["cases"].as_object().unwrap() {
@@ -612,6 +835,28 @@ mod tests {
             let rows = case["producer"]["append_rows"].as_array().unwrap();
             record_count += rows.len();
             assert_eq!(predicted.len(), rows.len(), "{name}");
+            let bounded = run_model_bounded(
+                &xy,
+                &pressure,
+                &times,
+                size,
+                version,
+                w,
+                h,
+                input["tool_type"].as_i64().unwrap() as i32,
+                input["curve_enabled"].as_bool().unwrap(),
+                rows.len(),
+            )
+            .unwrap_or_else(|error| panic!("{name} bounded sampler: {error:?}"));
+            assert_eq!(bounded.len(), rows.len(), "{name} bounded row count");
+            for (i, (bounded_row, compatibility_row)) in bounded.iter().zip(&predicted).enumerate()
+            {
+                assert_eq!(
+                    bounded_row.map(f32::to_bits),
+                    compatibility_row.map(f32::to_bits),
+                    "{name} bounded record {i}"
+                );
+            }
             let joined: Vec<u8> = rows
                 .iter()
                 .flat_map(|row| hex_bytes(row["delta_bytes"].as_str().unwrap()))
@@ -645,6 +890,182 @@ mod tests {
     }
 
     #[test]
+    fn short_terminal_cases_match_native_for_each_version_and_time_origin() {
+        let a_xy = [[0.0, 0.0], [10.0, 0.0], [10.25, 0.25]];
+        let a_pressure = [0.2, 0.4, 0.9];
+        let a_times = [200, 220, 240];
+        let b_xy = [[0.0, 0.0], [10.0, 0.0], [20.0, 3.0], [20.25, 3.25]];
+        let b_pressure = [0.2, 0.4, 0.6, 0.9];
+        let b_times = [200, 220, 240, 260];
+        let c_xy = [
+            [0.0, 0.0],
+            [10.0, 0.0],
+            [20.0, 3.0],
+            [30.0, 6.0],
+            [30.25, 6.25],
+        ];
+        let c_pressure = [0.2, 0.4, 0.6, 0.8, 0.9];
+        let c_times = [200, 220, 240, 260, 280];
+        let d_xy = [[0.0, 0.0], [0.25, 0.25], [10.0, 0.0], [10.25, 0.25]];
+        let d_pressure = [0.2, 0.4, 0.6, 0.9];
+        let d_times = [200, 210, 220, 240];
+        let size = 3.144_f64 as f32;
+
+        let cases = [
+            (
+                "short-a-v1",
+                &a_xy[..],
+                &a_pressure[..],
+                &a_times[..],
+                1,
+                7,
+                "9799392c62e10d1e4b8fca0da845172c14cfdd63b27d50af052def7a39269938",
+                "4d13cd8e00b98b4f05b5f4ffa7fc0717df96dadbae6314124212c30b90be85d6",
+            ),
+            (
+                "short-a-v2",
+                &a_xy[..],
+                &a_pressure[..],
+                &a_times[..],
+                2,
+                7,
+                "9799392c62e10d1e4b8fca0da845172c14cfdd63b27d50af052def7a39269938",
+                "a2d05bf6aa9e389a0b8b48ad40794faf116099e371ae57de95f9bfa89aeaf879",
+            ),
+            (
+                "short-a-v3",
+                &a_xy[..],
+                &a_pressure[..],
+                &a_times[..],
+                3,
+                7,
+                "9799392c62e10d1e4b8fca0da845172c14cfdd63b27d50af052def7a39269938",
+                "a2d05bf6aa9e389a0b8b48ad40794faf116099e371ae57de95f9bfa89aeaf879",
+            ),
+            (
+                "short-b-v1",
+                &b_xy[..],
+                &b_pressure[..],
+                &b_times[..],
+                1,
+                12,
+                "de426aa6df6fa24567556bc214a2e3e23abf540a4f7facb95a3421ca9c3a5251",
+                "31ba4c95237d1a818a745f9d02770211ee000c9617524f3ed21a69aea278f51b",
+            ),
+            (
+                "short-b-v2",
+                &b_xy[..],
+                &b_pressure[..],
+                &b_times[..],
+                2,
+                12,
+                "de426aa6df6fa24567556bc214a2e3e23abf540a4f7facb95a3421ca9c3a5251",
+                "c9bbfff98641c6391e421c92ee9174990cd873d24d8f150b2fc25c2fb0a62810",
+            ),
+            (
+                "short-b-v3",
+                &b_xy[..],
+                &b_pressure[..],
+                &b_times[..],
+                3,
+                12,
+                "de426aa6df6fa24567556bc214a2e3e23abf540a4f7facb95a3421ca9c3a5251",
+                "c9bbfff98641c6391e421c92ee9174990cd873d24d8f150b2fc25c2fb0a62810",
+            ),
+            (
+                "short-c-v1",
+                &c_xy[..],
+                &c_pressure[..],
+                &c_times[..],
+                1,
+                18,
+                "e70902ab1c885fd4ad157d86dfc53aa9a4e77a4d754b3b538b2932453f53e204",
+                "7673e6230ee6b3550c3eb39ca9b6f94190a270988debc1b350b9f9368367ccca",
+            ),
+            (
+                "short-c-v2",
+                &c_xy[..],
+                &c_pressure[..],
+                &c_times[..],
+                2,
+                18,
+                "e70902ab1c885fd4ad157d86dfc53aa9a4e77a4d754b3b538b2932453f53e204",
+                "8b97a362b74df8cfdd873d94207c5fb86c8f96e6eb4573f83a2aa331edd4660c",
+            ),
+            (
+                "short-c-v3",
+                &c_xy[..],
+                &c_pressure[..],
+                &c_times[..],
+                3,
+                18,
+                "e70902ab1c885fd4ad157d86dfc53aa9a4e77a4d754b3b538b2932453f53e204",
+                "8b97a362b74df8cfdd873d94207c5fb86c8f96e6eb4573f83a2aa331edd4660c",
+            ),
+            (
+                "short-d-v3",
+                &d_xy[..],
+                &d_pressure[..],
+                &d_times[..],
+                3,
+                7,
+                "2d1d38f1a6ac372728d1445dedb35014341e90e250fe34cd0099e6d6c7b378d9",
+                "f4f5230ac89595bcfc7cfeb9ca52f27e61a0a153576f71e0e9bf799a4f2d62ac",
+            ),
+        ];
+
+        for (name, xy, pressure, times, version, expected_count, input_sha, output_sha) in cases {
+            check_native_trace(
+                name,
+                xy,
+                pressure,
+                times,
+                (size, version),
+                (expected_count, input_sha, output_sha),
+            );
+        }
+
+        for (name, xy, pressure, times, count, input_sha, output_sha) in [
+            (
+                "short-a-zero-v3",
+                &a_xy[..],
+                &a_pressure[..],
+                &[0, 20, 40][..],
+                7,
+                "d1126de495f7b8308717dae69893e0160df12ba0bec66c54195bb3b2f64b6309",
+                "4d13cd8e00b98b4f05b5f4ffa7fc0717df96dadbae6314124212c30b90be85d6",
+            ),
+            (
+                "short-b-zero-v3",
+                &b_xy[..],
+                &b_pressure[..],
+                &[0, 20, 40, 60][..],
+                12,
+                "1de312d0f14562e5738486034e32c24d62d6e12a24b23b1add0c4100b30a2d25",
+                "c9bbfff98641c6391e421c92ee9174990cd873d24d8f150b2fc25c2fb0a62810",
+            ),
+            (
+                "short-d-zero-v3",
+                &d_xy[..],
+                &d_pressure[..],
+                &[0, 10, 20, 40][..],
+                7,
+                "0ca7699e1ca9d2aa8aa0a839a42cbc57e6f61915091668a014a92f2ecf987e50",
+                "79211558fff0bbcea87cb53fe67cf8937abf1d166a4576bae3f03d15b3554155",
+            ),
+        ] {
+            check_native_trace(
+                name,
+                xy,
+                pressure,
+                times,
+                (size, 3),
+                (count, input_sha, output_sha),
+            );
+        }
+    }
+
+    #[test]
     fn source_model_matches_native_glv1_glv2_glv3_full_vectors() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/chinesebrush-source-native.json"
@@ -671,5 +1092,216 @@ mod tests {
         );
         assert_eq!(extension["cases"].as_object().unwrap().len(), 24);
         assert_eq!(check_fixture(&baseline) + check_fixture(&extension), 953);
+    }
+
+    fn bounded(
+        xy: &[[f32; 2]],
+        pressure: &[f32],
+        times: &[i32],
+        curve: bool,
+        record_limit: usize,
+    ) -> Result<Vec<[f32; 5]>, SampleError> {
+        run_model_bounded(
+            xy,
+            pressure,
+            times,
+            20.0,
+            2,
+            1000,
+            1000,
+            0,
+            curve,
+            record_limit,
+        )
+    }
+
+    #[test]
+    fn bounded_sampler_accepts_exact_output_boundary_and_rejects_one_below() {
+        let xy = [[0.0, 0.0]];
+        let pressure = [0.5];
+        let times = [1];
+
+        let exact = bounded(&xy, &pressure, &times, false, 1).unwrap();
+        assert_eq!(exact.len(), 1);
+        assert_eq!(
+            bounded(&xy, &pressure, &times, false, 0),
+            Err(SampleError::OutputBudgetExceeded)
+        );
+    }
+
+    #[test]
+    fn bounded_sampler_rejects_huge_paths_without_partial_records() {
+        let xy = [[0.0, 0.0], [1.0e18, 0.0]];
+        let pressure = [0.5, 0.5];
+        let times = [1, 2];
+
+        assert_eq!(
+            bounded(&xy, &pressure, &times, true, MAX_OUTPUT_RECORDS),
+            Err(SampleError::OutputBudgetExceeded)
+        );
+    }
+
+    #[test]
+    fn bounded_sampler_rejects_empty_parameterization_without_panicking() {
+        // At this small display gate the movements are accepted, but the
+        // closed terminal cubic flattens to a zero chord and no segments.
+        assert_eq!(
+            run_model_bounded(
+                &[[0.0, 0.0], [0.1, 0.0], [0.0, 0.0]],
+                &[0.5; 3],
+                &[1, 2, 3],
+                20.0,
+                3,
+                1,
+                1,
+                2,
+                true,
+                100,
+            ),
+            Err(SampleError::DegeneratePath)
+        );
+    }
+
+    #[test]
+    fn bounded_sampler_rejects_invalid_arrays_and_timestamp_overflow_span() {
+        let xy = [[0.0, 0.0], [10.0, 0.0]];
+        let pressure = [0.5, 0.5];
+        let times = [1, 2];
+        assert_eq!(
+            bounded(&xy, &pressure[..1], &times, true, 100),
+            Err(SampleError::InvalidSource)
+        );
+
+        let non_finite = [[0.0, 0.0], [f32::NAN, 0.0]];
+        assert_eq!(
+            bounded(&non_finite, &pressure, &times, true, 100),
+            Err(SampleError::InvalidSource)
+        );
+
+        let wide_span = [i32::MIN, i32::MAX];
+        assert_eq!(
+            bounded(&xy, &pressure, &wide_span, true, 100),
+            Err(SampleError::InvalidSource)
+        );
+    }
+
+    #[test]
+    fn bounded_sampler_preserves_native_negative_pressure_edge_case() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-source-extension-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["adv-pressure-edges-v3"];
+        let (_, pressure, _) = source_arrays(&case["input"]);
+        assert!(pressure.iter().any(|value| *value < 0.0));
+        check_fixture(&serde_json::json!({"cases": {"negative-pressure": case}}));
+    }
+
+    #[test]
+    fn bounded_sampler_matches_long_native_glv123_traces() {
+        let cases = [
+            (
+                "stressmono-32-v3-size3_144",
+                32,
+                3.144_f64 as f32,
+                false,
+                27,
+                "5e5dd289f19c8bfc465a2c5f23ec2b7532afb9e1cb6b1b5d30234f96ddfa42f5",
+                "ec9b78aaf737d17294c344a5b8a93f927e6d759422d2745c7dfddb65fd8661d3",
+            ),
+            (
+                "stressmono-32-v3-size24",
+                32,
+                24.0_f32,
+                false,
+                16,
+                "5e5dd289f19c8bfc465a2c5f23ec2b7532afb9e1cb6b1b5d30234f96ddfa42f5",
+                "ce792982cf154160dac05e43c59889180c165b41b8e0595a9cf6e7abac858f72",
+            ),
+            (
+                "stressmono-64-v3-size3_144",
+                64,
+                3.144_f64 as f32,
+                false,
+                54,
+                "f01d96b338d891520398af32a951fc89cf37fc611130f69aeab6ada43c640c2b",
+                "de7a84d07eb3ecffcf87e69b2eaf66b0c7b77229203ef50f1a08b465d786ed1b",
+            ),
+            (
+                "stressmono-64-v3-size24",
+                64,
+                24.0_f32,
+                false,
+                34,
+                "f01d96b338d891520398af32a951fc89cf37fc611130f69aeab6ada43c640c2b",
+                "03166eb65313f11e96731c86d99d1b4248e3683eca3a3d51e779d1ee00ec71e2",
+            ),
+            (
+                "stressmono-128-v3-size3_144",
+                128,
+                3.144_f64 as f32,
+                false,
+                106,
+                "13c5416ed965a8d36f1628c9d99014961c51f527aa475cb7df498fecaedf8686",
+                "cc25fbd761e0690c4296c0dde4272fa12a2f129a29a49b39bc9f06eab98b6d9f",
+            ),
+            (
+                "stressmono-128-v3-size24",
+                128,
+                24.0_f32,
+                false,
+                64,
+                "13c5416ed965a8d36f1628c9d99014961c51f527aa475cb7df498fecaedf8686",
+                "dfc3df66c71d80ca8df00ad5accd5def1e477430fe6f505a4bb178deb00db543",
+            ),
+            (
+                "stressmono-32-v3-size24-shifted",
+                32,
+                24.0_f32,
+                true,
+                16,
+                "da1a0004d2d34e990b0404d5a88de92011dfbbeb02399cbb7d4321a176fe0708",
+                "e8f53f206f07201f8092419e60b750ce861cdf2ad1f83cb7bd8ad5feec95296e",
+            ),
+        ];
+
+        for (name, count, size, shifted, expected_count, input_sha, output_sha) in cases {
+            let (xy, pressure, times) = stress_source(count, shifted);
+            check_native_trace(
+                name,
+                &xy,
+                &pressure,
+                &times,
+                (size, 3),
+                (expected_count, input_sha, output_sha),
+            );
+        }
+
+        let source_sha = "5e5dd289f19c8bfc465a2c5f23ec2b7532afb9e1cb6b1b5d30234f96ddfa42f5";
+        let v1_v2_cases = [
+            (
+                "terminal-v1-32",
+                1,
+                27,
+                "2e374d6db19b25ccb27f33516bfd623bcfb0db9122f65d76d9f4cae5637190b2",
+            ),
+            (
+                "terminal-v2-32",
+                2,
+                27,
+                "ec9b78aaf737d17294c344a5b8a93f927e6d759422d2745c7dfddb65fd8661d3",
+            ),
+        ];
+        for (name, version, expected_count, output_sha) in v1_v2_cases {
+            let (xy, pressure, times) = stress_source(32, false);
+            check_native_trace(
+                name,
+                &xy,
+                &pressure,
+                &times,
+                (3.144_f64 as f32, version),
+                (expected_count, source_sha, output_sha),
+            );
+        }
     }
 }

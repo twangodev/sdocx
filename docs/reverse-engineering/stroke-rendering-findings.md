@@ -328,3 +328,16 @@ directions and sample boundaries. SVG/PDF use directional vector shading;
 Bounded Chromium and Firefox appearance checks pass; native fringe and PDF
 sampling differences remain. The [V14 findings](fountain-v14.md) describe its saved redraw;
 [vector parity](fountain-parity.md) records current coverage and measured limits.
+
+## ChineseBrush terminal controls
+
+For the pinned ChineseBrush DSO (`25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5`),
+GLV1/2/3 `endPen` at RVAs `0x32624`/`0x35868`/`0x385b4` reads the raw final
+MotionEvent even when its movement was rejected. Quadratic tails retain the
+accepted control point and use the raw endpoint and pressure. V2/V3 terminal
+width uses stored accepted speed (`+280`); the spatial gate precedes timestamp
+updates, and a zero previous timestamp selects the 50,000 time fallback.
+The [Rust source regressions](../../crates/sdocx/src/ink/chinesebrush_glv123.rs)
+pin native input bytes and complete packed streams for long and short controls,
+plus exact output-budget boundaries. They establish synthetic saved-redraw
+behavior, not app-deserialized admission or device pixels.
