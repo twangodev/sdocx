@@ -259,7 +259,12 @@ pub(super) fn capture(machine: &mut Machine, composer: &Path, base: &Path) {
         let segment = read_u64(machine.engine, start + index as u64 * 8);
         assert_heap_range(machine, segment, segment + 48, "segment object");
         let record_begin = read_u64(machine.engine, segment + 8);
-        let record_end = read_u64(machine.engine, segment + 24);
+        // libc++ vector stores begin/end/capacity at +8/+16/+24.
+        // Capacity can exceed the number of initialized record pointers.
+        let record_end = read_u64(machine.engine, segment + 16);
+        let record_capacity = read_u64(machine.engine, segment + 24);
+        assert!(record_begin <= record_end && record_end <= record_capacity);
+        assert_eq!((record_end - record_begin) % 8, 0);
         assert_heap_range(
             machine,
             record_begin,
