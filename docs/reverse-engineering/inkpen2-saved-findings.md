@@ -256,6 +256,10 @@ color is recalculated only while drawable+376 remains set (no prior stamp);
 a two-point 0.5-unit stroke reaches that branch, unlike the 25-record control.
 Gradient output still needs the normalized source-over color canvas as well as
 the enhanced-AA MAX mask; the constant-color projection alone is insufficient.
+Twelve joined native gradient draws (1×/2×/4×, AA off/on, alpha 128/255)
+regenerate the same 900-byte VBO. Reconstructing the six enhanced final frames
+from their captured M/C stage bytes matches alpha exactly and RGB within one
+byte; this verifies the stage law, not public vector transport or a general bound.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,
