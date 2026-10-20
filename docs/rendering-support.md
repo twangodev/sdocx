@@ -604,8 +604,9 @@ all ordered signed PDF records, version-dependent rectangles and raw template ty
 modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
 PDF-backed paper remains unrendered; PDF export rejects selected pages containing
-retained paper records rather than omitting their backgrounds. SVG previews still
-omit them. Retained bytes do not certify PDF validity or native composition.
+retained paper records rather than omitting their backgrounds. SVG previews report
+the omitted background through a structured notice; converting those diagnostic-aware
+pages to PDF also fails explicitly. Retained bytes do not certify native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
 test-only Rust assembly preserves selected source pages, scoped vector resources

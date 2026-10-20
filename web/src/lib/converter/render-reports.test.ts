@@ -8,7 +8,8 @@ function page(page_index: number) {
 		text_diagnostics: [{ kind: 'FutureFontNotice', family: 'Example', codepoints: [0x1f600], detail: { fallback: true } }],
 		object_diagnostics: [{ kind: 'FutureObjectNotice', anchor_utf16: -1, source: 'retained' }],
 		geometry_diagnostics: [{ kind: 'FutureGeometryNotice', object_uuid: 'line-id', source_offset: 123, source: { retained: true } }],
-		paint_diagnostics: [{ kind: 'FuturePaintNotice', role: 'Fill' as const, object_uuid: 'shape-id', source_offset: null, source: { saved: true } }]
+		paint_diagnostics: [{ kind: 'FuturePaintNotice', role: 'Fill' as const, object_uuid: 'shape-id', source_offset: null, source: { saved: true } }],
+		background_diagnostics: [{ kind: 'pdf_paper_omitted', record_count: 2 }]
 	};
 }
 
@@ -20,7 +21,7 @@ describe('render report boundary', () => {
 		expect(validateSvgResult(result, 2).source_page_index).toBe(9);
 		expect(validateSvgResult(result, 2).geometry_diagnostics[0].source).toEqual({ retained: true });
 		expect(validateSvgResult(result, 2).paint_diagnostics[0].source).toEqual({ saved: true });
-		expect(renderNoticeCount([result])).toBe(4);
+		expect(renderNoticeCount([result])).toBe(5);
 		expect(() => validateSvgResult(result, 1)).toThrow(/invalid SVG/);
 		expect(() => validateSvgResult({ ...result, text_diagnostics: [{ kind: 'FutureNotice', family: '', codepoints: ['65'] }] }, 2)).toThrow(/invalid SVG/);
 		expect(() => validateSvgResult({ ...result, object_diagnostics: [{ kind: 'FutureNotice', anchor_utf16: 0.5 }] }, 2)).toThrow(/invalid SVG/);

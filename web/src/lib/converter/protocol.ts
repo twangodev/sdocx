@@ -36,6 +36,12 @@ export interface PaintRenderDiagnostic {
 	[field: string]: unknown;
 }
 
+export interface BackgroundRenderDiagnostic {
+	kind: string;
+	record_count?: number;
+	[field: string]: unknown;
+}
+
 export interface PageRenderReport {
 	page_index: number;
 	source_page_index: number;
@@ -43,6 +49,7 @@ export interface PageRenderReport {
 	object_diagnostics: ObjectRenderDiagnostic[];
 	geometry_diagnostics: GeometryRenderDiagnostic[];
 	paint_diagnostics: PaintRenderDiagnostic[];
+	background_diagnostics: BackgroundRenderDiagnostic[];
 	[field: string]: unknown;
 }
 

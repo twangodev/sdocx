@@ -138,6 +138,16 @@ pub struct RenderOptions {
     pub point_marker_target: PointMarkerTarget,
 }
 
+/// A page background retained in the document but omitted from SVG rendering.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "kind", rename_all = "snake_case"))]
+#[non_exhaustive]
+pub enum BackgroundDiagnostic {
+    /// Imported PDF paper is not yet painted by the SVG preview renderer.
+    PdfPaperOmitted { record_count: usize },
+}
+
 /// One visible page rendered as a standalone Svg document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -163,6 +173,9 @@ pub struct RenderedPage {
     /// Shape and line fill or outline components omitted during rendering.
     #[cfg_attr(feature = "serde", serde(default))]
     pub paint_diagnostics: Vec<PaintDiagnostic>,
+    /// Retained page backgrounds that the SVG renderer cannot draw.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub background_diagnostics: Vec<BackgroundDiagnostic>,
 }
 
 impl RenderedPage {
@@ -177,6 +190,7 @@ impl RenderedPage {
             object_diagnostics: Vec::new(),
             geometry_diagnostics: Vec::new(),
             paint_diagnostics: Vec::new(),
+            background_diagnostics: Vec::new(),
         }
     }
 }
@@ -588,6 +602,17 @@ impl DocumentTextCache {
                 object_diagnostics: text_renderer.object_diagnostics(),
                 geometry_diagnostics: svg.take_geometry_diagnostics(),
                 paint_diagnostics: svg.take_paint_diagnostics(),
+                background_diagnostics: page
+                    .background
+                    .pdf_paper
+                    .as_ref()
+                    .filter(|records| !records.is_empty())
+                    .map(|records| {
+                        vec![BackgroundDiagnostic::PdfPaperOmitted {
+                            record_count: records.len(),
+                        }]
+                    })
+                    .unwrap_or_default(),
             },
             svg,
         )
@@ -4495,6 +4520,7 @@ mod tests {
                 object_diagnostics: vec![],
                 geometry_diagnostics: vec![],
                 paint_diagnostics: vec![],
+                background_diagnostics: vec![],
             },
             text,
             ink: registered,
@@ -6640,6 +6666,31 @@ mod tests {
         assert!(!normal.contains("data-replay-lengths"));
         assert!(!replay.contains("data-replay-lengths"));
         assert!(replay.contains("data-replay-stroke=\"0\""));
+    }
+
+    #[test]
+    fn svg_preview_reports_retained_pdf_paper_background_omission() {
+        let mut page = page_with_uncolored_stroke();
+        page.background.pdf_paper = Some(vec![crate::PdfPaperRecord {
+            media_id: -1000,
+            page_index: 0,
+            rectangle: crate::PdfPaperRectangle::Unspecified([0; 16]),
+        }]);
+        let imported_document = document(page);
+        let rendered = render_document_svg(&imported_document, &RenderOptions::default()).remove(0);
+        assert_eq!(
+            rendered.background_diagnostics,
+            [super::BackgroundDiagnostic::PdfPaperOmitted { record_count: 1 }]
+        );
+
+        let mut page = page_with_uncolored_stroke();
+        page.background.pdf_paper = Some(Vec::new());
+        let document = document(page);
+        assert!(
+            render_document_svg(&document, &RenderOptions::default())[0]
+                .background_diagnostics
+                .is_empty()
+        );
     }
 
     fn document(page: Page) -> Document {

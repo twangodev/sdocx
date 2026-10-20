@@ -3,7 +3,8 @@
 use std::sync::Arc;
 
 use sdocx::{
-    PdfError, PdfOptions, RenderedPage, render_layout_pages_pdf_with_fonts, render_svg_pages_pdf,
+    BackgroundDiagnostic, PdfError, PdfOptions, RenderedPage, render_layout_pages_pdf_with_fonts,
+    render_svg_pages_pdf,
 };
 
 fn page(width: u32, height: u32, content: &str) -> RenderedPage {
@@ -19,6 +20,27 @@ fn page(width: u32, height: u32, content: &str) -> RenderedPage {
 
 fn no_fonts() -> PdfOptions {
     PdfOptions::new(Arc::new(sdocx::pdf::fontdb::Database::new()))
+}
+
+#[test]
+fn generic_svg_pdf_export_refuses_pages_with_omitted_pdf_paper_diagnostics() {
+    let mut imported = page(400, 200, "<text x=\"10\" y=\"30\">note overlay</text>");
+    imported.source_page_index = 7;
+    imported.background_diagnostics =
+        vec![BackgroundDiagnostic::PdfPaperOmitted { record_count: 2 }];
+
+    let error = render_svg_pages_pdf(&[page(400, 200, ""), imported], &no_fonts()).unwrap_err();
+    assert!(matches!(
+        error,
+        PdfError::UnsupportedPdfPaper {
+            output_page_index: 1,
+            source_page_index: 7,
+            record_count: 2,
+        }
+    ));
+
+    let plain = page(400, 200, "<text x=\"10\" y=\"30\">user SVG</text>");
+    assert!(render_svg_pages_pdf(&[plain], &no_fonts()).is_ok());
 }
 
 #[test]

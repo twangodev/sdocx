@@ -9,6 +9,7 @@ pub(super) struct SvgOutput {
     pub object_diagnostics: Vec<sdocx::ObjectDiagnostic>,
     pub geometry_diagnostics: Vec<sdocx::GeometryDiagnostic>,
     pub paint_diagnostics: Vec<sdocx::PaintDiagnostic>,
+    pub background_diagnostics: Vec<sdocx::BackgroundDiagnostic>,
 }
 
 impl SvgOutput {
@@ -21,6 +22,7 @@ impl SvgOutput {
             object_diagnostics: page.object_diagnostics,
             geometry_diagnostics: page.geometry_diagnostics,
             paint_diagnostics: page.paint_diagnostics,
+            background_diagnostics: page.background_diagnostics,
         }
     }
 }
@@ -48,7 +50,9 @@ fn serialize_bytes<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, 
 #[cfg(test)]
 mod tests {
     use super::{PdfOutput, SvgOutput};
-    use sdocx::{PaintDiagnostic, PaintDiagnosticKind, PaintRole, RenderedPage};
+    use sdocx::{
+        BackgroundDiagnostic, PaintDiagnostic, PaintDiagnosticKind, PaintRole, RenderedPage,
+    };
 
     #[test]
     fn detailed_outputs_serialize_independent_paint_roles_and_identity() {
@@ -68,12 +72,18 @@ mod tests {
         ];
         let mut page = RenderedPage::new(7, 64, 64, "<svg><path stroke=\"#112233\"/></svg>");
         page.paint_diagnostics = paint.clone();
+        page.background_diagnostics =
+            vec![BackgroundDiagnostic::PdfPaperOmitted { record_count: 2 }];
         let expected = serde_json::json!([
             { "source_offset": 321, "object_uuid": "shape paint", "role": "Fill", "kind": "UnsupportedGradientFrame" },
             { "source_offset": null, "object_uuid": "line paint", "role": "Outline", "kind": "InvalidGradient" }
         ]);
         let svg = serde_json::to_value(SvgOutput::new(2, page)).unwrap();
         assert_eq!(svg["paint_diagnostics"], expected);
+        assert_eq!(
+            svg["background_diagnostics"],
+            serde_json::json!([{ "kind": "pdf_paper_omitted", "record_count": 2 }])
+        );
         assert_eq!(svg["geometry_diagnostics"], serde_json::json!([]));
         assert!(svg["svg"].as_str().unwrap().contains("stroke="));
         assert_eq!(svg["page_index"], 2);
@@ -95,6 +105,7 @@ mod tests {
             assert_eq!(report["source_page_index"], 7);
             assert_eq!(report["paint_diagnostics"], expected);
             assert_eq!(report["geometry_diagnostics"], serde_json::json!([]));
+            assert_eq!(report["background_diagnostics"], serde_json::json!([]));
         }
     }
 }

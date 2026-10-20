@@ -134,6 +134,7 @@ pub struct PdfPageDiagnostics {
     pub object_diagnostics: Vec<ObjectDiagnostic>,
     pub geometry_diagnostics: Vec<GeometryDiagnostic>,
     pub paint_diagnostics: Vec<PaintDiagnostic>,
+    pub background_diagnostics: Vec<crate::BackgroundDiagnostic>,
 }
 
 impl PdfPageDiagnostics {
@@ -146,6 +147,7 @@ impl PdfPageDiagnostics {
             object_diagnostics: Vec::new(),
             geometry_diagnostics: Vec::new(),
             paint_diagnostics: Vec::new(),
+            background_diagnostics: Vec::new(),
         }
     }
 }
@@ -314,6 +316,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
             object_diagnostics: scene.page.object_diagnostics,
             geometry_diagnostics: scene.page.geometry_diagnostics,
             paint_diagnostics: scene.page.paint_diagnostics,
+            background_diagnostics: scene.page.background_diagnostics,
         })
         .collect();
     Ok(PdfOutput { bytes, pages })
@@ -323,6 +326,22 @@ pub fn render_svg_pages_pdf(
     pages: &[RenderedPage],
     options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
+    for (output_page_index, page) in pages.iter().enumerate() {
+        let record_count = page
+            .background_diagnostics
+            .iter()
+            .map(|diagnostic| match diagnostic {
+                crate::BackgroundDiagnostic::PdfPaperOmitted { record_count } => *record_count,
+            })
+            .fold(0_usize, usize::saturating_add);
+        if record_count > 0 {
+            return Err(PdfError::UnsupportedPdfPaper {
+                output_page_index,
+                source_page_index: page.source_page_index,
+                record_count,
+            });
+        }
+    }
     render_pages_pdf(
         pages.iter().map(|page| PdfPage {
             page,
@@ -837,6 +856,7 @@ mod tests {
             object_diagnostics: Vec::new(),
             geometry_diagnostics: Vec::new(),
             paint_diagnostics: Vec::new(),
+            background_diagnostics: Vec::new(),
         };
         let ink = native_ink_registry();
         let bytes = render_pages_pdf(
@@ -886,6 +906,7 @@ mod tests {
             object_diagnostics: Vec::new(),
             geometry_diagnostics: Vec::new(),
             paint_diagnostics: Vec::new(),
+            background_diagnostics: Vec::new(),
         };
         let red_page = page(svg("#ff0000"));
         let blue_page = page(svg("#0000ff"));

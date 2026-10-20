@@ -359,6 +359,7 @@ fn captured_parent_placement_activates_only_the_native_per_run_text_clips() {
                         object_diagnostics: Vec::new(),
                         geometry_diagnostics: Vec::new(),
                         paint_diagnostics: Vec::new(),
+                        background_diagnostics: Vec::new(),
                     },
                     text: registry,
                     ink: Default::default(),

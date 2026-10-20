@@ -225,6 +225,7 @@ fn scoped_native_svg_clips_reach_retained_pdf_glyphs_and_restore_neighbors() {
                 object_diagnostics: Vec::new(),
                 geometry_diagnostics: Vec::new(),
                 paint_diagnostics: Vec::new(),
+                background_diagnostics: Vec::new(),
             },
             text: registry,
             ink,
