@@ -3547,6 +3547,7 @@ fn prepare_inkpen2_v9(
         || rendering.tool_type_raw != 2
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
         || rendering.style.line_type_raw.unwrap_or(0) != 0
+        || rendering.style.color_type_raw.unwrap_or(0) != 0
         || rendering.properties.replay_only
         || !rendering.properties.stylus_channels
         || rendering.properties.eraser
@@ -6060,6 +6061,33 @@ mod tests {
                 .inkpen2_v9
                 .is_none(),
                 "{name} must remain outside the captured V9 contract"
+            );
+        }
+    }
+
+    #[test]
+    fn inkpen2_constant_rgb_profile_rejects_native_gradient_and_pattern_modes() {
+        let options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        let mut stroke = inkpen2_color_stroke(0xff336699, None);
+        for color_type in [1, 2] {
+            // Native PenColorType 1 selects gradient/rainbow configuration;
+            // type 2 selects pattern configuration. Constant RGB cannot
+            // reconstruct those modes from the base ARGB alone.
+            stroke.rendering.as_mut().unwrap().style.color_type_raw = Some(color_type);
+            let prepared = prepare_stroke_for_page_with_theme(
+                &stroke,
+                RenderTheme::for_canvas(false),
+                &options,
+            );
+            assert!(
+                prepared.inkpen2_v9.is_none(),
+                "native color mode {color_type}"
             );
         }
     }
