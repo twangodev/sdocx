@@ -5,10 +5,11 @@
 //! once. Native intermediate RGBA8 rounding can still change the final RGB.
 use super::vector::{
     Blend, Circle, ColorMatrix, ColorValue, Definitions, Filter, Gradient, Group, Mask, Paint,
-    RadialGradient, Rectangle, ReplayPart, Scene, Stop, StrokeIndex, Styled, SvgFilter, SvgMask,
-    Transform,
+    RadialGradient, Rectangle, ReplayPart, Scene, Stop, StrokeIndex, Styled, SvgFilter, Transform,
 };
 use crate::PreparedInkPen2V9;
+
+mod max_field;
 
 pub(super) fn render(svg: &mut Scene, ink: &PreparedInkPen2V9, replay_index: Option<usize>) {
     let draw = |svg: &mut Scene| {
@@ -31,10 +32,13 @@ pub(super) fn render(svg: &mut Scene, ink: &PreparedInkPen2V9, replay_index: Opt
 ///
 /// Enhanced-AA uses ordered source-over RGB under a separate MAX-coverage
 /// luminance mask, with saved alpha applied once around the masked group. The
-/// mask's Lighten blend is known to be ignored by Firefox when nested in mask
-/// content; keep this path private until that backend behavior is resolved.
+/// mask isolates each stamp with explicitly cropped filter primitives. Keep
+/// active-gradient public admission gated while the complete route is checked.
 fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
-    if ink.opacity == 0.0 || ink.records.is_empty() {
+    if ink.opacity == 0.0
+        || ink.records.is_empty()
+        || ink.records.iter().all(|record| record[5] == 0.0)
+    {
         return;
     }
 
@@ -54,6 +58,27 @@ fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) 
         }
         return;
     }
+
+    let max_atlas = if ink.enhanced_antialias {
+        match max_field::MaxAtlas::new(ink) {
+            Ok(atlas) => Some(atlas),
+            Err(error) => {
+                #[cfg(feature = "pdf")]
+                if svg.retains_text() {
+                    svg.reject_native_text(error);
+                    return;
+                }
+                #[cfg(not(feature = "pdf"))]
+                let _ = error;
+                // Unsupported private prepared values follow the same whole-
+                // stroke fallback policy as invalid RGB; no partial atlas.
+                render_max(svg, ink, replay);
+                return;
+            }
+        }
+    } else {
+        None
+    };
 
     #[cfg(feature = "pdf")]
     let native_ink_id = if svg.retains_text() {
@@ -85,8 +110,8 @@ fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) 
     };
 
     svg.scope(outer, |svg| {
-        if ink.enhanced_antialias {
-            render_per_stamp_rgb_max(svg, ink, replay);
+        if let Some(atlas) = &max_atlas {
+            render_per_stamp_rgb_max(svg, ink, replay, atlas);
         } else {
             render_per_stamp_rgb_direct(svg, ink, replay);
         }
@@ -146,7 +171,12 @@ fn render_per_stamp_rgb_direct(svg: &mut Scene, ink: &PreparedInkPen2V9, replay:
     }
 }
 
-fn render_per_stamp_rgb_max(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
+fn render_per_stamp_rgb_max(
+    svg: &mut Scene,
+    ink: &PreparedInkPen2V9,
+    replay: bool,
+    atlas: &max_field::MaxAtlas,
+) {
     let (x, y, width, height) = field_region(ink);
     let mask = svg.definition::<Mask>();
     let color_filter = svg.definition::<Filter>();
@@ -160,58 +190,7 @@ fn render_per_stamp_rgb_max(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bo
                 .region(x, y, width, height)
                 .add(identity_rgb_opaque_alpha),
         );
-        svg.scope(
-            SvgMask::luminance(&mask)
-                .x(x)
-                .y(y)
-                .width(width)
-                .height(height),
-            |svg| {
-                svg.push(
-                    Rectangle::new()
-                        .x(x)
-                        .y(y)
-                        .width(width)
-                        .height(height)
-                        .fill(Paint::BLACK),
-                );
-                for (index, [cx, cy, rx, ry, edge, coverage, ..]) in ink.records.iter().enumerate()
-                {
-                    let id = svg.definition::<Gradient>();
-                    let stop = (*edge * 2.0).clamp(0.0, 1.0);
-                    let mut gradient = RadialGradient::new(&id)
-                        .cx(0)
-                        .cy(0)
-                        .r(1)
-                        .add(Stop::new(0, ColorValue::WHITE).opacity(*coverage));
-                    if stop > 0.0 {
-                        gradient =
-                            gradient.add(Stop::new(stop, ColorValue::WHITE).opacity(*coverage));
-                    }
-                    let gradient = gradient.add(Stop::new(1, ColorValue::WHITE).opacity(0));
-                    let matrix = Transform::matrix_unrounded([
-                        f64::from(*rx),
-                        0.0,
-                        0.0,
-                        f64::from(*ry),
-                        f64::from(*cx),
-                        f64::from(*cy),
-                    ]);
-                    svg.scope(
-                        Group::new()
-                            .blend(Blend::Lighten)
-                            .isolated()
-                            .transformed(matrix)
-                            .replay_part(replay.then_some(ReplayPart(index + 1)))
-                            .add(Definitions::new().add(gradient)),
-                        |svg| {
-                            svg.push(Circle::new().cx(0).cy(0).r(1).fill(Paint::BLACK));
-                            svg.push(Circle::new().cx(0).cy(0).r(1).fill(Paint::Gradient(id)));
-                        },
-                    );
-                }
-            },
-        );
+        atlas.emit(svg, ink, &mask, replay);
     });
 
     svg.scope(Group::new().masked(&mask), |svg| {
@@ -421,8 +400,8 @@ mod tests {
 
     fn colored_overlap(enhanced_antialias: bool, reverse: bool, alpha: u8) -> String {
         let mut records = vec![
-            [32.5, 32.5, 8., 8., 0.5, 0.8, 1., 0., 0.],
-            [32.5, 32.5, 8., 8., 0.5, 0.6, 0., 0., 1.],
+            [32.5, 32.5, 8., 8., 0.3, 0.8, 1., 0., 0.],
+            [32.5, 32.5, 8., 8., 0.3, 0.6, 0., 0., 1.],
         ];
         if reverse {
             records.reverse();
@@ -507,7 +486,7 @@ mod tests {
             for (actual, expected) in actual.into_iter().zip(expected) {
                 assert!(
                     (i32::from(actual) - expected).abs() <= 2,
-                    "{actual} != {expected}"
+                    "{actual} != {expected}; enhanced={enhanced}"
                 );
             }
         }
@@ -544,30 +523,32 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
-    fn empty_rgb_renderer_is_a_retained_scene_noop_for_both_routes() {
+    fn empty_or_zero_coverage_rgb_renderer_is_a_retained_scene_noop_for_both_routes() {
         for enhanced_antialias in [false, true] {
-            let ink = PreparedInkPen2V9 {
-                per_stamp_rgb: true,
-                enhanced_antialias,
-                records: Vec::new(),
-                sample_ends: vec![0],
-                color: crate::Color { r: 0, g: 0, b: 0 },
-                opacity: 0.5,
-                bounds: crate::BoundingBox {
-                    x_min: 31.,
-                    y_min: 31.,
-                    x_max: 33.,
-                    y_max: 33.,
-                },
-            };
-            let mut scene = Scene::new(Svg::new().width(64).height(64));
-            scene.retain_text();
-            render(&mut scene, &ink, None);
-            assert_eq!(scene.take_native_ink().len(), 0);
-            assert!(scene.take_native_text_error().is_none());
-            let output = scene.finish();
-            assert!(!output.contains("sdocx-native-ink-"));
-            assert!(!output.contains("data-replay-part"));
+            for records in [Vec::new(), vec![[32., 32., 1., 1., 0.25, 0., 1., 0., 0.]]] {
+                let ink = PreparedInkPen2V9 {
+                    per_stamp_rgb: true,
+                    enhanced_antialias,
+                    sample_ends: vec![0, records.len()],
+                    records,
+                    color: crate::Color { r: 0, g: 0, b: 0 },
+                    opacity: 0.5,
+                    bounds: crate::BoundingBox {
+                        x_min: 31.,
+                        y_min: 31.,
+                        x_max: 33.,
+                        y_max: 33.,
+                    },
+                };
+                let mut scene = Scene::new(Svg::new().width(64).height(64));
+                scene.retain_text();
+                render(&mut scene, &ink, None);
+                assert_eq!(scene.take_native_ink().len(), 0);
+                assert!(scene.take_native_text_error().is_none());
+                let output = scene.finish();
+                assert!(!output.contains("sdocx-native-ink-"));
+                assert!(!output.contains("data-replay-part"));
+            }
         }
     }
 

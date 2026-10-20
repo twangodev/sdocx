@@ -91,6 +91,9 @@ elements!(
     LinearGradient,
     RadialGradient,
     SvgFilter,
+    FilterOffset,
+    FilterBlend,
+    FilterRedByteMap,
     ColorMatrix,
     SvgMask,
     Stop,
@@ -330,6 +333,24 @@ pub(super) enum Mask {}
 pub(super) enum Clip {}
 pub(super) enum Filter {}
 #[derive(Clone, Copy)]
+pub(super) enum FilterResult {}
+
+#[derive(Clone, Copy)]
+pub(super) enum FilterInput {
+    SourceGraphic,
+    Result(Definition<FilterResult>),
+}
+
+impl FilterInput {
+    fn text(self) -> String {
+        match self {
+            Self::SourceGraphic => "SourceGraphic".into(),
+            Self::Result(result) => result.id(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub(super) struct Definition<K> {
     id: usize,
     kind: PhantomData<K>,
@@ -342,6 +363,34 @@ impl<K> Definition<K> {
         format!("url(#{})", self.id())
     }
 }
+
+pub(super) trait FilterPrimitive: NodeAccess + Sized {
+    fn result(mut self, result: &Definition<FilterResult>) -> Self {
+        self.node().attr("result", result.id());
+        self
+    }
+
+    fn region(
+        mut self,
+        x: impl Into<Numeric>,
+        y: impl Into<Numeric>,
+        width: impl Into<Numeric>,
+        height: impl Into<Numeric>,
+    ) -> Self {
+        self.node().number("x", x, -f64::MAX..=f64::MAX);
+        self.node().number("y", y, -f64::MAX..=f64::MAX);
+        self.node()
+            .number("width", width, f64::MIN_POSITIVE..=f64::MAX);
+        self.node()
+            .number("height", height, f64::MIN_POSITIVE..=f64::MAX);
+        self
+    }
+}
+
+impl FilterPrimitive for ColorMatrix {}
+impl FilterPrimitive for FilterOffset {}
+impl FilterPrimitive for FilterBlend {}
+impl FilterPrimitive for FilterRedByteMap {}
 
 pub(super) trait Styled: NodeAccess + Sized {
     fn fill(mut self, paint: impl Into<Option<Paint>>) -> Self {
@@ -754,6 +803,63 @@ impl ColorMatrix {
             "values",
             values.map(|values| Value::from(values).to_string()),
         );
+        Self(node)
+    }
+
+    pub fn input(mut self, input: FilterInput) -> Self {
+        self.node().attr("in", input.text());
+        self
+    }
+}
+
+impl FilterOffset {
+    pub fn new(dx: impl Into<Numeric>, dy: impl Into<Numeric>) -> Self {
+        let mut node = Node::new(svg_element::FilterEffectOffset::new());
+        node.attr("in", "SourceGraphic");
+        node.number("dx", dx, -f64::MAX..=f64::MAX);
+        node.number("dy", dy, -f64::MAX..=f64::MAX);
+        Self(node)
+    }
+
+    pub fn input(mut self, input: FilterInput) -> Self {
+        self.node().attr("in", input.text());
+        self
+    }
+}
+
+impl FilterBlend {
+    pub fn lighten(input1: FilterInput, input2: FilterInput) -> Self {
+        let mut node = Node::new(svg_element::FilterEffectBlend::new());
+        node.attr("in", input1.text());
+        node.attr("in2", input2.text());
+        node.attr("mode", "lighten");
+        Self(node)
+    }
+}
+
+impl FilterRedByteMap {
+    /// Map the red channel through a discrete 8-bit lookup table.
+    ///
+    /// The other component-transfer functions are omitted and therefore use
+    /// the SVG identity function. Each output entry is represented as the
+    /// corresponding normalized byte value.
+    pub fn new(input: FilterInput, table: &[u8; 256]) -> Self {
+        let values = table
+            .iter()
+            .map(|byte| {
+                Number::new(f64::from(*byte) / 255.0)
+                    .expect("normalized byte values are finite")
+                    .text()
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let mut node =
+            Node::new(svg_element::FilterEffectComponentTransfer::new().set("in", input.text()));
+        node.append(Node::new(
+            svg_element::FilterEffectFunctionR::new()
+                .set("type", "discrete")
+                .set("tableValues", values),
+        ));
         Self(node)
     }
 }

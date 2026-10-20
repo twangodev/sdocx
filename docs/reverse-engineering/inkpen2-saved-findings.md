@@ -274,10 +274,18 @@ Two-/three-stamp scratch controls match the analytic reference within 1–2 byte
 in PDFium. Across the twelve 25-record exports, direct MuPDF evaluation of the
 emitted mask functions matches the analytic field within 0.005 alpha byte;
 rasterized shading/soft-mask output still differs materially at low scales.
-Source-derived 25-record SVGs match native support
-in resvg/Chromium with active-ROI MAE 0.294–1.309, but Firefox's mask subtree
-fails to MAX-combine the stamps. The generic PDF filter path embeds a raster;
-cross-browser masking and native-referenced PDF appearance remain admission gaps.
+The staged SVG mask packs independent stamp fields, explicitly crops each
+offset input and MAX-combines them with filter primitives. Rust tests cover
+packing, low coverage, replay removal and resource rejection. In the six
+enhanced 25-record exports, Chromium/Firefox support-union RGBA MAE is
+0.216–1.551 bytes and support IoU is 0.9944–1. These are bounded host controls.
+The reflected page transform fails in resvg 0.45.1; an independent 0.47.0
+library replay reproduces the 14-versus-93-pixel support failure. Its offset
+scaling discards reflection signs. A positive-Y diagnostic restores support
+but is not a valid output correction. Fractional consumer zoom also increases
+browser error. Active-gradient admission therefore remains off; consumer
+transforms, native-referenced PDF appearance and real-document evidence remain
+open. Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,
