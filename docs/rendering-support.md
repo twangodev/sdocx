@@ -380,8 +380,9 @@ tool-2 NoCurve `1;` sources with explicit size/ARGB, ordinary style codes and
 native replay cutoffs, using one compound vector contour and one source-alpha
 composite. Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
-1×/2×/4×. The fixed contour approximates scale-dependent shader edges; unknown
-effects and budgets retain fallback, and device parity remains open.
+1×/2×/4×. The fixed contour approximates scale-dependent shader edges and can
+lose minimum-size dots. Unknown effects and budgets retain fallback, and device
+parity remains open.
 A [NoCurve paint replay](../conformance/magicpen-nocurve-paint-native.json)
 retains the same native source stream and full RGBA buffers at 1×/2×/4× on
 transparent targets, with separate opaque-background blend controls.
