@@ -367,7 +367,23 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn resolve(&self, style: &TextStyle, context: TextContext) -> Option<ResolvedFace> {
+        self.resolve_face(style, context, Direction::LeftToRight)
+            .map(|(face, _)| face)
+    }
+
+    pub(super) fn resolve_face(
+        &self,
+        style: &TextStyle,
+        context: TextContext,
+        direction: Direction,
+    ) -> Option<(ResolvedFace, bool)> {
         let family = style.family.as_deref().unwrap_or(self.default_family);
+        if matches!(context, TextContext::Flow)
+            && style.italic
+            && let Some(face) = self.resolve_native(style.family.as_deref(), direction)
+        {
+            return Some((face, false));
+        }
         let bold = style.bold && matches!(context, TextContext::Placed);
         match self.fonts.resolve_with_fallback(family, bold, style.italic) {
             Ok(selection) => {
@@ -378,7 +394,7 @@ impl<'a> TextRenderer<'a> {
                         codepoints: Vec::new(),
                     });
                 }
-                Some(selection.face)
+                Some((selection.face, style.italic))
             }
             Err(error) => {
                 self.record(TextDiagnostic {
@@ -1371,6 +1387,58 @@ mod tests {
                 .collect::<Vec<_>>(),
             [&TextDiagnosticKind::UnavailableFamily]
         );
+    }
+
+    #[test]
+    fn saved_flow_italic_uses_native_regular_face_only_when_name_contract_accepts_it() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let mut italic = style("Roboto");
+        italic.italic = true;
+
+        let (saved_face, saved_italic) = renderer
+            .resolve_face(&italic, TextContext::Flow, Direction::LeftToRight)
+            .unwrap();
+        assert_eq!(saved_face.style, fontdb::Style::Normal);
+        assert!(!saved_italic);
+        assert_eq!(
+            saved_face
+                .synthesis(fontdb::Weight::NORMAL, italic.italic)
+                .skew_x(),
+            -0.25
+        );
+
+        let (rtl_face, rtl_italic) = renderer
+            .resolve_face(&italic, TextContext::Flow, Direction::RightToLeft)
+            .unwrap();
+        assert_eq!(rtl_face.style, fontdb::Style::Normal);
+        assert!(!rtl_italic);
+
+        let (placed_face, placed_italic) = renderer
+            .resolve_face(&italic, TextContext::Placed, Direction::LeftToRight)
+            .unwrap();
+        assert_eq!(placed_face.style, fontdb::Style::Italic);
+        assert!(placed_italic);
+
+        let mut explicit_italic_name = italic.clone();
+        explicit_italic_name.family = Some("Roboto-Italic".into());
+        let (explicit_face, explicit_italic) = renderer
+            .resolve_face(
+                &explicit_italic_name,
+                TextContext::Flow,
+                Direction::LeftToRight,
+            )
+            .unwrap();
+        assert_eq!(explicit_face.style, fontdb::Style::Italic);
+        assert!(explicit_italic);
+
+        let mut other_family = italic;
+        other_family.family = Some("Roboto Mono".into());
+        let (other_face, other_italic) = renderer
+            .resolve_face(&other_family, TextContext::Flow, Direction::LeftToRight)
+            .unwrap();
+        assert_eq!(other_face.style, fontdb::Style::Italic);
+        assert!(other_italic);
     }
 
     #[test]

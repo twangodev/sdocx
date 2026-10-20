@@ -770,10 +770,9 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         measurement_issue: TextDiagnosticKind,
     ) -> Result<MeasuredSegment, MeasurementError> {
         let source = self.range.start + range.start..self.range.start + range.end;
-        let face = self
-            .renderer
-            .for_source(source.clone())
-            .resolve(style, self.styled.context())
+        let renderer = self.renderer.for_source(source.clone());
+        let (face, face_italic) = renderer
+            .resolve_face(style, self.styled.context(), direction)
             .ok_or_else(|| {
                 MeasurementError::UnavailableFace(
                     style.family.as_deref().unwrap_or("Roboto").to_owned(),
@@ -809,7 +808,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             let selected = self
                 .renderer
                 .fonts
-                .resolve_for_text(&face, text, bold, style.italic)?;
+                .resolve_for_text(&face, text, bold, face_italic)?;
             let coverage_fallback = selected.id != face.id;
             return self.shape_face(
                 range,
@@ -834,7 +833,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             let selected =
                 self.renderer
                     .fonts
-                    .resolve_for_text(&face, grapheme, bold, style.italic)?;
+                    .resolve_for_text(&face, grapheme, bold, face_italic)?;
             let start = self
                 .styled
                 .index
@@ -2197,6 +2196,30 @@ mod tests {
         assert!(real_styles.clusters.iter().all(|cluster| {
             cluster.run.face.weight == fontdb::Weight::BOLD
                 && cluster.run.face.style == fontdb::Style::Italic
+                && cluster.run.synthesis == FontSynthesis::default()
+        }));
+    }
+
+    #[test]
+    fn saved_flow_italic_shapes_regular_with_native_synthetic_shear() {
+        let mut content = text_box("Italic");
+        content.runs.push(RichTextRun {
+            start: 0,
+            end: 6,
+            bold: false,
+            italic: true,
+        });
+
+        let flow = measure(&content, TextContext::Flow);
+        assert!(flow.clusters.iter().all(|cluster| {
+            cluster.run.face.style == fontdb::Style::Normal
+                && cluster.run.synthesis.italic
+                && cluster.run.synthesis.skew_x() == -0.25
+        }));
+
+        let placed = measure(&content, TextContext::Placed);
+        assert!(placed.clusters.iter().all(|cluster| {
+            cluster.run.face.style == fontdb::Style::Italic
                 && cluster.run.synthesis == FontSynthesis::default()
         }));
     }
