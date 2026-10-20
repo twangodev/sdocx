@@ -329,7 +329,7 @@ Bounded Chromium and Firefox appearance checks pass; native fringe and PDF
 sampling differences remain. The [V14 findings](fountain-v14.md) describe its saved redraw;
 [vector parity](fountain-parity.md) records current coverage and measured limits.
 
-## ChineseBrush terminal controls
+## ChineseBrush source and paint controls
 
 For the pinned ChineseBrush DSO (`25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5`),
 GLV1/2/3 `endPen` at RVAs `0x32624`/`0x35868`/`0x385b4` reads the raw final
@@ -340,4 +340,25 @@ updates, and a zero previous timestamp selects the 50,000 time fallback.
 The [Rust source regressions](../../crates/sdocx/src/ink/chinesebrush_glv123.rs)
 pin native input bytes and complete packed streams for long and short controls,
 plus exact output-budget boundaries. They establish synthetic saved-redraw
-behavior, not app-deserialized admission or device pixels.
+behavior, not app-deserialized admission or device pixels. The NoCurve matrix
+adds 45 cases and 294 records: rejected raw endpoints still produce a terminal
+line, duplicate tails emit no segment, and all-rejected inputs produce a
+pressure-scaled dot at the last source point. Singleton Drawing admission remains
+unverified because that capture did not construct a ChineseBrush instance.
+
+The live alpha atlas uses nearest/clamp sampling; its complete 144×144 RGBA
+upload hashes to `da75f5d1190e6fe086aa11007b7ed739421cf5d4522e34cb246df273353d2942`.
+Fixed 321×228 logical-page, Y-down host captures separate 1×/2×/4× zoom from
+expanded-canvas controls. For the synthetic size-3.144 stroke, native visible
+support is 33 pixels at 1×. The intrinsic-image/axis-gradient prototype retains
+only 11 of those pixels in MuPDF and 18 in PDFium, versus 22 and 24 for matched
+generic lines, despite reducing color error. This is a production blocker.
+The shader's `fwidth(distance)` depends on angle and fragment-quad phase;
+constant radial gradients cannot reproduce it. Texture minification and this
+coverage field require separate controls before choosing vector transport.
+The Y-down projection maps the quad's negative-Y edge to page top, where the
+shader samples atlas row zero. Original atlas rows therefore need no SVG image
+flip; the positive-Y capture requires the opposite orientation. Mask gradients
+use white at every stop and fade alpha alone; fading luminance too suppressed
+coverage in the initial prototype. These corrections improve the host comparisons
+but do not resolve thin-stamp PDF coverage.
