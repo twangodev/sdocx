@@ -460,6 +460,8 @@ Model input. A [source matrix](https://github.com/twangodev/sdocx/blob/a24179384
 retains complete four-lane streams for 52 two- to eight-event controls across
 GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
+An authored synthetic SDOCX regression checks note-string resolution and all five
+parsed source channels before comparing 33 packed native records.
 An [adversarial extension](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-extension-native.json)
 adds 24 cases for pressure, size and method-specific speed/width precision;
 The established Rust matrix matches 1,762 native records across 143 cases, with generated
@@ -612,8 +614,9 @@ recovered contracts to the current Rust model and verified vector PDF transport;
 test-only Rust assembly preserves selected source pages, scoped vector resources
 and SDK overlay tags through reordered/duplicate pages and ordinary tails.
 Real-source and retained-text transport match MuPDF/PDFium at 1×/2×; the
-native-derived slice planner is also test-only, pending production query and
-placement integration. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
+native-derived slice planner is also test-only. A bounded block-image query
+candidate matches the measured native query and planner replays; general query
+and placement integration remain open. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)
 also executes native PNG decoding and image placement for a synthetic rectangle.
