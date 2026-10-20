@@ -68,6 +68,29 @@ const DEFAULT_FONT_COLOR: Color = Color {
     b: 38,
 };
 
+/// Mirrors the native TextViewUtil visibility predicate once its UTF-16 range
+/// and paragraph records have already been selected. Native text scanning
+/// ignores only space, carriage return, and line feed; if none remain, any
+/// nonzero RichTextParagraph bullet type in the selected records is visible.
+/// Recovered from Samsung Notes 4.4.45.37 Widget +0xddfe8/+0xde170;
+/// the paragraph fallback reads the native record's bullet type at +0x28.
+#[cfg(test)]
+pub(crate) fn native_text_range_has_visible_content(
+    text_utf16: &[u16],
+    range: Range<usize>,
+    paragraph_bullet_types: &[i32],
+) -> bool {
+    let start = range.start.min(text_utf16.len());
+    let end = range.end.min(text_utf16.len());
+    (start < end
+        && text_utf16[start..end]
+            .iter()
+            .any(|unit| !matches!(*unit, 0x000a | 0x000d | 0x0020)))
+        || paragraph_bullet_types
+            .iter()
+            .any(|bullet_type| *bullet_type != 0)
+}
+
 #[derive(Clone)]
 pub(super) struct TextStyle {
     pub font_size: f64,
@@ -805,6 +828,40 @@ pub(super) fn sanitize_hyperlink_target(target: String) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn native_visibility_scans_utf16_and_ignores_only_space_cr_and_lf() {
+        let ignored = [0x0020, 0x000d, 0x000a];
+        assert!(!native_text_range_has_visible_content(&ignored, 0..3, &[]));
+        assert!(native_text_range_has_visible_content(&[0x0009], 0..1, &[]));
+        assert!(native_text_range_has_visible_content(&[0xfffc], 0..1, &[]));
+        assert!(native_text_range_has_visible_content(
+            &[0xd83d, 0xde00],
+            0..2,
+            &[]
+        ));
+    }
+
+    #[test]
+    fn native_visibility_uses_nonzero_selected_paragraph_bullet_as_fallback() {
+        let whitespace = [0x0020, 0x000d, 0x000a];
+        assert!(!native_text_range_has_visible_content(
+            &whitespace,
+            0..3,
+            &[0, 0]
+        ));
+        for bullet_type in [1, 10, 11, -1] {
+            assert!(native_text_range_has_visible_content(
+                &whitespace,
+                0..3,
+                &[bullet_type]
+            ));
+        }
+        // The native runtime probe supplied a selected paragraph record even
+        // for an empty text layout; an empty selected-record list is distinct.
+        assert!(native_text_range_has_visible_content(&[], 0..0, &[1]));
+        assert!(!native_text_range_has_visible_content(&[], 0..0, &[]));
+    }
 
     pub(super) fn text_box() -> RichTextBox {
         RichTextBox {
