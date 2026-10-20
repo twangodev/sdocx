@@ -75,7 +75,6 @@ pub(super) struct BodyCutObservation {
 
 pub(super) trait SegmentQueries {
     fn body_cut(&self, band: [f32; 4]) -> Result<BodyCutObservation, PlanError>;
-    fn has_content_in_slice(&self, y: i32, height: i32) -> Result<bool, PlanError>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -216,18 +215,10 @@ impl<Q: SegmentQueries> Planner<'_, Q> {
             }
             planned_slices += 1;
 
-            let is_end =
-                y.checked_add(height).ok_or(PlanError::ArithmeticOverflow)? >= self.note_height;
-            if is_end {
-                let has_content = self.queries.has_content_in_slice(y, height)?;
-                let newest_has_pdf = segments
-                    .last()
-                    .is_some_and(|segment| !segment.record_indices.is_empty());
-                if !has_content && !newest_has_pdf {
-                    break;
-                }
-            }
-
+            // Native appends before isLastPageBlank. At the note end, that check either breaks
+            // immediately or returns false before the outer y < noteHeight test exits. Its
+            // content probes therefore cannot change this topology. Checked advance below
+            // excludes the signed-overflow case where native wrapping could continue the loop.
             y = y.checked_add(height).ok_or(PlanError::ArithmeticOverflow)?;
             if y < self.note_height
                 && segments
@@ -337,16 +328,11 @@ mod tests {
     #[derive(Clone, Copy)]
     struct Queries {
         body: BodyCutObservation,
-        content: bool,
     }
 
     impl SegmentQueries for Queries {
         fn body_cut(&self, _band: [f32; 4]) -> Result<BodyCutObservation, PlanError> {
             Ok(self.body)
-        }
-
-        fn has_content_in_slice(&self, _y: i32, _height: i32) -> Result<bool, PlanError> {
-            Ok(self.content)
         }
     }
 
@@ -358,7 +344,6 @@ mod tests {
                 line_count: 0,
                 line_rect: [0.0; 4],
             },
-            content: false,
         }
     }
 
@@ -482,7 +467,6 @@ mod tests {
                     line_count: 1,
                     line_rect: [0.0, 1527.0, 1812.0, line_bottom],
                 },
-                content: false,
             };
             let record = record("paper.pdf", 0, [0.0, 1600.0, 1812.0, 1700.0], 0);
             let segments = plan_segments(1812, 2000, 1527, &[record], &qs).unwrap();
@@ -499,7 +483,6 @@ mod tests {
                 line_count: 2,
                 line_rect: [0.0, 990.0, 100.0, 1000.0],
             },
-            content: false,
         };
         let record = record("paper.pdf", 0, [0.0, 2000.0, 100.0, 2500.0], 0);
         let segments = plan_segments(100, 3000, 1527, &[record], &qs).unwrap();
