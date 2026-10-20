@@ -489,39 +489,62 @@ fn source_glv1_curve_trace(
                 None,
             ));
         } else {
+            // endPen adjusts the final width from its raw terminal pressure
+            // even when the accepted source contains only two points.
+            let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
             paths.push((
                 SourceCurve::Quad([p[0], p[1], p[1]]),
-                width,
-                width,
-                true,
-                true,
-                None,
-            ));
-        }
-    } else if points.len() == 3 {
-        let distance = p[1].sub(p[2]).len();
-        if distance < 1.5 {
-            width = size * pressure[2];
-            paths.push((
-                SourceCurve::Quad([p[0], p[2], p[2]]),
-                width,
-                width,
-                true,
-                true,
-                None,
-            ));
-        } else {
-            let c2 = p[1].mid(p[2]);
-            let candidate = size.mul_add(pressure[2].mul_add(0.25, 0.25), width * 0.5);
-            let terminal = end_pen_width_target(width, candidate, size);
-            paths.push((
-                SourceCurve::Cubic([p[0], p[1], c2, p[2]]),
                 width,
                 terminal,
                 true,
                 true,
                 None,
             ));
+        }
+    } else if points.len() == 3 {
+        if raw_terminal_rejected {
+            // redrawLine leaves the cached path start/control intact when the
+            // raw final point fails admission; endPen closes that cubic at the
+            // raw endpoint rather than the last admitted point.
+            let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
+            paths.push((
+                SourceCurve::Cubic([
+                    p[0],
+                    p[1],
+                    p[1].mid(source_point(raw_terminal)),
+                    source_point(raw_terminal),
+                ]),
+                width,
+                terminal,
+                true,
+                true,
+                None,
+            ));
+        } else {
+            let distance = p[1].sub(p[2]).len();
+            if distance < 1.5 {
+                width = size * pressure[2];
+                paths.push((
+                    SourceCurve::Quad([p[0], p[2], p[2]]),
+                    width,
+                    width,
+                    true,
+                    true,
+                    None,
+                ));
+            } else {
+                let c2 = p[1].mid(p[2]);
+                let candidate = size.mul_add(pressure[2].mul_add(0.25, 0.25), width * 0.5);
+                let terminal = end_pen_width_target(width, candidate, size);
+                paths.push((
+                    SourceCurve::Cubic([p[0], p[1], c2, p[2]]),
+                    width,
+                    terminal,
+                    true,
+                    true,
+                    None,
+                ));
+            }
         }
     } else {
         let mut previous_end = p[0];
@@ -787,6 +810,42 @@ mod tests {
 
     fn le_hex_f32(value: &Value) -> f32 {
         f32::from_bits(le_hex_word(value))
+    }
+
+    #[test]
+    fn terminal_pressure_and_rejected_raw_tail_match_native_words_and_ranges() {
+        let two_point = source_glv1_curve_trace(&[[0.0, 0.0], [1.5, 0.0]], &[1.0, 0.0], 4.0);
+        assert_eq!(
+            two_point.records,
+            vec![
+                [0x0000_0000, 0x0000_0000, 0x3f00_0000],
+                [0x3f55_5552, 0x0000_0000, 0x3f2a_aaab],
+                [0x3faa_aaa9, 0x0000_0000, 0x3f55_5556],
+                [0x3fc0_0000, 0x0000_0000, 0x3f80_0000],
+            ],
+            "captured native two-point reversed-pressure stream"
+        );
+        assert_eq!(two_point.source_event_ranges, vec![0..0, 0..0]);
+        assert_eq!(two_point.terminal_range, 0..4);
+
+        let rejected_tail = source_glv1_curve_trace(
+            &[[0.0, 0.0], [3.0, 0.0], [6.0, 0.0], [6.5, 0.75]],
+            &[0.1, 0.8, 0.2, 1.0],
+            4.0,
+        );
+        assert_eq!(
+            rejected_tail.records,
+            vec![
+                [0x0000_0000, 0x0000_0000, 0x4006_6666],
+                [0x3fe7_cd1b, 0x3d4e_7711, 0x4009_999a],
+                [0x4055_b249, 0x3e3e_22a4, 0x400c_cccc],
+                [0x409e_5cff, 0x3edd_d125, 0x4010_0000],
+                [0x40cf_fffd, 0x3f3f_fffa, 0x4013_3332],
+            ],
+            "captured native rejected-terminal cubic stream"
+        );
+        assert_eq!(rejected_tail.source_event_ranges, vec![0..0; 4]);
+        assert_eq!(rejected_tail.terminal_range, 0..5);
     }
 
     fn range_words(value: &Value) -> Range<usize> {
