@@ -70,7 +70,7 @@ pub use formula::{
 #[cfg(feature = "render")]
 pub use ink::{
     CoverageMesh, CoverageTriangle, CoverageVertex, InkSupport, OrderedDiskReplay, PEN_PROFILES,
-    PenProfile, PreparedStroke, RectStamp, prepare_stroke,
+    PenProfile, PreparedInkPen2V9, PreparedStroke, RectStamp, prepare_stroke,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
@@ -106,13 +106,13 @@ pub use pdf::{
 pub use progress::{Progress, ProgressStage};
 #[cfg(feature = "render")]
 pub use render::{
-    DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, ObjectDiagnostic,
-    ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole, PointMarkerTarget,
-    RenderColorMode, RenderOptions, RenderTheme, RenderedPage, StrokePaint, TextDiagnostic,
-    TextDiagnosticKind, fonts, prepare_stroke_for_page, render_document_svg,
-    render_document_svg_with_fonts, render_layout_page_replay_svg,
-    render_layout_page_replay_svg_with_fonts, render_layout_page_svg,
-    render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
+    DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, InkPen2RenderProfile,
+    ObjectDiagnostic, ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole,
+    PointMarkerTarget, RenderColorMode, RenderOptions, RenderTheme, RenderedPage, StrokePaint,
+    TextDiagnostic, TextDiagnosticKind, fonts, prepare_stroke_for_page,
+    prepare_stroke_for_page_with_theme, render_document_svg, render_document_svg_with_fonts,
+    render_layout_page_replay_svg, render_layout_page_replay_svg_with_fonts,
+    render_layout_page_svg, render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{

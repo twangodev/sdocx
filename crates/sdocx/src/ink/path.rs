@@ -7,9 +7,9 @@
 use crate::Point;
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(super) struct P {
-    pub(super) x: f32,
-    pub(super) y: f32,
+pub(crate) struct P {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
 }
 
 impl P {

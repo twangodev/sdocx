@@ -14,10 +14,11 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 use vector::{
-    Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
-    Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle, ReplayPart,
-    ReplayPath, Scene, StrokeIndex, Styled, Svg, TSpan, Text, TextAnchor, TextDecoration,
-    Transform, ViewBox, color_hex, coordinate, decimal,
+    Anchor, Blend, Circle, Clip, ClipPath, ColorValue, Data, Definitions, Ellipse, FontFamily,
+    Gradient, Group, Image, Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path,
+    Polygon, RadialGradient, Rectangle, ReplayPart, ReplayPath, Scene, Stop, StrokeIndex, Styled,
+    Svg, TSpan, Text, TextAnchor, TextDecoration, Transform, ViewBox, color_hex, coordinate,
+    decimal,
 };
 
 mod arrows;
@@ -81,11 +82,29 @@ pub enum RenderColorMode {
     Dark,
 }
 
+/// Explicit host policy for fresh-draw InkPen2 V9 vector reconstruction.
+///
+/// Selecting this profile opts into the captured direct source-over paint route:
+/// enhanced antialiasing is disabled, the page-space transform is identity, and
+/// each stroke starts with fresh drawable state. Screen dimensions provide the
+/// native resolution input. This is a reconstruction policy, not a claim about
+/// Samsung Notes' device defaults or its canvas setup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InkPen2RenderProfile {
+    pub screen_width: u32,
+    pub screen_height: u32,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct RenderOptions {
+    /// Explicit InkPen2 V9 source-over profile. `None` preserves fallback behavior;
+    /// `Some` opts into fresh state, identity page transform, and enhanced-AA disabled.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen2_profile: Option<InkPen2RenderProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -495,6 +514,7 @@ impl DocumentTextCache {
             &text_renderer,
             body_text.as_ref(),
             retain_text,
+            options.inkpen2_profile,
             observer,
         );
         (
@@ -875,6 +895,7 @@ fn render_page_contents_svg(
     text_renderer: &TextRenderer<'_>,
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
+    inkpen2_profile: Option<InkPen2RenderProfile>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
     let bg = color_hex(&theme.background());
@@ -925,6 +946,7 @@ fn render_page_contents_svg(
         theme,
         replay,
         body_text,
+        inkpen2_profile,
     };
     let total = page.composed_objects().count();
     let mut progress = WorkProgress::new(observer, ProgressStage::Rendering, total);
@@ -956,6 +978,7 @@ struct CompositionContext<'a> {
     theme: RenderTheme,
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
+    inkpen2_profile: Option<InkPen2RenderProfile>,
 }
 
 fn render_pass(
@@ -1016,6 +1039,7 @@ fn render_object(
                 calligraphy_session,
                 native_allowed,
                 [context.page.width, context.page.height],
+                context.inkpen2_profile,
             );
             *stroke_index += 1;
         }
@@ -3171,7 +3195,12 @@ fn render_stroke(
     calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
     native_allowed: bool,
     viewport: [u32; 2],
+    inkpen2_profile: Option<InkPen2RenderProfile>,
 ) {
+    if native_allowed && let Some(ink) = prepare_inkpen2_v9(stroke, inkpen2_profile, theme) {
+        render_inkpen2_v9(svg, &ink, replay_index);
+        return;
+    }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
         && let Some(ink) = crate::ink::prepare_magicpen_v1_source(stroke)
@@ -3490,6 +3519,246 @@ pub(crate) struct InkPenV1VectorCandidate {
     pub(crate) source_event_path_ends: Vec<usize>,
 }
 
+const MAX_INKPEN2_SOURCE_SAMPLES: usize = 65_536;
+const MAX_INKPEN2_SOURCE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_INKPEN2_OUTPUT_RECORDS: usize = 32_768;
+const MAX_INKPEN2_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
+const INKPEN2_MARKUP_BUDGET_PER_RECORD: usize = 1024;
+
+/// Prepare exact V9 records for the explicitly configured fresh-draw host profile.
+fn prepare_inkpen2_v9(
+    stroke: &Stroke,
+    profile: Option<InkPen2RenderProfile>,
+    theme: RenderTheme,
+) -> Option<crate::ink::PreparedInkPen2V9> {
+    let profile = profile?;
+    if profile.screen_width == 0
+        || profile.screen_height == 0
+        || profile.screen_width > i32::MAX as u32
+        || profile.screen_height > i32::MAX as u32
+    {
+        return None;
+    }
+    let rendering = stroke.rendering.as_ref()?;
+    let n = stroke.points.len();
+    let source_bytes = n.checked_mul(48);
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
+        || rendering.advanced_settings.as_deref() != Some("9;")
+        || rendering.tool_type_raw != 2
+        || rendering.style.stroke_type_raw != Some(0)
+        || rendering.style.line_type_raw != Some(0)
+        || rendering.properties.replay_only
+        || !rendering.properties.stylus_channels
+        || rendering.properties.eraser
+        || rendering.properties.fixed_width
+        || rendering.properties.millisecond_timestamps
+        || rendering.properties.top_layer_pen
+        || rendering.properties.alpha_lock
+        || !rendering.properties.binary_added
+        || rendering.properties.generated
+        || rendering.properties.fixed_opacity
+        || rendering.properties.rainbow_effect
+        || rendering.properties.straighten
+        || rendering.properties.reveal_mode
+        || n < 2
+        || n > MAX_INKPEN2_SOURCE_SAMPLES
+        || source_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_SOURCE_BYTES)
+        || stroke.timestamps.len() != n
+        || stroke.pressures.len() != n
+        || stroke.tilts.len() != n
+        || stroke.orientations.len() != n
+        || stroke.timestamps.iter().any(|&t| i32::try_from(t).is_err())
+        || stroke.points.iter().any(|p| {
+            !p.x.is_finite()
+                || !p.y.is_finite()
+                || !(p.x as f32).is_finite()
+                || !(p.y as f32).is_finite()
+        })
+        || stroke
+            .pressures
+            .iter()
+            .any(|&v| !v.is_finite() || !(v as f32).is_finite())
+        || stroke.tilts.iter().any(|&v| !v.is_finite())
+        || stroke.orientations.iter().any(|&v| !v.is_finite())
+    {
+        return None;
+    }
+    let size = rendering.style.pen_size?;
+    if !size.is_finite()
+        || !stroke.pen_width.is_finite()
+        || size.to_bits() != stroke.pen_width.to_bits()
+    {
+        return None;
+    }
+    let argb = rendering.style.color_argb?;
+    // Binary field 13 is multiplied by a native document conversion factor.
+    // Until that factor is derived for this input route, only absent/zero is safe.
+    let tolerance = rendering.style.initial_tolerance.unwrap_or(0.0);
+    if !tolerance.is_finite() || tolerance != 0.0 {
+        return None;
+    }
+    let points: Vec<_> = stroke
+        .points
+        .iter()
+        .map(|p| crate::ink::inkpen2::source_point(p.x as f32, p.y as f32))
+        .collect();
+    let times: Vec<i32> = stroke.timestamps.iter().map(|&t| t as i32).collect();
+    let pressures: Vec<f32> = stroke.pressures.iter().map(|&p| p as f32).collect();
+    let tools = vec![i32::from(rendering.tool_type_raw); points.len()];
+    let input = crate::ink::inkpen2::Input {
+        points: &points,
+        times: &times,
+        tools: &tools,
+        pressures: &pressures,
+        rgb: [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8],
+        size: size.clamp(0.4, 800.0),
+        curve_enabled: rendering.properties.compressed,
+        is_shape: false,
+        runtime: crate::ink::inkpen2::Runtime {
+            inverse_scale: [1.0, 1.0],
+            spacing: 1.0,
+            tolerance,
+            tool_threshold: 20.0,
+            resolution_min: profile.screen_width.min(profile.screen_height) as i32,
+            initial_alternation: false,
+            initial_time: *times.first().unwrap_or(&0),
+        },
+    };
+    let output = crate::ink::inkpen2::redraw_bounded(input, MAX_INKPEN2_OUTPUT_RECORDS)?;
+    let output_bytes = output.vertices.len().checked_mul(36);
+    let markup_bytes = output
+        .vertices
+        .len()
+        .checked_mul(INKPEN2_MARKUP_BUDGET_PER_RECORD);
+    if output.vertices.len() > MAX_INKPEN2_OUTPUT_RECORDS
+        || output_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_OUTPUT_RECORDS * 36)
+        || markup_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_ESTIMATED_MARKUP_BYTES)
+        || output.sample_ends.len() != n
+        || output.sample_ends.first() != Some(&0)
+        || output.sample_ends.windows(2).any(|pair| pair[0] > pair[1])
+        || output.sample_ends.last() != Some(&output.terminal.start)
+        || output.terminal.start > output.terminal.end
+        || output.terminal.end != output.vertices.len()
+    {
+        return None;
+    }
+    if output.vertices.is_empty() {
+        return None;
+    }
+    let mut sample_ends = output.sample_ends;
+    *sample_ends.last_mut()? = output.terminal.end;
+    let mut bounds: Option<BoundingBox> = None;
+    for [cx, cy, rx, ry, ..] in &output.vertices {
+        let current = BoundingBox {
+            x_min: f64::from(*cx - *rx),
+            y_min: f64::from(*cy - *ry),
+            x_max: f64::from(*cx + *rx),
+            y_max: f64::from(*cy + *ry),
+        };
+        if let Some(old) = &mut bounds {
+            old.x_min = old.x_min.min(current.x_min);
+            old.y_min = old.y_min.min(current.y_min);
+            old.x_max = old.x_max.max(current.x_max);
+            old.y_max = old.y_max.max(current.y_max);
+        } else {
+            bounds = Some(current);
+        }
+    }
+    let source_color = stroke.color.or(Some(argb_color(argb)));
+    let color = source_color
+        .map(|color| theme.foreground_color(color))
+        .unwrap_or_else(|| argb_color(argb));
+    Some(crate::ink::PreparedInkPen2V9 {
+        records: output.vertices,
+        sample_ends,
+        color,
+        opacity: f64::from((argb >> 24) as u8 as f32 / 255.0),
+        bounds: bounds?,
+    })
+}
+
+fn render_inkpen2_v9(
+    svg: &mut Scene,
+    ink: &crate::ink::PreparedInkPen2V9,
+    replay_index: Option<usize>,
+) {
+    let draw = |svg: &mut Scene| {
+        for (index, vertex) in ink.records.iter().enumerate() {
+            let [cx, cy, rx, ry, edge, coverage, ..] = *vertex;
+            // Keep the native nine-float records untouched for diagnostics;
+            // page theme adaptation applies to their shared RGB paint only.
+            let color = ColorValue::Rgb(ink.color);
+            let id = svg.definition::<Gradient>();
+            let opacity = f64::from(coverage * ink.opacity as f32);
+            let stop = (edge * 2.0).clamp(0.0, 1.0);
+            let matrix = Transform::matrix_unrounded([
+                f64::from(rx),
+                0.0,
+                0.0,
+                f64::from(ry),
+                f64::from(cx),
+                f64::from(cy),
+            ]);
+            let gradient = RadialGradient::new(&id)
+                .cx(0)
+                .cy(0)
+                .r(1)
+                .add(Stop::new(0, color).opacity(opacity))
+                .add(Stop::new(stop, color).opacity(opacity))
+                .add(Stop::new(1, color).opacity(0));
+            let replay_part = replay_index.map(|_| ReplayPart(index + 1));
+            svg.push(
+                Group::new()
+                    .transformed(matrix)
+                    .add(Definitions::new().add(gradient))
+                    .replay_part(replay_part)
+                    .add(Circle::new().cx(0).cy(0).r(1).fill(Paint::Gradient(id))),
+            );
+        }
+    };
+    if let Some(index) = replay_index {
+        svg.scope(Group::new().replay_stroke(StrokeIndex(index)), draw);
+    } else {
+        draw(svg);
+    }
+}
+
+/// Prepare replay metadata with the same resolved page theme and explicit
+/// InkPen2 screen profile used by SVG/PDF rendering.
+pub fn prepare_stroke_for_page_with_theme<'a>(
+    stroke: &'a Stroke,
+    theme: RenderTheme,
+    options: &RenderOptions,
+) -> crate::PreparedStroke<'a> {
+    let Some(ink) = prepare_inkpen2_v9(stroke, options.inkpen2_profile, theme) else {
+        return prepare_stroke_for_page(stroke, theme.is_dark());
+    };
+    let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
+    prepared.points = Cow::Owned(
+        ink.records
+            .iter()
+            .map(|r| crate::Point {
+                x: f64::from(r[0]),
+                y: f64::from(r[1]),
+            })
+            .collect(),
+    );
+    prepared.sample_ends = Some(ink.sample_ends.clone());
+    prepared.dot_radii = None;
+    prepared.ordered_disk_replay = None;
+    prepared.inkpen2_v9 = Some(ink.clone());
+    prepared.dot_directions = None;
+    prepared.rect_stamp = None;
+    prepared.coverage_mesh = None;
+    prepared.segment_widths = None;
+    prepared.bounds = Some(ink.bounds);
+    prepared.color = vector::color_hex(&ink.color);
+    prepared.opacity = ink.opacity;
+    prepared.profile = Some("InkPen2V9");
+    prepared.support = crate::InkSupport::Reconstructed;
+    prepared
+}
+
 fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
     let color = &paint.color;
     if oblique::render(svg, paint, replay) {
@@ -3728,8 +3997,10 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        RenderColorMode, RenderOptions, is_dark_background, normalized_stroke_width,
-        render_document_svg, render_layout_page_svg, sanitize_hyperlink_target,
+        InkPen2RenderProfile, RenderColorMode, RenderOptions, RenderTheme, is_dark_background,
+        normalized_stroke_width, prepare_inkpen2_v9, prepare_stroke_for_page_with_theme,
+        render_document_svg, render_layout_page_replay_svg, render_layout_page_svg,
+        sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -5536,6 +5807,354 @@ mod tests {
         }
     }
 
+    fn inkpen2_color_stroke(argb: u32, color_override: Option<Color>) -> Stroke {
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.InkPen2".into()),
+                advanced_settings: Some("9;".into()),
+                tool_type_raw: 2,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(4.0),
+                    initial_tolerance: Some(0.0),
+                    line_type_raw: Some(0),
+                    stroke_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: vec![Point { x: 0.0, y: 0.0 }, Point { x: 8.0, y: 0.0 }],
+            pressures: vec![0.25, 0.5],
+            timestamps: vec![100, 110],
+            tilts: vec![0.0, 0.0],
+            orientations: vec![0.0, 0.0],
+            color: color_override,
+            pen_width: 4.0,
+        }
+    }
+
+    #[test]
+    fn inkpen2_profile_matches_compact_native_caller_streams_and_rejects_single_point() {
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let make_stroke = |points: &[[f64; 2]], times: &[i64], pressures: &[f64], curve: bool| {
+            let mut stroke = inkpen2_color_stroke(0xff000000, None);
+            stroke.points = points
+                .iter()
+                .map(|xy| Point { x: xy[0], y: xy[1] })
+                .collect();
+            stroke.timestamps = times.to_vec();
+            stroke.pressures = pressures.to_vec();
+            stroke.tilts = vec![0.0; points.len()];
+            stroke.orientations = vec![0.0; points.len()];
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.properties.compressed = curve;
+            rendering.style.initial_tolerance = Some(0.0);
+            stroke
+        };
+        let decode = |hex: &str| -> Vec<u8> {
+            hex.as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let cases: [(&str, Stroke, &str); 2] = [
+            (
+                "native linear source-caller",
+                make_stroke(
+                    &[[0.0, 0.0], [8.0, 0.0], [16.0, 3.0], [24.0, 3.0]],
+                    &[0, 10, 20, 30],
+                    &[0.2, 0.4, 0.6, 0.8],
+                    false,
+                ),
+                "faff7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000faffff3f0000000090a7144090a71440e4c8913e0000803f000000000000000000000000fcff3f400000000009f2144009f214400000923e0000803f000000000000000000000000faff7f4000000000823c1540823c1540e436923e0000803f000000000000000000000000fcff9f4000000000fb861540fb861540926d923e0000803f000000000000000000000000fcffbf400000000074d1154074d115400aa4923e0000803f000000000000000000000000fbffdf4000000000ed1b1640ed1b16404bda923e0000803f000000000000000000000000faffff400000000066661640666616405710933e0000803f00000000000000000000000034fb0e4170c6b33edfb01640dfb016402d46933e0000803f00000000000000000000000068f61d4170c6333fd6fc1640d6fc1640e17c933e0000803f0000000000000000000000009cf12c41d4d4863fcc481740cc4817405db3933e0000803f000000000000000000000000d0ec3b4170c6b33fc2941740c2941740a2e9933e0000803f00000000000000000000000004e84a410cb8e03fb9e01740b9e01740b21f943e0000803f00000000000000000000000038e35941d4d40640b02c1840b02c18408c55943e0000803f0000000000000000000000006cde6841a24d1d40a6781840a6781840308b943e0000803f000000000000000000000000a0d9774170c633409cc418409cc418409ec0943e0000803f000000000000000000000000e1a58341000040409210194092101940d7f5943e0000803f000000000000000000000000e1a58b41000040409210194092101940d7f5943e0000803f000000000000000000000000e1a59341000040409210194092101940d7f5943e0000803f000000000000000000000000e1a59b41000040409210194092101940d7f5943e0000803f000000000000000000000000e1a5a341000040409210194092101940d7f5943e0000803f000000000000000000000000e0a5ab41000040409210194092101940d7f5943e0000803f000000000000000000000000e0a5b341000040409210194092101940d7f5943e0000803f000000000000000000000000e0a5bb41000040409210194092101940d7f5943e0000803f0000000000000000000000000000c041000040409210194092101940d7f5943e0000803f000000000000000000000000",
+            ),
+            (
+                "native short two-point source-caller",
+                make_stroke(&[[0.0, 0.0], [0.75, 0.0]], &[100, 105], &[0.2, 0.6], true),
+                "0000403f000000008b2eba3f8b2eba3fffff1f3e0000803f000000000000000000000000",
+            ),
+        ];
+        for (name, stroke, expected_hex) in cases {
+            let prepared =
+                prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                    .unwrap_or_else(|| {
+                        panic!("{name} must be supported by the captured V9 profile")
+                    });
+            let actual: Vec<u8> = prepared
+                .records
+                .iter()
+                .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+                .collect();
+            let expected = decode(expected_hex);
+            assert_eq!(actual, expected, "{name}: full native RTV3 stream");
+        }
+
+        let mut one = inkpen2_color_stroke(0xff000000, None);
+        one.points.truncate(1);
+        one.timestamps.truncate(1);
+        one.pressures.truncate(1);
+        one.tilts.truncate(1);
+        one.orientations.truncate(1);
+        assert!(prepare_inkpen2_v9(&one, Some(profile), RenderTheme::for_canvas(false)).is_none());
+    }
+
+    #[test]
+    fn inkpen2_profile_rejects_output_amplification_at_the_generation_budget() {
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let mut stroke = inkpen2_color_stroke(0xff000000, None);
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point {
+                x: 40_000.0,
+                y: 0.0,
+            },
+        ];
+        stroke.timestamps = vec![0, 10];
+        stroke.pressures = vec![0.2, 0.8];
+        stroke.tilts = vec![0.0; 2];
+        stroke.orientations = vec![0.0; 2];
+
+        assert!(
+            prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false)).is_none()
+        );
+    }
+
+    #[test]
+    fn inkpen2_profile_adapts_rgb_by_theme_but_preserves_native_records_and_alpha() {
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let black = inkpen2_color_stroke(0xff00_0000, None);
+        let light =
+            prepare_inkpen2_v9(&black, Some(profile), RenderTheme::for_canvas(false)).unwrap();
+        let dark =
+            prepare_inkpen2_v9(&black, Some(profile), RenderTheme::for_canvas(true)).unwrap();
+        assert_eq!(light.color, Color { r: 0, g: 0, b: 0 });
+        assert_eq!(
+            dark.color,
+            Color {
+                r: 255,
+                g: 255,
+                b: 255
+            }
+        );
+        assert_eq!(light.records, dark.records);
+        assert!(light.records.iter().all(|record| record[6..9] == [0.0; 3]));
+
+        // Auto on a page without stored background resolves to the light canvas.
+        let page = page_with_uncolored_stroke();
+        let auto = RenderTheme::resolve(&page, &DocumentMetadata::default(), RenderColorMode::Auto);
+        assert_eq!(
+            prepare_inkpen2_v9(&black, Some(profile), auto)
+                .unwrap()
+                .color,
+            light.color
+        );
+        for (mode, expected) in [
+            (RenderColorMode::Light, "stop-color=\"#000000\""),
+            (RenderColorMode::Dark, "stop-color=\"#ffffff\""),
+            (RenderColorMode::Auto, "stop-color=\"#000000\""),
+        ] {
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![black.clone().into()];
+            let options = RenderOptions {
+                inkpen2_profile: Some(profile),
+                color_mode: mode,
+                ..RenderOptions::default()
+            };
+            let svg = render_document_svg(&document(page), &options)[0]
+                .svg
+                .clone();
+            assert!(svg.contains(expected), "{mode:?}: {expected}");
+        }
+
+        // A stored page background plus compatibility=false suppresses the
+        // normal dark-canvas foreground adaptation. The same resolved theme
+        // must drive both page SVG and replay metadata.
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(Color {
+            r: 16,
+            g: 16,
+            b: 16,
+        });
+        page.objects = vec![black.clone().into()];
+        let metadata = DocumentMetadata {
+            dark_mode_compatibility: Some(false),
+            ..DocumentMetadata::default()
+        };
+        let resolved = RenderTheme::resolve(&page, &metadata, RenderColorMode::Dark);
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            color_mode: RenderColorMode::Dark,
+            ..RenderOptions::default()
+        };
+        let prepared = prepare_stroke_for_page_with_theme(&black, resolved, &options);
+        assert_eq!(prepared.color, "#000000");
+        let page_svg = render_document_svg(
+            &Document {
+                pages: vec![page],
+                metadata,
+            },
+            &options,
+        )[0]
+        .svg
+        .clone();
+        assert!(page_svg.contains("stop-color=\"#000000\""));
+        assert!(!page_svg.contains("stop-color=\"#ffffff\""));
+
+        let argb = 0x80_336699;
+        let override_color = Color {
+            r: 10,
+            g: 30,
+            b: 50,
+        };
+        let partial = inkpen2_color_stroke(argb, Some(override_color));
+        let themed =
+            prepare_inkpen2_v9(&partial, Some(profile), RenderTheme::for_canvas(false)).unwrap();
+        assert_eq!(themed.color, override_color);
+        assert_eq!(themed.opacity, f64::from(128.0_f32 / 255.0_f32));
+        let raw = [(51.0_f32 / 255.0), (102.0_f32 / 255.0), (153.0_f32 / 255.0)];
+        assert!(themed.records.iter().all(|record| record[6..9] == raw));
+
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let prepared_light =
+            prepare_stroke_for_page_with_theme(&partial, RenderTheme::for_canvas(false), &options);
+        let prepared_dark =
+            prepare_stroke_for_page_with_theme(&partial, RenderTheme::for_canvas(true), &options);
+        assert_eq!(prepared_light.color, "#0a1e32");
+        assert_eq!(prepared_light.opacity, f64::from(128.0_f32 / 255.0_f32));
+        assert_eq!(prepared_dark.color, "#cde1f5");
+        assert_eq!(
+            prepared_dark.inkpen2_v9.as_ref().unwrap().records,
+            themed.records
+        );
+
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![partial.into()];
+        let mut options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        options.color_mode = RenderColorMode::Light;
+        let svg = render_document_svg(&document(page), &options)[0]
+            .svg
+            .clone();
+        assert!(svg.contains("stop-color=\"#0a1e32\""));
+        assert!(svg.contains(&format!(
+            "stop-opacity=\"{}\"",
+            f64::from(128.0_f32 / 255.0_f32)
+        )));
+    }
+
+    #[test]
+    fn inkpen2_profile_metadata_cutoffs_match_sequential_replay_parts() {
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let mut stroke = inkpen2_color_stroke(0x80_336699, None);
+        // Duplicate samples exercise equal adjacent event cutoffs; the terminal
+        // suffix belongs to the final source event.
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 16.0, y: 1.0 },
+        ];
+        stroke.timestamps = vec![100, 110, 120, 130];
+        stroke.pressures = vec![0.2, 0.3, 0.4, 0.5];
+        stroke.tilts = vec![0.0; 4];
+        stroke.orientations = vec![0.0; 4];
+        let page = Page {
+            objects: vec![stroke.clone().into()],
+            ..page_with_uncolored_stroke()
+        };
+        let document = document(page);
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let theme =
+            RenderTheme::resolve(&document.pages[0], &document.metadata, options.color_mode);
+        let prepared = prepare_stroke_for_page_with_theme(&stroke, theme, &options);
+        let native = prepared.inkpen2_v9.as_ref().expect("profiled V9 metadata");
+        assert_eq!(
+            prepared.sample_ends.as_deref(),
+            Some(native.sample_ends.as_slice())
+        );
+        assert_eq!(native.sample_ends.len(), stroke.points.len());
+        assert_eq!(native.sample_ends.last(), Some(&native.records.len()));
+        let all_parts: Vec<usize> = (1..=native.records.len()).collect();
+        for &cutoff in &native.sample_ends {
+            let visible: Vec<_> = all_parts
+                .iter()
+                .copied()
+                .filter(|part| *part <= cutoff)
+                .collect();
+            assert_eq!(visible.len(), cutoff);
+            assert!(
+                visible
+                    .iter()
+                    .enumerate()
+                    .all(|(index, part)| *part == index + 1)
+            );
+        }
+        assert_eq!(
+            stroke.points[1], stroke.points[2],
+            "fixture retains duplicate source event"
+        );
+
+        let replay =
+            render_layout_page_replay_svg(&document, &layout_document(&document), 0, &options)
+                .unwrap()
+                .svg;
+        let actual_parts: Vec<usize> = roxmltree::Document::parse(&replay)
+            .unwrap()
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .map(|part| part.parse().unwrap())
+            .collect();
+        assert_eq!(actual_parts, all_parts);
+
+        let legacy = prepare_stroke_for_page_with_theme(&stroke, theme, &RenderOptions::default());
+        assert!(
+            legacy.inkpen2_v9.is_none(),
+            "no-profile preparation retains fallback"
+        );
+        assert!(
+            !render_document_svg(&document, &RenderOptions::default())[0]
+                .svg
+                .contains("<radialGradient")
+        );
+    }
+
     #[test]
     fn normalizes_and_clamps_stroke_widths() {
         assert_eq!(normalized_stroke_width(f32::NAN), 1.0);
@@ -5715,14 +6334,26 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn public_fountain_missing_color_uses_native_default_without_changing_other_fallbacks() {
-        let matrix_rgb = |svg: &str| {
+        let fountain_rgb = |svg: &str| {
             let xml = roxmltree::Document::parse(svg).unwrap();
-            let matrix = xml
+            let Some(matrix) = xml
                 .descendants()
                 .find(|node| node.has_tag_name("feColorMatrix"))
-                .expect("Fountain SVG filter color matrix")
-                .attribute("values")
-                .unwrap();
+            else {
+                let colors = xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("stop"))
+                    .map(|node| node.attribute("stop-color").unwrap())
+                    .collect::<Vec<_>>();
+                let color = colors.first().expect("V16 colored radial gradient stops");
+                assert!(colors.iter().all(|candidate| candidate == color));
+                let color = color.strip_prefix('#').unwrap();
+                assert_eq!(color.len(), 6);
+                return [0, 2, 4].map(|offset| {
+                    f64::from(u8::from_str_radix(&color[offset..offset + 2], 16).unwrap()) / 255.
+                });
+            };
+            let matrix = matrix.attribute("values").unwrap();
             let values = matrix
                 .split_whitespace()
                 .map(|value| value.parse::<f64>().unwrap())
@@ -5747,7 +6378,7 @@ mod tests {
                 )
                 .remove(0)
                 .svg;
-                assert_eq!(matrix_rgb(&svg), expected, "{setting}, {mode:?}");
+                assert_eq!(fountain_rgb(&svg), expected, "{setting}, {mode:?}");
             }
         }
 
@@ -5763,7 +6394,7 @@ mod tests {
         let svg = render_document_svg(&document(page), &RenderOptions::default())
             .remove(0)
             .svg;
-        let actual = matrix_rgb(&svg);
+        let actual = fountain_rgb(&svg);
         for (actual, expected) in actual.into_iter().zip([51., 102., 153.].map(|v| v / 255.)) {
             assert!((actual - expected).abs() < 1e-6);
         }

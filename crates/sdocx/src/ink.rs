@@ -21,8 +21,7 @@ mod fountain_v14;
 // are integrated; production InkPen rendering remains explicitly approximate.
 #[allow(dead_code)]
 mod inkpen;
-#[cfg(test)]
-mod inkpen2;
+pub(crate) mod inkpen2;
 mod magicpen_glv1;
 mod magicpen_glv1_vector;
 pub(crate) use magicpen_glv1::{
@@ -333,6 +332,9 @@ pub struct PreparedStroke<'a> {
     /// Ordered native DefaultPen disk instances rendered with source-over.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub ordered_disk_replay: Option<OrderedDiskReplay>,
+    /// Exact nine-lane native InkPen2 V9 records for profile-aware page rendering.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub inkpen2_v9: Option<PreparedInkPen2V9>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_directions: Option<Vec<crate::Point>>,
@@ -357,6 +359,20 @@ pub struct PreparedStroke<'a> {
 #[allow(clippy::ptr_arg)] // Serde predicate must distinguish borrowed from generated storage.
 fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
     matches!(points, Cow::Borrowed(_))
+}
+
+/// Exact bounded InkPen2 V9 stamp records and source-event cutoffs.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct PreparedInkPen2V9 {
+    /// Ordered native records: center, ellipse radii, edge, coverage, RGB.
+    pub records: Vec<[f32; 9]>,
+    /// Exclusive record count after each source event; terminal suffix folded
+    /// into the final source event for replay compatibility.
+    pub sample_ends: Vec<usize>,
+    pub color: crate::Color,
+    pub opacity: f64,
+    pub bounds: crate::BoundingBox,
 }
 
 /// Prepare a verified native geometry profile when its saved inputs match.
@@ -521,6 +537,7 @@ fn prepare_stroke_inner(
         sample_ends,
         dot_radii,
         ordered_disk_replay,
+        inkpen2_v9: None,
         dot_directions,
         rect_stamp,
         coverage_mesh,

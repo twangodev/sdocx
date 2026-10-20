@@ -1,15 +1,20 @@
-//! Test-only reconstruction of the explicitly selected InkPen2 drawing V9
-//! saved-redraw numeric path. It is deliberately not wired to production.
+//! Bounded numeric reconstruction of explicitly selected InkPen2 V9 saved redraw.
+//! Native conformance evidence and test-only probes remain in the cfg(test) section.
 use super::path::{P, Quad};
 
+pub(crate) fn source_point(x: f32, y: f32) -> P {
+    P { x, y }
+}
+
 const MAX_POINTS: usize = 65_536;
-const MAX_EMISSIONS: usize = 1_000_000;
+#[cfg(test)]
+const DIAGNOSTIC_MAX_EMISSIONS: usize = 1_000_000;
 const MIN_RADIUS: f32 = f32::from_bits(0x3dcccccd);
 
 /// Runtime values read by the saved redraw path, supplied explicitly so this
 /// model does not guess saved settings or drawable state.
 #[derive(Clone, Copy, Debug)]
-pub(super) struct Runtime {
+pub(crate) struct Runtime {
     pub inverse_scale: [f32; 2],
     pub spacing: f32,
     pub tolerance: f32,
@@ -23,7 +28,7 @@ pub(super) struct Runtime {
 /// arrays are required to have matching lengths because native terminal event
 /// construction dereferences pressure even though it does not use its value.
 #[derive(Clone, Copy, Debug)]
-pub(super) struct Input<'a> {
+pub(crate) struct Input<'a> {
     pub points: &'a [P],
     pub times: &'a [i32],
     pub tools: &'a [i32],
@@ -37,7 +42,7 @@ pub(super) struct Input<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct Output {
+pub(crate) struct Output {
     /// RTV3's nine floats per successful callback AddPoint.
     pub vertices: Vec<[f32; 9]>,
     /// Exclusive output count after each input sample, for attribution.
@@ -60,6 +65,7 @@ struct Core<'a> {
     radius: f32,
     no_emission: bool,
     alternation: bool,
+    max_emissions: usize,
     bounds: [f32; 4],
 }
 
@@ -92,7 +98,8 @@ impl<'a> Core<'a> {
             rgb[1],
             rgb[2],
         ];
-        if vertex.iter().any(|v| !v.is_finite()) || self.output.vertices.len() >= MAX_EMISSIONS {
+        if vertex.iter().any(|v| !v.is_finite()) || self.output.vertices.len() >= self.max_emissions
+        {
             return None;
         }
         self.bounds[0] = self.bounds[0].min(p.x - r);
@@ -156,7 +163,7 @@ impl<'a> Core<'a> {
             distance += spacing;
             radius += increment;
             n += 1;
-            if n > MAX_EMISSIONS {
+            if n > self.max_emissions {
                 return None;
             }
         }
@@ -221,7 +228,7 @@ impl<'a> Core<'a> {
                 }
                 d += self.input.runtime.spacing;
                 n += 1;
-                if n > MAX_EMISSIONS {
+                if n > self.max_emissions {
                     return None;
                 }
             }
@@ -261,12 +268,21 @@ impl Path {
 
 /// Reconstructs the native plain line-type-0 saved path for a fresh drawable
 /// state. Saved samples are borrowed and never rewritten.
-pub(super) fn redraw(input: Input<'_>) -> Option<Output> {
+#[cfg(test)]
+pub(crate) fn redraw(input: Input<'_>) -> Option<Output> {
+    redraw_bounded(input, DIAGNOSTIC_MAX_EMISSIONS)
+}
+
+/// Runs one producer invocation with a caller-selected allocation ceiling.
+/// This is used by public dispatch to reject excessive vector expansion while
+/// leaving the diagnostic fixture path at its broader historical bound.
+pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<Output> {
     let n = input.points.len();
     let rt = input.runtime;
     if input.is_shape
         || n == 0
         || n > MAX_POINTS
+        || max_emissions == 0
         || input.times.len() != n
         || input.tools.len() != n
         || input.pressures.len() != n
@@ -304,6 +320,7 @@ pub(super) fn redraw(input: Input<'_>) -> Option<Output> {
         radius,
         no_emission: true,
         alternation: input.runtime.initial_alternation,
+        max_emissions,
         bounds: [
             f32::INFINITY,
             f32::INFINITY,
