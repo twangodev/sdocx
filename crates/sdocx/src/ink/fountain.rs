@@ -472,6 +472,114 @@ mod tests {
     }
 
     #[test]
+    fn persisted_v14_decoding_and_preparation_match_native_drawing() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-persisted-drawing-native.json"
+        ))
+        .unwrap();
+        let saved: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-saved-color-native.json"
+        ))
+        .unwrap();
+        let frame = saved["real_serialized_frames"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["id"] == "real_v14_handwritten_flat1445")
+            .unwrap();
+        let hex = format!(
+            "{}{}",
+            fixture["provenance"]["object_payload"]["prefix_hex"]
+                .as_str()
+                .unwrap(),
+            frame["frame_hex"].as_str().unwrap()
+        );
+        let payload: Vec<u8> = hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let mut stroke =
+            crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+        let native = &fixture["cases"][0];
+        // Resource resolution is separate from frame decoding. Native OnAttach
+        // resolved these names from the retained original StringID table.
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some(native["native_pen_name"].as_str().unwrap().into());
+        rendering.advanced_settings =
+            Some(native["native_advanced_setting"].as_str().unwrap().into());
+        assert_eq!(
+            rendering.style.pen_size.unwrap().to_bits(),
+            little_endian_u32(&native["native_state_after_apply"]["size_bits"])
+        );
+        let arrays = &native["source_getter_arrays"];
+        let expected_points = arrays["points_f32_bits"].as_array().unwrap();
+        assert_eq!(stroke.points.len() * 2, expected_points.len());
+        assert_eq!(
+            stroke.timestamps,
+            arrays["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap())
+                .collect::<Vec<_>>()
+        );
+        for (point, xy) in stroke.points.iter().zip(expected_points.chunks_exact(2)) {
+            assert_eq!(
+                (point.x as f32).to_bits(),
+                source_array_f32(&xy[0]).to_bits()
+            );
+            assert_eq!(
+                (point.y as f32).to_bits(),
+                source_array_f32(&xy[1]).to_bits()
+            );
+        }
+        for (values, field) in [
+            (&stroke.pressures, "pressure_f32_bits"),
+            (&stroke.tilts, "tilt_f32_bits"),
+            (&stroke.orientations, "orientation_f32_bits"),
+        ] {
+            let expected = arrays[field].as_array().unwrap();
+            assert_eq!(values.len(), expected.len());
+            for (actual, expected) in values.iter().zip(expected) {
+                assert_eq!(
+                    (*actual as f32).to_bits(),
+                    source_array_f32(expected).to_bits()
+                );
+            }
+        }
+        let dots = prepare(&stroke).unwrap();
+        let callbacks = native["drawing_addpoint_records"].as_array().unwrap();
+        assert_eq!(dots.points.len(), callbacks.len());
+        assert_eq!(dots.sample_ends.len(), stroke.points.len());
+        assert_eq!(dots.sample_ends.last(), Some(&callbacks.len()));
+        let directions = dots.directions.as_ref().unwrap();
+        for (index, callback) in callbacks.iter().enumerate() {
+            let words = callback["float_words_s0_s5"].as_array().unwrap();
+            for (actual, channel) in [
+                (dots.points[index].x, 0),
+                (dots.points[index].y, 1),
+                (directions[index].x, 3),
+                (directions[index].y, 4),
+            ] {
+                assert_eq!(
+                    (actual as f32).to_bits(),
+                    little_endian_u32(&words[channel])
+                );
+            }
+            // The recovered width arithmetic differs by at most one f32 ULP
+            // on this original persisted stroke; preserve that measured bound.
+            assert!(
+                (dots.radii[index] as f32)
+                    .to_bits()
+                    .abs_diff(little_endian_u32(&words[2]))
+                    <= 1
+            );
+            assert_eq!(little_endian_f32(&words[5]), 1.0);
+        }
+    }
+
+    #[test]
     fn v16_native_size_and_tolerance_defaults_match_all_native_argument_records() {
         for encoded in [
             include_str!("../../../../conformance/fountain-v16-defaults-native.json"),
