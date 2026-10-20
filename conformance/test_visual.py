@@ -106,6 +106,18 @@ class VisualTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "aspect ratio"):
                 visual.rasterize_reference(page, (1848, 2614))
 
+    def test_rounded_pdf_box_preserves_content_scale_and_pads_white(self):
+        with pymupdf.open() as pdf:
+            page = pdf.new_page(width=600, height=848)
+            page.draw_rect(
+                pymupdf.Rect(100, 800, 110, 801), color=None, fill=(0, 0, 0)
+            )
+            image = visual.rasterize_reference(page, (1848, 2613))
+            # Width fixes a uniform 3.08 pixels/point: y=800 must stay y=2464.
+            self.assertEqual(image.getpixel((310, 2464)), (0, 0, 0))
+            # The rounded MediaBox is shorter than the requested canvas.
+            self.assertEqual(image.getpixel((310, 2612)), (255, 255, 255))
+
     def test_manifest_checks_hashes_selection_and_unique_ids(self):
         manifest = self.fixture()
         self.assertEqual(len(visual.read_fixtures(manifest, self.root, {"fixture"})), 1)

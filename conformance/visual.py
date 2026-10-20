@@ -158,16 +158,21 @@ def rasterize_reference(page, size):
             f"page aspect ratio mismatch: SDK {width}x{height}, PDF {rect.width}x{rect.height}"
         )
     raster = page.get_pixmap(
-        matrix=pymupdf.Matrix(width / rect.width, height / rect.height),
+        matrix=pymupdf.Matrix(width / rect.width, width / rect.width),
         colorspace=pymupdf.csRGB,
         alpha=False,
     )
     if not (
-        width <= raster.width <= width + 1 and height <= raster.height <= height + 1
+        width <= raster.width <= width + 1
+        and math.floor(expected_height) <= raster.height <= math.ceil(expected_height) + 1
     ):
         raise ValueError("unexpected PDF raster dimensions")
     image = Image.frombytes("RGB", (raster.width, raster.height), raster.samples)
-    return image.crop((0, 0, width, height))
+    # A rounded page box clips the source; it must not stretch the artwork.
+    # Pad uncovered rows in white rather than PIL crop's default black.
+    canvas = Image.new("RGB", (width, height), "white")
+    canvas.paste(image, (0, 0))
+    return canvas
 
 
 def rgb_on_white(image):
