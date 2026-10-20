@@ -35,10 +35,84 @@ pub(crate) struct Input<'a> {
     pub pressures: &'a [f32],
     /// Source RGB from ObjectStroke::GetColor, without the packed alpha byte.
     pub rgb: [u8; 3],
+    /// Explicit saved rainbow settings when native V9's rainbow mode is selected.
+    /// Public dispatch currently leaves this unset until paint transport is ready.
+    pub rainbow: Option<Rainbow<'a>>,
     pub size: f32,
     pub curve_enabled: bool,
     pub is_shape: bool,
     pub runtime: Runtime,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Rainbow<'a> {
+    pub distance: i32,
+    pub offset: f32,
+    pub palette_argb: &'a [u32],
+}
+
+impl Rainbow<'_> {
+    fn color_at(&self, distance: f32, fallback: [u8; 3], offset: f32) -> Option<[f32; 3]> {
+        if self.palette_argb.is_empty() {
+            return Some(fallback.map(|channel| f32::from(channel) / 255.0));
+        }
+        // Native uses this signed integer as a floating period. Zero produces
+        // non-finite values; negative periods are retained when their actual
+        // converted palette index remains within the source vector.
+        if self.distance == 0 || !distance.is_finite() || !offset.is_finite() {
+            return None;
+        }
+        let period = self.distance as f32;
+        let sum = offset + distance;
+        if !sum.is_finite() {
+            return None;
+        }
+        let quotient = sum / period;
+        if !quotient.is_finite() {
+            return None;
+        }
+        // Native FCVTZS produces a signed 32-bit integer (saturating at the
+        // finite extremes), then SCVTF converts that integer back to f32.
+        let quotient = (quotient as i32) as f32;
+        let wrapped = (-quotient).mul_add(period, sum);
+        let phase = wrapped / period;
+        if !phase.is_finite() {
+            return None;
+        }
+
+        let count = self.palette_argb.len();
+        let step = (1.0f64 / count as f64) as f32;
+        let raw_index = phase / step;
+        if !raw_index.is_finite() {
+            return None;
+        }
+        // calculateRainbowColor uses FCVTZS followed by a signed `index < n`
+        // conditional select. Positive overflow clamps to the last palette
+        // entry; it does not wrap to zero.
+        // This is another FCVTZS. Small negative phases can truncate to index
+        // zero and extrapolate; reject only converted negative indices, which
+        // would read before the palette.
+        let index = raw_index as i32;
+        if index < 0 {
+            return None;
+        }
+        let index = if index as usize >= count {
+            count - 1
+        } else {
+            index as usize
+        };
+        let next = if index + 1 == count { 0 } else { index + 1 };
+        let fraction = (-(index as f32)).mul_add(step, phase) / step;
+        let first = self.palette_argb[index];
+        let second = self.palette_argb[next];
+        let channel = |shift: u32| {
+            let a = ((first >> shift) & 0xff) as f32;
+            let b = ((second >> shift) & 0xff) as f32;
+            (b - a).mul_add(fraction, a) / 255.0
+        };
+        let rgb = [channel(16), channel(8), channel(0)];
+        rgb.iter().all(|value| value.is_finite()).then_some(rgb)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -67,10 +141,12 @@ struct Core<'a> {
     alternation: bool,
     max_emissions: usize,
     bounds: [f32; 4],
+    rainbow_offset: f32,
+    current_rgb: [f32; 3],
 }
 
 impl<'a> Core<'a> {
-    fn add_point(&mut self, p: P, radius: f32) -> Option<()> {
+    fn add_point(&mut self, p: P, radius: f32, rgb: [f32; 3]) -> Option<()> {
         let [sx, sy] = self.input.runtime.inverse_scale;
         if !p.x.is_finite() || !p.y.is_finite() || !radius.is_finite() || sx <= 0. || sy <= 0. {
             return None;
@@ -86,7 +162,6 @@ impl<'a> Core<'a> {
         let uy = b.mul_add(k, 0.5);
         let m = ux.max(uy);
         let edge = ((m - 1.0) / m) * 0.5;
-        let rgb = self.input.rgb.map(|channel| f32::from(channel) / 255.);
         let vertex = [
             p.x,
             p.y,
@@ -162,12 +237,26 @@ impl<'a> Core<'a> {
         let mut n = 0;
         while distance <= length {
             if let Some(p) = path.at(distance) {
-                self.add_point(p, radius)?;
+                let rgb = if let Some(rainbow) = self.input.rainbow {
+                    rainbow.color_at(distance, self.input.rgb, self.rainbow_offset)?
+                } else {
+                    self.input.rgb.map(|channel| f32::from(channel) / 255.0)
+                };
+                self.current_rgb = rgb;
+                self.add_point(p, radius, rgb)?;
             }
             distance += spacing;
             radius += increment;
             n += 1;
             if n > self.max_emissions {
+                return None;
+            }
+        }
+        if let Some(rainbow) = self.input.rainbow
+            && !rainbow.palette_argb.is_empty()
+        {
+            self.rainbow_offset += length;
+            if !self.rainbow_offset.is_finite() {
                 return None;
             }
         }
@@ -216,7 +305,22 @@ impl<'a> Core<'a> {
         }
         let start = self.output.vertices.len();
         if self.no_emission {
-            self.add_point(self.control, self.radius * 0.5)?;
+            let rgb = if let Some(rainbow) = self.input.rainbow {
+                if rainbow.palette_argb.is_empty() {
+                    rainbow.color_at(0.0, self.input.rgb, 0.0)?
+                } else {
+                    let period = rainbow.distance as f32;
+                    if period == 0.0 || !period.is_finite() || !self.rainbow_offset.is_finite() {
+                        return None;
+                    }
+                    let wrapped = self.rainbow_offset % period;
+                    rainbow.color_at(wrapped, self.input.rgb, 0.0)?
+                }
+            } else {
+                self.input.rgb.map(|channel| f32::from(channel) / 255.0)
+            };
+            self.current_rgb = rgb;
+            self.add_point(self.control, self.radius * 0.5, rgb)?;
         } else {
             let endpoint = *self.input.points.last()?;
             let terminal = if self.input.curve_enabled {
@@ -228,7 +332,7 @@ impl<'a> Core<'a> {
             let mut n = 0;
             while d <= terminal.length() {
                 if let Some(p) = terminal.at(d) {
-                    self.add_point(p, self.radius)?;
+                    self.add_point(p, self.radius, self.current_rgb)?;
                 }
                 d += self.input.runtime.spacing;
                 n += 1;
@@ -236,7 +340,7 @@ impl<'a> Core<'a> {
                     return None;
                 }
             }
-            self.add_point(*self.input.points.last()?, self.radius)?;
+            self.add_point(*self.input.points.last()?, self.radius, self.current_rgb)?;
         }
         let end = self.output.vertices.len();
         self.output.terminal = start..end;
@@ -331,6 +435,8 @@ pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<O
             f32::NEG_INFINITY,
             f32::NEG_INFINITY,
         ],
+        rainbow_offset: input.rainbow.map_or(0.0, |rainbow| rainbow.offset),
+        current_rgb: input.rgb.map(|channel| f32::from(channel) / 255.0),
     };
     core.output.sample_ends.push(0);
     core.finish()
@@ -338,7 +444,7 @@ pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<O
 
 #[cfg(test)]
 mod tests {
-    use super::{Input, P, Runtime, redraw};
+    use super::{Input, P, Rainbow, Runtime, redraw};
     use serde_json::Value;
 
     fn hex_bytes(value: &str) -> Vec<u8> {
@@ -475,6 +581,7 @@ mod tests {
             tools: &tools,
             pressures: &pressures,
             rgb,
+            rainbow: None,
             size: f32_from_le_hex(&native_calls["drawable_getSize_f32_bits"]),
             curve_enabled: before_redraw["curve_enabled"].as_i64().unwrap() != 0,
             is_shape: before_redraw["shape"].as_i64().unwrap() != 0,
@@ -556,6 +663,7 @@ mod tests {
                 tools: &tools,
                 pressures: &pressures,
                 rgb: [0; 3],
+                rainbow: None,
                 size: number(&case["size"]),
                 curve_enabled: case["curve_enabled"].as_bool().unwrap(),
                 is_shape: case["is_shape"].as_bool().unwrap(),
@@ -990,6 +1098,7 @@ mod tests {
                 tools: &tool,
                 pressures: &pressure,
                 rgb: [0; 3],
+                rainbow: None,
                 size: 4.,
                 curve_enabled: false,
                 is_shape: true,
@@ -1091,6 +1200,7 @@ mod tests {
             tools: &tools,
             pressures: &pressures,
             rgb: [0; 3],
+            rainbow: None,
             size: f32_from_le_hex(&case["input"]["first_stroke"]["size_f32_bits"]),
             curve_enabled: true,
             is_shape: false,
@@ -1212,6 +1322,7 @@ mod tests {
             tools: &tools,
             pressures: &pressures,
             rgb: [0, 0, 0],
+            rainbow: None,
             size: 4.0,
             curve_enabled: true,
             is_shape: false,
@@ -1259,5 +1370,295 @@ mod tests {
         for (record, bits) in actual.vertices.iter().zip(expected) {
             assert_eq!(record.map(f32::to_bits), bits);
         }
+    }
+
+    fn rainbow_test_input<'a>(
+        points: &'a [P],
+        times: &'a [i32],
+        tools: &'a [i32],
+        pressures: &'a [f32],
+        rgb: [u8; 3],
+        rainbow: Option<Rainbow<'a>>,
+    ) -> Input<'a> {
+        Input {
+            points,
+            times,
+            tools,
+            pressures,
+            rgb,
+            rainbow,
+            size: 4.0,
+            curve_enabled: true,
+            is_shape: false,
+            runtime: Runtime {
+                inverse_scale: [1.0, 1.0],
+                spacing: 1.0,
+                tolerance: 0.0,
+                tool_threshold: 20.0,
+                resolution_min: 1080,
+                initial_alternation: false,
+                initial_time: times[0],
+            },
+        }
+    }
+
+    #[test]
+    fn rainbow_two_color_saved_stream_matches_native_bits() {
+        // Native InkPen2 V9 saved Drawing caller, exact pins inherited from
+        // the rainbow probe: InkPen2 61806b1a..., Model 4fbcf6d4...,
+        // Drawing 788bf413..., Base e10da011.... Input is the captured
+        // line0_curve_short_history case, D=5, offset=2.5, red/blue palette.
+        // Native JSON capture SHA-256:
+        // 64876f8246cda28cab6d6eb3592db3e9df02ff1477366b069b437f126c5f3a00.
+        // Its plain-color companion geometry is independently checked by the
+        // durable native saved-caller numeric fixture test above.
+        let points = [
+            P { x: 0.0, y: 0.0 },
+            P { x: 8.0, y: 0.0 },
+            P { x: 16.0, y: 3.0 },
+            P { x: 24.0, y: 3.0 },
+        ];
+        let times = [0, 10, 20, 30];
+        let tools = [2; 4];
+        let pressures = [0.2, 0.4, 0.6, 0.8];
+        let palette = [0xffff_0000, 0xff00_00ff];
+        let plain = redraw(rainbow_test_input(
+            &points, &times, &tools, &pressures, [0; 3], None,
+        ))
+        .unwrap();
+        let actual = redraw(rainbow_test_input(
+            &points,
+            &times,
+            &tools,
+            &pressures,
+            [0; 3],
+            Some(Rainbow {
+                distance: 5,
+                offset: 2.5,
+                palette_argb: &palette,
+            }),
+        ))
+        .unwrap();
+        assert_eq!(actual.vertices.len(), 25);
+        let cycle = [
+            [0x3ecc_cccc, 0x0000_0000, 0x3f19_999a],
+            [0x3f4c_cccc, 0x0000_0000, 0x3e4c_ccd0],
+            [0x3f4c_cccd, 0x0000_0000, 0x3e4c_cccd],
+            [0x3ecc_cccc, 0x0000_0000, 0x3f19_999a],
+            [0x0000_0000, 0x0000_0000, 0x3f80_0000],
+        ];
+        for (index, ((actual, plain), expected)) in actual
+            .vertices
+            .iter()
+            .zip(&plain.vertices)
+            .zip((0..25).map(|i| if i < 20 { cycle[i % 5] } else { cycle[4] }))
+            .enumerate()
+        {
+            assert_eq!(
+                actual[..6]
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                plain[..6]
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                "rainbow must preserve native geometry at record {index}"
+            );
+            assert_eq!(
+                [
+                    actual[6].to_bits(),
+                    actual[7].to_bits(),
+                    actual[8].to_bits(),
+                ],
+                expected,
+                "record {index}"
+            );
+        }
+    }
+
+    #[test]
+    fn rainbow_no_emission_terminal_uses_native_endpen_phase() {
+        // Native V9 short-stroke branch (+376=1): (0,0)->(.5,0), size 4,
+        // times 0/1, curve on, period 5, initial offset 2.5. The zero-stamp
+        // movement advances Data+72 to 2.75; endPen computes fmodf(2.75,5)/5
+        // = .55 before CalculateRainbowColor. Capture: InkPen2
+        // 61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c.
+        let points = [P { x: 0.0, y: 0.0 }, P { x: 0.5, y: 0.0 }];
+        let times = [0, 1];
+        let tools = [2; 2];
+        let pressures = [0.5; 2];
+        let palette = [0xffff_0000, 0xff00_00ff];
+        let actual = redraw(rainbow_test_input(
+            &points,
+            &times,
+            &tools,
+            &pressures,
+            [0; 3],
+            Some(Rainbow {
+                distance: 5,
+                offset: 2.5,
+                palette_argb: &palette,
+            }),
+        ))
+        .unwrap();
+        assert_eq!(actual.vertices.len(), 1);
+        assert_eq!(
+            actual.vertices[0].map(f32::to_bits),
+            [
+                0x3f00_0000,
+                0x0000_0000,
+                0x3fba_2e8b,
+                0x3fba_2e8b,
+                0x3e1f_ffff,
+                0x3f80_0000,
+                0x3dcc_ccd0,
+                0x0000_0000,
+                0x3f66_6666,
+            ]
+        );
+        assert_eq!(actual.terminal, 0..1);
+    }
+
+    #[test]
+    fn rainbow_no_emission_negative_period_matches_native_fmod_phase() {
+        // Native short-stroke saved caller: (0,0)->(.5,0), D=-5, offset=-1.
+        // At endPen, offset is -.75; fmodf(-.75,-5)/-5=.15. The converted
+        // palette index is zero, so this is in-bounds negative-period behavior.
+        // Capture SHA-256 93ecb480d2d62e30b6575fccb6379322a4f0b6fbcb5fbcccc28bc18c8ef679a8.
+        let points = [P { x: 0.0, y: 0.0 }, P { x: 0.5, y: 0.0 }];
+        let times = [0, 1];
+        let tools = [2; 2];
+        let pressures = [0.5; 2];
+        let palette = [0xffff_0000, 0xff00_00ff];
+        let actual = redraw(rainbow_test_input(
+            &points,
+            &times,
+            &tools,
+            &pressures,
+            [0; 3],
+            Some(Rainbow {
+                distance: -5,
+                offset: -1.0,
+                palette_argb: &palette,
+            }),
+        ))
+        .unwrap();
+        assert_eq!(
+            actual.vertices[0].map(f32::to_bits),
+            [
+                0x3f00_0000,
+                0,
+                0x3fba_2e8b,
+                0x3fba_2e8b,
+                0x3e1f_ffff,
+                0x3f80_0000,
+                0x3f33_3333,
+                0,
+                0x3e99_999a,
+            ]
+        );
+    }
+
+    #[test]
+    fn rainbow_native_palette_cardinality_and_empty_fallback() {
+        let two = [0xffff_0000, 0xff00_00ff];
+        let two_alpha = [0x00ff_0000, 0x7f00_00ff];
+        let one = [0xff00_ff00];
+        let three = [0xffff_0000, 0xff00_ff00, 0xff00_00ff];
+        let one_color = Rainbow {
+            distance: 5,
+            offset: 2.5,
+            palette_argb: &one,
+        };
+        let rgb = one_color.color_at(1.0, [0; 3], 0.0).unwrap();
+        assert_eq!(rgb.map(f32::to_bits), [0, 0x3f80_0000, 0]);
+        let three_color = Rainbow {
+            distance: 5,
+            offset: 4.0,
+            palette_argb: &three,
+        };
+        let actual = three_color
+            .color_at(1.0, [0; 3], three_color.offset)
+            .unwrap();
+        assert_eq!(actual.map(f32::to_bits), [0x3f80_0000, 0, 0]);
+        let positive_phase = three_color
+            .color_at(2.0, [0; 3], three_color.offset)
+            .unwrap();
+        assert_eq!(
+            positive_phase.map(f32::to_bits),
+            [0x3ecc_ccce, 0x3f19_9999, 0]
+        );
+        let regular = Rainbow {
+            distance: 5,
+            offset: 2.5,
+            palette_argb: &two,
+        }
+        .color_at(1.0, [0; 3], 2.5)
+        .unwrap();
+        let alpha_changed = Rainbow {
+            distance: 5,
+            offset: 2.5,
+            palette_argb: &two_alpha,
+        }
+        .color_at(1.0, [0; 3], 2.5)
+        .unwrap();
+        assert_eq!(regular.map(f32::to_bits), alpha_changed.map(f32::to_bits));
+        let empty = Rainbow {
+            distance: 0,
+            offset: f32::NAN,
+            palette_argb: &[],
+        }
+        .color_at(0.0, [51, 102, 153], f32::NAN)
+        .unwrap();
+        assert_eq!(
+            empty.map(f32::to_bits),
+            [
+                (51.0f32 / 255.0).to_bits(),
+                (102.0f32 / 255.0).to_bits(),
+                (153.0f32 / 255.0).to_bits(),
+            ]
+        );
+        let negative_period = Rainbow {
+            distance: -5,
+            offset: -1.0,
+            palette_argb: &two,
+        }
+        .color_at(0.0, [0; 3], -1.0)
+        .unwrap();
+        assert_eq!(
+            negative_period.map(f32::to_bits),
+            [0x3f19_999a, 0, 0x3ecc_cccd]
+        );
+        // Native FCVTZS saturates before converting its index and upper
+        // clamping; this real-caller capture used offset 1e20, D=5.
+        let saturated = Rainbow {
+            distance: 5,
+            offset: 1.0e20,
+            palette_argb: &two,
+        }
+        .color_at(1.0, [0; 3], 1.0e20)
+        .unwrap();
+        assert_eq!(saturated.map(f32::to_bits), [0x600a_c723, 0, 0xe00a_c723]);
+        let negative_phase = Rainbow {
+            distance: 5,
+            offset: -0.25,
+            palette_argb: &two,
+        }
+        .color_at(0.0, [0; 3], -0.25)
+        .unwrap();
+        assert_eq!(
+            negative_phase.map(f32::to_bits),
+            [0x3f8c_cccd, 0, 0xbdcc_cccd]
+        );
+        assert!(
+            Rainbow {
+                distance: 5,
+                offset: -3.0,
+                palette_argb: &two,
+            }
+            .color_at(0.0, [0; 3], -3.0)
+            .is_none()
+        );
     }
 }

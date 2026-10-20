@@ -3617,6 +3617,7 @@ fn prepare_inkpen2_v9(
         tools: &tools,
         pressures: &pressures,
         rgb: [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8],
+        rainbow: None,
         size: size.clamp(0.4, 800.0),
         curve_enabled: rendering.properties.compressed,
         is_shape: false,
@@ -6173,6 +6174,53 @@ mod tests {
                 .is_none(),
                 "{name} must remain outside the captured V9 contract"
             );
+        }
+    }
+
+    #[test]
+    fn inkpen2_inactive_gradient_settings_preserve_native_solid_records() {
+        // Native Drawing + saved V9 redraw: type 0 and rainbow=false retain
+        // the entire 25-record stream with a populated palette, distance 600,
+        // or offset .25. Final native payload SHA-256:
+        // f0a840909b835207aaa1add58c5379c1c9ea804985276975844811081025d110.
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        let mut stroke = inkpen2_color_stroke(0xff336699, None);
+        stroke
+            .points
+            .extend([Point { x: 16., y: 3. }, Point { x: 24., y: 3. }]);
+        stroke.timestamps = vec![0, 10, 20, 30];
+        stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        stroke.tilts = vec![0.; 4];
+        stroke.orientations = vec![0.; 4];
+        let theme = RenderTheme::for_canvas(false);
+        let baseline = prepare_inkpen2_v9(&stroke, Some(profile), theme).unwrap();
+        assert_eq!(baseline.records.len(), 25);
+        let words: Vec<u8> = baseline
+            .records
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        use sha2::Digest;
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(words)),
+            "f0a840909b835207aaa1add58c5379c1c9ea804985276975844811081025d110"
+        );
+        for (distance, offset) in [(0, 0.), (600, 0.), (0, 0.25)] {
+            let style = &mut stroke.rendering.as_mut().unwrap().style;
+            style.color_type_raw = Some(0);
+            style.gradient_colors_argb = Some(vec![0xff336699, 0xffcc8844]);
+            style.rainbow_distance = Some(distance);
+            style.rainbow_offset = Some(offset);
+            let actual = prepare_inkpen2_v9(&stroke, Some(profile), theme).unwrap();
+            assert_eq!(actual.records, baseline.records);
+            assert_eq!(actual.sample_ends, baseline.sample_ends);
+            assert_eq!(actual.color, baseline.color);
+            assert_eq!(actual.opacity, baseline.opacity);
         }
     }
 
