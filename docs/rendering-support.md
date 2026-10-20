@@ -254,6 +254,11 @@ A [17-case V1 boundary matrix](../conformance/inkpen-v1-boundaries-native.json)
 checks complete native Drawing/redraw vectors and source-event/terminal prefixes,
 including curved tools 0–4 and one no-curve tool1 control; Rust matches every word
 and cutoff. These synthetic setter controls do not establish serialized-note admission.
+A [serialized-frame replay](../conformance/inkpen-serialized-drawing-native.json)
+loads embedded string-table and stroke bytes through native Model attachment
+and Drawing. Controlled Fountain-to-InkPen derivatives select V1/null and V4;
+V1 defaults absent ARGB to opaque black and emits 68 records with exact event
+prefixes. These are synthetic derivatives, not app-captured InkPen notes.
 A [ten-case no-curve tool-3/4 capture](../conformance/inkpen-v1-nocurve-tool34-native.json)
 checks pressure and size boundaries; Rust matches complete vectors and native
 event cutoffs. Paired SVG/PDF exports improve native-referenced error across
