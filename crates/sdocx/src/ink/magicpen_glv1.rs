@@ -25,7 +25,7 @@ pub(crate) struct PreparedMagicPenV1 {
 pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
     let rendering = stroke.rendering.as_ref()?;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.MagicPen")
-        || rendering.advanced_settings.as_deref() != Some("1;")
+        || !matches!(rendering.advanced_settings.as_deref(), None | Some("1;"))
         || rendering.tool_type_raw != 2
         // Model ApplyBinary restores omitted style fields 16/25 to zero;
         // its writer omits these fields when their native values are zero.
@@ -46,7 +46,9 @@ pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
     {
         return None;
     }
-    let argb = rendering.style.color_argb?;
+    // Drawing selects GLV1 for null settings; ObjectStroke's omitted color
+    // is opaque black. Keep those defaults local to native preparation.
+    let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     let size = rendering.style.pen_size?;
     if !size.is_finite()
         || stroke.points.iter().any(|point| {

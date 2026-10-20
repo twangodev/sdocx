@@ -5144,6 +5144,97 @@ mod tests {
     }
 
     #[test]
+    fn magicpen_v1_omitted_settings_and_color_match_native_defaults() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-admission-defaults-native.json"
+        ))
+        .unwrap();
+        let float = |word: &serde_json::Value| {
+            f32::from_bits(u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())
+        };
+        let mut source = magicpen_v1_stroke();
+        source.points = fixture["source_input"]["points_f32_u32_hex"]
+            .as_array()
+            .unwrap()
+            .chunks_exact(2)
+            .map(|xy| Point {
+                x: float(&xy[0]) as f64,
+                y: float(&xy[1]) as f64,
+            })
+            .collect();
+        source.pressures = fixture["source_input"]["pressure_f32_u32_hex"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|word| float(word) as f64)
+            .collect();
+        source.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
+        let exports = |stroke: Stroke| {
+            let ink = crate::ink::prepare_magicpen_v1_source(&stroke).unwrap();
+            let native_hex = fixture["cases"][0]["post_return_vector_bytes_le_hex"]
+                .as_str()
+                .unwrap();
+            let bytes: Vec<u8> = ink
+                .records
+                .iter()
+                .flatten()
+                .flat_map(|word| word.to_le_bytes())
+                .collect();
+            let actual_hex: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+            assert_eq!(actual_hex, native_hex);
+            assert_eq!(ink.argb, 0xff00_0000);
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let document = document(page);
+            let normal = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            let replay = super::render_layout_page_replay_svg(
+                &document,
+                &layout_document(&document),
+                0,
+                &RenderOptions::default(),
+            )
+            .unwrap();
+            [normal, replay]
+        };
+        let expected = exports(source.clone());
+        for (advanced, argb) in [(None, Some(0xff00_0000)), (Some("1;"), None), (None, None)] {
+            let mut stroke = source.clone();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = advanced.map(str::to_owned);
+            rendering.style.color_argb = argb;
+            let actual = exports(stroke.clone());
+            assert_eq!(
+                stroke
+                    .rendering
+                    .as_ref()
+                    .unwrap()
+                    .advanced_settings
+                    .as_deref(),
+                advanced
+            );
+            assert_eq!(stroke.rendering.as_ref().unwrap().style.color_argb, argb);
+            for (actual, expected) in actual.iter().zip(&expected) {
+                assert_eq!(actual.svg, expected.svg);
+                #[cfg(feature = "pdf")]
+                assert_eq!(
+                    crate::render_svg_pages_pdf(std::slice::from_ref(actual), &Default::default())
+                        .unwrap(),
+                    crate::render_svg_pages_pdf(
+                        std::slice::from_ref(expected),
+                        &Default::default()
+                    )
+                    .unwrap(),
+                );
+            }
+        }
+        for advanced in ["", "2;", "unknown"] {
+            let mut stroke = source.clone();
+            stroke.rendering.as_mut().unwrap().advanced_settings = Some(advanced.into());
+            assert!(crate::ink::prepare_magicpen_v1_source(&stroke).is_none());
+        }
+    }
+
+    #[test]
     fn magicpen_v1_unknown_saved_effects_stay_on_generic_fallback() {
         let mutations: [fn(&mut crate::StrokeRendering); 11] = [
             |r| r.properties.replay_only = true,

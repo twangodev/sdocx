@@ -376,9 +376,11 @@ the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json
 joins native color, the unchanged upload and interior partial-alpha paint on
 transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
 initialization is host-supplied. Canonical SVG/PDF now reconstruct ordinary
-tool-2 NoCurve `1;` sources with explicit size/ARGB, ordinary style codes and
+tool-2 NoCurve null/`1;` sources with explicit size, ordinary style codes and
 native replay cutoffs, using one compound vector contour and one source-alpha
-composite. Omitted stroke/color type fields use the native zero defaults,
+composite. Omitted ARGB uses native opaque black, verified with
+[Drawing defaults controls](../conformance/magicpen-admission-defaults-native.json);
+empty advanced settings remain distinct. Omitted stroke/color type fields use the native zero defaults,
 verified by a [saved-frame Model check](../conformance/object-stroke-style-defaults-native.json).
 Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
