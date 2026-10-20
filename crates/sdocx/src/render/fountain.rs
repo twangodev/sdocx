@@ -12,10 +12,11 @@ pub(super) fn render(
     replay: bool,
     slice: Option<crate::render::PageSlice>,
 ) -> bool {
-    let Some(plan) = PaintPlan::prepare(paint) else {
+    let culling_slice = slice.filter(|slice| slice.fountain_paint_culling_enabled());
+    let Some(plan) = PaintPlan::prepare(paint, culling_slice.is_some()) else {
         return false;
     };
-    if slice.is_some_and(|slice| slice.fountain_paint_culling_enabled() && plan.outside(slice)) {
+    if culling_slice.is_some_and(|slice| plan.outside(slice)) {
         return true;
     }
     plan.emit(svg, paint, replay);
@@ -48,14 +49,14 @@ struct V16Plan {
 }
 
 impl PaintPlan {
-    fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
+    fn prepare(paint: &PreparedStroke<'_>, collect_bounds: bool) -> Option<Self> {
         if paint.profile == Some("FountainPen")
             && paint.dot_radii.is_some()
             && paint.dot_directions.is_none()
         {
             Some(Self::V16(V16Plan::prepare(paint)?))
         } else {
-            Some(Self::V14(V14Plan::prepare(paint)?))
+            Some(Self::V14(V14Plan::prepare(paint, collect_bounds)?))
         }
     }
 
@@ -81,7 +82,7 @@ impl PaintPlan {
 }
 
 impl V14Plan {
-    fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
+    fn prepare(paint: &PreparedStroke<'_>, collect_bounds: bool) -> Option<Self> {
         let (Some(directions), Some(radii), Some(bounds)) =
             (&paint.dot_directions, &paint.dot_radii, paint.bounds)
         else {
@@ -111,6 +112,10 @@ impl V14Plan {
                 dx,
                 dy,
             });
+            // Full-page output does not need serialized-transform culling bounds.
+            if !collect_bounds {
+                continue;
+            }
             let (Some(_tx), Some(ty)) = (
                 svg_number(point.x, 4).and_then(f32_number),
                 svg_number(point.y, 4).and_then(f32_number),
@@ -525,7 +530,7 @@ mod tests {
         };
         let touching = crate::render::PageSlice::new_for_page(&page, 11, 10, false).unwrap();
         let separated = crate::render::PageSlice::new_for_page(&page, 12, 10, false).unwrap();
-        let plan = PaintPlan::prepare(&paint).unwrap();
+        let plan = PaintPlan::prepare(&paint, true).unwrap();
         assert!(!plan.outside(touching), "the V16 +0.5 extent touches y=11");
         assert!(plan.outside(separated), "the V16 fringe ends before y=12");
     }
