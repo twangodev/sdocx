@@ -146,13 +146,20 @@ fn repeat_index(length: f32, width: i32) -> usize {
 }
 
 fn dab_size(pressure: f32, factor: f32, size: f32, prior: f32) -> f32 {
-    if factor < 0.35 {
-        (pressure * size).mul_add(1.0, prior) * 0.5
-    } else if factor < 0.7 {
-        let d = pressure * 1.5 + factor * 0.5;
+    // The native code widens factor to f64 before comparing against double
+    // constants in its read-only data, so compare after widening as well.
+    let factor64 = f64::from(factor);
+    if factor64 < 0.35 {
+        pressure.mul_add(size, prior) * 0.5
+    } else if factor64 < 0.7 {
+        // The native middle branch promotes all operands to f64, uses a
+        // fused multiply-add for factor*0.5 + pressure*1.5, then converts
+        // only the final result back to f32.
+        let d = f64::from(pressure) * 1.5;
+        let d = f64::from(factor).mul_add(0.5, d);
         let d = d * 0.5;
-        let d = d * size + prior;
-        d * 0.5
+        let d = d.mul_add(f64::from(size), f64::from(prior));
+        (d * 0.5) as f32
     } else {
         let d = (pressure + factor) * 0.5;
         size.mul_add(d, prior) * 0.5
@@ -176,7 +183,7 @@ fn calculated_width(target: f32, prior: f32, size: f32) -> f32 {
     }
 }
 
-fn factor(speed: f32) -> f32 {
+fn factor_f32(speed: f32) -> f32 {
     if speed < 4.2 {
         1.0
     } else if speed < 9.5 {
@@ -186,6 +193,37 @@ fn factor(speed: f32) -> f32 {
         t.mul_add(0.4, 0.4) + 0.2
     } else {
         0.2
+    }
+}
+
+fn factor_f64(speed: f32) -> f32 {
+    if speed < 4.2 {
+        1.0
+    } else if speed < 9.5 {
+        0.6
+    } else if speed < 35.0 {
+        let t = (f64::from(speed) - 9.5) / -25.5;
+        (t.mul_add(0.4, 0.4) + 0.2) as f32
+    } else {
+        0.2
+    }
+}
+
+// Native drawLine and endPen compile the same interpolation with different
+// scalar precision by selected GL version.
+fn line_factor(speed: f32, version: i32) -> f32 {
+    if version == 1 {
+        factor_f32(speed)
+    } else {
+        factor_f64(speed)
+    }
+}
+
+fn terminal_factor(speed: f32, version: i32) -> f32 {
+    if version == 1 {
+        factor_f64(speed)
+    } else {
+        factor_f32(speed)
     }
 }
 
@@ -362,11 +400,12 @@ pub fn model_event_loop(
         let endpoint = points[control].mid(points[lookahead]);
         let path = Path::Quad(start, points[control], endpoint);
         let p = effective_pressure(pressure[lookahead], tool);
-        let f = if version == 1 {
-            factor(points[lookahead].sub(points[accepted[j + 1]]).len())
+        let line_speed = if version == 1 {
+            points[lookahead].sub(points[accepted[j + 1]]).len()
         } else {
-            factor(speeds[lookahead])
+            (speeds[accepted[j + 1]] + speeds[lookahead]) * 0.5
         };
+        let f = line_factor(line_speed, version);
         let target = calculated_width(dab_size(p, f, size, prior), prior, size);
         let repeat = repeat_index(path.length(), prior.min(target) as i32);
         let target_index = f32_trunc(100.0 + p * 100.0);
@@ -402,14 +441,19 @@ pub fn model_event_loop(
     };
     let event = accepted[m - 1];
     let p = effective_pressure(pressure[event], tool);
-    let f = if version == 1 {
+    let terminal_speed = if version == 1 {
         if m <= 2 {
             1.0
         } else {
-            factor(points[event].sub(points[accepted[m - 2]]).len())
+            points[event].sub(points[accepted[m - 2]]).len()
         }
     } else {
-        factor(speeds[event])
+        speeds[event]
+    };
+    let f = if version == 1 && m <= 2 {
+        1.0
+    } else {
+        terminal_factor(terminal_speed, version)
     };
     let target = if version == 1 && m <= 2 {
         dab_size(p, f, size, prior).max(size / 10.0)
@@ -519,14 +563,8 @@ mod tests {
             .collect()
     }
 
-    #[test]
-    fn source_model_matches_native_glv1_glv2_glv3_full_vectors() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/chinesebrush-source-native.json"
-        ))
-        .unwrap();
-        assert_eq!(fixture["schema"], "chinesebrush-source-native-v1");
-        assert_eq!(fixture["cases"].as_object().unwrap().len(), 52);
+    fn check_fixture(fixture: &Value) -> usize {
+        let mut record_count = 0;
         for (name, case) in fixture["cases"].as_object().unwrap() {
             let input = &case["input"];
             let (points, pressure, times) = source_arrays(input);
@@ -552,6 +590,7 @@ mod tests {
                 input["curve_enabled"].as_bool().unwrap(),
             );
             let rows = case["producer"]["append_rows"].as_array().unwrap();
+            record_count += rows.len();
             assert_eq!(predicted.len(), rows.len(), "{name}");
             let joined: Vec<u8> = rows
                 .iter()
@@ -582,5 +621,32 @@ mod tests {
                 assert_eq!(delta_expected, actual_delta, "{name} packed delta {i}");
             }
         }
+        record_count
+    }
+
+    #[test]
+    fn source_model_matches_native_glv1_glv2_glv3_full_vectors() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-source-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "chinesebrush-source-native-v1");
+        assert_eq!(fixture["cases"].as_object().unwrap().len(), 52);
+        check_fixture(&fixture);
+    }
+
+    #[test]
+    fn source_model_matches_native_adversarial_precision_and_speed_cases() {
+        let baseline: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-source-native.json"
+        ))
+        .unwrap();
+        let extension: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-source-extension-native.json"
+        ))
+        .unwrap();
+        assert_eq!(extension["schema"], "chinesebrush-source-extension-native-v1");
+        assert_eq!(extension["cases"].as_object().unwrap().len(), 24);
+        assert_eq!(check_fixture(&baseline) + check_fixture(&extension), 953);
     }
 }

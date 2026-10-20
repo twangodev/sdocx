@@ -409,6 +409,9 @@ Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
 retains complete four-lane streams for 52 two- to eight-event controls across
 GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
+An [adversarial extension](../conformance/chinesebrush-source-extension-native.json)
+adds 24 cases for pressure, size and method-specific speed/width precision;
+the model matches all 953 records across the combined 76 cases.
 A [reuse matrix](../conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
 target streams after short, long and different preludes and version changes,
 with explicit host lifecycle adapters. A bounded
