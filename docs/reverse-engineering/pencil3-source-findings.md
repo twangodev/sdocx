@@ -28,6 +28,13 @@ relocation `0x11a8f0` binds `GetStrokeDrawableGL`, `0x106404`. The getter reads
 the configured version and `versionTable` (`0x106418`, GOT `0x11c298 →
 0x120b18`); entry 1 selects V1 construction at `0x10649c`.
 
+Native Drawing probes distinguish null settings (V1) from empty settings (V3).
+Explicit `0;`/`1;`/`3;` select V1, `2;` selects V2, and `4;` matches empty V3
+bit for bit against the Rust-consumed V3 fixture. The getter clamps indices to
+1–4 and reads table `[0,1,2,1,3]` at `0x120b18` (`0x106418–0x1064ec`).
+These are synthetic Model setter inputs, not persisted-note mapping; a literal
+`basepen` control through host C-`atoi` establishes no serialized syntax.
+
 Drawing `ObjectDrawing::redrawIPen`, `0x82abc`, requires count 1 and
 StrokeType != 1 for its ordinary single-object branch. It obtains that drawable
 through pen slot 232 and calls secondary-interface slot 40 (`0x82b54–0x82b70`).
@@ -114,6 +121,15 @@ The harness explicitly calls native Init on the selected RT and runs the
 queue synchronously. Native Draw then faults at Graphics `0x8e0d0` because
 the host subbitmap has no framebuffer target; completed paint is not established.
 
+Paper UV is `(clip.xy / clip.w + 1) / 2`, multiplied by
+`(canvasWidth / paperWidth, canvasHeight / paperHeight) / backgroundScale`.
+Native controls vary these inputs; projection and viewport determine phase,
+so page dimensions alone cannot recover paper placement.
+Fresh native callbacks configure built-in `RTV1+240` paper to NEAREST/REPEAT.
+Supplied `+248` paper is activated without sampler setters and inherits producer
+state. The host oracle's NEAREST/CLAMP initialization does not establish device
+state or the built-in repeat policy.
+
 The paper bitmap is distinct from an [editable Painting source](painting-source-findings.md)
 and does not replace saved XY. No inspected route proves this runtime input
 is serialized in an ordinary stroke. Preserve original samples, optional
@@ -141,13 +157,17 @@ anchored to Renderer SHA-256
 and pname tables at `0x30170`, `0x301c0`, and `0x31768`. Decoding those bytes
 maps enum values to GL wraps `0x8370, 0x812f, 0x812d, 0x2901`, filters
 `0x2600, 0x2601`, and parameter IDs 0–2 to `0x2802, 0x2803, 0x8072`;
-Pencil3 requests nearest filtering, paper repeat wrapping, and brush
-clamp-to-edge defaults. [`pencil_paint_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_paint_native.py)
+Pencil3 requests nearest filtering, built-in paper repeat wrapping, and brush
+clamp-to-edge defaults; supplied depth-map sampling is producer-owned. [`pencil_paint_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_paint_native.py)
 executes the embedded V1 shaders on host Mesa GLES with the native quad,
 textures and saved particle vectors; its projection, paper scale and color
 are synthetic, and its pixel fixture does not establish Android/device
 parity. The app's real render-queue execution and framebuffer remain outside
 these captures.
+
+The test-only V3 sampler now stops at an output budget without partial output
+or caller RNG changes on rejection, while retaining complete native streams.
+Public Pencil rendering remains generic.
 
 Single-stamp transport probes also separate source sampling from export
 rasterization. Nearest texel selection matched all 25/100 tested fragment
@@ -158,3 +178,12 @@ of 68–73. These hand-built PDF probes do not exercise the SDK's shared
 SVG-to-PDF route; they establish neither device parity nor a production
 transport. The scripts and measurements remain in the ignored
 `tmp/vector-parity-plan/pencil-stamp-*` experiments.
+
+A separate 48-particle prototype reuses the original brush atlas and paper as
+two intrinsic images with vector stamp geometry; decoded SVG alpha and SDK PDF
+soft-mask payloads preserve source values. On one shared native/candidate/fallback
+support union per renderer, RGB MAE is 1.94 in Firefox and about 17 in MuPDF/PDFium,
+versus 57–65 for the generic fallback. This is one synthetic 320×180 host frame.
+All particles lie within the first 150×150 paper tile, so repeat and clamp variants
+render identically and do not validate wrapping. A boundary-crossing native control,
+real paper/projection inputs and broader source profiles remain required.

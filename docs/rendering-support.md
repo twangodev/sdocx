@@ -160,6 +160,14 @@ A [one-particle vector sampling witness](https://github.com/twangodev/sdocx/blob
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
 paper coverage and production vector paint integration remain outstanding.
+Fresh selector probes confirm empty/`4;` selects Pencil3 V3, while `3;`
+selects V1. The V3 sampler now has an output budget; public routing remains
+unimplemented. An intrinsic-texture/vector-stamp prototype preserves source
+assets and improves the generic fallback in bounded host comparisons, but its
+paper-repeat assumption differs from the oracle's supplied bitmap clamp state;
+all captured particles stay inside the first tile, so this case cannot distinguish them.
+Built-in paper repeats; supplied-paper sampling is producer-owned. Context,
+sampler selection and real-document/device validation remain integration gates.
 Marker3 V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
