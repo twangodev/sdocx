@@ -160,8 +160,11 @@ A [one-particle vector sampling witness](https://github.com/twangodev/sdocx/blob
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
 paper coverage and production vector paint integration remain outstanding.
-The test-only Marker3 V5 sampler checks stamp positions, radii and callback
-boundaries in ten [synthetic native cases](../conformance/marker3-saved-native.json).
+Marker3 V5 page exports use native-sampled compound disks for the captured
+curved, tool-2 base-pen profile with explicit saved size/color and ordinary
+style. Other profiles retain the approximation. The sampler checks stamp
+positions, radii and callback boundaries in ten
+[synthetic native cases](../conformance/marker3-saved-native.json).
 The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
 checks null selecting V1, empty/explicit settings selecting V5, source ARGB
 forwarding and linked XY streams; the V5 sampler excludes null settings.

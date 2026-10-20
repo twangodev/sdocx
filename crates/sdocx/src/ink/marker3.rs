@@ -8,18 +8,65 @@ const STRAIGHT_PEN: &str = "com.samsung.android.sdk.pen.pen.preload.StraightMark
 const SPACING: f32 = 1.0;
 const REJECT_BELOW: f32 = 2.0;
 const ALTERNATE_BELOW: f32 = 20.0;
+const MAX_PAGE_STAMPS: usize = 65_536;
 
 pub(crate) struct Ink {
     pub points: Vec<Point>,
     pub radii: Vec<f64>,
     /// Native redraw callback boundaries; a one-point stroke has `[1, 2]`
     /// because its initial drawPoint and endPen terminal point are separate.
-    /// These are not PreparedStroke replay sample attribution boundaries.
+    /// For two or more source events these also delimit replay prefixes;
+    /// the one-event case stays outside canonical-page admission.
     pub sample_ends: Vec<usize>,
+    /// Source alpha is applied once to the compound stroke path.
+    pub opacity: f64,
 }
 
+#[cfg(all(test, feature = "serde"))]
 pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
+    prepare_bounded(s, usize::MAX)
+}
+
+/// Saved V5 source geometry admitted for canonical-page rendering only.
+pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
+    let rendering = s.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    let style = &rendering.style;
+    let argb = style.color_argb?;
+    if rendering.pen_name.as_deref() != Some(PEN)
+        || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
+        || rendering.tool_type_raw != 2
+        || !properties.compressed
+        || properties.replay_only
+        || properties.stylus_channels
+        || properties.eraser
+        || properties.fixed_width
+        || properties.millisecond_timestamps
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.generated
+        || properties.reveal_mode
+        || !matches!(style.stroke_type_raw, None | Some(0))
+        || !matches!(style.line_type_raw, None | Some(0))
+        || !matches!(style.color_type_raw, None | Some(0))
+        // A one-source-event V5 stroke yields two callback outputs (drawPoint
+        // plus endPen); its replay-prefix mapping has not been established.
+        || s.points.len() < 2
+    {
+        return None;
+    }
+    let mut ink = prepare_bounded(s, MAX_PAGE_STAMPS)?;
+    ink.opacity = f64::from(((argb >> 24) as u8) as f32 / 255.0);
+    Some(ink)
+}
+
+fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
+    // Drawing forwards ObjectStroke::GetPenSize, not the decoder's
+    // presentation width. Admit only the captured saved-size range here.
+    let saved_size = r.style.pen_size?;
     if !matches!(r.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         // Drawing admits null settings to Marker3 V1; this V5 sampler is only
         // valid for the observed empty and explicit `5;` settings.
@@ -30,8 +77,8 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
         || !matches!(r.tool_type_raw, 1..=3)
         || s.points.is_empty()
         || s.points.len() > 100_000
-        || !s.pen_width.is_finite()
-        || !(0.4..=800.0).contains(&s.pen_width)
+        || !saved_size.is_finite()
+        || !(0.4..=800.0).contains(&saved_size)
         || s.points.iter().any(|p| {
             !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7
         })
@@ -47,7 +94,7 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
         return None;
     }
 
-    let size = s.pen_width.clamp(0.4, 800.0).trunc();
+    let size = saved_size.trunc();
     let radius = f64::from(size.mul_add(0.5, 0.5));
     let mut points = Vec::new();
     let mut sample_ends = vec![0; s.points.len().max(2)];
@@ -56,6 +103,9 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
     let mut residual = SPACING;
     // Initial drawPoint sets the alternate flag before saved samples are read.
     let mut alternate = true;
+    if max_stamps == 0 {
+        return None;
+    }
     points.push(s.points[0]);
     sample_ends[0] = 1;
 
@@ -81,6 +131,9 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
             let q = Quad::new(midpoint, previous, end);
             let mut d = residual;
             while q.length > 0.0 && d <= q.length {
+                if points.len() >= max_stamps {
+                    return None;
+                }
                 let p = q.at(d);
                 points.push(Point {
                     x: p.x as f64,
@@ -96,6 +149,9 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
     }
     // endPen reads the terminal coordinates through native
     // MotionEvent.GetX/GetY and emits that endpoint as a point stamp.
+    if points.len() >= max_stamps {
+        return None;
+    }
     points.push(*s.points.last()?);
     if let Some(end) = sample_ends.last_mut() {
         *end = points.len();
@@ -105,6 +161,7 @@ pub(crate) fn prepare(s: &Stroke) -> Option<Ink> {
         points,
         radii,
         sample_ends,
+        opacity: 1.0,
     })
 }
 
@@ -174,6 +231,7 @@ mod tests {
                 },
                 style: StrokeStyle {
                     color_argb: Some(0xff33_6699),
+                    pen_size: Some(input.width),
                     ..StrokeStyle::default()
                 },
             }),
@@ -190,6 +248,14 @@ mod tests {
             color: None,
             pen_width: input.width,
         }
+    }
+
+    fn page_stroke(input: &Input) -> Stroke {
+        let mut stroke = stroke(input);
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.properties.compressed = true;
+        rendering.properties.top_layer_pen = false;
+        stroke
     }
 
     #[test]
@@ -216,6 +282,120 @@ mod tests {
             }
         }
         assert_eq!(supported, 10, "native fixture support coverage changed");
+    }
+
+    #[test]
+    fn canonical_page_gate_preserves_native_prefixes_and_source_alpha() {
+        let fixture = fixture();
+        for id in ["marker3-v5-saved-1", "marker3-v5-saved-3"] {
+            let case = fixture.cases.iter().find(|case| case.id == id).unwrap();
+            let mut stroke = page_stroke(&case.input);
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.style.color_argb = Some(0x80_336699);
+            let ink = prepare_for_page(&stroke).unwrap();
+            assert_eq!(ink.sample_ends, case.native.sample_ends);
+            assert_eq!(ink.sample_ends.len(), stroke.points.len());
+            assert_eq!(ink.sample_ends.last(), Some(&ink.points.len()));
+            assert_eq!(ink.points.len(), case.native.stamps.len());
+            assert_eq!(ink.opacity, f64::from(128_f32 / 255.0));
+            for ((point, radius), [x, y, native_radius]) in
+                ink.points.iter().zip(&ink.radii).zip(&case.native.stamps)
+            {
+                assert_eq!((point.x as f32).to_bits(), x.to_bits());
+                assert_eq!((point.y as f32).to_bits(), y.to_bits());
+                assert_eq!((*radius as f32).to_bits(), native_radius.to_bits());
+            }
+
+            let prepared = crate::ink::prepare_stroke_for_context(
+                &stroke,
+                false,
+                crate::ink::InkRenderContext::CanonicalPage,
+            );
+            assert_eq!(
+                prepared.sample_ends.as_ref(),
+                Some(&case.native.sample_ends)
+            );
+            assert_eq!(
+                prepared.dot_radii.as_ref().unwrap().len(),
+                case.native.stamps.len()
+            );
+            assert_eq!(prepared.opacity, f64::from(128_f32 / 255.0));
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed);
+
+            let context_free = crate::ink::prepare_stroke(&stroke, false);
+            assert!(context_free.sample_ends.is_none());
+            assert!(context_free.dot_radii.is_none());
+            assert_eq!(context_free.support, crate::InkSupport::Approximate);
+        }
+    }
+
+    #[test]
+    fn canonical_page_gate_rejects_unproven_marker3_inputs() {
+        let fixture = fixture();
+        let case = fixture
+            .cases
+            .iter()
+            .find(|case| case.id == "marker3-v5-saved-1")
+            .unwrap();
+        let valid = page_stroke(&case.input);
+        assert!(prepare_for_page(&valid).is_some());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().properties.compressed = false;
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().advanced_settings = None;
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().tool_type_raw = 1;
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().pen_name = Some(STRAIGHT_PEN.to_owned());
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().properties.fixed_width = true;
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid.clone();
+        rejected.rendering.as_mut().unwrap().style.color_argb = None;
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut rejected = valid;
+        rejected.points.pop();
+        assert!(prepare_for_page(&rejected).is_none());
+
+        let mut tap = page_stroke(&case.input);
+        tap.points.truncate(1);
+        let prepared = crate::ink::prepare_stroke_for_context(
+            &tap,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert!(prepared.sample_ends.is_none());
+        assert!(prepared.dot_radii.is_none());
+    }
+
+    #[test]
+    fn canonical_page_sampler_stops_at_output_stamp_budget() {
+        let fixture = fixture();
+        let case = fixture
+            .cases
+            .iter()
+            .find(|case| case.id == "marker3-v5-saved-1")
+            .unwrap();
+        let mut stroke = page_stroke(&case.input);
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point {
+                x: 70_000.0,
+                y: 0.0,
+            },
+        ];
+        assert!(prepare_for_page(&stroke).is_none());
     }
 
     fn f32_from_bits_hex(value: &str) -> f32 {
@@ -311,7 +491,7 @@ mod tests {
                 advanced_settings,
                 tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
                 properties: StrokeProperties {
-                    compressed: false,
+                    compressed: input["curve_enabled"].as_bool().unwrap(),
                     replay_only: false,
                     stylus_channels: false,
                     eraser: false,
@@ -327,6 +507,7 @@ mod tests {
                     reveal_mode: false,
                 },
                 style: StrokeStyle {
+                    pen_size: Some(width),
                     color_argb: Some(
                         u32::from_str_radix(
                             input["color_argb"]
@@ -400,6 +581,28 @@ mod tests {
             let ink = prepare(&stroke).unwrap();
             assert_caller_xy_matches(&ink, case);
             assert_native_sample_ends(&ink, "marker3-v5-saved-1");
+        }
+    }
+
+    #[test]
+    fn saved_size_controls_radius_independently_of_presentation_width() {
+        let fixture = caller_fixture();
+        let case = &fixture["cases"]["marker3_linked_saved1:5:tool2:curve1"];
+        let native_size = f32_from_bits_hex(
+            case["native_calls"]["source_ObjectStroke_GetPenSize_f32_bits"]
+                .as_str()
+                .unwrap(),
+        );
+        assert_eq!(native_size, 8.0);
+        let mut stroke = caller_stroke(case);
+        stroke.pen_width = 1.07;
+        let ink = prepare(&stroke).unwrap();
+        assert_caller_xy_matches(&ink, case);
+        assert!(ink.radii.iter().all(|&radius| radius == 4.5));
+
+        for size in [None, Some(f32::NAN), Some(-1.0), Some(801.0)] {
+            stroke.rendering.as_mut().unwrap().style.pen_size = size;
+            assert!(prepare(&stroke).is_none());
         }
     }
 

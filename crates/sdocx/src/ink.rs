@@ -32,7 +32,6 @@ pub(crate) fn magicpen_source_contour_path(records: &[[u32; 3]]) -> Option<Strin
     magicpen_glv1_vector::source_contour_path(records)
 }
 mod marker2;
-#[cfg(test)]
 pub(crate) mod marker3;
 mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
@@ -394,6 +393,7 @@ fn prepare_stroke_inner(
     let mut paint = stroke_paint(stroke, dark_mode);
     let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
     let oblique = context.and_then(|context| prepare_oblique_stroke(stroke, context));
+    let marker3 = context.and_then(|_| marker3::prepare_for_page(stroke));
     let mut fountain = fountain::prepare(stroke);
     if fountain.is_some()
         && stroke.color.is_none()
@@ -420,7 +420,8 @@ fn prepare_stroke_inner(
         .or_else(|| {
             marker2::prepare(stroke)
                 .map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity))
-        });
+        })
+        .or_else(|| marker3.map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity)));
     let rect = marker4::prepare(stroke);
     let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
     let (points, sample_ends, dot_radii, ordered_disk_replay, opacity) =

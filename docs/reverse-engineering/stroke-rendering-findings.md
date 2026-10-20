@@ -167,8 +167,13 @@ continuous distance gradient changes the fringe. Replaying the captured VBO,
 projection and quad differences matches isolated-stamp support exactly and
 alpha within two bytes across the tested 1×/2×/4× phase controls. At alpha 128,
 duplicate stamps preserve the single mask and overlapping masks combine by MAX.
-These are bounded host-shader observations, not production vector transport or
-device parity; the audit is in ignored
+The bounded production route preserves native centers/radii in one compound
+disk fill, applying source alpha once. On the 22-stamp saved control at
+1×/2×/4×, disk geometry improves support and alpha error over the generic
+pressure-width fallback in Firefox, resvg, MuPDF and PDFium. A 32-layer
+continuous-fringe candidate is about 700 times larger and worsens high-zoom
+error; it remains test-only. Neither transport reproduces fragment-quad
+derivatives or proves device parity. The audit is in ignored
 `tmp/vector-parity-plan/marker3-admission-next/`.
 
 ## Saved rendering inputs
