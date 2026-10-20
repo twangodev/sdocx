@@ -306,6 +306,34 @@ fn sample_line_with_phase(
     initial_distance: f32,
     mut emit: impl FnMut(SavedSample),
 ) -> f32 {
+    try_sample_line_with_phase(
+        start,
+        control,
+        end,
+        point_size,
+        alpha,
+        spacing,
+        initial_distance,
+        |sample| {
+            emit(sample);
+            true
+        },
+    )
+    .expect("finite conformance sampling path")
+}
+
+// A rejected emission stops before the next RNG advance or allocation.
+#[allow(clippy::too_many_arguments)]
+fn try_sample_line_with_phase(
+    start: [f32; 2],
+    control: [f32; 2],
+    end: [f32; 2],
+    point_size: f32,
+    alpha: f32,
+    spacing: f32,
+    initial_distance: f32,
+    mut emit: impl FnMut(SavedSample) -> bool,
+) -> Option<f32> {
     use super::path::{P, Quad};
     let path = Quad::new(
         P {
@@ -321,17 +349,26 @@ fn sample_line_with_phase(
             y: end[1],
         },
     );
+    if !path.length.is_finite() || !spacing.is_finite() || spacing <= 0.0 {
+        return None;
+    }
     let mut distance = initial_distance;
     while distance <= path.length {
         let point = path.at(distance);
-        emit(SavedSample {
+        if !emit(SavedSample {
             point: [point.x, point.y],
             size: point_size,
             alpha,
-        });
-        distance += spacing;
+        }) {
+            return None;
+        }
+        let next = distance + spacing;
+        if next <= distance {
+            return None;
+        }
+        distance = next;
     }
-    distance - path.length
+    Some(distance - path.length)
 }
 
 fn v1_particle_from_sample(sample: SavedSample, rng: &mut BionicRandom) -> Particle {
@@ -364,8 +401,18 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
 /// Run the source-side saved-stroke sampler and hand each upstream point,
 /// width, and opacity to a caller-owned particle kernel.
 fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) {
+    assert!(try_sample_saved_redraw(stroke, |sample| {
+        emit(sample);
+        true
+    }));
+}
+
+fn try_sample_saved_redraw(
+    stroke: &SavedStroke,
+    mut emit: impl FnMut(SavedSample) -> bool,
+) -> bool {
     if stroke.points.len() < 2 {
-        return;
+        return true;
     }
     let pressure_for_move = |pressure: f32| {
         if pressure.is_finite() {
@@ -384,11 +431,13 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
     let step = stroke.size * 0.08;
     let mut distance_phase = step;
     for _ in 0..7 {
-        emit(SavedSample {
+        if !emit(SavedSample {
             point: stroke.points[0],
             size: stroke.size,
             alpha: initial_alpha,
-        });
+        }) {
+            return false;
+        }
     }
 
     let mut raw = stroke.points[0];
@@ -431,7 +480,7 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
             pressure_for_move(stroke.pressures[index])
         };
         let alpha = pressure.clamp(0.1, 0.6) / 1.5;
-        distance_phase = sample_line_with_phase(
+        distance_phase = match try_sample_line_with_phase(
             midpoint,
             raw,
             [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5],
@@ -440,7 +489,10 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
             step,
             distance_phase,
             &mut emit,
-        );
+        ) {
+            Some(phase) => phase,
+            None => return false,
+        };
         midpoint = [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5];
         raw = current;
 
@@ -474,7 +526,7 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
     };
     let terminal_alpha = terminal_pressure.clamp(0.1, 0.6) / 1.5;
     let terminal = *stroke.points.last().unwrap();
-    sample_line_with_phase(
+    try_sample_line_with_phase(
         midpoint,
         raw,
         terminal,
@@ -483,7 +535,8 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
         step,
         distance_phase,
         &mut emit,
-    );
+    )
+    .is_some()
 }
 
 /// Compose the shared saved-source sampler with V3's private particle kernel.
@@ -493,18 +546,39 @@ fn saved_redraw_v3_particles(
     stroke: &SavedStroke,
     rng: &mut V3PrivateRandom,
 ) -> Result<Vec<V3Particle>, &'static str> {
+    saved_redraw_v3_particles_bounded(stroke, rng, usize::MAX)
+}
+
+/// Bound generated particles before advancing random state or allocating output.
+/// Failed attempts leave the caller's RNG untouched and expose no partial stream.
+fn saved_redraw_v3_particles_bounded(
+    stroke: &SavedStroke,
+    rng: &mut V3PrivateRandom,
+    max_particles: usize,
+) -> Result<Vec<V3Particle>, &'static str> {
     stroke.validate()?;
     let spacing = stroke.size * 0.08;
     if !stroke.size.is_finite() || stroke.size <= 0.0 || !spacing.is_finite() || spacing <= 0.0 {
         return Err("saved pen size must produce a finite positive spacing");
     }
-    // Native V3 resets its private state on every RedrawPen invocation, even
-    // when the same drawable and RNG-bearing receiver are reused.
-    rng.reset();
+    if stroke.points.iter().flatten().any(|v| !v.is_finite()) {
+        return Err("saved coordinates must be finite");
+    }
+    // Native V3 resets on every redraw. Commit that state only on success;
+    // a resource rejection is an adapter failure, not a native partial redraw.
+    let mut next_rng = *rng;
+    next_rng.reset();
     let mut particles = Vec::new();
-    sample_saved_redraw(stroke, |sample| {
-        particles.push(rng.particle(sample.point, sample.size, sample.alpha));
-    });
+    if !try_sample_saved_redraw(stroke, |sample| {
+        if particles.len() == max_particles {
+            return false;
+        }
+        particles.push(next_rng.particle(sample.point, sample.size, sample.alpha));
+        true
+    }) {
+        return Err("saved particle budget or finite sampling path exceeded");
+    }
+    *rng = next_rng;
     Ok(particles)
 }
 
@@ -1448,6 +1522,43 @@ mod tests {
             );
             assert_eq!(untouched_rng.state, 0x1234);
         }
+    }
+
+    #[test]
+    fn v3_saved_sampler_budget_preserves_native_stream_and_rejects_partial_output() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-v3-native.json"
+        ))
+        .unwrap();
+        let stroke = saved_v3_stroke_from_json(&fixture["input"]);
+        let mut expected_rng = V3PrivateRandom::new();
+        let expected = saved_redraw_v3_particles(&stroke, &mut expected_rng).unwrap();
+        assert_eq!(expected.len(), 48); // complete native Drawing control
+        for budget in [0, 1, 6, 7, 47] {
+            let mut rng = V3PrivateRandom { state: 0x1234 };
+            assert!(saved_redraw_v3_particles_bounded(&stroke, &mut rng, budget).is_err());
+            assert_eq!(rng.state, 0x1234);
+        }
+        let mut rng = V3PrivateRandom::new();
+        assert_eq!(
+            saved_redraw_v3_particles_bounded(&stroke, &mut rng, 48).unwrap(),
+            expected
+        );
+        assert_eq!(rng, expected_rng);
+
+        // A tiny spacing over a long path must terminate at the budget,
+        // rather than finish sampling an enormous discarded particle stream.
+        let mut dense = stroke.clone();
+        dense.size = 0.0001;
+        dense.points[3] = [1_000_000., 1_000_000.];
+        assert!(saved_redraw_v3_particles_bounded(&dense, &mut rng, 8).is_err());
+        assert_eq!(rng, expected_rng);
+        dense.points[0][0] = f32::NAN;
+        assert_eq!(
+            saved_redraw_v3_particles_bounded(&dense, &mut rng, 8),
+            Err("saved coordinates must be finite")
+        );
+        assert_eq!(rng, expected_rng);
     }
 
     #[test]
