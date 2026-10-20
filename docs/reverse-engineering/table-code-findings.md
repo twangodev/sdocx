@@ -167,7 +167,7 @@ dereferences each stored cell pointer. Existing sparse algorithm probes
 therefore establish behavior for supplied kernel inputs, independently of
 native editor construction or valid document admission.
 
-[`table-grid-admission.json`](../../conformance/table-grid-admission.json),
+[`table-grid-admission.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-grid-admission.json),
 SHA-256 `826c7ec115166289fe3be59c2bae8fb754b07a54a35b2a7fbbd0d6705147c45f`,
 captures 25 synthetic cases and 117 queries through native `GetCell`,
 `0x3c7570`, public `GetCell`, `0x3d2be0`, and `GetFrameCell`, `0x3c75c0`.
@@ -1415,7 +1415,9 @@ of supplied cache values below; the
 [live-width capture](#captured-live-column-widths) executes it on actual native
 measured text and source-change callbacks.
 
-[The column-minimum capture](../../conformance/table-column-minima.json),
+Historical JSON snapshots were archived at commit `a241793`; the comparison commands below read them from that immutable tree.
+
+[The column-minimum capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-column-minima.json),
 SHA-256 `571f54fbc638314d34080bedee692d7010d42574844d21af03869cf56aacc68f`,
 contains 179 synthetic cache inputs and 182 column queries. It covers all 81
 four-row combinations of missing layouts, unset optional widths and present
@@ -1438,12 +1440,12 @@ this column-minimum cache getter.
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --column-minima scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
   > /tmp/table-column-minima.json
-cmp /tmp/table-column-minima.json conformance/table-column-minima.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-column-minima.json | cmp - /tmp/table-column-minima.json
 ```
 
 ### Captured live column widths
 
-[`table-live-column-widths.json`](../../conformance/table-live-column-widths.json),
+[`table-live-column-widths.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-live-column-widths.json),
 SHA-256 `b2ddd2a31d79c65426c0a8fd64bcc9bcdb521d69a07bc78dd1e9645bd48cc223`,
 records ten controls and 101 canonical native width-producer observations.
 The [capture module](../../conformance/native_table/live_column_widths.rs)
@@ -1512,7 +1514,7 @@ width change or export autosizing contract.
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-column-widths.json
-cmp /tmp/table-live-column-widths.json conformance/table-live-column-widths.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-live-column-widths.json | cmp - /tmp/table-live-column-widths.json
 ```
 
 ### Outer-border initialization
@@ -1809,7 +1811,7 @@ cmp /tmp/table-clone-origin.json conformance/table-clone-origin.json
 
 ### Captured table background transport
 
-[`table-background-transport.json`](../../conformance/table-background-transport.json),
+[`table-background-transport.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-background-transport.json),
 SHA-256 `7c0ec937bcbc7c5e2c7475146ae5d4430a22d8eddb16606c09921b4a7e7a917c`,
 records 10 cases, 113 local paint commands, 76 selected paths and 50 Canvas
 events; 40 commands are marked as outer-border artwork. The
@@ -1861,7 +1863,7 @@ geometry windows without full world-transport or production activation parity.
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-background-transport.json
-cmp /tmp/table-background-transport.json conformance/table-background-transport.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-background-transport.json | cmp - /tmp/table-background-transport.json
 ```
 
 ### Visible rectangles and canvas clipping
@@ -1897,7 +1899,7 @@ width/height and truncates X, Y, width and height to signed integers, passing
 operation 0 to canvas virtual slot 64. The border guard and outward rounding
 belong to the clip; they do not change glyph origins or layout bounds.
 
-[`table-clipping.json`](../../conformance/table-clipping.json), SHA-256
+[`table-clipping.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-clipping.json), SHA-256
 `5d21686615f74c43a054e850dd19ec57c2170e860920846965f71d7b8084e476`,
 records 55 native states, 1,690 rectangle queries and 1,240 canvas clip calls.
 It covers merged/covered owners, empty/inverted queries, adjacent-float row
@@ -1921,7 +1923,7 @@ rectangle to this Drawing clip.
   scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-clipping.json
-cmp /tmp/table-clipping.json conformance/table-clipping.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-clipping.json | cmp - /tmp/table-clipping.json
 ```
 
 ### Export artwork crop
@@ -2174,7 +2176,7 @@ cmp /tmp/table-cell-model-bounds.json conformance/table-cell-model-bounds.json
 
 ### Cell model bridge after frame preparation
 
-[`table-cell-model-lifecycle.json`](../../conformance/table-cell-model-lifecycle.json),
+[`table-cell-model-lifecycle.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-cell-model-lifecycle.json),
 SHA-256 `e2807875de0d6462b601318a352cbda482f692689b72fafafc916336e8f16aa7`,
 records 17 cases, 88 stage snapshots and 327 cell snapshots. The
 [capture module](../../conformance/native_table/cell_model_lifecycle.rs)
@@ -2222,12 +2224,12 @@ a full application lifecycle parity claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-cell-model-lifecycle.json
-cmp /tmp/table-cell-model-lifecycle.json conformance/table-cell-model-lifecycle.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-cell-model-lifecycle.json | cmp - /tmp/table-cell-model-lifecycle.json
 ```
 
 ### Captured cell text constructors
 
-[`table-widget-text-constructor.json`](../../conformance/table-widget-text-constructor.json),
+[`table-widget-text-constructor.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-widget-text-constructor.json),
 SHA-256 `284bb1d14fc3b8be45462cdb3ba6309e2b071a8f0f69f0db48f8e7da58d8c37d`,
 records three device profiles and 24 semantic states. Native owned allocations
 repeat under fills `0x00`, `0xa5`, `0xff` and zero again; strict master-driver
@@ -2278,12 +2280,12 @@ single-cell producer chain under its recorded text and font controls.
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-widget-text-constructor.json
-cmp /tmp/table-widget-text-constructor.json conformance/table-widget-text-constructor.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-widget-text-constructor.json | cmp - /tmp/table-widget-text-constructor.json
 ```
 
 ### Captured cell model callbacks
 
-[`table-cell-model-callbacks.json`](../../conformance/table-cell-model-callbacks.json),
+[`table-cell-model-callbacks.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-cell-model-callbacks.json),
 SHA-256 `d57a73b6845f293acf318b6cfcc1b23eb1fdd1529578fb1fdaac4e17c63bae05`,
 records 18 cases with 37 state snapshots and 148 cell snapshots. Each runs
 in a fresh native machine under heap fills `0x00`, `0x55`, `0xa5` and `0xff`,
@@ -2360,7 +2362,7 @@ production callback activation or complete document lifecycle claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so > /tmp/table-cell-model-callbacks.json
-cmp /tmp/table-cell-model-callbacks.json conformance/table-cell-model-callbacks.json
+git show a24179384fbe043a8b5f003ee0c7bebeb394d106:conformance/table-cell-model-callbacks.json | cmp - /tmp/table-cell-model-callbacks.json
 ```
 
 ### Captured Bodytext table placement

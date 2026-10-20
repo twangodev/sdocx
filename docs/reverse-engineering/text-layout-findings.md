@@ -2131,7 +2131,7 @@ that decoration changes can be discarded during paint.
 
 ### Captured decoration commands and paint inputs
 
-[`table-text-decorations.json`](../../conformance/table-text-decorations.json),
+[`table-text-decorations.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-decorations.json),
 SHA-256 `2aa3eaff8c540215ae798596372875c9f978442157a4fb1f622103644389ac2c`,
 contains 368 cases and 438 rectangle commands. The
 [Rust capture module](../../conformance/native_table/text_decorations.rs)
@@ -2282,7 +2282,7 @@ neither establishes complete table or document composition.
 ### Captured paragraph layout loop
 
 The [Rust capture](../../conformance/native_table/text_paragraph_layout.rs) and
-[`table-text-paragraph-layout.json`](../../conformance/table-text-paragraph-layout.json),
+[`table-text-paragraph-layout.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-paragraph-layout.json),
 SHA-256
 `0e70b6e08ed084e33f36bac29d977488d4ccda33d3716c7ce03415c8f2800169`,
 execute the native RichText/default-paragraph constructors and complete

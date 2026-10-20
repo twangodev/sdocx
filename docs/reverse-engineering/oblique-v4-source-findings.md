@@ -86,7 +86,7 @@ V4 inverse-scale lookup (`0x4045c`) uses canvas slot 216. Graphics
 canvas matrix. Optional Drawing matrices can reach both canvases through
 `SetMatrix` (`0x80274`/`0x80290`). Composer's inspected bitmap-backed stroke
 PDF exporter builds a translation-only matrix (`0x34f788`–`0x34f7ec`). The
-[native canvas capture](../../conformance/oblique-canvas-native.json) executes
+[native canvas capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/oblique-canvas-native.json) executes
 that fragment, Drawing matrix application, native `SetCanvas`, and Oblique's
 model-matrix query: translation yields inverse scale `[1,1]`, while basis scale
 `[2,4]` yields `[0.5,0.25]`. Factory/resource callbacks remain synthetic and
@@ -164,7 +164,7 @@ its interior and complete sampling law are outside this scope.
 
 ## Executed core helper witness
 
-[`oblique_native.py`](../../conformance/oblique_native.py) separately executes
+[`oblique_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/oblique_native.py) separately executes
 the hash-pinned library under Unicorn. It runs the actual size conversion
 instruction `FCVTZU W9,S0` at `0x409e4` and the complete RTV1 `lineToMesh`
 helper at `0x45374` and `makeTriangles` at `0x455d0`, with explicit
@@ -186,7 +186,7 @@ this capture. A test-only Rust mesh core matches all corner/triangle bits;
 the expanded asymmetric and epsilon-neighbor cases check reciprocal/multiply
 rounding and the collapsed-segment gate. Production admission is bounded below.
 
-[`oblique_redraw_native.py`](../../conformance/oblique_redraw_native.py) adds
+[`oblique_redraw_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/oblique_redraw_native.py) adds
 four fresh saved-redraw captures through native sampling, endPen and mesh
 callbacks, retaining per-sample boundaries and a separate terminal suffix.
 The test-only Rust traversal matches their complete callback buffers and boundaries.
@@ -208,7 +208,7 @@ than truncating stored size, inventing saved nib directions or replacing
 original data with mesh/cache buffers.
 
 The production SVG/PDF renderer now supplies an explicit canonical-page context,
-backed by the [Standard canvas matrix capture](../../conformance/oblique-standard-pdf-matrix-native.json).
+backed by the [Standard canvas matrix capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/oblique-standard-pdf-matrix-native.json).
 Only effective V4, ordinary stroke type, explicit finite size/ARGB, color type 0
 and supported flags enter the bounded mesh path; Descendant objects keep the
 generic fallback. The context-free API remains approximate. The

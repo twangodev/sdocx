@@ -36,7 +36,7 @@ rechecked against both the property reader and the named getters:
 | Reveal mode | 492 | `IsRevealMode`, `0x2e7498` |
 | Straighten | 493 | `IsStraighten`, `0x2e7598` |
 
-The compact [`stroke-curve-flag` capture](../../conformance/stroke-curve-flag.json)
+The compact [`stroke-curve-flag` capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/stroke-curve-flag.json)
 executes `m_ApplyBinary_Property` (`0x2ed138`) with bit 0 clear/set, then
 calls `ObjectStroke::IsCurveEnabled` (`0x2e067c`). The native reader writes the
 masked bit to implementation byte `+40`; the getter follows wrapper `+32` to

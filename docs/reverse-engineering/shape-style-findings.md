@@ -16,7 +16,7 @@ appearance remains unverified.
 The [shape and line findings](shape-line-findings.md) describe the saved
 frames, path encoding and existing renderer separately.
 
-The [solid paint oracle](../../conformance/shape-solid-paint-native.json) executes
+The [solid paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/shape-solid-paint-native.json) executes
 a native Model rectangle through Drawing, pinned Skia and host Mesa: no outline
 and solid outlines of widths 1, 2 and 4 at density 1. It records full RGBA hashes
 and empty GL error histories. Equivalent SDK PDF rectangles at 96 DPI match all

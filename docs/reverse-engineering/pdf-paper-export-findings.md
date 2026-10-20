@@ -610,7 +610,7 @@ contract, independently of whether note strokes remain vectors. Source content,
 note geometry, resource resolution, placement and export transport are separate
 data requirements demonstrated by these native routes.
 
-The [native serialization capture](../../conformance/pdf-paper-pdfium-create-page.json)
+The [native serialization capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-create-page.json)
 executes PDFium page/form/path generation and saving for a synthetic 200×150
 page rotated 90°. Its counterrotated form has BBox `[0,0,150,200]` and placement
 `[0,1,-1,0,200,0]`; the emitted PDF renders a vector path. Allocation, formatting,
@@ -618,7 +618,7 @@ C locale/time, host libm and the file-write sink are explicit providers; unknown
 imports abort. This does not load a source PDF or execute the full Samsung
 writer wrapper, and establishes no source CropBox/UserUnit or pixel parity.
 
-The [loaded-source capture](../../conformance/pdf-paper-pdfium-source-overlay.json)
+The [loaded-source capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-source-overlay.json)
 executes the real PDFium parser and overlay/save sequence at all four rotations.
 Its nonzero MediaBox/CropBox, UserUnit 2 and original vector path survive; native
 page dimensions use the rotated CropBox without multiplying by UserUnit. The

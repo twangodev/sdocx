@@ -99,14 +99,14 @@ coverage, input color alpha and point alpha, with factor 1.5. This identifies
 coverage inputs rather than proving texture or compositing equivalence; see
 the separate [opacity findings](pen-opacity-findings.md).
 
-A [V3 scale-producer replay](../../conformance/pencil3-paper-scale-native.json)
+A [V3 scale-producer replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-scale-native.json)
 executes the screen-resolution handoff, native queued task and RTV1 setter in
 four contexts. GLV3 `RedrawPen` computes `min(width,height) / 1440`
 (`0x10b1e4–0x10b200`); the task carries it to RTV1+264. The observed scales are
 0.75, 0.5, 1.0 and 0.75, including portrait. Context/bitmap adapters and queue
 scheduling are host supplied; this witness stops before paint.
 
-The [bitmap-consumer replay](../../conformance/pencil3-paper-consumer-native.json)
+The [bitmap-consumer replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-consumer-native.json)
 joins native Drawing particle callbacks to the queued message's RT receiver,
 then executes its depth-map interface thunk and RTV1 setter. The synthetic
 320×180 ISPBitmap is stored at RT+248 and its dimensions at +256/+260.
@@ -123,16 +123,16 @@ for Pencil profiles. [Native PDF stroke bitmaps](native-pdf-stroke-findings.md)
 are derived output; original vector channels and configured coverage inputs
 remain separate source boundaries.
 
-The conformance witnesses include [`pencil_native.py`](../../conformance/pencil_native.py)
+The conformance witnesses include [`pencil_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_native.py)
 for native `drawPoint`, RTV1 `AddPoint`, bounds and saved redraw; ten saved
 cases use an AOSP bionic RNG model checked against CTS vectors, not Samsung
 runtime libc execution. The test-only Rust sampler matches all ten saved cases
 and eight compact boundary witnesses, including the 200-unit debounce cutoff
 and 50-entry tilt average. The compact witnesses hash every packed f32 attribute;
 the tilt-modulation divisor at `0x12b50` is exactly `0x3ef5c290`, not `0.48f32`.
-[`pencil_event_native.py`](../../conformance/pencil_event_native.py) separately
+[`pencil_event_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_event_native.py) separately
 executes the native saved-array constructor and source/tool/history getters.
-[`pencil_texture_native.py`](../../conformance/pencil_texture_native.py)
+[`pencil_texture_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_texture_native.py)
 executes native `buildTextures`/`setTextures` with explicit bitmap interfaces
 and asserts byte-exact brush-atlas and paper uploads. The sampler mapping is
 anchored to Renderer SHA-256
@@ -142,7 +142,7 @@ and pname tables at `0x30170`, `0x301c0`, and `0x31768`. Decoding those bytes
 maps enum values to GL wraps `0x8370, 0x812f, 0x812d, 0x2901`, filters
 `0x2600, 0x2601`, and parameter IDs 0–2 to `0x2802, 0x2803, 0x8072`;
 Pencil3 requests nearest filtering, paper repeat wrapping, and brush
-clamp-to-edge defaults. [`pencil_paint_native.py`](../../conformance/pencil_paint_native.py)
+clamp-to-edge defaults. [`pencil_paint_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_paint_native.py)
 executes the embedded V1 shaders on host Mesa GLES with the native quad,
 textures and saved particle vectors; its projection, paper scale and color
 are synthetic, and its pixel fixture does not establish Android/device

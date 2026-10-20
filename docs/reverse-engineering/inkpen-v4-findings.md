@@ -145,7 +145,7 @@ grows by 1 and supplies callback bounds (`0x31164–0x31194`).
 
 ## Derived geometry and current Rust boundary
 
-The optional [`inkpen_native.py`](../../conformance/inkpen_native.py) now
+The optional [`inkpen_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen_native.py) now
 executes the pinned V4 saved redraw, Base SmPath and actual RTV1 AddPoint.
 [`inkpen-v4.json`](../../conformance/inkpen-v4.json) records twenty-one finite
 cases covering tools 1–3, taps, short moves, both curve modes, timing and pressure
@@ -205,16 +205,16 @@ shader behavior are separate. [Opacity](pen-opacity-findings.md) and
 [native PDF transport](native-pdf-stroke-findings.md) do not certify vector
 outlines or complete visual parity for this source trace.
 
-The [Drawing caller fixture](../../conformance/inkpen-saved-caller-native.json)
+The [Drawing caller fixture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-saved-caller-native.json)
 also captures null settings selecting V1: the same synthetic four-point input
 emits 25 triples, versus V4's 26. V1 `reDrawLine` (`0x26fa8`) derives movement
 from distance; V4 (`0x30a38`) additionally uses elapsed time and display scale.
 The V4 numeric core therefore cannot serve V1 unchanged. The separate test-only
-V1 policy matches every callback word in fourteen [native matrix streams](../../conformance/inkpen-v1-saved-native.json),
+V1 policy matches every callback word in fourteen [native matrix streams](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-saved-native.json),
 including no-curve and duplicate-point controls. Broader state and paint
 validation remain open before production admission.
 
-The [V1 scale replay](../../conformance/inkpen-v1-scale-native.json) retains
+The [V1 scale replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-scale-native.json) retains
 the same Drawing stream through native Draw at explicit host transforms 1×/2×/4×.
 Fresh targets alone leave support unchanged; matching view transforms scale it.
 The shader's finite-quad `fwidth` changes its edge band with pixel scale, so a

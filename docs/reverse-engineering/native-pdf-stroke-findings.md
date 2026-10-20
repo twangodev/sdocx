@@ -159,7 +159,7 @@ type 1 through `ObjectStrokePDFWriter::WriteObject` (`0x37e134`), which calls
 `+16`. `NotePDFWriterVector::drawObjects` (`0x377880`) reaches this family;
 its connection to the public Notes Java/JNI export route remains unproven.
 
-The [Fountain writer oracle](../../conformance/fountain-pdf-writer-native.json)
+The [Fountain writer oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-pdf-writer-native.json)
 executes the native factory and a separately constructed `PDFFountainPen`,
 verifies their vtable identity and dispatches its native `WriteObject`
 (`0x373dbc`) through slot `+16`. Model setters reconstruct the saved channels;
@@ -187,7 +187,7 @@ There is also a backend limitation. In pinned `libSPenPdf.so`,
 (`0x73288`) is a bare return. `PDFPath::Circle` (`0x66500`) forwards through
 engine slot `+704`, whose PDFium vtable relocation at `0xb06c0` identifies that
 stub. Its generic `DrawPath` (`0x73478`, engine slot `+1032`) is also a bare
-return. A [native path API replay](../../conformance/pdf-writer-path-native.json)
+return. A [native path API replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-writer-path-native.json)
 executes the concrete engine and writer/path/paint methods: path creation and
 construction fail while paint construction succeeds. It opens no document.
 These entrypoints do not serialize the captured circles; the separate

@@ -97,7 +97,7 @@ is positive. It does not check template type, file existence or page readability
 The overload `HasPDF(int)` (`0xc628c`) compares **binding IDs** at record offset
 `0x10`, not PDF page indices at offset `0x14`.
 
-[Captured predicates](../../conformance/pdf-paper-predicates.json) execute
+[Captured predicates](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-predicates.json) execute
 unchanged WPage getters/predicates and actual BaseArrayList operations on supplied
 WPage facade/implementation and 72-byte records. They confirm binding matching,
 including negative queries; they do not construct WPage/PDFData or exercise

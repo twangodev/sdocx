@@ -418,7 +418,7 @@ complete table preview image or native PDF for these composition spans.
 
 ### Captured retained object runs
 
-[`table-text-object-runs.json`](../../conformance/table-text-object-runs.json),
+[`table-text-object-runs.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-object-runs.json),
 SHA-256 `23d9bc46664c98c445f7f08c42c9a0d64f41c7827f3df77bc8fbc21c472b7985`,
 contains 80 cases repeated across three memory fills: 54 published retained
 object records and 26 isolated-helper controls. The
@@ -499,7 +499,7 @@ but complete native output for those alpha-edge cases is not.
 
 ### Captured PDF alpha transport
 
-[`table-text-pdf-alpha.json`](../../conformance/table-text-pdf-alpha.json),
+[`table-text-pdf-alpha.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-pdf-alpha.json),
 SHA-256 `4cc777240688534f6a967f4e741bef858d851c615d260a7a827327fed25222d1`,
 contains 60 cases repeated across three memory fills. The
 [capture module](../../conformance/native_table/text_pdf_alpha.rs) executes
@@ -574,7 +574,7 @@ This is font-family metadata. It is not a check of the text's Unicode script
 or the script passed to HarfBuzz, and a Devanagari-shaped run alone does not
 establish that this gate applies.
 
-[`table-font-metadata.json`](../../conformance/table-font-metadata.json),
+[`table-font-metadata.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-font-metadata.json),
 SHA-256 `68a3f9315805a112c4930bcc0459e5c36c668491a01b9daca02036df5c01fccb`,
 contains 60 cases: 12 table-tag variants across five metadata/null states.
 The [capture module](../../conformance/native_table/text_font_metadata.rs)
@@ -625,7 +625,7 @@ preserves source text and physical font bytes without general text rasterization
 
 ### Captured font-family language
 
-[`table-text-font-language.json`](../../conformance/table-text-font-language.json),
+[`table-text-font-language.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-font-language.json),
 SHA-256 `e1e50b79052bf8fd6f3501ff91f8b8fa41258c511c795385a295755b48364149`,
 contains 26 supplied XML cases and 39 intercepted font records. The
 [capture module](../../conformance/native_table/text_font_language.rs) executes
@@ -661,7 +661,7 @@ font-file bytes. It does not establish arbitrary font-manager cache reuse.
 
 ### Captured file-font source instances
 
-[`table-text-font-source.json`](../../conformance/table-text-font-source.json),
+[`table-text-font-source.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-font-source.json),
 SHA-256 `10056b7117f979ba9e8bf846e4eb2b7f38aba4737191fdd66a1b4d5e0d0ea485`,
 contains 24 cases and 48 independently created native sources. The
 [capture module](../../conformance/native_table/text_font_source.rs) executes
@@ -859,7 +859,7 @@ instead accepts the next nonempty rectangle at `0xb15ac`–`0xb15b8`.
 A drawable owner's zero advance or zero ink therefore does not make it an
 unowned continuation; it can still contribute glyphs and identity.
 
-[`table-text-ownership.json`](../../conformance/table-text-ownership.json),
+[`table-text-ownership.json`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/table-text-ownership.json),
 SHA-256 `a06f8c07d2167aa2dead23d220870da8dec664fa3f32147b4b51bce796b5f683`,
 contains 38 cases, 124 UTF-16 entries, 94 supplied glyphs, 40 emitted runs and
 94 output glyphs. The

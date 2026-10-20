@@ -81,36 +81,36 @@ outer SDK loading is not exercised.
 
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
-| Fountain V14, saved `14;` | Reconstructed stamps/directions with [saved defaults](../conformance/fountain-v14-defaults-native.json); vector directional shading, colorizer and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [host shader captures](../conformance/fountain-v14-field-native.json) a [full saved-stroke replay](../conformance/fountain-v14-real-native.json) and an [original-frame Drawing check](../conformance/fountain-persisted-drawing-native.json). V14 colorizer witnesses render in Chromium and Firefox with vector-only PDF export. Native [expansion parameters](../conformance/fountain-v14-addpoint-native.json) and [synthetic thin-stamp shader checks](../conformance/fountain-v14-fringe-native.json) cover fringe behavior, which is not yet painted; minimum-width dots can disappear, and partial-alpha/PDF raster appearance still differ. |
-| Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; saved size/tolerance defaults and relative endpoint time; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry, [saved Drawing defaults](../conformance/fountain-v16-defaults-native.json), [endpoint timing](../conformance/fountain-v16-event-time-native.json), [radial field records](../conformance/fountain-v16-addpoint-native.json) scalar coverage checks and a [persisted native queue replay](../conformance/fountain-saved-render-native.json). Four of five paired default cases lower mean error across Chromium, Firefox, MuPDF and PDFium; the fifth is unchanged. PDF peak errors and raster sampling gaps remain. PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified. This setting selects drawing V16, not V18. |
-| DefaultPen, ordinary saved tools 0–3 | Native positions/radii rendered as ordered source-over circles; omitted size uses the native 0.4 clamp | Native geometry, replay-boundary and [admission controls](../conformance/defaultpen-admission-native.json); paired vector exports improve on the generic fallback. Shader edge coverage and device pixel parity remain unverified. |
-| Marker2 | Sampled circular stamps, native integer size and saved alpha | [Native caller controls](../conformance/marker2-saved-caller-native.json) check full XY streams and size defaults; [host paint controls](../conformance/marker2-zero-paint-native.json) confirm zero-width strokes produce no ink. V2 thin-edge shading and complete device appearance remain unverified. |
+| Fountain V14, saved `14;` | Reconstructed stamps/directions with [saved defaults](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-defaults-native.json); vector directional shading, colorizer and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [host shader captures](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-field-native.json) a [full saved-stroke replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-real-native.json) and an [original-frame Drawing check](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-persisted-drawing-native.json). V14 colorizer witnesses render in Chromium and Firefox with vector-only PDF export. Native [expansion parameters](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-addpoint-native.json) and [synthetic thin-stamp shader checks](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-fringe-native.json) cover fringe behavior, which is not yet painted; minimum-width dots can disappear, and partial-alpha/PDF raster appearance still differ. |
+| Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; saved size/tolerance defaults and relative endpoint time; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry, [saved Drawing defaults](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-defaults-native.json), [endpoint timing](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-event-time-native.json), [radial field records](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-addpoint-native.json) scalar coverage checks and a [persisted native queue replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-saved-render-native.json). Four of five paired default cases lower mean error across Chromium, Firefox, MuPDF and PDFium; the fifth is unchanged. PDF peak errors and raster sampling gaps remain. PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified. This setting selects drawing V16, not V18. |
+| DefaultPen, ordinary saved tools 0–3 | Native positions/radii rendered as ordered source-over circles; omitted size uses the native 0.4 clamp | Native geometry, replay-boundary and [admission controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-admission-native.json); paired vector exports improve on the generic fallback. Shader edge coverage and device pixel parity remain unverified. |
+| Marker2 | Sampled circular stamps, native integer size and saved alpha | [Native caller controls](../conformance/marker2-saved-caller-native.json) check full XY streams and size defaults; [host paint controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker2-zero-paint-native.json) confirm zero-width strokes produce no ink. V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 / StraightHighlighter V7, saved `7;` | Stylus midpoint sampling, saved style size and fractional rounded rectangular tip | Native geometry and [Drawing size/alias controls](../conformance/marker4-saved-caller-native.json); public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 / StraightHighlighter V8, saved `8;` | Sampled rounded rectangular tip, native integer size, tool-specific rotation and saved alpha | Executed Drawing size/alias controls, static native paint tracing and one paired Samsung PDF comparison; filtering/zoom coverage remain approximate. |
 | Other pens, unknown names or rejected settings | Generic straight segments with pressure width, polyline or tap circle | No pen-specific native texture, smoothing or width-law guarantee. |
 | Rainbow, eraser and straighten effects | Metadata retained; native effect semantics not reproduced | Gates vary by profile. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
-A [native RTV4 paint oracle](../conformance/fountain-rtv4-paint-native.json)
+A [native RTV4 paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-rtv4-paint-native.json)
 replays three V14 tuples, a synthetic control and a complete 24-stamp source
 tuple stream through native constructor, upload and Draw code on host Mesa.
 The full-stroke 1× crop matches all 64 shader-reference support pixels, with
 maximum channel error 6 and active-region mean error 1.4844. Color and matrix
 controls remain bounded; natural Drawing admission and device pixels are unverified.
 
-Native [matrix-scale captures](../conformance/fountain-inverse-scale-native.json)
+Native [matrix-scale captures](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-inverse-scale-native.json)
 cover changed and cached V14/V16 getters under five controlled canvas matrices;
 the full zoom-dependent Drawing/RT pipeline remains unverified.
 
 Admitted Fountain V14/V16 strokes with neither public RGB nor saved ARGB use
-native default black through the existing page theme. The [color oracle](../conformance/fountain-saved-color-native.json)
+native default black through the existing page theme. The [color oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-saved-color-native.json)
 replays two embedded corpus frames and eight separate synthetic Drawing controls;
 it does not establish outer SDK loading or final native pixels. Paired 1×
 Chromium, Firefox, MuPDF and PDFium renders lower mean error against the host
 shader references for one real V14 stroke and one synthetic V16 control;
 PDF sampling differences remain.
 
-A separate [native Fountain PDF writer](../conformance/fountain-pdf-writer-native.json)
+A separate [native Fountain PDF writer](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-pdf-writer-native.json)
 emits circle paths into a mocked sink. Its connection to public Notes export and
 final PDFium output remain unverified; it is not the GL paint reference.
 
@@ -121,11 +121,11 @@ Profile admission and validation are narrower than the names above. See
 [Marker4 V7](reverse-engineering/marker4-v7.md), and
 [Marker4 V8](reverse-engineering/marker4-rendering-findings.md).
 
-A [Crayon2 saved-playback paint oracle](../conformance/crayon2-saved-playback-paint-native.json)
+A [Crayon2 saved-playback paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/crayon2-saved-playback-paint-native.json)
 joins native source getters, 285 packed records, queued upload and host Mesa Draw,
 with clipped/interior and transparent/opaque controls. That V1 route supplies
 renderer size through a host write and uses modeled RNG. A separate
-[V2 Drawing oracle](../conformance/crayon2-drawing-admission-native.json)
+[V2 Drawing oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/crayon2-drawing-admission-native.json)
 checks native settings dispatch and Model size/color forwarding through the same
 RT, shader uniform and six opaque/partial/zero-alpha readbacks. Persisted-note
 admission, production vector paint and device parity remain open.
@@ -134,29 +134,29 @@ The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
-The [Drawing caller](../conformance/pencil3-saved-caller-native.json) captures
+The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
-The test-only [V3 particle kernel](../conformance/pencil3-v3-native.json)
+The test-only [V3 particle kernel](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-v3-native.json)
 matches all 48 particles in two redraw phases, including private RNG state and
-reset behavior. The test-only [V3 saved sampler](../conformance/pencil3-sampler-inputs-native.json)
+reset behavior. The test-only [V3 saved sampler](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-sampler-inputs-native.json)
 reconstructs complete native particle streams from source channels across five
 profiles, including varied pressure, tilt, tools and context dimensions.
-A [V3 host paint join](../conformance/pencil-v3-paint-join.json) replays those
+A [V3 host paint join](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil-v3-paint-join.json) replays those
 captured streams through the extracted shader and masks at three scales, with
 synthetic projection, color and paper phase; native device/FBO paint is unverified.
-A [native V3 draw handoff](../conformance/pencil3-draw-handoff-native.json)
+A [native V3 draw handoff](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-draw-handoff-native.json)
 captures color, projection, paper scale and texture bindings across five explicit
-profiles using mocked renderer resources and context. A [scale-producer replay](../conformance/pencil3-paper-scale-native.json)
+profiles using mocked renderer resources and context. A [scale-producer replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-scale-native.json)
 checks native `min(screen width,height) / 1440` through task dispatch to the RT
 field in four contexts; application paper inputs, paint and device pixels remain
-unverified. A [bitmap-consumer replay](../conformance/pencil3-paper-consumer-native.json)
+unverified. A [bitmap-consumer replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-consumer-native.json)
 joins the Drawing producer to the queued RT depth-map setter and cached dimensions.
 That capture stops at a missing host framebuffer target. A separate
-[native paper paint oracle](../conformance/pencil3-paper-paint-native.json)
+[native paper paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-paint-native.json)
 completes same-RT Mesa Draw with the native paper resource and white/zero controls,
 retaining full RGBA readbacks. Bitmap/texture ownership and lifecycle remain host
 adapters; production vector paint and device parity remain open.
-A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
+A [one-particle vector sampling witness](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
 paper coverage and production vector paint integration remain outstanding.
@@ -165,16 +165,16 @@ boundaries in ten [synthetic native cases](../conformance/marker3-saved-native.j
 The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
 checks null selecting V1, empty/explicit settings selecting V5, source ARGB
 forwarding and linked XY streams; the V5 sampler excludes null settings.
-Its [positive paint capture](../conformance/marker3-paint-positive-native.json)
+Its [positive paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker3-paint-positive-native.json)
 executes native mask/composite draws on separate complete framebuffer targets
 in host Mesa, retaining the full RGBA hash and GL error checks. The
-[scale capture](../conformance/marker3-paint-scale-native.json) retains full masks
+[scale capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker3-paint-scale-native.json) retains full masks
 and RGBA output for 17 linked-path and isolated-stamp cases across sizes 4/8/12
 and scales 1/2/4, checking uploaded XY against the saved caller buffers. Points
-enter directly at RTV1. A [joined Drawing paint capture](../conformance/marker3-joined-paint-native.json)
+enter directly at RTV1. A [joined Drawing paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker3-joined-paint-native.json)
 retains the Drawing-selected RT and its original 176-byte vector through native
 Init/Update/Draw, with a full host-Mesa RGBA readback and 239 zero GL error checks.
-The [queue control](../conformance/marker3-queue-handoff-native.json) executes
+The [queue control](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker3-queue-handoff-native.json) executes
 native `SendDataToGPU` with correct host queue wiring and detects missing
 dispatch with the wrong queue; no host vector-slot assignment is needed.
 In the joined paint capture, renderer-message and vector-delete
@@ -182,16 +182,16 @@ tasks remain deferred; complete queue/lifetime integration, vector edge coverage
 and device pixel parity remain outstanding.
 DefaultPen's sampler checks
 position/radius streams in sixteen synthetic
-[cases including degenerate paths](../conformance/defaultpen-saved-native.json).
-Its [Drawing caller](../conformance/defaultpen-saved-caller-native.json) verifies
+[cases including degenerate paths](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-saved-native.json).
+Its [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-saved-caller-native.json) verifies
 native Model getters, factory selection and identical 132-byte Drawing/saved
 streams on the same RT under an explicit 1920×1080 display profile.
-A [redraw-boundary capture](../conformance/defaultpen-redraw-boundaries-native.json)
+A [redraw-boundary capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-redraw-boundaries-native.json)
 retains all 22 stamps and native history/end-call boundaries for a six-point
 stroke; saved replay constructs a native event with source 0.
-DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
+DefaultPen's [Draw capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-draw-native.json) retains
 native blend setup and shader text that replaces input alpha with screen-space
-coverage. The [joined capture](../conformance/defaultpen-joined-paint-native.json)
+coverage. The [joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-joined-paint-native.json)
 passes that Drawing-selected RT’s 132-byte vector through native upload and
 draw to a host RGBA8 target, with an explicit same-vector-object handoff.
 Admitted saved profiles render the native disks in order; other states retain
@@ -209,19 +209,19 @@ the context-free preparer remains unchanged. Ordinary V1 and V4
 and apply saved ARGB alpha once per stroke in SVG/PDF.
 A test-only numeric core matches twenty-one
 configured-context native redraw cases and four setter cases, including both
-curve modes, fixed width and a degenerate curve. The [Drawing caller](../conformance/inkpen-saved-caller-native.json)
+curve modes, fixed width and a degenerate curve. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-saved-caller-native.json)
 captures null settings selecting V1 and empty settings selecting V4 under an
 explicit 1920×1080 display profile. The V4 numeric model reproduces the complete
 312-byte Drawing stream bit for bit, plus all streams in a
-[seven-case display matrix](../conformance/inkpen-display-profiles-native.json);
+[seven-case display matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-display-profiles-native.json);
 null settings remain outside that V4 model. The separate V1 core matches
-all fourteen emitted streams in the [V1 matrix](../conformance/inkpen-v1-saved-native.json),
+all fourteen emitted streams in the [V1 matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-saved-native.json),
 including no-curve, duplicate-point, timing and display controls; Drawing rejects
-the separate one-point case before pen creation. A [nine-case size/tool capture](../conformance/inkpen-admission-native.json)
+the separate one-point case before pen creation. A [nine-case size/tool capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-admission-native.json)
 checks omitted, zero, subminimum and oversized source sizes plus tool codes 0–4.
 The test-only model matches every captured callback word, using the saved style
 size (missing means zero) and native 0.4–800 clamp rather than the public width.
-A [reuse capture](../conformance/inkpen-reuse-native.json) checks short/long first
+A [reuse capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-reuse-native.json) checks short/long first
 strokes and a distinct-object control on the same pen, drawable and RT; every
 target stream matches the fresh 312 bytes. Direct redraw of the distinct object
 returns without callbacks after Drawing clears its cache-dirty flag. Broader
@@ -232,34 +232,34 @@ serialized bit 0 selects curve state; full-record deserialization is not exercis
 The [flag audit](../conformance/object-stroke-properties-native.json) checks
 137 zero/one-hot/pair masks against named native getters and the Rust parser;
 bit 2 is separately exercised through tilt/orientation channel storage.
-A [joined paint capture](../conformance/inkpen-joined-paint-native.json) executes
+A [joined paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-joined-paint-native.json) executes
 native Renderer factories and RTV1 Init/Update/Draw, checking the 312-byte upload
 and full RGBA readbacks. With correct host queue wiring, native `SendDataToGPU`
 installs the saved vector and `Update(false)` uploads it without a host vector-slot
-write. A [three-color capture](../conformance/inkpen-color-native.json) checks an
+write. A [three-color capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-color-native.json) checks an
 unchanged MAX mask and one source-over composite for zero, partial and opaque
-alpha under identity host color conversion. A [V1 joined capture](../conformance/inkpen-v1-joined-paint-native.json)
+alpha under identity host color conversion. A [V1 joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-joined-paint-native.json)
 checks null settings, the unchanged 300-byte upload and partial-alpha paint on
 the same Drawing-selected RT. The
-[scalar derivative check](../conformance/inkpen_coverage_scalar.py) reproduces
+[scalar derivative check](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen_coverage_scalar.py) reproduces
 all 32,768 bytes of the captured 128×64 MAX mask using fine 2×2 differences.
 This is one host Mesa witness, not a universal device derivative contract.
-A [V1 scale replay](../conformance/inkpen-v1-scale-native.json) checks fresh
+A [V1 scale replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-scale-native.json) checks fresh
 1×/2×/4× native Draw targets and separate identity-transform controls. Its
 pixel-dependent edge band prevents treating a fixed 1× contour as a general paint law.
-A [V1 reuse oracle](../conformance/inkpen-v1-reuse-native.json) checks source-event
+A [V1 reuse oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-reuse-native.json) checks source-event
 and terminal vector prefixes, short/long preceding strokes and distinct source
 objects. Rust matches the complete first/target streams and their native boundaries.
-A [17-case V1 boundary matrix](../conformance/inkpen-v1-boundaries-native.json)
+A [17-case V1 boundary matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-boundaries-native.json)
 checks complete native Drawing/redraw vectors and source-event/terminal prefixes,
 including curved tools 0–4 and one no-curve tool1 control; Rust matches every word
 and cutoff. These synthetic setter controls do not establish serialized-note admission.
-A [serialized-frame replay](../conformance/inkpen-serialized-drawing-native.json)
+A [serialized-frame replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-serialized-drawing-native.json)
 loads embedded string-table and stroke bytes through native Model attachment
 and Drawing. Controlled Fountain-to-InkPen derivatives select V1/null and V4;
 V1 defaults absent ARGB to opaque black and emits 68 records with exact event
 prefixes. These are synthetic derivatives, not app-captured InkPen notes.
-A [ten-case no-curve tool-3/4 capture](../conformance/inkpen-v1-nocurve-tool34-native.json)
+A [ten-case no-curve tool-3/4 capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-nocurve-tool34-native.json)
 checks pressure and size boundaries; Rust matches complete vectors and native
 event cutoffs. Paired SVG/PDF exports improve native-referenced error across
 1×/2×/4× host comparisons; tool5 and advanced V4 retain generic fallback.
@@ -272,22 +272,22 @@ A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
 redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay
-using native body-normalized sampling state. The [reuse oracle](../conformance/inkpen2-reuse-native.json)
+using native body-normalized sampling state. The [reuse oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-reuse-native.json)
 and Rust sequence test retain the native alternation byte between strokes:
 a shared Drawing retains it across distinct source objects too. A short
 preceding stroke changes tool-1 output, while the captured long
 history and tool-2 controls match fresh receivers. General caller/runtime
 state, shape modes and paint integration remain open. A
-[source controls](../conformance/inkpen2-source-caller-native.json) check six
+[source controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-source-caller-native.json) check six
 V9 streams and one-point Drawing rejection under an explicit host profile.
 The model consumes native getter arrays and selected drawable size, including
 the 0.4–800 clamp; these remain synthetic setter controls. The
-[RTV3 paint capture](../conformance/inkpen2-paint-native.json) checks native
+[RTV3 paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-paint-native.json) checks native
 MAX coverage, source-over color and final composition in six synthetic host
 Mesa cases, plus four direct-branch source-over cases. Both include source ARGB
 opacity controls. A test-only paint model matches every full-target readback;
 direct same-color overlap accumulates while the alternate branch preserves
-its MAX result. The [joined capture](../conformance/inkpen2-joined-paint-native.json)
+its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-joined-paint-native.json)
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
 Natural app canvas setup, production vector admission and device parity remain
@@ -318,70 +318,70 @@ opacity, unsupported model routes, PDF raster edges and device pixel parity
 remain open; host captures and vector-only PDFs do not establish full parity.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
-at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](../conformance/airbrush-saved-caller-native.json)
+at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-saved-caller-native.json)
 selects V1 for null settings and V2 for empty settings. The numeric model matches
 both 416-byte streams bit for bit under an explicit 1920×1080 display profile;
-the [color oracle](../conformance/airbrush-color-native.json) checks all 256 source
+the [color oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-color-native.json) checks all 256 source
 alpha bytes and ten full Drawing routes: native output alpha is
 `clamp(trunc(f32(f32(alpha) * 50) / 255), 3, 50)`, preserving RGB.
 This includes source alpha zero becoming output alpha three; GPU compositing
 is not established by this getter contract. A native
-[texture capture](../conformance/airbrush-texture-native.json) now checks Renderer
+[texture capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-texture-native.json) now checks Renderer
 allocation, nearest/clamped sampling and exact GL upload bytes. An
-[instanced Draw capture](../conformance/airbrush-draw-native.json) checks native
+[instanced Draw capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-draw-native.json) checks native
 buffer uploads, attributes and blend calls with a separately captured stamp
-stream injected by the host. A [joined paint capture](../conformance/airbrush-joined-paint-native.json)
+stream injected by the host. A [joined paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-joined-paint-native.json)
 checks the Drawing-produced vector through native task-body publication, upload
 and full RGBA readback. Link-time shader snapshots and live interface/sampler
 queries verify the native shader and nearest/clamped pattern; the target is zero
 before Draw. Scheduling and Renderer capabilities are host-supplied; general
 admission, vector paint and device parity remain outstanding.
-The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
+The [BrushPen native oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. The separate
-[Drawing caller](../conformance/brushpen-saved-caller-native.json) selects GLV10
+[Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-saved-caller-native.json) selects GLV10
 with an explicitly empty saved setting and captures 26 records under a
 1920×1080 context. The numeric model reproduces all 1144 bytes using the native
 `1440 / min(display limits)` speed factor; direct-wrapper cases retain the
-constructor’s 1440×2560 limits. The [reuse capture](../conformance/brushpen-reuse-native.json)
+constructor’s 1440×2560 limits. The [reuse capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-reuse-native.json)
 checks short/long first strokes and a distinct-object control on the same pen,
 drawable and RT: all second streams equal the fresh 1144-byte stream. Native
 redraw clears retained speed, and the next accepted segment seeds radius.
 The observed cache slot is not established as the drawable cache key. A
-[texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
+[texture capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-texture-native.json) reaches intercepted
 native texture/instance uploads, attribute setup, blend mapping and Draw-binding
 calls. A test-only source sampler matches
 every instance bit in ten synthetic MotionEvent cases and nine
-[saved-wrapper style profiles](../conformance/brushpen-saved-wrapper-native.json),
+[saved-wrapper style profiles](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-saved-wrapper-native.json),
 including tools 1–3 and both curve modes.
-A [positive paint capture](../conformance/brushpen-paint-positive-native.json)
+A [positive paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-paint-positive-native.json)
 executes native Draw and shaders on host Mesa with a fixture-linked instance,
 a separate output framebuffer and an unused-atlas-cell sensitivity check.
-The [same-object capture](../conformance/brushpen-same-run-native.json) checks
+The [same-object capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-same-run-native.json) checks
 26 native-generated records through native upload and host paint, including
-a full-stream unused-atlas-cell control. The [handoff capture](../conformance/brushpen-handoff-native.json)
+a full-stream unused-atlas-cell control. The [handoff capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-handoff-native.json)
 also completes native endPen and callback destruction, then executes the queued
-`SendDataToGPU` task. The [queued paint capture](../conformance/brushpen-queue-native.json)
+`SendDataToGPU` task. The [queued paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-queue-native.json)
 completes native clip setup, upload, draw and deferred vector deletion with a
 distinct cleared native canvas on host Mesa. Its style/color and scheduling are
 explicit host inputs; general caller admission, vector paint, production
 integration and Samsung device parity remain outstanding.
-A [Drawing-to-paint capture](../conformance/brushpen-drawing-paint-native.json)
+A [Drawing-to-paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/brushpen-drawing-paint-native.json)
 joins synthetic Model input, native queued color/data tasks, the unchanged
 1,144-byte upload and same-RT uniform color to a complete host Mesa draw.
 It also checks target preclear and deferred deletion; production vector paint remains open.
-The [MagicPen Drawing caller](../conformance/magicpen-saved-caller-native.json)
+The [MagicPen Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-saved-caller-native.json)
 checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
 RTV1 vectors separately from callback arguments for synthetic Model inputs;
-the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json)
+the [Drawing-to-paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-drawing-paint-native.json)
 joins native color, the unchanged upload and interior partial-alpha paint on
 transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
 initialization is host-supplied. Canonical SVG/PDF now reconstruct ordinary
 tool-2 curved and NoCurve null/`1;` sources with explicit size, ordinary style codes and
 native replay cutoffs, using one compound vector contour and one source-alpha
 composite. Omitted ARGB uses native opaque black, verified with
-[Drawing defaults controls](../conformance/magicpen-admission-defaults-native.json);
+[Drawing defaults controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-admission-defaults-native.json);
 empty advanced settings remain distinct. Omitted stroke/color type fields use the native zero defaults,
-verified by a [saved-frame Model check](../conformance/object-stroke-style-defaults-native.json).
+verified by a [saved-frame Model check](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/object-stroke-style-defaults-native.json).
 Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
 1×/2×/4×. The fixed contour now preserves the canonical radial coverage integral,
@@ -389,46 +389,46 @@ including positive area for minimum-size dots. Edge controls improve across
 Chromium, Firefox, MuPDF and PDFium, but still underfill at 4×; resvg can drop
 the smallest dot at 1×. Scale-dependent shader edges and device parity remain
 open. Unknown effects and budgets retain fallback.
-A [NoCurve paint replay](../conformance/magicpen-nocurve-paint-native.json)
+A [NoCurve paint replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-nocurve-paint-native.json)
 retains the same native source stream and full RGBA buffers at 1×/2×/4× on
 transparent targets, with separate opaque-background blend controls.
-The [edge replay](../conformance/magicpen-nocurve-edge-paint-native.json) adds
+The [edge replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-nocurve-edge-paint-native.json) adds
 18 captures covering duplicate points, rejected moves, minimum-size dots,
 subpixel phase and zero-alpha ink, with exact native uploads and full RGBA buffers.
-A [paint-control matrix](../conformance/magicpen-paint-controls-native.json)
+A [paint-control matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-paint-controls-native.json)
 checks eight scale/phase views plus GLV1/GLV2 and opaque-background controls.
 The source-derived shader model matches transparent support and stays within
 three RGBA bytes on these host captures; it does not establish export parity.
-A [GLV1 source matrix](../conformance/magicpen-glv1-source-native.json)
+A [GLV1 source matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-glv1-source-native.json)
 checks native source getters and complete XYZ streams; the Rust source model
 matches all 35 two- to eight-point cases, including duplicate/nearby-event
 admission, native width transitions and the 0.4–800 size clamp. A
-[NoCurve event matrix](../conformance/magicpen-nocurve-source-events-native.json)
+[NoCurve event matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-nocurve-source-events-native.json)
 adds 18 controls for admission cutoffs, first-admitted width seeding, terminal
 ranges, direct dots and thick-stroke sampling, with exact complete streams. A separate
-[curved event capture](../conformance/magicpen-curved-source-events-native.json)
+[curved event capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-curved-source-events-native.json)
 records line/terminal callback ranges for 33 bounded inputs, including rejected
 final points, duplicate endpoints, direct dots, size limits and low-factor
 terminal pressure controls. Rust matches every
 captured XYZ word and callback range. Pinned native loops exclude line endpoints
 and include terminal endpoints; terminal arguments retain the raw final input.
 Curved SVG/PDF admission uses the same bounds and approximate contour. The
-[four-profile curved paint replay](../conformance/magicpen-curved-paint-native.json)
+[four-profile curved paint replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-curved-paint-native.json)
 supports paired comparisons at 1×/2×/4× in five engines: active-support error
 improves over fallback in all 60 rows, while subpixel and zoom coverage still differ.
-The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
+The [ChineseBrush caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
-Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
+Model input. A [source matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-native.json)
 retains complete four-lane streams for 52 two- to eight-event controls across
 GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
-An [adversarial extension](../conformance/chinesebrush-source-extension-native.json)
+An [adversarial extension](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-extension-native.json)
 adds 24 cases for pressure, size and method-specific speed/width precision;
 the model matches all 953 records across the combined 76 cases.
-A [reuse matrix](../conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
+A [reuse matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
 target streams after short, long and different preludes and version changes,
 with explicit host lifecycle adapters. A bounded
-[GLV3 paint replay](../conformance/chinesebrush-paint-native.json) joins the
+[GLV3 paint replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-paint-native.json) joins the
 synthetic source stream to native queued VBO/color uploads, texture bytes and a
 full host Mesa readback. This does not establish device or export parity;
 arbitrary-length sampling and production vector integration remain open.
@@ -441,7 +441,7 @@ size/ARGB use the [native defaults](../conformance/oblique_defaults_native.json)
 of size 0.4 and opaque black; unsupported settings and Descendant objects retain
 the generic approximation.
 Source RGB/alpha and max coverage are preserved without image objects.
-The [native Draw oracle](../conformance/oblique-draw-native.json) also verifies
+The [native Draw oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/oblique-draw-native.json) also verifies
 explicit ARGB forwarding and executed MAX/source-over blend descriptors, with
 synthetic resource adapters and no device-pixel claim. The
 [reuse witness](../conformance/oblique-saved-caller-reuse-native.json) checks a
@@ -501,7 +501,7 @@ extending its guarantees.
 | Physical layers and visibility | Saved current layer; hidden recognized objects/subtrees omitted | Inactive layers remain structurally available; no captured multilayer appearance comparison. See [layer selection](reverse-engineering/page-layer-selection-findings.md). |
 | Object order and containers | Stored order within Base/Top/Masking root passes; selected containers recurse in place | Child render IDs do not reselect root passes. Saved child rotation is not applied again through a parent transform. Full mixed-container pixel parity remains unverified. |
 | Root intersection filtering | No native geometric selection filter | Native collector behavior is traced, but comparing stored bounding boxes alone does not implement it. See [selection findings](reverse-engineering/object-selection-findings.md). |
-| Light/dark treatment | Shared modes, native lightness reversal, local contrast and alpha-preserving paint | [Native Context-to-Pen dispatch](../conformance/drawing-color-theme-native.json) is verified for three explicit host-selected themes. Android theme discovery is unverified; paper/contrast selection remains export policy. See [themes](render-themes.md). |
+| Light/dark treatment | Shared modes, native lightness reversal, local contrast and alpha-preserving paint | [Native Context-to-Pen dispatch](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/drawing-color-theme-native.json) is verified for three explicit host-selected themes. Android theme discovery is unverified; paper/contrast selection remains export policy. See [themes](render-themes.md). |
 | Highlighter blending | Whole Top batch uses Darken on light paper and Lighten on dark paper | Capture-route selection/shader math has static evidence; native Standard list PDF uses Darken. SDK shares its SVG policy with PDF; native pixel parity is not claimed. |
 | Tape visibility/reveal | Saved note preference and per-stroke reveal flag retained | Generic pen approximation does not implement native presentation controls or destination attenuation. See [Tape findings](reverse-engineering/stroke-metadata-findings.md#tape-visibility-and-reveal-controls). |
 
@@ -550,26 +550,26 @@ validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
 a test-only SDK graft preserves the inline source graph and scoped vector
-resources. A [native source-PDF export probe](../conformance/pdf_paper_pdfium_quiz_source_native.py)
+resources. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
-vector path. A [PNG overlay capture](../conformance/pdf-paper-pdfium-image-export.json)
+vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)
 also executes native PNG decoding and image placement for a synthetic rectangle.
-A [Composer branch capture](../conformance/pdf-paper-composer-export.json) verifies
+A [Composer branch capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-composer-export.json) verifies
 the imported-paper DrawPDF skip and two manual-background extent controls;
 its AddPages bridge does not join native PDF serialization.
-A [SingleX segmentation capture](../conformance/pdf-paper-single-segments.json)
+A [SingleX segmentation capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-single-segments.json)
 uses retained quiz dimensions with explicit host text/object queries; full
 export and final page appearance remain unverified.
-The [body-writer transform capture](../conformance/pdf-paper-body-writer-matrix.json)
+The [body-writer transform capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-body-writer-matrix.json)
 observes native note-to-PDF scale and marker rectangles for rotated pages with
 two CropBox origins, then calls PDFium matrix helpers separately. The
-[image-adapter capture](../conformance/pdf-image-adapter-native.json) joins the
+[image-adapter capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-image-adapter-native.json) joins the
 native String-overload constructor/setters to PDFium image insertion and export
 for four rotations and shifted origins, with host-supplied placement and PNG.
-The [bitmap-overload capture](../conformance/pdf-image-bitmap-native.json) executes
+The [bitmap-overload capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-image-bitmap-native.json) executes
 native bitmap methods, adapter and libpng encoding with synthetic pixels,
 simulated host GL and pinned host zlib. The separate
-[RGBA bitmap capture](../conformance/pdf-image-rgba-native.json) executes native
+[RGBA bitmap capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-image-rgba-native.json) executes native
 texture/subbitmap readback through actual host Mesa textures and framebuffers,
 then native adapter/libpng encoding. Two synthetic 2×2 controls preserve alpha
 and verify rounded, clamped RGB unpremultiplication, including zero alpha;
@@ -582,7 +582,7 @@ and [image effect contracts](reverse-engineering/image-effects-findings.md)
 have static evidence for features absent from these documents; they do not add
 real-document appearance coverage. See also
 [PDF findings](reverse-engineering/pdf-export-findings.md).
-The [solid shape paint oracle](../conformance/shape-solid-paint-native.json)
+The [solid shape paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/shape-solid-paint-native.json)
 adds bounded native fill/outline raster evidence for an axis-aligned rectangle;
 odd-width edge coverage and broader paired appearance remain open.
 

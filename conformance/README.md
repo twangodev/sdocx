@@ -11,6 +11,11 @@ cargo test --workspace --all-features
 The CI workflow uses `cargo nextest run --profile ci --all-features` for the
 workspace test job and runs the Python visual-tooling tests separately.
 
+Native JSON fixtures retain the inputs and expected values asserted by Rust
+tests. Full capture traces and their original digests remain in the historical
+revision below; reverse-engineering evidence links point to those snapshots.
+Add regression logic in Rust and keep new fixture data limited to its assertions.
+
 ## External compatibility corpus
 
 Large `.sdocx` files and Samsung reference PDFs are stored in the

@@ -238,7 +238,7 @@ notes; see [rendering-corpus-findings.md](rendering-corpus-findings.md). That
 inventory confirms local resource presence but does not establish rendering or
 the unusual nonzero-origin/changed-width view cases.
 
-The optional [placement oracle](../../conformance/pdf_paper_placement_native.py)
+The optional [placement oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_placement_native.py)
 executes the caller fragment through native `View::SetPosition` and clipping
 for 26 retained/synthetic inputs, including all twenty continuous placements.
 Width and canvas interfaces are host boundaries; PDF opening, source-box
@@ -264,7 +264,7 @@ A bounded execution of `FPDFPage_NewFormObj`'s geometry instructions in pinned
 `libSPenPdfiumB.so` (`0x58a064–0x58a118`) captures the form matrix from supplied
 effective-box coordinates `[L,B,R,T]`. The native matrix and translation are
 recorded for each page rotation in the
-[form-matrix conformance fixture](../../conformance/pdf-paper-form-matrix.json).
+[form-matrix conformance fixture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-form-matrix.json).
 The fixture keeps the Samsung form argument (`4 - page rotation`) separate
 from the page-rotation label. Its asymmetric nonzero-origin box confirms that
 the form matrix contains the box origin and compensates for rotation.

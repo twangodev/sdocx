@@ -211,7 +211,7 @@ paths. StrokeTip opacity, per-plugin setting overrides and alias-specific
 configuration are outside this registry trace. Stored string-table references
 identify pen names/settings separately from the selected PDF export mode.
 
-The [AirBrush native capture](../../conformance/airbrush-saved-native.json)
+The [AirBrush native capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-saved-native.json)
 executes the real AirBrush constructor, whose version is 2; controlled version
 field overrides select V1/V2 drawable constructors. Three synthetic saved-redraw
 cases execute both GL constructors and redraw paths with bit-identical stamps.
