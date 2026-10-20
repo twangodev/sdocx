@@ -328,17 +328,27 @@ fn model_line(
         previous = *point;
     }
     if accepted.is_empty() {
-        let p = effective_pressure(*pressure.last().unwrap(), tool);
         if record_limit == 0 {
             return Err(SampleError::OutputBudgetExceeded);
         }
         return Ok(vec![[
-            points[0].x,
-            points[0].y,
-            size * 0.25,
+            points.last().unwrap().x,
+            points.last().unwrap().y,
+            size * effective_pressure(*pressure.last().unwrap(), tool) * 0.5,
             0.0,
-            (50.0 + p * 100.0) as i32 as f32,
+            0.0,
         ]]);
+    }
+    let terminal = points.len() - 1;
+    let accepted_last = *accepted.last().unwrap();
+    if accepted_last != terminal
+        && (points[accepted_last].x != points[terminal].x
+            || points[accepted_last].y != points[terminal].y)
+    {
+        // endPen consumes the raw final source event after the gated move loop.
+        // A duplicate endpoint has no terminal segment and would form a
+        // degenerate Path::Line in the numeric sampler.
+        accepted.push(terminal);
     }
     let seed = accepted[0];
     let scalar = f32_trunc(100.0 + effective_pressure(pressure[seed], tool) * 100.0) as f32;
@@ -773,6 +783,25 @@ mod tests {
         expected: (usize, &str, &str),
     ) {
         let (size, version) = profile;
+        check_native_trace_profile(
+            name,
+            xy,
+            pressure,
+            times,
+            (size, version, 1920, 1080, 2, true),
+            expected,
+        );
+    }
+
+    fn check_native_trace_profile(
+        name: &str,
+        xy: &[[f32; 2]],
+        pressure: &[f32],
+        times: &[i32],
+        profile: (f32, i32, i32, i32, i32, bool),
+        expected: (usize, &str, &str),
+    ) {
+        let (size, version, width, height, tool, curve) = profile;
         let (count, input_sha, output_sha) = expected;
         assert_eq!(
             source_input_sha256(xy, pressure, times),
@@ -781,7 +810,7 @@ mod tests {
         );
         let sample = |limit| {
             run_model_bounded(
-                xy, pressure, times, size, version, 1920, 1080, 2, true, limit,
+                xy, pressure, times, size, version, width, height, tool, curve, limit,
             )
         };
         let output = sample(count).unwrap_or_else(|error| panic!("{name} exact budget: {error:?}"));
@@ -1063,6 +1092,370 @@ mod tests {
                 (count, input_sha, output_sha),
             );
         }
+    }
+
+    #[test]
+    fn no_curve_source_loop_matches_native_terminal_and_gate_matrix() {
+        let size = 3.144_f64 as f32;
+        let accepted4_xy = [[0.0, 0.0], [8.0, 0.0], [16.0, 0.0], [24.0, 0.0]];
+        let accepted4_pressure = [0.3, 0.5, 0.8, 0.2];
+        let accepted4_times = [200, 220, 240, 260];
+        let rejected_final_xy = [[0.0, 0.0], [8.0, 0.0], [16.0, 0.0], [17.0, 0.0]];
+        let rejected_final_pressure = [0.3, 0.5, 0.8, 0.95];
+        let rejected_final_times = [200, 220, 240, 260];
+        let all_rejected_xy = [[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]];
+        let all_rejected_pressure = [0.3, 0.5, 0.8];
+        let all_rejected_times = [200, 220, 240];
+        let all_rejected_low_pressure = [0.2, 0.4, 0.3];
+        let two_event_xy = [[0.0, 0.0], [1.0, 0.0]];
+        let two_event_pressure = [0.3, 0.8];
+        let two_event_times = [200, 220];
+        let negative_pressure_xy = [[0.0, 0.0], [8.0, 0.0], [16.0, 0.0]];
+        let negative_pressure = [0.3, -0.2, -1.0];
+        let three_times = [200, 220, 240];
+        let zero_pressure = [0.3, 0.0, 0.0];
+        let edge_components_xy = [
+            [0.0, 0.0],
+            [2.99, 0.0],
+            [3.0, 0.0],
+            [3.01, 0.0],
+            [3.99, 0.0],
+            [4.0, 0.0],
+            [4.01, 0.0],
+        ];
+        let edge_components_pressure = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        let edge_components_times = [200, 210, 220, 230, 240, 250, 260];
+        let edge_diagonal_xy = [[0.0, 0.0], [3.9, 3.9], [7.9, 7.9]];
+        let edge_diagonal_pressure = [0.3, 0.4, 0.8];
+        let edge_diagonal_times = [200, 210, 220];
+        let screen_xy = [[0.0, 0.0], [3.5, 0.0], [8.0, 0.0]];
+        let screen_pressure = [0.3, 0.5, 0.8];
+        let identical_xy = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]];
+        let identical_pressure = [0.2, 0.4, 0.9];
+        let identical_times = [200, 220, 240];
+        let duplicate_terminal_xy = [[0.0, 0.0], [8.0, 0.0], [8.0, 0.0]];
+        let duplicate_terminal_pressure = [0.3, 0.5, 0.9];
+        let duplicate_terminal_times = [200, 220, 240];
+        let out_back_xy = [[0.0, 0.0], [8.0, 0.0], [0.0, 0.0]];
+        let out_back_pressure = [0.3, 0.5, 0.9];
+        let out_back_times = [200, 220, 240];
+
+        macro_rules! check_versions {
+            ($name:literal, $size:expr, $xy:expr, $pressure:expr, $times:expr, $tool:expr,
+             $width:expr, $height:expr, $count:expr, $input:literal,
+             $v1:literal, $v2:literal, $v3:literal) => {{
+                for (version, output_sha) in [(1, $v1), (2, $v2), (3, $v3)] {
+                    let case_name = format!("{}-v{}", $name, version);
+                    check_native_trace_profile(
+                        &case_name,
+                        $xy,
+                        $pressure,
+                        $times,
+                        ($size, version, $width, $height, $tool, false),
+                        ($count, $input, output_sha),
+                    );
+                }
+            }};
+        }
+
+        check_versions!(
+            "nocurve-accepted4",
+            size,
+            &accepted4_xy,
+            &accepted4_pressure,
+            &accepted4_times,
+            2,
+            1920,
+            1080,
+            15,
+            "011f5250f98499e958fdf7505898e441ca0800ce983f0a4a60b621f2e2373c12",
+            "f8e38c47c2bf9153d2c8d4586276da8630907892d6992d7d0634fa697847ac94",
+            "f8e38c47c2bf9153d2c8d4586276da8630907892d6992d7d0634fa697847ac94",
+            "f8e38c47c2bf9153d2c8d4586276da8630907892d6992d7d0634fa697847ac94"
+        );
+        check_versions!(
+            "nocurve-rejected-final",
+            size,
+            &rejected_final_xy,
+            &rejected_final_pressure,
+            &rejected_final_times,
+            2,
+            1920,
+            1080,
+            13,
+            "d27cfa3a6ca81d6314f2d7afd76344f7c4df20ca1c52df64c127afa0fa7e7aad",
+            "b6aec4e98ed3f6970395ea9baca5f74ce848fc4b28069919b02fee0bfeeb03dd",
+            "b6aec4e98ed3f6970395ea9baca5f74ce848fc4b28069919b02fee0bfeeb03dd",
+            "b6aec4e98ed3f6970395ea9baca5f74ce848fc4b28069919b02fee0bfeeb03dd"
+        );
+        check_versions!(
+            "nocurve-all-rejected",
+            size,
+            &all_rejected_xy,
+            &all_rejected_pressure,
+            &all_rejected_times,
+            2,
+            1920,
+            1080,
+            1,
+            "bba82f61262449bdabe3c0508c0ebaf4f0b3bc59737d332b1ac78b44e5f7d550",
+            "a172561328d8da58127c45466d41afe5ca644f3912a78cfb40e95d6dfc7d413f",
+            "a172561328d8da58127c45466d41afe5ca644f3912a78cfb40e95d6dfc7d413f",
+            "a172561328d8da58127c45466d41afe5ca644f3912a78cfb40e95d6dfc7d413f"
+        );
+        check_versions!(
+            "nocurve-all-rejected-tool1",
+            size,
+            &all_rejected_xy,
+            &all_rejected_pressure,
+            &all_rejected_times,
+            1,
+            1920,
+            1080,
+            1,
+            "bba82f61262449bdabe3c0508c0ebaf4f0b3bc59737d332b1ac78b44e5f7d550",
+            "4f8ae40389b66aef784b674706acb22f1ee3ffe02179c7286d79256ba8399025",
+            "4f8ae40389b66aef784b674706acb22f1ee3ffe02179c7286d79256ba8399025",
+            "4f8ae40389b66aef784b674706acb22f1ee3ffe02179c7286d79256ba8399025"
+        );
+        check_versions!(
+            "nocurve-all-rejected-size",
+            8.333333,
+            &all_rejected_xy,
+            &all_rejected_low_pressure,
+            &all_rejected_times,
+            2,
+            1920,
+            1080,
+            1,
+            "4705583333c28ed50039fa43454317c7cf2952e0881325415f0e0d9b1ec73744",
+            "afa0f047eb72733a46aae3c717e68cf2a26f538930f05488165b7cf6bc7db803",
+            "afa0f047eb72733a46aae3c717e68cf2a26f538930f05488165b7cf6bc7db803",
+            "afa0f047eb72733a46aae3c717e68cf2a26f538930f05488165b7cf6bc7db803"
+        );
+        check_versions!(
+            "nocurve-two-event-reject",
+            size,
+            &two_event_xy,
+            &two_event_pressure,
+            &two_event_times,
+            2,
+            1920,
+            1080,
+            1,
+            "b13cb702eb94fd20a64eff2ba72ac0f9623c9de02805655a6e89567adffcb559",
+            "c7ab1c10a8f718a8facf9507f2f11716ac4121527aad001ae1d2acb6b53003b5",
+            "c7ab1c10a8f718a8facf9507f2f11716ac4121527aad001ae1d2acb6b53003b5",
+            "c7ab1c10a8f718a8facf9507f2f11716ac4121527aad001ae1d2acb6b53003b5"
+        );
+        check_versions!(
+            "nocurve-negative-pressure",
+            size,
+            &negative_pressure_xy,
+            &negative_pressure,
+            &three_times,
+            2,
+            1920,
+            1080,
+            10,
+            "1c4f56a16560dfa8e0ba5067ba2c5ee1172c79458a62eb454f8822e3313d8754",
+            "e5d8987fd489d1007aa494b8b335fceb7eea5d433d9c69befab4bc82cbe64dee",
+            "e5d8987fd489d1007aa494b8b335fceb7eea5d433d9c69befab4bc82cbe64dee",
+            "e5d8987fd489d1007aa494b8b335fceb7eea5d433d9c69befab4bc82cbe64dee"
+        );
+        check_versions!(
+            "nocurve-zero-pressure",
+            size,
+            &negative_pressure_xy,
+            &zero_pressure,
+            &three_times,
+            2,
+            1920,
+            1080,
+            10,
+            "42064788667d5ea530bcc78e08f98bb63762cbb3585622c3f9b98cff30f558e5",
+            "351cefbf739174a7d8575a0b51bfe69d6f7b43102f3cb1130a097617830048a4",
+            "351cefbf739174a7d8575a0b51bfe69d6f7b43102f3cb1130a097617830048a4",
+            "351cefbf739174a7d8575a0b51bfe69d6f7b43102f3cb1130a097617830048a4"
+        );
+        check_versions!(
+            "nocurve-edge-components",
+            size,
+            &edge_components_xy,
+            &edge_components_pressure,
+            &edge_components_times,
+            2,
+            1920,
+            1080,
+            6,
+            "57f9d390bf1bfe6d7c4dae739394df7a54a318b206ee6b043941b2d0b85f1c4f",
+            "3ff06733643a0888653e476a2a0abbc9f0540fc04bad72cf405fdfd0e4d7739a",
+            "3ff06733643a0888653e476a2a0abbc9f0540fc04bad72cf405fdfd0e4d7739a",
+            "737856a23c061f86d19b0ffed447ab5c7bcd5e73032321f288a22db3330b34e2"
+        );
+        check_versions!(
+            "nocurve-edge-diagonal",
+            size,
+            &edge_diagonal_xy,
+            &edge_diagonal_pressure,
+            &edge_diagonal_times,
+            2,
+            1920,
+            1080,
+            6,
+            "764308e79a54769b4d182901d11bd98ed9ee7d57c1e48751af439204b5d61381",
+            "ccf88ba115be5a7bc40a4295064c5f88805bce92f1da7f35d41abe97f8a10079",
+            "ccf88ba115be5a7bc40a4295064c5f88805bce92f1da7f35d41abe97f8a10079",
+            "9d3396c454905b535270e3e0caae35026957e4c9a468ef84a0e9c6baa54d6c42"
+        );
+        check_versions!(
+            "nocurve-screen-gate",
+            size,
+            &screen_xy,
+            &screen_pressure,
+            &three_times,
+            2,
+            1440,
+            2560,
+            5,
+            "f57c11dabd30e3f4d936102d5cbdb21427b1bab43ed9498340b4d4dcc3e2b5ae",
+            "f21a46aa5c0c41dce850cf46f2c2057881f28df9b9e2b3fa884e1ef285ca605f",
+            "f21a46aa5c0c41dce850cf46f2c2057881f28df9b9e2b3fa884e1ef285ca605f",
+            "f21a46aa5c0c41dce850cf46f2c2057881f28df9b9e2b3fa884e1ef285ca605f"
+        );
+        check_versions!(
+            "nocurve-all-identical",
+            size,
+            &identical_xy,
+            &identical_pressure,
+            &identical_times,
+            2,
+            1920,
+            1080,
+            1,
+            "b1bfb2a50318e47aebb2170201e61b62fab6b7057d4438dbf248b1ea0e1c7c54",
+            "6c6ea73194e27d1bac22f0083503a7d74c8d1dc55204ccc377debaca0078dd23",
+            "6c6ea73194e27d1bac22f0083503a7d74c8d1dc55204ccc377debaca0078dd23",
+            "6c6ea73194e27d1bac22f0083503a7d74c8d1dc55204ccc377debaca0078dd23"
+        );
+        check_versions!(
+            "nocurve-duplicate-terminal",
+            size,
+            &duplicate_terminal_xy,
+            &duplicate_terminal_pressure,
+            &duplicate_terminal_times,
+            2,
+            1920,
+            1080,
+            5,
+            "267f07456725cc3dc28bb98a64d1a67fd327371714cf3314b14ea69de956e926",
+            "a1b055b6c7b26c4164bb6b1ced962d87a9265234cf5d9d2ac30820d9b0285389",
+            "a1b055b6c7b26c4164bb6b1ced962d87a9265234cf5d9d2ac30820d9b0285389",
+            "a1b055b6c7b26c4164bb6b1ced962d87a9265234cf5d9d2ac30820d9b0285389"
+        );
+        check_versions!(
+            "nocurve-out-back",
+            size,
+            &out_back_xy,
+            &out_back_pressure,
+            &out_back_times,
+            2,
+            1920,
+            1080,
+            10,
+            "6839137f900fe936c680c5dde95b1cece80f74ff1987b45185ece4c6b5439864",
+            "ea0207cdce92d877531f3c489954b334359510138c146c09fb2cfaef1f2e4453",
+            "ea0207cdce92d877531f3c489954b334359510138c146c09fb2cfaef1f2e4453",
+            "ea0207cdce92d877531f3c489954b334359510138c146c09fb2cfaef1f2e4453"
+        );
+        check_versions!(
+            "nocurve-tool1",
+            size,
+            &rejected_final_xy,
+            &rejected_final_pressure,
+            &rejected_final_times,
+            1,
+            1920,
+            1080,
+            13,
+            "d27cfa3a6ca81d6314f2d7afd76344f7c4df20ca1c52df64c127afa0fa7e7aad",
+            "1ea82381a48266228f43f1edc1942e8d4e49ec3988788af9dd84110defd7e08a",
+            "1ea82381a48266228f43f1edc1942e8d4e49ec3988788af9dd84110defd7e08a",
+            "1ea82381a48266228f43f1edc1942e8d4e49ec3988788af9dd84110defd7e08a"
+        );
+
+        let dot = run_model_bounded(
+            &all_rejected_xy,
+            &all_rejected_pressure,
+            &all_rejected_times,
+            size,
+            3,
+            1920,
+            1080,
+            2,
+            false,
+            1,
+        )
+        .unwrap();
+        assert_eq!(
+            dot[0].map(f32::to_bits),
+            [0x4000_0000, 0x4000_0000, 0x3fa0_f90a, 0, 0],
+            "native all-rejected dot uses last point, half-pressure width and zero scalar"
+        );
+        let dot_tool1 = run_model_bounded(
+            &all_rejected_xy,
+            &all_rejected_pressure,
+            &all_rejected_times,
+            size,
+            3,
+            1920,
+            1080,
+            1,
+            false,
+            1,
+        )
+        .unwrap();
+        assert_eq!(
+            dot_tool1[0].map(f32::to_bits),
+            [0x4000_0000, 0x4000_0000, 0x3f49_374c, 0, 0],
+            "native dot uses the tool-1 effective pressure"
+        );
+        let dot_large_size = run_model_bounded(
+            &all_rejected_xy,
+            &all_rejected_low_pressure,
+            &all_rejected_times,
+            8.333333,
+            3,
+            1920,
+            1080,
+            2,
+            false,
+            1,
+        )
+        .unwrap();
+        assert_eq!(
+            dot_large_size[0].map(f32::to_bits),
+            [0x4000_0000, 0x4000_0000, 0x3fa0_0000, 0, 0],
+            "native dot width scales with size and last pressure"
+        );
+        let terminal = run_model_bounded(
+            &rejected_final_xy,
+            &rejected_final_pressure,
+            &rejected_final_times,
+            size,
+            3,
+            1920,
+            1080,
+            2,
+            false,
+            13,
+        )
+        .unwrap();
+        assert_eq!(
+            terminal.last().unwrap().map(f32::to_bits),
+            [0x4185_5555, 0, 0x3fb5_182a, 0x40a0_0000, 0x4316_0000],
+            "native terminal line samples toward the raw endpoint using its pressure target"
+        );
     }
 
     #[test]
