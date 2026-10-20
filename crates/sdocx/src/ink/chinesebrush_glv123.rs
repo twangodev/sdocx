@@ -2192,3 +2192,126 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod synthetic_archive_regression {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    // Synthetic authored note table (IDs 0/1 resolve ChineseBrush + `3;`)
+    // wraps the native serialized ObjectStroke payload from
+    // conformance/object-stroke-channels-native.json, SHA-256
+    // 794c365ed0999439c289a45713ba2a33a23d19e58324acfb8e3956564bf1c37.
+    // The sampler profile is explicitly synthetic: 1920 x 1080.
+    #[test]
+    fn synthetic_sdocx_resolves_and_matches_native_chinesebrush_records() {
+        let archive = include_bytes!("../../tests/assets/chinesebrush/synthetic_v3.sdocx");
+        let oracle = include_bytes!("../../tests/assets/chinesebrush/native_packed.bin");
+        let document = crate::parse_bytes(archive).expect("synthetic ChineseBrush archive");
+        assert_eq!(document.pages.len(), 1);
+        let strokes: Vec<_> = document.pages[0].strokes().collect();
+        assert_eq!(strokes.len(), 1);
+        let stroke = strokes[0];
+        let rendering = stroke.rendering.as_ref().expect("saved rendering metadata");
+        assert_eq!(
+            rendering.pen_name.as_deref(),
+            Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+        );
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("3;"));
+        assert_eq!(rendering.tool_type_raw, 2);
+        assert!(rendering.properties.compressed);
+        assert!(rendering.properties.stylus_channels);
+        assert!(rendering.properties.millisecond_timestamps);
+        assert_eq!(rendering.style.stroke_type_raw.unwrap_or(0), 0);
+        assert!(!rendering.properties.eraser && !rendering.properties.fixed_width);
+        assert!(!rendering.properties.fixed_opacity && !rendering.properties.rainbow_effect);
+        assert!(!rendering.properties.alpha_lock && !rendering.properties.straighten);
+        assert!(!rendering.properties.reveal_mode && !rendering.properties.replay_only);
+
+        let version = match rendering.advanced_settings.as_deref() {
+            Some("1;") => 1,
+            Some("2;") => 2,
+            Some("3;") => 3,
+            _ => panic!("unsupported ChineseBrush version setting"),
+        };
+        let size = rendering.style.pen_size.expect("native saved pen size");
+        assert_eq!(size.to_bits(), 0x4111_de6a);
+        let points: Vec<[f32; 2]> = stroke
+            .points
+            .iter()
+            .map(|point| [point.x as f32, point.y as f32])
+            .collect();
+        let pressures: Vec<f32> = stroke.pressures.iter().map(|value| *value as f32).collect();
+        let timestamps: Vec<i32> = stroke
+            .timestamps
+            .iter()
+            .map(|value| i32::try_from(*value).expect("native timestamp fits i32"))
+            .collect();
+        let tilts: Vec<f32> = stroke.tilts.iter().map(|value| *value as f32).collect();
+        let orientations: Vec<f32> = stroke
+            .orientations
+            .iter()
+            .map(|value| *value as f32)
+            .collect();
+        assert_eq!(points.len(), 204);
+        assert_eq!(pressures.len(), 204);
+        assert_eq!(timestamps.len(), 204);
+        assert_eq!(tilts.len(), 204);
+        assert_eq!(orientations.len(), 204);
+
+        let digest = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        let point_bytes: Vec<u8> = points
+            .iter()
+            .flat_map(|xy| xy.iter().flat_map(|v| v.to_le_bytes()))
+            .collect();
+        let pressure_bytes: Vec<u8> = pressures.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let timestamp_bytes: Vec<u8> = timestamps.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let tilt_bytes: Vec<u8> = tilts.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let orientation_bytes: Vec<u8> =
+            orientations.iter().flat_map(|v| v.to_le_bytes()).collect();
+        assert_eq!(
+            digest(&point_bytes),
+            "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4"
+        );
+        assert_eq!(
+            digest(&pressure_bytes),
+            "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9"
+        );
+        assert_eq!(
+            digest(&timestamp_bytes),
+            "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a"
+        );
+        assert_eq!(
+            digest(&tilt_bytes),
+            "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6"
+        );
+        assert_eq!(
+            digest(&orientation_bytes),
+            "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+        );
+
+        let rows = run_model_bounded(
+            &points,
+            &pressures,
+            &timestamps,
+            size,
+            version,
+            1920,
+            1080,
+            i32::from(rendering.tool_type_raw),
+            rendering.properties.compressed,
+            MAX_OUTPUT_RECORDS,
+        )
+        .expect("bounded sampler accepts parsed synthetic source");
+        let packed: Vec<u8> = rows
+            .iter()
+            .flat_map(|row| {
+                [row[0], row[1], row[2], packed_w(row[3], row[4])]
+                    .into_iter()
+                    .flat_map(f32::to_le_bytes)
+            })
+            .collect();
+        assert_eq!(rows.len(), 33);
+        assert_eq!(packed.as_slice(), oracle);
+    }
+}
