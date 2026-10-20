@@ -1,0 +1,700 @@
+{
+  "assertions": {
+    "native_vector_format": "25 records x 36 bytes = 900 bytes per captured AddPoint vector",
+    "orientation_swap_same_minimum_same_full_stream": [
+      "portrait_1920x1080",
+      "landscape_1080x1920"
+    ],
+    "square_1080_same_minimum_same_full_stream": [
+      "portrait_1920x1080",
+      "square_1080"
+    ],
+    "square_1920_changes_full_stream": [
+      "portrait_1920x1080",
+      "square_1920"
+    ]
+  },
+  "limits": [
+    "all profiles are explicit synthetic context getter outputs; the fixture does not identify Samsung's ordinary export/display profile",
+    "the source caller executes native Drawing selection, selected V9 redraw and AddPoint; bounded host callbacks provide context, resources and task queue",
+    "the stream is a native geometry/vector oracle, not a renderer pixel or PDF/SVG export claim"
+  ],
+  "native_instruction_evidence": {
+    "drawing_context_and_pen_setter": {
+      "instructions": {
+        "0x82398": {
+          "assembly": "ldr\tx8, [x8, #16]",
+          "bytes": "f9400908"
+        },
+        "0x8239c": {
+          "assembly": "blr\tx8",
+          "bytes": "d63f0100"
+        },
+        "0x823b8": {
+          "assembly": "ldr\tx8, [x8, #32]",
+          "bytes": "f9401108"
+        },
+        "0x823bc": {
+          "assembly": "blr\tx8",
+          "bytes": "d63f0100"
+        },
+        "0x823d8": {
+          "assembly": "ldr\tx8, [x8, #40]",
+          "bytes": "f9401508"
+        },
+        "0x823dc": {
+          "assembly": "blr\tx8",
+          "bytes": "d63f0100"
+        },
+        "0x823e8": {
+          "assembly": "ldr\tx8, [x8, #112]",
+          "bytes": "f9403908"
+        },
+        "0x823ec": {
+          "assembly": "mov\tx0, x21",
+          "bytes": "aa1503e0"
+        },
+        "0x823f0": {
+          "assembly": "mov\tw1, w22",
+          "bytes": "2a1603e1"
+        },
+        "0x823f4": {
+          "assembly": "blr\tx8",
+          "bytes": "d63f0100"
+        }
+      },
+      "library": "libSPenDrawing.so",
+      "meaning": "context+16 returns screen-profile object; its slots+32/+40 return width/height; selected Pen slot+112 receives x0=pen,w1=width,w2=height",
+      "rva_range": [
+        "0x82390",
+        "0x823f8"
+      ]
+    },
+    "drawline_two_dimension_min": {
+      "instructions": {
+        "0x4de38": {
+          "assembly": "ldr\tx8, [x19, #72]",
+          "bytes": "f9402668"
+        },
+        "0x4de3c": {
+          "assembly": "ldr\tx8, [x8]",
+          "bytes": "f9400108"
+        },
+        "0x4de44": {
+          "assembly": "ldp\tw10, w9, [x8, #32]",
+          "bytes": "2944250a"
+        },
+        "0x4de4c": {
+          "assembly": "cmp\tw9, w10",
+          "bytes": "6b0a013f"
+        },
+        "0x4de50": {
+          "assembly": "csel\tw9, w9, w10, lt\t// lt = tstop",
+          "bytes": "1a8ab129"
+        },
+        "0x4de64": {
+          "assembly": "scvtf\ts2, w9",
+          "bytes": "1e220122"
+        },
+        "0x4de68": {
+          "assembly": "mov\tw9, #0x44b40000            \t// #1152647168",
+          "bytes": "52a89689"
+        },
+        "0x4de6c": {
+          "assembly": "fmov\ts3, w9",
+          "bytes": "1e270123"
+        },
+        "0x4de70": {
+          "assembly": "fdiv\ts2, s3, s2",
+          "bytes": "1e221862"
+        },
+        "0x4de84": {
+          "assembly": "fmul\ts1, s1, s2",
+          "bytes": "1e220821"
+        }
+      },
+      "library": "libSPenInkPen2.so",
+      "meaning": "load two dimensions at data+32/+36; compare and signed-csel the smaller; calculate 1440.0/min and apply it to the time-derived factor",
+      "rva_range": [
+        "0x4de38",
+        "0x4de88"
+      ]
+    },
+    "pen_set_screen_resolution": {
+      "instructions": {
+        "0x460b4": {
+          "assembly": "mov\tx8, x0",
+          "bytes": "aa0003e8"
+        },
+        "0x460b8": {
+          "assembly": "str\tw1, [x0, #56]",
+          "bytes": "b9003801"
+        },
+        "0x460bc": {
+          "assembly": "mov\tw0, #0x1                   \t// #1",
+          "bytes": "52800020"
+        },
+        "0x460c0": {
+          "assembly": "str\tw2, [x8, #60]",
+          "bytes": "b9003d02"
+        },
+        "0x460c4": {
+          "assembly": "ret",
+          "bytes": "d65f03c0"
+        }
+      },
+      "library": "libSPenPenCommon.so",
+      "meaning": "native SetScreenResolution stores W1 at Pen+56 and W2 at Pen+60, then returns 1",
+      "rva_range": [
+        "0x460b4",
+        "0x460c8"
+      ]
+    }
+  },
+  "profiles": {
+    "landscape_1080x1920": {
+      "host_context_getter": {
+        "object_drawing_context_vslot": 16,
+        "returned_dimensions": [
+          1080,
+          1920
+        ],
+        "screen_profile_getter_slots": {
+          "height": 40,
+          "width": 32
+        },
+        "source": "explicit synthetic host profile; vslot callbacks in pinned caller"
+      },
+      "native_calls": {
+        "ObjectDrawing_drawObjectStroke_return": 1,
+        "Pen_SetScreenResolution_entry_args": {
+          "height": 1920,
+          "width": 1080
+        },
+        "selected_RedrawPen_return": 1,
+        "selected_drawable": "InkPen2StrokeDrawableGLV9",
+        "source_profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1920,
+          "width": 1080
+        }
+      },
+      "native_rtv1_streams": {
+        "draw_object_stroke": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        },
+        "saved_redraw": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        }
+      },
+      "profile_id": "landscape_1080x1920",
+      "scope": "native V9 Drawing saved-object caller under explicit synthetic context; host provides display getter and bounded resource/queue callbacks",
+      "source": {
+        "advanced_getter_object_hex": "d0bf0e02000000001061031000000000f0bf0e02000000001000000002000000",
+        "advanced_getter_pointer_nonnull": true,
+        "advanced_getter_utf8": "9;",
+        "advanced_setting": "9;",
+        "advanced_setting_state": "9",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000041",
+            "00000000"
+          ],
+          [
+            "00008041",
+            "00004040"
+          ],
+          [
+            "0000c041",
+            "00004040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tool_type": 2
+      }
+    },
+    "portrait_1920x1080": {
+      "host_context_getter": {
+        "object_drawing_context_vslot": 16,
+        "returned_dimensions": [
+          1920,
+          1080
+        ],
+        "screen_profile_getter_slots": {
+          "height": 40,
+          "width": 32
+        },
+        "source": "explicit synthetic host profile; vslot callbacks in pinned caller"
+      },
+      "native_calls": {
+        "ObjectDrawing_drawObjectStroke_return": 1,
+        "Pen_SetScreenResolution_entry_args": {
+          "height": 1080,
+          "width": 1920
+        },
+        "selected_RedrawPen_return": 1,
+        "selected_drawable": "InkPen2StrokeDrawableGLV9",
+        "source_profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1080,
+          "width": 1920
+        }
+      },
+      "native_rtv1_streams": {
+        "draw_object_stroke": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        },
+        "saved_redraw": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        }
+      },
+      "profile_id": "portrait_1920x1080",
+      "scope": "native V9 Drawing saved-object caller under explicit synthetic context; host provides display getter and bounded resource/queue callbacks",
+      "source": {
+        "advanced_getter_object_hex": "d0bf0e02000000001061031000000000f0bf0e02000000001000000002000000",
+        "advanced_getter_pointer_nonnull": true,
+        "advanced_getter_utf8": "9;",
+        "advanced_setting": "9;",
+        "advanced_setting_state": "9",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000041",
+            "00000000"
+          ],
+          [
+            "00008041",
+            "00004040"
+          ],
+          [
+            "0000c041",
+            "00004040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tool_type": 2
+      }
+    },
+    "square_1080": {
+      "host_context_getter": {
+        "object_drawing_context_vslot": 16,
+        "returned_dimensions": [
+          1080,
+          1080
+        ],
+        "screen_profile_getter_slots": {
+          "height": 40,
+          "width": 32
+        },
+        "source": "explicit synthetic host profile; vslot callbacks in pinned caller"
+      },
+      "native_calls": {
+        "ObjectDrawing_drawObjectStroke_return": 1,
+        "Pen_SetScreenResolution_entry_args": {
+          "height": 1080,
+          "width": 1080
+        },
+        "selected_RedrawPen_return": 1,
+        "selected_drawable": "InkPen2StrokeDrawableGLV9",
+        "source_profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1080,
+          "width": 1080
+        }
+      },
+      "native_rtv1_streams": {
+        "draw_object_stroke": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        },
+        "saved_redraw": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803f000000000000000000000000105bde40fea9503eefca1a40efca1a40bd27963e0000803f000000000000000000000000c0cefd40a87ab93e21191b4021191b401a5d963e0000803f00000000000000000000000037a10e41d2e7103f53671b4053671b404192963e0000803f000000000000000000000000105b1e41fea9503f85b51b4085b51b4033c7963e0000803f000000000000000000000000e7142e41e8018e3fb7031c40b7031c40f0fb963e0000803f000000000000000000000000bfce3d41a87ab93fe9511c40e9511c407830973e0000803f0000000000000000000000009a884d415474e63f1da01c401da01c40cd64973e0000803f00000000000000000000000072425d417cdf06401da01c401da01c40cd64973e0000803f00000000000000000000000049fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000000021b67c41607825401da01c401da01c40cd64973e0000803f000000000000000000000000fc378641f26b30401da01c401da01c40cd64973e0000803f000000000000000000000000e8148e419a7938401da01c401da01c40cd64973e0000803f000000000000000000000000d4f1954157a13d401da01c401da01c40cd64973e0000803f000000000000000000000000c0ce9d4129e33f401da01c401da01c40cd64973e0000803f000000000000000000000000e63aa741000040401da01c401da01c40cd64973e0000803f000000000000000000000000bdb9af41000040401da01c401da01c40cd64973e0000803f0000000000000000000000008171b641000040401da01c401da01c40cd64973e0000803f000000000000000000000000c760bf41000040401da01c401da01c40cd64973e0000803f0000000000000000000000000000c041000040401da01c401da01c40cd64973e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "6176deb45580a51fb22c1b0c483d15592d85cabee0aa34ef6a19787c112d3285"
+        }
+      },
+      "profile_id": "square_1080",
+      "scope": "native V9 Drawing saved-object caller under explicit synthetic context; host provides display getter and bounded resource/queue callbacks",
+      "source": {
+        "advanced_getter_object_hex": "d0bf0e02000000001061031000000000f0bf0e02000000001000000002000000",
+        "advanced_getter_pointer_nonnull": true,
+        "advanced_getter_utf8": "9;",
+        "advanced_setting": "9;",
+        "advanced_setting_state": "9",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000041",
+            "00000000"
+          ],
+          [
+            "00008041",
+            "00004040"
+          ],
+          [
+            "0000c041",
+            "00004040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tool_type": 2
+      }
+    },
+    "square_1920": {
+      "host_context_getter": {
+        "object_drawing_context_vslot": 16,
+        "returned_dimensions": [
+          1920,
+          1920
+        ],
+        "screen_profile_getter_slots": {
+          "height": 40,
+          "width": 32
+        },
+        "source": "explicit synthetic host profile; vslot callbacks in pinned caller"
+      },
+      "native_calls": {
+        "ObjectDrawing_drawObjectStroke_return": 1,
+        "Pen_SetScreenResolution_entry_args": {
+          "height": 1920,
+          "width": 1920
+        },
+        "selected_RedrawPen_return": 1,
+        "selected_drawable": "InkPen2StrokeDrawableGLV9",
+        "source_profile": {
+          "canvas_model_matrix_f32_bits": [
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          "height": 1920,
+          "width": 1920
+        }
+      },
+      "native_rtv1_streams": {
+        "draw_object_stroke": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbae81a40bae81a40183c963e0000803f000000000000000000000000105bde40fea9503ee8a21b40e8a21b409dba963e0000803f000000000000000000000000c0cefd40a87ab93e165d1c40165d1c40f637973e0000803f00000000000000000000000037a10e41d2e7103f45171d4045171d4025b4973e0000803f000000000000000000000000105b1e41fea9503f74d11d4074d11d40302f983e0000803f000000000000000000000000e7142e41e8018e3fa28b1e40a28b1e4019a9983e0000803f000000000000000000000000bfce3d41a87ab93fd0451f40d0451f40e521993e0000803f0000000000000000000000009a884d415474e63f00002040000020409a99993e0000803f00000000000000000000000072425d417cdf064000002040000020409a99993e0000803f00000000000000000000000049fc6c41e39e174000002040000020409a99993e0000803f00000000000000000000000021b67c416078254000002040000020409a99993e0000803f000000000000000000000000fc378641f26b304000002040000020409a99993e0000803f000000000000000000000000e8148e419a79384000002040000020409a99993e0000803f000000000000000000000000d4f1954157a13d4000002040000020409a99993e0000803f000000000000000000000000c0ce9d4129e33f4000002040000020409a99993e0000803f000000000000000000000000e63aa7410000404000002040000020409a99993e0000803f000000000000000000000000bdb9af410000404000002040000020409a99993e0000803f0000000000000000000000008171b6410000404000002040000020409a99993e0000803f000000000000000000000000c760bf410000404000002040000020409a99993e0000803f0000000000000000000000000000c0410000404000002040000020409a99993e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "157295f6b3776ffe17693389d99c3cd2737f6b04bc747cbc697d2272fdcf72de"
+        },
+        "saved_redraw": {
+          "bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803f000000000000000000000000678ce33f0000000074d1154074d115400aa4923e0000803f00000000000000000000000086c6314000000000d1451740d14517403bb1933e0000803f000000000000000000000000f4ff7f40000000002eba18402eba18404bb9943e0000803f000000000000000000000000b0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000000060e7be40a87ab93dbae81a40bae81a40183c963e0000803f000000000000000000000000105bde40fea9503ee8a21b40e8a21b409dba963e0000803f000000000000000000000000c0cefd40a87ab93e165d1c40165d1c40f637973e0000803f00000000000000000000000037a10e41d2e7103f45171d4045171d4025b4973e0000803f000000000000000000000000105b1e41fea9503f74d11d4074d11d40302f983e0000803f000000000000000000000000e7142e41e8018e3fa28b1e40a28b1e4019a9983e0000803f000000000000000000000000bfce3d41a87ab93fd0451f40d0451f40e521993e0000803f0000000000000000000000009a884d415474e63f00002040000020409a99993e0000803f00000000000000000000000072425d417cdf064000002040000020409a99993e0000803f00000000000000000000000049fc6c41e39e174000002040000020409a99993e0000803f00000000000000000000000021b67c416078254000002040000020409a99993e0000803f000000000000000000000000fc378641f26b304000002040000020409a99993e0000803f000000000000000000000000e8148e419a79384000002040000020409a99993e0000803f000000000000000000000000d4f1954157a13d4000002040000020409a99993e0000803f000000000000000000000000c0ce9d4129e33f4000002040000020409a99993e0000803f000000000000000000000000e63aa7410000404000002040000020409a99993e0000803f000000000000000000000000bdb9af410000404000002040000020409a99993e0000803f0000000000000000000000008171b6410000404000002040000020409a99993e0000803f000000000000000000000000c760bf410000404000002040000020409a99993e0000803f0000000000000000000000000000c0410000404000002040000020409a99993e0000803f000000000000000000000000",
+          "length": 900,
+          "record_count": 25,
+          "sha256": "157295f6b3776ffe17693389d99c3cd2737f6b04bc747cbc697d2272fdcf72de"
+        }
+      },
+      "profile_id": "square_1920",
+      "scope": "native V9 Drawing saved-object caller under explicit synthetic context; host provides display getter and bounded resource/queue callbacks",
+      "source": {
+        "advanced_getter_object_hex": "d0bf0e02000000001061031000000000f0bf0e02000000001000000002000000",
+        "advanced_getter_pointer_nonnull": true,
+        "advanced_getter_utf8": "9;",
+        "advanced_setting": "9;",
+        "advanced_setting_state": "9",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00000041",
+            "00000000"
+          ],
+          [
+            "00008041",
+            "00004040"
+          ],
+          [
+            "0000c041",
+            "00004040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tool_type": 2
+      }
+    }
+  },
+  "provenance": {
+    "advanced_setting": "9",
+    "case": "line0_curve_short_history",
+    "files": {
+      "conformance/elf_plt.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/conformance/elf_plt.py",
+        "sha256": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
+      },
+      "conformance/fountain_native.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/conformance/fountain_native.py",
+        "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+      },
+      "conformance/inkpen2_saved_caller_native.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/conformance/inkpen2_saved_caller_native.py",
+        "sha256": "a1d0f06b88f5de50274f81228f04020231a7d23089581fbee99252648a3676aa"
+      },
+      "conformance/oblique_canvas_native.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/conformance/oblique_canvas_native.py",
+        "sha256": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+      },
+      "native/libSPenBase.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+        "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+      },
+      "native/libSPenComposer.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+        "sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+      },
+      "native/libSPenDrawing.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+        "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+      },
+      "native/libSPenFountainPen.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+        "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+      },
+      "native/libSPenGraphics.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+        "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+      },
+      "native/libSPenInkPen2.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenInkPen2.so",
+        "sha256": "61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c"
+      },
+      "native/libSPenModel.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+        "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+      },
+      "native/libSPenPenCommon.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+      },
+      "native/libc++_shared.so": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+        "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "python": {
+        "path": "/usr/bin/python3.13",
+        "sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+      },
+      "runtime/unicorn/__init__.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/__init__.py",
+        "sha256": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b"
+      },
+      "runtime/unicorn/arm64_const.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/arm64_const.py",
+        "sha256": "92f91a2b0a36cd34deee16db4f8da4ac0c9ae35c3ea1089296e5ef9d170a5be9"
+      },
+      "runtime/unicorn/lib/libunicorn.so.2": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/lib/libunicorn.so.2",
+        "sha256": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c"
+      },
+      "runtime/unicorn/unicorn.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/unicorn.py",
+        "sha256": "e823b17649d0610c6f52b665902ac9dc46962785feebcac8465a0d7c477f25b7"
+      },
+      "runtime/unicorn/unicorn_py3/unicorn.py": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/unicorn_py3/unicorn.py",
+        "sha256": "62ffe84341f4288e309040e06555b81798031817d32fd19a945e250813f872f0"
+      }
+    },
+    "python_executable": "/usr/bin/python3.13",
+    "python_version": "3.13.5",
+    "tools": {
+      "/usr/bin/x86_64-linux-gnu-c++filt": {
+        "path": "/usr/bin/x86_64-linux-gnu-c++filt",
+        "sha256": "7d54ea6797a5e8c69255f711b79577efd9934c3502c6edee4bc25b7dc7d97bd2"
+      },
+      "/usr/bin/x86_64-linux-gnu-nm": {
+        "path": "/usr/bin/x86_64-linux-gnu-nm",
+        "sha256": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+      },
+      "resolved:c++filt": {
+        "path": "/usr/bin/x86_64-linux-gnu-c++filt",
+        "sha256": "7d54ea6797a5e8c69255f711b79577efd9934c3502c6edee4bc25b7dc7d97bd2"
+      },
+      "resolved:nm": {
+        "path": "/usr/bin/x86_64-linux-gnu-nm",
+        "sha256": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+      },
+      "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump": {
+        "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump",
+        "sha256": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb"
+      }
+    }
+  },
+  "runner_sha256": "1ee08c570ac075e1633ff3cc9f782f61847f783ffdaf975c53e5f94d2afbb858",
+  "schema": "inkpen2-native-screen-normalization-v1"
+}
