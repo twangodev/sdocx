@@ -3147,27 +3147,16 @@ fn magicpen_v1_vector_path(ink: &crate::ink::PreparedMagicPenV1, replay: bool) -
     {
         return None;
     }
-    let mut ends = ink.sample_ends.clone();
-    if let Some(last) = ends.last_mut() {
-        *last = ink.records.len();
-    }
     let mut path = ReplayPath::default();
-    let mut start = 0;
-    for end in ends {
-        if end < start || end > ink.records.len() {
+    // ReplaySvg resolves saved samples through PreparedStroke::sample_ends,
+    // then indexes these prefixes by emitted stamp count, not source event.
+    for record in &ink.records {
+        let data = crate::ink::magicpen_source_contour_path(std::slice::from_ref(record))?;
+        if !path.push_serialized(&data, replay, MAX_PATH_BYTES) {
             return None;
         }
-        if end == start {
-            path.record_prefix(replay);
-        } else {
-            let data = crate::ink::magicpen_source_contour_path(&ink.records[start..end])?;
-            if !path.push_serialized(&data, replay, MAX_PATH_BYTES) {
-                return None;
-            }
-        }
-        start = end;
     }
-    (start == ink.records.len()).then(|| path.finish())
+    Some(path.finish())
 }
 
 fn magicpen_source_color(stroke: &Stroke, argb: u32) -> Option<Color> {
@@ -4917,14 +4906,25 @@ mod tests {
             assert_eq!(path.attribute("d").unwrap().matches('Z').count(), 12);
             if has_replay {
                 let lengths = path.attribute("data-replay-lengths").unwrap();
-                assert_eq!(lengths.split(',').count(), 3);
+                assert_eq!(lengths.split(',').count(), 12);
                 let values = lengths
                     .split(',')
                     .map(|value| value.parse::<usize>().unwrap())
                     .collect::<Vec<_>>();
-                assert_eq!(values[0], 0);
-                assert!(values[1] > values[0]);
-                assert!(values[2] > values[1]);
+                let stroke = magicpen_v1_stroke();
+                let prepared = crate::prepare_stroke_for_page(&stroke, false);
+                for count in prepared.sample_ends.unwrap() {
+                    // Match the web ReplaySvg cutoff contract, including the
+                    // empty initial event and a six-stamp intermediate event.
+                    let end = if count >= values.len() {
+                        path.attribute("d").unwrap().len()
+                    } else {
+                        count.checked_sub(1).map_or(0, |index| values[index])
+                    };
+                    let prefix = &path.attribute("d").unwrap()[..end];
+                    assert_eq!(prefix.matches('M').count(), count);
+                    assert!(prefix.is_empty() || prefix.ends_with('Z'));
+                }
             } else {
                 assert!(path.attribute("data-replay-lengths").is_none());
             }
