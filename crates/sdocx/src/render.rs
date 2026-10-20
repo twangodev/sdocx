@@ -3545,8 +3545,8 @@ fn prepare_inkpen2_v9(
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
         || rendering.advanced_settings.as_deref() != Some("9;")
         || rendering.tool_type_raw != 2
-        || rendering.style.stroke_type_raw != Some(0)
-        || rendering.style.line_type_raw != Some(0)
+        || rendering.style.stroke_type_raw.unwrap_or(0) != 0
+        || rendering.style.line_type_raw.unwrap_or(0) != 0
         || rendering.properties.replay_only
         || !rendering.properties.stylus_channels
         || rendering.properties.eraser
@@ -5916,6 +5916,152 @@ mod tests {
         one.tilts.truncate(1);
         one.orientations.truncate(1);
         assert!(prepare_inkpen2_v9(&one, Some(profile), RenderTheme::for_canvas(false)).is_none());
+    }
+
+    #[test]
+    fn inkpen2_serialized_style_mapping_reaches_native_v9_records() {
+        // Bounded hybrid source control: this type-0 base prefix is borrowed
+        // from a Fountain note, while the type-1 style frame is host-built.
+        // The native V9 output below was captured after applying that same
+        // 106-byte type-1 frame and resolving its IDs through StringIDManager.
+        let hex_bytes = |hex: &str| -> Vec<u8> {
+            hex.as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let mut payload = hex_bytes(
+            "8900000000006900000002bf010400600400a00f0000240064313630613838652d623534642d313166312d613062392d396663373838333030663136f20edec9f25b06000000000001e55c40000000e0dbbc6940000000e05d9a604000000020769b6c400000000000be7635c6f25b060038070000350a000000000000000000000000000000000000",
+        );
+        payload.extend(hex_bytes(
+            "6a00000001005a000000020504040f000000040000000000000000000000000000000000000100800001600000010080cdcc4c3e330333033303000000000a000a000a00000000000000000000000000000000000000000002000000000001000000563412ff00008040",
+        ));
+        let mut stroke = crate::decode::decode_stroke(&payload, &crate::ParseLimits::default())
+            .expect("parse hybrid native type-1 frame");
+        let rendering = stroke.rendering.as_mut().unwrap();
+        assert_eq!(rendering.style.legacy_pen_name_id, Some(0));
+        assert_eq!(rendering.style.advanced_pen_setting_id, Some(1));
+        assert_eq!(rendering.style.color_argb, Some(0xff123456));
+        assert_eq!(rendering.style.pen_size, Some(4.0));
+        assert_eq!(rendering.style.initial_tolerance, None);
+        assert_eq!(rendering.style.stroke_type_raw, None);
+        assert_eq!(rendering.style.line_type_raw, None);
+        assert_eq!(
+            stroke.points,
+            [
+                crate::Point { x: 0.0, y: 0.0 },
+                crate::Point { x: 8.0, y: 0.0 },
+                crate::Point { x: 16.0, y: 3.0 },
+                crate::Point { x: 24.0, y: 3.0 },
+            ]
+        );
+        crate::StrokeResources::new(&crate::NoteStringTable {
+            entries: vec![
+                crate::NoteStringId {
+                    id: 0,
+                    text: "com.samsung.android.sdk.pen.pen.preload.InkPen2".into(),
+                },
+                crate::NoteStringId {
+                    id: 1,
+                    text: "9;".into(),
+                },
+            ],
+            trailing_data: Vec::new(),
+        })
+        .resolve(&mut stroke);
+        let rendering = stroke.rendering.as_mut().unwrap();
+        assert_eq!(
+            rendering.pen_name.as_deref(),
+            Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
+        );
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("9;"));
+        // The frame omits these fields. In pinned libSPenModel, ObjectStrokeImpl's
+        // constructor zeros offsets 0x1d0 (GetStrokeType) and 0x180
+        // (GetLineType), and the native getters read those fields directly.
+        // Thus absent parsed style values mean the native zero defaults here.
+
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let prepared = prepare_stroke_for_page_with_theme(
+            &stroke,
+            RenderTheme::for_canvas(false),
+            &RenderOptions {
+                inkpen2_profile: Some(profile),
+                ..RenderOptions::default()
+            },
+        );
+        let ink = prepared
+            .inkpen2_v9
+            .expect("decoded style IDs admit explicit V9 profile");
+        assert_eq!(ink.records.len(), 25);
+        let actual: Vec<u32> = ink
+            .records
+            .iter()
+            .flatten()
+            .map(|value| value.to_bits())
+            .collect();
+        let expected: [u32; 225] = [
+            0x3f7ffbf4, 0x00000000, 0x40145d17, 0x40145d17, 0x3e919191, 0x3f800000, 0x3d909091,
+            0x3e50d0d1, 0x3eacacad, 0x3fe38c67, 0x00000000, 0x4015d174, 0x4015d174, 0x3e92a40a,
+            0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x4031c686, 0x00000000, 0x401745d1,
+            0x401745d1, 0x3e93b13b, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x407ffff4,
+            0x00000000, 0x4018ba2e, 0x4018ba2e, 0x3e94b94b, 0x3f800000, 0x3d909091, 0x3e50d0d1,
+            0x3eacacad, 0x409f73b0, 0x3cb97aa8, 0x401a2e8b, 0x401a2e8b, 0x3e95bc60, 0x3f800000,
+            0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x40bee760, 0x3db97aa8, 0x401a7cbd, 0x401a7cbd,
+            0x3e95f22a, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x40de5b10, 0x3e50a9fe,
+            0x401acaef, 0x401acaef, 0x3e9627bd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad,
+            0x40fdcec0, 0x3eb97aa8, 0x401b1921, 0x401b1921, 0x3e965d1a, 0x3f800000, 0x3d909091,
+            0x3e50d0d1, 0x3eacacad, 0x410ea137, 0x3f10e7d2, 0x401b6753, 0x401b6753, 0x3e969241,
+            0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x411e5b10, 0x3f50a9fe, 0x401bb585,
+            0x401bb585, 0x3e96c733, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x412e14e7,
+            0x3f8e01e8, 0x401c03b7, 0x401c03b7, 0x3e96fbf0, 0x3f800000, 0x3d909091, 0x3e50d0d1,
+            0x3eacacad, 0x413dcebf, 0x3fb97aa8, 0x401c51e9, 0x401c51e9, 0x3e973078, 0x3f800000,
+            0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x414d889a, 0x3fe67454, 0x401ca01d, 0x401ca01d,
+            0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x415d4272, 0x4006df7c,
+            0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad,
+            0x416cfc49, 0x40179ee3, 0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091,
+            0x3e50d0d1, 0x3eacacad, 0x417cb621, 0x40257860, 0x401ca01d, 0x401ca01d, 0x3e9764cd,
+            0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x418637fc, 0x40306bf2, 0x401ca01d,
+            0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x418e14e8,
+            0x4038799a, 0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1,
+            0x3eacacad, 0x4195f1d4, 0x403da157, 0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000,
+            0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x419dcec0, 0x403fe329, 0x401ca01d, 0x401ca01d,
+            0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x41a73ae6, 0x40400000,
+            0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad,
+            0x41afb9bd, 0x40400000, 0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091,
+            0x3e50d0d1, 0x3eacacad, 0x41b67181, 0x40400000, 0x401ca01d, 0x401ca01d, 0x3e9764cd,
+            0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x41bf60c7, 0x40400000, 0x401ca01d,
+            0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1, 0x3eacacad, 0x41c00000,
+            0x40400000, 0x401ca01d, 0x401ca01d, 0x3e9764cd, 0x3f800000, 0x3d909091, 0x3e50d0d1,
+            0x3eacacad,
+        ];
+        assert_eq!(actual, expected, "all 225 native RTV3 float words");
+
+        let unsupported_types: [(&str, fn(&mut crate::StrokeStyle)); 2] = [
+            ("nonzero stroke type", |style| {
+                style.stroke_type_raw = Some(1)
+            }),
+            ("nonzero line type", |style| style.line_type_raw = Some(1)),
+        ];
+        for (name, mutate) in unsupported_types {
+            let mut unsupported = stroke.clone();
+            mutate(&mut unsupported.rendering.as_mut().unwrap().style);
+            assert!(
+                prepare_stroke_for_page_with_theme(
+                    &unsupported,
+                    RenderTheme::for_canvas(false),
+                    &RenderOptions {
+                        inkpen2_profile: Some(profile),
+                        ..RenderOptions::default()
+                    },
+                )
+                .inkpen2_v9
+                .is_none(),
+                "{name} must remain outside the captured V9 contract"
+            );
+        }
     }
 
     #[test]
