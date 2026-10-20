@@ -7,7 +7,7 @@
     "size_word": "8-digit hexadecimal uint32 word; decoded from source getter byte encoding"
   },
   "provenance": {
-    "runner_sha256": "ab6926c4bfade52e6a8d25bcf1dd7abffebf2430ef26dd5eff153e70f4ae9be4",
+    "runner_sha256": "1cccb9d7293b81a49e1547b59f1ce716b070a86ea2a49bac7b96979ef22eeca3",
     "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
     "libraries": {
       "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
@@ -28,6 +28,11 @@
       "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
       "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
       "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "lineage_reference_hashes_not_read_at_replay": {
+      "original_eight_case_fixture_sha256": "00b0a6220fe675ef2281556c68a923275211abd5b61116faf394b5e75984659a",
+      "rejected_terminal_four_case_fixture_sha256": "e5fe0823ffe75e2c0944abe396aa0b173c644d0307eb4f76bd8b23a2f8d0215f",
+      "previous_twelve_case_fixture_sha256": "3694d91f841362c77deff494fc57b17b7629510118ba92f0b44947440ac7cbf9"
     },
     "capture_source": "Hash-pinned MagicPen saved-caller runner, parameterized by this script. A Unicorn code hook is added immediately before ObjectDrawing::drawObjectStroke and removed immediately after it; only that invocation contributes to phase and callback observations. Wrapper SHA-256 uses a stable <FIXTURE_OUTPUT> placeholder. Each callback includes its raw source ordinal and its exact AddPoint half-open range/records.",
     "native_instruction_contract": {
@@ -6187,6 +6192,3123 @@
           },
           "initial_addpoint_callback_owner": "line",
           "post_return_vector_bytes_le_hex": "00000000000000000000c03ffcff8b3ffcff073f0000d43ffbff1740fcff8f3f0000e83ff9ff7540faffe33f0000fc3f0000b04000002040000008407a14de40ae474140cdcc1040285c0741eb5158409a991940c1f52041b81e65406766224008d73b4115ae674034332b40000058410000604000003440b70b734176a65940aaaa3d40dbd78741ccee5d40545547400b5596412e096c40feff5040e4a7a341b93d8040a8aa5a408b8bb141313c8e40525564400000c0410000a040ffff6d40a6f5d541e58fbf4054d57440e565ea41fd26e140a9aa7b400e9afd41c4310241ff3f8140f1c0084256281641aaaa844081791242c9f22a415415884000001c42fdff3f41fe7f8b40"
+        }
+      }
+    },
+    {
+      "id": "tool2_3_terminal_rejected",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40e00000",
+          "40000000",
+          "40f9999a",
+          "40266666"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3eb33333",
+          "3f733333"
+        ],
+        "timestamps_i32": [
+          100,
+          113,
+          171
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 6,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40100000",
+          "3ff2636a",
+          "3f0c7e49",
+          "40240000",
+          "4061d0cb",
+          "3f850242",
+          "40380000",
+          "409cee9f",
+          "3fbc495a",
+          "404c0000",
+          "40d410c4",
+          "400405a8",
+          "40600000",
+          "40f99998",
+          "40266664",
+          "40740000"
+        ],
+        "sha256": "360af319b727425bf916e18d09abf1ed2f71b15c7722df3bcc3ab51e731a187c"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "7a843338e496447fc8f8f4952eae6b2197cf9286f182e76d1c008df4b8139249",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "source_getters": {
+          "point_count": 3,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "40e00000",
+              "40000000",
+              "40f9999a",
+              "40266666"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3eb33333",
+              "3f733333"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              113,
+              171
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": true,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00002041",
+          "selected_pen_get_size_f32_u32_hex": "00002041",
+          "selected_drawable_class": "GLV1"
+        },
+        "redraw_phase": {
+          "addpoint_count": 6,
+          "addpoint_end": 6,
+          "addpoint_range": [
+            0,
+            6
+          ],
+          "addpoint_start": 0,
+          "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "phase_index": 0
+        },
+        "native_addpoint": {
+          "record_count": 6,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "3fe00000",
+            "3ff2636a",
+            "3f0c7e49",
+            "40040000",
+            "4061d0cb",
+            "3f850242",
+            "40180000",
+            "409cee9f",
+            "3fbc495a",
+            "402c0000",
+            "40d410c4",
+            "400405a8",
+            "40400000",
+            "40f99998",
+            "40266664",
+            "40540000"
+          ],
+          "captured_addpoint_records": [
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "00000000",
+                "00000000",
+                "3fe00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "3ff2636a",
+                "3f0c7e49",
+                "40040000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4061d0cb",
+                "3f850242",
+                "40180000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "409cee9f",
+                "3fbc495a",
+                "402c0000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40d410c4",
+                "400405a8",
+                "40400000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40f99998",
+                "40266664",
+                "40540000"
+              ]
+            }
+          ],
+          "source_event_trace": {
+            "curved_end_calls": [
+              {
+                "addpoint_count": 6,
+                "addpoint_end": 6,
+                "addpoint_range": [
+                  0,
+                  6
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.5
+                },
+                "args_f32_u32_hex": [
+                  "40f9999a",
+                  "40266666",
+                  "3f733333"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.5
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40f9999a",
+                    "40266666"
+                  ],
+                  "pressure_f32_u32_hex": "3f733333",
+                  "timestamp_i32": 171,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  6
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "00000000",
+                      "00000000",
+                      "3fe00000"
+                    ],
+                    "receiver": "0x10016a40"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "3ff2636a",
+                      "3f0c7e49",
+                      "40040000"
+                    ],
+                    "receiver": "0x10016a40"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4061d0cb",
+                      "3f850242",
+                      "40180000"
+                    ],
+                    "receiver": "0x10016a40"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "409cee9f",
+                      "3fbc495a",
+                      "402c0000"
+                    ],
+                    "receiver": "0x10016a40"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40d410c4",
+                      "400405a8",
+                      "40400000"
+                    ],
+                    "receiver": "0x10016a40"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40f99998",
+                      "40266664",
+                      "40540000"
+                    ],
+                    "receiver": "0x10016a40"
+                  }
+                ]
+              }
+            ],
+            "curved_line_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.5
+                },
+                "args_f32_u32_hex": [
+                  "40e00000",
+                  "40000000",
+                  "3eb33333"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 1,
+                  "point_f32_u32_hex": [
+                    "40e00000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3eb33333",
+                  "timestamp_i32": 113,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.5
+                },
+                "args_f32_u32_hex": [
+                  "40f9999a",
+                  "40266666",
+                  "3f733333"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.5
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40f9999a",
+                    "40266666"
+                  ],
+                  "pressure_f32_u32_hex": "3f733333",
+                  "timestamp_i32": 171,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              }
+            ]
+          },
+          "initial_addpoint_callback_owner": "terminal",
+          "post_return_vector_bytes_le_hex": "0000000000000000000010406a63f23f497e0c3f00002440cbd061404202853f000038409fee9c405a49bc3f00004c40c410d440a8050440000060409899f9406466264000007440"
+        }
+      }
+    },
+    {
+      "id": "tool2_5_terminal_origin_rejected",
+      "input": {
+        "points_f32_u32_hex": [
+          "c1200000",
+          "40000000",
+          "c0c00000",
+          "40400000",
+          "c0400000",
+          "40a00000",
+          "bf19999a",
+          "3f4ccccd",
+          "00000000",
+          "00000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3e99999a",
+          "3f0ccccd",
+          "3e4ccccd",
+          "3f7851ec"
+        ],
+        "timestamps_i32": [
+          100,
+          111,
+          127,
+          143,
+          199
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "c1200000",
+          "40000000",
+          "40000000",
+          "c103cb8b",
+          "40164139",
+          "40000000",
+          "c0d389c6",
+          "401e6e2c",
+          "40000000",
+          "c09c5a08",
+          "40162f6d",
+          "40000000",
+          "c0533333",
+          "3ff33333",
+          "40000000",
+          "c000ee4a",
+          "3fab27b4",
+          "401ecccd",
+          "bf756926",
+          "3f46d89c",
+          "403d999a",
+          "b4f3333e",
+          "351cccce",
+          "405c6667"
+        ],
+        "sha256": "fda924f0995448e71165cdd95b6e843b06a6c0cb6bc18193bf2ef30c372cfa92"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "5d5a2a82d4acbc140ebf3bace03253e5b24c72af6557f17028cd60c32741d4f2",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "source_getters": {
+          "point_count": 5,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "c1200000",
+              "40000000",
+              "c0c00000",
+              "40400000",
+              "c0400000",
+              "40a00000",
+              "bf19999a",
+              "3f4ccccd",
+              "00000000",
+              "00000000"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3e99999a",
+              "3f0ccccd",
+              "3e4ccccd",
+              "3f7851ec"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              111,
+              127,
+              143,
+              199
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": true,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00002041",
+          "selected_pen_get_size_f32_u32_hex": "00002041",
+          "selected_drawable_class": "GLV1"
+        },
+        "redraw_phase": {
+          "addpoint_count": 8,
+          "addpoint_end": 8,
+          "addpoint_range": [
+            0,
+            8
+          ],
+          "addpoint_start": 0,
+          "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "phase_index": 0
+        },
+        "native_addpoint": {
+          "record_count": 8,
+          "argument_words_f32_u32_hex": [
+            "c1200000",
+            "40000000",
+            "3fc00000",
+            "c103cb8b",
+            "40164139",
+            "3fc00000",
+            "c0d389c6",
+            "401e6e2c",
+            "3fc00000",
+            "c09c5a08",
+            "40162f6d",
+            "3fc00000",
+            "c0533333",
+            "3ff33333",
+            "3fc00000",
+            "c000ee4a",
+            "3fab27b4",
+            "3ffd999a",
+            "bf756926",
+            "3f46d89c",
+            "401d999a",
+            "b4f3333e",
+            "351cccce",
+            "403c6667"
+          ],
+          "captured_addpoint_records": [
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c1200000",
+                "40000000",
+                "3fc00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c103cb8b",
+                "40164139",
+                "3fc00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c0d389c6",
+                "401e6e2c",
+                "3fc00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c09c5a08",
+                "40162f6d",
+                "3fc00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c0533333",
+                "3ff33333",
+                "3fc00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "c000ee4a",
+                "3fab27b4",
+                "3ffd999a"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "bf756926",
+                "3f46d89c",
+                "401d999a"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "b4f3333e",
+                "351cccce",
+                "403c6667"
+              ]
+            }
+          ],
+          "source_event_trace": {
+            "curved_end_calls": [
+              {
+                "addpoint_count": 4,
+                "addpoint_end": 8,
+                "addpoint_range": [
+                  4,
+                  8
+                ],
+                "addpoint_start": 4,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -0.6000000238418579,
+                  "control_y_plus316_f32": 0.800000011920929,
+                  "last_x_plus296_f32": -0.6000000238418579,
+                  "last_y_plus300_f32": 0.800000011920929,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.8373541831970215,
+                  "width_plus144_f32": 3.0
+                },
+                "args_f32_u32_hex": [
+                  "00000000",
+                  "00000000",
+                  "3f7851ec"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -0.6000000238418579,
+                  "control_y_plus316_f32": 0.800000011920929,
+                  "last_x_plus296_f32": -0.6000000238418579,
+                  "last_y_plus300_f32": 0.800000011920929,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.8373541831970215,
+                  "width_plus144_f32": 3.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 4,
+                  "point_f32_u32_hex": [
+                    "00000000",
+                    "00000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f7851ec",
+                  "timestamp_i32": 199,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  8
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c0533333",
+                      "3ff33333",
+                      "3fc00000"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c000ee4a",
+                      "3fab27b4",
+                      "3ffd999a"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "bf756926",
+                      "3f46d89c",
+                      "401d999a"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "b4f3333e",
+                      "351cccce",
+                      "403c6667"
+                    ],
+                    "receiver": "0x10016e30"
+                  }
+                ]
+              }
+            ],
+            "curved_line_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -6.0,
+                  "control_y_plus316_f32": 3.0,
+                  "last_x_plus296_f32": -6.0,
+                  "last_y_plus300_f32": 3.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.0
+                },
+                "args_f32_u32_hex": [
+                  "c0c00000",
+                  "40400000",
+                  "3e99999a"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": -10.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 1,
+                  "point_f32_u32_hex": [
+                    "c0c00000",
+                    "40400000"
+                  ],
+                  "pressure_f32_u32_hex": "3e99999a",
+                  "timestamp_i32": 111,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": -6.0,
+                  "control_y_plus316_f32": 3.0,
+                  "last_x_plus296_f32": -3.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.0
+                },
+                "args_f32_u32_hex": [
+                  "c0400000",
+                  "40a00000",
+                  "3f0ccccd"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -6.0,
+                  "control_y_plus316_f32": 3.0,
+                  "last_x_plus296_f32": -6.0,
+                  "last_y_plus300_f32": 3.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "c0400000",
+                    "40a00000"
+                  ],
+                  "pressure_f32_u32_hex": "3f0ccccd",
+                  "timestamp_i32": 127,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 4,
+                "addpoint_end": 4,
+                "addpoint_range": [
+                  0,
+                  4
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -0.6000000238418579,
+                  "control_y_plus316_f32": 0.800000011920929,
+                  "last_x_plus296_f32": -0.6000000238418579,
+                  "last_y_plus300_f32": 0.800000011920929,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.8373541831970215,
+                  "width_plus144_f32": 3.0
+                },
+                "args_f32_u32_hex": [
+                  "bf19999a",
+                  "3f4ccccd",
+                  "3e4ccccd"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": -6.0,
+                  "control_y_plus316_f32": 3.0,
+                  "last_x_plus296_f32": -3.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 3.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 3,
+                  "point_f32_u32_hex": [
+                    "bf19999a",
+                    "3f4ccccd"
+                  ],
+                  "pressure_f32_u32_hex": "3e4ccccd",
+                  "timestamp_i32": 143,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  4
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c1200000",
+                      "40000000",
+                      "3fc00000"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c103cb8b",
+                      "40164139",
+                      "3fc00000"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c0d389c6",
+                      "401e6e2c",
+                      "3fc00000"
+                    ],
+                    "receiver": "0x10016e30"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "c09c5a08",
+                      "40162f6d",
+                      "3fc00000"
+                    ],
+                    "receiver": "0x10016e30"
+                  }
+                ]
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 4,
+                "addpoint_range": [
+                  4,
+                  4
+                ],
+                "addpoint_start": 4,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -0.6000000238418579,
+                  "control_y_plus316_f32": 0.800000011920929,
+                  "last_x_plus296_f32": -0.6000000238418579,
+                  "last_y_plus300_f32": 0.800000011920929,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.8373541831970215,
+                  "width_plus144_f32": 3.0
+                },
+                "args_f32_u32_hex": [
+                  "00000000",
+                  "00000000",
+                  "3f7851ec"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": -0.6000000238418579,
+                  "control_y_plus316_f32": 0.800000011920929,
+                  "last_x_plus296_f32": -0.6000000238418579,
+                  "last_y_plus300_f32": 0.800000011920929,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.8373541831970215,
+                  "width_plus144_f32": 3.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 4,
+                  "point_f32_u32_hex": [
+                    "00000000",
+                    "00000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f7851ec",
+                  "timestamp_i32": 199,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  4
+                ],
+                "addpoint_records": []
+              }
+            ]
+          },
+          "initial_addpoint_callback_owner": "line",
+          "post_return_vector_bytes_le_hex": "000020c100000040000000408bcb03c13941164000000040c689d3c02c6e1e4000000040085a9cc06d2f164000000040333353c03333f33f000000404aee00c0b427ab3fcdcc1e40266975bf9cd8463f9a993d403e33f3b4cecc1c3567665c40"
+        }
+      }
+    },
+    {
+      "id": "tool2_6_terminal_rejected",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40400000",
+          "3f800000",
+          "40e00000",
+          "40400000",
+          "41600000",
+          "41000000",
+          "41a00000",
+          "40a00000",
+          "41a73333",
+          "40b66666"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3e800000",
+          "3ee66666",
+          "3f266666",
+          "3f59999a",
+          "3f7ae148"
+        ],
+        "timestamps_i32": [
+          100,
+          111,
+          127,
+          143,
+          162,
+          199
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 13,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3fe00000",
+          "3fcd056e",
+          "3f21c363",
+          "3ff8cccd",
+          "405fd541",
+          "3fc76309",
+          "4008cccd",
+          "40a17370",
+          "401a0ae6",
+          "40153334",
+          "40d66876",
+          "405862f2",
+          "4021999a",
+          "41080000",
+          "40900000",
+          "402e0000",
+          "41240960",
+          "40afe661",
+          "403815f1",
+          "413deebc",
+          "40c6169c",
+          "40422be2",
+          "415af73c",
+          "40d5bea6",
+          "404c41d3",
+          "41775146",
+          "40daffa6",
+          "405657c4",
+          "418aed47",
+          "40d5bbec",
+          "40606db5",
+          "41994af0",
+          "40c825ca",
+          "406a83a6",
+          "41a73330",
+          "40b66669",
+          "40749997"
+        ],
+        "sha256": "09c804f7ebb59a926ea18d47b2500aa5cca83a54f07fd9a60347ae4bd9bf417f"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "27b0ca1320154ce410fc12924d0f2d2f056696a0d65c1fd0c2b3634913c3aaf4",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "source_getters": {
+          "point_count": 6,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "40400000",
+              "3f800000",
+              "40e00000",
+              "40400000",
+              "41600000",
+              "41000000",
+              "41a00000",
+              "40a00000",
+              "41a73333",
+              "40b66666"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3e800000",
+              "3ee66666",
+              "3f266666",
+              "3f59999a",
+              "3f7ae148"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              111,
+              127,
+              143,
+              162,
+              199
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": true,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00002041",
+          "selected_pen_get_size_f32_u32_hex": "00002041",
+          "selected_drawable_class": "GLV1"
+        },
+        "redraw_phase": {
+          "addpoint_count": 13,
+          "addpoint_end": 13,
+          "addpoint_range": [
+            0,
+            13
+          ],
+          "addpoint_start": 0,
+          "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "phase_index": 0
+        },
+        "native_addpoint": {
+          "record_count": 13,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "3fa00000",
+            "3fcd056e",
+            "3f21c363",
+            "3fb8cccd",
+            "405fd541",
+            "3fc76309",
+            "3fd1999a",
+            "40a17370",
+            "401a0ae6",
+            "3fea6667",
+            "40d66876",
+            "405862f2",
+            "4001999a",
+            "41080000",
+            "40900000",
+            "400e0000",
+            "41240960",
+            "40afe661",
+            "401815f1",
+            "413deebc",
+            "40c6169c",
+            "40222be2",
+            "415af73c",
+            "40d5bea6",
+            "402c41d3",
+            "41775146",
+            "40daffa6",
+            "403657c4",
+            "418aed47",
+            "40d5bbec",
+            "40406db5",
+            "41994af0",
+            "40c825ca",
+            "404a83a6",
+            "41a73330",
+            "40b66669",
+            "40549997"
+          ],
+          "captured_addpoint_records": [
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "00000000",
+                "00000000",
+                "3fa00000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "3fcd056e",
+                "3f21c363",
+                "3fb8cccd"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "405fd541",
+                "3fc76309",
+                "3fd1999a"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40a17370",
+                "401a0ae6",
+                "3fea6667"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40d66876",
+                "405862f2",
+                "4001999a"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41080000",
+                "40900000",
+                "400e0000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41240960",
+                "40afe661",
+                "401815f1"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "413deebc",
+                "40c6169c",
+                "40222be2"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "415af73c",
+                "40d5bea6",
+                "402c41d3"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41775146",
+                "40daffa6",
+                "403657c4"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "418aed47",
+                "40d5bbec",
+                "40406db5"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41994af0",
+                "40c825ca",
+                "404a83a6"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41a73330",
+                "40b66669",
+                "40549997"
+              ]
+            }
+          ],
+          "source_event_trace": {
+            "curved_end_calls": [
+              {
+                "addpoint_count": 8,
+                "addpoint_end": 13,
+                "addpoint_range": [
+                  5,
+                  13
+                ],
+                "addpoint_start": 5,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 20.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "args_f32_u32_hex": [
+                  "41a73333",
+                  "40b66666",
+                  "3f7ae148"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 20.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 5,
+                  "point_f32_u32_hex": [
+                    "41a73333",
+                    "40b66666"
+                  ],
+                  "pressure_f32_u32_hex": "3f7ae148",
+                  "timestamp_i32": 199,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  13
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41080000",
+                      "40900000",
+                      "400e0000"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41240960",
+                      "40afe661",
+                      "401815f1"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "413deebc",
+                      "40c6169c",
+                      "40222be2"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "415af73c",
+                      "40d5bea6",
+                      "402c41d3"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41775146",
+                      "40daffa6",
+                      "403657c4"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "418aed47",
+                      "40d5bbec",
+                      "40406db5"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41994af0",
+                      "40c825ca",
+                      "404a83a6"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41a73330",
+                      "40b66669",
+                      "40549997"
+                    ],
+                    "receiver": "0x10017250"
+                  }
+                ]
+              }
+            ],
+            "curved_line_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 3.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 3.0,
+                  "last_y_plus300_f32": 1.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.5
+                },
+                "args_f32_u32_hex": [
+                  "40400000",
+                  "3f800000",
+                  "3e800000"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 1,
+                  "point_f32_u32_hex": [
+                    "40400000",
+                    "3f800000"
+                  ],
+                  "pressure_f32_u32_hex": "3e800000",
+                  "timestamp_i32": 111,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 3.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 3.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.5
+                },
+                "args_f32_u32_hex": [
+                  "40e00000",
+                  "40400000",
+                  "3ee66666"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 3.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 3.0,
+                  "last_y_plus300_f32": 1.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.5
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40e00000",
+                    "40400000"
+                  ],
+                  "pressure_f32_u32_hex": "3ee66666",
+                  "timestamp_i32": 127,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 5,
+                "addpoint_end": 5,
+                "addpoint_range": [
+                  0,
+                  5
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 14.0,
+                  "last_y_plus300_f32": 8.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "args_f32_u32_hex": [
+                  "41600000",
+                  "41000000",
+                  "3f266666"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 3.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 3.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.5
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 3,
+                  "point_f32_u32_hex": [
+                    "41600000",
+                    "41000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f266666",
+                  "timestamp_i32": 143,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  5
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "00000000",
+                      "00000000",
+                      "3fa00000"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "3fcd056e",
+                      "3f21c363",
+                      "3fb8cccd"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "405fd541",
+                      "3fc76309",
+                      "3fd1999a"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40a17370",
+                      "401a0ae6",
+                      "3fea6667"
+                    ],
+                    "receiver": "0x10017250"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40d66876",
+                      "405862f2",
+                      "4001999a"
+                    ],
+                    "receiver": "0x10017250"
+                  }
+                ]
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 5,
+                "addpoint_range": [
+                  5,
+                  5
+                ],
+                "addpoint_start": 5,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 20.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "args_f32_u32_hex": [
+                  "41a00000",
+                  "40a00000",
+                  "3f59999a"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 14.0,
+                  "last_y_plus300_f32": 8.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 4,
+                  "point_f32_u32_hex": [
+                    "41a00000",
+                    "40a00000"
+                  ],
+                  "pressure_f32_u32_hex": "3f59999a",
+                  "timestamp_i32": 162,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  5
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 5,
+                "addpoint_range": [
+                  5,
+                  5
+                ],
+                "addpoint_start": 5,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 20.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "args_f32_u32_hex": [
+                  "41a73333",
+                  "40b66666",
+                  "3f7ae148"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 14.0,
+                  "control_y_plus316_f32": 8.0,
+                  "last_x_plus296_f32": 20.0,
+                  "last_y_plus300_f32": 5.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 8.602325439453125,
+                  "width_plus144_f32": 4.4375
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 5,
+                  "point_f32_u32_hex": [
+                    "41a73333",
+                    "40b66666"
+                  ],
+                  "pressure_f32_u32_hex": "3f7ae148",
+                  "timestamp_i32": 199,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  5
+                ],
+                "addpoint_records": []
+              }
+            ]
+          },
+          "initial_addpoint_callback_owner": "line",
+          "post_return_vector_bytes_le_hex": "00000000000000000000e03f6e05cd3f63c3213fcdccf83f41d55f400963c73fcdcc08407073a140e60a1a40343315407668d640f26258409a992140000008410000904000002e406009244161e6af40f1153840bcee3d419c16c640e22b42403cf75a41a6bed540d3414c4046517741a6ffda40c457564047ed8a41ecbbd540b56d6040f04a9941ca25c840a6836a403033a7416966b64097997440"
+        }
+      }
+    },
+    {
+      "id": "tool2_9_duplicate_terminal_rejected",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40000000",
+          "3f800000",
+          "40800000",
+          "00000000",
+          "40800000",
+          "00000000",
+          "408ccccd",
+          "3e99999a",
+          "41100000",
+          "40000000",
+          "41600000",
+          "40800000",
+          "41900000",
+          "40000000",
+          "4195999a",
+          "40333333"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3e4ccccd",
+          "3eb33333",
+          "3f000000",
+          "3f333333",
+          "3f59999a",
+          "3f266666",
+          "3f0ccccd",
+          "3f75c28f"
+        ],
+        "timestamps_i32": [
+          100,
+          111,
+          127,
+          143,
+          162,
+          181,
+          199,
+          224,
+          260
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 12,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "3fc00000",
+          "3fbffffb",
+          "3f1c71c3",
+          "3feaaaab",
+          "4055554f",
+          "3f8e38e1",
+          "400aaaab",
+          "40b00000",
+          "3fc00000",
+          "40200000",
+          "40de147a",
+          "3fd70a3d",
+          "40253333",
+          "41075c28",
+          "3fe8f5c2",
+          "402a6666",
+          "4120f5c1",
+          "3ff5c28f",
+          "402f9999",
+          "413bd708",
+          "3ffd70a3",
+          "4034cccc",
+          "41580000",
+          "40000000",
+          "403a0000",
+          "417814d3",
+          "40032c5f",
+          "404ebbbc",
+          "41885022",
+          "400cb17e",
+          "40637778",
+          "4195999a",
+          "40333331",
+          "40783334"
+        ],
+        "sha256": "94e0eedbe20a5638d518dcb98e4f4a903fbf113d32bbd6de2b6e3272c46e36ba"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "96bfb109c61174cb3036cd5d8f7f063b74feeba93c6c2b31f3e7d26e5af2d90d",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "source_getters": {
+          "point_count": 9,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "40000000",
+              "3f800000",
+              "40800000",
+              "00000000",
+              "40800000",
+              "00000000",
+              "408ccccd",
+              "3e99999a",
+              "41100000",
+              "40000000",
+              "41600000",
+              "40800000",
+              "41900000",
+              "40000000",
+              "4195999a",
+              "40333333"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3e4ccccd",
+              "3eb33333",
+              "3f000000",
+              "3f333333",
+              "3f59999a",
+              "3f266666",
+              "3f0ccccd",
+              "3f75c28f"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              111,
+              127,
+              143,
+              162,
+              181,
+              199,
+              224,
+              260
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": true,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00002041",
+          "selected_pen_get_size_f32_u32_hex": "00002041",
+          "selected_drawable_class": "GLV1"
+        },
+        "redraw_phase": {
+          "addpoint_count": 12,
+          "addpoint_end": 12,
+          "addpoint_range": [
+            0,
+            12
+          ],
+          "addpoint_start": 0,
+          "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "phase_index": 0
+        },
+        "native_addpoint": {
+          "record_count": 12,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "3f800000",
+            "3fbffffb",
+            "3f1c71c3",
+            "3faaaaab",
+            "4055554f",
+            "3f8e38e1",
+            "3fd55556",
+            "40b00000",
+            "3fc00000",
+            "40000000",
+            "40de147a",
+            "3fd70a3d",
+            "40053333",
+            "41075c28",
+            "3fe8f5c2",
+            "400a6666",
+            "4120f5c1",
+            "3ff5c28f",
+            "400f9999",
+            "413bd708",
+            "3ffd70a3",
+            "4014cccc",
+            "41580000",
+            "40000000",
+            "401a0000",
+            "417814d3",
+            "40032c5f",
+            "402ebbbc",
+            "41885022",
+            "400cb17e",
+            "40437778",
+            "4195999a",
+            "40333331",
+            "40583334"
+          ],
+          "captured_addpoint_records": [
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "00000000",
+                "00000000",
+                "3f800000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "3fbffffb",
+                "3f1c71c3",
+                "3faaaaab"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4055554f",
+                "3f8e38e1",
+                "3fd55556"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40b00000",
+                "3fc00000",
+                "40000000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40de147a",
+                "3fd70a3d",
+                "40053333"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41075c28",
+                "3fe8f5c2",
+                "400a6666"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4120f5c1",
+                "3ff5c28f",
+                "400f9999"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "413bd708",
+                "3ffd70a3",
+                "4014cccc"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41580000",
+                "40000000",
+                "401a0000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "417814d3",
+                "40032c5f",
+                "402ebbbc"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "41885022",
+                "400cb17e",
+                "40437778"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4195999a",
+                "40333331",
+                "40583334"
+              ]
+            }
+          ],
+          "source_event_trace": {
+            "curved_end_calls": [
+              {
+                "addpoint_count": 4,
+                "addpoint_end": 12,
+                "addpoint_range": [
+                  8,
+                  12
+                ],
+                "addpoint_start": 8,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 18.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 18.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.4721360206604,
+                  "width_plus144_f32": 4.8125
+                },
+                "args_f32_u32_hex": [
+                  "4195999a",
+                  "40333333",
+                  "3f75c28f"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 18.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 18.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.4721360206604,
+                  "width_plus144_f32": 4.8125
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 8,
+                  "point_f32_u32_hex": [
+                    "4195999a",
+                    "40333333"
+                  ],
+                  "pressure_f32_u32_hex": "3f75c28f",
+                  "timestamp_i32": 260,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  12
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41580000",
+                      "40000000",
+                      "401a0000"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "417814d3",
+                      "40032c5f",
+                      "402ebbbc"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41885022",
+                      "400cb17e",
+                      "40437778"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4195999a",
+                      "40333331",
+                      "40583334"
+                    ],
+                    "receiver": "0x10017640"
+                  }
+                ]
+              }
+            ],
+            "curved_line_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 2.0,
+                  "last_y_plus300_f32": 1.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "args_f32_u32_hex": [
+                  "40000000",
+                  "3f800000",
+                  "3e4ccccd"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 1,
+                  "point_f32_u32_hex": [
+                    "40000000",
+                    "3f800000"
+                  ],
+                  "pressure_f32_u32_hex": "3e4ccccd",
+                  "timestamp_i32": 111,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "args_f32_u32_hex": [
+                  "40800000",
+                  "00000000",
+                  "3eb33333"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 2.0,
+                  "last_y_plus300_f32": 1.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40800000",
+                    "00000000"
+                  ],
+                  "pressure_f32_u32_hex": "3eb33333",
+                  "timestamp_i32": 127,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "args_f32_u32_hex": [
+                  "40800000",
+                  "00000000",
+                  "3f000000"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 3,
+                  "point_f32_u32_hex": [
+                    "40800000",
+                    "00000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f000000",
+                  "timestamp_i32": 143,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "args_f32_u32_hex": [
+                  "408ccccd",
+                  "3e99999a",
+                  "3f333333"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 4,
+                  "point_f32_u32_hex": [
+                    "408ccccd",
+                    "3e99999a"
+                  ],
+                  "pressure_f32_u32_hex": "3f333333",
+                  "timestamp_i32": 162,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 3,
+                "addpoint_end": 3,
+                "addpoint_range": [
+                  0,
+                  3
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 9.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 9.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 5.385164737701416,
+                  "width_plus144_f32": 4.0
+                },
+                "args_f32_u32_hex": [
+                  "41100000",
+                  "40000000",
+                  "3f59999a"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 2.0,
+                  "control_y_plus316_f32": 1.0,
+                  "last_x_plus296_f32": 4.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 2.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 5,
+                  "point_f32_u32_hex": [
+                    "41100000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f59999a",
+                  "timestamp_i32": 181,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  3
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "00000000",
+                      "00000000",
+                      "3f800000"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "3fbffffb",
+                      "3f1c71c3",
+                      "3faaaaab"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4055554f",
+                      "3f8e38e1",
+                      "3fd55556"
+                    ],
+                    "receiver": "0x10017640"
+                  }
+                ]
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 3,
+                "addpoint_range": [
+                  3,
+                  3
+                ],
+                "addpoint_start": 3,
+                "after": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 9.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 14.0,
+                  "last_y_plus300_f32": 4.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 5.385164737701416,
+                  "width_plus144_f32": 4.0
+                },
+                "args_f32_u32_hex": [
+                  "41600000",
+                  "40800000",
+                  "3f266666"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 9.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 9.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 5.385164737701416,
+                  "width_plus144_f32": 4.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 6,
+                  "point_f32_u32_hex": [
+                    "41600000",
+                    "40800000"
+                  ],
+                  "pressure_f32_u32_hex": "3f266666",
+                  "timestamp_i32": 199,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  3
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 5,
+                "addpoint_end": 8,
+                "addpoint_range": [
+                  3,
+                  8
+                ],
+                "addpoint_start": 3,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 18.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 18.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.4721360206604,
+                  "width_plus144_f32": 4.8125
+                },
+                "args_f32_u32_hex": [
+                  "41900000",
+                  "40000000",
+                  "3f0ccccd"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 9.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 14.0,
+                  "last_y_plus300_f32": 4.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 5.385164737701416,
+                  "width_plus144_f32": 4.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 7,
+                  "point_f32_u32_hex": [
+                    "41900000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f0ccccd",
+                  "timestamp_i32": 224,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  8
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40b00000",
+                      "3fc00000",
+                      "40000000"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40de147a",
+                      "3fd70a3d",
+                      "40053333"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "41075c28",
+                      "3fe8f5c2",
+                      "400a6666"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4120f5c1",
+                      "3ff5c28f",
+                      "400f9999"
+                    ],
+                    "receiver": "0x10017640"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "413bd708",
+                      "3ffd70a3",
+                      "4014cccc"
+                    ],
+                    "receiver": "0x10017640"
+                  }
+                ]
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 8,
+                "addpoint_range": [
+                  8,
+                  8
+                ],
+                "addpoint_start": 8,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 18.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 18.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.4721360206604,
+                  "width_plus144_f32": 4.8125
+                },
+                "args_f32_u32_hex": [
+                  "4195999a",
+                  "40333333",
+                  "3f75c28f"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 18.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 18.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 4.4721360206604,
+                  "width_plus144_f32": 4.8125
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 8,
+                  "point_f32_u32_hex": [
+                    "4195999a",
+                    "40333333"
+                  ],
+                  "pressure_f32_u32_hex": "3f75c28f",
+                  "timestamp_i32": 260,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  8
+                ],
+                "addpoint_records": []
+              }
+            ]
+          },
+          "initial_addpoint_callback_owner": "line",
+          "post_return_vector_bytes_le_hex": "00000000000000000000c03ffbffbf3fc3711c3fabaaea3f4f555540e1388e3fabaa0a400000b0400000c03f000020407a14de403d0ad73f33332540285c0741c2f5e83f66662a40c1f520418fc2f53f99992f4008d73b41a370fd3fcccc3440000058410000004000003a40d31478415f2c0340bcbb4e40225088417eb10c40787763409a9995413133334034337840"
+        }
+      }
+    },
+    {
+      "id": "tool2_3_duplicate_terminal_same_xy_pressure",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40e00000",
+          "40000000",
+          "40e00000",
+          "40000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3ecccccd",
+          "3f7ae148"
+        ],
+        "timestamps_i32": [
+          100,
+          113,
+          171
+        ],
+        "size_f32_u32_hex": "41200000",
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 5,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "40200000",
+          "4008e292",
+          "3f1c70a7",
+          "4037999a",
+          "4078e1fb",
+          "3f8e37fd",
+          "404f3334",
+          "40a7ff1d",
+          "3fbffefd",
+          "4066ccce",
+          "40e00000",
+          "40000000",
+          "407e6668"
+        ],
+        "sha256": "6cca898ec71b2c302782471b126e45552b22f56db7ff44b1b3248741eb862fd9"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "f938915371ea2d3a15fb911a2284ff2d4e9f01c8e7ef48a7f009cedda15edfb7",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "source_getters": {
+          "point_count": 3,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "40e00000",
+              "40000000",
+              "40e00000",
+              "40000000"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3ecccccd",
+              "3f7ae148"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              113,
+              171
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": true,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00002041",
+          "selected_pen_get_size_f32_u32_hex": "00002041",
+          "selected_drawable_class": "GLV1"
+        },
+        "redraw_phase": {
+          "addpoint_count": 5,
+          "addpoint_end": 5,
+          "addpoint_range": [
+            0,
+            5
+          ],
+          "addpoint_start": 0,
+          "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "phase_index": 0
+        },
+        "native_addpoint": {
+          "record_count": 5,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "40000000",
+            "4008e292",
+            "3f1c70a7",
+            "4017999a",
+            "4078e1fb",
+            "3f8e37fd",
+            "402f3334",
+            "40a7ff1d",
+            "3fbffefd",
+            "4046ccce",
+            "40e00000",
+            "40000000",
+            "405e6668"
+          ],
+          "captured_addpoint_records": [
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "00000000",
+                "00000000",
+                "40000000"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4008e292",
+                "3f1c70a7",
+                "4017999a"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "4078e1fb",
+                "3f8e37fd",
+                "402f3334"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40a7ff1d",
+                "3fbffefd",
+                "4046ccce"
+              ]
+            },
+            {
+              "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+              "float_words_s0_s2_u32_hex": [
+                "40e00000",
+                "40000000",
+                "405e6668"
+              ]
+            }
+          ],
+          "source_event_trace": {
+            "curved_end_calls": [
+              {
+                "addpoint_count": 5,
+                "addpoint_end": 5,
+                "addpoint_range": [
+                  0,
+                  5
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 4.0
+                },
+                "args_f32_u32_hex": [
+                  "40e00000",
+                  "40000000",
+                  "3f7ae148"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 4.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40e00000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f7ae148",
+                  "timestamp_i32": 171,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  5
+                ],
+                "addpoint_records": [
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "00000000",
+                      "00000000",
+                      "40000000"
+                    ],
+                    "receiver": "0x10016890"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4008e292",
+                      "3f1c70a7",
+                      "4017999a"
+                    ],
+                    "receiver": "0x10016890"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "4078e1fb",
+                      "3f8e37fd",
+                      "402f3334"
+                    ],
+                    "receiver": "0x10016890"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40a7ff1d",
+                      "3fbffefd",
+                      "4046ccce"
+                    ],
+                    "receiver": "0x10016890"
+                  },
+                  {
+                    "entry": "SPen::MagicPenStrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float)",
+                    "float_words_s0_s2": [
+                      "40e00000",
+                      "40000000",
+                      "405e6668"
+                    ],
+                    "receiver": "0x10016890"
+                  }
+                ]
+              }
+            ],
+            "curved_line_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 4.0
+                },
+                "args_f32_u32_hex": [
+                  "40e00000",
+                  "40000000",
+                  "3ecccccd"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 1,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 1,
+                  "point_f32_u32_hex": [
+                    "40e00000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3ecccccd",
+                  "timestamp_i32": 113,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              },
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 0,
+                "addpoint_range": [
+                  0,
+                  0
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 4.0
+                },
+                "args_f32_u32_hex": [
+                  "40e00000",
+                  "40000000",
+                  "3f7ae148"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 7.0,
+                  "control_y_plus316_f32": 2.0,
+                  "last_x_plus296_f32": 7.0,
+                  "last_y_plus300_f32": 2.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 4.0
+                },
+                "phase_index": 0,
+                "source_event": {
+                  "index_zero_based": 2,
+                  "point_f32_u32_hex": [
+                    "40e00000",
+                    "40000000"
+                  ],
+                  "pressure_f32_u32_hex": "3f7ae148",
+                  "timestamp_i32": 171,
+                  "tilt_f32_u32_hex": "00000000",
+                  "orientation_f32_u32_hex": "00000000"
+                },
+                "addpoint_prefix_range": [
+                  0,
+                  0
+                ],
+                "addpoint_records": []
+              }
+            ]
+          },
+          "initial_addpoint_callback_owner": "terminal",
+          "post_return_vector_bytes_le_hex": "00000000000000000000204092e20840a7701c3f9a993740fbe17840fd378e3f34334f401dffa740fdfebf3fcecc66400000e0400000004068667e40"
         }
       }
     }

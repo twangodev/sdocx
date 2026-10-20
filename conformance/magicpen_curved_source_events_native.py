@@ -22,6 +22,11 @@ ROOT = next(
 )
 BASE = ROOT / "conformance/magicpen_saved_caller_native.py"
 FIXTURE = SCRIPT_DIR / "magicpen-curved-source-events-native.json"
+LINEAGE_FIXTURES = {
+    "original_eight_case_fixture_sha256": "00b0a6220fe675ef2281556c68a923275211abd5b61116faf394b5e75984659a",
+    "rejected_terminal_four_case_fixture_sha256": "e5fe0823ffe75e2c0944abe396aa0b173c644d0307eb4f76bd8b23a2f8d0215f",
+    "previous_twelve_case_fixture_sha256": "3694d91f841362c77deff494fc57b17b7629510118ba92f0b44947440ac7cbf9",
+}
 BASE_SHA256 = "cd2d613e202e35be261316a433533cda1c2f0ee76db150c4cca20963c80ba59c"
 LIBRARIES = {
     "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
@@ -105,6 +110,11 @@ CASES = [
     ("tool2_4_boundary", [(0.,0.),(5.,2.),(11.,-1.),(19.,6.)], [.2,.4,.7,1.], [100,117,139,181], 10,"set",True),
     ("tool2_6_boundary", [(1.,2.),(4.,-1.),(9.,3.),(15.,8.),(23.,4.),(31.,10.)], [.1,.25,.45,.65,.85,1.], [100,111,127,143,162,181], 10,"set",True),
     ("tool2_9_boundary", [(0.,0.),(2.,1.),(5.,-2.),(9.,4.),(13.,8.),(18.,3.),(24.,9.),(30.,7.),(39.,12.)], [.1,.2,.3,.4,.5,.6,.8,.9,1.], [100,111,127,143,162,181,199,224,250], 10,"set",True),
+    ("tool2_3_terminal_rejected", [(0.,0.),(7.,2.),(7.8,2.6)], [.10,.35,.95], [100,113,171], 10,"set",True),
+    ("tool2_5_terminal_origin_rejected", [(-10.,2.),(-6.,3.),(-3.,5.),(-.6,.8),(0.,0.)], [.10,.3,.55,.2,.97], [100,111,127,143,199], 10,"set",True),
+    ("tool2_6_terminal_rejected", [(0.,0.),(3.,1.),(7.,3.),(14.,8.),(20.,5.),(20.9,5.7)], [.10,.25,.45,.65,.85,.98], [100,111,127,143,162,199], 10,"set",True),
+    ("tool2_9_duplicate_terminal_rejected", [(0.,0.),(2.,1.),(4.,0.),(4.,0.),(4.4,.3),(9.,2.),(14.,4.),(18.,2.),(18.7,2.8)], [.10,.20,.35,.50,.70,.85,.65,.55,.96], [100,111,127,143,162,181,199,224,260], 10,"set",True),
+    ("tool2_3_duplicate_terminal_same_xy_pressure", [(0.,0.),(7.,2.),(7.,2.)], [.10,.40,.98], [100,113,171], 10,"set",True),
 ]
 
 
@@ -407,12 +417,6 @@ def generated_fixture() -> dict:
         raise RuntimeError("native helper source pins differ from the reviewed closure")
     if len({case["capture"]["base_caller_sha256"] for case in cases}) != 1:
         raise RuntimeError("base caller changed during capture matrix")
-    reference = json.loads((ROOT / "conformance/magicpen-glv1-source-native.json").read_text())
-    previous = json.loads((ROOT / "tmp/vector-parity-plan/magicpen-curved-events-next/magicpen-curved-source-events-native.json").read_text())
-    old_by_id = {case["id"]: case for case in previous["cases"]}
-    for case in cases[:5]:
-        if case != old_by_id[case["id"]]:
-            raise RuntimeError(f"existing curved capture changed: {case['id']}")
     instruction_contract = verify_instruction_contract()
     return {
         "schema": "sdocx-magicpen-glv1-curved-source-events-v1",
@@ -427,6 +431,7 @@ def generated_fixture() -> dict:
             "base_caller_sha256": cases[0]["capture"]["base_caller_sha256"],
             "libraries": LIBRARIES,
             "helpers": HELPERS,
+            "lineage_reference_hashes_not_read_at_replay": LINEAGE_FIXTURES,
             "capture_source": "Hash-pinned MagicPen saved-caller runner, parameterized by this script. A Unicorn code hook is added immediately before ObjectDrawing::drawObjectStroke and removed immediately after it; only that invocation contributes to phase and callback observations. Wrapper SHA-256 uses a stable <FIXTURE_OUTPUT> placeholder. Each callback includes its raw source ordinal and its exact AddPoint half-open range/records.",
             "native_instruction_contract": instruction_contract,
             "runtime_closure": runtime_closure(),

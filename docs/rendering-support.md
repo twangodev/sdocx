@@ -384,10 +384,11 @@ admission, native width transitions and the 0.4–800 size clamp. A
 adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
 ranges and direct-dot fallback, with exact complete streams. A separate
 [curved event capture](../conformance/magicpen-curved-source-events-native.json)
-records line/terminal callback ranges for eight bounded inputs and pins native
-loop instructions: lines exclude their endpoint, while terminal sampling includes
-it. General curved sampling, replay reconstruction and production vector admission
-remain open.
+records line/terminal callback ranges for 13 bounded inputs, including rejected
+final points and changed pressure at duplicate endpoints. Rust matches every
+captured XYZ word and callback range. Pinned native loops exclude line endpoints
+and include terminal endpoints; terminal arguments retain the raw final input.
+General curved sampling and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)

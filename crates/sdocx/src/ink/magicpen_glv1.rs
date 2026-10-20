@@ -230,14 +230,19 @@ fn repeat_index(length: f32, interval: f32) -> usize {
     (scaled as usize).max(2) + 1
 }
 
-fn admit_source_events(points: &[[f32; 2]], pressure: &[f32]) -> (Vec<[f32; 2]>, Vec<f32>) {
+fn admit_source_events(
+    points: &[[f32; 2]],
+    pressure: &[f32],
+) -> (Vec<[f32; 2]>, Vec<f32>, Vec<usize>) {
     assert_eq!(points.len(), pressure.len());
     if points.is_empty() {
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), Vec::new());
     }
     let mut admitted_points = vec![points[0]];
     let mut admitted_pressure = vec![pressure[0]];
-    for (point, &point_pressure) in points.iter().zip(pressure).skip(1) {
+    let mut source_indices = vec![0];
+    for (source_index, (point, &point_pressure)) in points.iter().zip(pressure).enumerate().skip(1)
+    {
         let previous = *admitted_points.last().unwrap();
         // Native source admission skips an event only when both axes are below 1.5.
         if (point[0] - previous[0]).abs() < 1.5 && (point[1] - previous[1]).abs() < 1.5 {
@@ -245,33 +250,73 @@ fn admit_source_events(points: &[[f32; 2]], pressure: &[f32]) -> (Vec<[f32; 2]>,
         }
         admitted_points.push(*point);
         admitted_pressure.push(point_pressure);
+        source_indices.push(source_index);
     }
-    (admitted_points, admitted_pressure)
+    (admitted_points, admitted_pressure, source_indices)
 }
 
 fn source_point(p: [f32; 2]) -> FPoint {
     FPoint { x: p[0], y: p[1] }
 }
 
+pub struct CurveEmission {
+    pub records: Vec<[u32; 3]>,
+    pub source_event_ranges: Vec<Range<usize>>,
+    pub terminal_range: Range<usize>,
+}
+
 fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) -> Vec<[u32; 3]> {
+    source_glv1_curve_trace(points, pressure, source_size).records
+}
+
+fn source_glv1_curve_trace(
+    points: &[[f32; 2]],
+    pressure: &[f32],
+    source_size: f32,
+) -> CurveEmission {
     assert!(points.len() >= 2 && points.len() == pressure.len());
-    let (points, pressure) = admit_source_events(points, pressure);
+    let raw_point_count = points.len();
+    let raw_terminal = *points.last().unwrap();
+    let raw_terminal_pressure = *pressure.last().unwrap();
+    let (points, pressure, source_indices) = admit_source_events(points, pressure);
     if points.len() < 2 {
-        return Vec::new();
+        return CurveEmission {
+            records: Vec::new(),
+            source_event_ranges: vec![0..0; raw_point_count],
+            terminal_range: 0..0,
+        };
     }
+    let raw_terminal_rejected = source_indices.last().copied() != Some(raw_point_count - 1);
     let size = source_size.clamp(0.4, 800.0);
     let p: Vec<_> = points.iter().copied().map(source_point).collect();
-    let mut paths: Vec<(SourceCurve, f32, f32, bool, bool)> = Vec::new();
+    let mut paths: Vec<(SourceCurve, f32, f32, bool, bool, Option<usize>)> = Vec::new();
     let mut width = size * pressure[1];
     let mut last_factor = 1.0_f32;
     if points.len() == 2 {
-        paths.push((
-            SourceCurve::Quad([p[0], p[1], p[1]]),
-            width,
-            width,
-            true,
-            true,
-        ));
+        if raw_terminal_rejected {
+            // If the final raw event is rejected by redrawLine, native
+            // endPen still closes the path at that raw endpoint and uses its
+            // pressure while retaining the accepted point as control.
+            let end = source_point(raw_terminal);
+            let terminal = size.mul_add(raw_terminal_pressure.mul_add(0.25, 0.25), width * 0.5);
+            paths.push((
+                SourceCurve::Quad([p[0], p[1], end]),
+                width,
+                terminal,
+                true,
+                true,
+                None,
+            ));
+        } else {
+            paths.push((
+                SourceCurve::Quad([p[0], p[1], p[1]]),
+                width,
+                width,
+                true,
+                true,
+                None,
+            ));
+        }
     } else if points.len() == 3 {
         let distance = p[1].sub(p[2]).len();
         if distance < 1.5 {
@@ -282,6 +327,7 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
                 width,
                 true,
                 true,
+                None,
             ));
         } else {
             let c2 = p[1].mid(p[2]);
@@ -292,6 +338,7 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
                 terminal,
                 true,
                 true,
+                None,
             ));
         }
     } else {
@@ -308,6 +355,7 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
                 target,
                 paths.is_empty(),
                 false,
+                Some(source_indices[i]),
             ));
             width = target;
             previous_end = end;
@@ -316,33 +364,39 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
             i += 2;
         }
         let final_index = p.len() - 1;
-        let terminal = terminal_width_target(width, size, pressure[final_index], last_factor);
+        let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
+        let terminal_point = source_point(raw_terminal);
         if final_index % 2 == 0 {
             paths.push((
                 SourceCurve::Cubic([
                     previous_end,
                     control,
-                    control.mid(p[final_index]),
-                    p[final_index],
+                    control.mid(terminal_point),
+                    terminal_point,
                 ]),
                 width,
                 terminal,
                 false,
                 true,
+                None,
             ));
         } else {
             paths.push((
-                SourceCurve::Quad([previous_end, control, p[final_index]]),
+                SourceCurve::Quad([previous_end, control, terminal_point]),
                 width,
                 terminal,
                 false,
                 true,
+                None,
             ));
         }
     }
 
     let mut output = Vec::new();
-    for (path, from_width, to_width, first, terminal) in paths {
+    let mut source_event_ranges = vec![None; raw_point_count];
+    let mut terminal_range = 0..0;
+    for (path, from_width, to_width, _first, terminal, source_event_index) in paths {
+        let path_start = output.len();
         let length = path.length();
         let repeat = repeat_index(length, from_width.min(to_width));
         let step = length / repeat as f32;
@@ -352,21 +406,28 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
         let mut radius = from_width * 0.5;
         let mut current_width = from_width;
         for sample in 0..=repeat {
-            let position = if sample == repeat && !matches!(path, SourceCurve::Cubic(_)) {
+            let position = if sample == repeat
+                && !raw_terminal_rejected
+                && !matches!(path, SourceCurve::Cubic(_))
+            {
                 match path {
                     SourceCurve::Quad([_, _, end]) => end,
                     SourceCurve::Cubic([_, _, _, end]) => end,
                 }
             } else if sample == repeat
                 && terminal
-                && points.len() > 3
-                && matches!(path, SourceCurve::Cubic(_))
+                && (raw_terminal_rejected
+                    || (points.len() > 3 && matches!(path, SourceCurve::Cubic(_))))
             {
                 path.at(length)
             } else {
                 path.at(distance)
             };
-            if first || sample != 0 {
+            // Native line callbacks are half-open and the end callback is
+            // closed: each path owns its start, while only the final path
+            // owns its endpoint. This also preserves the raw rejected final
+            // endpoint supplied independently to endPen.
+            if terminal || sample < repeat {
                 let sample_width = if sample == repeat && !terminal {
                     to_width
                 } else {
@@ -383,8 +444,35 @@ fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) ->
             radius += radius_step;
             current_width += width_step;
         }
+        let path_range = path_start..output.len();
+        if terminal {
+            terminal_range = path_range;
+        } else if let Some(source_index) = source_event_index {
+            source_event_ranges[source_index] = Some(path_range);
+        }
     }
-    output
+    let mut source_event_cursor = 0;
+    let source_event_ranges = source_event_ranges
+        .into_iter()
+        .enumerate()
+        .map(|(index, range)| {
+            if index == 0 {
+                return 0..0;
+            }
+            if let Some(range) = range {
+                assert_eq!(range.start, source_event_cursor);
+                source_event_cursor = range.end;
+                range
+            } else {
+                source_event_cursor..source_event_cursor
+            }
+        })
+        .collect();
+    CurveEmission {
+        records: output,
+        source_event_ranges,
+        terminal_range,
+    }
 }
 
 struct NoCurveEmission {
@@ -563,6 +651,180 @@ mod tests {
                 case["native"]["record_count"].as_u64().unwrap() as usize * 3,
                 expected.len(),
                 "{id}"
+            );
+        }
+    }
+
+    #[test]
+    fn curved_source_events_and_rejected_terminals_match_native_stream_and_ranges() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-curved-source-events-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "sdocx-magicpen-glv1-curved-source-events-v1"
+        );
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 13);
+        let mut seen = std::collections::BTreeSet::new();
+        for case in cases {
+            let id = case["id"].as_str().unwrap();
+            assert!(seen.insert(id), "duplicate case {id}");
+            let input = &case["input"];
+            assert_eq!(input["curve_enabled"], true, "{id}");
+            assert_eq!(input["tool_type"], 2, "{id}");
+            assert_eq!(input["stroke_type"], 0, "{id}");
+            assert_eq!(input["advanced_setting"], "1;", "{id}");
+            let point_words = fixture_bits(&input["points_f32_u32_hex"]);
+            let pressure_words = fixture_bits(&input["pressure_f32_u32_hex"]);
+            let points: Vec<[f32; 2]> = point_words
+                .chunks_exact(2)
+                .map(|xy| [f32::from_bits(xy[0]), f32::from_bits(xy[1])])
+                .collect();
+            let pressure: Vec<f32> = pressure_words.iter().copied().map(f32::from_bits).collect();
+            assert_eq!(points.len(), pressure.len(), "{id}");
+            let size = f32::from_bits(
+                fixture_bits(&Value::Array(vec![input["size_f32_u32_hex"].clone()]))[0],
+            );
+            let emission = source_glv1_curve_trace(&points, &pressure, size);
+
+            let capture = &case["capture"];
+            let getters = &capture["source_getters"];
+            assert_eq!(
+                getters["point_count"].as_u64().unwrap() as usize,
+                points.len(),
+                "{id}"
+            );
+            assert_eq!(
+                fixture_bits(&getters["arrays"]["points_f32_bits"]),
+                point_words,
+                "{id}"
+            );
+            assert_eq!(
+                fixture_bits(&getters["arrays"]["pressure_f32_bits"]),
+                pressure_words,
+                "{id}"
+            );
+            assert_eq!(
+                getters["arrays"]["timestamps_i32"], input["timestamps_i32"],
+                "{id}"
+            );
+            assert_eq!(
+                fixture_bits(&getters["arrays"]["tilt_f32_bits"]),
+                vec![0; points.len()],
+                "{id}"
+            );
+            assert_eq!(
+                fixture_bits(&getters["arrays"]["orientation_f32_bits"]),
+                vec![0; points.len()],
+                "{id}"
+            );
+            assert_eq!(getters["metadata"]["tool_type"], 2, "{id}");
+            assert_eq!(getters["metadata"]["stroke_type"], 0, "{id}");
+            assert_eq!(getters["metadata"]["curve_enabled"], true, "{id}");
+            assert_eq!(getters["selected_drawable_class"], "GLV1", "{id}");
+
+            let phase = &capture["redraw_phase"];
+            assert_eq!(phase["phase_index"], 0, "{id}");
+            assert!(
+                phase["entry"].as_str().unwrap().contains("GLV1::RedrawPen"),
+                "{id}"
+            );
+            let adds = &capture["native_addpoint"];
+            let add_count = adds["record_count"].as_u64().unwrap() as usize;
+            assert_eq!(range_words(&phase["addpoint_range"]), 0..add_count, "{id}");
+
+            let trace = &adds["source_event_trace"];
+            let lines = trace["curved_line_calls"].as_array().unwrap();
+            let terminals = trace["curved_end_calls"].as_array().unwrap();
+            assert_eq!(lines.len(), points.len() - 1, "{id}");
+            assert_eq!(terminals.len(), 1, "{id}");
+            assert_eq!(emission.source_event_ranges.len(), points.len(), "{id}");
+            for (ordinal, event) in lines.iter().enumerate() {
+                let source_index = ordinal + 1;
+                assert_eq!(event["phase_index"], 0, "{id} event {source_index}");
+                let args = fixture_bits(&event["args_f32_u32_hex"]);
+                assert_eq!(
+                    args,
+                    vec![
+                        point_words[source_index * 2],
+                        point_words[source_index * 2 + 1],
+                        pressure_words[source_index]
+                    ],
+                    "{id} event {source_index} args"
+                );
+                let native_range = range_words(&event["addpoint_range"]);
+                assert_eq!(
+                    native_range, emission.source_event_ranges[source_index],
+                    "{id} event {source_index} range"
+                );
+                assert_eq!(
+                    event["addpoint_count"].as_u64().unwrap() as usize,
+                    native_range.end - native_range.start,
+                    "{id} event {source_index} count"
+                );
+            }
+            let terminal = &terminals[0];
+            assert_eq!(terminal["phase_index"], 0, "{id} terminal");
+            assert_eq!(
+                fixture_bits(&terminal["args_f32_u32_hex"]),
+                vec![
+                    *point_words.get(point_words.len() - 2).unwrap(),
+                    *point_words.last().unwrap(),
+                    *pressure_words.last().unwrap()
+                ],
+                "{id} raw terminal args"
+            );
+            let terminal_range = range_words(&terminal["addpoint_range"]);
+            assert_eq!(
+                terminal_range, emission.terminal_range,
+                "{id} terminal range"
+            );
+            assert_eq!(
+                terminal["addpoint_count"].as_u64().unwrap() as usize,
+                terminal_range.end - terminal_range.start,
+                "{id} terminal count"
+            );
+            if id == "tool2_3_duplicate_terminal_same_xy_pressure" {
+                let rejected_duplicate = lines.last().unwrap();
+                assert_eq!(
+                    rejected_duplicate["addpoint_count"].as_u64().unwrap(),
+                    0,
+                    "{id} duplicate line rejection"
+                );
+                assert_eq!(
+                    rejected_duplicate["before"]["last_x_plus296_f32"]
+                        .as_f64()
+                        .unwrap() as f32,
+                    points[1][0],
+                    "{id} retained x"
+                );
+                assert_eq!(
+                    rejected_duplicate["before"]["last_y_plus300_f32"]
+                        .as_f64()
+                        .unwrap() as f32,
+                    points[1][1],
+                    "{id} retained y"
+                );
+                assert_eq!(
+                    terminal["args_f32_u32_hex"][2],
+                    input["pressure_f32_u32_hex"].as_array().unwrap()[2],
+                    "{id} terminal raw pressure"
+                );
+                assert_eq!(
+                    emission.source_event_ranges[2].start, emission.source_event_ranges[2].end,
+                    "{id} rejected source range"
+                );
+            }
+
+            let expected = fixture_bits(&case["native"]["xyz_f32_u32_hex"]);
+            let actual: Vec<u32> = emission.records.iter().flatten().copied().collect();
+            assert_eq!(actual, expected, "{id} complete native stream");
+            assert_eq!(
+                case["native"]["record_count"].as_u64().unwrap() as usize,
+                emission.records.len(),
+                "{id} record count"
             );
         }
     }
@@ -774,4 +1036,19 @@ mod tests {
             );
         }
     }
+}
+
+#[allow(dead_code)]
+pub fn copied_model_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
+    source_glv1_curve(points, pressure, size)
+}
+
+#[allow(dead_code)]
+pub fn copied_model_curve_trace(points: &[[f32; 2]], pressure: &[f32], size: f32) -> CurveEmission {
+    source_glv1_curve_trace(points, pressure, size)
+}
+
+#[allow(dead_code)]
+pub fn copied_model_no_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
+    source_glv1_no_curve(points, pressure, size)
 }
