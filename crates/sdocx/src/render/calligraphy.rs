@@ -873,7 +873,7 @@ mod tests {
         let images = pdf
             .objects
             .values()
-            .filter_map(|object| object.as_dict().ok())
+            .filter_map(|object| object.as_stream().ok().map(|stream| &stream.dict))
             .filter(|dict| {
                 dict.get(b"Subtype")
                     .and_then(lopdf::Object::as_name)

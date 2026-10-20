@@ -1,8 +1,7 @@
-//! Test-only numeric reconstruction of Pencil3 V1 and V3 sampling and particle
-//! kernels. This module is intentionally not registered for production use.
-//! Random state is supplied explicitly: V1 models an explicit bionic RNG
-//! context, while V3 keeps its observed per-redraw private state here.
+//! Numeric reconstruction of Pencil3 sampling and particle kernels.
+//! V1 remains conformance-only; V3 has a bounded production saved-source path.
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct RectF {
     pub left: f32,
@@ -11,6 +10,7 @@ pub(super) struct RectF {
     pub bottom: f32,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Particle {
     /// Packed RTV1 order: center x, center y, half-size, random row, alpha.
@@ -27,17 +27,17 @@ pub(super) struct V3Particle {
 /// Source-derived input shared by Pencil3 versions before their distinct
 /// particle kernels consume random state or pack RTV records.
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SavedSample {
-    point: [f32; 2],
-    size: f32,
-    alpha: f32,
+pub(super) struct SavedSample {
+    pub(super) point: [f32; 2],
+    pub(super) size: f32,
+    pub(super) alpha: f32,
 }
 
 /// Per-Redraw private Pencil3 V3 random state. Native RedrawPen resets the
 /// state at every draw, so this generator is deliberately independent from
 /// `BionicRandom` and has an explicit reset operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct V3PrivateRandom {
+pub(super) struct V3PrivateRandom {
     state: u64,
 }
 
@@ -46,13 +46,13 @@ impl V3PrivateRandom {
     const MULTIPLIER: u64 = 0x343fd;
     const INCREMENT: u64 = 0x269ec3;
 
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             state: Self::INITIAL_STATE,
         }
     }
 
-    fn reset(&mut self) {
+    pub(super) fn reset(&mut self) {
         self.state = Self::INITIAL_STATE;
     }
 
@@ -66,7 +66,7 @@ impl V3PrivateRandom {
 
     /// Build one V3 particle from actual drawPoint arguments. Native order is
     /// three LCG advances (x, y, texture row), then an RTV1 AddPoint record.
-    fn particle(&mut self, point: [f32; 2], size: f32, alpha: f32) -> V3Particle {
+    pub(super) fn particle(&mut self, point: [f32; 2], size: f32, alpha: f32) -> V3Particle {
         let size1 = size + 1.0;
         let range = size1.mul_add(size1.min(5.0), 30.0);
         let divisor = range as u32;
@@ -85,6 +85,7 @@ impl V3PrivateRandom {
     }
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug)]
 pub(super) struct DrawPoint {
     pub point: [f32; 2],
@@ -95,6 +96,7 @@ pub(super) struct DrawPoint {
     pub rand_values: [u32; 3],
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug)]
 pub(super) struct DrawPointResult {
     pub particle: Particle,
@@ -117,7 +119,7 @@ pub(super) struct SavedStroke {
 }
 
 impl SavedStroke {
-    fn validate(&self) -> Result<(), &'static str> {
+    pub(super) fn validate(&self) -> Result<(), &'static str> {
         let n = self.points.len();
         if n == 0 || self.pressures.len() != n || self.timestamps.len() != n {
             return Err("saved point, pressure and timestamp channels must be aligned");
@@ -134,6 +136,7 @@ impl SavedStroke {
         self.tilts.as_ref().map_or(0.0, |v| v[index])
     }
 
+    #[cfg(test)]
     fn orientation_at(&self, index: usize) -> f32 {
         self.orientations.as_ref().map_or(0.0, |v| v[index])
     }
@@ -143,6 +146,7 @@ impl SavedStroke {
 /// supplied RNG outputs. Native drawPoint at Pencil3+0x108338 uses
 /// `size1 = size + 1`, `range = 30 + size1 * min(size1, 5)`, then emits
 /// `(point + rand % trunc(range) / 20 - trunc(range) / 40)` on each axis.
+#[cfg(test)]
 pub(super) fn draw_point(input: DrawPoint) -> DrawPointResult {
     let size1 = input.size + 1.0;
     let range = 30.0 + size1 * size1.min(5.0);
@@ -177,6 +181,7 @@ pub(super) fn draw_point(input: DrawPoint) -> DrawPointResult {
 /// A local AOSP bionic `random()` TYPE_3 state. It models the inspected AOSP
 /// source profile; it does not assert that a particular Samsung OS release
 /// executes this implementation.
+#[cfg(test)]
 #[derive(Clone, Debug)]
 pub(super) struct BionicRandom {
     state: [u32; 31],
@@ -184,6 +189,7 @@ pub(super) struct BionicRandom {
     rear: usize,
 }
 
+#[cfg(test)]
 impl BionicRandom {
     pub fn seeded(seed: u32) -> Self {
         let mut state = [0; 31];
@@ -218,6 +224,7 @@ impl BionicRandom {
     }
 }
 
+#[cfg(test)]
 fn seven_start_dabs(
     point: [f32; 2],
     size: f32,
@@ -246,6 +253,7 @@ fn seven_start_dabs(
 /// Sample one saved quadratic path using native `drawLine` spacing. The
 /// caller supplies the resolved per-segment drawPoint size and alpha because
 /// the saved event adapter's pressure profile is a separate native contract.
+#[cfg(test)]
 fn line_particles(
     start: [f32; 2],
     control: [f32; 2],
@@ -267,6 +275,7 @@ fn line_particles(
 /// boundary particle on curved multi-segment strokes.
 // Keep recovered particle inputs and mutable RNG state visible at this seam.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 fn line_particles_with_phase(
     start: [f32; 2],
     control: [f32; 2],
@@ -296,6 +305,7 @@ fn line_particles_with_phase(
 /// while keeping their Bionic and private-LCG particle kernels separate.
 // The saved sampler uses explicit geometry, brush, RNG, and emission inputs.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 fn sample_line_with_phase(
     start: [f32; 2],
     control: [f32; 2],
@@ -324,7 +334,7 @@ fn sample_line_with_phase(
 
 // A rejected emission stops before the next RNG advance or allocation.
 #[allow(clippy::too_many_arguments)]
-fn try_sample_line_with_phase(
+pub(super) fn try_sample_line_with_phase(
     start: [f32; 2],
     control: [f32; 2],
     end: [f32; 2],
@@ -371,6 +381,7 @@ fn try_sample_line_with_phase(
     Some(distance - path.length)
 }
 
+#[cfg(test)]
 fn v1_particle_from_sample(sample: SavedSample, rng: &mut BionicRandom) -> Particle {
     draw_point(DrawPoint {
         point: sample.point,
@@ -390,6 +401,7 @@ fn v1_particle_from_sample(sample: SavedSample, rng: &mut BionicRandom) -> Parti
 /// Reconstruct the native V1 saved-event lifecycle for the bounded finite
 /// profile used by the conformance fixture.  Values are derived from the
 /// saved stroke; fixture output is never consulted by this implementation.
+#[cfg(test)]
 fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<Particle> {
     let mut particles = Vec::new();
     sample_saved_redraw(stroke, |sample| {
@@ -400,14 +412,15 @@ fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<P
 
 /// Run the source-side saved-stroke sampler and hand each upstream point,
 /// width, and opacity to a caller-owned particle kernel.
-fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) {
+#[cfg(test)]
+pub(super) fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) {
     assert!(try_sample_saved_redraw(stroke, |sample| {
         emit(sample);
         true
     }));
 }
 
-fn try_sample_saved_redraw(
+pub(super) fn try_sample_saved_redraw(
     stroke: &SavedStroke,
     mut emit: impl FnMut(SavedSample) -> bool,
 ) -> bool {
@@ -542,7 +555,8 @@ fn try_sample_saved_redraw(
 /// Compose the shared saved-source sampler with V3's private particle kernel.
 /// Channel validation happens before sampling so malformed arrays cannot
 /// trigger partial output or an out-of-range getter read.
-fn saved_redraw_v3_particles(
+#[cfg(test)]
+pub(super) fn saved_redraw_v3_particles(
     stroke: &SavedStroke,
     rng: &mut V3PrivateRandom,
 ) -> Result<Vec<V3Particle>, &'static str> {
@@ -551,7 +565,7 @@ fn saved_redraw_v3_particles(
 
 /// Bound generated particles before advancing random state or allocating output.
 /// Failed attempts leave the caller's RNG untouched and expose no partial stream.
-fn saved_redraw_v3_particles_bounded(
+pub(super) fn saved_redraw_v3_particles_bounded(
     stroke: &SavedStroke,
     rng: &mut V3PrivateRandom,
     max_particles: usize,

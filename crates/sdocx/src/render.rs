@@ -31,6 +31,8 @@ mod gradient;
 mod image_crop;
 mod inkpen2_vector;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
+mod pencil3;
+pub use pencil3::Pencil3PaperSampler;
 mod paint_diagnostic;
 pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
@@ -99,6 +101,22 @@ pub struct InkPen2RenderProfile {
     pub enhanced_antialias: bool,
 }
 
+/// Explicit canonical canvas policy for fresh Pencil3 V3 reconstruction.
+///
+/// Screen dimensions determine native paper scale; canvas dimensions and the
+/// supplied-paper sampler are caller inputs, not inferred Samsung app defaults.
+/// The canvas must match the exported page. This route retains intrinsic brush
+/// and paper textures with vector stamp geometry and does not select replay.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Pencil3RenderProfile {
+    pub screen_width: u32,
+    pub screen_height: u32,
+    pub canvas_width: u32,
+    pub canvas_height: u32,
+    pub paper_sampler: Pencil3PaperSampler,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -109,6 +127,9 @@ pub struct RenderOptions {
     /// explicitly selects its enhanced-antialiasing paint route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen2_profile: Option<InkPen2RenderProfile>,
+    /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub pencil3_profile: Option<Pencil3RenderProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -519,6 +540,7 @@ impl DocumentTextCache {
             body_text.as_ref(),
             retain_text,
             options.inkpen2_profile,
+            options.pencil3_profile,
             observer,
         );
         (
@@ -900,6 +922,7 @@ fn render_page_contents_svg(
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    pencil3_profile: Option<Pencil3RenderProfile>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
     let bg = color_hex(&theme.background());
@@ -951,6 +974,7 @@ fn render_page_contents_svg(
         replay,
         body_text,
         inkpen2_profile,
+        pencil3_profile,
     };
     let total = page.composed_objects().count();
     let mut progress = WorkProgress::new(observer, ProgressStage::Rendering, total);
@@ -983,6 +1007,7 @@ struct CompositionContext<'a> {
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    pencil3_profile: Option<Pencil3RenderProfile>,
 }
 
 fn render_pass(
@@ -1044,6 +1069,7 @@ fn render_object(
                 native_allowed,
                 [context.page.width, context.page.height],
                 context.inkpen2_profile,
+                context.pencil3_profile,
             );
             *stroke_index += 1;
         }
@@ -3201,7 +3227,30 @@ fn render_stroke(
     native_allowed: bool,
     viewport: [u32; 2],
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    pencil3_profile: Option<Pencil3RenderProfile>,
 ) {
+    if native_allowed
+        && replay_index.is_none()
+        && let Some(profile) = pencil3_profile
+        && [profile.canvas_width, profile.canvas_height] == viewport
+        && let Some(mut ink) = crate::ink::pencil_source::prepare_pencil3_v3_source(
+            stroke,
+            profile.screen_width,
+            profile.screen_height,
+        )
+    {
+        ink.color = theme.foreground_color(stroke.color.unwrap_or(ink.color));
+        let context = pencil3::Pencil3PaintContext {
+            canvas_width: profile.canvas_width,
+            canvas_height: profile.canvas_height,
+            background_scale: profile.screen_width.min(profile.screen_height) as f32 / 1440.0,
+            paper_sampler: profile.paper_sampler,
+            y_up: false,
+        };
+        if pencil3::render(svg, &ink, context) {
+            return;
+        }
+    }
     if native_allowed && let Some(ink) = prepare_inkpen2_v9(stroke, inkpen2_profile, theme) {
         render_inkpen2_v9(svg, &ink, replay_index);
         return;
@@ -4038,6 +4087,15 @@ mod tests {
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
     };
+
+    #[cfg(feature = "pdf")]
+    fn pdf_object_dictionary(object: &lopdf::Object) -> Option<&lopdf::Dictionary> {
+        match object {
+            lopdf::Object::Stream(stream) => Some(&stream.dict),
+            lopdf::Object::Dictionary(dict) => Some(dict),
+            _ => None,
+        }
+    }
 
     #[test]
     fn inkpen2_profile_legacy_serde_defaults_enhanced_antialias_off() {
@@ -4952,7 +5010,7 @@ mod tests {
         let images = pdf
             .objects
             .values()
-            .filter_map(|object| object.as_dict().ok())
+            .filter_map(pdf_object_dictionary)
             .filter(|dict| {
                 dict.get(b"Subtype")
                     .and_then(lopdf::Object::as_name)
@@ -5009,7 +5067,7 @@ mod tests {
         let images = pdf
             .objects
             .values()
-            .filter_map(|object| object.as_dict().ok())
+            .filter_map(pdf_object_dictionary)
             .filter(|dict| {
                 dict.get(b"Subtype")
                     .and_then(lopdf::Object::as_name)
@@ -5341,7 +5399,7 @@ mod tests {
             let images = pdf
                 .objects
                 .values()
-                .filter_map(|object| object.as_dict().ok())
+                .filter_map(pdf_object_dictionary)
                 .filter(|dict| {
                     dict.get(b"Subtype")
                         .and_then(lopdf::Object::as_name)
@@ -6278,6 +6336,162 @@ mod tests {
         }
     }
 
+    fn pencil3_native_profile_stroke() -> Stroke {
+        let mut stroke = inkpen2_color_stroke(0xff00_0000, None);
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Pencil3".into());
+        rendering.advanced_settings = Some("4;".into());
+        rendering.style = StrokeStyle {
+            color_argb: Some(0xff00_0000),
+            pen_size: Some(10.),
+            ..StrokeStyle::default()
+        };
+        stroke.points = [[160., 100.], [170., 100.], [180., 100.], [190., 110.]]
+            .map(|[x, y]| Point { x, y })
+            .to_vec();
+        stroke.pressures = vec![0.25, 0.5, 0.75, 1.];
+        stroke.timestamps = vec![10, 20, 30, 40];
+        stroke.tilts = vec![0.; 4];
+        stroke.orientations = vec![0.; 4];
+        stroke.pen_width = 10.;
+        stroke.bbox = BoundingBox {
+            x_min: 160.,
+            y_min: 100.,
+            x_max: 190.,
+            y_max: 110.,
+        };
+        stroke
+    }
+
+    #[test]
+    fn pencil3_public_profile_retains_native_particles_and_shared_intrinsic_assets() {
+        use sha2::Digest;
+        let stroke = pencil3_native_profile_stroke();
+        let prepared =
+            crate::ink::pencil_source::prepare_pencil3_v3_source(&stroke, 2560, 1440).unwrap();
+        assert_eq!(prepared.records.len(), 48);
+        let bytes: Vec<u8> = prepared
+            .records
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(bytes)),
+            "f5d7ece4ff8260805d3ccdf45d89afbe22c16764855f4ed8b0221b96bf7b09f0"
+        );
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        let mut second = stroke.clone();
+        second.color = Some(Color { r: 255, g: 0, b: 0 });
+        for point in &mut second.points {
+            point.x -= 100.;
+        }
+        second.bbox.x_min -= 100.;
+        second.bbox.x_max -= 100.;
+        page.objects = vec![stroke.into(), second.into()];
+        let doc = document(page);
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        let svg = render_document_svg(&doc, &options).remove(0).svg;
+        assert_eq!(
+            svg.matches("data:image/png;base64,").count(),
+            2,
+            "both strokes reuse the original brush and paper assets"
+        );
+        assert_eq!(svg.matches("<mask ").count(), 98);
+        assert!(
+            svg.contains("fill=\"#ff0000\""),
+            "presentation RGB override remains effective"
+        );
+        #[cfg(feature = "pdf")]
+        {
+            let tree = usvg::Tree::from_str(&svg, &usvg::Options::default()).unwrap();
+            assert_eq!(tree.size().width(), 320.);
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let bytes =
+                crate::render_document_pdf(&doc, &options, &crate::PdfOptions::default()).unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let images = pdf
+                .objects
+                .values()
+                .filter_map(pdf_object_dictionary)
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
+                })
+                .count();
+            assert_eq!(
+                images, 4,
+                "two intrinsic images with their alpha soft masks"
+            );
+        }
+    }
+
+    #[test]
+    fn pencil3_public_profile_falls_back_for_unverified_selector_or_canvas() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        page.objects = vec![pencil3_native_profile_stroke().into()];
+        let doc = document(page);
+        let fallback = render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 321,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::Repeat,
+            }),
+            ..RenderOptions::default()
+        };
+        assert_eq!(render_document_svg(&doc, &options).remove(0).svg, fallback);
+        let mut replay_options = options.clone();
+        replay_options
+            .pencil3_profile
+            .as_mut()
+            .unwrap()
+            .canvas_width = 320;
+        let layout = layout_document(&doc);
+        assert_eq!(
+            render_layout_page_replay_svg(&doc, &layout, 0, &replay_options)
+                .unwrap()
+                .svg,
+            render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg,
+            "unverified sample-addressable replay keeps its established path",
+        );
+        let mut unsupported = pencil3_native_profile_stroke();
+        unsupported.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
+        let mut page = doc.pages[0].clone();
+        page.objects = vec![unsupported.into()];
+        let doc = document(page);
+        let mut options = options;
+        options.pencil3_profile.as_mut().unwrap().canvas_width = 320;
+        assert_eq!(
+            render_document_svg(&doc, &options).remove(0).svg,
+            render_document_svg(&doc, &RenderOptions::default())
+                .remove(0)
+                .svg
+        );
+    }
+
     #[test]
     fn inkpen2_profile_matches_compact_native_caller_streams_and_rejects_single_point() {
         let profile = InkPen2RenderProfile {
@@ -6638,7 +6852,7 @@ mod tests {
             let images = pdf
                 .objects
                 .values()
-                .filter_map(|object| object.as_dict().ok())
+                .filter_map(pdf_object_dictionary)
                 .filter(|dict| {
                     dict.get(b"Subtype")
                         .and_then(lopdf::Object::as_name)

@@ -1,4 +1,4 @@
-use super::{Definition, Gradient};
+use super::{Definition, Gradient, PatternId};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Number {
@@ -119,6 +119,7 @@ pub enum Paint {
     None,
     Solid(ColorValue),
     Gradient(Definition<Gradient>),
+    Pattern(Definition<PatternId>),
 }
 impl Paint {
     pub const BLACK: Self = Self::Solid(ColorValue::BLACK);
@@ -134,6 +135,7 @@ impl Paint {
             Self::None => "none".into(),
             Self::Solid(color) => color.text(),
             Self::Gradient(id) => id.url(),
+            Self::Pattern(id) => id.url(),
         }
     }
 }

@@ -110,6 +110,7 @@ elements!(
     Anchor,
     EmbeddedFont
 );
+elements!(Pattern, Use);
 macro_rules! constructors {
     ($($name:ident),*) => { $(impl $name { pub fn new() -> Self { Self(Node::new(svg_element::$name::new())) } })* };
 }
@@ -136,12 +137,14 @@ containers!(
     Text,
     Anchor
 );
+containers!(Pattern);
 macro_rules! children {
     ($($name:ident),*) => { $(impl $name {
         pub fn add(mut self, child: impl Into<Node>) -> Self { self.0.append(child.into()); self }
     })* };
 }
 children!(
+    Svg,
     Group,
     Definitions,
     ClipPath,
@@ -149,10 +152,12 @@ children!(
     RadialGradient,
     SvgFilter
 );
+children!(Pattern, SvgMask);
 
 pub(super) struct Scene {
     elements: Vec<Node>,
     next_id: usize,
+    shared_definitions: std::collections::HashSet<&'static str>,
     geometry_diagnostics: Vec<super::GeometryDiagnostic>,
     paint_diagnostics: Vec<super::PaintDiagnostic>,
     #[cfg(feature = "pdf")]
@@ -167,6 +172,7 @@ impl Scene {
         Self {
             elements: vec![root.into()],
             next_id: 0,
+            shared_definitions: std::collections::HashSet::new(),
             geometry_diagnostics: Vec::new(),
             paint_diagnostics: Vec::new(),
             #[cfg(feature = "pdf")]
@@ -263,6 +269,9 @@ impl Scene {
             self.elements.last_mut().unwrap().append(node);
         }
     }
+    pub(super) fn claim_shared_definition(&mut self, key: &'static str) -> bool {
+        self.shared_definitions.insert(key)
+    }
     pub fn report_geometry_issue(&mut self, issue: super::GeometryDiagnostic) {
         self.geometry_diagnostics.push(issue);
     }
@@ -328,6 +337,8 @@ impl SvgNode for Inline {
 #[derive(Clone, Copy)]
 pub(super) enum Gradient {}
 #[derive(Clone, Copy)]
+pub(super) enum PatternId {}
+#[derive(Clone, Copy)]
 pub(super) enum Mask {}
 #[derive(Clone, Copy)]
 pub(super) enum Clip {}
@@ -358,6 +369,9 @@ pub(super) struct Definition<K> {
 impl<K> Definition<K> {
     fn id(&self) -> String {
         format!("sdocx-def-{}", self.id)
+    }
+    pub(super) fn id_text(&self) -> String {
+        self.id()
     }
     fn url(&self) -> String {
         format!("url(#{})", self.id())
@@ -395,6 +409,10 @@ impl FilterPrimitive for FilterRedByteMap {}
 pub(super) trait Styled: NodeAccess + Sized {
     fn fill(mut self, paint: impl Into<Option<Paint>>) -> Self {
         self.node().optional("fill", paint.into().map(Paint::text));
+        self
+    }
+    fn mask_id(mut self, id: &str) -> Self {
+        self.node().attr("mask", format!("url(#{id})"));
         self
     }
     fn stroke(mut self, paint: impl Into<Option<Paint>>) -> Self {
@@ -499,6 +517,10 @@ impl Svg {
         self.0.attr("overflow", "hidden");
         self
     }
+    pub fn preserve_aspect_none(mut self) -> Self {
+        self.0.attr("preserveAspectRatio", "none");
+        self
+    }
 }
 impl Group {
     pub fn linear_rgb(mut self) -> Self {
@@ -589,6 +611,35 @@ impl Image {
     pub fn stretched(mut self) -> Self {
         self.0.attr("preserveAspectRatio", "none");
         self
+    }
+    pub fn id(mut self, id: &str) -> Self {
+        self.0.attr("id", id);
+        self
+    }
+    pub fn pixelated(mut self) -> Self {
+        self.0.attr("image-rendering", "pixelated");
+        self
+    }
+}
+impl Pattern {
+    pub fn user_space(id: &Definition<PatternId>, width: f64, height: f64) -> Self {
+        let mut node = Node::new(svg_element::Pattern::new());
+        node.attr("id", id.id());
+        node.attr("patternUnits", "userSpaceOnUse");
+        node.number("width", width, f64::MIN_POSITIVE..=f64::MAX);
+        node.number("height", height, f64::MIN_POSITIVE..=f64::MAX);
+        Self(node)
+    }
+    pub fn transformed(mut self, transform: Transform) -> Self {
+        self.0.optional("patternTransform", transform.text());
+        self
+    }
+}
+impl Use {
+    pub fn href(id: &str) -> Self {
+        let mut node = Node::new(svg_element::Use::new());
+        node.attr("href", format!("#{id}"));
+        Self(node)
     }
 }
 impl Text {
@@ -756,6 +807,19 @@ macro_rules! gradient_transforms {
 }
 gradient_transforms!(LinearGradient, RadialGradient);
 impl SvgMask {
+    pub fn alpha(id: &str, x: f64, y: f64, width: f64, height: f64) -> Self {
+        let mut node = Node::new(
+            svg_element::Mask::new()
+                .set("id", id)
+                .set("maskUnits", "userSpaceOnUse")
+                .set("style", "mask-type:alpha"),
+        );
+        node.number("x", x, -f64::MAX..=f64::MAX);
+        node.number("y", y, -f64::MAX..=f64::MAX);
+        node.number("width", width, f64::MIN_POSITIVE..=f64::MAX);
+        node.number("height", height, f64::MIN_POSITIVE..=f64::MAX);
+        Self(node)
+    }
     pub fn luminance(id: &Definition<Mask>) -> Self {
         Self(Node::new(
             svg_element::Mask::new()

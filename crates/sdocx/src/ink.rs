@@ -38,8 +38,8 @@ mod marker4;
 mod oblique;
 mod oblique_v1;
 mod path;
-#[cfg(test)]
 mod pencil;
+pub(crate) mod pencil_source;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

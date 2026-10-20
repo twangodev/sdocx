@@ -734,6 +734,7 @@ mod tests {
                 true,
                 [64, 64],
                 None,
+                None,
             );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));
