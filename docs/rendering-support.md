@@ -382,9 +382,11 @@ composite. Omitted stroke/color type fields use the native zero defaults,
 verified by a [saved-frame Model check](../conformance/object-stroke-style-defaults-native.json).
 Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
-1×/2×/4×. The fixed contour approximates scale-dependent shader edges and can
-lose minimum-size dots. Unknown effects and budgets retain fallback, and device
-parity remains open.
+1×/2×/4×. The fixed contour now preserves the canonical radial coverage integral,
+including positive area for minimum-size dots. Edge controls improve across
+Chromium, Firefox, MuPDF and PDFium, but still underfill at 4×; resvg can drop
+the smallest dot at 1×. Scale-dependent shader edges and device parity remain
+open. Unknown effects and budgets retain fallback.
 A [NoCurve paint replay](../conformance/magicpen-nocurve-paint-native.json)
 retains the same native source stream and full RGBA buffers at 1×/2×/4× on
 transparent targets, with separate opaque-background blend controls.

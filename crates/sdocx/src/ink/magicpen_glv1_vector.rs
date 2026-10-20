@@ -1,8 +1,9 @@
 //! Scalable vector contours for MagicPen GLV1 stamps.
 //!
-//! The polygon is a scalable approximation of the native mask shader's
-//! half-coverage contour. It is not pixel-exact after arbitrary SVG/PDF
-//! transforms because the native shader recomputes finite 2x2 `fwidth`.
+//! The polygon is a source-derived approximation of native radial coverage:
+//! at canonical 1 px/source-unit scale, its area on each ray equals the
+//! integral of the native linear radial field. It is not pointwise exact and
+//! does not follow the native shader's scale-dependent finite 2x2 `fwidth`.
 
 const CONTOUR_VERTICES: usize = 192;
 const MAX_RECORDS: usize = 65_536;
@@ -25,10 +26,16 @@ pub(super) fn source_contour_path(records: &[[u32; 3]]) -> Option<String> {
         for vertex in 0..CONTOUR_VERTICES {
             let angle = 2.0 * std::f64::consts::PI * vertex as f64 / CONTOUR_VERTICES as f64;
             let (sin, cos) = angle.sin_cos();
-            // This is the native shader's smoothAlpha == 0.5 contour for an
-            // identity 1 px/source-unit transform. A fixed SVG contour then
-            // scales with the document, unlike native per-view `fwidth`.
-            let contour_radius = (radius - 0.5 * (cos.abs() + sin.abs())).max(0.0);
+            // Preserve the radial integral of the canonical linear coverage
+            // ramp. This retains small stamps whose half-coverage contour
+            // has zero area, without fitting a captured pixel boundary.
+            let edge = cos.abs() + sin.abs();
+            let rho2 = if radius >= edge {
+                radius * radius - radius * edge + edge * edge / 3.0
+            } else {
+                radius * radius * radius / (3.0 * edge)
+            };
+            let contour_radius = rho2.max(0.0).sqrt();
             let px = x + contour_radius * cos;
             let py = y + contour_radius * sin;
             if !px.is_finite() || !py.is_finite() {

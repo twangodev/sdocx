@@ -4986,6 +4986,55 @@ mod tests {
     }
 
     #[test]
+    fn magicpen_v1_native_zero_pressure_dot_retains_vector_and_zoom_coverage() {
+        // Native transparent 1x witness: center (8.25,8.25), stored radius
+        // 0.5, one visible pixel RGBA [4,8,12,20]. The old half-coverage
+        // contour collapsed this native stamp to a zero-area path.
+        let mut stroke = magicpen_v1_stroke();
+        stroke.points = vec![Point { x: 8.25, y: 8.25 }; 3];
+        stroke.pressures = vec![0.0; 3];
+        stroke.pen_width = 0.4;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.4);
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff33_6699);
+        let ink = crate::ink::prepare_magicpen_v1_source(&stroke).unwrap();
+        assert_eq!(
+            ink.records,
+            vec![[8.25_f32.to_bits(), 8.25_f32.to_bits(), 0.5_f32.to_bits()]]
+        );
+        assert_eq!(ink.sample_ends, vec![0, 0, 0]);
+        assert_eq!(ink.terminal_range, 0..1);
+        let raster = |stroke: Option<Stroke>, scale: u32| {
+            let mut page = page_with_uncolored_stroke();
+            page.objects.clear();
+            if let Some(stroke) = stroke {
+                page.objects.push(stroke.into());
+            }
+            let rendered =
+                render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+            assert!(!rendered.svg.contains("<image"));
+            let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+            let mut pixels =
+                resvg::tiny_skia::Pixmap::new(rendered.width * scale, rendered.height * scale)
+                    .unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                &mut pixels.as_mut(),
+            );
+            pixels.data().to_vec()
+        };
+        // resvg still drops this subpixel phase at 1x. Check the unchanged
+        // exported contour at 2x/4x; the old zero-area contour stays blank.
+        for scale in [2, 4] {
+            let blank = raster(None, scale);
+            assert!(raster(Some(stroke.clone()), scale) != blank);
+            let mut transparent = stroke.clone();
+            transparent.rendering.as_mut().unwrap().style.color_argb = Some(0x0033_6699);
+            assert!(raster(Some(transparent), scale) == blank);
+        }
+    }
+
+    #[test]
     fn magicpen_v1_public_exports_use_native_thick_stroke_repeat_counts() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/magicpen-nocurve-source-events-native.json"
