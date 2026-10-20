@@ -69,7 +69,8 @@ it('reveals captured InkPen V1 source-event prefixes with terminal suffix at the
 		geometry: { sample_ends: [0, 0, 0, 25] }
 	} as ReplayStroke;
 	const replay = new ReplaySvg(root, { strokes: [item] } as Replay);
-	for (const [sample, expected] of [[0, ''], [1, ''], [2, ''], [3, data]]) {
+	const samples: [number, string][] = [[0, ''], [1, ''], [2, ''], [3, data]];
+	for (const [sample, expected] of samples) {
 		replay.seek(-1, sample);
 		expect(attributes.d).toBe(expected);
 		if (expected) expect(expected.endsWith('Z')).toBe(true);
