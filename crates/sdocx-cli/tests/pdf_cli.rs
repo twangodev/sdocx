@@ -23,6 +23,34 @@ impl Fixture {
     }
 
     fn with_page_objects(pages: &[(&str, &[Vec<u8>])]) -> Self {
+        let pages = pages
+            .iter()
+            .map(|(id, objects)| {
+                let mut page = support::page(&[objects.to_vec()], 0, &[]);
+                let original: Vec<_> = "page".encode_utf16().flat_map(u16::to_le_bytes).collect();
+                let offset = page
+                    .windows(original.len())
+                    .position(|window| window == original)
+                    .unwrap();
+                let replacement: Vec<_> = id.encode_utf16().flat_map(u16::to_le_bytes).collect();
+                page[offset..offset + replacement.len()].copy_from_slice(&replacement);
+                ((*id).to_owned(), page)
+            })
+            .collect();
+        Self::with_page_bytes(pages)
+    }
+
+    fn with_pdf_paper() -> Self {
+        let mut fields = 1_u16.to_le_bytes().to_vec();
+        for value in [-1000_i32, 0, 0, 0, 1080, 1527] {
+            fields.extend_from_slice(&value.to_le_bytes());
+        }
+        let page = support::page(&[vec![]], 1 << 8, &fields);
+        // Match support::page's built-in UUID and archive filename directly.
+        Self::with_page_bytes(vec![("page".into(), page)])
+    }
+
+    fn with_page_bytes(pages: Vec<(String, Vec<u8>)>) -> Self {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
         let directory = std::env::temp_dir().join(format!(
@@ -33,15 +61,7 @@ impl Fixture {
         std::fs::create_dir(&directory).unwrap();
         let file = std::fs::File::create(directory.join("note.sdocx")).unwrap();
         let mut zip = zip::ZipWriter::new(file);
-        for (id, objects) in pages {
-            let mut bytes = support::page(&[objects.to_vec()], 0, &[]);
-            let original: Vec<_> = "page".encode_utf16().flat_map(u16::to_le_bytes).collect();
-            let offset = bytes
-                .windows(original.len())
-                .position(|window| window == original)
-                .unwrap();
-            let replacement: Vec<_> = id.encode_utf16().flat_map(u16::to_le_bytes).collect();
-            bytes[offset..offset + replacement.len()].copy_from_slice(&replacement);
+        for (id, bytes) in pages {
             zip.start_file(
                 format!("{id}.page"),
                 zip::write::SimpleFileOptions::default(),
@@ -346,5 +366,24 @@ fn invalid_ranges_do_not_overwrite_output() {
         let result = fixture.run(&["--pages", selection, "-o", "existing.pdf"]);
         assert!(!result.status.success(), "{selection:?}");
         assert_eq!(std::fs::read(&output).unwrap(), b"existing");
+    }
+}
+
+#[test]
+fn svg_and_png_exports_warn_once_for_retained_pdf_background() {
+    let fixture = Fixture::with_pdf_paper();
+    for format in ["svg", "png"] {
+        let output = format!("paper.{format}");
+        let result = fixture.run(&["--pages", "1,1", "-f", format, "-o", &output]);
+        let diagnostics = String::from_utf8_lossy(&result.stderr);
+        assert!(result.status.success(), "{diagnostics}");
+        let expected = "Warning [PdfPaperOmitted] visible page 1 (source page 1): imported PDF background is omitted from this output";
+        assert_eq!(diagnostics.matches(expected).count(), 1, "{diagnostics}");
+        let bytes = std::fs::read(fixture.0.join(output)).unwrap();
+        match format {
+            "svg" => assert!(String::from_utf8(bytes).unwrap().starts_with("<svg")),
+            "png" => assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n")),
+            _ => unreachable!(),
+        }
     }
 }

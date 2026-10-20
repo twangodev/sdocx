@@ -11,13 +11,14 @@ struct RenderWarnings {
 impl RenderWarnings {
     fn report(
         &mut self,
-        page_index: usize,
-        source_page_index: usize,
+        page: (usize, usize),
         text: &[sdocx::TextDiagnostic],
         objects: &[sdocx::ObjectDiagnostic],
         geometry: &[sdocx::GeometryDiagnostic],
         paint: &[sdocx::PaintDiagnostic],
+        backgrounds: &[sdocx::BackgroundDiagnostic],
     ) {
+        let (page_index, source_page_index) = page;
         if !self.pages.insert(page_index) {
             return;
         }
@@ -61,6 +62,20 @@ impl RenderWarnings {
                 diagnostic.role,
                 diagnostic.object_uuid,
             );
+        }
+        for diagnostic in backgrounds {
+            match diagnostic {
+                sdocx::BackgroundDiagnostic::PdfPaperOmitted { .. } => eprintln!(
+                    "Warning [PdfPaperOmitted] visible page {} (source page {}): imported PDF background is omitted from this output",
+                    page_index + 1,
+                    source_page_index + 1,
+                ),
+                _ => eprintln!(
+                    "Warning [{diagnostic:?}] visible page {} (source page {})",
+                    page_index + 1,
+                    source_page_index + 1,
+                ),
+            }
         }
         for diagnostic in geometry {
             let source = match diagnostic.source_offset {
@@ -410,12 +425,12 @@ fn main() {
         });
         for page in &output.pages {
             render_warnings.report(
-                page.page_index,
-                page.source_page_index,
+                (page.page_index, page.source_page_index),
                 &page.text_diagnostics,
                 &page.object_diagnostics,
                 &page.geometry_diagnostics,
                 &page.paint_diagnostics,
+                &page.background_diagnostics,
             );
         }
         let pdf = output.bytes;
@@ -443,12 +458,12 @@ fn main() {
         .collect();
     for (&page_index, page) in page_indices.iter().zip(&rendered_pages) {
         render_warnings.report(
-            page_index,
-            page.source_page_index,
+            (page_index, page.source_page_index),
             &page.text_diagnostics,
             &page.object_diagnostics,
             &page.geometry_diagnostics,
             &page.paint_diagnostics,
+            &page.background_diagnostics,
         );
     }
 
