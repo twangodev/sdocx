@@ -191,7 +191,7 @@ pub(crate) struct PreparedInkPenV1 {
 pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkPenV1> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
-    let argb = rendering.style.color_argb?;
+    let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
         || rendering.advanced_settings.is_some()
         || rendering.tool_type_raw > 4
@@ -564,7 +564,9 @@ pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     {
         return None;
     }
-    rendering.style.color_argb
+    rendering.style.color_argb.or_else(|| {
+        rendering.advanced_settings.is_none().then_some(0xff00_0000)
+    })
 }
 
 struct PreparedObliqueInk {
@@ -2175,6 +2177,205 @@ mod tests {
         assert_eq!(generated["points"].as_array().unwrap().len(), 3);
         assert_eq!(generated["sample_ends"], serde_json::json!([1, 3]));
         assert_eq!(input.points.len(), 2);
+    }
+
+    fn inkpen_v1_stroke_for_default_color_test(setting: Option<&str>, argb: Option<u32>) -> Stroke {
+        let mut input = stroke(&[(0., 0.), (10., 3.), (22., 8.), (35., 10.)]);
+        input.rendering = Some(crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into()),
+            advanced_settings: setting.map(str::to_owned),
+            tool_type_raw: 1,
+            properties: crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: false,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+            style: crate::StrokeStyle {
+                color_argb: argb,
+                color_type_raw: Some(0),
+                pen_size: Some(10.0),
+                stroke_type_raw: Some(0),
+                ..crate::StrokeStyle::default()
+            },
+        });
+        input
+    }
+
+    #[test]
+    fn missing_argb_defaults_only_for_null_advanced_inkpen_v1() {
+        let v1 = inkpen_v1_stroke_for_default_color_test(None, None);
+        assert_eq!(saved_inkpen_argb(&v1), Some(0xff00_0000));
+
+        for setting in [Some(""), Some("4;")] {
+            let other = inkpen_v1_stroke_for_default_color_test(setting, None);
+            assert_eq!(saved_inkpen_argb(&other), None, "setting {setting:?}");
+            assert!(
+                prepare_inkpen_v1_for_page(&other).is_none(),
+                "setting {setting:?}"
+            );
+        }
+
+        let explicit = inkpen_v1_stroke_for_default_color_test(None, Some(0x8033_6699));
+        assert_eq!(saved_inkpen_argb(&explicit), Some(0x8033_6699));
+
+        let mutations: [fn(&mut Stroke); 6] = [
+            |stroke: &mut Stroke| stroke.rendering.as_mut().unwrap().properties.replay_only = true,
+            |stroke: &mut Stroke| stroke.rendering.as_mut().unwrap().properties.eraser = true,
+            |stroke: &mut Stroke| {
+                stroke.rendering.as_mut().unwrap().properties.top_layer_pen = true
+            },
+            |stroke: &mut Stroke| stroke.rendering.as_mut().unwrap().tool_type_raw = 5,
+            |stroke: &mut Stroke| {
+                stroke.rendering.as_mut().unwrap().style.stroke_type_raw = Some(1)
+            },
+            |stroke: &mut Stroke| stroke.rendering.as_mut().unwrap().style.color_type_raw = Some(1),
+        ];
+        for mutate in mutations {
+            let mut unsupported = v1.clone();
+            mutate(&mut unsupported);
+            assert_eq!(saved_inkpen_argb(&unsupported), None);
+        }
+    }
+
+    #[test]
+    fn serialized_inkpen_v1_missing_argb_preparer_matches_native_drawing() {
+        use base64::Engine as _;
+        fn decode_hex(value: &str) -> Vec<u8> {
+            (0..value.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&value[i..i + 2], 16).unwrap())
+                .collect()
+        }
+        fn lanes_f32(value: &serde_json::Value) -> Vec<f64> {
+            decode_hex(value["bytes"].as_str().unwrap())
+                .chunks_exact(4)
+                .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()) as f64)
+                .collect()
+        }
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen-serialized-drawing-native.json"
+        ))
+        .unwrap();
+        let capture = &fixture["cases"]["synthetic_full_name_null_setting_v1"]["native_capture"];
+        let arrays = &capture["native_source_arrays"];
+        let frame = base64::engine::general_purpose::STANDARD
+            .decode(fixture["input"]["cases"]["synthetic_full_name_null_setting_v1"]["frame"]["bytes"].as_str().unwrap())
+            .unwrap();
+        assert_eq!(u16::from_le_bytes(frame[11..13].try_into().unwrap()) & 1, 1, "source frame curve/compressed bit");
+        assert_eq!(u16::from_le_bytes(frame[2488..2490].try_into().unwrap()), 2, "source frame tool type");
+        let pen_size = f32::from_le_bytes(frame[2490..2494].try_into().unwrap());
+        assert_eq!(pen_size.to_bits(), 0x4111_de6a, "source frame pen size");
+        let point_bytes = decode_hex(arrays["points"]["bytes"].as_str().unwrap());
+        let points = point_bytes
+            .chunks_exact(8)
+            .map(|bytes| crate::Point {
+                x: f32::from_le_bytes(bytes[..4].try_into().unwrap()) as f64,
+                y: f32::from_le_bytes(bytes[4..].try_into().unwrap()) as f64,
+            })
+            .collect();
+        let timestamp_bytes = decode_hex(arrays["timestamps"]["bytes"].as_str().unwrap());
+        let input = Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into()),
+                advanced_settings: None,
+                tool_type_raw: 2,
+                properties: crate::StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: true,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: None,
+                    color_type_raw: Some(0),
+                    pen_size: Some(pen_size),
+                    stroke_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures: lanes_f32(&arrays["pressure"]),
+            timestamps: timestamp_bytes
+                .chunks_exact(4)
+                .map(|bytes| i32::from_le_bytes(bytes.try_into().unwrap()) as i64)
+                .collect(),
+            tilts: lanes_f32(&arrays["tilt"]),
+            orientations: lanes_f32(&arrays["orientation"]),
+            color: None,
+            pen_width: pen_size,
+        };
+        assert_eq!(arrays["points"]["count"], input.points.len());
+        assert_eq!(input.rendering.as_ref().unwrap().style.color_argb, None);
+        let prepared = prepare_inkpen_v1_for_page(&input).expect("native missing-color V1 default");
+        assert_eq!(prepared.argb, 0xff00_0000);
+        let mut bytes = Vec::new();
+        for (point, radius) in prepared.points.iter().zip(&prepared.radii) {
+            bytes.extend_from_slice(&(point.x as f32).to_bits().to_le_bytes());
+            bytes.extend_from_slice(&(point.y as f32).to_bits().to_le_bytes());
+            bytes.extend_from_slice(&radius.to_bits().to_le_bytes());
+        }
+        assert_eq!(
+            capture["serialized_drawing"]["native_getcolor_argb"],
+            "0xff000000"
+        );
+        assert!(
+            capture["serialized_drawing"]["color_forwarding_calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|call| call["argb_u32"] == "0xff000000")
+        );
+        let expected_hex = capture["serialized_drawing"]["callback_delta_bytes"]
+            .as_str()
+            .unwrap();
+        let expected = decode_hex(expected_hex);
+        assert_eq!(
+            bytes, expected,
+            "all prepared XYZ/radius words versus native Drawing"
+        );
+        let native_boundaries = capture["serialized_drawing"]["boundaries"]
+            .as_array()
+            .unwrap();
+        let redraw = native_boundaries
+            .iter()
+            .filter(|row| row["method"] == "reDrawLine")
+            .collect::<Vec<_>>();
+        assert_eq!(prepared.sample_ends.len(), 204);
+        assert_eq!(redraw.len(), prepared.sample_ends.len() - 1);
+        for (i, (end, row)) in prepared.sample_ends.iter().skip(1).zip(redraw).enumerate() {
+            assert_eq!(
+                *end,
+                row["after_record_count"].as_u64().unwrap() as usize,
+                "native reDrawLine return after sample {}",
+                i + 1
+            );
+        }
+        assert_eq!(prepared.terminal.start, 64);
+        assert_eq!(prepared.terminal.end, 68);
     }
 
     #[test]

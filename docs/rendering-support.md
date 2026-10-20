@@ -199,8 +199,8 @@ the generic approximation. Natural queue/lifecycle setup and native shader edge
 coverage remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries. Canonical-page SVG/PDF
-now reconstruct ordinary V1 null-setting geometry with saved ARGB for
-tools 0–4 in both curve modes;
+now reconstruct ordinary V1 null-setting geometry for tools 0–4 in both curve
+modes, using saved ARGB or the native opaque-black default when it is absent;
 a bounded compound contour approximates native coverage at one SVG pixel per
 source unit. Replay preserves source-event cutoffs and folds the terminal suffix
 into the final event. Unsupported inputs and exhausted budgets retain fallback;
