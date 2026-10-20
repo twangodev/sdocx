@@ -375,13 +375,19 @@ RTV1 vectors separately from callback arguments for synthetic Model inputs;
 the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json)
 joins native color, the unchanged upload and interior partial-alpha paint on
 transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
-initialization is host-supplied; production vector paint and device parity remain open.
+initialization is host-supplied. Canonical SVG/PDF now reconstruct ordinary
+tool-2 NoCurve `1;` sources with explicit size/ARGB, ordinary style codes and
+native replay cutoffs, using one compound vector contour and one source-alpha
+composite. Paired public exports
+improve native-referenced error in 12 host comparisons across four engines at
+1×/2×/4×. The fixed contour approximates scale-dependent shader edges; unknown
+effects and budgets retain fallback, and device parity remains open.
 A [paint-control matrix](../conformance/magicpen-paint-controls-native.json)
 checks eight scale/phase views plus GLV1/GLV2 and opaque-background controls.
 The source-derived shader model matches transparent support and stays within
 three RGBA bytes on these host captures; it does not establish export parity.
 A [GLV1 source matrix](../conformance/magicpen-glv1-source-native.json)
-checks native source getters and complete XYZ streams; the test-only Rust model
+checks native source getters and complete XYZ streams; the Rust source model
 matches all 35 two- to eight-point cases, including duplicate/nearby-event
 admission, native width transitions and the 0.4–800 size clamp. A
 [NoCurve event matrix](../conformance/magicpen-nocurve-source-events-native.json)
@@ -392,7 +398,7 @@ records line/terminal callback ranges for 13 bounded inputs, including rejected
 final points and changed pressure at duplicate endpoints. Rust matches every
 captured XYZ word and callback range. Pinned native loops exclude line endpoints
 and include terminal endpoints; terminal arguments retain the raw final input.
-General curved sampling and production vector admission remain open.
+General curved sampling and curved production admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)

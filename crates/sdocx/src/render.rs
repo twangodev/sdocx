@@ -3129,6 +3129,51 @@ fn argb_color(argb: u32) -> Color {
     }
 }
 
+fn magicpen_v1_vector_path(ink: &crate::ink::PreparedMagicPenV1, replay: bool) -> Option<Path> {
+    const MAX_PATH_BYTES: usize = 8 * 1024 * 1024;
+    if ink.records.is_empty()
+        || ink.records.len() > 65_536
+        || ink.sample_ends.is_empty()
+        || ink.sample_ends.len() > 100_000
+        || ink.sample_ends.first() != Some(&0)
+        || ink.sample_ends.windows(2).any(|pair| pair[0] > pair[1])
+        || ink.sample_ends.iter().any(|&end| end > ink.records.len())
+        || ink.terminal_range.start > ink.terminal_range.end
+        || ink.terminal_range.end != ink.records.len()
+        || ink
+            .sample_ends
+            .last()
+            .is_none_or(|&end| end > ink.terminal_range.start && end != ink.terminal_range.end)
+    {
+        return None;
+    }
+    let mut ends = ink.sample_ends.clone();
+    if let Some(last) = ends.last_mut() {
+        *last = ink.records.len();
+    }
+    let mut path = ReplayPath::default();
+    let mut start = 0;
+    for end in ends {
+        if end < start || end > ink.records.len() {
+            return None;
+        }
+        if end == start {
+            path.record_prefix(replay);
+        } else {
+            let data = crate::ink::magicpen_source_contour_path(&ink.records[start..end])?;
+            if !path.push_serialized(&data, replay, MAX_PATH_BYTES) {
+                return None;
+            }
+        }
+        start = end;
+    }
+    (start == ink.records.len()).then(|| path.finish())
+}
+
+fn magicpen_source_color(stroke: &Stroke, argb: u32) -> Option<Color> {
+    stroke.color.or(Some(argb_color(argb)))
+}
+
 fn render_stroke(
     svg: &mut Scene,
     stroke: &Stroke,
@@ -3138,6 +3183,30 @@ fn render_stroke(
     native_allowed: bool,
     viewport: [u32; 2],
 ) {
+    if native_allowed
+        && viewport.iter().all(|dimension| *dimension > 0)
+        && let Some(ink) = crate::ink::prepare_magicpen_v1_source(stroke)
+        && let Some(path) = magicpen_v1_vector_path(&ink, replay_index.is_some())
+    {
+        let color = theme.foreground(magicpen_source_color(stroke, ink.argb));
+        let opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        let draw = |svg: &mut Scene| {
+            svg.push(path.fill(Paint::from_hex(&color)));
+        };
+        let draw = |svg: &mut Scene| {
+            if opacity == 1.0 {
+                draw(svg);
+            } else {
+                svg.scope(Group::new().opacity(opacity), draw);
+            }
+        };
+        if let Some(index) = replay_index {
+            svg.scope(Group::new().replay_stroke(StrokeIndex(index)), draw);
+        } else {
+            draw(svg);
+        }
+        return;
+    }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
         && let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
@@ -3225,6 +3294,30 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
         dark_mode,
         crate::ink::InkRenderContext::CanonicalPage,
     );
+    if let Some(ink) = crate::ink::prepare_magicpen_v1_source(stroke)
+        && magicpen_v1_vector_path(&ink, false).is_some()
+    {
+        let color =
+            RenderTheme::for_canvas(dark_mode).foreground(magicpen_source_color(stroke, ink.argb));
+        let mut sample_ends = ink.sample_ends;
+        if let Some(last) = sample_ends.last_mut() {
+            *last = ink.points.len();
+        }
+        prepared.points = Cow::Owned(ink.points);
+        prepared.sample_ends = Some(sample_ends);
+        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
+        prepared.ordered_disk_replay = None;
+        prepared.dot_directions = None;
+        prepared.rect_stamp = None;
+        prepared.coverage_mesh = None;
+        prepared.segment_widths = None;
+        prepared.bounds = Some(ink.bounds);
+        prepared.color = color;
+        prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        prepared.top_layer = false;
+        prepared.profile = Some("MagicPen");
+        prepared.support = crate::InkSupport::Reconstructed;
+    }
     if let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
         && let Some(vector) = inkpen_v1_vector_path(
             &ink.points,
@@ -4645,6 +4738,276 @@ mod tests {
             orientations: vec![0.0; 4],
             color: None,
             pen_width: 10.0,
+        }
+    }
+
+    fn magicpen_v1_stroke() -> Stroke {
+        let mut stroke = inkpen_v1_stroke();
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.MagicPen".into());
+        rendering.advanced_settings = Some("1;".into());
+        rendering.tool_type_raw = 2;
+        rendering.properties.compressed = false;
+        stroke.points.truncate(3);
+        stroke.pressures.truncate(3);
+        stroke.timestamps.truncate(3);
+        stroke.tilts.truncate(3);
+        stroke.orientations.truncate(3);
+        stroke
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn dump_magicpen_public_candidate_and_generic_fallback() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-nocurve-source-events-native.json"
+        ))
+        .unwrap();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "curve_off")
+            .unwrap();
+        let input = &case["input"];
+        let f32_word = |value: &serde_json::Value| {
+            f32::from_bits(u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+        };
+        let words = input["points_f32_u32_hex"].as_array().unwrap();
+        let points = words
+            .chunks_exact(2)
+            .map(|xy| Point {
+                x: f64::from(f32_word(&xy[0])),
+                y: f64::from(f32_word(&xy[1])),
+            })
+            .collect::<Vec<_>>();
+        let pressures = input["pressure_f32_u32_hex"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|word| f64::from(f32_word(word)))
+            .collect::<Vec<_>>();
+        let size = f64::from(f32_word(&input["size_f32_u32_hex"]));
+        let mut stroke = inkpen_v1_stroke();
+        stroke.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.MagicPen".into());
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 2;
+        stroke.rendering.as_mut().unwrap().properties.compressed = false;
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x8033_6699);
+        stroke.points = points;
+        stroke.pressures = pressures;
+        stroke.timestamps = input["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_i64().unwrap())
+            .collect();
+        stroke.tilts = vec![0.0; stroke.points.len()];
+        stroke.orientations = vec![0.0; stroke.points.len()];
+        stroke.pen_width = size as f32;
+        let prepared = crate::ink::prepare_magicpen_v1_source(&stroke).unwrap();
+        let native = case["native"]["xyz_f32_u32_hex"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|word| u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(prepared.records.iter().flatten().copied().collect::<Vec<_>>(), native);
+
+        let mut page = page_with_uncolored_stroke();
+        page.width = 256;
+        page.height = 256;
+        page.objects = vec![stroke.clone().into()];
+        let candidate = document(page.clone());
+        let candidate_svg = render_document_svg(&candidate, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let candidate_pdf = crate::render_document_pdf(
+            &candidate,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+
+        let mut fallback_object = crate::PageObject::from(stroke.clone());
+        fallback_object.content = crate::PageObjectContent::Descendant(Box::new(
+            crate::PageObjectContent::Stroke(stroke),
+        ));
+        page.objects = vec![fallback_object];
+        let blank_page_seed = page.clone();
+        let fallback = document(page);
+        let fallback_svg = render_document_svg(&fallback, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let fallback_pdf = crate::render_document_pdf(
+            &fallback,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+
+        let mut blank_page = blank_page_seed;
+        blank_page.objects.clear();
+        let blank = document(blank_page);
+        let blank_svg = render_document_svg(&blank, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let blank_pdf = crate::render_document_pdf(
+            &blank,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+
+        if let Some(dir) = std::env::var_os("MAGICPEN_PUBLIC_DUMP_DIR") {
+            let dir = std::path::Path::new(&dir);
+            std::fs::create_dir_all(dir).unwrap();
+            std::fs::write(dir.join("candidate.svg"), candidate_svg).unwrap();
+            std::fs::write(dir.join("candidate.pdf"), candidate_pdf).unwrap();
+            std::fs::write(dir.join("fallback.svg"), fallback_svg).unwrap();
+            std::fs::write(dir.join("fallback.pdf"), fallback_pdf).unwrap();
+            std::fs::write(dir.join("blank.svg"), blank_svg).unwrap();
+            std::fs::write(dir.join("blank.pdf"), blank_pdf).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_magicpen_v1_page_export_uses_source_contours_and_event_prefixes() {
+        let stroke = magicpen_v1_stroke();
+        let prepared = crate::prepare_stroke_for_page(&stroke, false);
+        assert_eq!(prepared.profile, Some("MagicPen"));
+        assert_eq!(prepared.support, crate::InkSupport::Reconstructed);
+        assert_eq!(prepared.sample_ends.as_deref(), Some(&[0, 6, 12][..]));
+        assert_eq!(prepared.opacity, 128.0 / 255.0);
+        assert_eq!(prepared.color, "#336699");
+
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let source = document(page);
+        let normal = render_document_svg(&source, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let replay = super::render_layout_page_replay_svg(
+            &source,
+            &layout_document(&source),
+            0,
+            &RenderOptions::default(),
+        )
+        .unwrap()
+        .svg;
+        for (svg, has_replay) in [(&normal, false), (&replay, true)] {
+            let xml = roxmltree::Document::parse(svg).unwrap();
+            let paths = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("path"))
+                .collect::<Vec<_>>();
+            assert_eq!(paths.len(), 1);
+            let path = paths[0];
+            assert_eq!(path.attribute("fill"), Some("#336699"));
+            assert_eq!(path.attribute("d").unwrap().matches('M').count(), 12);
+            assert_eq!(path.attribute("d").unwrap().matches('Z').count(), 12);
+            if has_replay {
+                let lengths = path.attribute("data-replay-lengths").unwrap();
+                assert_eq!(lengths.split(',').count(), 3);
+                let values = lengths
+                    .split(',')
+                    .map(|value| value.parse::<usize>().unwrap())
+                    .collect::<Vec<_>>();
+                assert_eq!(values[0], 0);
+                assert!(values[1] > values[0]);
+                assert!(values[2] > values[1]);
+            } else {
+                assert!(path.attribute("data-replay-lengths").is_none());
+            }
+            let opacity = xml
+                .descendants()
+                .find(|node| node.has_tag_name("g") && node.attribute("opacity").is_some())
+                .and_then(|node| node.attribute("opacity"))
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert!((opacity - 128.0 / 255.0).abs() < 1e-6);
+        }
+        assert!(replay.contains(r#"data-replay-stroke="0""#));
+
+        let mut fallback = magicpen_v1_stroke();
+        fallback
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("2;".into());
+        assert_eq!(
+            crate::prepare_stroke_for_page(&fallback, false).support,
+            crate::InkSupport::Approximate
+        );
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![fallback.into()];
+        let fallback_svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+            .svg
+            .clone();
+        assert!(!fallback_svg.contains("data-replay-lengths"));
+        assert!(!fallback_svg.contains(r##"fill="#336699""##));
+
+        let mut curved = magicpen_v1_stroke();
+        curved.rendering.as_mut().unwrap().properties.compressed = true;
+        assert_eq!(
+            crate::prepare_stroke_for_page(&curved, false).support,
+            crate::InkSupport::Approximate
+        );
+        assert!(crate::prepare_stroke_for_page(&curved, false)
+            .sample_ends
+            .is_none());
+
+        let mut budget = magicpen_v1_stroke();
+        budget.rendering.as_mut().unwrap().properties.compressed = false;
+        let count = 2_000;
+        budget.points = (0..count)
+            .map(|index| Point {
+                x: index as f64 * 2.0,
+                y: 0.0,
+            })
+            .collect();
+        budget.pressures = vec![1.0; count];
+        budget.timestamps = (0..count as i64).collect();
+        budget.tilts = vec![0.0; count];
+        budget.orientations = vec![0.0; count];
+        let ink = crate::ink::prepare_magicpen_v1_source(&budget).unwrap();
+        assert!(super::magicpen_v1_vector_path(&ink, false).is_none());
+        let prepared = crate::prepare_stroke_for_page(&budget, false);
+        assert_eq!(prepared.support, crate::InkSupport::Approximate);
+        assert!(prepared.sample_ends.is_none());
+    }
+
+    #[test]
+    fn magicpen_v1_unknown_saved_effects_stay_on_generic_fallback() {
+        let mutations: [fn(&mut crate::StrokeRendering); 11] = [
+            |r| r.properties.replay_only = true,
+            |r| r.properties.eraser = true,
+            |r| r.properties.fixed_width = true,
+            |r| r.properties.top_layer_pen = true,
+            |r| r.properties.alpha_lock = true,
+            |r| r.properties.fixed_opacity = true,
+            |r| r.properties.rainbow_effect = true,
+            |r| r.properties.straighten = true,
+            |r| r.properties.reveal_mode = true,
+            |r| r.style.color_type_raw = None,
+            |r| r.style.color_type_raw = Some(1),
+        ];
+        for mutate in mutations {
+            let mut stroke = magicpen_v1_stroke();
+            mutate(stroke.rendering.as_mut().unwrap());
+            let prepared = crate::prepare_stroke_for_page(&stroke, false);
+            assert_eq!(prepared.support, crate::InkSupport::Approximate);
+            assert!(prepared.sample_ends.is_none());
+
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+                .svg
+                .clone();
+            assert!(!svg.contains("data-replay-lengths"));
+            assert!(!svg.contains(r##"fill="#336699""##));
         }
     }
 

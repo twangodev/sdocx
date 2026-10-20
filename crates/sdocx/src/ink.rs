@@ -23,8 +23,15 @@ mod fountain_v14;
 mod inkpen;
 #[cfg(test)]
 mod inkpen2;
-#[cfg(test)]
 mod magicpen_glv1;
+mod magicpen_glv1_vector;
+pub(crate) use magicpen_glv1::{
+    PreparedMagicPenV1, prepare_source_v1 as prepare_magicpen_v1_source,
+};
+
+pub(crate) fn magicpen_source_contour_path(records: &[[u32; 3]]) -> Option<String> {
+    magicpen_glv1_vector::source_contour_path(records)
+}
 mod marker2;
 #[cfg(test)]
 pub(crate) mod marker3;

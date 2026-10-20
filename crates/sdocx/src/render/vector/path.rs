@@ -153,6 +153,14 @@ impl ReplayPath {
         true
     }
 
+    /// Record an empty replay prefix while leaving the serialized path alone.
+    /// Native callbacks can consume source events without adding any points.
+    pub(in crate::render) fn record_prefix(&mut self, replay: bool) {
+        if replay {
+            self.lengths.push(self.data.len());
+        }
+    }
+
     #[cfg(test)]
     pub(in crate::render) fn serialized_len(&self) -> usize {
         self.data.len()

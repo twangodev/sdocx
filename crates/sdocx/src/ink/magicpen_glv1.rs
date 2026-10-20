@@ -1,11 +1,160 @@
-//! Bounded saved-source model for MagicPen GLV1.
+//! Source model and bounded NoCurve page preparation for MagicPen GLV1.
 //!
-//! This is test-only evidence for type-2, stroke-type-0 synthetic ObjectStroke
-//! inputs routed by native Drawing to GLV1. It does not model GLV2, saved-note
-//! parsing, canvas context, or RTV1 painting.
+//! Curved sampling remains regression evidence. Production admission covers
+//! ordinary type-2 NoCurve sources with explicit saved settings; GLV2, SDK
+//! deserialization and native per-view paint coverage remain separate.
 
 use super::path::{P, Quad};
 use std::ops::Range;
+
+use crate::{BoundingBox, Point, Stroke};
+
+const MAX_SOURCE_POINTS: usize = 100_000;
+const MAX_OUTPUT_RECORDS: usize = 65_536;
+
+pub(crate) struct PreparedMagicPenV1 {
+    pub(crate) records: Vec<[u32; 3]>,
+    pub(crate) points: Vec<Point>,
+    pub(crate) radii: Vec<f32>,
+    pub(crate) sample_ends: Vec<usize>,
+    pub(crate) terminal_range: Range<usize>,
+    pub(crate) bounds: BoundingBox,
+    pub(crate) argb: u32,
+}
+
+pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
+    let rendering = stroke.rendering.as_ref()?;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.MagicPen")
+        || rendering.advanced_settings.as_deref() != Some("1;")
+        || rendering.tool_type_raw != 2
+        || rendering.style.stroke_type_raw != Some(0)
+        || rendering.style.color_type_raw != Some(0)
+        || rendering.properties.replay_only
+        || rendering.properties.eraser
+        || rendering.properties.fixed_width
+        || rendering.properties.top_layer_pen
+        || rendering.properties.alpha_lock
+        || rendering.properties.fixed_opacity
+        || rendering.properties.rainbow_effect
+        || rendering.properties.straighten
+        || rendering.properties.reveal_mode
+        || stroke.points.len() < 2
+        || stroke.points.len() > MAX_SOURCE_POINTS
+        || stroke.points.len() != stroke.pressures.len()
+    {
+        return None;
+    }
+    let argb = rendering.style.color_argb?;
+    let size = rendering.style.pen_size?;
+    if !size.is_finite()
+        || stroke.points.iter().any(|point| {
+            !point.x.is_finite()
+                || !point.y.is_finite()
+                || !(point.x as f32).is_finite()
+                || !(point.y as f32).is_finite()
+        })
+        || stroke.pressures.iter().any(|pressure| {
+            !pressure.is_finite()
+                || !(*pressure as f32).is_finite()
+                || !(0.0..=1.0).contains(&(*pressure as f32))
+        })
+    {
+        return None;
+    }
+
+    // Bound worst-case source-derived sample growth before invoking the native
+    // numeric model, which otherwise follows native repeat counts directly.
+    let mut source_length = 0.0_f64;
+    for pair in stroke.points.windows(2) {
+        let dx = pair[1].x as f32 as f64 - pair[0].x as f32 as f64;
+        let dy = pair[1].y as f32 as f64 - pair[0].y as f32 as f64;
+        source_length += dx.hypot(dy);
+    }
+    let upper_records = source_length * 4.0 + stroke.points.len() as f64 * 8.0;
+    if !upper_records.is_finite() || upper_records > MAX_OUTPUT_RECORDS as f64 {
+        return None;
+    }
+
+    let points: Vec<[f32; 2]> = stroke
+        .points
+        .iter()
+        .map(|point| [point.x as f32, point.y as f32])
+        .collect();
+    let pressure: Vec<f32> = stroke
+        .pressures
+        .iter()
+        .map(|pressure| *pressure as f32)
+        .collect();
+    let emission = if rendering.properties.compressed {
+        // Curved sampling remains regression evidence; page paint admission
+        // currently covers NoCurve sources only.
+        return None;
+    } else {
+        let emission = source_glv1_no_curve_trace(&points, &pressure, size);
+        (
+            emission.records,
+            emission.sample_ends,
+            emission.terminal_range,
+        )
+    };
+    let (records, sample_ends, terminal_range) = emission;
+    if records.is_empty()
+        || records.len() > MAX_OUTPUT_RECORDS
+        || sample_ends.len() != points.len()
+        || sample_ends.first() != Some(&0)
+        || sample_ends.windows(2).any(|pair| pair[0] > pair[1])
+        || terminal_range.start > terminal_range.end
+        || terminal_range.end != records.len()
+        || sample_ends
+            .last()
+            .is_none_or(|&end| end > terminal_range.start && end != terminal_range.end)
+    {
+        return None;
+    }
+    let mut prepared_points = Vec::with_capacity(records.len());
+    let mut radii = Vec::with_capacity(records.len());
+    let mut bounds: Option<BoundingBox> = None;
+    for [x, y, radius] in &records {
+        let (x, y, radius) = (
+            f32::from_bits(*x),
+            f32::from_bits(*y),
+            f32::from_bits(*radius),
+        );
+        if !x.is_finite() || !y.is_finite() || !radius.is_finite() || radius < 0.0 {
+            return None;
+        }
+        prepared_points.push(Point {
+            x: f64::from(x),
+            y: f64::from(y),
+        });
+        radii.push(radius);
+        let next = BoundingBox {
+            x_min: f64::from(x - radius),
+            y_min: f64::from(y - radius),
+            x_max: f64::from(x + radius),
+            y_max: f64::from(y + radius),
+        };
+        if let Some(current) = &mut bounds {
+            current.x_min = current.x_min.min(next.x_min);
+            current.y_min = current.y_min.min(next.y_min);
+            current.x_max = current.x_max.max(next.x_max);
+            current.y_max = current.y_max.max(next.y_max);
+        } else {
+            bounds = Some(next);
+        }
+    }
+    Some(PreparedMagicPenV1 {
+        records,
+        points: prepared_points,
+        radii,
+        sample_ends,
+        terminal_range,
+        bounds: bounds?,
+        argb,
+    })
+}
+
+
 
 #[derive(Clone, Copy)]
 struct FPoint {
@@ -259,6 +408,8 @@ fn source_point(p: [f32; 2]) -> FPoint {
     FPoint { x: p[0], y: p[1] }
 }
 
+// Curved replay metadata is consumed by native-oracle tests until admission.
+#[cfg_attr(not(test), allow(dead_code))]
 pub struct CurveEmission {
     pub records: Vec<[u32; 3]>,
     pub source_event_ranges: Vec<Range<usize>>,
