@@ -378,7 +378,9 @@ mod tests {
             assert_eq!(native_hex.len() % 8, 0, "{case_id} native XY stream");
             let expected_words = native_hex
                 .as_bytes()
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|word| {
                     let text = std::str::from_utf8(word).unwrap();
                     let bytes: [u8; 4] = std::array::from_fn(|index| {

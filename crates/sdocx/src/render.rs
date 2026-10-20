@@ -3191,6 +3191,7 @@ fn magicpen_source_color(stroke: &Stroke, argb: u32) -> Option<Color> {
     stroke.color.or(Some(argb_color(argb)))
 }
 
+#[allow(clippy::too_many_arguments)] // Carries the independent per-render pen profiles.
 fn render_stroke(
     svg: &mut Scene,
     stroke: &Stroke,
@@ -3568,8 +3569,7 @@ fn prepare_inkpen2_v9(
         || rendering.properties.rainbow_effect
         || rendering.properties.straighten
         || rendering.properties.reveal_mode
-        || n < 2
-        || n > MAX_INKPEN2_SOURCE_SAMPLES
+        || !(2..=MAX_INKPEN2_SOURCE_SAMPLES).contains(&n)
         || source_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_SOURCE_BYTES)
         || stroke.timestamps.len() != n
         || stroke.pressures.len() != n
@@ -3777,27 +3777,32 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
         if structurally_valid {
             let mut start = 0usize;
             for (redraw, &end) in replay_data.redraw_ends.iter().enumerate() {
-                for index in start..end {
+                for (index, &radius) in radii.iter().enumerate().take(end).skip(start) {
                     let point = &paint.points[index];
                     svg.push(
                         Circle::new()
                             .replay_part(replay.then_some(ReplayPart(redraw + 2)))
                             .cx(point.x)
                             .cy(point.y)
-                            .r(radii[index])
+                            .r(radius)
                             .fill(Paint::from_hex(color)),
                     );
                 }
                 start = end;
             }
-            for index in replay_data.terminal_start..paint.points.len() {
+            for (index, &radius) in radii
+                .iter()
+                .enumerate()
+                .take(paint.points.len())
+                .skip(replay_data.terminal_start)
+            {
                 let point = &paint.points[index];
                 svg.push(
                     Circle::new()
                         .replay_part(replay.then_some(ReplayPart(replay_data.terminal_part)))
                         .cx(point.x)
                         .cy(point.y)
-                        .r(radii[index])
+                        .r(radius)
                         .fill(Paint::from_hex(color)),
                 );
             }
@@ -4224,7 +4229,9 @@ mod tests {
                     .as_str()
                     .unwrap()
                     .as_bytes()
-                    .chunks_exact(8)
+                    .as_chunks::<8>()
+                    .0
+                    .iter()
                     .map(|word| std::str::from_utf8(word).unwrap().to_owned())
                     .collect()
             };
@@ -4232,7 +4239,7 @@ mod tests {
                 .iter()
                 .map(|word| {
                     let mut raw = [0_u8; 4];
-                    for (index, pair) in word.as_bytes().chunks_exact(2).enumerate() {
+                    for (index, pair) in word.as_bytes().as_chunks::<2>().0.iter().enumerate() {
                         raw[index] =
                             u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap();
                     }
@@ -4242,7 +4249,9 @@ mod tests {
         };
         let point_values = floats("points_f32_bits", "point_bytes_f32_le");
         let points = point_values
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| Point {
                 x: f64::from(xy[0]),
                 y: f64::from(xy[1]),
@@ -4458,11 +4467,13 @@ mod tests {
                 let bytes = std::array::from_fn(|index| {
                     u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap()
                 });
-                f32::from_le_bytes(bytes.try_into().unwrap())
+                f32::from_le_bytes(bytes)
             })
             .collect::<Vec<_>>();
         let expected = native_values
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|triple| [triple[0], triple[1], triple[2]])
             .collect::<Vec<_>>();
         let points = [(0., 0.), (10., 0.), (20., 0.), (30., 10.)];
@@ -5286,7 +5297,9 @@ mod tests {
         };
         let words = input["points_f32_u32_hex"].as_array().unwrap();
         let points = words
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| Point {
                 x: f64::from(f32_word(&xy[0])),
                 y: f64::from(f32_word(&xy[1])),
@@ -5510,7 +5523,9 @@ mod tests {
             stroke.points = input["points_f32_u32_hex"]
                 .as_array()
                 .unwrap()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|xy| Point {
                     x: f32::from_bits(word(&xy[0])) as f64,
                     y: f32::from_bits(word(&xy[1])) as f64,
@@ -5713,7 +5728,9 @@ mod tests {
             stroke.points = input["points_f32_u32_hex"]
                 .as_array()
                 .unwrap()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|xy| Point {
                     x: f64::from(float(&xy[0])),
                     y: f64::from(float(&xy[1])),
@@ -5810,7 +5827,9 @@ mod tests {
         source.points = fixture["source_input"]["points_f32_u32_hex"]
             .as_array()
             .unwrap()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| Point {
                 x: float(&xy[0]) as f64,
                 y: float(&xy[1]) as f64,
@@ -6125,7 +6144,9 @@ mod tests {
         };
         let decode = |hex: &str| -> Vec<u8> {
             hex.as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect()
         };
@@ -6178,7 +6199,9 @@ mod tests {
         // 106-byte type-1 frame and resolving its IDs through StringIDManager.
         let hex_bytes = |hex: &str| -> Vec<u8> {
             hex.as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect()
         };
@@ -6292,7 +6315,8 @@ mod tests {
         ];
         assert_eq!(actual, expected, "all 225 native RTV3 float words");
 
-        let unsupported_types: [(&str, fn(&mut crate::StrokeStyle)); 2] = [
+        type StyleMutation = fn(&mut crate::StrokeStyle);
+        let unsupported_types: [(&str, StyleMutation); 2] = [
             ("nonzero stroke type", |style| {
                 style.stroke_type_raw = Some(1)
             }),

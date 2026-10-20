@@ -250,9 +250,8 @@ pub(super) fn saved_with_boundaries(
     // RedrawPen visits all but the terminal event as history. The first
     // historical event seeds the drawable; later accepted events emit a
     // midpoint quadratic and advance its retained start/control state.
-    for index in 2..input.len() - 1 {
+    for &next in &input[2..input.len() - 1] {
         let previous = endpoint;
-        let next = input[index];
         let distance = next.sub(previous).len();
         let accepted = if distance > threshold {
             alternate = true;

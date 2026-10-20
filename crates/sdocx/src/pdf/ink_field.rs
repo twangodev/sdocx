@@ -139,20 +139,11 @@ impl Default for ContourLimits {
     }
 }
 
+#[derive(Default)]
 struct ContourWork {
     limits: ContourLimits,
     work: usize,
     bbox_comparisons: usize,
-}
-
-impl Default for ContourWork {
-    fn default() -> Self {
-        Self {
-            limits: ContourLimits::default(),
-            work: 0,
-            bbox_comparisons: 0,
-        }
-    }
 }
 
 impl ContourWork {
@@ -955,10 +946,9 @@ fn legacy_function_code(triangles: &[Triangle], bounds: BoundingBox) -> Result<V
     Ok(code.into_bytes())
 }
 
-fn legacy_tiles(
-    triangles: &[Triangle],
-    bounds: BoundingBox,
-) -> Result<Vec<([f64; 4], Vec<Triangle>)>, String> {
+type LegacyTile = ([f64; 4], Vec<Triangle>);
+
+fn legacy_tiles(triangles: &[Triangle], bounds: BoundingBox) -> Result<Vec<LegacyTile>, String> {
     let width = bounds.x_max - bounds.x_min;
     let height = bounds.y_max - bounds.y_min;
     if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
@@ -1416,10 +1406,10 @@ pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Resul
         document.objects.insert(matches[0], form);
     }
     for object in document.objects.values_mut() {
-        if let Object::Stream(stream) = object {
-            if !stream.dict.has(b"Filter") {
-                stream.compress().map_err(|error| error.to_string())?;
-            }
+        if let Object::Stream(stream) = object
+            && !stream.dict.has(b"Filter")
+        {
+            stream.compress().map_err(|error| error.to_string())?;
         }
     }
     let mut output = Vec::new();
@@ -1773,8 +1763,8 @@ mod tests {
         let bounds = BoundingBox {
             x_min: 0.0,
             y_min: 0.0,
-            x_max: f64::from(remote + remote_step),
-            y_max: f64::from(remote + remote_step),
+            x_max: remote + remote_step,
+            y_max: remote + remote_step,
         };
         let tiny = Triangle([[0.0, 0.0, 1.0], [450.0, 0.0, 1.0], [0.0, 450.0, 1.0]]);
         let far = Triangle([

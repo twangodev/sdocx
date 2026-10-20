@@ -5,9 +5,9 @@ use std::borrow::Cow;
 mod airbrush;
 #[cfg(test)]
 mod brushpen;
+pub(crate) mod calligraphy;
 #[cfg(test)]
 mod chinesebrush_glv123;
-pub(crate) mod calligraphy;
 
 #[cfg(test)]
 pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>; 3]> {
@@ -593,9 +593,10 @@ pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     {
         return None;
     }
-    rendering.style.color_argb.or_else(|| {
-        rendering.advanced_settings.is_none().then_some(0xff00_0000)
-    })
+    rendering
+        .style
+        .color_argb
+        .or_else(|| rendering.advanced_settings.is_none().then_some(0xff00_0000))
 }
 
 struct PreparedObliqueInk {
@@ -1010,9 +1011,7 @@ mod tests {
         input.pen_width = 2.5;
         input.rendering = Some(crate::StrokeRendering {
             metadata: None,
-            pen_name: Some(
-                "com.samsung.android.sdk.pen.pen.preload.FountainPen".into(),
-            ),
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.FountainPen".into()),
             advanced_settings: Some(advanced_settings.into()),
             tool_type_raw: 2,
             properties: crate::StrokeProperties {
@@ -1148,13 +1147,7 @@ mod tests {
         for version in ["14;", "18;0;100;"] {
             let mut input = fountain_stroke(version);
             assert!(input.color.is_none());
-            assert!(input
-                .rendering
-                .as_ref()
-                .unwrap()
-                .style
-                .color_argb
-                .is_none());
+            assert!(input.rendering.as_ref().unwrap().style.color_argb.is_none());
             for (dark_mode, expected) in [(false, "#000000"), (true, "#ffffff")] {
                 let prepared = prepare_stroke(&input, dark_mode);
                 assert_eq!(prepared.support, InkSupport::Reconstructed, "{version}");
@@ -1175,12 +1168,7 @@ mod tests {
     fn fountain_color_fallback_does_not_change_style_argb_or_unsupported_fallback() {
         let mut explicit = fountain_stroke("18;0;100;");
         explicit.color = Some(crate::Color { r: 3, g: 3, b: 3 });
-        explicit
-            .rendering
-            .as_mut()
-            .unwrap()
-            .style
-            .color_argb = Some(0xff03_0303);
+        explicit.rendering.as_mut().unwrap().style.color_argb = Some(0xff03_0303);
         let prepared = prepare_stroke(&explicit, false);
         assert_eq!(prepared.color, "#030303");
         assert_eq!(prepared.opacity, 1.0);
@@ -1238,7 +1226,7 @@ mod tests {
                 .points
                 .iter()
                 .zip(radii)
-                .zip(expected.chunks_exact(3))
+                .zip(expected.as_chunks::<3>().0)
                 .enumerate()
             {
                 for (actual, expected) in [point.x as f32, point.y as f32, *radius as f32]
@@ -2289,8 +2277,10 @@ mod tests {
         }
         fn lanes_f32(value: &serde_json::Value) -> Vec<f64> {
             decode_hex(value["bytes"].as_str().unwrap())
-                .chunks_exact(4)
-                .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()) as f64)
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|bytes| f32::from_le_bytes(*bytes) as f64)
                 .collect()
         }
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
@@ -2300,15 +2290,29 @@ mod tests {
         let capture = &fixture["cases"]["synthetic_full_name_null_setting_v1"]["native_capture"];
         let arrays = &capture["native_source_arrays"];
         let frame = base64::engine::general_purpose::STANDARD
-            .decode(fixture["input"]["cases"]["synthetic_full_name_null_setting_v1"]["frame"]["bytes"].as_str().unwrap())
+            .decode(
+                fixture["input"]["cases"]["synthetic_full_name_null_setting_v1"]["frame"]["bytes"]
+                    .as_str()
+                    .unwrap(),
+            )
             .unwrap();
-        assert_eq!(u16::from_le_bytes(frame[11..13].try_into().unwrap()) & 1, 1, "source frame curve/compressed bit");
-        assert_eq!(u16::from_le_bytes(frame[2488..2490].try_into().unwrap()), 2, "source frame tool type");
+        assert_eq!(
+            u16::from_le_bytes(frame[11..13].try_into().unwrap()) & 1,
+            1,
+            "source frame curve/compressed bit"
+        );
+        assert_eq!(
+            u16::from_le_bytes(frame[2488..2490].try_into().unwrap()),
+            2,
+            "source frame tool type"
+        );
         let pen_size = f32::from_le_bytes(frame[2490..2494].try_into().unwrap());
         assert_eq!(pen_size.to_bits(), 0x4111_de6a, "source frame pen size");
         let point_bytes = decode_hex(arrays["points"]["bytes"].as_str().unwrap());
         let points = point_bytes
-            .chunks_exact(8)
+            .as_chunks::<8>()
+            .0
+            .iter()
             .map(|bytes| crate::Point {
                 x: f32::from_le_bytes(bytes[..4].try_into().unwrap()) as f64,
                 y: f32::from_le_bytes(bytes[4..].try_into().unwrap()) as f64,
@@ -2349,8 +2353,10 @@ mod tests {
             points,
             pressures: lanes_f32(&arrays["pressure"]),
             timestamps: timestamp_bytes
-                .chunks_exact(4)
-                .map(|bytes| i32::from_le_bytes(bytes.try_into().unwrap()) as i64)
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|bytes| i32::from_le_bytes(*bytes) as i64)
                 .collect(),
             tilts: lanes_f32(&arrays["tilt"]),
             orientations: lanes_f32(&arrays["orientation"]),

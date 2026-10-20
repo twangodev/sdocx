@@ -69,7 +69,9 @@ mod tests {
         let bytes = hex.as_bytes();
         assert_eq!(bytes.len() % 24, 0);
         bytes
-            .chunks_exact(24)
+            .as_chunks::<24>()
+            .0
+            .iter()
             .map(|record| {
                 std::array::from_fn(|index| {
                     let start = index * 8;
@@ -119,7 +121,9 @@ mod tests {
         let native = baseline["native"]["xyz_f32_u32_hex"]
             .as_array()
             .unwrap()
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|xyz| {
                 xyz.iter()
                     .map(|word| u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())

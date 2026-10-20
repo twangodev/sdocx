@@ -15,6 +15,7 @@ use crate::types::{
 };
 use crate::{ParseLimits, Progress, ProgressStage};
 
+#[allow(clippy::too_many_arguments)] // Keeps parse context explicit at the page boundary.
 pub(crate) fn parse_page(
     data: &[u8],
     stored: &StoredPage,

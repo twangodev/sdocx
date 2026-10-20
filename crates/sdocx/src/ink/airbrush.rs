@@ -229,7 +229,9 @@ mod tests {
     fn little_endian_f32(hex: &str) -> f32 {
         let bytes: Vec<u8> = hex
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect();
         f32::from_le_bytes(bytes.try_into().unwrap())
@@ -276,11 +278,15 @@ mod tests {
                 .unwrap();
             let bytes: Vec<u8> = encoded
                 .as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect();
             let points: Vec<P> = bytes
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|point| P {
                     x: f32::from_le_bytes(point[..4].try_into().unwrap()),
                     y: f32::from_le_bytes(point[4..].try_into().unwrap()),
@@ -309,7 +315,9 @@ mod tests {
                         .as_str()
                         .unwrap()
                         .as_bytes()
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .map(|pair| {
                             u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
                         })

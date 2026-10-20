@@ -451,7 +451,7 @@ impl Pass {
         let half = (factor + pressure) * 0.5;
         let candidate = half.mul_add(self.size, self.width) * 0.5;
         let change = (self.width - candidate).abs();
-        let adjusted = if change > 1. {
+        if change > 1. {
             if candidate < self.width {
                 self.width - 1.
             } else {
@@ -461,8 +461,7 @@ impl Pass {
             self.width - 0.5
         } else {
             candidate
-        };
-        adjusted
+        }
     }
 
     fn redraw(&mut self, p: P, pressure: f32, time: i64, threshold: f32) -> Option<()> {
@@ -722,8 +721,14 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
             return None;
         }
         sample_ends[0] = 1;
-        for i in 1..s.points.len() {
-            let raw = s.pressures[i] as f32;
+        for ((point, (raw, timestamp)), sample_end) in s
+            .points
+            .iter()
+            .zip(s.pressures.iter().zip(&s.timestamps))
+            .zip(sample_ends.iter_mut())
+            .skip(1)
+        {
+            let raw = *raw as f32;
             let pressure = if r.tool_type_raw == 1 || r.tool_type_raw == 3 {
                 0.5
             } else if raw > 1. {
@@ -732,12 +737,12 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
                 raw
             };
             pass.redraw(
-                s.points[i].into(),
+                (*point).into(),
                 pressure,
-                s.timestamps[i],
+                *timestamp,
                 if r.tool_type_raw == 1 { 50. } else { 5. },
             )?;
-            sample_ends[i] = pass.points.len();
+            *sample_end = pass.points.len();
         }
         terminal_start = pass.points.len();
         if s.points.len() > 1 {
@@ -750,8 +755,14 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
         terminal_end = pass.points.len();
     } else {
         pass.bounds.dot(first, 0.);
-        for i in 1..s.points.len() {
-            let raw = s.pressures[i] as f32;
+        for ((point, raw), sample_end) in s
+            .points
+            .iter()
+            .zip(&s.pressures)
+            .zip(sample_ends.iter_mut())
+            .skip(1)
+        {
+            let raw = *raw as f32;
             let pressure = if r.tool_type_raw == 1 {
                 0.5
             } else if raw > 1. {
@@ -759,8 +770,8 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
             } else {
                 raw
             };
-            pass.redraw_no_curve(s.points[i].into(), pressure * size)?;
-            sample_ends[i] = pass.points.len();
+            pass.redraw_no_curve((*point).into(), pressure * size)?;
+            *sample_end = pass.points.len();
         }
         terminal_start = pass.points.len();
         if s.points.len() > 1 {
@@ -1639,7 +1650,9 @@ mod tests {
 
     fn decode_hex_bytes(text: &str) -> Vec<u8> {
         text.as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }

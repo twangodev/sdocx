@@ -481,7 +481,11 @@ mod tests {
         unseeded.extend(&arc);
         unseeded.extend(&line);
         let mut commands = Vec::new();
-        assert!(visit_drawing_path(&unseeded, |c| commands.push(c)).unwrap().1);
+        assert!(
+            visit_drawing_path(&unseeded, |c| commands.push(c))
+                .unwrap()
+                .1
+        );
         assert!(matches!(
             commands.as_slice(),
             [crate::shape::NativePathCommand::Line([8., 9.])]

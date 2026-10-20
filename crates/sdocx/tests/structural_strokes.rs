@@ -343,7 +343,10 @@ fn supported_containers_and_unsupported_objects_keep_decoded_children() {
         .iter()
         .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
         .collect::<Vec<_>>();
-    let unsupported_count = kinds.iter().filter(|&&kind| !matches!(kind, 4 | 11)).count();
+    let unsupported_count = kinds
+        .iter()
+        .filter(|&&kind| !matches!(kind, 4 | 11))
+        .count();
     assert_eq!(warnings.len(), unsupported_count);
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
     for ((kind, object), warning) in kinds

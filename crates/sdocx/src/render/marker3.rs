@@ -68,7 +68,7 @@ pub(super) fn append_coverage(
         scene.push(
             Path::new()
                 .data(data)
-                .fill(color.clone())
+                .fill(color)
                 .fill_opacity(decimal(opacity, 6)),
         );
     }

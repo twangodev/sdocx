@@ -1,6 +1,6 @@
 //! Typed Oblique V4 saved-redraw geometry; production preparation remains gated.
 
-use super::path::{Quad, P};
+use super::path::{P, Quad};
 use std::ops::Range;
 
 pub(super) const DEFAULT_K: f32 = f32::from_bits(0x3f35_04f3);
@@ -116,7 +116,7 @@ fn quadratic_samples(
     let samples = if terminal { count + 1 } else { count };
     reserve_samples(used, samples + 1)?;
     let mut distance = 0.0_f32;
-    let mut out = Vec::with_capacity(samples as usize + 1);
+    let mut out = Vec::with_capacity(samples + 1);
     for _ in 0..samples {
         out.push(path.at(distance));
         distance += step;
@@ -459,7 +459,7 @@ fn append_segment(
     if triangles.len().checked_add(added)? > MAX_OUTPUT_TRIANGLES {
         return None;
     }
-    for chunk in vertices.chunks_exact(3) {
+    for chunk in vertices.as_chunks::<3>().0 {
         let convert = |v: [f32; 3]| CoverageVertex {
             position: P { x: v[0], y: v[1] },
             coverage: v[2],
@@ -490,10 +490,15 @@ pub(super) fn prepare_addpoint_stream_with_boundaries(
 ) -> Option<PreparedAddPointStream> {
     if callbacks.len() > MAX_PATH_SAMPLES
         || sample_end_callbacks.windows(2).any(|w| w[0] > w[1])
-        || sample_end_callbacks.iter().any(|&end| end > callbacks.len())
+        || sample_end_callbacks
+            .iter()
+            .any(|&end| end > callbacks.len())
         || terminal_start_callback > callbacks.len()
         || !runtime.k.is_finite()
-        || runtime.inverse_scale.iter().any(|value| !value.is_finite() || *value == 0.0)
+        || runtime
+            .inverse_scale
+            .iter()
+            .any(|value| !value.is_finite() || *value == 0.0)
     {
         return None;
     }
@@ -506,7 +511,11 @@ pub(super) fn prepare_addpoint_stream_with_boundaries(
         boundary_index += 1;
     }
     for (index, &(previous, current)) in callbacks.iter().enumerate() {
-        if !previous.x.is_finite() || !previous.y.is_finite() || !current.x.is_finite() || !current.y.is_finite() {
+        if !previous.x.is_finite()
+            || !previous.y.is_finite()
+            || !current.x.is_finite()
+            || !current.y.is_finite()
+        {
             return None;
         }
         append_segment(&mut triangles, size, runtime, previous, current)?;
@@ -926,15 +935,17 @@ mod tests {
             for (triangle_index, triangle) in prepared.triangles.iter().enumerate() {
                 for (vertex_index, vertex) in triangle.0.iter().enumerate() {
                     let i = triangle_index * 3 + vertex_index;
-                    for axis in 0..3 {
-                        let value = match axis {
-                            0 => vertex.position.x,
-                            1 => vertex.position.y,
-                            _ => vertex.coverage,
-                        };
+                    let expected_vertex = expected[i].as_array().unwrap();
+                    assert_eq!(expected_vertex.len(), 3);
+                    for (axis, (value, expected)) in
+                        [vertex.position.x, vertex.position.y, vertex.coverage]
+                            .into_iter()
+                            .zip(expected_vertex)
+                            .enumerate()
+                    {
                         assert_eq!(
                             value.to_bits(),
-                            bits(&expected[i][axis]),
+                            bits(expected),
                             "{id} vertex {i} axis {axis}"
                         );
                     }
@@ -1194,33 +1205,41 @@ mod tests {
                 inverse_scale: [1.0, 1.0],
             },
         );
-        assert!(prepare(ObliqueInput {
-            size: f32::NAN,
-            ..base
-        })
-        .is_none());
+        assert!(
+            prepare(ObliqueInput {
+                size: f32::NAN,
+                ..base
+            })
+            .is_none()
+        );
         assert!(prepare(ObliqueInput { size: -1.0, ..base }).is_none());
-        assert!(prepare(ObliqueInput {
-            size: 4_294_967_296.0,
-            ..base
-        })
-        .is_none());
-        assert!(prepare(ObliqueInput {
-            runtime: ObliqueRuntime {
-                k: f32::INFINITY,
-                inverse_scale: [1.0, 1.0]
-            },
-            ..base
-        })
-        .is_none());
-        assert!(prepare(ObliqueInput {
-            runtime: ObliqueRuntime {
-                k: DEFAULT_K,
-                inverse_scale: [1.0, 0.0]
-            },
-            ..base
-        })
-        .is_none());
+        assert!(
+            prepare(ObliqueInput {
+                size: 4_294_967_296.0,
+                ..base
+            })
+            .is_none()
+        );
+        assert!(
+            prepare(ObliqueInput {
+                runtime: ObliqueRuntime {
+                    k: f32::INFINITY,
+                    inverse_scale: [1.0, 1.0]
+                },
+                ..base
+            })
+            .is_none()
+        );
+        assert!(
+            prepare(ObliqueInput {
+                runtime: ObliqueRuntime {
+                    k: DEFAULT_K,
+                    inverse_scale: [1.0, 0.0]
+                },
+                ..base
+            })
+            .is_none()
+        );
         let nonfinite = [
             P { x: 0.0, y: 0.0 },
             P {
@@ -1228,11 +1247,13 @@ mod tests {
                 y: 1.0,
             },
         ];
-        assert!(prepare(ObliqueInput {
-            points: &nonfinite,
-            ..base
-        })
-        .is_none());
+        assert!(
+            prepare(ObliqueInput {
+                points: &nonfinite,
+                ..base
+            })
+            .is_none()
+        );
         let huge = [
             P { x: 0.0, y: 0.0 },
             P {
@@ -1240,11 +1261,13 @@ mod tests {
                 y: -f32::MAX,
             },
         ];
-        assert!(prepare(ObliqueInput {
-            points: &huge,
-            ..base
-        })
-        .is_none());
+        assert!(
+            prepare(ObliqueInput {
+                points: &huge,
+                ..base
+            })
+            .is_none()
+        );
     }
 
     #[test]

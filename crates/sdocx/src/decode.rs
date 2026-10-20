@@ -197,8 +197,10 @@ mod tests {
 
     fn native_floats(hex: &str) -> Vec<f64> {
         bytes(hex)
-            .chunks_exact(4)
-            .map(|word| f64::from(f32::from_le_bytes(word.try_into().unwrap())))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|word| f64::from(f32::from_le_bytes(*word)))
             .collect()
     }
 
@@ -238,8 +240,10 @@ mod tests {
                 .as_str()
                 .unwrap(),
         )
-        .chunks_exact(4)
-        .map(|word| i64::from(i32::from_le_bytes(word.try_into().unwrap())))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|word| i64::from(i32::from_le_bytes(*word)))
         .collect();
         assert_eq!(stroke.timestamps, times);
         let definitions = fixture["synthetic_control_definition"].as_array().unwrap();

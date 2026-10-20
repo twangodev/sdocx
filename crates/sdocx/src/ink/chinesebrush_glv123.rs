@@ -235,6 +235,8 @@ pub fn packed_w(phase: f32, scalar: f32) -> f32 {
     (phase as f64).mul_add(1.0, scalar as f64 * 0.001) as f32
 }
 
+// Keep the native sampler's explicit path, repeat, width, and index state.
+#[allow(clippy::too_many_arguments)]
 fn emit_path(
     out: &mut Vec<[f32; 5]>,
     path: Path,
@@ -279,13 +281,13 @@ fn model_line(
     };
     let mut accepted = Vec::new();
     let mut previous = points[0];
-    for i in 1..points.len() {
-        let d = points[i].sub(previous);
+    for (i, point) in points.iter().enumerate().skip(1) {
+        let d = point.sub(previous);
         if d.x.abs() < gate && d.y.abs() < gate {
             continue;
         }
         accepted.push(i);
-        previous = points[i];
+        previous = *point;
     }
     if accepted.is_empty() {
         let p = effective_pressure(*pressure.last().unwrap(), tool);
@@ -332,6 +334,8 @@ fn model_line(
     out
 }
 
+// This boundary mirrors the source arrays and explicit native profile.
+#[allow(clippy::too_many_arguments)]
 pub fn model_event_loop(
     xy: &[[f32; 2]],
     pressure: &[f32],
@@ -478,6 +482,8 @@ pub fn model_event_loop(
     out
 }
 
+// Keep the compatibility wrapper's source and runtime parameters explicit.
+#[allow(clippy::too_many_arguments)]
 pub fn run_model(
     xy: &[[f32; 2]],
     pressure: &[f32],
@@ -510,11 +516,15 @@ mod tests {
 
     fn words(hex: &str) -> Vec<u32> {
         hex.as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect::<Vec<_>>()
-            .chunks_exact(4)
-            .map(|word| u32::from_le_bytes(word.try_into().unwrap()))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|word| u32::from_le_bytes(*word))
             .collect()
     }
 
@@ -522,7 +532,9 @@ mod tests {
         let arrays = &input["source_arrays"];
         let point_words = words(arrays["points"]["data_hex"].as_str().unwrap());
         let points = point_words
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| P {
                 x: f32::from_bits(xy[0]),
                 y: f32::from_bits(xy[1]),
@@ -536,10 +548,14 @@ mod tests {
             .as_str()
             .unwrap()
             .as_bytes()
-            .chunks_exact(8)
+            .as_chunks::<8>()
+            .0
+            .iter()
             .map(|chunk| {
                 let bytes: Vec<u8> = chunk
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                     .collect();
                 i32::from_le_bytes(bytes.try_into().unwrap())
@@ -551,14 +567,18 @@ mod tests {
     fn expected_words(row: &Value, field: &str) -> Vec<u32> {
         let bytes = hex_bytes(row[field].as_str().unwrap());
         bytes
-            .chunks_exact(4)
-            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| u32::from_le_bytes(*b))
             .collect()
     }
 
     fn hex_bytes(hex: &str) -> Vec<u8> {
         hex.as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }
@@ -645,7 +665,10 @@ mod tests {
             "../../../../conformance/chinesebrush-source-extension-native.json"
         ))
         .unwrap();
-        assert_eq!(extension["schema"], "chinesebrush-source-extension-native-v1");
+        assert_eq!(
+            extension["schema"],
+            "chinesebrush-source-extension-native-v1"
+        );
         assert_eq!(extension["cases"].as_object().unwrap().len(), 24);
         assert_eq!(check_fixture(&baseline) + check_fixture(&extension), 953);
     }

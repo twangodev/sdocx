@@ -75,11 +75,13 @@ pub(super) fn render_model(
     replay: bool,
 ) -> Result<(), AdapterError> {
     let triangles = |vertices: &[crate::ink::calligraphy::MeshVertex]| {
-        if vertices.len() % 3 != 0 {
+        if !vertices.len().is_multiple_of(3) {
             return Err(AdapterError::InvalidSampleBoundaries);
         }
         Ok(vertices
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|vertices| {
                 NativeTriangle(std::array::from_fn(|index| NativeVertex {
                     position: vertices[index].position,
@@ -433,12 +435,16 @@ mod tests {
                 upload["vertex_count"].as_u64().unwrap() as usize * 16
             );
             let floats = bytes
-                .chunks_exact(4)
-                .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|bytes| f32::from_le_bytes(*bytes))
                 .collect::<Vec<_>>();
             assert!(floats.len().is_multiple_of(12));
             let triangles = floats
-                .chunks_exact(12)
+                .as_chunks::<12>()
+                .0
+                .iter()
                 .map(|vertices| {
                     NativeTriangle(std::array::from_fn(|index| NativeVertex {
                         position: [vertices[index * 4], vertices[index * 4 + 1]],
@@ -462,7 +468,9 @@ mod tests {
     fn decode_hex(text: &str) -> Vec<u8> {
         assert!(text.len().is_multiple_of(2));
         text.as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }
@@ -694,8 +702,10 @@ mod tests {
             let expected = decode_hex(upload["bytes_hex"].as_str().unwrap());
             if actual != expected {
                 let mismatch = actual
-                    .chunks_exact(4)
-                    .zip(expected.chunks_exact(4))
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(expected.as_chunks::<4>().0.iter())
                     .position(|(left, right)| left != right)
                     .unwrap_or(actual.len().min(expected.len()) / 4);
                 panic!(
@@ -712,7 +722,9 @@ mod tests {
         let triangles = |vertices: &[[f32; 4]]| {
             assert!(vertices.len().is_multiple_of(3));
             vertices
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|triangle| {
                     NativeTriangle(std::array::from_fn(|index| NativeVertex {
                         position: [triangle[index][0], triangle[index][1]],

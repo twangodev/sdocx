@@ -94,7 +94,7 @@ pub(crate) fn expand(values: [f64; 6]) -> Option<Vec<NativePathCommand>> {
     let mut commands = Vec::with_capacity(unit_points.len().saturating_sub(1));
     let start_point = map_point(unit_points[0], start_vector, direction_ccw, rx, ry, cx, cy);
     commands.push(NativePathCommand::Move(start_point.map(f64::from)));
-    for points in unit_points[1..].chunks_exact(2) {
+    for points in unit_points[1..].as_chunks::<2>().0 {
         let control = map_point(points[0], start_vector, direction_ccw, rx, ry, cx, cy);
         let endpoint = map_point(points[1], start_vector, direction_ccw, rx, ry, cx, cy);
         commands.push(NativePathCommand::Quadratic([
@@ -368,7 +368,7 @@ mod tests {
             let actual = expand(input).expect("finite ordered native Arc should expand");
             let mut expected = expected;
             if seeded {
-                assert_eq!(expected.len() >= 3, true);
+                assert!(expected.len() >= 3);
                 expected.drain(..2);
             }
             let actual = our_commands(actual);

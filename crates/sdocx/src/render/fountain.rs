@@ -617,8 +617,7 @@ mod tests {
         );
         let parts = xml
             .descendants()
-            .filter(|node| node.attribute("data-replay-part").is_some())
-            .map(|node| node.attribute("data-replay-part").unwrap())
+            .filter_map(|node| node.attribute("data-replay-part"))
             .collect::<Vec<_>>();
         assert_eq!(parts, ["1", "2"]);
         assert!(!replay.contains("<image"));

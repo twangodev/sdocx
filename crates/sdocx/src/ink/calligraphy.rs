@@ -1171,9 +1171,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
         CalligraphyState::fresh(),
     )?;
     let stroke = &output.stroke;
-    let Some(last_vector) = stroke.vectors.last() else {
-        return None;
-    };
+    let last_vector = stroke.vectors.last()?;
     if output.state.add_point.center.map(f32::to_bits)
         != [last_vector[0].to_bits(), last_vector[1].to_bits()]
         || output.state.saved.nib.angle_degrees.to_bits()
@@ -1191,7 +1189,9 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
     let bits = |hex: &str| -> Option<u32> {
         let bytes: Vec<u8> = hex
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).ok()?, 16).ok())
             .collect::<Option<Vec<_>>>()?;
         Some(u32::from_le_bytes(bytes.try_into().ok()?))
@@ -1387,10 +1387,14 @@ mod tests {
         }
         let bytes = source[bytes_key].as_str().unwrap().as_bytes();
         bytes
-            .chunks_exact(8)
+            .as_chunks::<8>()
+            .0
+            .iter()
             .map(|word| {
                 let bytes = word
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|byte| u8::from_str_radix(std::str::from_utf8(byte).unwrap(), 16).unwrap())
                     .collect::<Vec<_>>();
                 f32::from_le_bytes(bytes.try_into().unwrap())
@@ -1405,7 +1409,9 @@ mod tests {
 
         let coordinates = fixture_f32s(source, "points_f32_bits", "point_bytes_f32_le");
         let points = coordinates
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| Point {
                 x: f64::from(xy[0]),
                 y: f64::from(xy[1]),
@@ -1501,7 +1507,9 @@ mod tests {
     fn fixture_hex_bytes(value: &str) -> Vec<u8> {
         value
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|byte| u8::from_str_radix(std::str::from_utf8(byte).unwrap(), 16).unwrap())
             .collect()
     }
@@ -1509,7 +1517,9 @@ mod tests {
     fn bits(hex: &str) -> u32 {
         u32::from_le_bytes(
             hex.as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect::<Vec<_>>()
                 .try_into()
@@ -1574,9 +1584,7 @@ mod tests {
         }
     }
 
-    fn saved_history_state_bits(
-        state: SavedHistoryState,
-    ) -> (
+    type SavedHistoryStateBits = (
         [u32; 2],
         [u32; 2],
         [u32; 2],
@@ -1585,7 +1593,9 @@ mod tests {
         [u32; 2],
         bool,
         bool,
-    ) {
+    );
+
+    fn saved_history_state_bits(state: SavedHistoryState) -> SavedHistoryStateBits {
         (
             [state.accepted.x.to_bits(), state.accepted.y.to_bits()],
             [state.start.x.to_bits(), state.start.y.to_bits()],
@@ -1701,7 +1711,9 @@ mod tests {
         let xy = f32s("points_f32_bits");
         assert_eq!(xy.len() % 2, 0);
         let points: Vec<[f32; 2]> = xy
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|point| [point[0], point[1]])
             .collect();
         let pressures = f32s("pressure_f32_bits");
@@ -1727,7 +1739,9 @@ mod tests {
         };
         let parse_words = |hex: &str| -> Vec<u32> {
             hex.as_bytes()
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|word| bits(std::str::from_utf8(word).unwrap()))
                 .collect()
         };
@@ -1838,7 +1852,9 @@ mod tests {
                     .as_str()
                     .unwrap()
                     .as_bytes()
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                     .collect();
                 assert_eq!(actual_bytes, expected_bytes, "{label} RTV1 buffer {slot}");
@@ -1897,7 +1913,9 @@ mod tests {
         let raw_state = |hex: &str| -> super::SavedHistoryState {
             let bytes: Vec<u8> = hex
                 .as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect();
             let f32_at = |offset: usize| {
@@ -1968,13 +1986,17 @@ mod tests {
         let decode_f32_bytes = |value: &serde_json::Value| -> Vec<f32> {
             let hex = value.as_str().unwrap();
             hex.as_bytes()
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|word| f32::from_bits(bits(std::str::from_utf8(word).unwrap())))
                 .collect()
         };
         let short_xy = decode_f32_bytes(&short_input["point_bytes_f32_le"]);
         let short_points: Vec<[f32; 2]> = short_xy
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|point| [point[0], point[1]])
             .collect();
         let short_pressures = decode_f32_bytes(&short_input["pressure_bytes_f32_le"]);
@@ -2150,7 +2172,9 @@ mod tests {
                         .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
                         .collect();
                     let previous_edges: [[[f32; 2]; 2]; 3] = edge
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .map(|v| [[v[0], v[1]], [v[2], v[3]]])
                         .collect::<Vec<_>>()
                         .try_into()
@@ -2282,7 +2306,9 @@ mod tests {
             .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
             .collect();
         let previous_edges: [[[f32; 2]; 2]; 3] = edge
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|v| [[v[0], v[1]], [v[2], v[3]]])
             .collect::<Vec<_>>()
             .try_into()
@@ -3131,10 +3157,14 @@ mod tests {
 
         let decode_words = |hex: &str| -> Vec<u32> {
             hex.as_bytes()
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|word| {
                     let bytes = word
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .map(|pair| {
                             u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
                         })
@@ -3158,7 +3188,9 @@ mod tests {
         };
         let source_points = |source: &serde_json::Value| {
             source_floats(source, "points_f32_bits", "point_bytes_f32_le")
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| [pair[0], pair[1]])
                 .collect::<Vec<_>>()
         };
@@ -3182,7 +3214,9 @@ mod tests {
         let captured_glv1_state = |hex: &str| {
             let bytes = hex
                 .as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
                 .collect::<Vec<_>>();
             let word =
@@ -3350,13 +3384,13 @@ mod tests {
                 "run {index} build call count"
             );
 
-            for slot in 0..3 {
+            for (slot, target) in native_buffer_targets.iter().enumerate() {
                 let actual = match slot {
                     0 => mesh_bits(&output.buffers.core),
                     1 => mesh_bits(&output.buffers.fringe_a),
                     _ => mesh_bits(&output.buffers.fringe_b),
                 };
-                let target = native_buffer_targets[slot].expect("native output target captured");
+                let target = target.as_deref().expect("native output target captured");
                 let native_buffer = run["rtv1_mesh"]["buffers"]
                     .as_array()
                     .unwrap()

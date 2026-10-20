@@ -265,6 +265,8 @@ fn line_particles(
 /// V1 carries `distance - path_length` from an accepted line into the next
 /// accepted line or `endPen`; restarting each path at one full step loses a
 /// boundary particle on curved multi-segment strokes.
+// Keep recovered particle inputs and mutable RNG state visible at this seam.
+#[allow(clippy::too_many_arguments)]
 fn line_particles_with_phase(
     start: [f32; 2],
     control: [f32; 2],
@@ -292,6 +294,8 @@ fn line_particles_with_phase(
 /// Run the shared native SmPath sampling loop without selecting a particle
 /// RNG or output packing. This lets V1 and V3 share saved-source iteration
 /// while keeping their Bionic and private-LCG particle kernels separate.
+// The saved sampler uses explicit geometry, brush, RNG, and emission inputs.
+#[allow(clippy::too_many_arguments)]
 fn sample_line_with_phase(
     start: [f32; 2],
     control: [f32; 2],
@@ -449,7 +453,7 @@ fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(SavedSample)) 
         tilt_ring[tilt_index] = tilt;
         tilt_index = (tilt_index + 1) % tilt_ring.len();
         let average = tilt_ring.iter().copied().sum::<f32>() / 50.0;
-        let tilt_scale = if average > 0.0 && average >= 0.55 {
+        let tilt_scale = if average >= 0.55 {
             // Pinned rodata 0x12b50 is one ULP above the literal 0.48f32.
             (average - 0.55) / f32::from_bits(0x3ef5_c290)
         } else {
@@ -1002,7 +1006,7 @@ mod tests {
         assert_eq!(particles[7].attributes[2].to_bits(), 2.0f32.to_bits());
         assert_eq!(
             particles[397].attributes[2].to_bits(),
-            3.500002145767212f32.to_bits()
+            f32::from_bits(0x4060_0009).to_bits()
         );
     }
 

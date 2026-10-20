@@ -780,6 +780,21 @@ fn source_glv1_no_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32)
     source_glv1_no_curve_trace(points, pressure, source_size).records
 }
 
+#[allow(dead_code)]
+pub fn copied_model_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
+    source_glv1_curve(points, pressure, size)
+}
+
+#[allow(dead_code)]
+pub fn copied_model_curve_trace(points: &[[f32; 2]], pressure: &[f32], size: f32) -> CurveEmission {
+    source_glv1_curve_trace(points, pressure, size)
+}
+
+#[allow(dead_code)]
+pub fn copied_model_no_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
+    source_glv1_no_curve(points, pressure, size)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -875,7 +890,9 @@ mod tests {
             let pressure_words = fixture_bits(&input["pressure_f32_u32_hex"]);
             assert_eq!(point_words.len(), pressure_words.len() * 2, "{id}");
             let points: Vec<_> = point_words
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|xy| [f32::from_bits(xy[0]), f32::from_bits(xy[1])])
                 .collect();
             let pressure: Vec<_> = pressure_words.into_iter().map(f32::from_bits).collect();
@@ -926,7 +943,9 @@ mod tests {
             let point_words = fixture_bits(&input["points_f32_u32_hex"]);
             let pressure_words = fixture_bits(&input["pressure_f32_u32_hex"]);
             let points: Vec<[f32; 2]> = point_words
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|xy| [f32::from_bits(xy[0]), f32::from_bits(xy[1])])
                 .collect();
             let pressure: Vec<f32> = pressure_words.iter().copied().map(f32::from_bits).collect();
@@ -1115,7 +1134,9 @@ mod tests {
             let point_words = fixture_bits(&input["points_f32_u32_hex"]);
             let pressure_words = fixture_bits(&input["pressure_f32_u32_hex"]);
             let points: Vec<[f32; 2]> = point_words
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|xy| [f32::from_bits(xy[0]), f32::from_bits(xy[1])])
                 .collect();
             let pressure: Vec<f32> = pressure_words.iter().copied().map(f32::from_bits).collect();
@@ -1283,19 +1304,4 @@ mod tests {
             );
         }
     }
-}
-
-#[allow(dead_code)]
-pub fn copied_model_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
-    source_glv1_curve(points, pressure, size)
-}
-
-#[allow(dead_code)]
-pub fn copied_model_curve_trace(points: &[[f32; 2]], pressure: &[f32], size: f32) -> CurveEmission {
-    source_glv1_curve_trace(points, pressure, size)
-}
-
-#[allow(dead_code)]
-pub fn copied_model_no_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
-    source_glv1_no_curve(points, pressure, size)
 }

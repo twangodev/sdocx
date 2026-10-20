@@ -496,7 +496,9 @@ mod tests {
         );
         let payload: Vec<u8> = hex
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect();
         let mut stroke =
@@ -524,7 +526,7 @@ mod tests {
                 .map(|value| value.as_i64().unwrap())
                 .collect::<Vec<_>>()
         );
-        for (point, xy) in stroke.points.iter().zip(expected_points.chunks_exact(2)) {
+        for (point, xy) in stroke.points.iter().zip(expected_points.as_chunks::<2>().0) {
             assert_eq!(
                 (point.x as f32).to_bits(),
                 source_array_f32(&xy[0]).to_bits()
@@ -616,7 +618,9 @@ mod tests {
                 let source = &case["source_arrays"];
                 let point_words = source["points_f32_bits"].as_array().unwrap();
                 stroke.points = point_words
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|pair| Point {
                         x: f64::from(source_array_f32(&pair[0])),
                         y: f64::from(source_array_f32(&pair[1])),
@@ -687,8 +691,11 @@ mod tests {
                     .style
                     .pen_size
                     .unwrap_or(0.);
+                // Preserve the captured max-then-min NaN behavior.
+                #[allow(clippy::manual_clamp)]
+                let clamped_size = raw_size.max(0.4).min(800.);
                 assert_eq!(
-                    raw_size.max(0.4).min(800.).to_bits(),
+                    clamped_size.to_bits(),
                     little_endian_f32(&case["native_pen_getsize_f32_bits"]).to_bits(),
                     "{name} native Pen GetSize"
                 );
@@ -730,7 +737,9 @@ mod tests {
             let source = &case["source_arrays"];
             let point_words = source["points_f32_bits"].as_array().unwrap();
             stroke.points = point_words
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| Point {
                     x: f64::from(source_array_f32(&pair[0])),
                     y: f64::from(source_array_f32(&pair[1])),

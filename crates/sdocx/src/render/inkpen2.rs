@@ -207,7 +207,9 @@ mod tests {
         assert_eq!(value.len() % 2, 0);
         value
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }
@@ -228,7 +230,9 @@ mod tests {
         assert_eq!(bytes.len(), case.producer.byte_count);
         assert_eq!(bytes.len() % (9 * 4), 0);
         bytes
-            .chunks_exact(9 * 4)
+            .as_chunks::<{ 9 * 4 }>()
+            .0
+            .iter()
             .map(|record| {
                 std::array::from_fn(|lane| {
                     let offset = lane * 4;
@@ -294,7 +298,7 @@ mod tests {
         assert_eq!(projection.values[13].to_bits(), (-0.5f32).to_bits());
         assert_eq!(
             projection.values[10].to_bits(),
-            (-3.0518509e-5f32).to_bits()
+            (-3.051_851e-5_f32).to_bits()
         );
         assert_eq!(
             readback.actual_viewport_calls,
@@ -686,8 +690,10 @@ mod tests {
                 let captured_bytes = decode_hex(&captured.rgba_bytes);
                 assert_eq!(captured_bytes.len(), modeled_bytes.len());
                 for (index, (modeled_pixel, captured_pixel)) in modeled_bytes
-                    .chunks_exact(4)
-                    .zip(captured_bytes.chunks_exact(4))
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(captured_bytes.as_chunks::<4>().0.iter())
                     .enumerate()
                 {
                     assert_eq!(
@@ -753,8 +759,10 @@ mod tests {
                 assert_eq!(case.source_argb_u32, 0xff33_6699);
                 let mut max_error = 0u8;
                 for (pixel_index, (model, native)) in modeled
-                    .chunks_exact(4)
-                    .zip(captured.chunks_exact(4))
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(captured.as_chunks::<4>().0.iter())
                     .enumerate()
                 {
                     assert_eq!(

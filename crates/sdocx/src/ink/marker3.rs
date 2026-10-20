@@ -226,15 +226,19 @@ mod tests {
     fn bytes_from_hex(value: &str) -> Vec<u8> {
         value
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }
 
     fn f32_array_from_hex(value: &str) -> Vec<f32> {
         bytes_from_hex(value)
-            .chunks_exact(4)
-            .map(|bytes| f32::from_bits(u32::from_le_bytes(bytes.try_into().unwrap())))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|bytes| f32::from_bits(u32::from_le_bytes(*bytes)))
             .collect()
     }
 
@@ -250,7 +254,9 @@ mod tests {
         let source = &case["native_calls"]["source_ObjectStroke_arrays"];
         let source_xy = f32_array_from_hex(source["points"]["data_hex"].as_str().unwrap());
         let points = source_xy
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|xy| Point {
                 x: f64::from(xy[0]),
                 y: f64::from(xy[1]),
@@ -262,8 +268,10 @@ mod tests {
                 .map(f64::from)
                 .collect();
         let timestamps = bytes_from_hex(source["timestamps"]["data_hex"].as_str().unwrap())
-            .chunks_exact(4)
-            .map(|bytes| i64::from(i32::from_le_bytes(bytes.try_into().unwrap())))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|bytes| i64::from(i32::from_le_bytes(*bytes)))
             .collect();
         let tilts = f32_array_from_hex(source["tilts"]["data_hex"].as_str().unwrap())
             .into_iter()
@@ -351,7 +359,7 @@ mod tests {
         );
         assert_eq!(output.len() % 8, 0);
         assert_eq!(ink.points.len(), output.len() / 8);
-        for (point, pair) in ink.points.iter().zip(output.chunks_exact(8)) {
+        for (point, pair) in ink.points.iter().zip(output.as_chunks::<8>().0) {
             let x = f32::from_bits(u32::from_le_bytes(pair[..4].try_into().unwrap()));
             let y = f32::from_bits(u32::from_le_bytes(pair[4..].try_into().unwrap()));
             assert_eq!((point.x as f32).to_bits(), x.to_bits());

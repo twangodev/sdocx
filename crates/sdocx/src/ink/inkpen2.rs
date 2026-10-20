@@ -451,22 +451,28 @@ mod tests {
         assert!(value.len().is_multiple_of(2));
         value
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
     }
 
     fn floats_from_le_hex(value: &str) -> Vec<f32> {
         hex_bytes(value)
-            .chunks_exact(4)
-            .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|bytes| f32::from_le_bytes(*bytes))
             .collect()
     }
 
     fn floats_from_le_bytes(value: &[u8]) -> Vec<f32> {
         value
-            .chunks_exact(4)
-            .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|bytes| f32::from_le_bytes(*bytes))
             .collect()
     }
 
@@ -977,7 +983,7 @@ mod tests {
                 for (record_index, (actual, expected)) in model
                     .vertices
                     .iter()
-                    .zip(native_floats.chunks_exact(9))
+                    .zip(native_floats.as_chunks::<9>().0)
                     .enumerate()
                 {
                     for lane in 0..9 {
@@ -998,8 +1004,7 @@ mod tests {
                     .as_array()
                     .unwrap()
                     .iter()
-                    .filter(|event| event["phase"] == phase)
-                    .last()
+                    .rfind(|event| event["phase"] == phase)
                     .unwrap();
                 hex_bytes(event["after_bytes"].as_str().unwrap())
             };
@@ -1008,8 +1013,10 @@ mod tests {
             assert_eq!(colored.len(), 25 * 9);
             assert_eq!(black.len(), colored.len());
             for (index, (colored, black)) in colored
-                .chunks_exact(9)
-                .zip(black.chunks_exact(9))
+                .as_chunks::<9>()
+                .0
+                .iter()
+                .zip(black.as_chunks::<9>().0)
                 .enumerate()
             {
                 assert_eq!(
@@ -1033,8 +1040,7 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .filter(|event| event["phase"] == "saved_redraw")
-            .last()
+            .rfind(|event| event["phase"] == "saved_redraw")
             .unwrap()["after_bytes"]
             .as_str()
             .unwrap();
@@ -1042,8 +1048,7 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .filter(|event| event["phase"] == "saved_redraw")
-            .last()
+            .rfind(|event| event["phase"] == "saved_redraw")
             .unwrap()["after_bytes"]
             .as_str()
             .unwrap();
@@ -1057,8 +1062,7 @@ mod tests {
                 .as_array()
                 .unwrap()
                 .iter()
-                .filter(|event| event["phase"] == "saved_redraw")
-                .last()
+                .rfind(|event| event["phase"] == "saved_redraw")
                 .unwrap();
         let actual = floats_from_le_hex(captured["after_bytes"].as_str().unwrap());
         let expected = numeric_case["native"]["rtv3"]

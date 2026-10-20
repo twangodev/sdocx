@@ -22,9 +22,7 @@ fn decode_saved_png_with_limit(mime_type: &str, data: &[u8], decode_limit: usize
         Ok(reader) => reader,
         Err(error) => return classify_decode_error(error),
     };
-    let Some(buffer_size) = reader.output_buffer_size() else {
-        return None;
-    };
+    let buffer_size = reader.output_buffer_size()?;
     if buffer_size > MAX_PNG_DECODE_BYTES {
         return None;
     }

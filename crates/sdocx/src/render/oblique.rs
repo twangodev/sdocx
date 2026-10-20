@@ -106,7 +106,7 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     let native_ink_id = if svg.retains_text() {
         match svg
             .native_ink()
-            .register(&mesh, [color.0, color.1, color.2], paint.opacity)
+            .register(mesh, [color.0, color.1, color.2], paint.opacity)
         {
             Ok(id) => Some(id),
             Err(_) => return false,
@@ -116,11 +116,13 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     };
 
     svg.scope(definitions, |_| {});
-    let mut outer_group = Group::new().filtered(&filter).opacity(paint.opacity);
+    let outer_group = Group::new().filtered(&filter).opacity(paint.opacity);
     #[cfg(feature = "pdf")]
-    if let Some(id) = native_ink_id {
-        outer_group = outer_group.native_ink_id(id);
-    }
+    let outer_group = if let Some(id) = native_ink_id {
+        outer_group.native_ink_id(id)
+    } else {
+        outer_group
+    };
     svg.scope(outer_group, |svg| {
         svg.scope(Group::new().isolated(), |svg| {
             // Keep the black field first: it is the opaque destination for
