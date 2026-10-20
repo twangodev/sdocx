@@ -245,11 +245,14 @@ fn archive_with_asset(
 }
 
 fn distinct_stroke(color: u32, x: f64, y: f64, visible: bool) -> Vec<u8> {
-    let mut fixed = 1_u16.to_le_bytes().to_vec();
-    fixed.extend(x.to_le_bytes());
-    fixed.extend(y.to_le_bytes());
-    fixed.extend(0.75_f32.to_le_bytes());
-    fixed.extend(123_i32.to_le_bytes());
+    // Native saved Drawing admits a stationary tap as two source events.
+    let mut fixed = 2_u16.to_le_bytes().to_vec();
+    for _ in 0..2 {
+        fixed.extend(x.to_le_bytes());
+        fixed.extend(y.to_le_bytes());
+    }
+    fixed.extend([0.75_f32.to_le_bytes(); 2].concat());
+    fixed.extend([123_i32.to_le_bytes(), 124_i32.to_le_bytes()].concat());
     fixed.extend([1, 0]);
     let style = [
         color.to_le_bytes(),
@@ -390,7 +393,8 @@ fn formula_inspection_decodes_native_field_order_strokes_and_label_graphs() {
     {
         let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
         assert_eq!(rendered.len(), 1);
-        assert_eq!(rendered[0].svg.matches("<circle").count(), 2);
+        // The inspected one-point child strokes are rejected by saved Drawing.
+        assert_eq!(rendered[0].svg.matches("<circle").count(), 0);
     }
 }
 
@@ -421,15 +425,15 @@ fn absent_formula_image_renders_source_and_answer_lists_in_native_order() {
             == Some("com.samsung.android.sdk.pen.pen.preload.Marker")
     }));
     let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-    assert!(svg.contains("cx=\"111"), "{svg}");
-    assert!(svg.contains("cy=\"222"), "{svg}");
-    assert!(svg.contains("cx=\"333"), "{svg}");
-    assert!(svg.contains("cy=\"444"), "{svg}");
+    assert!(svg.contains("x1=\"111"), "{svg}");
+    assert!(svg.contains("y1=\"222"), "{svg}");
+    assert!(svg.contains("x1=\"333"), "{svg}");
+    assert!(svg.contains("y1=\"444"), "{svg}");
     assert!(svg.contains("#123456"), "{svg}");
     assert!(svg.contains("#abcdef"), "{svg}");
-    assert_eq!(svg.matches("<circle").count(), 3, "{svg}");
-    assert!(svg.contains("cx=\"200"), "hidden child was omitted: {svg}");
-    assert!(svg.contains("cy=\"250"), "hidden child was omitted: {svg}");
+    assert_eq!(svg.matches("<line").count(), 3, "{svg}");
+    assert!(svg.contains("x1=\"200"), "hidden child was omitted: {svg}");
+    assert!(svg.contains("y1=\"250"), "hidden child was omitted: {svg}");
     assert!(svg.contains("#00ff00"), "hidden child was omitted: {svg}");
     #[cfg(feature = "pdf")]
     {
@@ -444,8 +448,8 @@ fn absent_formula_image_renders_source_and_answer_lists_in_native_order() {
             content
                 .operations
                 .iter()
-                .any(|operation| { matches!(operation.operator.as_str(), "c" | "v" | "y") }),
-            "Formula circles were not exported as PDF vector paths: {:?}",
+                .any(|operation| { matches!(operation.operator.as_str(), "l" | "c" | "v" | "y") }),
+            "Formula ink was not exported as PDF vector paths: {:?}",
             content.operations
         );
         assert!(!pdf.objects.values().any(|object| {
@@ -629,7 +633,7 @@ fn corrupt_bound_formula_png_falls_back_to_both_ink_lists() {
     let strokes: Vec<_> = parsed.document.pages[0].strokes().collect();
     assert_eq!(strokes.len(), 3);
     let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-    assert_eq!(svg.matches("<circle").count(), 3, "{svg}");
+    assert_eq!(svg.matches("<line").count(), 3, "{svg}");
     assert!(
         !svg.contains("<image"),
         "corrupt Formula image was emitted: {svg}"

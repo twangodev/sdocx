@@ -3229,6 +3229,12 @@ fn render_stroke(
     inkpen2_profile: Option<InkPen2RenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
 ) {
+    // Saved ObjectDrawing admission requires at least two source points before
+    // pen-name dispatch. Keep the context-free prepare_stroke compatibility
+    // path unchanged; this renderer only paints persisted page objects.
+    if stroke.points.len() <= 1 {
+        return;
+    }
     if native_allowed
         && let Some(profile) = pencil3_profile
         && let Some(ink) = prepare_pencil3_v3(stroke, profile, theme, viewport)
@@ -3354,6 +3360,9 @@ fn render_stroke(
 /// used by canonical page exports. The context-free `prepare_stroke` keeps
 /// its compatibility behavior.
 pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::PreparedStroke<'_> {
+    if stroke.points.len() <= 1 {
+        return empty_saved_stroke_paint(stroke, RenderTheme::for_canvas(dark_mode));
+    }
     let mut prepared = crate::ink::prepare_stroke_for_context(
         stroke,
         dark_mode,
@@ -3408,6 +3417,30 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
         prepared.support = crate::InkSupport::Reconstructed;
     }
     prepared
+}
+
+fn empty_saved_stroke_paint(stroke: &Stroke, theme: RenderTheme) -> crate::PreparedStroke<'_> {
+    crate::PreparedStroke {
+        // Owned empty storage is intentional: serde must emit `points: []`
+        // instead of omitting the field and allowing replay to reuse source
+        // singleton geometry.
+        points: Cow::Owned(Vec::new()),
+        sample_ends: Some(vec![0; stroke.points.len()]),
+        dot_radii: None,
+        ordered_disk_replay: None,
+        inkpen2_v9: None,
+        dot_directions: None,
+        rect_stamp: None,
+        coverage_mesh: None,
+        segment_widths: None,
+        width: normalized_stroke_width(stroke.pen_width),
+        bounds: None,
+        color: theme.foreground(stroke_source_color(stroke)),
+        opacity: 1.0,
+        top_layer: false,
+        profile: None,
+        support: crate::InkSupport::Approximate,
+    }
 }
 
 struct InkPenV1VectorPath {
@@ -3820,6 +3853,9 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
     theme: RenderTheme,
     options: &RenderOptions,
 ) -> crate::PreparedStroke<'a> {
+    if stroke.points.len() <= 1 {
+        return empty_saved_stroke_paint(stroke, theme);
+    }
     let Some(ink) = prepare_inkpen2_v9(stroke, options.inkpen2_profile, theme) else {
         return prepare_stroke_for_page(stroke, theme.is_dark());
     };
@@ -3859,6 +3895,9 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
     options: &RenderOptions,
     viewport: [u32; 2],
 ) -> crate::PreparedStroke<'a> {
+    if stroke.points.len() <= 1 {
+        return empty_saved_stroke_paint(stroke, theme);
+    }
     let Some(ink) = options
         .pencil3_profile
         .and_then(|profile| prepare_pencil3_v3(stroke, profile, theme, viewport))
@@ -6350,6 +6389,122 @@ mod tests {
         }
     }
 
+    #[test]
+    fn saved_singleton_strokes_are_not_admitted_to_page_paint_or_replay() {
+        let page = page_with_uncolored_stroke();
+        let crate::PageObjectContent::Stroke(generic) = page.objects[0].content.leaf() else {
+            panic!("expected stroke fixture");
+        };
+        let mut generic = generic.clone();
+        generic.points.truncate(1);
+        generic.points[0] = Point { x: 40.0, y: 40.0 };
+        generic.pressures.truncate(1);
+        generic.timestamps.truncate(1);
+        generic.tilts.truncate(1);
+        generic.orientations.truncate(1);
+
+        let mut native = inkpen2_color_stroke(0xff00_0000, None);
+        native.points.truncate(1);
+        native.points[0] = Point { x: 40.0, y: 40.0 };
+        native.pressures.truncate(1);
+        native.timestamps.truncate(1);
+        native.tilts.truncate(1);
+        native.orientations.truncate(1);
+        let mut chinese = native.clone();
+        chinese.rendering.as_mut().unwrap().pen_name = Some("ChineseBrush".into());
+
+        for stroke in [&generic, &chinese, &native] {
+            let options = RenderOptions::default();
+            let prepared = [
+                super::prepare_stroke_for_page(stroke, false),
+                super::prepare_stroke_for_page_with_theme(
+                    stroke,
+                    RenderTheme::for_canvas(false),
+                    &options,
+                ),
+                super::prepare_stroke_for_viewport_with_theme(
+                    stroke,
+                    RenderTheme::for_canvas(false),
+                    &options,
+                    [100, 100],
+                ),
+            ];
+            for prepared in &prepared {
+                assert!(prepared.points.is_empty());
+                assert!(prepared.bounds.is_none());
+                assert_eq!(prepared.sample_ends.as_deref(), Some(&[0][..]));
+            }
+            #[cfg(feature = "serde")]
+            {
+                let serialized = serde_json::to_value(&prepared[1]).unwrap();
+                assert_eq!(serialized["points"], serde_json::json!([]));
+                assert_eq!(serialized["bounds"], serde_json::Value::Null);
+            }
+
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.clone().into()];
+            let source = document(page);
+            let normal = render_document_svg(&source, &RenderOptions::default())[0]
+                .svg
+                .clone();
+            let replay = super::render_layout_page_replay_svg(
+                &source,
+                &layout_document(&source),
+                0,
+                &RenderOptions::default(),
+            )
+            .unwrap()
+            .svg;
+            assert!(!normal.contains("<path"), "singleton page export painted");
+            assert!(!normal.contains("<circle"), "singleton page export painted");
+            assert!(!replay.contains("<path"), "singleton replay painted");
+            assert!(!replay.contains("<circle"), "singleton replay painted");
+
+            #[cfg(feature = "pdf")]
+            {
+                let bytes = crate::render_document_pdf(
+                    &source,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let page_id = *pdf.get_pages().values().next().unwrap();
+                let content = pdf.get_page_content(page_id).unwrap();
+                let mut blank_page = page_with_uncolored_stroke();
+                blank_page.objects.clear();
+                let blank = document(blank_page);
+                let blank_bytes = crate::render_document_pdf(
+                    &blank,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap();
+                let blank_pdf = lopdf::Document::load_mem(&blank_bytes).unwrap();
+                let blank_id = *blank_pdf.get_pages().values().next().unwrap();
+                assert_eq!(
+                    content,
+                    blank_pdf.get_page_content(blank_id).unwrap(),
+                    "singleton PDF export must match a page with no stroke"
+                );
+            }
+        }
+
+        let mut coincident = generic.clone();
+        coincident.points.push(coincident.points[0]);
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![coincident.into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+            .svg
+            .clone();
+        assert!(
+            svg.contains("<polyline"),
+            "two-point tap was rejected: {svg}"
+        );
+
+        assert_eq!(crate::prepare_stroke(&generic, false).points.len(), 1);
+    }
+
     fn inkpen2_color_stroke(argb: u32, color_override: Option<Color>) -> Stroke {
         Stroke {
             rendering: Some(StrokeRendering {
@@ -8648,8 +8803,9 @@ mod tests {
                 },
             }),
             bbox: BoundingBox::default(),
-            points: vec![Point { x, y: 20. }],
-            pressures: vec![0.4],
+            // Saved Drawing requires two source events even for a stationary tap.
+            points: vec![Point { x, y: 20. }; 2],
+            pressures: vec![0.4; 2],
             timestamps: vec![],
             tilts: vec![],
             orientations: vec![],
@@ -8770,7 +8926,7 @@ mod tests {
         red.pen_width = 30.;
         red.pressures.clear();
         let mut cyan = marker(true, 16.);
-        cyan.points = vec![Point { x: 16., y: 16. }];
+        cyan.points = vec![Point { x: 16., y: 16. }; 2];
         cyan.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_ffff);
         cyan.color = Some(Color {
             r: 0,

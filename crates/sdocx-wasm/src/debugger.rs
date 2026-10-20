@@ -371,7 +371,7 @@ impl Source {
                             .into_iter()
                             .map(|(object, stroke, native_allowed)| json!({
                                 "offset": object.source_offset,
-                                "geometry": if native_allowed {
+                                "geometry": if native_allowed || stroke.points.len() < 2 {
                                     sdocx::prepare_stroke_for_page(stroke, false)
                                 } else {
                                     sdocx::prepare_stroke(stroke, false)
@@ -459,20 +459,17 @@ mod source_tests {
             .iter()
             .zip(parsed.document.pages[0].composed_strokes_with_context())
         {
-            // Use the same Value-to-wire roundtrip as the debugger, including
-            // float32 promotion and JSON number parsing.
-            let expected: Value = serde_json::from_str(
-                &json!({
-                    "stroke": stroke,
-                    "geometry": if native_allowed {
-                        sdocx::prepare_stroke_for_page(stroke, false)
-                    } else {
-                        sdocx::prepare_stroke(stroke, false)
-                    }
-                })
-                .to_string(),
-            )
-            .unwrap();
+            // Include the debugger's raw-time normalization and wire roundtrip.
+            let mut expected = json!({
+                "stroke": stroke,
+                "geometry": if native_allowed || stroke.points.len() < 2 {
+                    sdocx::prepare_stroke_for_page(stroke, false)
+                } else {
+                    sdocx::prepare_stroke(stroke, false)
+                }
+            });
+            safe_numbers(&mut expected);
+            let expected: Value = serde_json::from_str(&expected.to_string()).unwrap();
             assert_eq!(item["stroke"], expected["stroke"]);
             assert_eq!(item["geometry"], expected["geometry"]);
             assert_eq!(item["geometry"]["profile"], "FountainPen");

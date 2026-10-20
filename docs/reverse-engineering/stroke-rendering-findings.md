@@ -343,8 +343,16 @@ plus exact output-budget boundaries. They establish synthetic saved-redraw
 behavior, not app-deserialized admission or device pixels. The NoCurve matrix
 adds 45 cases and 294 records: rejected raw endpoints still produce a terminal
 line, duplicate tails emit no segment, and all-rejected inputs produce a
-pressure-scaled dot at the last source point. Singleton Drawing admission remains
-unverified because that capture did not construct a ChineseBrush instance.
+pressure-scaled dot at the last source point for multi-event sources.
+
+Shared `ObjectDrawing::drawObjectStroke` rejects stored point counts 0 and 1
+before `GetPenName`: Drawing RVAs `0x81a64–0x81a74` call `GetPointCount`, compare
+against 1 and set error 7 on rejection. In-bounds singleton and empty native
+Model arrays produce no pen instance, MotionEvent reads or queued work;
+coincident and separated two-point controls both pass. This is a saved-object
+Drawing gate, distinct from a standalone sampler's ability to construct a dot.
+The capture receipt hashes to
+`2a3f9031c334033fe4ead376d9a5a011a9672c8bc24d2f0a6db9038eda0bb279`.
 
 The live alpha atlas uses nearest/clamp sampling; its complete 144×144 RGBA
 upload hashes to `da75f5d1190e6fe086aa11007b7ed739421cf5d4522e34cb246df273353d2942`.
