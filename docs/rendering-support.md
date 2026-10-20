@@ -376,7 +376,7 @@ the [Drawing-to-paint capture](../conformance/magicpen-drawing-paint-native.json
 joins native color, the unchanged upload and interior partial-alpha paint on
 transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch texture
 initialization is host-supplied. Canonical SVG/PDF now reconstruct ordinary
-tool-2 NoCurve null/`1;` sources with explicit size, ordinary style codes and
+tool-2 curved and NoCurve null/`1;` sources with explicit size, ordinary style codes and
 native replay cutoffs, using one compound vector contour and one source-alpha
 composite. Omitted ARGB uses native opaque black, verified with
 [Drawing defaults controls](../conformance/magicpen-admission-defaults-native.json);
@@ -412,7 +412,10 @@ final points, duplicate endpoints, direct dots, size limits and low-factor
 terminal pressure controls. Rust matches every
 captured XYZ word and callback range. Pinned native loops exclude line endpoints
 and include terminal endpoints; terminal arguments retain the raw final input.
-General curved sampling and curved production admission remain open.
+Curved SVG/PDF admission uses the same bounds and approximate contour. The
+[four-profile curved paint replay](../conformance/magicpen-curved-paint-native.json)
+supports paired comparisons at 1×/2×/4× in five engines: active-support error
+improves over fallback in all 60 rows, while subpixel and zoom coverage still differ.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)

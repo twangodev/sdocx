@@ -4953,18 +4953,6 @@ mod tests {
         assert!(!fallback_svg.contains("data-replay-lengths"));
         assert!(!fallback_svg.contains(r##"fill="#336699""##));
 
-        let mut curved = magicpen_v1_stroke();
-        curved.rendering.as_mut().unwrap().properties.compressed = true;
-        assert_eq!(
-            crate::prepare_stroke_for_page(&curved, false).support,
-            crate::InkSupport::Approximate
-        );
-        assert!(
-            crate::prepare_stroke_for_page(&curved, false)
-                .sample_ends
-                .is_none()
-        );
-
         let mut budget = magicpen_v1_stroke();
         budget.rendering.as_mut().unwrap().properties.compressed = false;
         let count = 2_000;
@@ -4983,6 +4971,132 @@ mod tests {
         let prepared = crate::prepare_stroke_for_page(&budget, false);
         assert_eq!(prepared.support, crate::InkSupport::Approximate);
         assert!(prepared.sample_ends.is_none());
+    }
+
+    #[test]
+    fn magicpen_v1_curved_public_replay_matches_native_records_and_sample_cutoffs() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-curved-source-events-native.json"
+        ))
+        .unwrap();
+        let word =
+            |value: &serde_json::Value| u32::from_str_radix(value.as_str().unwrap(), 16).unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let id = case["id"].as_str().unwrap();
+            let input = &case["input"];
+            let mut stroke = magicpen_v1_stroke();
+            stroke.points = input["points_f32_u32_hex"]
+                .as_array()
+                .unwrap()
+                .chunks_exact(2)
+                .map(|xy| Point {
+                    x: f32::from_bits(word(&xy[0])) as f64,
+                    y: f32::from_bits(word(&xy[1])) as f64,
+                })
+                .collect();
+            stroke.pressures = input["pressure_f32_u32_hex"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f32::from_bits(word(value)) as f64)
+                .collect();
+            stroke.timestamps = input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_i64().unwrap())
+                .collect();
+            stroke.tilts = vec![0.0; stroke.points.len()];
+            stroke.orientations = vec![0.0; stroke.points.len()];
+            stroke.pen_width = f32::from_bits(word(&input["size_f32_u32_hex"]));
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.properties.compressed = true;
+            rendering.style.pen_size = Some(stroke.pen_width);
+            let ink = crate::ink::prepare_magicpen_v1_source(&stroke)
+                .unwrap_or_else(|| panic!("{id} rejected"));
+            let actual: Vec<u32> = ink.records.iter().flatten().copied().collect();
+            let expected: Vec<u32> = case["native"]["xyz_f32_u32_hex"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(word)
+                .collect();
+            assert_eq!(actual, expected, "{id} native records");
+            let count = ink.records.len();
+            let mut ends = vec![0];
+            ends.extend(
+                case["capture"]["native_addpoint"]["source_event_trace"]["curved_line_calls"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|event| event["addpoint_range"][1].as_u64().unwrap() as usize),
+            );
+            *ends.last_mut().unwrap() = count;
+            let prepared = crate::prepare_stroke_for_page(&stroke, false);
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed, "{id}");
+            assert_eq!(prepared.sample_ends.as_ref(), Some(&ends), "{id} cutoffs");
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.clone().into()];
+            let document = document(page);
+            let normal = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            let replay = super::render_layout_page_replay_svg(
+                &document,
+                &layout_document(&document),
+                0,
+                &RenderOptions::default(),
+            )
+            .unwrap();
+            let xml = roxmltree::Document::parse(&replay.svg).unwrap();
+            let path = xml
+                .descendants()
+                .find(|node| node.has_tag_name("path"))
+                .unwrap();
+            let data = path.attribute("d").unwrap();
+            let lengths: Vec<usize> = path
+                .attribute("data-replay-lengths")
+                .unwrap()
+                .split(',')
+                .map(|value| value.parse().unwrap())
+                .collect();
+            assert_eq!(lengths.len(), count, "{id} prepared-record prefixes");
+            for end in ends {
+                let bytes = end.checked_sub(1).map_or(0, |index| lengths[index]);
+                assert_eq!(
+                    data[..bytes].matches('M').count(),
+                    end,
+                    "{id} replay cutoff"
+                );
+            }
+            let normal_xml = roxmltree::Document::parse(&normal.svg).unwrap();
+            let normal_path = normal_xml
+                .descendants()
+                .find(|node| node.has_tag_name("path"))
+                .unwrap();
+            assert_eq!(
+                normal_path.attribute("d"),
+                Some(data),
+                "{id} stable geometry"
+            );
+            assert!(!normal.svg.contains("<image"));
+            if id == "tool2_baseline" {
+                #[cfg(feature = "pdf")]
+                {
+                    let bytes =
+                        crate::render_svg_pages_pdf(&[normal], &Default::default()).unwrap();
+                    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                    assert!(!pdf.objects.values().any(|object| {
+                        object.as_stream().ok().is_some_and(|stream| {
+                            stream
+                                .dict
+                                .get(b"Subtype")
+                                .ok()
+                                .and_then(|value| value.as_name().ok())
+                                == Some(b"Image")
+                        })
+                    }));
+                }
+            }
+        }
     }
 
     #[test]

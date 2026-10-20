@@ -1,8 +1,8 @@
-//! Source model and bounded NoCurve page preparation for MagicPen GLV1.
+//! Source model and bounded page preparation for MagicPen GLV1.
 //!
-//! Curved sampling remains regression evidence. Production admission covers
-//! ordinary type-2 NoCurve sources with explicit saved settings; GLV2, SDK
-//! deserialization and native per-view paint coverage remain separate.
+//! Ordinary tool-2 curved and NoCurve sources reconstruct native stamps.
+//! Vector paint remains an approximation; GLV2, SDK deserialization and
+//! native per-view pixel coverage remain separate.
 
 use super::path::{P, Quad};
 use std::ops::Range;
@@ -90,9 +90,16 @@ pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
         .map(|pressure| *pressure as f32)
         .collect();
     let emission = if rendering.properties.compressed {
-        // Curved sampling remains regression evidence; page paint admission
-        // currently covers NoCurve sources only.
-        return None;
+        let emission = source_glv1_curve_trace(&points, &pressure, size);
+        (
+            emission.records,
+            emission
+                .source_event_ranges
+                .into_iter()
+                .map(|range| range.end)
+                .collect(),
+            emission.terminal_range,
+        )
     } else {
         let emission = source_glv1_no_curve_trace(&points, &pressure, size);
         (
@@ -416,8 +423,7 @@ fn source_point(p: [f32; 2]) -> FPoint {
     FPoint { x: p[0], y: p[1] }
 }
 
-// Curved replay metadata is consumed by native-oracle tests until admission.
-#[cfg_attr(not(test), allow(dead_code))]
+// Curved replay metadata retains rejected events and the separate terminal suffix.
 pub struct CurveEmission {
     pub records: Vec<[u32; 3]>,
     pub source_event_ranges: Vec<Range<usize>>,
