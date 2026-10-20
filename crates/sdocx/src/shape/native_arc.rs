@@ -65,9 +65,9 @@ pub(crate) fn expand(values: [f64; 6]) -> Option<Vec<NativePathCommand>> {
     let start_radians = start * DEG_TO_RAD;
     let end_degrees = start + sweep;
     let mut end_radians = end_degrees * DEG_TO_RAD;
-    let (start_sin, start_cos) = start_radians.sin_cos();
+    let (start_sin, start_cos) = libm::sincosf(start_radians);
     let start_vector = [snap(start_cos), snap(start_sin)];
-    let (end_sin, end_cos) = end_radians.sin_cos();
+    let (end_sin, end_cos) = libm::sincosf(end_radians);
     let mut end_vector = [snap(end_cos), snap(end_sin)];
 
     if start_vector == end_vector && sweep.abs() > NEAR_FULL_LOW && sweep.abs() < NEAR_FULL_HIGH {
@@ -78,7 +78,7 @@ pub(crate) fn expand(values: [f64; 6]) -> Option<Vec<NativePathCommand>> {
         };
         for _ in 0..4096 {
             end_radians -= step;
-            let (sin, cos) = end_radians.sin_cos();
+            let (sin, cos) = libm::sincosf(end_radians);
             end_vector = [snap(cos), snap(sin)];
             if start_vector != end_vector {
                 break;

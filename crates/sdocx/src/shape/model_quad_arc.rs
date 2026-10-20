@@ -38,7 +38,7 @@ pub(super) fn expand(
     let rx = (right - left) * 0.5;
     let ry = (bottom - top) * 0.5;
     let radians = (f64::from(rotation) / 180.) * PI;
-    let (sin, cos) = radians.sin_cos();
+    let (sin, cos) = libm::sincos(radians);
     for point in &mut points {
         // Base::PointF::GetRotatedPoint first rotates in f64 and narrows,
         // then Model maps (rotated + 1) with separate f32 add/mul/add.

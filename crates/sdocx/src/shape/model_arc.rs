@@ -4,6 +4,9 @@
 //! intersects those rays with the ellipse, converts the intersections back to
 //! unit-ellipse parameters, then delegates curve construction to the separate
 //! Model unit-arc builder.
+//! Transcendentals use pinned portable libm: platform math differs by ULPs.
+//! Existing oracles execute native instructions with hosted Linux math; they
+//! do not establish Android math-library bit parity.
 
 const PI: f64 = f64::from_bits(0x4009_21fb_5444_2d18);
 const PI_OVER_180: f64 = f64::from_bits(0x3f91_df46_a252_9d39);
@@ -42,7 +45,7 @@ fn normalize_angle(mut angle: f32) -> Option<f32> {
 }
 
 fn angle_from_vector(x: f32, y: f32) -> f32 {
-    let radians = y.atan2(x);
+    let radians = libm::atan2f(y, x);
     let degrees = radians * RAD_TO_DEG as f32;
     let mut angle = (f64::from(degrees) / PI) as f32;
     if angle < 0.0 {
@@ -59,7 +62,7 @@ fn unit_vector(angle: f32) -> Option<[f32; 2]> {
         180.0 => [-1.0, 0.0],
         270.0 => [0.0, -1.0],
         _ => {
-            let (sin, cos) = sincos_radians(angle).sin_cos();
+            let (sin, cos) = libm::sincosf(sincos_radians(angle));
             [cos, sin]
         }
     })
@@ -76,7 +79,7 @@ fn unit_vector_unwrapped(angle: f32) -> [f32; 2] {
         270.0 => return [0.0, -1.0],
         _ => {}
     }
-    let (sin, cos) = sincos_radians(angle).sin_cos();
+    let (sin, cos) = libm::sincosf(sincos_radians(angle));
     [cos, sin]
 }
 
@@ -92,7 +95,7 @@ fn ray_parameter(angle: f32, rect: [f32; 4], rx: f32, ry: f32) -> Option<([f32; 
         270.0 => return Some(([0.0, -1.0], 270.0)),
         _ => {}
     }
-    let tangent = radians(angle).tan();
+    let tangent = libm::tanf(radians(angle));
     let rx2t2 = (rx * rx * tangent) * tangent;
     let denominator = ry.mul_add(ry, rx2t2).sqrt();
     let product = rx * ry;
@@ -111,7 +114,7 @@ fn ray_parameter(angle: f32, rect: [f32; 4], rx: f32, ry: f32) -> Option<([f32; 
     let offset_x = point_x - center_x;
     let offset_y = point_y - center_y;
     let parameter = angle_from_vector(offset_x * (ry / rx), offset_y);
-    let (sin, cos) = sincos_radians(parameter).sin_cos();
+    let (sin, cos) = libm::sincosf(sincos_radians(parameter));
     Some(([cos, sin], parameter))
 }
 

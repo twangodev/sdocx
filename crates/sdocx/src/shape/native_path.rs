@@ -221,7 +221,7 @@ fn rotate_model_commands(commands: &mut [NativePathCommand], bounds: [f32; 4], a
     }
     let center = [(bounds[0] + bounds[2]) * 0.5, (bounds[1] + bounds[3]) * 0.5];
     let radians = (f64::from(angle) / 180.0) * MODEL_PI;
-    let (sine, cosine) = radians.sin_cos();
+    let (sine, cosine) = libm::sincos(radians);
     let rotate = |point: &mut [f64; 2]| {
         let x = point[0] as f32;
         let y = point[1] as f32;

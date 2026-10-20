@@ -149,7 +149,7 @@ fn rotate_point(point: [f32; 2], center: [f32; 2], angle: f32) -> [f32; 2] {
         return point;
     }
     let radians = (f64::from(angle) / 180.0) * PI;
-    let (sine, cosine) = radians.sin_cos();
+    let (sine, cosine) = libm::sincos(radians);
     let dy = f64::from(point[1] - center[1]);
     let dx = f64::from(point[0] - center[0]);
     let x = dx.mul_add(cosine, -(sine * dy));

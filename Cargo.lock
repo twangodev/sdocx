@@ -996,6 +996,7 @@ dependencies = [
  "i_overlay",
  "imagesize",
  "krilla",
+ "libm",
  "lopdf",
  "once_cell",
  "png",
