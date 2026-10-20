@@ -420,9 +420,21 @@ pub(super) fn sample_saved_redraw(stroke: &SavedStroke, mut emit: impl FnMut(Sav
     }));
 }
 
+#[cfg(test)]
 pub(super) fn try_sample_saved_redraw(
     stroke: &SavedStroke,
     mut emit: impl FnMut(SavedSample) -> bool,
+) -> bool {
+    try_sample_saved_redraw_with_source_index(stroke, |_, sample| emit(sample))
+}
+
+/// Run the saved-source sampler while preserving the index of the source
+/// point whose event processing emits each sample. The ordinary sampler
+/// delegates here and discards the index, so particle generation stays on
+/// the same arithmetic and emission path.
+pub(super) fn try_sample_saved_redraw_with_source_index(
+    stroke: &SavedStroke,
+    mut emit: impl FnMut(usize, SavedSample) -> bool,
 ) -> bool {
     if stroke.points.len() < 2 {
         return true;
@@ -444,11 +456,14 @@ pub(super) fn try_sample_saved_redraw(
     let step = stroke.size * 0.08;
     let mut distance_phase = step;
     for _ in 0..7 {
-        if !emit(SavedSample {
-            point: stroke.points[0],
-            size: stroke.size,
-            alpha: initial_alpha,
-        }) {
+        if !emit(
+            0,
+            SavedSample {
+                point: stroke.points[0],
+                size: stroke.size,
+                alpha: initial_alpha,
+            },
+        ) {
             return false;
         }
     }
@@ -501,7 +516,7 @@ pub(super) fn try_sample_saved_redraw(
             alpha,
             step,
             distance_phase,
-            &mut emit,
+            |sample| emit(index, sample),
         ) {
             Some(phase) => phase,
             None => return false,
@@ -547,7 +562,7 @@ pub(super) fn try_sample_saved_redraw(
         terminal_alpha,
         step,
         distance_phase,
-        &mut emit,
+        |sample| emit(stroke.points.len() - 1, sample),
     )
     .is_some()
 }
@@ -565,11 +580,33 @@ pub(super) fn saved_redraw_v3_particles(
 
 /// Bound generated particles before advancing random state or allocating output.
 /// Failed attempts leave the caller's RNG untouched and expose no partial stream.
+#[cfg(test)]
 pub(super) fn saved_redraw_v3_particles_bounded(
     stroke: &SavedStroke,
     rng: &mut V3PrivateRandom,
     max_particles: usize,
 ) -> Result<Vec<V3Particle>, &'static str> {
+    saved_redraw_v3_bounded_inner(stroke, rng, max_particles, false).map(|(particles, _)| particles)
+}
+
+/// Generate particles and retain one exclusive cumulative particle end per
+/// source point. Ends are captured in the same bounded sampling pass as the
+/// particles, so replay metadata cannot come from a second sampling run.
+pub(super) fn saved_redraw_v3_particles_with_source_ends_bounded(
+    stroke: &SavedStroke,
+    rng: &mut V3PrivateRandom,
+    max_particles: usize,
+) -> Result<(Vec<V3Particle>, Vec<usize>), &'static str> {
+    saved_redraw_v3_bounded_inner(stroke, rng, max_particles, true)
+        .map(|(particles, source_ends)| (particles, source_ends.expect("requested source ends")))
+}
+
+fn saved_redraw_v3_bounded_inner(
+    stroke: &SavedStroke,
+    rng: &mut V3PrivateRandom,
+    max_particles: usize,
+    retain_source_ends: bool,
+) -> Result<(Vec<V3Particle>, Option<Vec<usize>>), &'static str> {
     stroke.validate()?;
     let spacing = stroke.size * 0.08;
     if !stroke.size.is_finite() || stroke.size <= 0.0 || !spacing.is_finite() || spacing <= 0.0 {
@@ -583,17 +620,26 @@ pub(super) fn saved_redraw_v3_particles_bounded(
     let mut next_rng = *rng;
     next_rng.reset();
     let mut particles = Vec::new();
-    if !try_sample_saved_redraw(stroke, |sample| {
+    let mut source_ends = retain_source_ends.then(|| vec![0; stroke.points.len()]);
+    let mut next_source_end = 0;
+    if !try_sample_saved_redraw_with_source_index(stroke, |source_index, sample| {
         if particles.len() == max_particles {
             return false;
+        }
+        if let Some(ends) = &mut source_ends {
+            ends[next_source_end..source_index].fill(particles.len());
+            next_source_end = source_index;
         }
         particles.push(next_rng.particle(sample.point, sample.size, sample.alpha));
         true
     }) {
         return Err("saved particle budget or finite sampling path exceeded");
     }
+    if let Some(ends) = &mut source_ends {
+        ends[next_source_end..].fill(particles.len());
+    }
     *rng = next_rng;
-    Ok(particles)
+    Ok((particles, source_ends))
 }
 
 #[cfg(test)]

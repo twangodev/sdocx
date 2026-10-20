@@ -175,7 +175,8 @@ these captures.
 V3 preparation now stops at 2,048 particles and 65,536 source points, with no
 partial stream or caller RNG changes on rejection. Admission requires exact
 Pencil3 empty/`4;` settings, ordinary tool 2, complete finite channels, explicit
-ARGB and supported style defaults. Replay retains the established fallback.
+ARGB and supported style defaults. Explicit-profile replay reveals the same
+saved-redraw particle stream using source-event cutoffs.
 Native `Pen::SetSize` at PenCommon `0x45fdc` clamps to [0.4,800]. Drawing forwards
 omitted size as zero, yielding 0.4; explicit 0/0.1 and 800/900 controls match
 complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted
@@ -204,3 +205,12 @@ Firefox, resvg, MuPDF and PDFium against the no-profile fallback. PDF raster res
 consumer sampling, real paper/projection inputs, broader source
 profiles and Samsung-device comparisons remain open. Scratch captures and
 cross-renderer reports stay outside maintained conformance files.
+
+Saved-redraw attribution hooks identify seven initial `drawPoint` calls at
+Pencil3 RVA `0x10b430`, interior calls at `0x10bb24` with loop index W24,
+and terminal calls at `0x10ad84`. Baseline cumulative ends are [7,13,25,48];
+a varied-pressure/tilt control with a skipped 0.02236 movement has
+[7,14,14,47]. Rust tests pin both complete streams and cutoffs. The ignored
+receipt SHA-256 is `281722a1a62dda32d57534c103c311c5f9fdd5678f12b86f33637f33c28e0f70`.
+This establishes source ownership within a full saved redraw, not live gesture
+behavior or equality with redrawing truncated source prefixes.

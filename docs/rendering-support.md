@@ -169,7 +169,9 @@ brush and paper textures with vector stamp geometry; these are intrinsic image
 assets, not rendered-stroke bitmaps. Matching sampler controls improve on the
 generic fallback across five consumers; PDF residuals remain. Supplied-paper
 sampling is producer-owned, while built-in paper repeats. Context defaults,
-replay and real-document/device validation remain integration gaps.
+real-document/device validation remain integration gaps. Profile-aware replay
+uses source-event particle cutoffs; viewport-aware metadata checks the same
+canvas eligibility as paint.
 Marker3 V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp

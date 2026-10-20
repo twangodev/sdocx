@@ -3230,16 +3230,9 @@ fn render_stroke(
     pencil3_profile: Option<Pencil3RenderProfile>,
 ) {
     if native_allowed
-        && replay_index.is_none()
         && let Some(profile) = pencil3_profile
-        && [profile.canvas_width, profile.canvas_height] == viewport
-        && let Some(mut ink) = crate::ink::pencil_source::prepare_pencil3_v3_source(
-            stroke,
-            profile.screen_width,
-            profile.screen_height,
-        )
+        && let Some(ink) = prepare_pencil3_v3(stroke, profile, theme, viewport)
     {
-        ink.color = theme.foreground_color(stroke.color.unwrap_or(ink.color));
         let context = pencil3::Pencil3PaintContext {
             canvas_width: profile.canvas_width,
             canvas_height: profile.canvas_height,
@@ -3247,7 +3240,7 @@ fn render_stroke(
             paper_sampler: profile.paper_sampler,
             y_up: false,
         };
-        if pencil3::render(svg, &ink, context) {
+        if pencil3::render(svg, &ink, context, replay_index) {
             return;
         }
     }
@@ -3798,8 +3791,30 @@ fn render_inkpen2_v9(
     inkpen2_vector::render(svg, ink, replay_index);
 }
 
-/// Prepare replay metadata with the same resolved page theme and explicit
-/// InkPen2 screen profile used by SVG/PDF rendering.
+fn prepare_pencil3_v3(
+    stroke: &Stroke,
+    profile: Pencil3RenderProfile,
+    theme: RenderTheme,
+    viewport: [u32; 2],
+) -> Option<crate::ink::pencil_source::PreparedPencil3V3> {
+    if [profile.canvas_width, profile.canvas_height] != viewport
+        || viewport.contains(&0)
+        || viewport.iter().any(|&size| size > i32::MAX as u32)
+    {
+        return None;
+    }
+    let mut ink = crate::ink::pencil_source::prepare_pencil3_v3_source(
+        stroke,
+        profile.screen_width,
+        profile.screen_height,
+    )?;
+    ink.color = theme.foreground_color(stroke.color.unwrap_or(ink.color));
+    Some(ink)
+}
+
+/// Prepare replay metadata with a resolved theme and explicit InkPen2 screen
+/// profile. For canvas-dependent Pencil3 profiles, use
+/// [`prepare_stroke_for_viewport_with_theme`] with the actual rendered page size.
 pub fn prepare_stroke_for_page_with_theme<'a>(
     stroke: &'a Stroke,
     theme: RenderTheme,
@@ -3830,6 +3845,48 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
     prepared.color = vector::color_hex(&ink.color);
     prepared.opacity = ink.opacity;
     prepared.profile = Some("InkPen2V9");
+    prepared.support = crate::InkSupport::Reconstructed;
+    prepared
+}
+
+/// Prepare replay metadata for an actual rendered page viewport. This applies
+/// the same canvas eligibility check as SVG/PDF rendering for Pencil3 profiles.
+/// Callers rendering transformed descendants must use [`crate::prepare_stroke`]
+/// instead, matching the renderer's native-profile exclusion.
+pub fn prepare_stroke_for_viewport_with_theme<'a>(
+    stroke: &'a Stroke,
+    theme: RenderTheme,
+    options: &RenderOptions,
+    viewport: [u32; 2],
+) -> crate::PreparedStroke<'a> {
+    let Some(ink) = options
+        .pencil3_profile
+        .and_then(|profile| prepare_pencil3_v3(stroke, profile, theme, viewport))
+    else {
+        return prepare_stroke_for_page_with_theme(stroke, theme, options);
+    };
+    let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
+    prepared.points = Cow::Owned(
+        ink.records
+            .iter()
+            .map(|r| crate::Point {
+                x: f64::from(r[0]),
+                y: f64::from(r[1]),
+            })
+            .collect(),
+    );
+    prepared.sample_ends = Some(ink.sample_ends);
+    prepared.dot_radii = None;
+    prepared.ordered_disk_replay = None;
+    prepared.inkpen2_v9 = None;
+    prepared.dot_directions = None;
+    prepared.rect_stamp = None;
+    prepared.coverage_mesh = None;
+    prepared.segment_widths = None;
+    prepared.bounds = Some(ink.bounds);
+    prepared.color = vector::color_hex(&ink.color);
+    prepared.opacity = f64::from(ink.opacity);
+    prepared.profile = Some("Pencil3V3");
     prepared.support = crate::InkSupport::Reconstructed;
     prepared
 }
@@ -6441,6 +6498,76 @@ mod tests {
     }
 
     #[test]
+    fn pencil3_replay_retains_particles_resources_and_source_cutoffs() {
+        let stroke = pencil3_native_profile_stroke();
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        page.objects = vec![stroke.clone().into()];
+        let doc = document(page);
+        let layout = layout_document(&doc);
+        for sampler in [
+            super::Pencil3PaperSampler::Repeat,
+            super::Pencil3PaperSampler::ClampToEdge,
+        ] {
+            let options = RenderOptions {
+                pencil3_profile: Some(super::Pencil3RenderProfile {
+                    screen_width: 2560,
+                    screen_height: 1440,
+                    canvas_width: 320,
+                    canvas_height: 180,
+                    paper_sampler: sampler,
+                }),
+                ..RenderOptions::default()
+            };
+            let prepared = super::prepare_stroke_for_viewport_with_theme(
+                &stroke,
+                RenderTheme::for_canvas(false),
+                &options,
+                [320, 180],
+            );
+            assert_eq!(prepared.profile, Some("Pencil3V3"));
+            assert_eq!(prepared.points.len(), 48);
+            let ends = prepared.sample_ends.as_ref().unwrap();
+            assert_eq!(ends.len(), stroke.points.len());
+            assert_eq!(ends[0], 7);
+            assert_eq!(ends.last(), Some(&48));
+            assert!(ends.windows(2).all(|pair| pair[0] <= pair[1]));
+            let normal = super::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+            let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+            let xml = roxmltree::Document::parse(&replay.svg).unwrap();
+            let group = xml
+                .descendants()
+                .find(|n| n.attribute("data-replay-stroke") == Some("0"))
+                .unwrap();
+            let parts: Vec<_> = group
+                .descendants()
+                .filter_map(|n| n.attribute("data-replay-part"))
+                .collect();
+            assert_eq!(parts, (1..=48).map(|i| i.to_string()).collect::<Vec<_>>());
+            assert!(!group.descendants().any(|n| n.has_tag_name("defs")));
+            assert_eq!(replay.svg.matches("data:image/png;base64,").count(), 2);
+            #[cfg(feature = "pdf")]
+            {
+                let raster = |svg: &str| {
+                    let tree =
+                        resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+                    let mut pixmap = resvg::tiny_skia::Pixmap::new(80, 45).unwrap();
+                    resvg::render(
+                        &tree,
+                        resvg::tiny_skia::Transform::from_scale(0.25, 0.25),
+                        &mut pixmap.as_mut(),
+                    );
+                    pixmap
+                };
+                assert_eq!(raster(&normal.svg).data(), raster(&replay.svg).data());
+            }
+            #[cfg(not(feature = "pdf"))]
+            assert_eq!(normal.width, replay.width);
+        }
+    }
+
+    #[test]
     fn pencil3_public_profile_falls_back_for_unverified_selector_or_canvas() {
         let mut page = page_with_uncolored_stroke();
         page.width = 320;
@@ -6461,22 +6588,24 @@ mod tests {
             ..RenderOptions::default()
         };
         assert_eq!(render_document_svg(&doc, &options).remove(0).svg, fallback);
-        let mut replay_options = options.clone();
-        replay_options
-            .pencil3_profile
-            .as_mut()
-            .unwrap()
-            .canvas_width = 320;
         let layout = layout_document(&doc);
         assert_eq!(
-            render_layout_page_replay_svg(&doc, &layout, 0, &replay_options)
+            render_layout_page_replay_svg(&doc, &layout, 0, &options)
                 .unwrap()
                 .svg,
             render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
                 .unwrap()
                 .svg,
-            "unverified sample-addressable replay keeps its established path",
+            "mismatched replay canvas uses the same fallback",
         );
+        let geometry = super::prepare_stroke_for_viewport_with_theme(
+            &pencil3_native_profile_stroke(),
+            RenderTheme::for_canvas(false),
+            &options,
+            [320, 180],
+        )
+        .profile;
+        assert_ne!(geometry, Some("Pencil3V3"));
         let mut unsupported = pencil3_native_profile_stroke();
         unsupported.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
         let mut page = doc.pages[0].clone();

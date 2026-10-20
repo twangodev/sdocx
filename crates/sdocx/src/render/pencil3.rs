@@ -5,8 +5,8 @@
 //! every dab selects a row through a clipped SVG `<use>` viewport.
 
 use super::vector::{
-    ColorValue, Definitions, Group, Image, Paint, Pattern, PatternId, Rectangle, Scene, Styled,
-    Svg, SvgMask, Transform, Use, ViewBox,
+    ColorValue, Definitions, Group, Image, Paint, Pattern, PatternId, Rectangle, ReplayPart, Scene,
+    StrokeIndex, Styled, Svg, SvgMask, Transform, Use, ViewBox,
 };
 use crate::{BoundingBox, ink::pencil_source::PreparedPencil3V3};
 
@@ -45,6 +45,7 @@ pub(super) fn render(
     scene: &mut Scene,
     source: &PreparedPencil3V3,
     context: Pencil3PaintContext,
+    replay_index: Option<usize>,
 ) -> bool {
     let records = &source.records;
     if records.is_empty()
@@ -143,6 +144,9 @@ pub(super) fn render(
     scene.push(definitions);
 
     let mut geometry = Group::new();
+    if let Some(index) = replay_index {
+        geometry = geometry.replay_stroke(StrokeIndex(index));
+    }
     if context.y_up {
         geometry =
             geometry.transformed(Transform::matrix([1.0, 0.0, 0.0, -1.0, 0.0, height], 0, 0));
@@ -155,6 +159,7 @@ pub(super) fn render(
             scene.scope(Group::new().mask_id(&paper_mask_id), |scene| {
                 scene.push(
                     Rectangle::new()
+                        .replay_part(replay_index.map(|_| ReplayPart(index + 1)))
                         .x(f64::from(x) - half)
                         .y(f64::from(y) - half)
                         .width(half * 2.0)

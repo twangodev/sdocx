@@ -1,6 +1,8 @@
 //! Bounded source preparation for the selector-confirmed Pencil3 V3 path.
 
-use super::pencil::{SavedStroke, V3PrivateRandom, saved_redraw_v3_particles_bounded};
+use super::pencil::{
+    SavedStroke, V3PrivateRandom, saved_redraw_v3_particles_with_source_ends_bounded,
+};
 use crate::{BoundingBox, Color, Stroke};
 
 const MAX_SOURCE_POINTS: usize = 65_536;
@@ -9,6 +11,11 @@ const MAX_OUTPUT_RECORDS: usize = 2_048;
 pub(crate) struct PreparedPencil3V3 {
     /// RTV1 packed order: center x, center y, half-size, texture row, alpha.
     pub(crate) records: Vec<[f32; 5]>,
+    /// Exclusive cumulative record end after each saved source point has
+    /// been processed. The vector has one entry per source point; repeated
+    /// ends represent points that emitted no particles, and the final end is
+    /// the complete record count.
+    pub(crate) sample_ends: Vec<usize>,
     pub(crate) bounds: BoundingBox,
     pub(crate) color: Color,
     /// Saved ARGB alpha converted to the renderer's 0..=1 range.
@@ -159,8 +166,9 @@ pub(crate) fn prepare_pencil3_v3_source(
     source.validate().ok()?;
 
     let mut rng = V3PrivateRandom::new();
-    let particles =
-        saved_redraw_v3_particles_bounded(&source, &mut rng, MAX_OUTPUT_RECORDS).ok()?;
+    let (particles, sample_ends) =
+        saved_redraw_v3_particles_with_source_ends_bounded(&source, &mut rng, MAX_OUTPUT_RECORDS)
+            .ok()?;
     if particles.is_empty() {
         return None;
     }
@@ -202,6 +210,7 @@ pub(crate) fn prepare_pencil3_v3_source(
     }
     Some(PreparedPencil3V3 {
         records,
+        sample_ends,
         bounds: bounds?,
         color: Color {
             r: (argb >> 16) as u8,
@@ -323,6 +332,51 @@ mod tests {
             assert_eq!(actual, native, "{name} full packed stream");
             assert!(prepared.bounds.x_min.is_finite() && prepared.bounds.x_max.is_finite());
         }
+    }
+
+    #[test]
+    fn source_event_ends_match_native_v3_boundaries_without_changing_streams() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-sampler-inputs-native.json"
+        ))
+        .unwrap();
+        let baseline_profile = &fixture["cases"]["baseline_tool2_curve"]["input_profile"];
+        let baseline = prepare_pencil3_v3_source(&fixture_stroke(baseline_profile), 1920, 1080)
+            .expect("baseline native profile");
+        assert_eq!(baseline.sample_ends, [7, 13, 25, 48]);
+        let baseline_bytes = baseline
+            .records
+            .iter()
+            .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&baseline_bytes)),
+            "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+            "baseline complete native packed stream"
+        );
+
+        let mut skipped = fixture_stroke(baseline_profile);
+        skipped.points = [[0.0, 0.0], [12.0, 3.0], [12.02, 3.01], [31.0, 9.0]]
+            .into_iter()
+            .map(|[x, y]| Point { x, y })
+            .collect();
+        skipped.pressures = [0.2, 0.9, 0.35, 0.8].into_iter().collect();
+        skipped.timestamps = [10, 20, 21, 40].into_iter().collect();
+        skipped.tilts = [0.1, 0.72, 0.24, 0.61].into_iter().collect();
+        skipped.orientations = [0.0, 0.3, 0.1, 0.7].into_iter().collect();
+        let skipped =
+            prepare_pencil3_v3_source(&skipped, 1920, 1080).expect("native tiny-segment profile");
+        assert_eq!(skipped.sample_ends, [7, 14, 14, 47]);
+        let skipped_bytes = skipped
+            .records
+            .iter()
+            .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&skipped_bytes)),
+            "ad7e23bc2b7c3d559fb44b90feea02f770ad492fbe0c6e5ccd67ad5c0702292a",
+            "tiny-segment complete native packed stream"
+        );
     }
 
     #[test]
