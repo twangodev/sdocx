@@ -382,6 +382,9 @@ composite. Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
 1×/2×/4×. The fixed contour approximates scale-dependent shader edges; unknown
 effects and budgets retain fallback, and device parity remains open.
+A [NoCurve paint replay](../conformance/magicpen-nocurve-paint-native.json)
+retains the same native source stream and full RGBA buffers at 1×/2×/4× on
+transparent targets, with separate opaque-background blend controls.
 A [paint-control matrix](../conformance/magicpen-paint-controls-native.json)
 checks eight scale/phase views plus GLV1/GLV2 and opaque-background controls.
 The source-derived shader model matches transparent support and stays within
