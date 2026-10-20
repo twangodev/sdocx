@@ -176,6 +176,30 @@ impl LayoutPage {
         .then_some(slice)
     }
 
+    /// Retrieve the full source used by the Standard PDF writer for a
+    /// source-owned single-page continuous note.
+    ///
+    /// This is deliberately narrower than inspection and SVG layout: mode 1
+    /// PDF export measures the complete note body and clips it to the page
+    /// viewport, regardless of a shorter saved inspection section. Validate
+    /// the synthetic inspection node first so stale or edited layout pages do
+    /// not get replaced by the authoritative metadata source.
+    #[cfg(feature = "render")]
+    pub(crate) fn single_page_continuous_pdf_body(
+        &self,
+        document: &Document,
+    ) -> Option<RichTextBox> {
+        if document.metadata.page_mode != Some(1)
+            || document.pages.len() != 1
+            || self.source_page_index != 0
+        {
+            return None;
+        }
+        let body = document.metadata.note_text.as_ref()?;
+        self.validated_inspection_ranges(document, &TextIndex::new(&body.text))?;
+        Some(body.clone())
+    }
+
     /// Rebuild validated capture text from the authoritative document body.
     pub fn body_text_capture(&self, document: &Document) -> Option<RichTextBox> {
         let metadata = self.body_text_slice()?;

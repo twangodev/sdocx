@@ -562,8 +562,15 @@ impl DocumentTextCache {
                 settings,
             ));
         observer(Progress::pending(ProgressStage::Preparing));
-        let body_text =
-            PreparedBodyText::new(document, layout_page, theme, &text_renderer, self, slice);
+        let body_text = PreparedBodyText::new(
+            document,
+            layout_page,
+            theme,
+            &text_renderer,
+            self,
+            slice,
+            retain_text,
+        );
         let mut svg = render_page_contents_svg(
             page,
             &document.metadata,
@@ -619,33 +626,38 @@ impl PreparedBodyText {
         renderer: &TextRenderer<'_>,
         cache: &mut DocumentTextCache,
         slice: Option<PageSlice>,
+        pdf_scene: bool,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
-        let (text, first_page_index, last_page_index) =
-            if let Some(window) = body.capture_window.as_ref() {
+        let pdf_full_body = pdf_scene
+            .then(|| page.single_page_continuous_pdf_body(document))
+            .flatten();
+        let (text, source_range, first_page_index, last_page_index, detached) =
+            if let Some(text) = pdf_full_body {
+                let source_range = 0..text.text.chars().count();
+                (text, source_range, 0, 0, false)
+            } else if let Some(window) = body.capture_window.as_ref() {
                 (
                     page.body_text_capture(document)?,
+                    window.source_range.clone(),
                     window.first_page_index,
                     window.requested_page_index,
+                    window.first_page_index != 0
+                        || document.metadata.note_text.as_ref().is_some_and(|source| {
+                            window.saved_source_range != (0..source.text.chars().count())
+                        }),
                 )
             } else {
                 (
                     page.body_text_reflow(document)?,
+                    body.reflow.as_ref()?.source_range.clone(),
                     body.reflow.as_ref()?.first_page_index,
                     document.pages.len().checked_sub(1)?,
+                    false,
                 )
             };
-        let detached = body.capture_window.as_ref().is_some_and(|window| {
-            window.first_page_index != 0
-                || document.metadata.note_text.as_ref().is_some_and(|source| {
-                    window.saved_source_range != (0..source.text.chars().count())
-                })
-        });
         let key = BodyPlanKey {
-            source_range: body.capture_window.as_ref().map_or_else(
-                || body.reflow.as_ref().unwrap().source_range.clone(),
-                |window| window.source_range.clone(),
-            ),
+            source_range,
             first_page_index,
             last_page_index,
             detached,
@@ -4243,7 +4255,9 @@ mod tests {
         sanitize_hyperlink_target,
     };
     use crate::{
-        BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
+        BoundingBox, Color, Document, DocumentMetadata, MediaAsset, ObjectSpanLayoutConstraint,
+        ObjectSpanLayoutOption, ObjectType, Page, PageElement, PageObjectContent, PlacedImage,
+        Point, RichTextBox, RichTextObjectContent, RichTextObjectSpan, RichTextSection,
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
     };
@@ -8618,6 +8632,149 @@ mod tests {
                 .unwrap()
                 .has(b"StructTreeRoot")
         );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn single_page_continuous_pdf_uses_full_source_without_replacing_inspection_slice() {
+        let mut body = theme_test_text();
+        body.text = format!("{}\u{fffc}tail", "\n".repeat(112));
+        body.text_sections = vec![RichTextSection {
+            start_utf16: 0,
+            length_utf16: 36,
+        }];
+        body.object_spans = vec![RichTextObjectSpan {
+            object_type: ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                bbox: BoundingBox {
+                    x_min: 40.0,
+                    y_min: 5_400.0,
+                    x_max: 180.0,
+                    y_max: 5_600.0,
+                },
+                rotation_degrees: None,
+                media_id: Some(7),
+                media_index: Some(0),
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            }))),
+            text_index_utf16: 112,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        }];
+        let mut page = page_with_uncolored_stroke();
+        page.width = 1_812;
+        page.height = 15_372;
+        let mut document = document(page);
+        document.metadata.page_mode = Some(1);
+        document.metadata.default_page_dimensions = Some((1_080, 1_527));
+        document.metadata.flow_dimensions = Some((1_080, 9_162));
+        document.metadata.note_text = Some(body);
+        document.metadata.media_assets = vec![MediaAsset {
+            name: "0.svg".to_owned(),
+            archive_id: Some(0),
+            mime_type: "image/svg+xml".to_owned(),
+            data: br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>"#.to_vec(),
+        }];
+
+        let layout = layout_document(&document);
+        let layout_page = &layout.pages[0];
+        let inspection = layout_page.body_text_slice().unwrap();
+        assert_eq!(inspection.source_range, 0..36);
+        let PageObjectContent::Element(PageElement::TextBox(inspection_text)) =
+            layout_page.page.objects[inspection.object_index]
+                .content
+                .leaf()
+        else {
+            panic!("expected the generated inspection text box");
+        };
+        assert_eq!(inspection_text.text.encode_utf16().count(), 36);
+        assert!(inspection_text.object_spans.is_empty());
+
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let inspection_svg = render_document_svg(&document, &options).remove(0).svg;
+        assert!(!inspection_svg.contains("data:image/svg+xml;base64,"));
+
+        let mut cache = super::DocumentTextCache::default();
+        let requests = [super::PageSceneRequest::full_page(layout_page)];
+        let scene = cache.render_layout_page_scene_requests(
+            &document,
+            &requests,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert!(scene[0].page.svg.contains("data:image/svg+xml;base64,"));
+        assert_eq!(cache.plans[0].1.text.text.encode_utf16().count(), 117);
+        assert_eq!(cache.plans[0].1.text.object_spans[0].text_index_utf16, 112);
+
+        let first_plan = super::Rc::clone(&cache.plans[0].1);
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .text
+            .push_str(" changed-source");
+        let edited_layout = layout_document(&document);
+        let request = [super::PageSceneRequest::full_page(&edited_layout.pages[0])];
+        let changed = cache.render_layout_page_scene_requests(
+            &document,
+            &request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert!(changed[0].page.svg.contains("data:image/svg+xml;base64,"));
+        assert_eq!(cache.plans.len(), 1);
+        assert!(!super::Rc::ptr_eq(&first_plan, &cache.plans[0].1));
+        assert!(cache.plans[0].1.text.text.ends_with(" changed-source"));
+
+        let mut edited_layout = layout_document(&document);
+        let object_index = edited_layout.pages[0]
+            .body_text_slice()
+            .unwrap()
+            .object_index;
+        let PageObjectContent::Element(PageElement::TextBox(inspection_text)) =
+            &mut edited_layout.pages[0].page.objects[object_index].content
+        else {
+            panic!("expected the generated inspection text box");
+        };
+        inspection_text.text.push_str(" edited-layout");
+        let request = [super::PageSceneRequest::full_page(&edited_layout.pages[0])];
+        let edited = cache.render_layout_page_scene_requests(
+            &document,
+            &request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert!(!edited[0].page.svg.contains("data:image/svg+xml;base64,"));
+
+        let mut stale_document = Document {
+            pages: document.pages.clone(),
+            metadata: document.metadata.clone(),
+        };
+        stale_document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .text
+            .replace_range(..1, "x");
+        let request = [super::PageSceneRequest::full_page(&layout.pages[0])];
+        let stale = cache.render_layout_page_scene_requests(
+            &stale_document,
+            &request,
+            &options,
+            &fonts,
+            &mut |_| {},
+        );
+        assert!(!stale[0].page.svg.contains("data:image/svg+xml;base64,"));
     }
 
     #[cfg(feature = "pdf")]
