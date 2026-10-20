@@ -2747,7 +2747,15 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
         );
         let css = font_css(&page.svg);
         let placed = matches!(context, Context::Standalone);
-        assert_eq!(css.len(), if placed { 3 } else { 2 }, "{context:?}");
+        assert_eq!(css.len(), if placed { 3 } else { 1 }, "{context:?}");
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        for value in ["c", "d"] {
+            assert_eq!(
+                tspan(&xml, value).attribute("font-style"),
+                Some("italic"),
+                "{context:?}: logical italics survive regular-face synthesis",
+            );
+        }
         for (weight, slant, hash) in [
             (
                 400,
@@ -2772,10 +2780,10 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
         ] {
             let descriptor = format!("font-weight:{weight};font-style:{slant};");
             let selected = css.iter().find(|style| style.contains(&descriptor));
-            if weight == 700 && (!placed || slant == "normal") {
+            if (!placed && slant == "italic") || (weight == 700 && (!placed || slant == "normal")) {
                 assert!(
                     selected.is_none(),
-                    "{context:?}: synthetic bold keeps regular faces"
+                    "{context:?}: native synthesis keeps regular faces"
                 );
             } else {
                 let bytes = embedded_font_bytes(selected.unwrap());
