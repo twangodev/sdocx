@@ -652,6 +652,16 @@ Text `DeviceFontManager`, `0x84684`, reads device `/system/etc/fonts.xml` and
 has no `fonts.xml`, `fonts_additional.xml`, `fallback_fonts.xml` assets or Roboto
 font bytes. The fixture does not recover those device inputs.
 
+On paired `01-basic-formatting` page 3, the APK's
+`assets/font/SamsungKorean-Regular.ttf` (SHA-256
+`a37d021285b9ab1264172268a77fde3cd13d5d2b1612c789e1e2a96443ed4424`)
+matches native `서`/`울`: glyphs 5758/7194 have identical
+outlines and 890/1000-em advances. Caller-supplied `FontSource` selects this
+face; origin-registered ink support agrees at thresholds 16/32 with tolerance 1,
+while raster color error remains. Four preceding missing SECCJK glyphs explain
+the roughly 91-pixel Korean start shift: each advances 950/1000 em natively,
+against narrower Roboto missing-glyph boxes. General device fallback remains open.
+
 Separately, the source-traced file-font creation chain at
 `0x87930`/`0x87a94`/`0x87ef0` reaches Skia's fresh typeface allocation and
 process counter. The successful branch increments global counter `0x2ac318`
