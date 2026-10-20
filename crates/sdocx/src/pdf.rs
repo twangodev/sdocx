@@ -21,6 +21,9 @@ mod font_identity_tests;
 #[cfg(test)]
 #[path = "pdf/paper.rs"]
 mod paper;
+#[cfg(test)]
+#[path = "pdf/paper_segments.rs"]
+mod paper_segments;
 
 use crate::render::{
     DocumentTextCache, NativeInkPayload, NativeInkRegistry, NativePdfPainter, NativeTextRegistry,

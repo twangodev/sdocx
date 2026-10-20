@@ -607,8 +607,11 @@ PDF-backed paper remains unrendered; retained records and bytes do not certify P
 validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
-a test-only SDK graft preserves the inline source graph and scoped vector
-resources. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
+test-only Rust assembly preserves selected source pages, scoped vector resources
+and SDK overlay tags through reordered/duplicate pages and ordinary tails.
+Real-source and retained-text transport match MuPDF/PDFium at 1×/2×; the
+native-derived slice planner is also test-only, pending production query and
+placement integration. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)
 also executes native PNG decoding and image placement for a synthetic rectangle.
