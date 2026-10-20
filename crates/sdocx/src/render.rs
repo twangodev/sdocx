@@ -4990,6 +4990,24 @@ mod tests {
         // Native transparent 1x witness: center (8.25,8.25), stored radius
         // 0.5, one visible pixel RGBA [4,8,12,20]. The old half-coverage
         // contour collapsed this native stamp to a zero-area path.
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-nocurve-edge-paint-native.json"
+        ))
+        .unwrap();
+        let witness = &fixture["captures"]["duplicate_all_points_zero_pressure_alpha255-transparent-1x"]
+            ["paint"];
+        assert_eq!(witness["native_vector_hex"], "00000441000004410000003f");
+        assert_eq!(witness["readback"]["changed_from_background_pixels"], 1);
+        assert_eq!(
+            witness["source_inputs"]["points"],
+            serde_json::json!([[8.25, 8.25], [8.25, 8.25], [8.25, 8.25]])
+        );
+        assert_eq!(
+            witness["source_inputs"]["pressure"],
+            serde_json::json!([0, 0, 0])
+        );
+        assert_eq!(witness["source_inputs"]["size"], 0.4);
+        assert_eq!(witness["source_inputs"]["argb"], "0xff336699");
         let mut stroke = magicpen_v1_stroke();
         stroke.points = vec![Point { x: 8.25, y: 8.25 }; 3];
         stroke.pressures = vec![0.0; 3];
