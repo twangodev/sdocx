@@ -277,7 +277,11 @@ and Rust sequence test retain the native alternation byte between strokes:
 a shared Drawing retains it across distinct source objects too. A short
 preceding stroke changes tool-1 output, while the captured long
 history and tool-2 controls match fresh receivers. General caller/runtime
-state, shape modes and paint integration remain open. The
+state, shape modes and paint integration remain open. A
+[source controls](../conformance/inkpen2-source-caller-native.json) check six
+V9 streams and one-point Drawing rejection under an explicit host profile.
+The model consumes native getter arrays and selected drawable size, including
+the 0.4–800 clamp; these remain synthetic setter controls. The
 [RTV3 paint capture](../conformance/inkpen2-paint-native.json) checks native
 MAX coverage, source-over color and final composition in six synthetic host
 Mesa cases, plus four direct-branch source-over cases. Both include source ARGB
