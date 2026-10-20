@@ -1,0 +1,629 @@
+{
+  "parser_representation": {
+    "color_type_raw": null,
+    "meaning": "Both fields are absent in the source; parser None preserves omission. This demonstrates pinned Model defaults without rewriting parser metadata.",
+    "stroke_type_raw": null
+  },
+  "result": {
+    "controls": {
+      "explicit_nonzero_setter_getters": {
+        "color_type": "0x2",
+        "stroke_type": "0x1"
+      },
+      "post_apply_getters": {
+        "color_type": "0x0",
+        "stroke_type": "0x0"
+      },
+      "pre_apply_seed_getters": {
+        "color_type": "0x1",
+        "stroke_type": "0x2"
+      }
+    },
+    "mapped_dsos": {
+      "Base": {
+        "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+        "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+      },
+      "FountainPen": {
+        "path": "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+        "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+      },
+      "Model": {
+        "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+        "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+      },
+      "MontblancCalligraphyPen": {
+        "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMontblancCalligraphyPen.so",
+        "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42"
+      },
+      "PenCommon": {
+        "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+      }
+    },
+    "native_apply_call": {
+      "arguments_s0_f32_bits": "0000803f",
+      "arguments_x": [
+        "0x10000af0",
+        "0x10000c60",
+        "0x7ce",
+        "0x0"
+      ],
+      "entry_address": "0x42ee650",
+      "return_s0_f32_bits": "0000803f",
+      "return_x0": "0x7ce",
+      "rva": "0x2ee650",
+      "symbol": "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)"
+    },
+    "native_state_after_apply": {
+      "color_type": 0,
+      "stroke_type": 0
+    },
+    "new_apply_return_bytes": 1998,
+    "scope": "Native ObjectStrokeBinaryHandler::NewApplyBinary consumes an original corpus ObjectStroke frame after nonzero stroke/color type setters; getters observe omitted fields as zero. Separate setter/getter controls establish nonzero values. No Drawing, whole-note SDK loader, MagicPen-specific source, or rendering claim.",
+    "type_getter_calls": [
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e16b0",
+        "return_s0_f32_bits": "ffffffff",
+        "return_x0": "0x2",
+        "rva": "0x2e16b0",
+        "symbol": "SPen::ObjectStroke::GetStrokeType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e35ec",
+        "return_s0_f32_bits": "ffffffff",
+        "return_x0": "0x1",
+        "rva": "0x2e35ec",
+        "symbol": "SPen::ObjectStroke::GetColorType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e16b0",
+        "return_s0_f32_bits": "0000803f",
+        "return_x0": "0x0",
+        "rva": "0x2e16b0",
+        "symbol": "SPen::ObjectStroke::GetStrokeType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e35ec",
+        "return_s0_f32_bits": "0000803f",
+        "return_x0": "0x0",
+        "rva": "0x2e35ec",
+        "symbol": "SPen::ObjectStroke::GetColorType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e16b0",
+        "return_s0_f32_bits": "0000803f",
+        "return_x0": "0x0",
+        "rva": "0x2e16b0",
+        "symbol": "SPen::ObjectStroke::GetStrokeType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e35ec",
+        "return_s0_f32_bits": "0000803f",
+        "return_x0": "0x0",
+        "rva": "0x2e35ec",
+        "symbol": "SPen::ObjectStroke::GetColorType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e16b0",
+        "return_s0_f32_bits": "00000000",
+        "return_x0": "0x1",
+        "rva": "0x2e16b0",
+        "symbol": "SPen::ObjectStroke::GetStrokeType() const"
+      },
+      {
+        "arguments_s0_f32_bits": null,
+        "arguments_x": [
+          "0x100005f0"
+        ],
+        "entry_address": "0x42e35ec",
+        "return_s0_f32_bits": "00000000",
+        "return_x0": "0x2",
+        "rva": "0x2e35ec",
+        "symbol": "SPen::ObjectStroke::GetColorType() const"
+      }
+    ]
+  },
+  "schema": "sdocx-object-stroke-style-defaults-native-v1",
+  "source": {
+    "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "channel_helper": "conformance/object_stroke_channels_native.py",
+    "channel_helper_sha256": "78216df84c591d5c04e1fbda4c4a93d01921513ca7b619a5a0a79f1d97f25c2a",
+    "field_mask_hex": "8a250000",
+    "fixture": "conformance/fountain-saved-color-native.json",
+    "fixture_sha256": "de23cf21f239fc9e12794bc55777fa18406d1129162f8198b1544b8f009f932d",
+    "frame_id": "real_v14_handwritten_flat1445",
+    "frame_length": 1998,
+    "frame_sha256": "78ac51193c78862ba6ce9e992e8e7f3433667dc08fe2c2fa71ad9d81dcd4194c",
+    "helper_pins": {
+      "conformance/calligraphy_saved_native.py": "663f15668825ce6ed219830f3e671c408b85ad103477b444201f68f0b12c6517",
+      "conformance/calligraphy_saved_wrapper_native.py": "5952473d15716fa686113f35887f550224462f2ee4fbd500c589cb4e52b05cff",
+      "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+    },
+    "in_memory_patches": [
+      {
+        "anchor": "color-type-symbol",
+        "new_sha256": "0023d1887927a57028f48f55b235d9c8ca25e8ac9c0b41c7b0ab5a8f89bda15b",
+        "old_sha256": "f0f5c2c8b3604408313889e2eb89ba1c3aff95ec4929310f5bdf5b0f346b128c"
+      },
+      {
+        "anchor": "seed-before-apply",
+        "new_sha256": "862058a23ba85005178791ed50dce94739a9133ff79632d8096f0005389a4e8d",
+        "old_sha256": "87d14a015cb2d1013147170a715ab9537cd1413fb7773a39b94616a1f8e74536"
+      },
+      {
+        "anchor": "getter-after-apply",
+        "new_sha256": "0f5a7fcc2a089283096cb65830789280aac3fcd0ae66af90c3ac698063534480",
+        "old_sha256": "cdf4aaca17041fd241d53aef393201a560bfb1ac665c6df71e44515534f7381b"
+      },
+      {
+        "anchor": "final-state-color-type",
+        "new_sha256": "ffe838b97fabc3bcf8c2142ff4ea8d429967a78aadebdfadb983f03259fa743f",
+        "old_sha256": "ef1516af235a16fceccd2681e30f094c87cc9dd80e033d4b4a075e39a40b1715"
+      },
+      {
+        "anchor": "setter-getter-controls",
+        "new_sha256": "4b3188c02bde86c6faa7bdedf9cbd162cf6fd0e926fb26fd0121df76b61a02a5",
+        "old_sha256": "d08d55ec75f68dd89425c00784f98f0d853c552f6a0fc1606c65b6dd1e93f796"
+      },
+      {
+        "anchor": "return-controls",
+        "new_sha256": "7936766353bcbbccb2400c22c1c5cf18e55ba7b0e656081f57f6e70ca2ae4241",
+        "old_sha256": "ae259fc033232c4e2b00d2c50b61c62b8fa002e29ffbeac6378eecf3eb96c953"
+      }
+    ],
+    "instruction_evidence": {
+      "apply_color_type": [
+        {
+          "bytes_le_hex": "37c80434",
+          "instruction": "tbnz\tw20, #25, 2eddd8 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x6b8>",
+          "rva": "0x2edd54"
+        },
+        {
+          "bytes_le_hex": "b901eb5f",
+          "instruction": "str\twzr, [x26, #488]",
+          "rva": "0x2edd58"
+        },
+        {
+          "bytes_le_hex": "14000027",
+          "instruction": "b\t2eddf8 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x6d8>",
+          "rva": "0x2edd5c"
+        },
+        {
+          "bytes_le_hex": "910053e1",
+          "instruction": "add\tx1, sp, #0x14",
+          "rva": "0x2edd60"
+        },
+        {
+          "bytes_le_hex": "52800040",
+          "instruction": "mov\tw0, #0x2                   \t// #2",
+          "rva": "0x2edd64"
+        },
+        {
+          "bytes_le_hex": "9406344e",
+          "instruction": "bl\t47aea0 <SPen::CheckReadBuffer(int, int&)@plt>",
+          "rva": "0x2edd68"
+        },
+        {
+          "bytes_le_hex": "3607d7c0",
+          "instruction": "tbz\tw0, #0, 2ed864 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x144>",
+          "rva": "0x2edd6c"
+        },
+        {
+          "bytes_le_hex": "f9400268",
+          "instruction": "ldr\tx8, [x19]",
+          "rva": "0x2edd70"
+        },
+        {
+          "bytes_le_hex": "9106a340",
+          "instruction": "add\tx0, x26, #0x1a8",
+          "rva": "0x2edd74"
+        },
+        {
+          "bytes_le_hex": "78402515",
+          "instruction": "ldrh\tw21, [x8], #2",
+          "rva": "0x2edd78"
+        },
+        {
+          "bytes_le_hex": "f9000268",
+          "instruction": "str\tx8, [x19]",
+          "rva": "0x2edd7c"
+        },
+        {
+          "bytes_le_hex": "f940d748",
+          "instruction": "ldr\tx8, [x26, #424]",
+          "rva": "0x2edd80"
+        },
+        {
+          "bytes_le_hex": "aa1503e1",
+          "instruction": "mov\tx1, x21",
+          "rva": "0x2edd84"
+        },
+        {
+          "bytes_le_hex": "f900db48",
+          "instruction": "str\tx8, [x26, #432]",
+          "rva": "0x2edd88"
+        },
+        {
+          "bytes_le_hex": "9400036b",
+          "instruction": "bl\t2eeb38 <SPen::ObjectStrokeBinaryHandler::SetCoeditMode(bool)@@Base+0x8>",
+          "rva": "0x2edd8c"
+        },
+        {
+          "bytes_le_hex": "9106a340",
+          "instruction": "add\tx0, x26, #0x1a8",
+          "rva": "0x2edd90"
+        },
+        {
+          "bytes_le_hex": "940003ad",
+          "instruction": "bl\t2eec48 <SPen::ObjectStrokeBinaryHandler::SetCoeditMode(bool)@@Base+0x118>",
+          "rva": "0x2edd94"
+        },
+        {
+          "bytes_le_hex": "34fffdf5",
+          "instruction": "cbz\tw21, 2edd54 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x634>",
+          "rva": "0x2edd98"
+        },
+        {
+          "bytes_le_hex": "d37ef6b5",
+          "instruction": "lsl\tx21, x21, #2",
+          "rva": "0x2edd9c"
+        },
+        {
+          "bytes_le_hex": "aa1f03f6",
+          "instruction": "mov\tx22, xzr",
+          "rva": "0x2edda0"
+        },
+        {
+          "bytes_le_hex": "f940d757",
+          "instruction": "ldr\tx23, [x26, #424]",
+          "rva": "0x2edda4"
+        },
+        {
+          "bytes_le_hex": "910053e1",
+          "instruction": "add\tx1, sp, #0x14",
+          "rva": "0x2edda8"
+        },
+        {
+          "bytes_le_hex": "52800080",
+          "instruction": "mov\tw0, #0x4                   \t// #4",
+          "rva": "0x2eddac"
+        },
+        {
+          "bytes_le_hex": "9406343c",
+          "instruction": "bl\t47aea0 <SPen::CheckReadBuffer(int, int&)@plt>",
+          "rva": "0x2eddb0"
+        },
+        {
+          "bytes_le_hex": "3607d580",
+          "instruction": "tbz\tw0, #0, 2ed864 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x144>",
+          "rva": "0x2eddb4"
+        },
+        {
+          "bytes_le_hex": "f9400268",
+          "instruction": "ldr\tx8, [x19]",
+          "rva": "0x2eddb8"
+        },
+        {
+          "bytes_le_hex": "b8404509",
+          "instruction": "ldr\tw9, [x8], #4",
+          "rva": "0x2eddbc"
+        },
+        {
+          "bytes_le_hex": "b8366ae9",
+          "instruction": "str\tw9, [x23, x22]",
+          "rva": "0x2eddc0"
+        },
+        {
+          "bytes_le_hex": "910012d6",
+          "instruction": "add\tx22, x22, #0x4",
+          "rva": "0x2eddc4"
+        },
+        {
+          "bytes_le_hex": "eb1602bf",
+          "instruction": "cmp\tx21, x22",
+          "rva": "0x2eddc8"
+        },
+        {
+          "bytes_le_hex": "f9000268",
+          "instruction": "str\tx8, [x19]",
+          "rva": "0x2eddcc"
+        },
+        {
+          "bytes_le_hex": "54fffea1",
+          "instruction": "b.ne\t2edda4 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x684>  // b.any",
+          "rva": "0x2eddd0"
+        },
+        {
+          "bytes_le_hex": "17ffffe0",
+          "instruction": "b\t2edd54 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x634>",
+          "rva": "0x2eddd4"
+        },
+        {
+          "bytes_le_hex": "910053e1",
+          "instruction": "add\tx1, sp, #0x14",
+          "rva": "0x2eddd8"
+        },
+        {
+          "bytes_le_hex": "52800040",
+          "instruction": "mov\tw0, #0x2                   \t// #2",
+          "rva": "0x2edddc"
+        },
+        {
+          "bytes_le_hex": "94063430",
+          "instruction": "bl\t47aea0 <SPen::CheckReadBuffer(int, int&)@plt>",
+          "rva": "0x2edde0"
+        },
+        {
+          "bytes_le_hex": "3607d400",
+          "instruction": "tbz\tw0, #0, 2ed864 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x144>",
+          "rva": "0x2edde4"
+        }
+      ],
+      "apply_stroke_type": [
+        {
+          "bytes_le_hex": "37800074",
+          "instruction": "tbnz\tw20, #16, 2edbf8 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x4d8>",
+          "rva": "0x2edbec"
+        },
+        {
+          "bytes_le_hex": "b901d35f",
+          "instruction": "str\twzr, [x26, #464]",
+          "rva": "0x2edbf0"
+        },
+        {
+          "bytes_le_hex": "14000009",
+          "instruction": "b\t2edc18 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x4f8>",
+          "rva": "0x2edbf4"
+        },
+        {
+          "bytes_le_hex": "910053e1",
+          "instruction": "add\tx1, sp, #0x14",
+          "rva": "0x2edbf8"
+        },
+        {
+          "bytes_le_hex": "52800040",
+          "instruction": "mov\tw0, #0x2                   \t// #2",
+          "rva": "0x2edbfc"
+        },
+        {
+          "bytes_le_hex": "940634a8",
+          "instruction": "bl\t47aea0 <SPen::CheckReadBuffer(int, int&)@plt>",
+          "rva": "0x2edc00"
+        },
+        {
+          "bytes_le_hex": "3607e300",
+          "instruction": "tbz\tw0, #0, 2ed864 <SPen::ObjectStrokeBinaryHandler::m_ApplyBinary_FlexibleData(unsigned char**, int, unsigned int, float) const@@Base+0x144>",
+          "rva": "0x2edc04"
+        },
+        {
+          "bytes_le_hex": "f9400268",
+          "instruction": "ldr\tx8, [x19]",
+          "rva": "0x2edc08"
+        },
+        {
+          "bytes_le_hex": "78402509",
+          "instruction": "ldrh\tw9, [x8], #2",
+          "rva": "0x2edc0c"
+        },
+        {
+          "bytes_le_hex": "b901d349",
+          "instruction": "str\tw9, [x26, #464]",
+          "rva": "0x2edc10"
+        },
+        {
+          "bytes_le_hex": "f9000268",
+          "instruction": "str\tx8, [x19]",
+          "rva": "0x2edc14"
+        }
+      ],
+      "write_color_type": [
+        {
+          "bytes_le_hex": "b941eb48",
+          "instruction": "ldr\tw8, [x26, #488]",
+          "rva": "0x2ecd28"
+        },
+        {
+          "bytes_le_hex": "340001a8",
+          "instruction": "cbz\tw8, 2ecd60 <SPen::ObjectStrokeBinaryHandler::m_GetBinary_FlexibleData(unsigned char*, int&, unsigned int&) const@@Base+0x784>",
+          "rva": "0x2ecd2c"
+        },
+        {
+          "bytes_le_hex": "b9800289",
+          "instruction": "ldrsw\tx9, [x20]",
+          "rva": "0x2ecd30"
+        },
+        {
+          "bytes_le_hex": "38296aa8",
+          "instruction": "strb\tw8, [x21, x9]",
+          "rva": "0x2ecd34"
+        },
+        {
+          "bytes_le_hex": "b9800288",
+          "instruction": "ldrsw\tx8, [x20]",
+          "rva": "0x2ecd38"
+        },
+        {
+          "bytes_le_hex": "3947a749",
+          "instruction": "ldrb\tw9, [x26, #489]",
+          "rva": "0x2ecd3c"
+        },
+        {
+          "bytes_le_hex": "8b0802a8",
+          "instruction": "add\tx8, x21, x8",
+          "rva": "0x2ecd40"
+        },
+        {
+          "bytes_le_hex": "39000509",
+          "instruction": "strb\tw9, [x8, #1]",
+          "rva": "0x2ecd44"
+        },
+        {
+          "bytes_le_hex": "b9400288",
+          "instruction": "ldr\tw8, [x20]",
+          "rva": "0x2ecd48"
+        },
+        {
+          "bytes_le_hex": "11000908",
+          "instruction": "add\tw8, w8, #0x2",
+          "rva": "0x2ecd4c"
+        },
+        {
+          "bytes_le_hex": "b9000288",
+          "instruction": "str\tw8, [x20]",
+          "rva": "0x2ecd50"
+        },
+        {
+          "bytes_le_hex": "b9400268",
+          "instruction": "ldr\tw8, [x19]",
+          "rva": "0x2ecd54"
+        },
+        {
+          "bytes_le_hex": "32070108",
+          "instruction": "orr\tw8, w8, #0x2000000",
+          "rva": "0x2ecd58"
+        },
+        {
+          "bytes_le_hex": "b9000268",
+          "instruction": "str\tw8, [x19]",
+          "rva": "0x2ecd5c"
+        }
+      ],
+      "write_stroke_type": [
+        {
+          "bytes_le_hex": "b941d348",
+          "instruction": "ldr\tw8, [x26, #464]",
+          "rva": "0x2eca60"
+        },
+        {
+          "bytes_le_hex": "340001a8",
+          "instruction": "cbz\tw8, 2eca98 <SPen::ObjectStrokeBinaryHandler::m_GetBinary_FlexibleData(unsigned char*, int&, unsigned int&) const@@Base+0x4bc>",
+          "rva": "0x2eca64"
+        },
+        {
+          "bytes_le_hex": "b9800289",
+          "instruction": "ldrsw\tx9, [x20]",
+          "rva": "0x2eca68"
+        },
+        {
+          "bytes_le_hex": "38296aa8",
+          "instruction": "strb\tw8, [x21, x9]",
+          "rva": "0x2eca6c"
+        },
+        {
+          "bytes_le_hex": "b9800288",
+          "instruction": "ldrsw\tx8, [x20]",
+          "rva": "0x2eca70"
+        },
+        {
+          "bytes_le_hex": "39474749",
+          "instruction": "ldrb\tw9, [x26, #465]",
+          "rva": "0x2eca74"
+        },
+        {
+          "bytes_le_hex": "8b0802a8",
+          "instruction": "add\tx8, x21, x8",
+          "rva": "0x2eca78"
+        },
+        {
+          "bytes_le_hex": "39000509",
+          "instruction": "strb\tw9, [x8, #1]",
+          "rva": "0x2eca7c"
+        },
+        {
+          "bytes_le_hex": "b9400288",
+          "instruction": "ldr\tw8, [x20]",
+          "rva": "0x2eca80"
+        },
+        {
+          "bytes_le_hex": "11000908",
+          "instruction": "add\tw8, w8, #0x2",
+          "rva": "0x2eca84"
+        },
+        {
+          "bytes_le_hex": "b9000288",
+          "instruction": "str\tw8, [x20]",
+          "rva": "0x2eca88"
+        },
+        {
+          "bytes_le_hex": "b9400268",
+          "instruction": "ldr\tw8, [x19]",
+          "rva": "0x2eca8c"
+        },
+        {
+          "bytes_le_hex": "32100108",
+          "instruction": "orr\tw8, w8, #0x10000",
+          "rva": "0x2eca90"
+        },
+        {
+          "bytes_le_hex": "b9000268",
+          "instruction": "str\tw8, [x19]",
+          "rva": "0x2eca94"
+        }
+      ]
+    },
+    "instrumented_helper_sha256": "b17fa32c844ef0d1e26b46dd58a1e8c1b22b44c05ca8d209c40ab24519d3fe5e",
+    "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "native_entries": {
+      "SPen::ObjectStroke::GetColorType() const": {
+        "address": "0x42e35ec",
+        "rva": "0x2e35ec"
+      },
+      "SPen::ObjectStroke::GetStrokeType() const": {
+        "address": "0x42e16b0",
+        "rva": "0x2e16b0"
+      },
+      "SPen::ObjectStrokeBinaryHandler::NewApplyBinary(unsigned char*, int, unsigned int, float)": {
+        "address": "0x42ee650",
+        "rva": "0x2ee650"
+      }
+    },
+    "omitted_bits": [
+      16,
+      25
+    ],
+    "runner_sha256": "b91877c35a7fb569fdb8b5722428d24930038c982cc02300537d9cd0d51ee764",
+    "runtime_helper_sha256": {
+      "conformance/calligraphy_saved_native.py": "663f15668825ce6ed219830f3e671c408b85ad103477b444201f68f0b12c6517",
+      "conformance/calligraphy_saved_wrapper_native.py": "5952473d15716fa686113f35887f550224462f2ee4fbd500c589cb4e52b05cff",
+      "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "conformance/object_stroke_channels_native.py": "78216df84c591d5c04e1fbda4c4a93d01921513ca7b619a5a0a79f1d97f25c2a"
+    },
+    "source_document": "tmp/stroke-conformance/handwritten.sdocx",
+    "source_document_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "source_page_sha256": "c7c834e0eeb751966517f354dc55ea056b5eb2453a5b9e16b7be08ca7b3a9591",
+    "stroke_index": 1445,
+    "tool_sha256": {
+      "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb",
+      "/usr/bin/nm": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+    }
+  }
+}

@@ -4980,6 +4980,50 @@ mod tests {
     }
 
     #[test]
+    fn magicpen_v1_omitted_native_style_defaults_preserve_public_exports() {
+        let exports = |stroke: Stroke| {
+            let prepared = crate::prepare_stroke_for_page(&stroke, false);
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed);
+            assert_eq!(prepared.sample_ends.as_deref(), Some(&[0, 6, 12][..]));
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let source = document(page);
+            let normal = render_document_svg(&source, &RenderOptions::default()).remove(0);
+            let replay = super::render_layout_page_replay_svg(
+                &source,
+                &layout_document(&source),
+                0,
+                &RenderOptions::default(),
+            )
+            .unwrap();
+            (normal, replay)
+        };
+        let expected = exports(magicpen_v1_stroke());
+        for (stroke_type, color_type) in [(None, Some(0)), (Some(0), None), (None, None)] {
+            let mut stroke = magicpen_v1_stroke();
+            let style = &mut stroke.rendering.as_mut().unwrap().style;
+            style.stroke_type_raw = stroke_type;
+            style.color_type_raw = color_type;
+            crate::prepare_stroke_for_page(&stroke, false);
+            let style = &stroke.rendering.as_ref().unwrap().style;
+            assert_eq!(style.stroke_type_raw, stroke_type);
+            assert_eq!(style.color_type_raw, color_type);
+            let actual = exports(stroke);
+            assert_eq!(actual.0.svg, expected.0.svg);
+            assert_eq!(actual.1.svg, expected.1.svg);
+            #[cfg(feature = "pdf")]
+            for (actual, expected) in [(&actual.0, &expected.0), (&actual.1, &expected.1)] {
+                assert_eq!(
+                    crate::render_svg_pages_pdf(std::slice::from_ref(actual), &Default::default())
+                        .unwrap(),
+                    crate::render_svg_pages_pdf(std::slice::from_ref(expected), &Default::default())
+                        .unwrap(),
+                );
+            }
+        }
+    }
+
+    #[test]
     fn magicpen_v1_unknown_saved_effects_stay_on_generic_fallback() {
         let mutations: [fn(&mut crate::StrokeRendering); 11] = [
             |r| r.properties.replay_only = true,
@@ -4991,7 +5035,7 @@ mod tests {
             |r| r.properties.rainbow_effect = true,
             |r| r.properties.straighten = true,
             |r| r.properties.reveal_mode = true,
-            |r| r.style.color_type_raw = None,
+            |r| r.style.stroke_type_raw = Some(1),
             |r| r.style.color_type_raw = Some(1),
         ];
         for mutate in mutations {

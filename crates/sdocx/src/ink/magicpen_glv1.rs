@@ -27,8 +27,10 @@ pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.MagicPen")
         || rendering.advanced_settings.as_deref() != Some("1;")
         || rendering.tool_type_raw != 2
-        || rendering.style.stroke_type_raw != Some(0)
-        || rendering.style.color_type_raw != Some(0)
+        // Model ApplyBinary restores omitted style fields 16/25 to zero;
+        // its writer omits these fields when their native values are zero.
+        || rendering.style.stroke_type_raw.unwrap_or(0) != 0
+        || rendering.style.color_type_raw.unwrap_or(0) != 0
         || rendering.properties.replay_only
         || rendering.properties.eraser
         || rendering.properties.fixed_width

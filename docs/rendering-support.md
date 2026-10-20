@@ -378,7 +378,9 @@ transparent/opaque host Mesa targets, retaining full RGBA buffers. Scratch textu
 initialization is host-supplied. Canonical SVG/PDF now reconstruct ordinary
 tool-2 NoCurve `1;` sources with explicit size/ARGB, ordinary style codes and
 native replay cutoffs, using one compound vector contour and one source-alpha
-composite. Paired public exports
+composite. Omitted stroke/color type fields use the native zero defaults,
+verified by a [saved-frame Model check](../conformance/object-stroke-style-defaults-native.json).
+Paired public exports
 improve native-referenced error in 12 host comparisons across four engines at
 1×/2×/4×. The fixed contour approximates scale-dependent shader edges and can
 lose minimum-size dots. Unknown effects and budgets retain fallback, and device
