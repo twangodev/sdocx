@@ -23,11 +23,17 @@ Addresses are from the existing Samsung Notes 4.4.45.37 ARM64
 - `endPen` draws the terminal quadratic and an endpoint, or falls back
   to one stamp when no samples were emitted.
 - RTV4 `Update` (`0x5f0f8`) uses the truncated integer pen size.
-  `setRectData` (`0x5e5b4`) gives X extents ±0.77*(size/2+0.5) and
-  Y extents 0.5±size/2, before tip rotation.
+  Captured static quad vertices have local bounds X=±0.77*(size/2+0.5)
+  and Y=±(size/2+0.5), centered at zero. The vertex shader rotates these
+  bounds and adds the saved AddPoint XY unchanged. This was verified with
+  native task2 frames for an unrotated stylus stroke and horizontal and
+  rotated tool-0 strokes: the instance VBO XY matched the saved AddPoint
+  coordinates exactly, and the static quad's local center was (0,0). The
+  frames are controlled Unicorn/Mesa replays of native Marker4 RTV4 code,
+  not Samsung-device pixel captures.
 - `CreatePenCanvas` (`0x5e9c0`) creates a 200×200 mask and draws the
   rounded rectangle [1,1,199,199] with corner radii 50. The vector tip
-  uses those proportions, with alpha applied once to the stamp union.
+  approximates those proportions, with alpha applied once to the stamp union.
 
 ## Real-file comparison
 
@@ -37,6 +43,11 @@ channel exceeds 35. Colored-mask intersection over union improved from
 28.45% to 91.75%; missing reference-colored pixels fell from 71.44% to 2.75%.
 Mean absolute channel error within the shared colored mask fell from 35.18
 to 4.73. These measurements cover this fixture, not general native parity.
+
+The later V8 center correction improves the paired PDF's MuPDF color-region
+comparison at 1×/2×. PDFium's color-region error worsens at 1× and improves at
+2×; thresholded color support worsens slightly at both scales. The correction
+follows the executed native center contract; filtering remains approximate.
 
 The comparison includes narrow ruled paper (template 1). Observed differences
 include native mask filtering and typed-text placement/size. Other Marker4

@@ -138,14 +138,10 @@ pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
         });
     }
     let size = f64::from(size.trunc());
-    // RTV4 quad: x = ±0.77*(size/2+0.5), y = 0.5 ± size/2.
+    // RTV4's static quad is centered on each saved AddPoint position; its
+    // captured local bounds are x=±0.77*(size/2+0.5), y=±(size/2+0.5).
     // Its 200px mask covers [1,199] with elliptical corner radii 50.
     let angle = angle.unwrap_or(0.);
-    let (sin, cos) = angle.sin_cos();
-    for p in &mut points {
-        p.x -= sin * 0.5;
-        p.y += cos * 0.5;
-    }
     Some(Ink {
         points,
         sample_ends,
@@ -288,11 +284,8 @@ mod tests {
                 } else {
                     register_float(&registers[2])
                 } as f64;
-                let (sin, cos) = angle.sin_cos();
-                let x =
-                    f64::from(register_float(&registers[0])) - if is_v7 { 0. } else { sin * 0.5 };
-                let y =
-                    f64::from(register_float(&registers[1])) + if is_v7 { 0. } else { cos * 0.5 };
+                let x = f64::from(register_float(&registers[0]));
+                let y = f64::from(register_float(&registers[1]));
                 assert!(
                     (point.x - x).abs() < 1e-4 && (point.y - y).abs() < 1e-4,
                     "{} point {point:?} vs ({x},{y})",
@@ -305,6 +298,26 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn v8_rotated_stamp_centers_remain_at_saved_addpoint_positions() {
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 20., y: 20. }, Point { x: 20., y: 40. }];
+        stroke.pressures = vec![0.5; 2];
+        stroke.timestamps = vec![0, 10];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = Some("8;".into());
+        rendering.tool_type_raw = 0;
+        rendering.style.pen_size = Some(36.21);
+
+        let actual = prepare(&stroke).unwrap();
+        assert!((actual.stamp.angle - std::f64::consts::FRAC_PI_2).abs() < 1e-6);
+        // The sampled quadratic controls the first Y; a rotated local-center
+        // shift would incorrectly move every point's X away from 20.
+        assert!(actual.points.first().unwrap().y > 20.);
+        assert_eq!(actual.points.last(), Some(&Point { x: 20., y: 40. }));
+        assert!(actual.points.iter().all(|point| point.x == 20.));
     }
 
     #[test]

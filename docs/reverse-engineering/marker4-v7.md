@@ -20,7 +20,8 @@ Samsung Notes 4.4.45.37 ARM64 `libSPenMarker4.so` SHA-256:
 - `drawPoint` (`0x52e30`) clamps half the fractional pen width to radius 1.
   RTV3 `AddPoint` (`0x5c0fc`) expands this radius by 0.5 in both dimensions;
   horizontal extents are multiplied by 0.77. The tip is centred on the point.
-  V8 instead truncates pen size and offsets its tip vertically by 0.5.
+  V8 instead truncates pen size and expands both local half-extents by 0.5;
+  its RTV4 quad remains centered on the saved AddPoint position.
 - RTV3 `CreatePenCanvas` (`0x5bd80`) draws a rounded rectangle from 1 to 199
   in a 200-pixel mask, with corner radii 50. V7 vectors retain these proportions.
   ARGB alpha is applied once to the stamp union, within the existing Darken batch.
