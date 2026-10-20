@@ -176,6 +176,14 @@ error; it remains test-only. Neither transport reproduces fragment-quad
 derivatives or proves device parity. The audit is in ignored
 `tmp/vector-parity-plan/marker3-admission-next/`.
 
+On this Marker3 route, Drawing's `GetMorphable` call resolves to PenCommon's
+null-return stub (`0x46468`); the guard at Drawing `0x81ef0` skips the curve
+getter and setter. Two- and three-point controls produce identical complete
+XY streams with curve enabled or disabled, so both use the same page sampler.
+Drawing rejects point counts ≤1 (`0x81a64–0x81a78`); invoking an already selected
+V5 redraw directly emits coincident initial/terminal stamps for one point,
+which does not establish one-point Drawing admission.
+
 ## Saved rendering inputs
 
 The semantic `Stroke` carries optional `StrokeRendering`, populated by the

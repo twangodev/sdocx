@@ -13,10 +13,9 @@ const MAX_PAGE_STAMPS: usize = 65_536;
 pub(crate) struct Ink {
     pub points: Vec<Point>,
     pub radii: Vec<f64>,
-    /// Native redraw callback boundaries; a one-point stroke has `[1, 2]`
-    /// because its initial drawPoint and endPen terminal point are separate.
-    /// For two or more source events these also delimit replay prefixes;
-    /// the one-event case stays outside canonical-page admission.
+    /// Native redraw callback boundaries. Drawing does not select the Marker3
+    /// V5 route for strokes with fewer than two source events; admitted streams
+    /// therefore also delimit the captured replay prefixes.
     pub sample_ends: Vec<usize>,
     /// Source alpha is applied once to the compound stroke path.
     pub opacity: f64,
@@ -36,7 +35,6 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     if rendering.pen_name.as_deref() != Some(PEN)
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
         || rendering.tool_type_raw != 2
-        || !properties.compressed
         || properties.replay_only
         || properties.stylus_channels
         || properties.eraser
@@ -51,8 +49,8 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
         || !matches!(style.stroke_type_raw, None | Some(0))
         || !matches!(style.line_type_raw, None | Some(0))
         || !matches!(style.color_type_raw, None | Some(0))
-        // A one-source-event V5 stroke yields two callback outputs (drawPoint
-        // plus endPen); its replay-prefix mapping has not been established.
+        // The captured Drawing caller rejects fewer than two source events
+        // before selecting the Marker3 V5 drawable.
         || s.points.len() < 2
     {
         return None;
@@ -341,7 +339,7 @@ mod tests {
         assert!(prepare_for_page(&valid).is_some());
 
         let mut rejected = valid.clone();
-        rejected.rendering.as_mut().unwrap().properties.compressed = false;
+        rejected.rendering.as_mut().unwrap().properties.eraser = true;
         assert!(prepare_for_page(&rejected).is_none());
 
         let mut rejected = valid.clone();
@@ -377,6 +375,70 @@ mod tests {
         );
         assert!(prepared.sample_ends.is_none());
         assert!(prepared.dot_radii.is_none());
+    }
+
+    #[test]
+    fn canonical_page_curve_disabled_v5_matches_saved_drawing_caller() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-saved-caller-native.json"
+        ))
+        .unwrap();
+        for (id, core_case) in [
+            ("marker3_linked_saved1:5:tool2:curve0", "marker3-v5-saved-1"),
+            (
+                "marker3_nontrivial_saved3:5:tool2:curve0",
+                "marker3-v5-saved-3",
+            ),
+        ] {
+            let case = &fixture["cases"][id];
+            assert_eq!(case["input"]["curve_enabled"], false);
+            assert_eq!(
+                case["native_calls"]["source_ObjectStroke_IsCurveEnabled"],
+                0
+            );
+            assert_eq!(
+                case["native_calls"]["route"]["drawing_selected_drawable_version"],
+                "5"
+            );
+            assert_eq!(
+                case["native_calls"]["ObjectStroke_GetAdvancedPenSetting"]["utf8"],
+                "5;"
+            );
+            assert!(
+                case["native_calls"]["curve_forward_virtual_calls"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            );
+            for snapshot in case["native_calls"]["ObjectStroke_getter_snapshots"]
+                .as_array()
+                .unwrap()
+            {
+                assert_eq!(snapshot["curve_enabled"], 0);
+            }
+
+            let stroke = caller_stroke(case);
+            assert!(!stroke.rendering.as_ref().unwrap().properties.compressed);
+            let ink = prepare_for_page(&stroke).unwrap();
+            assert_caller_xy_matches(&ink, case);
+            assert_native_sample_ends(&ink, core_case);
+
+            let prepared = crate::ink::prepare_stroke_for_context(
+                &stroke,
+                false,
+                crate::ink::InkRenderContext::CanonicalPage,
+            );
+            assert_eq!(
+                prepared.sample_ends.as_ref(),
+                Some(&ink.sample_ends),
+                "{id} V5 native sample boundaries"
+            );
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed);
+            let context_free = crate::ink::prepare_stroke(&stroke, false);
+            assert!(context_free.sample_ends.is_none());
+            assert!(context_free.dot_radii.is_none());
+            assert_eq!(context_free.support, crate::InkSupport::Approximate);
+        }
     }
 
     #[test]
@@ -533,18 +595,20 @@ mod tests {
     }
 
     fn assert_caller_xy_matches(ink: &Ink, case: &serde_json::Value) {
-        let output = bytes_from_hex(
-            case["phase_final_vectors"]["saved_redraw"]["vector_bytes"]
-                .as_str()
-                .unwrap(),
-        );
-        assert_eq!(output.len() % 8, 0);
-        assert_eq!(ink.points.len(), output.len() / 8);
-        for (point, pair) in ink.points.iter().zip(output.as_chunks::<8>().0) {
-            let x = f32::from_bits(u32::from_le_bytes(pair[..4].try_into().unwrap()));
-            let y = f32::from_bits(u32::from_le_bytes(pair[4..].try_into().unwrap()));
-            assert_eq!((point.x as f32).to_bits(), x.to_bits());
-            assert_eq!((point.y as f32).to_bits(), y.to_bits());
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            let output = bytes_from_hex(
+                case["phase_final_vectors"][phase]["vector_bytes"]
+                    .as_str()
+                    .unwrap(),
+            );
+            assert_eq!(output.len() % 8, 0, "{phase} byte alignment");
+            assert_eq!(ink.points.len(), output.len() / 8, "{phase} count");
+            for (point, pair) in ink.points.iter().zip(output.as_chunks::<8>().0) {
+                let x = f32::from_bits(u32::from_le_bytes(pair[..4].try_into().unwrap()));
+                let y = f32::from_bits(u32::from_le_bytes(pair[4..].try_into().unwrap()));
+                assert_eq!((point.x as f32).to_bits(), x.to_bits(), "{phase} x");
+                assert_eq!((point.y as f32).to_bits(), y.to_bits(), "{phase} y");
+            }
         }
     }
 

@@ -167,65 +167,68 @@ mod tests {
             .iter()
             .find(|case| case.id == "marker3-v5-saved-1")
             .unwrap();
-        let mut stroke = marker3_stroke(&case.input);
-        // The linked Drawing caller enables curves and reads saved size 8.
-        // Presentation width and pressure must not shrink those native disks.
-        stroke.pen_width = 1.07;
-        let rendering = stroke.rendering.as_mut().unwrap();
-        rendering.properties.compressed = true;
-        rendering.style.color_argb = Some(0x8033_6699);
-        for point in &mut stroke.points {
-            point.x += 24.0;
-            point.y += 16.0;
-        }
-        let document = crate::Document {
-            pages: vec![crate::Page {
-                uuid: "marker3".into(),
-                width: 128,
-                height: 32,
-                content_bbox: BoundingBox {
-                    x_min: 19.5,
-                    y_min: 11.5,
-                    x_max: 48.5,
-                    y_max: 20.5,
-                },
-                background_color: None,
-                template: None,
-                background: Default::default(),
-                objects: vec![crate::PageObject::from(stroke)],
-            }],
-            metadata: Default::default(),
-        };
-        let options = crate::RenderOptions::default();
-        let pages = crate::render_document_svg(&document, &options);
-        let parsed = roxmltree::Document::parse(&pages[0].svg).unwrap();
-        let paths = parsed
-            .descendants()
-            .filter(|node| node.has_tag_name("path"))
-            .collect::<Vec<_>>();
-        assert_eq!(paths.len(), 1, "one compound MAX-union fill");
-        let path = paths[0];
-        let data = path.attribute("d").unwrap();
-        assert_eq!(data.matches('M').count(), case.native.stamps.len());
-        assert!(
-            data.contains("a4.5,4.5"),
-            "saved radius survives presentation width"
-        );
-        let alpha: f64 = path.attribute("fill-opacity").unwrap().parse().unwrap();
-        assert!((alpha - 128.0 / 255.0).abs() < 0.0001);
-        assert!(!parsed.descendants().any(|node| node.has_tag_name("image")));
-        #[cfg(feature = "pdf")]
-        {
-            let pdf = crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
-            let parsed = lopdf::Document::load_mem(&pdf).unwrap();
-            assert!(!parsed.objects.values().any(|object| {
-                object.as_stream().is_ok_and(|stream| {
-                    stream
-                        .dict
-                        .get(b"Subtype")
-                        .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
-                })
-            }));
+        for curve in [false, true] {
+            let mut stroke = marker3_stroke(&case.input);
+            // Native Drawing controls cover both curve flags with saved size 8.
+            // Presentation width and pressure must not shrink those native disks.
+            stroke.pen_width = 1.07;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.properties.compressed = curve;
+            rendering.style.color_argb = Some(0x8033_6699);
+            for point in &mut stroke.points {
+                point.x += 24.0;
+                point.y += 16.0;
+            }
+            let document = crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "marker3".into(),
+                    width: 128,
+                    height: 32,
+                    content_bbox: BoundingBox {
+                        x_min: 19.5,
+                        y_min: 11.5,
+                        x_max: 48.5,
+                        y_max: 20.5,
+                    },
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: vec![crate::PageObject::from(stroke)],
+                }],
+                metadata: Default::default(),
+            };
+            let options = crate::RenderOptions::default();
+            let pages = crate::render_document_svg(&document, &options);
+            let parsed = roxmltree::Document::parse(&pages[0].svg).unwrap();
+            let paths = parsed
+                .descendants()
+                .filter(|node| node.has_tag_name("path"))
+                .collect::<Vec<_>>();
+            assert_eq!(paths.len(), 1, "one compound MAX-union fill");
+            let path = paths[0];
+            let data = path.attribute("d").unwrap();
+            assert_eq!(data.matches('M').count(), case.native.stamps.len());
+            assert!(
+                data.contains("a4.5,4.5"),
+                "saved radius survives presentation width"
+            );
+            let alpha: f64 = path.attribute("fill-opacity").unwrap().parse().unwrap();
+            assert!((alpha - 128.0 / 255.0).abs() < 0.0001);
+            assert!(!parsed.descendants().any(|node| node.has_tag_name("image")));
+            #[cfg(feature = "pdf")]
+            {
+                let pdf =
+                    crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+                let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+                assert!(!parsed.objects.values().any(|object| {
+                    object.as_stream().is_ok_and(|stream| {
+                        stream
+                            .dict
+                            .get(b"Subtype")
+                            .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+                    })
+                }));
+            }
         }
     }
 
