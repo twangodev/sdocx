@@ -4813,7 +4813,15 @@ mod tests {
             .iter()
             .map(|word| u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())
             .collect::<Vec<_>>();
-        assert_eq!(prepared.records.iter().flatten().copied().collect::<Vec<_>>(), native);
+        assert_eq!(
+            prepared
+                .records
+                .iter()
+                .flatten()
+                .copied()
+                .collect::<Vec<_>>(),
+            native
+        );
 
         let mut page = page_with_uncolored_stroke();
         page.width = 256;
@@ -4932,11 +4940,7 @@ mod tests {
         assert!(replay.contains(r#"data-replay-stroke="0""#));
 
         let mut fallback = magicpen_v1_stroke();
-        fallback
-            .rendering
-            .as_mut()
-            .unwrap()
-            .advanced_settings = Some("2;".into());
+        fallback.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
         assert_eq!(
             crate::prepare_stroke_for_page(&fallback, false).support,
             crate::InkSupport::Approximate
@@ -4955,9 +4959,11 @@ mod tests {
             crate::prepare_stroke_for_page(&curved, false).support,
             crate::InkSupport::Approximate
         );
-        assert!(crate::prepare_stroke_for_page(&curved, false)
-            .sample_ends
-            .is_none());
+        assert!(
+            crate::prepare_stroke_for_page(&curved, false)
+                .sample_ends
+                .is_none()
+        );
 
         let mut budget = magicpen_v1_stroke();
         budget.rendering.as_mut().unwrap().properties.compressed = false;
@@ -4977,6 +4983,68 @@ mod tests {
         let prepared = crate::prepare_stroke_for_page(&budget, false);
         assert_eq!(prepared.support, crate::InkSupport::Approximate);
         assert!(prepared.sample_ends.is_none());
+    }
+
+    #[test]
+    fn magicpen_v1_public_exports_use_native_thick_stroke_repeat_counts() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-nocurve-source-events-native.json"
+        ))
+        .unwrap();
+        let float = |word: &serde_json::Value| {
+            f32::from_bits(u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())
+        };
+        for (id, count) in [
+            ("repeat_bucket_width_50_len24", 8),
+            ("repeat_bucket_width_80_len24", 6),
+        ] {
+            let case = fixture["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|case| case["id"] == id)
+                .unwrap();
+            assert_eq!(case["native"]["record_count"], count);
+            let input = &case["input"];
+            let mut stroke = magicpen_v1_stroke();
+            stroke.points = input["points_f32_u32_hex"]
+                .as_array()
+                .unwrap()
+                .chunks_exact(2)
+                .map(|xy| Point {
+                    x: f64::from(float(&xy[0])),
+                    y: f64::from(float(&xy[1])),
+                })
+                .collect();
+            stroke.pressures = input["pressure_f32_u32_hex"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|word| f64::from(float(word)))
+                .collect();
+            stroke.rendering.as_mut().unwrap().style.pen_size =
+                Some(float(&input["size_f32_u32_hex"]));
+            let prepared = crate::prepare_stroke_for_page(&stroke, false);
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed, "{id}");
+            assert_eq!(
+                prepared.sample_ends.as_deref(),
+                Some(&[0, count / 2, count][..]),
+                "{id}"
+            );
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.into()];
+            let svg = render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+            let xml = roxmltree::Document::parse(&svg.svg).unwrap();
+            let path = xml
+                .descendants()
+                .find(|node| node.has_tag_name("path"))
+                .unwrap();
+            assert_eq!(
+                path.attribute("d").unwrap().matches('M').count(),
+                count,
+                "{id}"
+            );
+        }
     }
 
     #[test]
@@ -5016,8 +5084,11 @@ mod tests {
                 assert_eq!(
                     crate::render_svg_pages_pdf(std::slice::from_ref(actual), &Default::default())
                         .unwrap(),
-                    crate::render_svg_pages_pdf(std::slice::from_ref(expected), &Default::default())
-                        .unwrap(),
+                    crate::render_svg_pages_pdf(
+                        std::slice::from_ref(expected),
+                        &Default::default()
+                    )
+                    .unwrap(),
                 );
             }
         }
@@ -5281,8 +5352,7 @@ mod tests {
         rendering.style.color_argb = None;
         rendering.style.color_type_raw = Some(0);
         rendering.style.pen_size = Some(2.5);
-        rendering.style.initial_tolerance =
-            (advanced_setting == "14;").then_some(0.0);
+        rendering.style.initial_tolerance = (advanced_setting == "14;").then_some(0.0);
         stroke.pen_width = 2.5;
         stroke
     }
@@ -5415,12 +5485,7 @@ mod tests {
             g: 0x66,
             b: 0x99,
         });
-        explicit
-            .rendering
-            .as_mut()
-            .unwrap()
-            .style
-            .color_argb = Some(0xff33_6699);
+        explicit.rendering.as_mut().unwrap().style.color_argb = Some(0xff33_6699);
         let mut page = page_with_uncolored_stroke();
         page.objects = vec![explicit.into()];
         let svg = render_document_svg(&document(page), &RenderOptions::default())

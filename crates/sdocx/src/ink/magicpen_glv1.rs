@@ -377,10 +377,10 @@ fn repeat_index(length: f32, interval: f32) -> usize {
         length / 6.0
     } else if interval <= 40.0 {
         length / 7.0
-    } else if interval <= 60.0 {
-        length / 10.0
-    } else {
+    } else if interval <= 55.0 {
         length * 0.125
+    } else {
+        length / 10.0
     };
     (scaled as usize).max(2) + 1
 }
@@ -840,7 +840,7 @@ mod tests {
             "sdocx-magicpen-glv1-curved-source-events-v1"
         );
         let cases = fixture["cases"].as_array().unwrap();
-        assert_eq!(cases.len(), 25);
+        assert_eq!(cases.len(), 33);
         let case_ids: std::collections::BTreeSet<_> = cases
             .iter()
             .map(|case| case["id"].as_str().unwrap())
@@ -1026,7 +1026,7 @@ mod tests {
         let cases = fixture["cases"].as_array().unwrap();
         let baseline_cases = baseline["cases"].as_array().unwrap();
         assert_eq!(baseline_cases.len(), 35);
-        assert_eq!(cases.len(), 51);
+        assert_eq!(cases.len(), 53);
         assert_eq!(
             &cases[..35],
             baseline_cases.as_slice(),
@@ -1034,7 +1034,7 @@ mod tests {
         );
 
         let new_cases = &cases[35..];
-        assert_eq!(new_cases.len(), 16);
+        assert_eq!(new_cases.len(), 18);
         let mut seen = std::collections::BTreeSet::new();
         for case in new_cases {
             let id = case["id"].as_str().unwrap();

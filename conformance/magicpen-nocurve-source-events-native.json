@@ -1,13 +1,13 @@
 {
   "schema": "sdocx-magicpen-glv1-nocurve-source-events-native-v1",
-  "scope": "35 unchanged committed source-sampler cases plus 16 fresh NoCurve event-boundary cases. Synthetic Model ObjectStroke setters/getters -> Drawing-selected GLV1 -> native RTV1 AddPoint and complete post-return vectors. No SDK deserialization, GLV2, texture binding, GPU draw, or paint output.",
+  "scope": "35 unchanged committed source-sampler cases plus 18 fresh NoCurve event-boundary cases. Synthetic Model ObjectStroke setters/getters -> Drawing-selected GLV1 -> native RTV1 AddPoint and complete post-return vectors. No SDK deserialization, GLV2, texture binding, GPU draw, or paint output.",
   "encoding": {
     "source_point_and_pressure_words": "8-digit hexadecimal uint32 word; interpret as IEEE-754 f32 bits",
     "native_xyz_words": "8-digit hexadecimal uint32 word; native vector bytes decoded little-endian into f32 words",
     "size_word": "8-digit hexadecimal uint32 word; decoded from source getter byte encoding"
   },
   "provenance": {
-    "runner_sha256": "5cc41a8e9fc07f1c9902d03fedd16061c713d36f60451ae93148feef3d606431",
+    "runner_sha256": "21f86bcc4011f81d6065e719f6ada0b2cfb64795129b0fde0854806a94c3c6df",
     "baseline_runner_sha256": "b76a02a7b37438ddc303b06858e952bbc3fd6d770044b03e95465b64931f42c0",
     "baseline_fixture_sha256": "a67b0260313b1e5ede189a32864da5dc9e3eaab4909f832308560186459cc34b",
     "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
@@ -29921,6 +29921,580 @@
             ]
           },
           "post_return_vector_bytes_le_hex": "0000803f0000803f00009040"
+        }
+      }
+    },
+    {
+      "id": "repeat_bucket_width_50_len24",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41c2147b",
+          "00000000",
+          "4242147b",
+          "00000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3dcccccd",
+          "3dcccccd"
+        ],
+        "timestamps_i32": [
+          100,
+          111,
+          122
+        ],
+        "size_f32_u32_hex": "43fa0000",
+        "curve_enabled": false,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 8,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41cc0000",
+          "40c21476",
+          "00000000",
+          "41cc0000",
+          "41421476",
+          "00000000",
+          "41cc0000",
+          "41918f59",
+          "00000000",
+          "41cc0000",
+          "41c2147b",
+          "00000000",
+          "41cc0000",
+          "41f29998",
+          "00000000",
+          "41cc0000",
+          "42118f5b",
+          "00000000",
+          "41cc0000",
+          "4229d1ea",
+          "00000000",
+          "41cc0000"
+        ],
+        "sha256": "299ab8e389708ecdeaf699c796c4dd2b02f198d214797fe115db313494e233c9"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "ec34a8022e81846060c5a2943041f2a2e3903bb010ac85588eed55404f8f1fda",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "redraw_phases": [
+          {
+            "addpoint_count": 8,
+            "addpoint_end": 8,
+            "addpoint_range": [
+              0,
+              8
+            ],
+            "addpoint_start": 0,
+            "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+            "lr": 50867060,
+            "phase_index": 0
+          }
+        ],
+        "source_getters": {
+          "point_count": 3,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "41c2147b",
+              "00000000",
+              "4242147b",
+              "00000000"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3dcccccd",
+              "3dcccccd"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              111,
+              122
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": false,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "0000fa43",
+          "selected_pen_get_size_f32_u32_hex": "0000fa43",
+          "selected_drawable_class": "GLV1"
+        },
+        "native_addpoint": {
+          "record_count": 8,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "0000c841",
+            "7614c240",
+            "00000000",
+            "0000c841",
+            "76144241",
+            "00000000",
+            "0000c841",
+            "598f9141",
+            "00000000",
+            "0000c841",
+            "7b14c241",
+            "00000000",
+            "0000c841",
+            "9899f241",
+            "00000000",
+            "0000c841",
+            "5b8f1142",
+            "00000000",
+            "0000c841",
+            "ead12942",
+            "00000000",
+            "0000c841"
+          ],
+          "source_event_trace": {
+            "no_curve_end_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 8,
+                "addpoint_range": [
+                  8,
+                  8
+                ],
+                "addpoint_start": 8,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 50.0
+                },
+                "args_f32_u32_hex": [
+                  "7b144242",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 50.0
+                },
+                "lr": 167941696,
+                "obj": 268526480,
+                "phase_index": 0
+              }
+            ],
+            "no_curve_line_calls": [
+              {
+                "addpoint_count": 4,
+                "addpoint_end": 4,
+                "addpoint_range": [
+                  0,
+                  4
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 24.260000228881836,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 50.0
+                },
+                "args_f32_u32_hex": [
+                  "7b14c241",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "lr": 167941620,
+                "obj": 268526480,
+                "phase_index": 0,
+                "threshold_admitted": true
+              },
+              {
+                "addpoint_count": 4,
+                "addpoint_end": 8,
+                "addpoint_range": [
+                  4,
+                  8
+                ],
+                "addpoint_start": 4,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 50.0
+                },
+                "args_f32_u32_hex": [
+                  "7b144242",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 24.260000228881836,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 50.0
+                },
+                "lr": 167941620,
+                "obj": 268526480,
+                "phase_index": 0,
+                "threshold_admitted": true
+              }
+            ]
+          },
+          "post_return_vector_bytes_le_hex": "00000000000000000000cc417614c240000000000000cc4176144241000000000000cc41598f9141000000000000cc417b14c241000000000000cc419899f241000000000000cc415b8f1142000000000000cc41ead12942000000000000cc41"
+        }
+      }
+    },
+    {
+      "id": "repeat_bucket_width_80_len24",
+      "input": {
+        "points_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "41c2147b",
+          "00000000",
+          "4242147b",
+          "00000000"
+        ],
+        "pressure_f32_u32_hex": [
+          "3dcccccd",
+          "3dcccccd",
+          "3dcccccd"
+        ],
+        "timestamps_i32": [
+          100,
+          111,
+          122
+        ],
+        "size_f32_u32_hex": "44480000",
+        "curve_enabled": false,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "advanced_setting": "1;"
+      },
+      "native": {
+        "record_count": 6,
+        "xyz_f32_u32_hex": [
+          "00000000",
+          "00000000",
+          "42220000",
+          "410162fa",
+          "00000000",
+          "42220000",
+          "418162fa",
+          "00000000",
+          "42220000",
+          "41c2147b",
+          "00000000",
+          "42220000",
+          "420162fc",
+          "00000000",
+          "42220000",
+          "4221bbba",
+          "00000000",
+          "42220000"
+        ],
+        "sha256": "facc3a4477ce593e1dc9d96c889914359d1f2958bde794094f45d395e0a21dce"
+      },
+      "capture": {
+        "source_case": "v1",
+        "profile": [
+          1920,
+          1080
+        ],
+        "base_caller_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+        "wrapper_sha256": "7d6c8fb3f1b65dbab1487169804896ce4ba9f95ba5c6db40d587422c9548de0d",
+        "libraries": {
+          "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "MagicPen": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+          "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "helpers": {
+          "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "native_scope": "synthetic native ObjectStroke setter input; native Drawing selection and RedrawPen/AddPoint; no SDK deserialization or paint output",
+        "redraw_phases": [
+          {
+            "addpoint_count": 6,
+            "addpoint_end": 6,
+            "addpoint_range": [
+              0,
+              6
+            ],
+            "addpoint_start": 0,
+            "entry": "SPen::MagicPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+            "lr": 50867060,
+            "phase_index": 0
+          }
+        ],
+        "source_getters": {
+          "point_count": 3,
+          "arrays": {
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "points_f32_bits": [
+              "00000000",
+              "00000000",
+              "41c2147b",
+              "00000000",
+              "4242147b",
+              "00000000"
+            ],
+            "pressure_f32_bits": [
+              "3dcccccd",
+              "3dcccccd",
+              "3dcccccd"
+            ],
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              100,
+              111,
+              122
+            ]
+          },
+          "metadata": {
+            "color_argb": "0xff000000",
+            "curve_enabled": false,
+            "stroke_type": 0,
+            "tool_type": 2
+          },
+          "source_pen_size_f32_u32_hex": "00004844",
+          "selected_pen_get_size_f32_u32_hex": "00004844",
+          "selected_drawable_class": "GLV1"
+        },
+        "native_addpoint": {
+          "record_count": 6,
+          "argument_words_f32_u32_hex": [
+            "00000000",
+            "00000000",
+            "00002042",
+            "fa620141",
+            "00000000",
+            "00002042",
+            "fa628141",
+            "00000000",
+            "00002042",
+            "7b14c241",
+            "00000000",
+            "00002042",
+            "fc620142",
+            "00000000",
+            "00002042",
+            "babb2142",
+            "00000000",
+            "00002042"
+          ],
+          "source_event_trace": {
+            "no_curve_end_calls": [
+              {
+                "addpoint_count": 0,
+                "addpoint_end": 6,
+                "addpoint_range": [
+                  6,
+                  6
+                ],
+                "addpoint_start": 6,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 80.0
+                },
+                "args_f32_u32_hex": [
+                  "7b144242",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 80.0
+                },
+                "lr": 167941696,
+                "obj": 268526432,
+                "phase_index": 0
+              }
+            ],
+            "no_curve_line_calls": [
+              {
+                "addpoint_count": 3,
+                "addpoint_end": 3,
+                "addpoint_range": [
+                  0,
+                  3
+                ],
+                "addpoint_start": 0,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 24.260000228881836,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 80.0
+                },
+                "args_f32_u32_hex": [
+                  "7b14c241",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 0.0,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 1,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 0.0
+                },
+                "lr": 167941620,
+                "obj": 268526432,
+                "phase_index": 0,
+                "threshold_admitted": true
+              },
+              {
+                "addpoint_count": 3,
+                "addpoint_end": 6,
+                "addpoint_range": [
+                  3,
+                  6
+                ],
+                "addpoint_start": 3,
+                "after": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 48.52000045776367,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 80.0
+                },
+                "args_f32_u32_hex": [
+                  "7b144242",
+                  "00000000",
+                  "cdcccc3d"
+                ],
+                "before": {
+                  "alternating_baseline_flag_plus157": 0,
+                  "control_x_plus312_f32": 0.0,
+                  "control_y_plus316_f32": 0.0,
+                  "last_x_plus296_f32": 24.260000228881836,
+                  "last_y_plus300_f32": 0.0,
+                  "pending_init_flag_plus156": 0,
+                  "raw_distance_plus148_f32": 0.0,
+                  "width_plus144_f32": 80.0
+                },
+                "lr": 167941620,
+                "obj": 268526432,
+                "phase_index": 0,
+                "threshold_admitted": true
+              }
+            ]
+          },
+          "post_return_vector_bytes_le_hex": "000000000000000000002242fa6201410000000000002242fa62814100000000000022427b14c2410000000000002242fc6201420000000000002242babb21420000000000002242"
         }
       }
     }

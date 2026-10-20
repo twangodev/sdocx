@@ -101,6 +101,19 @@ def preflight_existing_fixture(write_fixture: bool) -> None:
     if recorded.get("runtime_closure") != runtime_closure():
         raise RuntimeError("curved native fixture runtime closure differs")
 
+def _x_axis_points(deltas):
+    points = [(0.0, 0.0)]
+    x = 0.0
+    for delta in deltas:
+        x += delta
+        points.append((x, 0.0))
+    return points
+
+
+def _alternating_pressure(count, start=0):
+    return [float((index + start) % 2) for index in range(count)]
+
+
 CASES = [
     ("tool2_baseline", [(0.0, 0.0), (10.0, 0.0), (20.0, 2.0)], [.3, .6, 1.0], [100, 110, 120], 10, "set", True),
     ("tool2_3_nonsymmetric", [(1.25, -2.5), (6.0, 1.0), (12.5, 7.25)], [.15, .55, .9], [100, 113, 137], 10, "set", True),
@@ -127,6 +140,14 @@ CASES = [
     ("curve_pressure_edges_size_default", [(0.,0.),(2.,0.),(4.,1.),(7.,3.),(10.,1.)], [0.,1.,0.,1.,0.], [100,111,127,143,162], 10,"set",True),
     ("curve_terminal_factor_02_pressure_zero", [(0.,0.),(2.,0.),(4.,0.),(40.,0.),(42.,0.)], [.2,.3,.4,.5,0.], [100,111,127,143,162], 10,"set",True),
     ("curve_terminal_factor_02_pressure_one", [(0.,0.),(2.,0.),(4.,0.),(40.,0.),(42.,0.)], [.2,.3,.4,.5,1.], [100,111,127,143,162], 10,"set",True),
+    ("long9_factor_edges_below", _x_axis_points([2,2,4.199,2,9.499,2,34.999,2]), _alternating_pressure(9), [100+11*i for i in range(9)], 10,"set",True),
+    ("long9_factor_edges_exact", _x_axis_points([2,2,4.2,2,9.5,2,35,2]), _alternating_pressure(9,1), [100+11*i for i in range(9)], 10,"set",True),
+    ("long9_factor_edges_above", _x_axis_points([2,2,4.201,2,9.501,2,35.001,2]), _alternating_pressure(9), [100+11*i for i in range(9)], 10,"set",True),
+    ("long11_duplicate_and_subthreshold_tail", _x_axis_points([2,2,4.2,2,9.5,2,35,2,0,1.49]), _alternating_pressure(11,1), [100+11*i for i in range(11)], 10,"set",True),
+    ("long11_min_size_duplicate_tail_pressure_zero", _x_axis_points([2,2,4.199,2,9.501,2,34.999,2,0,1.49]), [1.,0.,1.,0.,1.,0.,1.,0.,1.,0.,0.], [100+11*i for i in range(11)], .4,"set",True),
+    ("long16_min_size_pressure_edges", _x_axis_points([2,2,4.19,2,9.49,2,35,2,4.21,2,9.51,2,34.99,2,2]), _alternating_pressure(16), [100+11*i for i in range(16)], .4,"set",True),
+    ("long16_max_size_pressure_edges", _x_axis_points([2,2,4.21,2,9.51,2,35.01,2,4.19,2,9.49,2,35,2,2]), _alternating_pressure(16,1), [100+11*i for i in range(16)], 800,"set",True),
+    ("long21_max_size_duplicate_rejected_tail", _x_axis_points([2,2,4.2,2,9.5,2,35,2,2,2,4.199,2,9.499,2,34.999,2,2,0,1.49,0]), _alternating_pressure(21), [100+11*i for i in range(21)], 800,"set",True),
 ]
 
 

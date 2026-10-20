@@ -64,6 +64,8 @@ CASES = [
     ("two_subthreshold_terminal_nonzero", [(0,0),(.5,0),(1,0)], [.1,.4,.8], [100,110,120], 10, "set", False),
     ("all_rejected_final_origin", [(0,0),(.5,.25),(0,0)], [.1,.4,.8], [100,110,120], 10, "set", False),
     ("duplicate_all_points", [(1,1),(1,1),(1,1)], [.1,.4,.8], [100,110,120], 10, "set", False),
+    ("repeat_bucket_width_50_len24", [(0,0),(24.26,0),(48.52,0)], [.1,.1,.1], [100,111,122], 500, "set", False),
+    ("repeat_bucket_width_80_len24", [(0,0),(24.26,0),(48.52,0)], [.1,.1,.1], [100,111,122], 800, "set", False),
 ]
 
 
@@ -298,11 +300,11 @@ def generated_fixture() -> dict:
     if len({case["capture"]["base_caller_sha256"] for case in added}) != 1:
         raise RuntimeError("base caller changed during capture matrix")
     ids = [case["id"] for case in baseline["cases"] + added]
-    if len(set(ids)) != 51:
+    if len(set(ids)) != 53:
         raise RuntimeError(f"expected 51 unique cases, found {len(set(ids))}")
     return {
         "schema": "sdocx-magicpen-glv1-nocurve-source-events-native-v1",
-        "scope": "35 unchanged committed source-sampler cases plus 16 fresh NoCurve event-boundary cases. Synthetic Model ObjectStroke setters/getters -> Drawing-selected GLV1 -> native RTV1 AddPoint and complete post-return vectors. No SDK deserialization, GLV2, texture binding, GPU draw, or paint output.",
+        "scope": "35 unchanged committed source-sampler cases plus 18 fresh NoCurve event-boundary cases. Synthetic Model ObjectStroke setters/getters -> Drawing-selected GLV1 -> native RTV1 AddPoint and complete post-return vectors. No SDK deserialization, GLV2, texture binding, GPU draw, or paint output.",
         "encoding": {
             "source_point_and_pressure_words": "8-digit hexadecimal uint32 word; interpret as IEEE-754 f32 bits",
             "native_xyz_words": "8-digit hexadecimal uint32 word; native vector bytes decoded little-endian into f32 words",
@@ -334,7 +336,7 @@ def main() -> None:
     else:
         if not FIXTURE.exists() or FIXTURE.read_text() != encoded:
             raise SystemExit("MagicPen GLV1 source fixture mismatch; use --write-fixture after review")
-    print(f"verified {len(current['cases'])} MagicPen source cases (35 baseline + 16 NoCurve event controls)")
+    print(f"verified {len(current['cases'])} MagicPen source cases (35 baseline + 18 NoCurve event controls)")
 
 
 if __name__ == "__main__":

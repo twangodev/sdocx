@@ -397,10 +397,10 @@ checks native source getters and complete XYZ streams; the Rust source model
 matches all 35 two- to eight-point cases, including duplicate/nearby-event
 admission, native width transitions and the 0.4–800 size clamp. A
 [NoCurve event matrix](../conformance/magicpen-nocurve-source-events-native.json)
-adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
-ranges and direct-dot fallback, with exact complete streams. A separate
+adds 18 controls for admission cutoffs, first-admitted width seeding, terminal
+ranges, direct dots and thick-stroke sampling, with exact complete streams. A separate
 [curved event capture](../conformance/magicpen-curved-source-events-native.json)
-records line/terminal callback ranges for 25 bounded inputs, including rejected
+records line/terminal callback ranges for 33 bounded inputs, including rejected
 final points, duplicate endpoints, direct dots, size limits and low-factor
 terminal pressure controls. Rust matches every
 captured XYZ word and callback range. Pinned native loops exclude line endpoints
