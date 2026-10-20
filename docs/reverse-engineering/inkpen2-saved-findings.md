@@ -269,9 +269,9 @@ Twelve joined native gradient draws (1×/2×/4×, AA off/on, alpha 128/255)
 regenerate the same 900-byte VBO. Reconstructing the six enhanced final frames
 from their captured M/C stage bytes matches alpha exactly and RGB within one
 byte; this verifies the stage law, not public vector transport or a general bound.
-An internal Rust PDF route retains the nine-float records and uses Type 4 RGB
-shading with a separate q/MAX luminosity mask, without images. Its staged limit
-is 512 records and 1 MiB of calculator code; active-gradient admission stays off.
+An internal Rust PDF route retains the nine-float records and uses Type 1 RGB
+shading with Type 4 calculator functions with a separate q/MAX luminosity mask, without images. Its staged limit
+is 512 records and 1 MiB of calculator code; enhanced active-gradient admission stays off.
 Rust tests execute the generated programs against the source-over/normalization
 law and check retained vector export of the native 900-byte stream at three
 scales and zero/partial/opaque alpha. This does not establish pixel parity.
@@ -288,9 +288,27 @@ The reflected page transform fails in resvg 0.45.1; an independent 0.47.0
 library replay reproduces the 14-versus-93-pixel support failure. Its offset
 scaling discards reflection signs. A positive-Y diagnostic restores support
 but is not a valid output correction. Fractional consumer zoom also increases
-browser error. Active-gradient admission therefore remains off; consumer
+browser error. Enhanced active-gradient admission therefore remains off; consumer
 transforms, native-referenced PDF appearance and real-document evidence remain
 open. Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
+The public active-gradient route is limited to explicit AA-off profiles with
+minimum screen dimension 1080, type 1, positive distance, nonnegative offset,
+2–256 palette entries, at most 512 records and unit coverage in every record.
+It uses direct source-over radial gradients without the enhanced MAX mask.
+A parsed 126-byte active hybrid frame produces the same 25-record/900-byte
+native Drawing stream (SHA-256 `570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987`);
+Rust tests exercise public SVG/PDF dispatch and retain zero image objects.
+The unchanged public exports improve shared-support RGB error and support IoU
+against the no-profile fallback in all fifteen 1×/2×/4× comparisons across
+Chromium, Firefox, resvg, MuPDF and PDFium. Browser/resvg MAE is 0.51–2.55 bytes;
+PDF MAE remains 8.15–33.88 (maximum 46–139), so PDF pixel parity is unresolved.
+Native premultiplied readback is row-flipped once and composited over the same
+export paper; each renderer uses a shared native/candidate/fallback support union.
+Model construction initializes the separate effect type to zero. Runtime tracing
+also resolves Drawing's `GetLaserable` guard to the null PenCommon stub
+(`0x46488`), skipping the apparent effect-type forwarding block. Omitting an
+explicit type-zero setter preserves the complete VBO. These are host-built
+source controls, not evidence of app defaults or real-document parity.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,

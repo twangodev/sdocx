@@ -3527,6 +3527,7 @@ pub(crate) struct InkPenV1VectorCandidate {
 const MAX_INKPEN2_SOURCE_SAMPLES: usize = 65_536;
 const MAX_INKPEN2_SOURCE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_INKPEN2_OUTPUT_RECORDS: usize = 32_768;
+const MAX_INKPEN2_ACTIVE_RGB_RECORDS: usize = 512;
 const MAX_INKPEN2_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const INKPEN2_MARKUP_BUDGET_PER_RECORD: usize = 1024;
 const INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES: usize = 4096;
@@ -3546,6 +3547,7 @@ fn prepare_inkpen2_v9(
         return None;
     }
     let rendering = stroke.rendering.as_ref()?;
+    let active_rainbow = rendering.properties.rainbow_effect;
     let n = stroke.points.len();
     let source_bytes = n.checked_mul(48);
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
@@ -3566,7 +3568,6 @@ fn prepare_inkpen2_v9(
         || !rendering.properties.binary_added
         || rendering.properties.generated
         || rendering.properties.fixed_opacity
-        || rendering.properties.rainbow_effect
         || rendering.properties.straighten
         || rendering.properties.reveal_mode
         || !(2..=MAX_INKPEN2_SOURCE_SAMPLES).contains(&n)
@@ -3599,6 +3600,35 @@ fn prepare_inkpen2_v9(
         return None;
     }
     let argb = rendering.style.color_argb?;
+    let rainbow = if active_rainbow {
+        if profile.enhanced_antialias
+            || profile.screen_width.min(profile.screen_height) != 1080
+            || rendering.style.color_type_raw != Some(1)
+            || rendering.style.first_unparsed_field.is_some()
+            || !rendering.style.trailing_data.is_empty()
+        {
+            return None;
+        }
+        let distance = rendering
+            .style
+            .rainbow_distance
+            .filter(|distance| *distance > 0)?;
+        let offset = rendering
+            .style
+            .rainbow_offset
+            .filter(|offset| offset.is_finite() && *offset >= 0.0)?;
+        let palette = rendering.style.gradient_colors_argb.as_deref()?;
+        if !(2..=256).contains(&palette.len()) {
+            return None;
+        }
+        Some(crate::ink::inkpen2::Rainbow {
+            distance,
+            offset,
+            palette_argb: palette,
+        })
+    } else {
+        None
+    };
     // Binary field 13 is multiplied by a native document conversion factor.
     // Until that factor is derived for this input route, only absent/zero is safe.
     let tolerance = rendering.style.initial_tolerance.unwrap_or(0.0);
@@ -3619,7 +3649,7 @@ fn prepare_inkpen2_v9(
         tools: &tools,
         pressures: &pressures,
         rgb: [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8],
-        rainbow: None,
+        rainbow,
         size: size.clamp(0.4, 800.0),
         curve_enabled: rendering.properties.compressed,
         is_shape: false,
@@ -3633,15 +3663,20 @@ fn prepare_inkpen2_v9(
             initial_time: *times.first().unwrap_or(&0),
         },
     };
-    let output = crate::ink::inkpen2::redraw_bounded(input, MAX_INKPEN2_OUTPUT_RECORDS)?;
+    let output_budget = if active_rainbow {
+        MAX_INKPEN2_ACTIVE_RGB_RECORDS
+    } else {
+        MAX_INKPEN2_OUTPUT_RECORDS
+    };
+    let output = crate::ink::inkpen2::redraw_bounded(input, output_budget)?;
     let output_bytes = output.vertices.len().checked_mul(36);
     let markup_bytes = output
         .vertices
         .len()
         .checked_mul(INKPEN2_MARKUP_BUDGET_PER_RECORD)
         .and_then(|bytes| bytes.checked_add(INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES));
-    if output.vertices.len() > MAX_INKPEN2_OUTPUT_RECORDS
-        || output_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_OUTPUT_RECORDS * 36)
+    if output.vertices.len() > output_budget
+        || output_bytes.is_none_or(|bytes| bytes > output_budget * 36)
         || markup_bytes.is_none_or(|bytes| bytes > MAX_INKPEN2_ESTIMATED_MARKUP_BYTES)
         || output.sample_ends.len() != n
         || output.sample_ends.first() != Some(&0)
@@ -3658,6 +3693,9 @@ fn prepare_inkpen2_v9(
             || record[3] <= 0.0
             || !(0.0..=1.0).contains(&record[5])
     }) {
+        return None;
+    }
+    if active_rainbow && output.vertices.iter().any(|record| record[5] != 1.0) {
         return None;
     }
     if output.vertices.is_empty() {
@@ -3683,11 +3721,17 @@ fn prepare_inkpen2_v9(
         }
     }
     let source_color = stroke.color.or(Some(argb_color(argb)));
-    let color = source_color
-        .map(|color| theme.foreground_color(color))
-        .unwrap_or_else(|| argb_color(argb));
+    let color = if active_rainbow {
+        // The native palette supplies each stamp's RGB. Keep the saved base
+        // color intact for alpha/fallback semantics; never theme-map stops.
+        argb_color(argb)
+    } else {
+        source_color
+            .map(|color| theme.foreground_color(color))
+            .unwrap_or_else(|| argb_color(argb))
+    };
     Some(crate::ink::PreparedInkPen2V9 {
-        per_stamp_rgb: false,
+        per_stamp_rgb: active_rainbow,
         records: output.vertices,
         sample_ends,
         color,
@@ -6453,6 +6497,279 @@ mod tests {
                 "{name} must remain outside the captured V9 contract"
             );
         }
+    }
+
+    fn inkpen2_active_rainbow_hybrid_stroke() -> Stroke {
+        // The 137-byte source prefix is the same borrowed type-0 source used
+        // by inkpen2_serialized_style_mapping_reaches_native_v9_records. This
+        // 126-byte style frame is the native NewApplyBinary/OnAttach active
+        // type-1 rainbow hybrid (SHA-256 9521a7d4b155e59397788993f8d2796b1f43663d7d6d900a0f6d222be371083e), embedded here to keep the regression durable.
+        let hex_bytes = |hex: &str| -> Vec<u8> {
+            hex.as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let mut payload = hex_bytes(
+            "8900000000006900000002bf010400600400a00f0000240064313630613838652d623534642d313166312d613062392d396663373838333030663136f20edec9f25b06000000000001e55c40000000e0dbbc6940000000e05d9a604000000020769b6c400000000000be7635c6f25b060038070000350a000000000000000000000000000000000000",
+        );
+        payload.extend(hex_bytes(
+            "7e00000001005a000000020514040f00c003040000000000000000000000000000000000000100800001600000010080cdcc4c3e330333033303000000000a000a000a00000000000000000000000000000000000000000002000000000001000000563412ff00008040050000000000204002000000ffffff0000ff0100",
+        ));
+        let mut stroke = crate::decode::decode_stroke(&payload, &crate::ParseLimits::default())
+            .expect("parse native active-rainbow hybrid");
+        crate::StrokeResources::new(&crate::NoteStringTable {
+            entries: vec![
+                crate::NoteStringId {
+                    id: 0,
+                    text: "com.samsung.android.sdk.pen.pen.preload.InkPen2".into(),
+                },
+                crate::NoteStringId {
+                    id: 1,
+                    text: "9;".into(),
+                },
+            ],
+            trailing_data: Vec::new(),
+        })
+        .resolve(&mut stroke);
+        stroke
+    }
+
+    #[test]
+    fn inkpen2_active_rainbow_aa_off_uses_native_per_stamp_vbo() {
+        use sha2::Digest;
+
+        // Native active hybrid after NewApplyBinary/OnAttach and actual
+        // Drawing-selected GLV9 redraw: 25 Vector9 records / 900 bytes.
+        // The emitted VBO SHA-256 is 570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987.
+        let stroke = inkpen2_active_rainbow_hybrid_stroke();
+        let style = &stroke.rendering.as_ref().unwrap().style;
+        assert_eq!(
+            stroke.rendering.as_ref().unwrap().pen_name.as_deref(),
+            Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
+        );
+        assert_eq!(
+            stroke
+                .rendering
+                .as_ref()
+                .unwrap()
+                .advanced_settings
+                .as_deref(),
+            Some("9;")
+        );
+        assert!(stroke.rendering.as_ref().unwrap().properties.rainbow_effect);
+        assert_eq!(style.color_type_raw, Some(1));
+        assert_eq!(style.rainbow_distance, Some(5));
+        assert_eq!(style.rainbow_offset, Some(2.5));
+        assert_eq!(
+            style.gradient_colors_argb.as_deref(),
+            Some(&[0xffff_0000, 0xff00_00ff][..])
+        );
+        assert_eq!(style.color_argb, Some(0xff12_3456));
+        assert_eq!(stroke.points.len(), 4);
+
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        let prepared = prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+            .expect("active native type-1 AA-off profile is supported");
+        assert!(prepared.per_stamp_rgb);
+        assert!(!prepared.enhanced_antialias);
+        assert_eq!(prepared.records.len(), 25);
+        assert!(prepared.records.iter().all(|record| record[5] == 1.0));
+        let bytes: Vec<u8> = prepared
+            .records
+            .iter()
+            .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+            .collect();
+        assert_eq!(bytes.len(), 900);
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(&bytes)),
+            "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+        );
+
+        // Source ARGB alpha affects final stroke opacity only; palette RGB
+        // remains native data and is never changed by RenderTheme.
+        for alpha in [0_u8, 128, 255] {
+            let mut variant = stroke.clone();
+            variant.rendering.as_mut().unwrap().style.color_argb =
+                Some((u32::from(alpha) << 24) | 0x0012_3456);
+            let light = prepare_inkpen2_v9(&variant, Some(profile), RenderTheme::for_canvas(false))
+                .unwrap();
+            let dark =
+                prepare_inkpen2_v9(&variant, Some(profile), RenderTheme::for_canvas(true)).unwrap();
+            assert_eq!(light.records, prepared.records);
+            assert_eq!(dark.records, prepared.records);
+            assert_eq!(light.color, dark.color);
+            assert_eq!(light.opacity, f64::from(f32::from(alpha) / 255.0));
+        }
+
+        // Exercise public dispatch from the parsed source, including PDF transport.
+        let mut source = stroke.clone();
+        source.bbox = BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 24.,
+            y_max: 3.,
+        };
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        page.objects = vec![source.into()];
+        let doc = document(page);
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let svg = render_document_svg(&doc, &options).remove(0).svg;
+        assert_eq!(svg.matches("<radialGradient").count(), 25);
+        assert!(!svg.contains("<mask"));
+        assert!(!svg.contains("<filter"));
+
+        #[cfg(feature = "pdf")]
+        {
+            let bytes =
+                crate::render_document_pdf(&doc, &options, &crate::PdfOptions::default()).unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let images = pdf
+                .objects
+                .values()
+                .filter_map(|object| object.as_dict().ok())
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
+                })
+                .count();
+            assert_eq!(
+                images, 0,
+                "active AA-off gradients retain vector PDF shading"
+            );
+        }
+    }
+
+    #[test]
+    fn inkpen2_active_rainbow_admission_fails_closed_outside_aa0_contract() {
+        type Mutation = fn(&mut Stroke);
+        let mutations: [(&str, Mutation); 17] = [
+            ("color type 0", |s| {
+                s.rendering.as_mut().unwrap().style.color_type_raw = Some(0)
+            }),
+            ("color type 2", |s| {
+                s.rendering.as_mut().unwrap().style.color_type_raw = Some(2)
+            }),
+            ("color type unknown", |s| {
+                s.rendering.as_mut().unwrap().style.color_type_raw = Some(3)
+            }),
+            ("color type absent", |s| {
+                s.rendering.as_mut().unwrap().style.color_type_raw = None
+            }),
+            ("distance absent", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_distance = None
+            }),
+            ("distance zero", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_distance = Some(0)
+            }),
+            ("distance negative", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_distance = Some(-1)
+            }),
+            ("offset absent", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_offset = None
+            }),
+            ("offset negative", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_offset = Some(-0.25)
+            }),
+            ("offset nonfinite", |s| {
+                s.rendering.as_mut().unwrap().style.rainbow_offset = Some(f32::NAN)
+            }),
+            ("palette absent", |s| {
+                s.rendering.as_mut().unwrap().style.gradient_colors_argb = None
+            }),
+            ("palette empty", |s| {
+                s.rendering.as_mut().unwrap().style.gradient_colors_argb = Some(vec![])
+            }),
+            ("palette singleton", |s| {
+                s.rendering.as_mut().unwrap().style.gradient_colors_argb = Some(vec![0xffff_0000])
+            }),
+            ("palette exceeds bound", |s| {
+                s.rendering.as_mut().unwrap().style.gradient_colors_argb =
+                    Some(vec![0xffff_0000; 257])
+            }),
+            ("source ARGB absent", |s| {
+                s.rendering.as_mut().unwrap().style.color_argb = None
+            }),
+            ("unknown style tail", |s| {
+                s.rendering.as_mut().unwrap().style.first_unparsed_field = Some(26)
+            }),
+            ("style trailing bytes", |s| {
+                s.rendering.as_mut().unwrap().style.trailing_data = vec![1]
+            }),
+        ];
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        for (label, mutate) in mutations {
+            let mut stroke = inkpen2_active_rainbow_hybrid_stroke();
+            mutate(&mut stroke);
+            assert!(
+                prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                    .is_none(),
+                "{label} must be rejected"
+            );
+        }
+
+        let mut stroke = inkpen2_active_rainbow_hybrid_stroke();
+        let mut inactive = stroke.clone();
+        inactive
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = false;
+        let solid = prepare_inkpen2_v9(&inactive, Some(profile), RenderTheme::for_canvas(false))
+            .expect("inactive type-1 palette retains the existing solid route");
+        assert!(!solid.per_stamp_rgb);
+        let aa = InkPen2RenderProfile {
+            enhanced_antialias: true,
+            ..profile
+        };
+        assert!(prepare_inkpen2_v9(&stroke, Some(aa), RenderTheme::for_canvas(false)).is_none());
+        let wrong_resolution = InkPen2RenderProfile {
+            screen_width: 2560,
+            screen_height: 1600,
+            ..profile
+        };
+        assert!(
+            prepare_inkpen2_v9(
+                &stroke,
+                Some(wrong_resolution),
+                RenderTheme::for_canvas(false)
+            )
+            .is_none()
+        );
+        assert!(prepare_inkpen2_v9(&stroke, None, RenderTheme::for_canvas(false)).is_none());
+
+        // Thin radii produce coverage below one and are excluded from the
+        // measured direct vector/PDF contract.
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.4);
+        stroke.pen_width = 0.4;
+        assert!(
+            prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false)).is_none()
+        );
+
+        let mut long = inkpen2_active_rainbow_hybrid_stroke();
+        long.points = vec![Point { x: 0., y: 0. }, Point { x: 600., y: 0. }];
+        long.timestamps = vec![0, 10];
+        long.pressures = vec![0.5; 2];
+        long.tilts = vec![0.; 2];
+        long.orientations = vec![0.; 2];
+        assert!(prepare_inkpen2_v9(&long, Some(profile), RenderTheme::for_canvas(false)).is_none());
     }
 
     #[test]

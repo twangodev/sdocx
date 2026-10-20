@@ -28,12 +28,12 @@ pub(super) fn render(svg: &mut Scene, ink: &PreparedInkPen2V9, replay_index: Opt
     }
 }
 
-/// Internal staged renderer for records whose RGB channels differ by stamp.
+/// Renderer for records whose RGB channels differ by stamp.
 ///
 /// Enhanced-AA uses ordered source-over RGB under a separate MAX-coverage
 /// luminance mask, with saved alpha applied once around the masked group. The
-/// mask isolates each stamp with explicitly cropped filter primitives. Keep
-/// active-gradient public admission gated while the complete route is checked.
+/// mask isolates each stamp with explicitly cropped filter primitives. Enhanced
+/// active gradients remain staged; public admission uses the bounded AA-off route.
 fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
     if ink.opacity == 0.0
         || ink.records.is_empty()
