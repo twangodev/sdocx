@@ -247,8 +247,11 @@ InkPen2 points and the generic pressure-width approximation. The explicit
 with zero tolerance and complete channels. It selects fresh state, identity
 inverse scale and an explicit `enhanced_antialias` policy; screen dimensions are
 supplied rather than inferred from the page. Saved channels remain the source.
-Native color modes 1 (gradient) and 2 (pattern) configure separate effects;
-the constant-RGB route admits only missing/zero color type and rejects rainbow.
+Native color mode 1 configures gradient effects. InkPen2's `GetPatternable`
+returns null (PenCommon `0x46480`), so Drawing skips type-2 pattern setup.
+Joined type-0/type-2 controls with different pattern index/scale retain identical
+25-record geometry and RGBA paint. The constant-RGB route admits missing/zero
+and type-2 color modes while rejecting rainbow and unsupported color modes.
 Native gradient probes recover palette interpolation at `0x4e9dc`/`0x4ecc0`:
 segment-local distance plus carried offset selects RGB; palette alpha and the
 separate rainbow-time control do not affect the captured streams. Terminal
