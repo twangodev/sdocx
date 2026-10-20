@@ -8679,111 +8679,169 @@ mod tests {
         );
     }
 
-    // Bounded source-to-line check against a controlled native image-line receipt.
-    // It checks SDK layout against the captured native image line observation,
-    // without asserting a generic native line-query adapter.
+    // Measured Block Image cases only; this does not claim a generic native query adapter.
     #[cfg(feature = "pdf")]
     #[test]
-    fn continuous_body_image_line_matches_native_cut_receipt() {
-        let mut body = theme_test_text();
-        body.text = format!("{}\u{fffc}\n\n\n", "\n".repeat(112));
-        body.font_size = Some(17.0); // logical size; density=3 and delta=-5 -> 36 px.
-        body.margins = Some([16.0, 10.0, 16.0, 10.0]);
-        body.object_spans = vec![RichTextObjectSpan {
-            object_type: ObjectType::Image,
-            object_data: Vec::new(),
-            content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
-                bbox: BoundingBox {
-                    x_min: 48.0,
-                    y_min: 5473.2021484375,
-                    x_max: 567.4820556640625,
-                    y_max: 6154.56396484375,
-                },
-                rotation_degrees: None,
-                media_id: Some(0),
-                media_index: Some(0),
-                crop_rect: None,
-                original_bbox: None,
-                border_media_id: None,
-                original_media_id: None,
-            }))),
-            text_index_utf16: 112,
-            layout_option: ObjectSpanLayoutOption::Block,
-            layout_constraint: ObjectSpanLayoutConstraint::Normal,
-        }];
-        let mut page = page_with_uncolored_stroke();
-        page.width = 1812;
-        page.height = 15372;
-        let mut document = document(page);
-        document.metadata.page_mode = Some(1);
-        document.metadata.default_page_dimensions = Some((1080, 1527));
-        document.metadata.flow_dimensions = Some((1080, 9162));
-        document.metadata.flow_page_padding = Some((0, 24));
-        document.metadata.body_font_size_delta = Some(-5);
-        document.metadata.note_text = Some(body);
+    fn continuous_body_block_image_lines_match_native_layout_cases() {
+        // anchor, image height, page width, density, font delta, native top/bottom bits
+        let cases = [
+            (0, 100.0, 1080, 1, 0, [1092616192, 1122494185]),
+            (1, 100.0, 1080, 1, 0, [1107545293, 1124787880]),
+            (7, 100.0, 1080, 1, 0, [1126868582, 1133137133]),
+            (1, 200.0, 1080, 1, 0, [1107545293, 1131341480]),
+            (1, 681.36181640625, 1080, 1, 0, [1107545293, 1144262866]),
+            (1, 1000.0, 1080, 1, 0, [1107545293, 1149361365]),
+            // Native 36px / 48,30px maps to logical 17px / 16,10px at density 3, delta -5.
+            (7, 681.36181640625, 1812, 3, -5, [1136204187, 1149568310]),
+            (112, 681.36181640625, 1812, 3, -5, [1168837030, 1170258266]),
+        ];
 
-        let layout = layout_document(&document);
-        let fonts = super::fonts::FontBook::default();
-        let options = RenderOptions::default();
-        let mut cache = super::DocumentTextCache::default();
-        let _ = cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
-        let plan = &cache
-            .plans
-            .first()
-            .expect("continuous body plan prepared")
-            .1;
-        let source = &plan.text.text;
-        let utf16 = source.encode_utf16().collect::<Vec<_>>();
-        let char_to_utf16 = |character: usize| -> usize {
-            source.chars().take(character).map(char::len_utf16).sum()
-        };
-        assert_eq!(utf16.len(), 116);
-        assert_eq!(utf16[112], 0xfffc);
-        assert_eq!(plan.layout.lines.len(), 116);
-        let selected = plan
-            .layout
-            .lines
-            .iter()
-            .enumerate()
-            .filter_map(|(index, line)| {
-                (line.top <= 6066.0 && line.bottom >= 6065.0).then_some((index, line))
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(selected.len(), 1);
-        let (index, line) = selected[0];
-        assert_eq!(index, 112);
-        assert_eq!(line.line.source, 112..113);
-        let selected_utf16 =
-            char_to_utf16(line.line.source.start)..char_to_utf16(line.line.source.end);
-        assert_eq!(selected_utf16, 112..113);
-        assert!(super::text::native_text_range_has_visible_content(
-            &utf16,
-            selected_utf16,
-            &[],
-        ));
-        assert_eq!((line.top as f32).to_bits(), 1168837030);
-        assert_eq!((line.bottom as f32).to_bits(), 1170258266);
-        assert!((line.baseline - 6154.56884765625).abs() < 0.001);
-        // Full-width bands from the same native receipt. This checks this
-        // source's line boxes, not a general native line-selection adapter.
-        for (top, bottom, visible) in [
-            (5424.60595703125, 5473.2060546875, false),
-            (5473.2060546875, 5474.2060546875, true),
-            (6154., 6155., true),
-            (6166.1689453125, 6167.1689453125, true),
-            (6167.1689453125, 6168.1689453125, false),
-            (6215.76904296875, 6216.76904296875, false),
-        ] {
-            let candidate = plan.layout.lines.iter().any(|line| {
-                line.top < bottom
-                    && line.bottom > top
-                    && super::text::native_text_range_has_visible_content(
-                        &utf16,
-                        char_to_utf16(line.line.source.start)..char_to_utf16(line.line.source.end),
-                        &[],
-                    )
-            });
-            assert_eq!(candidate, visible, "band {top}..{bottom}");
+        for (anchor, image_height, width, density, delta, native_bits) in cases {
+            let quiz = anchor == 112;
+            let page_height = if quiz { 15_372 } else { 9_162 };
+            let flow_width = if quiz { 1_080 } else { width };
+            let image_top = if quiz { 5_473.2021484375 } else { 100.0 };
+            let mut body = theme_test_text();
+            body.bbox = BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: f64::from(width),
+                y_max: f64::from(page_height),
+            };
+            body.text = format!("{}\u{fffc}\n\n\n", "\n".repeat(anchor));
+            body.font_size = Some(17.0);
+            body.margins = Some([16.0, 10.0, 16.0, 10.0]);
+            let left = 16.0 * density as f32;
+            body.object_spans = vec![RichTextObjectSpan {
+                object_type: ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: f64::from(left),
+                        y_min: image_top,
+                        x_max: f64::from(left + 519.48206),
+                        y_max: image_top + image_height,
+                    },
+                    rotation_degrees: None,
+                    media_id: Some(0),
+                    media_index: Some(0),
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                }))),
+                text_index_utf16: anchor as i32,
+                layout_option: ObjectSpanLayoutOption::Block,
+                layout_constraint: ObjectSpanLayoutConstraint::Normal,
+            }];
+
+            let mut page = page_with_uncolored_stroke();
+            page.width = width;
+            page.height = page_height;
+            let mut document = document(page);
+            document.metadata.page_mode = Some(1);
+            document.metadata.default_page_dimensions = Some((360 * density, 1_527));
+            document.metadata.flow_dimensions = Some((flow_width, 9_162));
+            document.metadata.flow_page_padding = Some((0, 24));
+            document.metadata.body_font_size_delta = Some(delta);
+            document.metadata.note_text = Some(body);
+
+            let layout = layout_document(&document);
+            let fonts = super::fonts::FontBook::default();
+            let mut cache = super::DocumentTextCache::default();
+            let _ = cache.render_layout_page_svg(
+                &document,
+                &layout,
+                0,
+                &RenderOptions::default(),
+                &fonts,
+            );
+            let plan = &cache
+                .plans
+                .first()
+                .expect("continuous body plan prepared")
+                .1;
+            let source = &plan.text.text;
+            let utf16 = source.encode_utf16().collect::<Vec<_>>();
+            let to_utf16 = |i: usize| source.chars().take(i).map(char::len_utf16).sum::<usize>();
+            assert_eq!(source.chars().nth(anchor), Some('\u{fffc}'));
+            assert_eq!(plan.layout.lines.len(), anchor + 4);
+            let (line_index, line) = plan
+                .layout
+                .lines
+                .iter()
+                .enumerate()
+                .find(|(_, line)| line.line.source.start <= anchor && anchor < line.line.source.end)
+                .expect("image marker belongs to an SDK line");
+            assert_eq!(line_index, anchor);
+            let image_range = to_utf16(line.line.source.start)..to_utf16(line.line.source.end);
+            assert_eq!(image_range, anchor..anchor + 1);
+            assert!(super::text::native_text_range_has_visible_content(
+                &utf16,
+                image_range,
+                &[]
+            ));
+            assert_eq!(
+                (line.top as f32).to_bits(),
+                native_bits[0],
+                "top at anchor {anchor}"
+            );
+            assert_eq!(
+                (line.bottom as f32).to_bits(),
+                native_bits[1],
+                "bottom at anchor {anchor}"
+            );
+
+            let (top, bottom) = (
+                f32::from_bits(native_bits[0]),
+                f32::from_bits(native_bits[1]),
+            );
+            let visible = |a: f32, b: f32| {
+                if a >= b {
+                    return false;
+                }
+                let selected = plan
+                    .layout
+                    .lines
+                    .iter()
+                    .filter(|line| line.top < f64::from(b) && line.bottom > f64::from(a))
+                    .collect::<Vec<_>>();
+                let Some(first) = selected.first() else {
+                    return false;
+                };
+                let last = selected.last().unwrap();
+                super::text::native_text_range_has_visible_content(
+                    &utf16,
+                    to_utf16(first.line.source.start)..to_utf16(last.line.source.end),
+                    &[],
+                )
+            };
+            let mid = (top + bottom) * 0.5;
+            for (a, b, expected) in [
+                (top - 1.0, top, false),
+                (top, top + 1.0, true),
+                (top, bottom, true),
+                (bottom - 1.0, bottom, true),
+                (bottom, bottom + 1.0, false),
+                (top, top, false),
+                (mid, mid, false),
+                (bottom, bottom, false),
+            ] {
+                assert_eq!(visible(a, b), expected, "band {a}..{b} at anchor {anchor}");
+            }
+            if quiz {
+                assert!((line.baseline - 6_154.56884765625).abs() < 0.001);
+                for (a, b, expected) in [
+                    (5_424.60595703125_f64, 5_473.2060546875_f64, false),
+                    (5_473.2060546875, 5_474.2060546875, true),
+                    (6_065.0, 6_066.0, true),
+                    (6_154.0, 6_155.0, true),
+                    (6_166.1689453125, 6_167.1689453125, true),
+                    (6_167.1689453125, 6_168.1689453125, false),
+                ] {
+                    assert_eq!(visible(a as f32, b as f32), expected, "quiz band {a}..{b}");
+                }
+            }
         }
     }
 
