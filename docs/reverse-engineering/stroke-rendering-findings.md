@@ -356,6 +356,8 @@ The capture receipt hashes to
 
 The live alpha atlas uses nearest/clamp sampling; its complete 144×144 RGBA
 upload hashes to `da75f5d1190e6fe086aa11007b7ed739421cf5d4522e34cb246df273353d2942`.
+It reconstructs byte-for-byte from exported `SPen::g_chinesePtn` at file offset
+`0x14480`: seven 48×48 RGBA cells occupy slots 0–6 of a zero-filled 3×3 atlas.
 Fixed 321×228 logical-page, Y-down host captures use an overridden projection
 and growing framebuffer for a synthetic 1×/2×/4× scale sweep; this is not native
 canvas zoom. The shader's `fwidth(distance)` depends on angle and
