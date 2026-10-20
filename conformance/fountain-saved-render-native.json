@@ -1,0 +1,5558 @@
+{
+  "cases": [
+    {
+      "advanced_setting": "18;0;100;",
+      "callback_execution_order": [
+        {
+          "position": 1,
+          "returned": true,
+          "slot16_method": "0x10506b4",
+          "task": "0x108240b0",
+          "vtable": "0x10774f8"
+        },
+        {
+          "position": 2,
+          "returned": true,
+          "slot16_method": "0x104676c",
+          "task": "0x108240f0",
+          "vtable": "0x10774c8"
+        },
+        {
+          "position": 3,
+          "returned": true,
+          "slot16_method": "0x1045e6c",
+          "task": "0x108241b0",
+          "vtable": "0x1077528"
+        },
+        {
+          "position": 4,
+          "returned": true,
+          "slot16_method": "0x6698c",
+          "task": "0x108241d0",
+          "vtable": "0xd2018"
+        }
+      ],
+      "case": "hf02_saved_v16",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1080fc40",
+      "drawing_return": 1,
+      "evidence_scope": "Native HF02 ObjectStroke apply/Drawing selects GLV16 and records 76 native RTV5 AddPoint outputs. A synchronous host queue adapter dispatches the captured native task vtables in submission order: native SendDataToGPU receives the live vector, then native PenGLRenderMsg paints to the native SPPenCanvas bitmap, followed by native vector deletion. Native resource construction and GLES callbacks are host adapters; the 1920x1080 RGBA readback is host Mesa output, not Android scheduling, device pixels, or public Notes playback.",
+      "hf02_native_state": {
+        "advanced_setting": "18;0;100;",
+        "base_apply_return": 137,
+        "base_frame_sha256": "8c458422f3ae0f10e14ed805c969ba901e7b58731cf604ff7fe50b8e5bac6e31",
+        "color_argb": "0xff000000",
+        "curve_enabled": 1,
+        "implementation": "0x108104a0",
+        "model_context": "0x10811260",
+        "object": "0x1080fdc0",
+        "on_attach_raw_x0": 276890952,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+        "size_f32_bits": "6ade1141",
+        "string_id_manager": "0x10810ff0",
+        "stroke_type": 0,
+        "table_apply_return": 1,
+        "table_sha256": "f35b044485b8a91fd825ac682c734b23c565e52fbfb869fc3d4d3e89b414035e",
+        "tool_type": 2,
+        "type1_apply_return": 2514,
+        "type1_frame_sha256": "490fa32ab9d69416e4c48dec88b26ad14e362d7b08eb3e1b6a9ada47ce2980c2"
+      },
+      "hf02_visible": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_callback_canvas_setup": {
+        "bitmap": "0x1080b290",
+        "bitmap_from_impl": "0x1080b290",
+        "canvas": "0x1080b7e0",
+        "get_bitmap_vslot_192": "0x40aef08",
+        "get_msg_queue_vslot_184": "0x40aef00",
+        "impl": "0x1080b8f0",
+        "vptr": "0x40d0cc8"
+      },
+      "native_pen_getsize_f32_bits": "6ade1141",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10814bc0"
+        },
+        {
+          "input_s0": "6ade1141",
+          "return_w0": 1,
+          "this": "0x10814bc0"
+        }
+      ],
+      "native_upload_checkpoint": {
+        "calls": [],
+        "hit": true,
+        "receiver": "0x108166c0",
+        "receiver_vptr": "0xd2410",
+        "vector_bytes": 2128,
+        "vector_object": "0x10821670",
+        "vector_sha256": "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a"
+      },
+      "queue_task_effects": [
+        {
+          "post_bytes_144": "00f40c04000000000000000000000000a0b380100000000054ab0804000000000000000000000000b0b480100000000060af060a0000000048b0060a00000000000000000000000000000000000000000000000000000000e10d000001000000640000000000000000b78010000000008007000038040000000000000200000006000000010000000100000000000000",
+          "pre_bytes_144": "00f40c04000000000000000000000000a0b380100000000054ab0804000000000000000000000000b0b4801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40cf110",
+          "returned": true,
+          "slot16_method": "0x408d4b0",
+          "task": "0x1080b4e0",
+          "vtable": "0x40cf400"
+        },
+        {
+          "post_bytes_144": "d8000d040000000000000000000000009022021000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "d8000d040000000000000000000000009022021000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x0",
+          "returned": true,
+          "slot16_method": "0x4092444",
+          "task": "0x1080b790",
+          "vtable": "0x40d00d8"
+        },
+        {
+          "post_bytes_144": "30f70c04000000000000000000000000a0b380100000000024ce080400000000000000000000000014b4801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "30f70c04000000000000000000000000a0b380100000000024ce080400000000000000000000000014b4801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40cf110",
+          "returned": true,
+          "slot16_method": "0x408d754",
+          "task": "0x1080b7b0",
+          "vtable": "0x40cf730"
+        },
+        {
+          "post_bytes_144": "20f50c04000000000000000000000000a0b3801000000000900000000000000001000000000000000100000000000000a8e30c040000000060b980100000000070b980100000000000000000000000000100000000000000000000000000000010a5060a0000000088a5060a0000000001000000800700003804000001000000d8a5060a000000000000000000000000",
+          "pre_bytes_144": "20f50c04000000000000000000000000a0b3801000000000900000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40cf110",
+          "returned": true,
+          "slot16_method": "0x408d574",
+          "task": "0x1080b910",
+          "vtable": "0x40cf520"
+        },
+        {
+          "post_bytes_144": "d80f0d04000000000000000000000000f0b88010000000004cfb0a040000000000000000000000000000000000000000f8010d040000000090b28010000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "d80f0d04000000000000000000000000f0b88010000000004cfb0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40d0fb8",
+          "returned": true,
+          "slot16_method": "0x40b0030",
+          "task": "0x1080b9d0",
+          "vtable": "0x40d0fd8"
+        },
+        {
+          "post_bytes_144": "a87b0701000000000000000000000000c06681100000000048000000000000000100000000000000800700003804000000e30110000000000000000000000000f0bf0e020000000043000000330000000000000000000000000000000000000063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00",
+          "pre_bytes_144": "a87b0701000000000000000000000000c06681100000000048000000000000000100000000000000800700003804000000e301100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x104a274",
+          "task": "0x108167f0",
+          "vtable": "0x1077ba8"
+        },
+        {
+          "post_bytes_144": "200e0d04000000000000000000000000f0b880100000000018fe0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "200e0d04000000000000000000000000f0b880100000000018fe0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40d0fb8",
+          "returned": true,
+          "slot16_method": "0x40aef48",
+          "task": "0x10816f90",
+          "vtable": "0x40d0e20"
+        },
+        {
+          "post_bytes_144": "08280d00000000000000000000000000c066811000000000a4a404010000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "08280d00000000000000000000000000c066811000000000a4a404010000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x66938",
+          "task": "0x10820920",
+          "vtable": "0xd2808"
+        },
+        {
+          "post_bytes_144": "38280d00000000000000000000000000c06681100000000058a504010000000000000000000000006ade1141000000ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "38280d00000000000000000000000000c06681100000000058a504010000000000000000000000006ade1141000000ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x66960",
+          "task": "0x10820950",
+          "vtable": "0xd2838"
+        },
+        {
+          "post_bytes_144": "08280d00000000000000000000000000c066811000000000b0a504010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "08280d00000000000000000000000000c066811000000000b0a504010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x66938",
+          "task": "0x10820980",
+          "vtable": "0xd2808"
+        },
+        {
+          "indirect_member_call": {
+            "matching_exported_symbols": [
+              "SPen::FountainPenStrokeDrawableRTV5::ClearPenCanvas()"
+            ],
+            "receiver": "0x108166c0",
+            "slot_byte_offset": "0x50",
+            "subobject": "0x108166c0",
+            "subobject_vtable": "0xd2410",
+            "tag": 1,
+            "target": "0x9f6e4"
+          },
+          "post_bytes_144": "98280d00000000000000000000000000c066811000000000500000000000000001000000000000000000000000000000200e0d04000000000000000000000000f0b880100000000018fe0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "98280d00000000000000000000000000c066811000000000500000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x63804",
+          "task": "0x108209b0",
+          "vtable": "0xd2898"
+        },
+        {
+          "post_bytes_144": "200e0d04000000000000000000000000f0b880100000000018fe0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "200e0d04000000000000000000000000f0b880100000000018fe0a040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x40d0fb8",
+          "returned": true,
+          "slot16_method": "0x40aef48",
+          "task": "0x108209e0",
+          "vtable": "0x40d0e20"
+        },
+        {
+          "post_bytes_144": "d8270d00000000000000000000000000c066811000000000aca404010000000000000000000000000000de4200004a43000008430000694300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "d8270d00000000000000000000000000c066811000000000aca404010000000000000000000000000000de4200004a43000008430000694300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x6690c",
+          "task": "0x10824070",
+          "vtable": "0xd27d8"
+        },
+        {
+          "post_bytes_144": "f8740701000000000000000000000000c066811000000000c4a504010000000000000000000000007016821000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "f8740701000000000000000000000000c066811000000000c4a504010000000000000000000000007016821000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0xd2410",
+          "returned": true,
+          "slot16_method": "0x10506b4",
+          "task": "0x108240b0",
+          "vtable": "0x10774f8"
+        },
+        {
+          "post_bytes_144": "c874070100000000000000000000000000000000000000000000000000000000c066811000000000e0b780100000000000000000000000000317df42a6ff4a43d4610743c00f68430000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f0000000000000000",
+          "pre_bytes_144": "c874070100000000000000000000000000000000000000000000000000000000c066811000000000e0b780100000000000000000000000000317df42a6ff4a43d4610743c00f68430000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f0000000000000000",
+          "receiver_vptr_error": "Invalid memory read (UC_ERR_READ_UNMAPPED)",
+          "returned": true,
+          "slot16_method": "0x104676c",
+          "task": "0x108240f0",
+          "vtable": "0x10774c8"
+        },
+        {
+          "post_bytes_144": "287507010000000000000000000000007016821000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "287507010000000000000000000000007016821000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x108226a0",
+          "returned": true,
+          "slot16_method": "0x1045e6c",
+          "task": "0x108241b0",
+          "vtable": "0x1077528"
+        },
+        {
+          "post_bytes_144": "18200d000000000000000000000000009005080100000000d00f05010000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "pre_bytes_144": "18200d000000000000000000000000009005080100000000d00f05010000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "receiver_vptr": "0x10820b00",
+          "returned": true,
+          "slot16_method": "0x6698c",
+          "task": "0x108241d0",
+          "vtable": "0xd2018"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10815930",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1080fdc0"
+        }
+      ],
+      "renderer_canvas_error": null,
+      "renderer_canvas_result": null,
+      "renderer_draw_error": null,
+      "renderer_draw_result": null,
+      "renderer_gl_call_counts": {
+        "glBindBuffer": 19,
+        "glBindFramebuffer": 4,
+        "glBindTexture": 5,
+        "glBlendEquationSeparate": 1,
+        "glBlendFuncSeparate": 1,
+        "glBufferData": 7,
+        "glCheckFramebufferStatus": 4,
+        "glColorMask": 1,
+        "glDisable": 7,
+        "glDrawArraysInstanced": 1,
+        "glEnable": 1,
+        "glFenceSync": 1,
+        "glFramebufferTexture2D": 1,
+        "glGenSamplers": 2,
+        "glSamplerParameteri": 14,
+        "glTexImage2D": 2,
+        "glUniform4fv": 1,
+        "glUniformMatrix4fv": 1,
+        "glUseProgram": 1,
+        "glViewport": 3
+      },
+      "renderer_gl_calls": [
+        {
+          "call": "glBindTexture",
+          "id": 1,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 1080,
+          "internalFormat": 32856,
+          "pixelBytes": 8294400,
+          "pixelsSha256": "788ae0147bdf979a6575938ca2d7d4403788588f7be2010f03776c968fd1ab49",
+          "target": 3553,
+          "type": 5121,
+          "width": 1920
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            1,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 1
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "buffer": 1,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBindTexture",
+          "id": 2,
+          "target": 3553
+        },
+        {
+          "call": "glTexImage2D",
+          "format": 6403,
+          "hasPixels": false,
+          "height": 1080,
+          "internalFormat": 33321,
+          "pixelBytes": 0,
+          "pixelsSha256": null,
+          "target": 3553,
+          "type": 5121,
+          "width": 1920
+        },
+        {
+          "call": "glBindTexture",
+          "id": 0,
+          "target": 3553
+        },
+        {
+          "call": "glDisable",
+          "cap": 3089
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            1920,
+            1080
+          ]
+        },
+        {
+          "buffer": 2,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "buffer": 3,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "buffer": 2,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": "000080bf000080bf000000000000803f000080bf0000803f00000000000000000000803f000080bf0000803f0000803f0000803f0000803f0000803f00000000",
+          "dataSha256": "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4",
+          "size": 64,
+          "target": 34962,
+          "usage": 35044
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34963
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "buffer": 4,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": null,
+          "dataSha256": null,
+          "size": 0,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "buffer": 4,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": "000080bf0000803f000080bf000080bf0000803f0000803f0000803f0000803f000080bf000080bf0000803f000080bf",
+          "dataSha256": "6b0b87ae7ed17d448d3c052f787a549360b705521bd41576f4943dd63b784c75",
+          "size": 48,
+          "target": 34962,
+          "usage": 35048
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34963
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glDisable",
+          "cap": 3089
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            1920,
+            1080
+          ]
+        },
+        {
+          "buffer": 3,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glBufferData",
+          "dataHex": "efd204439f6153436443a83f6443a83f0000803fb607f53d0000803fefd204439d955243f13e0140f13e01400000803fde3b813e0000803f04c204431fc2514318f4074018f407400000803ffb7c873e0000803f3c8d0443e7f250433fa90e403fa90e400000803f88278d3e0000803f0f3104437d32504337131140371311400000803fbb108f3e0000803fb5a40343dc944f432f7d13402f7d13400000803febe9903e0000803fe2fc02438a1f4f43e8511440e85114400000803f3e89913e0000803fe842024350be4e43a2261540a22615400000803fca26923e0000803f5e790143b96e4e43637a1640637a16400000803fcf1e933e0000803f42b30043f6364e4324ce174024ce17400000803f7e12943e0000803f0ac3ff422d114e43e5211940e52119400000803ff301953e0000803f3616fe42c0fd4d4398221c4098221c400000803fb510973e0000803fbb71fc4233fc4d434a231f404a231f400000803f940b993e0000803f2ecffa42070c4e43fb232240fb2322400000803fadf39a3e0000803f172bf942e52d4e4387782640877826400000803f91949d3e0000803fde92f74230624e4313cd2a4013cd2a400000803f5713a03e0000803fd70af642b4a84e439f212f409f212f400000803f8672a23e0000803fb87df44291004f43beae3540beae35400000803f1cd2a53e0000803f5d03f342cd5a4f43dd3b3c40dd3b3c400000803f97f5a83e0000803fc89cf1422eb74f43e6da3f40e6da3f400000803f2a9aaa3e0000803fd432f042d11c5043ef794340ef7943400000803f292fac3e0000803fdec8ee42478b5043f8184740f81847400000803f6cb5ad3e0000803f836eed429600514339d2474039d247400000803fb601ae3e0000803f6428ec4213845143798b4840798b48400000803f744dae3e0000803fe1f1ea42ee1752435c2349405c2349400000803f258bae3e0000803face5e942cec052433fbb49403fbb49400000803f7ac8ae3e0000803f7627e942bd7a534322534a4022534a400000803f7205af3e0000803f15ace8423a6054435da14a405da14a400000803fb624af3e0000803f33aee842132d554398ef4a4098ef4a400000803fe143af3e0000803f9977e94207e15543432a4940432a49400000803ff18dae3e0000803f987fea42033556433a4847403a4847400000803fefc8ad3e0000803f0019ec42c38d564332664540326645400000803f2c00ad3e0000803feddded42c8e95643e80a4340e80a43400000803f72ffab3e0000803f9a69ef42b63357439eaf40409eaf40400000803f71f8aa3e0000803f9ee7f0427a74574389303f4089303f400000803f124eaa3e0000803f1c6cf24267af574373b13d4073b13d400000803f02a1a93e0000803f6905f442dce657435d323c405d323c400000803f32f1a83e0000803f6fb4f542ae1b5843edfa3a40edfa3a400000803f3060a83e0000803ffe55f742c54f58437ec339407ec339400000803f49cda73e0000803f27daf842a28258430f8c38400f8c38400000803f7338a73e0000803f3b67fa4215bd584316733740167337400000803f79b0a63e0000803f04f3fb42c20359431c5a36401c5a36400000803fdc26a63e0000803f3c6cfd42bc51594319383640193836400000803f1616a63e0000803f63e9fe423ea2594316163640161636400000803f4b05a63e0000803f643e0043b1f7594313f4354013f435400000803f79f4a53e0000803fea0a01439a595a43ece03640ece036400000803f1769a63e0000803fc0b701435cc55a43c6cd3740c6cd37400000803f8adca63e0000803fc94f024385445b4300a9394000a939400000803fb4c0a73e0000803fd4db0243d3e05b433a843b403a843b400000803f59a0a83e0000803f43550343ff965c43e6b13d40e6b13d400000803f36a1a93e0000803ffaa203439d5b5d4393df3f4093df3f400000803f3f9caa3e0000803fcdbc03439a265e4329804140298041400000803f1554ab3e0000803f899f03439af15e43bf204340bf2043400000803fd908ac3e0000803fcb4b03432fbf5f4373714340737143400000803f852bac3e0000803faeda02436069604327c2434027c243400000803f144eac3e0000803fb2460243bc026143db124440db1244400000803f8770ac3e0000803f239b01431e876143ecad4340ecad43400000803f6d45ac3e0000803f3cef004345ff6143fe484340fe4843400000803f271aac3e0000803f483f00435d72624310e4424010e442400000803fb4eeab3e0000803fd20cff4248e16243fc634140fc6341400000803fbf47ab3e0000803f4e95fd42ca416343eae33f40eae33f400000803f2d9eaa3e0000803fca1dfc42a39163437c673e407c673e400000803f95f3a93e0000803f339dfa42b9d763430eeb3c400eeb3c400000803f4e46a93e0000803ff70cf942751a6443a06e3b40a06e3b400000803f4796a83e0000803fe76df7424c59644381623940816239400000803f259fa73e0000803fbacff542368c644363563740635637400000803f7ea2a63e0000803f4c38f44285b06443454a3540454a35400000803f22a0a53e0000803ffc92f24268c8644316d6314016d631400000803fcddea33e0000803ff6eef04231d66443e6612e40e6612e400000803fab0ba23e0000803f4c54ef4253d9644327202c4027202c400000803f4ed0a03e0000803fbbb0ed424dce644368de294068de29400000803f908c9f3e0000803f0d10ec4262b36443a99c2740a99c27400000803f1b409e3e0000803f696cea42187b644307bc244007bc24400000803f018b9c3e0000803fab02e942ac13644366db214066db21400000803f5dc69a3e0000803f02a4e7425a66634366db214066db21400000803f5dc69a3e0000803fde25e7429ff1624366db214066db21400000803f5dc69a3e0000803f",
+          "dataSha256": "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a",
+          "size": 2128,
+          "target": 34962,
+          "usage": 35040
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34963
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glDisable",
+          "cap": 3089
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        },
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            1,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        },
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        },
+        {
+          "call": "glViewport",
+          "values": [
+            0,
+            0,
+            1920,
+            1080
+          ]
+        },
+        {
+          "call": "glUseProgram",
+          "program": 6
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0010416667209938169,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0018518518190830946,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "buffer": 2,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "buffer": 3,
+          "call": "glBindBuffer",
+          "target": 34962
+        },
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 6,
+            "texture2d": 0,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            76
+          ]
+        },
+        {
+          "buffer": 0,
+          "call": "glBindBuffer",
+          "target": 34962
+        }
+      ],
+      "renderer_gl_draw_events": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33984,
+            "framebuffer": 1,
+            "program": 6,
+            "texture2d": 0,
+            "vao": 0
+          },
+          "values": [
+            5,
+            0,
+            4,
+            76
+          ]
+        }
+      ],
+      "renderer_gl_error_checks": [
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenTextures"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenSamplers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindTexture"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glTexImage2D"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindTexture"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glFenceSync"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glFlush"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenFramebuffers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindTexture"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glFramebufferTexture2D"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCheckFramebufferStatus"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindAttribLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glLinkProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramBinary"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetString"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenBuffers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenTextures"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenSamplers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindTexture"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glTexImage2D"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glPixelStorei"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindTexture"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glSamplerParameteri"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteTextures"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteSamplers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetBooleanv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCheckFramebufferStatus"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glViewport"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glClearColor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glClear"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glInvalidateFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetString"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenBuffers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenBuffers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetString"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGenBuffers"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glLinkProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramBinary"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glLinkProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramBinary"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glShaderSource"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCompileShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetShaderiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCreateProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glAttachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glLinkProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDetachShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDeleteShader"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramBinary"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetProgramiv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetActiveUniform"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetUniformLocation"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetBooleanv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCheckFramebufferStatus"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glViewport"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glClearColor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glClear"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glInvalidateFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBufferData"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBlendEquationSeparate"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBlendFuncSeparate"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glEnable"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glColorMask"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindFramebuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glCheckFramebufferStatus"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glViewport"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glUseProgram"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glUniformMatrix4fv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glUniform4fv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glEnableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribPointer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glEnableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribPointer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glEnableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribPointer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glEnableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribPointer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDrawArraysInstanced"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glVertexAttribDivisor"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glDisableVertexAttribArray"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glBindBuffer"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glGetIntegerv"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "call": "glInvalidateFramebuffer"
+        }
+      ],
+      "renderer_init_error": "Init/Draw are not separate host calls; the captured native PenGLRenderMsg task performs the paint path",
+      "renderer_init_fail_pc": null,
+      "renderer_init_result": null,
+      "renderer_init_unresolved_plt": null,
+      "renderer_instance_count_u32_at_plus272": 76,
+      "renderer_readback": {
+        "alpha_nonzero_bbox": [
+          113,
+          204,
+          134,
+          231
+        ],
+        "alpha_nonzero_pixels": 361,
+        "bytes": 8294400,
+        "canvas_bitmap_matches": true,
+        "draw_framebuffer_binding": 1,
+        "draw_pname": 36006,
+        "gl_error_after_readpixels": 0,
+        "gl_error_before_readpixels": 0,
+        "height": 1080,
+        "native_callback_bitmap": "0x1080b290",
+        "native_callback_canvas": "0x1080b7e0",
+        "native_getbitmap_after_queue": "0x1080b290",
+        "queue_managed_events": [],
+        "read_attachment_name": 1,
+        "read_attachment_type": 5890,
+        "read_framebuffer_binding": 1,
+        "read_pname": 36010,
+        "rgba8_zlib_base64": "eNrs3c2LTQEYx/GnSZFilCTlbSGbyVbJUhJ/gSRFKVL+Ay9Z2FhYyMKGHUsLK4mFjbcolsqGNMqkO8oMZuaO53RH7pj7Oos559TnU9/NdO9d/LZPZ04EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArLjj2avsR9bM5heayyazx9k+MwEAAAAAAABU1qNsNv7de/v1KdttNgAAAAAAAIDKuBmtZ3vnl1FxLz5gQgAAAAAAAIDSvY/l3X3ba5gRAAAAAAAAoFQfovddt3j377NsT9t3dmUPYvF7gYv2mxMAAAAAAACgFLej9+13PFvf4/uH/vv8ZZMCAAAAAAAAlGImuj/ze3XA3/jW9r2LJgUAAAAAAABYcQej8+33dzY6xO+cXfjedLbVrAAAAAAAAAAr7lJ0vv9+zY4N+Vt7sxGTAgAAAAAAAJTidPR+9+9s9i47aSoAAAAAAACASlubzUXvG3B7E9kFswEAAAAAAABU0rUY/P77t2b2NNtoPgAAAAAAAIBKOZd9j+HvwEWvzQcAAAAAAABQOWPZk+xXDHcD/pntNB8AAAAAAABAJY1G612/b7Pp6H8DnjIZAAAAAAAAQC2syu5F61nfbjfg52YCAAAAAAAAqJUz2Wwsvf82sxHzAAAAAAAAANTK5uj8DPAR0wAAAAAAAADUyurofP89ahoAAAAAAACA2jgcnf//c9F28wAAAAAAAACUZtMQn30Zne++RQ1TAgAAAAAAAJTmRbRut+PZji6fGcveZM3ofvstOmVOAAAAAAAAgFKcj8X325nsfnYre5h9XPjb/ADdNScAAAAAAABAaa7EYLfdfl03JQAAAAAAAEDppmL5d98v2RYTAgAAAAAAAFTCtmwyhrv7TmQnTAcAAAAAAABQSXeyRtaMpffe4h3An7Mb2TpTAQAAAAAAANTGmmxDuPUCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/agwMSAAAAAEH/X7cjUAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAmuQI2ng==",
+        "rgba_sha256": "318568f0f140349c7662e87f19bb05ee18757d8e17178764a4157242c2742de7",
+        "width": 1920
+      },
+      "renderer_receiver": "0x108166c0",
+      "renderer_rt_destructor_entries": [],
+      "renderer_rt_slots_after_draw": {
+        "200": "0x1080b7e0",
+        "208": "0x10816fd0",
+        "80": "0x0",
+        "88": "0x0",
+        "96": "0x0"
+      },
+      "renderer_rt_vptr_checkpoints": [
+        {
+          "receiver": "0x108166c0",
+          "stage": "after_natural_queue_return",
+          "vptr": "0xd2410"
+        }
+      ],
+      "renderer_shader_link_events": [
+        {
+          "call": "glCreateProgram",
+          "program": 3
+        },
+        {
+          "call": "glAttachShader",
+          "program": 3,
+          "shader": 1
+        },
+        {
+          "call": "glAttachShader",
+          "program": 3,
+          "shader": 2
+        },
+        {
+          "call": "glLinkProgram",
+          "program": 3
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 0,
+          "name": "uProjectionMatrix",
+          "program": 3
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 1,
+          "name": "uColor",
+          "program": 3
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 2,
+          "name": "uTintColor",
+          "program": 3
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 3,
+          "name": "uHasTintColor",
+          "program": 3
+        },
+        {
+          "call": "glCreateProgram",
+          "program": 4
+        },
+        {
+          "call": "glAttachShader",
+          "program": 4,
+          "shader": 1
+        },
+        {
+          "call": "glAttachShader",
+          "program": 4,
+          "shader": 2
+        },
+        {
+          "call": "glLinkProgram",
+          "program": 4
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 0,
+          "name": "ProjectionMatrix",
+          "program": 4
+        },
+        {
+          "call": "glCreateProgram",
+          "program": 5
+        },
+        {
+          "call": "glAttachShader",
+          "program": 5,
+          "shader": 1
+        },
+        {
+          "call": "glAttachShader",
+          "program": 5,
+          "shader": 2
+        },
+        {
+          "call": "glLinkProgram",
+          "program": 5
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 0,
+          "name": "uSrcTexture",
+          "program": 5
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 1,
+          "name": "uInputColor",
+          "program": 5
+        },
+        {
+          "call": "glCreateProgram",
+          "program": 6
+        },
+        {
+          "call": "glAttachShader",
+          "program": 6,
+          "shader": 1
+        },
+        {
+          "call": "glAttachShader",
+          "program": 6,
+          "shader": 2
+        },
+        {
+          "call": "glLinkProgram",
+          "program": 6
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 0,
+          "name": "ProjectionMatrix",
+          "program": 6
+        },
+        {
+          "call": "glGetUniformLocation",
+          "location": 1,
+          "name": "inputColor",
+          "program": 6
+        }
+      ],
+      "renderer_shader_source_calls": [
+        {
+          "shader": 1,
+          "source": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec4 aPointInfo; layout(location = 2) in float transparency; layout(location = 3) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { gl_Position = ProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.zw, 0.0, 1.0); fragCoord = vec2(aRectPoint.z, aRectPoint.w); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; out float FragColor; void main(void) { float dist = distance(center, fragCoord); float circleAlpha = clamp((radius - dist) / abs(radius - dist), 0.0, 1.0); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * circleAlpha * alpha; FragColor = pointAlpha; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec2 aVertex; out vec2 vUV; void main(void) { vUV = aVertex * 0.5 + 0.5; gl_Position = vec4(aVertex.xy, 0.0, 1.0); }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision highp float; uniform sampler2D uSrcTexture; uniform vec4 uInputColor; in vec2 vUV; out vec4 FragColor; void main(void) { float alpha = texture(uSrcTexture, vUV).r * uInputColor.a; if (alpha > 0.0) FragColor = vec4(uInputColor.rgb * alpha, alpha); else discard; }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec4 aPointInfo; layout(location = 2) in float transparency; layout(location = 3) in vec2 AAInfo; uniform mat4 ProjectionMatrix; out vec2 fragCoord; out float inputAlpha; out float innerRadius; out float alphaByWidth; void main(void) { gl_Position = ProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.zw, 0.0, 1.0); fragCoord = vec2(aRectPoint.z, aRectPoint.w); inputAlpha = transparency; innerRadius = AAInfo.x; alphaByWidth = AAInfo.y; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision mediump float; uniform vec4 inputColor; in vec2 fragCoord; in float inputAlpha; in float innerRadius; in float alphaByWidth; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; out vec4 FragColor; void main(void) { float dist = distance(center, fragCoord); float circleAlpha = clamp((radius - dist) / abs(radius - dist), 0.0, 1.0); float alpha = alphaByWidth; if (dist > innerRadius) { alpha *= (1.0 - (dist - innerRadius) / (0.5 - innerRadius)); } float pointAlpha = inputAlpha * circleAlpha * alpha; FragColor = vec4(inputColor.rgb, 1.0) * pointAlpha * inputColor.a; }"
+          ]
+        }
+      ],
+      "renderer_texture_generations": [
+        {
+          "count": 1,
+          "ids": [
+            1
+          ],
+          "phase": "CreateBitmap used as native callback canvas"
+        },
+        {
+          "count": 1,
+          "ids": [
+            2
+          ],
+          "phase": "native HF02 Drawing and callback dispatch"
+        }
+      ],
+      "renderer_vertex_events": [
+        {
+          "call": "glEnableVertexAttribArray",
+          "index": 0
+        },
+        {
+          "array_buffer_binding": 2,
+          "call": "glVertexAttribPointer",
+          "index": 0,
+          "normalized": 0,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 16,
+          "type": 5126
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 0,
+          "index": 0
+        },
+        {
+          "call": "glEnableVertexAttribArray",
+          "index": 1
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glVertexAttribPointer",
+          "index": 1,
+          "normalized": 0,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 28,
+          "type": 5126
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 1,
+          "index": 1
+        },
+        {
+          "call": "glEnableVertexAttribArray",
+          "index": 2
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glVertexAttribPointer",
+          "index": 2,
+          "normalized": 0,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 28,
+          "type": 5126
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 1,
+          "index": 2
+        },
+        {
+          "call": "glEnableVertexAttribArray",
+          "index": 3
+        },
+        {
+          "array_buffer_binding": 3,
+          "call": "glVertexAttribPointer",
+          "index": 3,
+          "normalized": 0,
+          "pointer_offset": 20,
+          "size": 2,
+          "stride": 28,
+          "type": 5126
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 1,
+          "index": 3
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 0,
+          "index": 0
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 0,
+          "index": 1
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 0,
+          "index": 2
+        },
+        {
+          "call": "glVertexAttribDivisor",
+          "divisor": 0,
+          "index": 3
+        }
+      ],
+      "rtv_addpoint_entries": [
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "efd20443",
+            "9f615343",
+            "c886503f",
+            "0000803f",
+            "0000583f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "0000583f"
+            ],
+            "position_xyz_f32_bits": [
+              "efd20443",
+              "9f615343",
+              "c886503f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "efd20443",
+            "9d955243",
+            "e27dc23f",
+            "0000803f",
+            "0000583f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "0000583f"
+            ],
+            "position_xyz_f32_bits": [
+              "efd20443",
+              "9d955243",
+              "e27dc23f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "04c20443",
+            "1fc25143",
+            "30e8cf3f",
+            "0000803f",
+            "aca3dd3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "aca3dd3f"
+            ],
+            "position_xyz_f32_bits": [
+              "04c20443",
+              "1fc25143",
+              "30e8cf3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "3c8d0443",
+            "e7f25043",
+            "7e52dd3f",
+            "0000803f",
+            "aca3dd3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "aca3dd3f"
+            ],
+            "position_xyz_f32_bits": [
+              "3c8d0443",
+              "e7f25043",
+              "7e52dd3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "0f310443",
+            "7d325043",
+            "6e26e23f",
+            "0000803f",
+            "f799e13f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "f799e13f"
+            ],
+            "position_xyz_f32_bits": [
+              "0f310443",
+              "7d325043",
+              "6e26e23f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "b5a40343",
+            "dc944f43",
+            "5efae63f",
+            "0000803f",
+            "f799e13f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "f799e13f"
+            ],
+            "position_xyz_f32_bits": [
+              "b5a40343",
+              "dc944f43",
+              "5efae63f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "e2fc0243",
+            "8a1f4f43",
+            "d0a3e83f",
+            "0000803f",
+            "73f3fe3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "73f3fe3f"
+            ],
+            "position_xyz_f32_bits": [
+              "e2fc0243",
+              "8a1f4f43",
+              "d0a3e83f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "e8420243",
+            "50be4e43",
+            "444dea3f",
+            "0000803f",
+            "73f3fe3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "73f3fe3f"
+            ],
+            "position_xyz_f32_bits": [
+              "e8420243",
+              "50be4e43",
+              "444dea3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "5e790143",
+            "b96e4e43",
+            "c6f4ec3f",
+            "0000803f",
+            "1a5e1040",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a5e1040"
+            ],
+            "position_xyz_f32_bits": [
+              "5e790143",
+              "b96e4e43",
+              "c6f4ec3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "42b30043",
+            "f6364e43",
+            "489cef3f",
+            "0000803f",
+            "1a5e1040",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a5e1040"
+            ],
+            "position_xyz_f32_bits": [
+              "42b30043",
+              "f6364e43",
+              "489cef3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "0ac3ff42",
+            "2d114e43",
+            "ca43f23f",
+            "0000803f",
+            "1a5e1040",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a5e1040"
+            ],
+            "position_xyz_f32_bits": [
+              "0ac3ff42",
+              "2d114e43",
+              "ca43f23f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "3616fe42",
+            "c0fd4d43",
+            "2f45f83f",
+            "0000803f",
+            "8f0d1740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "8f0d1740"
+            ],
+            "position_xyz_f32_bits": [
+              "3616fe42",
+              "c0fd4d43",
+              "2f45f83f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "bb71fc42",
+            "33fc4d43",
+            "9346fe3f",
+            "0000803f",
+            "8f0d1740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "8f0d1740"
+            ],
+            "position_xyz_f32_bits": [
+              "bb71fc42",
+              "33fc4d43",
+              "9346fe3f"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "2ecffa42",
+            "070c4e43",
+            "fb230240",
+            "0000803f",
+            "8f0d1740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "8f0d1740"
+            ],
+            "position_xyz_f32_bits": [
+              "2ecffa42",
+              "070c4e43",
+              "fb230240"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "172bf942",
+            "e52d4e43",
+            "87780640",
+            "0000803f",
+            "ba861340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "ba861340"
+            ],
+            "position_xyz_f32_bits": [
+              "172bf942",
+              "e52d4e43",
+              "87780640"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "de92f742",
+            "30624e43",
+            "13cd0a40",
+            "0000803f",
+            "ba861340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "ba861340"
+            ],
+            "position_xyz_f32_bits": [
+              "de92f742",
+              "30624e43",
+              "13cd0a40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "d70af642",
+            "b4a84e43",
+            "9f210f40",
+            "0000803f",
+            "ba861340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "ba861340"
+            ],
+            "position_xyz_f32_bits": [
+              "d70af642",
+              "b4a84e43",
+              "9f210f40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "b87df442",
+            "91004f43",
+            "beae1540",
+            "0000803f",
+            "1f520940",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1f520940"
+            ],
+            "position_xyz_f32_bits": [
+              "b87df442",
+              "91004f43",
+              "beae1540"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "5d03f342",
+            "cd5a4f43",
+            "dd3b1c40",
+            "0000803f",
+            "1f520940",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1f520940"
+            ],
+            "position_xyz_f32_bits": [
+              "5d03f342",
+              "cd5a4f43",
+              "dd3b1c40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "c89cf142",
+            "2eb74f43",
+            "e6da1f40",
+            "0000803f",
+            "1a3b0440",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a3b0440"
+            ],
+            "position_xyz_f32_bits": [
+              "c89cf142",
+              "2eb74f43",
+              "e6da1f40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "d432f042",
+            "d11c5043",
+            "ef792340",
+            "0000803f",
+            "1a3b0440",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a3b0440"
+            ],
+            "position_xyz_f32_bits": [
+              "d432f042",
+              "d11c5043",
+              "ef792340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "dec8ee42",
+            "478b5043",
+            "f8182740",
+            "0000803f",
+            "1a3b0440",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1a3b0440"
+            ],
+            "position_xyz_f32_bits": [
+              "dec8ee42",
+              "478b5043",
+              "f8182740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "836eed42",
+            "96005143",
+            "39d22740",
+            "0000803f",
+            "ef890a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "ef890a40"
+            ],
+            "position_xyz_f32_bits": [
+              "836eed42",
+              "96005143",
+              "39d22740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "6428ec42",
+            "13845143",
+            "798b2840",
+            "0000803f",
+            "ef890a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "ef890a40"
+            ],
+            "position_xyz_f32_bits": [
+              "6428ec42",
+              "13845143",
+              "798b2840"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "e1f1ea42",
+            "ee175243",
+            "5c232940",
+            "0000803f",
+            "3e760640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "3e760640"
+            ],
+            "position_xyz_f32_bits": [
+              "e1f1ea42",
+              "ee175243",
+              "5c232940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "ace5e942",
+            "cec05243",
+            "3fbb2940",
+            "0000803f",
+            "3e760640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "3e760640"
+            ],
+            "position_xyz_f32_bits": [
+              "ace5e942",
+              "cec05243",
+              "3fbb2940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "7627e942",
+            "bd7a5343",
+            "22532a40",
+            "0000803f",
+            "3e760640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "3e760640"
+            ],
+            "position_xyz_f32_bits": [
+              "7627e942",
+              "bd7a5343",
+              "22532a40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "15ace842",
+            "3a605443",
+            "5da12a40",
+            "0000803f",
+            "730ac43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "730ac43f"
+            ],
+            "position_xyz_f32_bits": [
+              "15ace842",
+              "3a605443",
+              "5da12a40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "33aee842",
+            "132d5543",
+            "98ef2a40",
+            "0000803f",
+            "730ac43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "730ac43f"
+            ],
+            "position_xyz_f32_bits": [
+              "33aee842",
+              "132d5543",
+              "98ef2a40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "9977e942",
+            "07e15543",
+            "432a2940",
+            "0000803f",
+            "def4653f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "def4653f"
+            ],
+            "position_xyz_f32_bits": [
+              "9977e942",
+              "07e15543",
+              "432a2940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "987fea42",
+            "03355643",
+            "3a482740",
+            "0000803f",
+            "0457c23f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "0457c23f"
+            ],
+            "position_xyz_f32_bits": [
+              "987fea42",
+              "03355643",
+              "3a482740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "0019ec42",
+            "c38d5643",
+            "32662540",
+            "0000803f",
+            "0457c23f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "0457c23f"
+            ],
+            "position_xyz_f32_bits": [
+              "0019ec42",
+              "c38d5643",
+              "32662540"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "eddded42",
+            "c8e95643",
+            "e80a2340",
+            "0000803f",
+            "18940a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "18940a40"
+            ],
+            "position_xyz_f32_bits": [
+              "eddded42",
+              "c8e95643",
+              "e80a2340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "9a69ef42",
+            "b6335743",
+            "9eaf2040",
+            "0000803f",
+            "18940a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "18940a40"
+            ],
+            "position_xyz_f32_bits": [
+              "9a69ef42",
+              "b6335743",
+              "9eaf2040"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "9ee7f042",
+            "7a745743",
+            "89301f40",
+            "0000803f",
+            "fc0c0a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "fc0c0a40"
+            ],
+            "position_xyz_f32_bits": [
+              "9ee7f042",
+              "7a745743",
+              "89301f40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "1c6cf242",
+            "67af5743",
+            "73b11d40",
+            "0000803f",
+            "fc0c0a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "fc0c0a40"
+            ],
+            "position_xyz_f32_bits": [
+              "1c6cf242",
+              "67af5743",
+              "73b11d40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "6905f442",
+            "dce65743",
+            "5d321c40",
+            "0000803f",
+            "fc0c0a40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "fc0c0a40"
+            ],
+            "position_xyz_f32_bits": [
+              "6905f442",
+              "dce65743",
+              "5d321c40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "6fb4f542",
+            "ae1b5843",
+            "edfa1a40",
+            "0000803f",
+            "821f0640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "821f0640"
+            ],
+            "position_xyz_f32_bits": [
+              "6fb4f542",
+              "ae1b5843",
+              "edfa1a40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "fe55f742",
+            "c54f5843",
+            "7ec31940",
+            "0000803f",
+            "821f0640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "821f0640"
+            ],
+            "position_xyz_f32_bits": [
+              "fe55f742",
+              "c54f5843",
+              "7ec31940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "27daf842",
+            "a2825843",
+            "0f8c1840",
+            "0000803f",
+            "821f0640",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "821f0640"
+            ],
+            "position_xyz_f32_bits": [
+              "27daf842",
+              "a2825843",
+              "0f8c1840"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "3b67fa42",
+            "15bd5843",
+            "16731740",
+            "0000803f",
+            "e267f53f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "e267f53f"
+            ],
+            "position_xyz_f32_bits": [
+              "3b67fa42",
+              "15bd5843",
+              "16731740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "04f3fb42",
+            "c2035943",
+            "1c5a1640",
+            "0000803f",
+            "e267f53f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "e267f53f"
+            ],
+            "position_xyz_f32_bits": [
+              "04f3fb42",
+              "c2035943",
+              "1c5a1640"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "3c6cfd42",
+            "bc515943",
+            "19381640",
+            "0000803f",
+            "4e8a0540",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "4e8a0540"
+            ],
+            "position_xyz_f32_bits": [
+              "3c6cfd42",
+              "bc515943",
+              "19381640"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "63e9fe42",
+            "3ea25943",
+            "16161640",
+            "0000803f",
+            "4e8a0540",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "4e8a0540"
+            ],
+            "position_xyz_f32_bits": [
+              "63e9fe42",
+              "3ea25943",
+              "16161640"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "643e0043",
+            "b1f75943",
+            "13f41540",
+            "0000803f",
+            "4e8a0540",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "4e8a0540"
+            ],
+            "position_xyz_f32_bits": [
+              "643e0043",
+              "b1f75943",
+              "13f41540"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "ea0a0143",
+            "9a595a43",
+            "ece01640",
+            "0000803f",
+            "27cbfb3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "27cbfb3f"
+            ],
+            "position_xyz_f32_bits": [
+              "ea0a0143",
+              "9a595a43",
+              "ece01640"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "c0b70143",
+            "5cc55a43",
+            "c6cd1740",
+            "0000803f",
+            "27cbfb3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "27cbfb3f"
+            ],
+            "position_xyz_f32_bits": [
+              "c0b70143",
+              "5cc55a43",
+              "c6cd1740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "c94f0243",
+            "85445b43",
+            "00a91940",
+            "0000803f",
+            "3a0be43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "3a0be43f"
+            ],
+            "position_xyz_f32_bits": [
+              "c94f0243",
+              "85445b43",
+              "00a91940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "d4db0243",
+            "d3e05b43",
+            "3a841b40",
+            "0000803f",
+            "3a0be43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "3a0be43f"
+            ],
+            "position_xyz_f32_bits": [
+              "d4db0243",
+              "d3e05b43",
+              "3a841b40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "43550343",
+            "ff965c43",
+            "e6b11d40",
+            "0000803f",
+            "1da8de3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1da8de3f"
+            ],
+            "position_xyz_f32_bits": [
+              "43550343",
+              "ff965c43",
+              "e6b11d40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "faa20343",
+            "9d5b5d43",
+            "93df1f40",
+            "0000803f",
+            "1da8de3f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "1da8de3f"
+            ],
+            "position_xyz_f32_bits": [
+              "faa20343",
+              "9d5b5d43",
+              "93df1f40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "cdbc0343",
+            "9a265e43",
+            "29802140",
+            "0000803f",
+            "b8e7e73f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "b8e7e73f"
+            ],
+            "position_xyz_f32_bits": [
+              "cdbc0343",
+              "9a265e43",
+              "29802140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "899f0343",
+            "9af15e43",
+            "bf202340",
+            "0000803f",
+            "b8e7e73f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "b8e7e73f"
+            ],
+            "position_xyz_f32_bits": [
+              "899f0343",
+              "9af15e43",
+              "bf202340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "cb4b0343",
+            "2fbf5f43",
+            "73712340",
+            "0000803f",
+            "af5e0740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "af5e0740"
+            ],
+            "position_xyz_f32_bits": [
+              "cb4b0343",
+              "2fbf5f43",
+              "73712340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "aeda0243",
+            "60696043",
+            "27c22340",
+            "0000803f",
+            "af5e0740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "af5e0740"
+            ],
+            "position_xyz_f32_bits": [
+              "aeda0243",
+              "60696043",
+              "27c22340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "b2460243",
+            "bc026143",
+            "db122440",
+            "0000803f",
+            "af5e0740",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "af5e0740"
+            ],
+            "position_xyz_f32_bits": [
+              "b2460243",
+              "bc026143",
+              "db122440"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "239b0143",
+            "1e876143",
+            "ecad2340",
+            "0000803f",
+            "888e1340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "888e1340"
+            ],
+            "position_xyz_f32_bits": [
+              "239b0143",
+              "1e876143",
+              "ecad2340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "3cef0043",
+            "45ff6143",
+            "fe482340",
+            "0000803f",
+            "888e1340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "888e1340"
+            ],
+            "position_xyz_f32_bits": [
+              "3cef0043",
+              "45ff6143",
+              "fe482340"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "483f0043",
+            "5d726243",
+            "10e42240",
+            "0000803f",
+            "888e1340",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "888e1340"
+            ],
+            "position_xyz_f32_bits": [
+              "483f0043",
+              "5d726243",
+              "10e42240"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "d20cff42",
+            "48e16243",
+            "fc632140",
+            "0000803f",
+            "4edf0c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "4edf0c40"
+            ],
+            "position_xyz_f32_bits": [
+              "d20cff42",
+              "48e16243",
+              "fc632140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "4e95fd42",
+            "ca416343",
+            "eae31f40",
+            "0000803f",
+            "4edf0c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "4edf0c40"
+            ],
+            "position_xyz_f32_bits": [
+              "4e95fd42",
+              "ca416343",
+              "eae31f40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "ca1dfc42",
+            "a3916343",
+            "7c671e40",
+            "0000803f",
+            "14680c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "14680c40"
+            ],
+            "position_xyz_f32_bits": [
+              "ca1dfc42",
+              "a3916343",
+              "7c671e40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "339dfa42",
+            "b9d76343",
+            "0eeb1c40",
+            "0000803f",
+            "14680c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "14680c40"
+            ],
+            "position_xyz_f32_bits": [
+              "339dfa42",
+              "b9d76343",
+              "0eeb1c40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "f70cf942",
+            "751a6443",
+            "a06e1b40",
+            "0000803f",
+            "14680c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "14680c40"
+            ],
+            "position_xyz_f32_bits": [
+              "f70cf942",
+              "751a6443",
+              "a06e1b40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "e76df742",
+            "4c596443",
+            "81621940",
+            "0000803f",
+            "24090c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "24090c40"
+            ],
+            "position_xyz_f32_bits": [
+              "e76df742",
+              "4c596443",
+              "81621940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "bacff542",
+            "368c6443",
+            "63561740",
+            "0000803f",
+            "24090c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "24090c40"
+            ],
+            "position_xyz_f32_bits": [
+              "bacff542",
+              "368c6443",
+              "63561740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "4c38f442",
+            "85b06443",
+            "454a1540",
+            "0000803f",
+            "24090c40",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "24090c40"
+            ],
+            "position_xyz_f32_bits": [
+              "4c38f442",
+              "85b06443",
+              "454a1540"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "fc92f242",
+            "68c86443",
+            "16d61140",
+            "0000803f",
+            "713f0140",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "713f0140"
+            ],
+            "position_xyz_f32_bits": [
+              "fc92f242",
+              "68c86443",
+              "16d61140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "f6eef042",
+            "31d66443",
+            "e6610e40",
+            "0000803f",
+            "713f0140",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "713f0140"
+            ],
+            "position_xyz_f32_bits": [
+              "f6eef042",
+              "31d66443",
+              "e6610e40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "4c54ef42",
+            "53d96443",
+            "27200c40",
+            "0000803f",
+            "56fbf63f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "56fbf63f"
+            ],
+            "position_xyz_f32_bits": [
+              "4c54ef42",
+              "53d96443",
+              "27200c40"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "bbb0ed42",
+            "4dce6443",
+            "68de0940",
+            "0000803f",
+            "56fbf63f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "56fbf63f"
+            ],
+            "position_xyz_f32_bits": [
+              "bbb0ed42",
+              "4dce6443",
+              "68de0940"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "0d10ec42",
+            "62b36443",
+            "a99c0740",
+            "0000803f",
+            "56fbf63f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "56fbf63f"
+            ],
+            "position_xyz_f32_bits": [
+              "0d10ec42",
+              "62b36443",
+              "a99c0740"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "696cea42",
+            "187b6443",
+            "07bc0440",
+            "0000803f",
+            "35fde43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "35fde43f"
+            ],
+            "position_xyz_f32_bits": [
+              "696cea42",
+              "187b6443",
+              "07bc0440"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "ab02e942",
+            "ac136443",
+            "66db0140",
+            "0000803f",
+            "35fde43f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "35fde43f"
+            ],
+            "position_xyz_f32_bits": [
+              "ab02e942",
+              "ac136443",
+              "66db0140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "02a4e742",
+            "5a666343",
+            "66db0140",
+            "0000803f",
+            "efcc983f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "efcc983f"
+            ],
+            "position_xyz_f32_bits": [
+              "02a4e742",
+              "5a666343",
+              "66db0140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)",
+          "float_words_s0_s5": [
+            "de25e742",
+            "9ff16243",
+            "66db0140",
+            "0000803f",
+            "0000803f",
+            "0000003f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "0000803f"
+            ],
+            "position_xyz_f32_bits": [
+              "de25e742",
+              "9ff16243",
+              "66db0140"
+            ],
+            "transparency_f32_bits": "0000003f"
+          },
+          "receiver": "0x108166c0",
+          "receiver_vptr": "0xd2410"
+        }
+      ],
+      "selected_drawable": "0x10815930",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x10814bc0",
+      "send_data_to_gpu_calls": [
+        {
+          "arg1": "0x10821670",
+          "arg2": null,
+          "receiver": "0x108166c0"
+        }
+      ],
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "bfa98a07",
+          "bfa98a07",
+          "bfa98a07",
+          "bfa98a07",
+          "bfa98a07",
+          "bfa98a07",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa78207",
+          "bfa66207",
+          "bfa66207",
+          "bfa66207",
+          "bfa66207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bf98da07",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bfa1c207",
+          "bf973a07",
+          "bf973a07",
+          "bf973a07",
+          "bf973a07",
+          "bf973a07",
+          "bf973a07",
+          "bf973a07"
+        ],
+        "points_f32_bits": [
+          "4304d2ef",
+          "4353619f",
+          "4304d2ef",
+          "4353619f",
+          "4304d2ef",
+          "4353519f",
+          "4304d2ef",
+          "4353419f",
+          "4304d2ef",
+          "4353319f",
+          "4304d2ef",
+          "4353299f",
+          "4304d2ef",
+          "4353099f",
+          "4304d2ef",
+          "4352e99f",
+          "4304d2ef",
+          "4352d19f",
+          "4304d2ef",
+          "4352a19f",
+          "4304d2ef",
+          "4352719f",
+          "4304d2ef",
+          "4352499f",
+          "4304d2ef",
+          "4352199f",
+          "4304d2ef",
+          "4352019f",
+          "4304d2ef",
+          "4351f99f",
+          "4304d2ef",
+          "4351e19f",
+          "4304d2ef",
+          "4351b19f",
+          "4304d2ef",
+          "4351899f",
+          "4304d2ef",
+          "4351599f",
+          "4304d2ef",
+          "4351319f",
+          "4304c2ef",
+          "4351019f",
+          "4304b2ef",
+          "4350d99f",
+          "4304a2ef",
+          "4350a99f",
+          "4304a2ef",
+          "4350a99f",
+          "43049aef",
+          "4350819f",
+          "43047aef",
+          "4350519f",
+          "43044aef",
+          "4350299f",
+          "430432ef",
+          "434ff99f",
+          "43042aef",
+          "434ff19f",
+          "430402ef",
+          "434fd19f",
+          "4303daef",
+          "434fa19f",
+          "4303aaef",
+          "434f719f",
+          "430382ef",
+          "434f499f",
+          "430342ef",
+          "434f299f",
+          "4302caef",
+          "434f019f",
+          "4302b2ef",
+          "434ee19f",
+          "430272ef",
+          "434eb19f",
+          "430262ef",
+          "434eb19f",
+          "430202ef",
+          "434e999f",
+          "4301d2ef",
+          "434e799f",
+          "43015aef",
+          "434e599f",
+          "430132ef",
+          "434e419f",
+          "4300aaef",
+          "434e219f",
+          "430082ef",
+          "434e019f",
+          "42ffd5de",
+          "434df19f",
+          "42ff65de",
+          "434de99f",
+          "42fe35de",
+          "434de99f",
+          "42fdc5de",
+          "434de99f",
+          "42fc95de",
+          "434de99f",
+          "42fbb5de",
+          "434de99f",
+          "42fac5de",
+          "434de99f",
+          "42f9d5de",
+          "434e019f",
+          "42f8e5de",
+          "434e219f",
+          "42f7e5de",
+          "434e419f",
+          "42f7b5de",
+          "434e499f",
+          "42f6d5de",
+          "434e699f",
+          "42f5d5de",
+          "434e999f",
+          "42f4c5de",
+          "434f119f",
+          "42f3b5de",
+          "434f299f",
+          "42f2b5de",
+          "434f599f",
+          "42f1a5de",
+          "434f819f",
+          "42f095de",
+          "434ff99f",
+          "42f025de",
+          "4350199f",
+          "42ef05de",
+          "4350919f",
+          "42ee15de",
+          "4350a99f",
+          "42ed95de",
+          "4351219f",
+          "42ec95de",
+          "4351419f",
+          "42ec35de",
+          "4351b19f",
+          "42eb35de",
+          "4351d19f",
+          "42ead5de",
+          "4352499f",
+          "42ea65de",
+          "4352699f",
+          "42e975de",
+          "4352d99f",
+          "42e935de",
+          "4352f99f",
+          "42e8e5de",
+          "4353719f",
+          "42e8a5de",
+          "4353919f",
+          "42e8a5de",
+          "4353b19f",
+          "42e885de",
+          "4354019f",
+          "42e865de",
+          "4354219f",
+          "42e855de",
+          "4354519f",
+          "42e855de",
+          "4354c19f",
+          "42e855de",
+          "4354e19f",
+          "42e855de",
+          "4355119f",
+          "42e855de",
+          "4355399f",
+          "42e855de",
+          "4355699f",
+          "42e8a5de",
+          "4355919f",
+          "42e905de",
+          "4355c19f",
+          "42e955de",
+          "4355e99f",
+          "42e9b5de",
+          "4356199f",
+          "42ea15de",
+          "4356299f",
+          "42eaa5de",
+          "4356419f",
+          "42ead5de",
+          "4356619f",
+          "42ebc5de",
+          "4356919f",
+          "42ec25de",
+          "4356a99f",
+          "42ec95de",
+          "4356b99f",
+          "42ed25de",
+          "4356c99f",
+          "42ed85de",
+          "4356e99f",
+          "42ee85de",
+          "4357019f",
+          "42eee5de",
+          "4357219f",
+          "42f025de",
+          "4357419f",
+          "42f085de",
+          "4357699f",
+          "42f1c5de",
+          "4357899f",
+          "42f215de",
+          "4357b19f",
+          "42f2c5de",
+          "4357c19f",
+          "42f385de",
+          "4357d19f",
+          "42f465de",
+          "4357f19f",
+          "42f555de",
+          "4358099f",
+          "42f645de",
+          "4358299f",
+          "42f735de",
+          "4358499f",
+          "42f815de",
+          "4358699f",
+          "42f905de",
+          "4358819f",
+          "42f9f5de",
+          "4358a19f",
+          "42fa75de",
+          "4358b99f",
+          "42fae5de",
+          "4358c99f",
+          "42fb35de",
+          "4358e99f",
+          "42fc85de",
+          "4359199f",
+          "42fcd5de",
+          "4359319f",
+          "42fd85de",
+          "4359499f",
+          "42fe15de",
+          "4359619f",
+          "42fe75de",
+          "4359899f",
+          "42ffb5de",
+          "4359b99f",
+          "43000aef",
+          "4359e99f",
+          "43005aef",
+          "435a019f",
+          "43009aef",
+          "435a119f",
+          "4300caef",
+          "435a419f",
+          "43014aef",
+          "435a699f",
+          "43017aef",
+          "435ae19f",
+          "4301baef",
+          "435ae19f",
+          "4301f2ef",
+          "435ae19f",
+          "43020aef",
+          "435b099f",
+          "430282ef",
+          "435b819f",
+          "4302a2ef",
+          "435b819f",
+          "4302baef",
+          "435b999f",
+          "4302caef",
+          "435bb19f",
+          "4302faef",
+          "435c299f",
+          "430322ef",
+          "435c419f",
+          "430352ef",
+          "435c719f",
+          "430382ef",
+          "435cf19f",
+          "4303aaef",
+          "435d119f",
+          "4303caef",
+          "435d419f",
+          "4303caef",
+          "435dc19f",
+          "4303caef",
+          "435dd19f",
+          "4303caef",
+          "435de19f",
+          "4303caef",
+          "435e599f",
+          "4303caef",
+          "435e719f",
+          "4303caef",
+          "435ea19f",
+          "4303caef",
+          "435eb99f",
+          "4303caef",
+          "435ec99f",
+          "4303baef",
+          "435f419f",
+          "43039aef",
+          "435f619f",
+          "430372ef",
+          "435f899f",
+          "43035aef",
+          "435fd19f",
+          "430342ef",
+          "4360019f",
+          "43031aef",
+          "4360219f",
+          "4302daef",
+          "4360999f",
+          "430262ef",
+          "4360b19f",
+          "43023aef",
+          "4360e19f",
+          "4301c2ef",
+          "4361699f",
+          "43019aef",
+          "4361819f",
+          "430102ef",
+          "4361f99f",
+          "4300daef",
+          "4362099f",
+          "4300caef",
+          "4362199f",
+          "430032ef",
+          "4362899f",
+          "42fff5de",
+          "4362a99f",
+          "42feb5de",
+          "4362d99f",
+          "42fe15de",
+          "4363319f",
+          "42fdc5de",
+          "4363599f",
+          "42fcd5de",
+          "4363799f",
+          "42fbe5de",
+          "4363a19f",
+          "42fae5de",
+          "4363d19f",
+          "42fa25de",
+          "4363f19f",
+          "42f9d5de",
+          "4364019f",
+          "42f8b5de",
+          "4364299f",
+          "42f7a5de",
+          "4364599f",
+          "42f685de",
+          "4364819f",
+          "42f5c5de",
+          "4364999f",
+          "42f575de",
+          "4364a19f",
+          "42f465de",
+          "4364c19f",
+          "42f365de",
+          "4364c19f",
+          "42f255de",
+          "4364d99f",
+          "42f195de",
+          "4364d99f",
+          "42f155de",
+          "4364d99f",
+          "42f065de",
+          "4364d99f",
+          "42ef75de",
+          "4364d99f",
+          "42ef05de",
+          "4364d99f",
+          "42ee05de",
+          "4364d99f",
+          "42edb5de",
+          "4364d99f",
+          "42ed45de",
+          "4364d99f",
+          "42ec25de",
+          "4364d99f",
+          "42ebc5de",
+          "4364c99f",
+          "42eab5de",
+          "4364c19f",
+          "42ea65de",
+          "4364a19f",
+          "42e9e5de",
+          "4364819f",
+          "42e975de",
+          "4364599f",
+          "42e905de",
+          "4364399f",
+          "42e885de",
+          "4364099f",
+          "42e835de",
+          "4363f19f",
+          "42e7d5de",
+          "4363d19f",
+          "42e785de",
+          "4363a19f",
+          "42e765de",
+          "4363799f",
+          "42e745de",
+          "4363499f",
+          "42e725de",
+          "4363219f",
+          "42e725de",
+          "4363019f",
+          "42e725de",
+          "4362f19f",
+          "42e725de",
+          "4362f19f"
+        ],
+        "pressure_f32_bits": [
+          "3d450c52",
+          "3d750c52",
+          "3d8e0629",
+          "3da88629",
+          "3dc68629",
+          "3de80629",
+          "3e084314",
+          "3e1ec314",
+          "3e374314",
+          "3e560314",
+          "3e73c314",
+          "3e89e18a",
+          "3e99818a",
+          "3ea7c18a",
+          "3ea7c18a",
+          "3eb5218a",
+          "3ec2a18a",
+          "3ece018a",
+          "3ed8818a",
+          "3ee3818a",
+          "3eeb418a",
+          "3ef5418a",
+          "3efc618a",
+          "3efc618a",
+          "3f01f0c5",
+          "3f0410c5",
+          "3f0620c5",
+          "3f0780c5",
+          "3f0780c5",
+          "3f0950c5",
+          "3f0ae0c5",
+          "3f0c50c5",
+          "3f0d20c5",
+          "3f0d20c5",
+          "3f0e30c5",
+          "3f0df0c5",
+          "3f0ee0c5",
+          "3f0ee0c5",
+          "3f0f20c5",
+          "3f0ff0c5",
+          "3f1000c5",
+          "3f10f0c5",
+          "3f1110c5",
+          "3f1100c5",
+          "3f11c0c5",
+          "3f11f0c5",
+          "3f11f0c5",
+          "3f1350c5",
+          "3f1350c5",
+          "3f1420c5",
+          "3f14e0c5",
+          "3f1460c5",
+          "3f1470c5",
+          "3f1430c5",
+          "3f1430c5",
+          "3f13f0c5",
+          "3f1360c5",
+          "3f13f0c5",
+          "3f1340c5",
+          "3f12f0c5",
+          "3f1310c5",
+          "3f1370c5",
+          "3f1310c5",
+          "3f1420c5",
+          "3f1370c5",
+          "3f13e0c5",
+          "3f1460c5",
+          "3f1460c5",
+          "3f15f0c5",
+          "3f14f0c5",
+          "3f1570c5",
+          "3f14b0c5",
+          "3f1400c5",
+          "3f1390c5",
+          "3f1360c5",
+          "3f1360c5",
+          "3f1290c5",
+          "3f1240c5",
+          "3f1130c5",
+          "3f1020c5",
+          "3f0fb0c5",
+          "3f0ea0c5",
+          "3f0d70c5",
+          "3f0d00c5",
+          "3f0be0c5",
+          "3f0ae0c5",
+          "3f0ae0c5",
+          "3f09e0c5",
+          "3f09e0c5",
+          "3f0920c5",
+          "3f0870c5",
+          "3f0790c5",
+          "3f0650c5",
+          "3f0650c5",
+          "3f0600c5",
+          "3f0520c5",
+          "3f0580c5",
+          "3f04d0c5",
+          "3f0460c5",
+          "3f0310c5",
+          "3f01b0c5",
+          "3f0080c5",
+          "3f0080c5",
+          "3effe18a",
+          "3efea18a",
+          "3efce18a",
+          "3efe618a",
+          "3efba18a",
+          "3efc618a",
+          "3efaa18a",
+          "3ef9218a",
+          "3ef9218a",
+          "3ef8a18a",
+          "3ef8618a",
+          "3ef7418a",
+          "3ef7418a",
+          "3ef7418a",
+          "3ef6218a",
+          "3ef5e18a",
+          "3ef6418a",
+          "3ef4618a",
+          "3ef4618a",
+          "3ef4c18a",
+          "3ef3a18a",
+          "3ef3818a",
+          "3ef2c18a",
+          "3ef2c18a",
+          "3ef3c18a",
+          "3ef3418a",
+          "3ef4e18a",
+          "3ef5a18a",
+          "3ef5a18a",
+          "3ef5a18a",
+          "3ef6018a",
+          "3ef6218a",
+          "3ef6218a",
+          "3ef6e18a",
+          "3ef7018a",
+          "3ef7a18a",
+          "3ef8c18a",
+          "3ef8c18a",
+          "3efae18a",
+          "3efd018a",
+          "3effa18a",
+          "3f00e0c5",
+          "3f00e0c5",
+          "3f00e0c5",
+          "3f0230c5",
+          "3f01f0c5",
+          "3f0390c5",
+          "3f0390c5",
+          "3f0450c5",
+          "3f0520c5",
+          "3f05f0c5",
+          "3f0630c5",
+          "3f0620c5",
+          "3f0730c5",
+          "3f07f0c5",
+          "3f0870c5",
+          "3f0870c5",
+          "3f09a0c5",
+          "3f0910c5",
+          "3f0a10c5",
+          "3f0a30c5",
+          "3f0a30c5",
+          "3f0a90c5",
+          "3f0ac0c5",
+          "3f0a40c5",
+          "3f09b0c5",
+          "3f09b0c5",
+          "3f0a40c5",
+          "3f09c0c5",
+          "3f09d0c5",
+          "3f09c0c5",
+          "3f09c0c5",
+          "3f0930c5",
+          "3f0860c5",
+          "3f0810c5",
+          "3f05d0c5",
+          "3f05d0c5",
+          "3f03e0c5",
+          "3f01c0c5",
+          "3efb818a",
+          "3ef4218a",
+          "3ef4218a",
+          "3ee9418a",
+          "3ede818a",
+          "3ed0c18a",
+          "3ec3818a",
+          "3eb3618a",
+          "3ea2818a",
+          "3e90618a",
+          "3e794314",
+          "3e50c314",
+          "3e28c314",
+          "3e058314",
+          "3dce0628",
+          "3da18628",
+          "3d808628",
+          "3d530c50",
+          "3d1e0c50",
+          "3d1e0c50",
+          "39862800",
+          "39862800"
+        ],
+        "tilt_f32_bits": [
+          "3f04f99c",
+          "3f04f99c",
+          "3f04f99c",
+          "3f04f99c",
+          "3f04f99c",
+          "3f04f99c",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef8b338",
+          "3ef03338",
+          "3ef03338",
+          "3ef03338",
+          "3ef03338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef7d338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3ef27338",
+          "3eefb338",
+          "3eefb338",
+          "3eefb338",
+          "3eefb338",
+          "3eefb338",
+          "3eefb338",
+          "3eefb338"
+        ],
+        "timestamps_i32": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          27,
+          29,
+          31,
+          33,
+          35,
+          37,
+          39,
+          41,
+          43,
+          44,
+          45,
+          48,
+          50,
+          52,
+          52,
+          54,
+          56,
+          58,
+          60,
+          62,
+          64,
+          66,
+          68,
+          69,
+          70,
+          73,
+          75,
+          77,
+          79,
+          81,
+          83,
+          85,
+          87,
+          89,
+          91,
+          93,
+          95,
+          98,
+          100,
+          102,
+          102,
+          104,
+          106,
+          108,
+          110,
+          112,
+          114,
+          116,
+          119,
+          120,
+          122,
+          124,
+          127,
+          129,
+          131,
+          133,
+          135,
+          137,
+          139,
+          141,
+          143,
+          144,
+          145,
+          147,
+          150,
+          151,
+          153,
+          156,
+          158,
+          160,
+          162,
+          164,
+          166,
+          168,
+          169,
+          170,
+          172,
+          174,
+          176,
+          177,
+          178,
+          180,
+          182,
+          185,
+          187,
+          189,
+          191,
+          193,
+          194,
+          195,
+          197,
+          199,
+          201,
+          203,
+          205,
+          207,
+          209,
+          210,
+          211,
+          213,
+          216,
+          218,
+          219,
+          220,
+          222,
+          224,
+          226,
+          227,
+          228,
+          230,
+          232,
+          234,
+          235,
+          236,
+          239,
+          241,
+          243,
+          244,
+          245,
+          247,
+          249,
+          251,
+          253,
+          255,
+          257,
+          259,
+          260,
+          261,
+          263,
+          266,
+          267,
+          269,
+          270,
+          272,
+          274,
+          276,
+          277,
+          278,
+          280,
+          282,
+          284,
+          286,
+          288,
+          290,
+          292,
+          294,
+          294,
+          297,
+          299,
+          301,
+          302,
+          303,
+          305,
+          307,
+          309,
+          310,
+          311,
+          313,
+          315,
+          317,
+          319,
+          319,
+          321,
+          323,
+          325,
+          327,
+          328,
+          330,
+          332,
+          334,
+          335,
+          336,
+          338,
+          340,
+          342,
+          344,
+          346,
+          348,
+          351,
+          353,
+          354,
+          357,
+          359,
+          361,
+          363,
+          365,
+          367,
+          369,
+          369,
+          371
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "6ade1141",
+      "source_model_get_point_count": 204,
+      "style_pen_size_setter": "set"
+    }
+  ],
+  "host_gles": {
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "profile": [
+    1920,
+    1080
+  ],
+  "provenance": {
+    "analysis_tools": {
+      "/usr/bin/c++filt": "7d54ea6797a5e8c69255f711b79577efd9934c3502c6edee4bc25b7dc7d97bd2",
+      "/usr/bin/nm": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1",
+      "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-nm": "507950b76ed983334636dee2c9eba697d159e47918fdd0068a21c1b87f8f7116",
+      "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb"
+    },
+    "helpers": {
+      "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+      "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+      "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "host_adapter_source": "conformance/marker3_paint_scale_native.py class P, re-bound to the same HF02 Unicorn Uc and using caller p.alloc",
+    "host_gl_library_sha256": {
+      "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+      "/usr/lib/x86_64-linux-gnu/libEGL_mesa.so.0.0.0": "af1229604d80d73422ff3767f572849dce074a0ecdba8254e93a06a88cfec2e6",
+      "/usr/lib/x86_64-linux-gnu/libEGL_nvidia.so.615.71.09": "55bc036537d02dd4e45d1aa117f29355d8b4f992067a8eacad18702bef18f52d",
+      "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812",
+      "/usr/lib/x86_64-linux-gnu/libGLdispatch.so.0.0.0": "890baeef03fd73560a2fde85ebe9fb49ca3e90686923c5ee22101b28ec8ee7aa",
+      "/usr/lib/x86_64-linux-gnu/libLLVM.so.19.1": "3523f50f635d2a1ea47518a392451f2854b92823ceaf1345fb806099dd1a3b8a",
+      "/usr/lib/x86_64-linux-gnu/libnvidia-egl-gbm.so.1.1.4": "c0eaa8e9c6f0167f8136a31978f46b6d001a16a1996604361d1c9cdc12ed4836",
+      "/usr/lib/x86_64-linux-gnu/libnvidia-egl-wayland2.so.1.0.2": "ed9a02f6ec01db2c55568ac6abb4ec19cd107d7ebe8db025c3b1557311f47779",
+      "/usr/lib/x86_64-linux-gnu/libnvidia-egl-xcb.so.1.0.6": "2ff3c4ac0eeadfe41da855ab7851b3e8350fb4cda5733608785d508c2aca6686",
+      "/usr/lib/x86_64-linux-gnu/libnvidia-egl-xlib.so.1.0.6": "3fea35ad3a04425f49fb0d43743fc933bfeb10ae660a9c1a728958cb19c49ce4",
+      "/usr/lib/x86_64-linux-gnu/libnvidia-eglcore.so.615.71.09": "d314812db5967416334e578e0e557310b9b9aaadfcb130526e29ea9f701e12c0",
+      "/usr/lib/x86_64-linux-gnu/libxcb-dri3.so.0.1.0": "ff8c8ca1388a0f73121c9d182b0241c687725df0f8ad8385d1c408f79b0a8810"
+    },
+    "libraries": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "renderer_dso_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "runner_boundary": "Actual HF02 ObjectStroke Model apply and Drawing route, selected GLV16, 76 native RTV5 AddPoint outputs. A synchronous host queue adapter dispatches the captured native task vtables in submission order. The native SendDataToGPU task receives the live vector, then the native PenGLRenderMsg task paints to a natively constructed SPPenCanvas/Bitmap. Renderer GLES callbacks, native resource construction, and queue scheduling are host adapters.",
+    "runner_sha256": "b20659749eb44294b6890519db1e27b8658308d9de2748247d6e77c7db42a5d8",
+    "runtime_versions": {
+      "python": "3.13.5",
+      "python_executable": "/usr/bin/python3.13",
+      "python_executable_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+      "unicorn": "2.1.4",
+      "unicorn_files": {
+        "unicorn/__init__.py": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b",
+        "unicorn/lib/libunicorn.so.2": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c",
+        "unicorn/unicorn.py": "e823b17649d0610c6f52b665902ac9dc46962785feebcac8465a0d7c477f25b7"
+      }
+    },
+    "source_archive_sha256": "dd6580a0531cf1712ef6526f1b0d51c42adaeb0d11feacca5d23ba562239da82",
+    "source_fixture_sha256": "794c365ed0999439c289a45713ba2a33a23d19e58324acfb8ee3956564bf1c37"
+  },
+  "schema": "sdocx-fountain-saved-render-native-v1",
+  "source_input": {
+    "archive_sha256": "dd6580a0531cf1712ef6526f1b0d51c42adaeb0d11feacca5d23ba562239da82",
+    "frame_bytes": 2514,
+    "frame_sha256": "490fa32ab9d69416e4c48dec88b26ad14e362d7b08eb3e1b6a9ada47ce2980c2",
+    "kind": "HF02 actual persisted FountainPen frame",
+    "page_orientation": 0,
+    "payload_sha256": "c01022129e9a3a09ee95dc5935d5e177bd507e03d6d9dbd357a5278a64ab72b4",
+    "point_count": 204,
+    "string_table_values": [
+      "18;0;100;",
+      "com.samsung.android.sdk.pen.pen.preload.FountainPen"
+    ],
+    "table_sha256": "f35b044485b8a91fd825ac682c734b23c565e52fbfb869fc3d4d3e89b414035e"
+  }
+}
