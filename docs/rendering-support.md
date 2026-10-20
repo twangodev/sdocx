@@ -459,13 +459,16 @@ GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
 An [adversarial extension](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-extension-native.json)
 adds 24 cases for pressure, size and method-specific speed/width precision;
-Rust checks match 1,762 native records across 143 cases, with generated
+The established Rust matrix matches 1,762 native records across 143 cases, with generated
 long/short controls extending coverage through 128 events, including
 rejected terminal movements and zero-time speed seeding. Bounded sampling
 checks source channels and output budgets; terminal geometry retains the raw
 endpoint and pressure while V2/V3 widths retain accepted-move speed.
 NoCurve controls retain rejected raw terminal segments, skip duplicate tails,
 and place all-rejected dots at the last source point with pressure-scaled width.
+Additional Rust controls pin 77 paint-input records at sizes 0.4, 1, 3.144 and
+24; 18 versioned controls verify cumulative source-event record boundaries
+for curved and NoCurve saved redraws. These cuts do not establish live replay policy.
 A [reuse matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-reuse-native.json) checks fresh-equivalent
 target streams after short, long and different preludes and version changes,
 with explicit host lifecycle adapters. A bounded
@@ -477,8 +480,10 @@ Live program/sampler queries identify the alpha-atlas shader and native nearest/
 clamp sampling. Opaque, partial and zero source-alpha controls produce identical
 host readbacks. Fixed-logical-page zoom controls are host-selected; SVG/PDF
 intrinsic-texture prototypes reduce color error against matched generic lines,
-but size-3.144 stamps lose visible support in 1× PDF exports. Native
-derivatives, texture minification and vector transport remain under investigation;
+and corrected angular alpha masks improve thin-stamp support in PDF exports.
+Minimum-size controls still miss sparse native pixels. Screen-cache allocation
+uses view dimensions, but stroke-local resolution and projection remain unverified.
+Native derivatives, texture minification and vector transport remain under investigation;
 these prototypes are not production paint.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.

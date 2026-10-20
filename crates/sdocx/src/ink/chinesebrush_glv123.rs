@@ -22,6 +22,17 @@ pub enum SampleError {
     DegeneratePath,
 }
 
+/// Bounded records plus cumulative exclusive record ends for raw source events.
+///
+/// `sample_ends[i]` is the number of records attributable through source event
+/// `i`. A row batch becomes visible at the event index proven by the native
+/// saved-redraw trace; this is source metadata, not a live-event replay policy.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BoundedSample {
+    pub records: Vec<[f32; 5]>,
+    pub sample_ends: Vec<usize>,
+}
+
 struct Cubic {
     p: [P; 4],
     segments: Vec<(f32, u16)>,
@@ -301,6 +312,15 @@ fn emit_path_limited(
     Ok(())
 }
 
+fn single_record(record: [f32; 5]) -> Result<Vec<[f32; 5]>, SampleError> {
+    let mut output = Vec::new();
+    output
+        .try_reserve_exact(1)
+        .map_err(|_| SampleError::AllocationFailed)?;
+    output.push(record);
+    Ok(output)
+}
+
 #[allow(clippy::too_many_arguments)] // Explicit native source/context plus output budget.
 fn model_line(
     points: &[P],
@@ -311,6 +331,7 @@ fn model_line(
     height: i32,
     tool: i32,
     record_limit: usize,
+    mut sample_ends: Option<&mut [usize]>,
 ) -> Result<Vec<[f32; 5]>, SampleError> {
     let gate = if version == 1 || version == 2 {
         4.0
@@ -318,6 +339,9 @@ fn model_line(
         width.min(height) as f32 / 360.0
     };
     let mut accepted = Vec::new();
+    accepted
+        .try_reserve_exact(points.len())
+        .map_err(|_| SampleError::AllocationFailed)?;
     let mut previous = points[0];
     for (i, point) in points.iter().enumerate().skip(1) {
         let d = point.sub(previous);
@@ -331,13 +355,17 @@ fn model_line(
         if record_limit == 0 {
             return Err(SampleError::OutputBudgetExceeded);
         }
-        return Ok(vec![[
+        if let Some(ends) = sample_ends.as_deref_mut() {
+            ends.fill(0);
+            *ends.last_mut().expect("validated nonempty source") = 1;
+        }
+        return single_record([
             points.last().unwrap().x,
             points.last().unwrap().y,
             size * effective_pressure(*pressure.last().unwrap(), tool) * 0.5,
             0.0,
             0.0,
-        ]]);
+        ]);
     }
     let terminal = points.len() - 1;
     let accepted_last = *accepted.last().unwrap();
@@ -357,6 +385,7 @@ fn model_line(
     let mut start = points[0];
     let mut phase = 0;
     let mut out = Vec::new();
+    let mut source_cursor = 1;
     for (event_index, &event) in accepted.iter().enumerate() {
         let target = if event_index == 0 {
             width_state
@@ -380,8 +409,18 @@ fn model_line(
             &mut phase,
             record_limit,
         )?;
+        if let Some(ends) = sample_ends.as_deref_mut() {
+            let end = out.len();
+            let before = end - repeat;
+            ends[source_cursor..event].fill(before);
+            ends[event] = end;
+            source_cursor = event + 1;
+        }
         width_state = target;
         start = points[event];
+    }
+    if let Some(ends) = sample_ends {
+        ends[source_cursor..].fill(out.len());
     }
     Ok(out)
 }
@@ -400,7 +439,40 @@ pub fn model_event_loop(
     curve: bool,
     record_limit: usize,
 ) -> Result<Vec<[f32; 5]>, SampleError> {
-    let points: Vec<P> = xy.iter().map(|p| P { x: p[0], y: p[1] }).collect();
+    model_event_loop_inner(
+        xy,
+        pressure,
+        times,
+        size,
+        version,
+        width,
+        height,
+        tool,
+        curve,
+        record_limit,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn model_event_loop_inner(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    curve: bool,
+    record_limit: usize,
+    mut sample_ends: Option<&mut [usize]>,
+) -> Result<Vec<[f32; 5]>, SampleError> {
+    let mut points = Vec::new();
+    points
+        .try_reserve_exact(xy.len())
+        .map_err(|_| SampleError::AllocationFailed)?;
+    points.extend(xy.iter().map(|p| P { x: p[0], y: p[1] }));
     assert_eq!(points.len(), pressure.len());
     assert_eq!(points.len(), times.len());
     if !curve {
@@ -413,6 +485,7 @@ pub fn model_event_loop(
             height,
             tool,
             record_limit,
+            sample_ends,
         );
     }
     let gate = if version <= 2 {
@@ -421,8 +494,15 @@ pub fn model_event_loop(
         width.min(height) as f32 / 360.0
     };
     let mut accepted = Vec::new();
+    accepted
+        .try_reserve_exact(points.len())
+        .map_err(|_| SampleError::AllocationFailed)?;
     let mut previous = 0usize;
-    let mut speeds = vec![0.0_f32; points.len()];
+    let mut speeds = Vec::new();
+    speeds
+        .try_reserve_exact(points.len())
+        .map_err(|_| SampleError::AllocationFailed)?;
+    speeds.resize(points.len(), 0.0_f32);
     for i in 1..points.len() {
         let delta = points[i].sub(points[previous]);
         if delta.x.abs() < gate && delta.y.abs() < gate {
@@ -447,13 +527,17 @@ pub fn model_event_loop(
         if record_limit == 0 {
             return Err(SampleError::OutputBudgetExceeded);
         }
-        return Ok(vec![[
+        if let Some(ends) = sample_ends.as_deref_mut() {
+            ends.fill(0);
+            *ends.last_mut().expect("validated nonempty source") = 1;
+        }
+        return single_record([
             points[0].x,
             points[0].y,
             size * 0.25,
             0.0,
             (50.0 + p * 100.0) as i32 as f32,
-        ]]);
+        ]);
     }
     let seed = accepted[0];
     let seed_pressure = effective_pressure(pressure[seed], tool);
@@ -463,6 +547,7 @@ pub fn model_event_loop(
     let mut out = Vec::new();
     let mut start = points[0];
     let mut j = 0;
+    let mut source_cursor = 1;
     while j + 2 < accepted.len() {
         let control = accepted[j];
         let lookahead = accepted[j + 2];
@@ -478,6 +563,7 @@ pub fn model_event_loop(
         let target = calculated_width(dab_size(p, f, size, prior), prior, size);
         let repeat = repeat_index(path.length(), prior.min(target) as i32);
         let target_index = f32_trunc(100.0 + p * 100.0);
+        let before = out.len();
         emit_path_limited(
             &mut out,
             path,
@@ -492,6 +578,11 @@ pub fn model_event_loop(
             &mut phase,
             record_limit,
         )?;
+        if let Some(ends) = sample_ends.as_deref_mut() {
+            ends[source_cursor..lookahead].fill(before);
+            ends[lookahead] = out.len();
+            source_cursor = lookahead + 1;
+        }
         start = endpoint;
         prior = target;
         index = target_index;
@@ -549,6 +640,7 @@ pub fn model_event_loop(
     };
     let repeat = repeat_index(path.length(), prior.min(target) as i32);
     let target_index = f32_trunc(50.0 + p * 100.0);
+    let before = out.len();
     emit_path_limited(
         &mut out,
         path,
@@ -563,6 +655,13 @@ pub fn model_event_loop(
         &mut phase,
         record_limit,
     )?;
+    if let Some(ends) = sample_ends {
+        if source_cursor < event {
+            ends[source_cursor..event].fill(before);
+        }
+        ends[event] = out.len();
+        ends[event + 1..].fill(out.len());
+    }
     Ok(out)
 }
 
@@ -612,6 +711,87 @@ pub fn run_model_bounded(
     curve: bool,
     record_limit: usize,
 ) -> Result<Vec<[f32; 5]>, SampleError> {
+    let (safe_size, limit) = validate_bounded_source(
+        xy,
+        pressure,
+        times,
+        size,
+        version,
+        width,
+        height,
+        tool,
+        record_limit,
+    )?;
+    model_event_loop_inner(
+        xy, pressure, times, safe_size, version, width, height, tool, curve, limit, None,
+    )
+}
+
+/// Produce bounded native saved-redraw records with one cumulative exclusive
+/// record end for every raw source event. Curved batches are tagged at the
+/// accepted lookahead event that emitted them; terminal rows are tagged at the
+/// raw final event. NoCurve batches are tagged from observed native source-array
+/// reads, including rejected raw-terminal and all-rejected dot paths.
+#[allow(clippy::too_many_arguments)]
+pub fn run_model_bounded_with_sample_ends(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    curve: bool,
+    record_limit: usize,
+) -> Result<BoundedSample, SampleError> {
+    let (safe_size, limit) = validate_bounded_source(
+        xy,
+        pressure,
+        times,
+        size,
+        version,
+        width,
+        height,
+        tool,
+        record_limit,
+    )?;
+    let mut sample_ends = Vec::new();
+    sample_ends
+        .try_reserve_exact(xy.len())
+        .map_err(|_| SampleError::AllocationFailed)?;
+    sample_ends.resize(xy.len(), 0);
+    let records = model_event_loop_inner(
+        xy,
+        pressure,
+        times,
+        safe_size,
+        version,
+        width,
+        height,
+        tool,
+        curve,
+        limit,
+        Some(&mut sample_ends),
+    )?;
+    Ok(BoundedSample {
+        records,
+        sample_ends,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_bounded_source(
+    xy: &[[f32; 2]],
+    pressure: &[f32],
+    times: &[i32],
+    size: f32,
+    version: i32,
+    width: i32,
+    height: i32,
+    tool: i32,
+    record_limit: usize,
+) -> Result<(f32, usize), SampleError> {
     let len = xy.len();
     if len == 0 || len > MAX_SOURCE_EVENTS || pressure.len() != len || times.len() != len {
         return Err(SampleError::InvalidSource);
@@ -635,9 +815,7 @@ pub fn run_model_bounded(
     }
     let limit = record_limit.min(MAX_OUTPUT_RECORDS);
     let safe_size = size.clamp(0.4, 800.0);
-    model_event_loop(
-        xy, pressure, times, safe_size, version, width, height, tool, curve, limit,
-    )
+    Ok((safe_size, limit))
 }
 
 #[cfg(test)]
@@ -800,7 +978,7 @@ mod tests {
         times: &[i32],
         profile: (f32, i32, i32, i32, i32, bool),
         expected: (usize, &str, &str),
-    ) {
+    ) -> BoundedSample {
         let (size, version, width, height, tool, curve) = profile;
         let (count, input_sha, output_sha) = expected;
         assert_eq!(
@@ -815,6 +993,31 @@ mod tests {
         };
         let output = sample(count).unwrap_or_else(|error| panic!("{name} exact budget: {error:?}"));
         assert_eq!(output.len(), count, "{name} record count");
+        let with_ends = run_model_bounded_with_sample_ends(
+            xy, pressure, times, size, version, width, height, tool, curve, count,
+        )
+        .unwrap_or_else(|error| panic!("{name} exact metadata budget: {error:?}"));
+        assert_eq!(with_ends.records.len(), count, "{name} metadata records");
+        assert_eq!(
+            with_ends.sample_ends.len(),
+            xy.len(),
+            "{name} source-event ends"
+        );
+        assert!(
+            with_ends
+                .sample_ends
+                .windows(2)
+                .all(|pair| pair[0] <= pair[1]),
+            "{name} monotone source-event ends"
+        );
+        assert_eq!(with_ends.sample_ends.last().copied(), Some(count));
+        for (i, (with_end, bounded)) in with_ends.records.iter().zip(&output).enumerate() {
+            assert_eq!(
+                with_end.map(f32::to_bits),
+                bounded.map(f32::to_bits),
+                "{name} metadata record {i}"
+            );
+        }
         let packed: Vec<u8> = output
             .iter()
             .flat_map(|r| {
@@ -832,6 +1035,40 @@ mod tests {
             sample(count - 1),
             Err(SampleError::OutputBudgetExceeded),
             "{name} one-below budget"
+        );
+        assert_eq!(
+            run_model_bounded_with_sample_ends(
+                xy,
+                pressure,
+                times,
+                size,
+                version,
+                width,
+                height,
+                tool,
+                curve,
+                count - 1,
+            ),
+            Err(SampleError::OutputBudgetExceeded),
+            "{name} metadata one-below budget"
+        );
+        with_ends
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn check_native_trace_cut(
+        name: &str,
+        xy: &[[f32; 2]],
+        pressure: &[f32],
+        times: &[i32],
+        profile: (f32, i32, i32, i32, i32, bool),
+        expected: (usize, &str, &str),
+        expected_ends: &[usize],
+    ) {
+        let sample = check_native_trace_profile(name, xy, pressure, times, profile, expected);
+        assert_eq!(
+            sample.sample_ends, expected_ends,
+            "{name} native source cuts"
         );
     }
 
@@ -878,12 +1115,52 @@ mod tests {
             )
             .unwrap_or_else(|error| panic!("{name} bounded sampler: {error:?}"));
             assert_eq!(bounded.len(), rows.len(), "{name} bounded row count");
+            let bounded_with_ends = run_model_bounded_with_sample_ends(
+                &xy,
+                &pressure,
+                &times,
+                size,
+                version,
+                w,
+                h,
+                input["tool_type"].as_i64().unwrap() as i32,
+                input["curve_enabled"].as_bool().unwrap(),
+                rows.len(),
+            )
+            .unwrap_or_else(|error| panic!("{name} bounded sampler with ends: {error:?}"));
+            assert_eq!(
+                bounded_with_ends.records.len(),
+                rows.len(),
+                "{name} records"
+            );
+            assert_eq!(
+                bounded_with_ends.sample_ends.len(),
+                xy.len(),
+                "{name} endpoints"
+            );
+            assert!(
+                bounded_with_ends
+                    .sample_ends
+                    .windows(2)
+                    .all(|pair| pair[0] <= pair[1]),
+                "{name} endpoint monotonicity"
+            );
+            assert_eq!(
+                bounded_with_ends.sample_ends.last().copied(),
+                Some(rows.len()),
+                "{name} final endpoint"
+            );
             for (i, (bounded_row, compatibility_row)) in bounded.iter().zip(&predicted).enumerate()
             {
                 assert_eq!(
                     bounded_row.map(f32::to_bits),
                     compatibility_row.map(f32::to_bits),
                     "{name} bounded record {i}"
+                );
+                assert_eq!(
+                    bounded_with_ends.records[i].map(f32::to_bits),
+                    bounded_row.map(f32::to_bits),
+                    "{name} metadata route record {i}"
                 );
             }
             let joined: Vec<u8> = rows
@@ -1090,6 +1367,223 @@ mod tests {
                 times,
                 (size, 3),
                 (count, input_sha, output_sha),
+            );
+        }
+    }
+
+    #[test]
+    fn source_streams_match_native_paint_controls_at_small_and_large_sizes() {
+        // Audited native Drawing -> queued paint captures share these source
+        // bytes at 1x/2x/4x. Check the complete VBO before comparing paint;
+        // matching producer bytes does not establish raster or export parity.
+        let xy = [
+            [40.0, 40.0],
+            [46.0, 43.0],
+            [49.0, 52.0],
+            [57.0, 53.0],
+            [63.0, 55.0],
+        ];
+        let pressure = [0.3, 0.55, 0.75, 0.35, 0.95];
+        let times = [300, 311, 324, 338, 355];
+        let input_sha = "0029677ef22dc5a238bfdcc87895fdf2b3a86123487c9cc63a9995507bcfe13e";
+        for (name, size, curve, count, output_sha) in [
+            (
+                "paint-size24",
+                24.0,
+                true,
+                11,
+                "a87baacfcd4321e69430c93f9f472ff134f9326cf943d13626873ac7d50bdf3d",
+            ),
+            (
+                "paint-size3.144",
+                3.144,
+                true,
+                16,
+                "d612fdcbd17c9094617111d0dd82c79919ad511ef2305d5089358970c8f82018",
+            ),
+            (
+                "paint-size0.4",
+                0.4,
+                true,
+                16,
+                "6f3494b41b3e1dd0fa50a042f5f4a11e2d7e786741884b1c7146c0de2a59f05e",
+            ),
+            (
+                "paint-size1",
+                1.0,
+                true,
+                16,
+                "f2e1564ab18e09f8408679fcf1f147f5709f6f9d1df3c4b5a0195a7a8a5e53a2",
+            ),
+            (
+                "paint-no-curve",
+                3.144,
+                false,
+                18,
+                "38c112b760466a6f1d9f2a906a6e468145208727ca9daf2118f2fec0120e1403",
+            ),
+        ] {
+            check_native_trace_profile(
+                name,
+                &xy,
+                &pressure,
+                &times,
+                (size, 3, 1920, 1080, 2, curve),
+                (count, input_sha, output_sha),
+            );
+        }
+    }
+
+    #[test]
+    fn captured_saved_redraw_sample_ends_match_native_source_read_cuts() {
+        let proto_xy = [
+            [0.0, 0.0],
+            [6.0, 3.0],
+            [9.0, 12.0],
+            [17.0, 13.0],
+            [23.0, 15.0],
+            [31.0, 18.0],
+            [36.0, 28.0],
+            [45.0, 34.0],
+        ];
+        let proto_pressure = [0.3, 0.55, 0.75, 0.35, 0.95, 0.5, 0.7, 0.4];
+        let proto_times = [300, 311, 324, 338, 355, 376, 390, 407];
+        let proto_ends = [0, 0, 0, 8, 8, 16, 16, 32];
+        for (version, output_sha) in [
+            (
+                1,
+                "1a85978c2052ff9c202e56762cca545f9506a57f0b78c9b44d9f8153eb2f488b",
+            ),
+            (
+                2,
+                "4e7b93d798e599093cabf861cb4bb2df95a76b73d0765b7e75f94a5109388770",
+            ),
+            (
+                3,
+                "4e7b93d798e599093cabf861cb4bb2df95a76b73d0765b7e75f94a5109388770",
+            ),
+        ] {
+            check_native_trace_cut(
+                &format!("saved-proto8-v{version}"),
+                &proto_xy,
+                &proto_pressure,
+                &proto_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, true),
+                (
+                    32,
+                    "650c0661aca26161bf38c7f926d8a6817bf91acf9f4e9727c5e9be4665d5673d",
+                    output_sha,
+                ),
+                &proto_ends,
+            );
+        }
+
+        let (mono_xy, mono_pressure, mono_times) = stress_source(32, false);
+        let mut mono_ends = [0; 32];
+        mono_ends[9..15].fill(5);
+        mono_ends[15..21].fill(10);
+        mono_ends[21..27].fill(15);
+        mono_ends[27..31].fill(20);
+        mono_ends[31] = 27;
+        let mono_input_sha = "5e5dd289f19c8bfc465a2c5f23ec2b7532afb9e1cb6b1b5d30234f96ddfa42f5";
+        for (version, output_sha) in [
+            (
+                1,
+                "2e374d6db19b25ccb27f33516bfd623bcfb0db9122f65d76d9f4cae5637190b2",
+            ),
+            (
+                2,
+                "ec9b78aaf737d17294c344a5b8a93f927e6d759422d2745c7dfddb65fd8661d3",
+            ),
+            (
+                3,
+                "ec9b78aaf737d17294c344a5b8a93f927e6d759422d2745c7dfddb65fd8661d3",
+            ),
+        ] {
+            check_native_trace_cut(
+                &format!("saved-mono32-v{version}"),
+                &mono_xy,
+                &mono_pressure,
+                &mono_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, true),
+                (27, mono_input_sha, output_sha),
+                &mono_ends,
+            );
+        }
+
+        let control_xy = [
+            [40.0, 40.0],
+            [46.0, 43.0],
+            [49.0, 52.0],
+            [57.0, 53.0],
+            [63.0, 55.0],
+        ];
+        let control_pressure = [0.3, 0.55, 0.75, 0.35, 0.95];
+        let control_times = [300, 311, 324, 338, 355];
+        for version in 1..=3 {
+            check_native_trace_cut(
+                &format!("saved-no-curve-five-v{version}"),
+                &control_xy,
+                &control_pressure,
+                &control_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, false),
+                (
+                    18,
+                    "0029677ef22dc5a238bfdcc87895fdf2b3a86123487c9cc63a9995507bcfe13e",
+                    "38c112b760466a6f1d9f2a906a6e468145208727ca9daf2118f2fec0120e1403",
+                ),
+                &[0, 4, 9, 14, 18],
+            );
+        }
+
+        let rejected_xy = [[0.0, 0.0], [8.0, 0.0], [16.0, 0.0], [17.0, 0.0]];
+        let rejected_pressure = [0.3, 0.5, 0.8, 0.95];
+        let rejected_times = [200, 220, 240, 260];
+        let duplicate_xy = [[0.0, 0.0], [8.0, 0.0], [8.0, 0.0]];
+        let duplicate_pressure = [0.3, 0.5, 0.9];
+        let duplicate_times = [200, 220, 240];
+        let dot_xy = [[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]];
+        let dot_pressure = [0.3, 0.5, 0.8];
+        let dot_times = [200, 220, 240];
+        for version in 1..=3 {
+            check_native_trace_cut(
+                &format!("saved-no-curve-rejected-v{version}"),
+                &rejected_xy,
+                &rejected_pressure,
+                &rejected_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, false),
+                (
+                    13,
+                    "d27cfa3a6ca81d6314f2d7afd76344f7c4df20ca1c52df64c127afa0fa7e7aad",
+                    "b6aec4e98ed3f6970395ea9baca5f74ce848fc4b28069919b02fee0bfeeb03dd",
+                ),
+                &[0, 5, 10, 13],
+            );
+            check_native_trace_cut(
+                &format!("saved-no-curve-duplicate-v{version}"),
+                &duplicate_xy,
+                &duplicate_pressure,
+                &duplicate_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, false),
+                (
+                    5,
+                    "267f07456725cc3dc28bb98a64d1a67fd327371714cf3314b14ea69de956e926",
+                    "a1b055b6c7b26c4164bb6b1ced962d87a9265234cf5d9d2ac30820d9b0285389",
+                ),
+                &[0, 5, 5],
+            );
+            check_native_trace_cut(
+                &format!("saved-no-curve-dot-v{version}"),
+                &dot_xy,
+                &dot_pressure,
+                &dot_times,
+                (3.144_f64 as f32, version, 1920, 1080, 2, false),
+                (
+                    1,
+                    "bba82f61262449bdabe3c0508c0ebaf4f0b3bc59737d332b1ac78b44e5f7d550",
+                    "a172561328d8da58127c45466d41afe5ca644f3912a78cfb40e95d6dfc7d413f",
+                ),
+                &[0, 0, 1],
             );
         }
     }
