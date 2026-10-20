@@ -266,8 +266,10 @@ byte; this verifies the stage law, not public vector transport or a general boun
 Experimental PDF Type 4 RGB shading plus a separate MAX luminosity mask can
 express this field without images. Two-/three-stamp order and alpha controls
 match the analytic reference within 1–2 bytes in PDFium; MuPDF retains larger
-low-scale sampling errors. Native 25-record transport and browser mask behavior
-still need paired validation before public gradient admission.
+low-scale sampling errors. Source-derived 25-record SVGs match native support
+in resvg/Chromium with active-ROI MAE 0.294–1.309, but Firefox's mask subtree
+fails to MAX-combine the stamps. The generic PDF filter path embeds a raster;
+cross-browser masking and a validated vector PDF lowering remain admission gaps.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,
