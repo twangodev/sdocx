@@ -379,8 +379,10 @@ admission, native width transitions and the 0.4–800 size clamp. A
 adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
 ranges and direct-dot fallback, with exact complete streams. A separate
 [curved event capture](../conformance/magicpen-curved-source-events-native.json)
-records line/terminal callback ranges for five bounded inputs. General curved
-sampling, replay reconstruction and production vector admission remain open.
+records line/terminal callback ranges for eight bounded inputs and pins native
+loop instructions: lines exclude their endpoint, while terminal sampling includes
+it. General curved sampling, replay reconstruction and production vector admission
+remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)

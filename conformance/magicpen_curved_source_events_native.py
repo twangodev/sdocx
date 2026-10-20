@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import struct
 import subprocess
@@ -43,12 +44,67 @@ HELPERS = {
     "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
 }
 
+RUNTIME_PINS = {
+    "python_executable_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+    "unicorn_package_init_sha256": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b",
+    "unicorn_python_module_sha256": "e823b17649d0610c6f52b665902ac9dc46962785feebcac8465a0d7c477f25b7",
+    "unicorn_native_library_sha256": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c",
+}
+
+
+def runtime_closure() -> dict:
+    import unicorn
+
+    executable = Path(sys.executable).resolve()
+    package_dir = Path(unicorn.__file__).resolve().parent
+    paths = {
+        "python_executable": executable,
+        "unicorn_package_init": package_dir / "__init__.py",
+        "unicorn_python_module": package_dir / "unicorn.py",
+        "unicorn_native_library": package_dir / "lib/libunicorn.so.2",
+    }
+    hashes = {key: sha256(path.read_bytes()) for key, path in paths.items()}
+    expected = dict(zip(paths.keys(), RUNTIME_PINS.values()))
+    if hashes != expected:
+        raise RuntimeError(f"native runner runtime closure changed: {hashes}")
+    if platform.python_version() != "3.13.5" or unicorn.__version__ != "2.1.4":
+        raise RuntimeError("native runner Python/Unicorn version changed")
+    return {
+        "python": {"path": str(executable), "version": platform.python_version(), "sha256": hashes["python_executable"]},
+        "unicorn": {
+            "version": unicorn.__version__,
+            "package_path": str(package_dir.relative_to(ROOT)),
+            "init_sha256": hashes["unicorn_package_init"],
+            "python_module_sha256": hashes["unicorn_python_module"],
+            "native_library_path": str(paths["unicorn_native_library"].relative_to(ROOT)),
+            "native_library_sha256": hashes["unicorn_native_library"],
+        },
+    }
+
+
+def preflight_existing_fixture(write_fixture: bool) -> None:
+    runtime_closure()
+    if write_fixture:
+        return
+    if not FIXTURE.exists():
+        raise RuntimeError("curved fixture is missing; use --write-fixture after review")
+    fixture = json.loads(FIXTURE.read_text())
+    recorded = fixture.get("provenance", {})
+    actual_runner = sha256(Path(__file__).read_bytes())
+    if recorded.get("runner_sha256") != actual_runner:
+        raise RuntimeError("curved native fixture runner SHA does not match this script")
+    if recorded.get("runtime_closure") != runtime_closure():
+        raise RuntimeError("curved native fixture runtime closure differs")
+
 CASES = [
     ("tool2_baseline", [(0.0, 0.0), (10.0, 0.0), (20.0, 2.0)], [.3, .6, 1.0], [100, 110, 120], 10, "set", True),
     ("tool2_3_nonsymmetric", [(1.25, -2.5), (6.0, 1.0), (12.5, 7.25)], [.15, .55, .9], [100, 113, 137], 10, "set", True),
     ("tool2_5_nonsymmetric", [(2.0, 3.0), (8.0, -1.0), (14.0, 7.0), (31.0, 4.0), (42.0, 12.0)], [.15, .35, .65, .95, .55], [100, 117, 139, 181, 220], 10, "set", True),
     ("tool2_7_nonsymmetric", [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (7.0, 3.0), (10.0, 1.0), (14.0, 4.0), (18.0, 2.0)], [.10, .20, .35, .50, .70, .85, 1.0], [100, 111, 127, 143, 162, 181, 203], 10, "set", True),
     ("tool2_8_duplicate_subthreshold", [(0.0, 0.0), (2.0, 1.0), (4.0, 0.0), (4.0, 0.0), (4.4, .3), (9.0, 2.0), (14.0, 4.0), (18.0, 2.0)], [.10, .20, .35, .50, .70, .85, .65, 1.0], [100, 111, 127, 143, 162, 181, 199, 224], 10, "set", True),
+    ("tool2_4_boundary", [(0.,0.),(5.,2.),(11.,-1.),(19.,6.)], [.2,.4,.7,1.], [100,117,139,181], 10,"set",True),
+    ("tool2_6_boundary", [(1.,2.),(4.,-1.),(9.,3.),(15.,8.),(23.,4.),(31.,10.)], [.1,.25,.45,.65,.85,1.], [100,111,127,143,162,181], 10,"set",True),
+    ("tool2_9_boundary", [(0.,0.),(2.,1.),(5.,-2.),(9.,4.),(13.,8.),(18.,3.),(24.,9.),(30.,7.),(39.,12.)], [.1,.2,.3,.4,.5,.6,.8,.9,1.], [100,111,127,143,162,181,199,224,250], 10,"set",True),
 ]
 
 
@@ -60,6 +116,58 @@ def sha256(data: bytes) -> str:
 def f32word(value: float) -> str:
     return f"{struct.unpack('<I', struct.pack('<f', value))[0]:08x}"
 
+
+
+def elf_vaddr_bytes(path: Path, va: int, length: int) -> bytes:
+    data = path.read_bytes()
+    if data[:6] != b"\x7fELF\x02\x01":
+        raise RuntimeError("unexpected ELF encoding")
+    eh = struct.unpack_from("<HHIQQQIHHHHHH", data, 16)
+    phoff, phentsize, phnum = eh[4], eh[8], eh[9]
+    for index in range(phnum):
+        entry = struct.unpack_from("<IIQQQQQQ", data, phoff + index * phentsize)
+        p_type, _flags, offset, vaddr, _paddr, filesz, _memsz, _align = entry
+        if p_type == 1 and vaddr <= va and va + length <= vaddr + filesz:
+            start = offset + va - vaddr
+            return data[start:start + length]
+    raise RuntimeError(f"ELF VA {va:#x} is outside PT_LOAD file bytes")
+
+
+INSTRUCTION_CONTRACT = {
+    "library": "scratch/apk-analysis-native/arm64-v8a/libSPenMagicPen.so",
+    "library_sha256": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+    "functions": {
+        "redrawLine": {
+            "rva": "0x286d8",
+            "description": "getRepeat result is loop count; loop draws exactly repeat getPosTan samples and excludes path endpoint.",
+            "instructions_le_hex": {
+                "0x2896c": "f503002a", "0x28998": "bf060071", "0x289a0": "cb060054",
+                "0x289d4": "7b4b0094", "0x289ec": "814a0094", "0x28a5c": "b5060071", "0x28a70": "a1faff54"
+            }
+        },
+        "redrawEndPen": {
+            "rva": "0x28b30",
+            "description": "getRepeat result is incremented before the terminal loop; it draws repeat+1 getPosTan samples including endpoint.",
+            "instructions_le_hex": {
+                "0x28df0": "84490094", "0x28e48": "16040011", "0x28e50": "0041201e",
+                "0x28e60": "584a0094", "0x28e78": "5e490094", "0x28ee8": "d6060071", "0x28efc": "a1faff54"
+            }
+        }
+    },
+    "boundary_rule": "When an inclusive path sampler is flattened into one XYZ stream, each shared segment endpoint is stored once and assigned to the next source callback. The native line callback is half-open and the final end callback is closed; ranges are contiguous and preserve the full stream."
+}
+
+
+def verify_instruction_contract() -> dict:
+    path = ROOT / INSTRUCTION_CONTRACT["library"]
+    if sha256(path.read_bytes()) != INSTRUCTION_CONTRACT["library_sha256"]:
+        raise RuntimeError("MagicPen DSO changed from pinned curved boundary contract")
+    for function in INSTRUCTION_CONTRACT["functions"].values():
+        for address, expected in function["instructions_le_hex"].items():
+            actual = elf_vaddr_bytes(path, int(address, 16), 4).hex()
+            if actual != expected:
+                raise RuntimeError(f"native instruction mismatch at {address}: {actual} != {expected}")
+    return INSTRUCTION_CONTRACT
 
 def replace_once(source: str, old: str, new: str, label: str) -> str:
     count = source.count(old)
@@ -300,10 +408,12 @@ def generated_fixture() -> dict:
     if len({case["capture"]["base_caller_sha256"] for case in cases}) != 1:
         raise RuntimeError("base caller changed during capture matrix")
     reference = json.loads((ROOT / "conformance/magicpen-glv1-source-native.json").read_text())
-    baseline = next(case for case in cases if case["id"] == "tool2_baseline")
-    old_baseline = next(case for case in reference["cases"] if case["id"] == "baseline")
-    if baseline["native"] != old_baseline["native"]:
-        raise RuntimeError("isolated one-call hook changed the existing tool2 baseline vector")
+    previous = json.loads((ROOT / "tmp/vector-parity-plan/magicpen-curved-events-next/magicpen-curved-source-events-native.json").read_text())
+    old_by_id = {case["id"]: case for case in previous["cases"]}
+    for case in cases[:5]:
+        if case != old_by_id[case["id"]]:
+            raise RuntimeError(f"existing curved capture changed: {case['id']}")
+    instruction_contract = verify_instruction_contract()
     return {
         "schema": "sdocx-magicpen-glv1-curved-source-events-v1",
         "scope": "Synthetic Model ObjectStroke getters/setters -> native Drawing selection -> one GLV1 RedrawPen -> curved redrawLine/redrawEndPen source callbacks -> RTV1 AddPoint and complete vector. Raw source indices are matched ordinally against actual getter arrays; callback AddPoint ranges are measured from native entry traces. No SDK deserialization or paint output.",
@@ -318,6 +428,8 @@ def generated_fixture() -> dict:
             "libraries": LIBRARIES,
             "helpers": HELPERS,
             "capture_source": "Hash-pinned MagicPen saved-caller runner, parameterized by this script. A Unicorn code hook is added immediately before ObjectDrawing::drawObjectStroke and removed immediately after it; only that invocation contributes to phase and callback observations. Wrapper SHA-256 uses a stable <FIXTURE_OUTPUT> placeholder. Each callback includes its raw source ordinal and its exact AddPoint half-open range/records.",
+            "native_instruction_contract": instruction_contract,
+            "runtime_closure": runtime_closure(),
         },
         "cases": cases,
     }
@@ -332,6 +444,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.case and args.write_fixture:
         parser.error("--case cannot be combined with --write-fixture; fixture writes always capture the full matrix")
+    preflight_existing_fixture(args.write_fixture)
     if args.case:
         match = next((case for case in CASES if case[0] == args.case), None)
         if match is None:
