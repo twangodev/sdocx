@@ -545,7 +545,7 @@ extending its guarantees.
 | Tables | Dense unmerged/merged preparation, vector fills/borders/artwork and measured content | Sparse/invalid grids use diagnosed fallback; rotated/nested preparation and general split-page composition remain incomplete or unverified. |
 | Table text clipping | Conservative table-wide scope; native per-run clipping in certified ordinary one-page contexts | Certification is bounded by source, font metrics, geometry and transforms; arbitrary cell-loop/per-run parity is not established. |
 | Code blocks | Shared title/body layout, panels, chrome/minimum geometry and continuation handling | Captured supplied-metric geometry is verified separately from complete native split-page composition. |
-| Pagination | Saved inspection sections, full-source fallback reflow, single-page continuous PDF bodies and bounded native page-range routing | PDF uses the full body when its inspection node is source-owned; quiz’s image at UTF-16 112 is retained. Inspection still selects 0..36. Empty inspection nodes, general native repagination, obstacle production and page-bound construction remain outside the verified route. |
+| Pagination | Saved inspection sections, full-source fallback reflow, single-page continuous bodies and bounded native page-range routing | SVG, replay and PDF use the full body when its inspection node is source-owned; quiz’s image at UTF-16 112 is retained. Inspection data still selects 0..36. General native repagination, obstacle production and page-bound construction remain outside the verified route. |
 
 ## Graphics, paper and composition
 

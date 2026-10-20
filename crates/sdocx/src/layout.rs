@@ -176,19 +176,16 @@ impl LayoutPage {
         .then_some(slice)
     }
 
-    /// Retrieve the full source used by the Standard PDF writer for a
+    /// Retrieve the full source used by native mode-1 body layout for a
     /// source-owned single-page continuous note.
     ///
-    /// This is deliberately narrower than inspection and SVG layout: mode 1
-    /// PDF export measures the complete note body and clips it to the page
-    /// viewport, regardless of a shorter saved inspection section. Validate
-    /// the synthetic inspection node first so stale or edited layout pages do
-    /// not get replaced by the authoritative metadata source.
+    /// This is deliberately narrower than inspection: native mode-1 display
+    /// and Standard PDF paths measure the complete note body and clip it to
+    /// their viewport, regardless of a shorter saved inspection section.
+    /// Validate the synthetic inspection node first so stale or edited layout
+    /// pages do not get replaced by the authoritative metadata source.
     #[cfg(feature = "render")]
-    pub(crate) fn single_page_continuous_pdf_body(
-        &self,
-        document: &Document,
-    ) -> Option<RichTextBox> {
+    pub(crate) fn single_page_continuous_body(&self, document: &Document) -> Option<RichTextBox> {
         if document.metadata.page_mode != Some(1)
             || document.pages.len() != 1
             || self.source_page_index != 0
@@ -1416,6 +1413,64 @@ mod tests {
             first.source_snapshot.as_ref().unwrap(),
             second.source_snapshot.as_ref().unwrap()
         ));
+    }
+
+    #[test]
+    fn mode1_empty_saved_section_reflow_preserves_full_body_image() {
+        let mut document = capture_document("before\u{fffc}after", &[(0, 0)]);
+        document.metadata.page_mode = Some(1);
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .object_spans
+            .push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(RichTextObjectContent::Image(Box::new(crate::PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: 10.0,
+                        y_min: 20.0,
+                        x_max: 40.0,
+                        y_max: 60.0,
+                    },
+                    rotation_degrees: None,
+                    media_id: None,
+                    media_index: Some(7),
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                }))),
+                text_index_utf16: 6,
+                layout_option: crate::ObjectSpanLayoutOption::Inline,
+                layout_constraint: crate::ObjectSpanLayoutConstraint::Normal,
+            });
+        let source = document.metadata.note_text.as_ref().unwrap().clone();
+
+        let page = layout_document(&document).pages.remove(0);
+        let inspection = page.body_text_slice().unwrap();
+        assert_eq!(
+            inspection.source_range,
+            0..TextIndex::new(&source.text).len()
+        );
+        assert!(inspection.reflow.is_some());
+        assert!(page.body_text_capture(&document).is_none());
+
+        let full = page.body_text_reflow(&document).unwrap();
+        assert_eq!(full, source);
+        assert_eq!(full.object_spans.len(), 1);
+        assert_eq!(full.object_spans[0].text_index_utf16, 6);
+        let Some(RichTextObjectContent::Image(image)) = full.object_spans[0].content.as_ref()
+        else {
+            panic!("full body image object should survive reflow");
+        };
+        assert_eq!(image.media_index, Some(7));
+
+        let mut removed_inspection = page.clone();
+        removed_inspection.page.objects.clear();
+        assert!(removed_inspection.body_text_reflow(&document).is_none());
     }
 
     #[test]

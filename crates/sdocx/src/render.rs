@@ -562,15 +562,8 @@ impl DocumentTextCache {
                 settings,
             ));
         observer(Progress::pending(ProgressStage::Preparing));
-        let body_text = PreparedBodyText::new(
-            document,
-            layout_page,
-            theme,
-            &text_renderer,
-            self,
-            slice,
-            retain_text,
-        );
+        let body_text =
+            PreparedBodyText::new(document, layout_page, theme, &text_renderer, self, slice);
         let mut svg = render_page_contents_svg(
             page,
             &document.metadata,
@@ -626,14 +619,11 @@ impl PreparedBodyText {
         renderer: &TextRenderer<'_>,
         cache: &mut DocumentTextCache,
         slice: Option<PageSlice>,
-        pdf_scene: bool,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
-        let pdf_full_body = pdf_scene
-            .then(|| page.single_page_continuous_pdf_body(document))
-            .flatten();
+        let full_body = page.single_page_continuous_body(document);
         let (text, source_range, first_page_index, last_page_index, detached) =
-            if let Some(text) = pdf_full_body {
+            if let Some(text) = full_body {
                 let source_range = 0..text.text.chars().count();
                 (text, source_range, 0, 0, false)
             } else if let Some(window) = body.capture_window.as_ref() {
@@ -4255,11 +4245,14 @@ mod tests {
         sanitize_hyperlink_target,
     };
     use crate::{
-        BoundingBox, Color, Document, DocumentMetadata, MediaAsset, ObjectSpanLayoutConstraint,
-        ObjectSpanLayoutOption, ObjectType, Page, PageElement, PageObjectContent, PlacedImage,
-        Point, RichTextBox, RichTextObjectContent, RichTextObjectSpan, RichTextSection,
+        BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
+    };
+    #[cfg(feature = "pdf")]
+    use crate::{
+        MediaAsset, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType,
+        PageObjectContent, PlacedImage, RichTextObjectContent, RichTextObjectSpan, RichTextSection,
     };
 
     #[cfg(all(feature = "pdf", feature = "serde"))]
@@ -4463,6 +4456,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn inkpen2_profile_legacy_serde_defaults_enhanced_antialias_off() {
         let profile: InkPen2RenderProfile =
@@ -8636,7 +8630,7 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
-    fn single_page_continuous_pdf_uses_full_source_without_replacing_inspection_slice() {
+    fn single_page_continuous_uses_full_source_without_replacing_inspection_slice() {
         let mut body = theme_test_text();
         body.text = format!("{}\u{fffc}tail", "\n".repeat(112));
         body.text_sections = vec![RichTextSection {
@@ -8696,10 +8690,21 @@ mod tests {
 
         let fonts = super::fonts::FontBook::default();
         let options = RenderOptions::default();
-        let inspection_svg = render_document_svg(&document, &options).remove(0).svg;
-        assert!(!inspection_svg.contains("data:image/svg+xml;base64,"));
-
         let mut cache = super::DocumentTextCache::default();
+        let inspection_svg = cache
+            .render_layout_page_svg(&document, &layout, 0, &options, &fonts)
+            .unwrap();
+        assert!(inspection_svg.svg.contains("data:image/svg+xml;base64,"));
+        assert_eq!(cache.plans[0].1.text.text.encode_utf16().count(), 117);
+        assert_eq!(cache.plans[0].1.text.object_spans[0].text_index_utf16, 112);
+        let first_plan = super::Rc::clone(&cache.plans[0].1);
+
+        let replay_svg = cache
+            .render_layout_page_replay_svg(&document, &layout, 0, &options, &fonts)
+            .unwrap();
+        assert!(replay_svg.svg.contains("data:image/svg+xml;base64,"));
+        assert!(super::Rc::ptr_eq(&first_plan, &cache.plans[0].1));
+
         let requests = [super::PageSceneRequest::full_page(layout_page)];
         let scene = cache.render_layout_page_scene_requests(
             &document,
@@ -8711,8 +8716,7 @@ mod tests {
         assert!(scene[0].page.svg.contains("data:image/svg+xml;base64,"));
         assert_eq!(cache.plans[0].1.text.text.encode_utf16().count(), 117);
         assert_eq!(cache.plans[0].1.text.object_spans[0].text_index_utf16, 112);
-
-        let first_plan = super::Rc::clone(&cache.plans[0].1);
+        assert!(super::Rc::ptr_eq(&first_plan, &cache.plans[0].1));
         document
             .metadata
             .note_text
