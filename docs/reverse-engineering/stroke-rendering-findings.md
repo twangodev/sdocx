@@ -349,16 +349,33 @@ unverified because that capture did not construct a ChineseBrush instance.
 The live alpha atlas uses nearest/clamp sampling; its complete 144×144 RGBA
 upload hashes to `da75f5d1190e6fe086aa11007b7ed739421cf5d4522e34cb246df273353d2942`.
 Fixed 321×228 logical-page, Y-down host captures separate 1×/2×/4× zoom from
-expanded-canvas controls. For the synthetic size-3.144 stroke, native visible
-support is 33 pixels at 1×. The intrinsic-image/axis-gradient prototype retains
-only 11 of those pixels in MuPDF and 18 in PDFium, versus 22 and 24 for matched
-generic lines, despite reducing color error. This is a production blocker.
-The shader's `fwidth(distance)` depends on angle and fragment-quad phase;
-constant radial gradients cannot reproduce it. Texture minification and this
-coverage field require separate controls before choosing vector transport.
+expanded-canvas controls. The shader's `fwidth(distance)` depends on angle and
+fragment-quad phase. Constant radial gradients lose thin-stamp PDF support;
+corrected angular alpha bands improve size-3.144 1× support IoU to 1.000 in
+MuPDF and 0.971 in PDFium, with lower color error than matched generic lines.
+These are per-scale host comparisons, not device or arbitrary-zoom parity.
+Minimum-size 0.4 controls still miss sparse native pixels at 2×/4×; an empty
+native 1× frame has no active-region error metric and cannot establish parity.
+
 The Y-down projection maps the quad's negative-Y edge to page top, where the
 shader samples atlas row zero. Original atlas rows therefore need no SVG image
-flip; the positive-Y capture requires the opposite orientation. Mask gradients
-use white at every stop and fade alpha alone; fading luminance too suppressed
-coverage in the initial prototype. These corrections improve the host comparisons
-but do not resolve thin-stamp PDF coverage.
+flip; the positive-Y capture requires the opposite orientation. Masks keep RGB
+white and fade alpha alone. The corrected atlas extraction uses the full
+144-pixel row stride; earlier contiguous-cell extraction results are invalid.
+The corrected comparison receipt hashes to
+`f4b2b0388f3984f5b2f23d5dd911fed39f029ec17762ba6ba4400b555d736a1e`.
+Actual applied host matrices were checked with `glGetUniformfv`; they override
+the native matrix and do not establish Samsung's stroke-cache projection.
+
+Native source-array read hooks and AddPoint boundaries also establish cumulative
+record cuts for curved and NoCurve saved redraws. Rust checks all three versions,
+including rejected and duplicate terminal events; these cuts describe saved
+redraw attribution, not live app replay. The source-boundary receipt hashes to
+`76f44ce5613fe5253fe39ade58782d61e7272578b28e40707c593d75b1934730`.
+
+The RTV1 `CreatePenCanvas(int,int,queue)` name does not establish target sizing:
+at `0x3b5d0` it discards those arguments and dispatches `Init()` through vtable
+slot `+0x30` (`0x49690 → 0x3b0f4`). `Draw` at `0x3b9f4` receives an external
+`ISPSubBitmap` and combines its matrix with the caller's matrix before shader
+submission. The target's upstream owner, dimensions and device transform remain
+unresolved; the fixed 144×144 pattern atlas is a separate allocation.
