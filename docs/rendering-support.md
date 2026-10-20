@@ -462,6 +462,8 @@ GLV1/2/3; a shared test-only source-event model matches callback Vector4/scalar
 inputs and every packed stream word in these bounded captures.
 An authored synthetic SDOCX regression checks note-string resolution and all five
 parsed source channels before comparing 33 packed native records.
+Parsed GLV1/2/3 fallback colors retain saved RGB or ObjectStroke's omitted-color black;
+brush geometry and textured paint remain approximate.
 An [adversarial extension](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/chinesebrush-source-extension-native.json)
 adds 24 cases for pressure, size and method-specific speed/width precision;
 The established Rust matrix matches 1,762 native records across 143 cases, with generated

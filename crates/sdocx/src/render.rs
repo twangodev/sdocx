@@ -4219,15 +4219,38 @@ pub struct StrokePaint {
 }
 
 fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
-    // Preserve an explicit public color; recover saved RGB only for the
-    // ordinary InkPen profiles whose source-color contract is established.
+    // Preserve an explicit public color; recover saved RGB only for profiles
+    // whose source-color contract is established.
     stroke.color.or_else(|| {
-        crate::ink::saved_inkpen_argb(stroke).map(|argb| Color {
-            r: (argb >> 16) as u8,
-            g: (argb >> 8) as u8,
-            b: argb as u8,
-        })
+        chinesebrush_source_color(stroke)
+            .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
     })
+}
+
+fn argb_rgb(argb: u32) -> Color {
+    Color {
+        r: (argb >> 16) as u8,
+        g: (argb >> 8) as u8,
+        b: argb as u8,
+    }
+}
+
+/// Recover ObjectStroke's omitted-color default only for canonical parsed
+/// ChineseBrush records. Public/generic strokes and unsupported profiles keep
+/// the established theme fallback.
+fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
+    let rendering = stroke.rendering.as_ref()?;
+    if rendering.metadata.is_none()
+        || rendering.pen_name.as_deref()
+            != Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            Some("1;" | "2;" | "3;")
+        )
+    {
+        return None;
+    }
+    Some(argb_rgb(rendering.style.color_argb.unwrap_or(0xff00_0000)))
 }
 
 /// Resolve paint for a default light or dark canvas, without document metadata.
@@ -8243,6 +8266,99 @@ mod tests {
                 assert_eq!(parts, ["2", "3"]);
             }
         }
+    }
+
+    #[test]
+    fn parsed_chinesebrush_missing_color_uses_native_objectstroke_default() {
+        let document = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let stroke = document.pages[0].strokes().next().unwrap();
+        let rendering = stroke.rendering.as_ref().unwrap();
+        assert_eq!(
+            rendering.pen_name.as_deref(),
+            Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+        );
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("3;"));
+        assert!(rendering.metadata.is_some());
+        assert_eq!(rendering.style.color_argb, None);
+        assert_eq!(stroke.color, None);
+
+        assert_eq!(
+            super::stroke_source_color(stroke),
+            Some(Color { r: 0, g: 0, b: 0 })
+        );
+        assert_eq!(super::stroke_paint(stroke, false).color, "#000000");
+        assert_eq!(super::stroke_paint(stroke, true).color, "#ffffff");
+        assert_eq!(crate::prepare_stroke(stroke, false).color, "#000000");
+        assert_eq!(
+            super::prepare_stroke_for_page(stroke, false).color,
+            "#000000"
+        );
+        assert_eq!(
+            super::prepare_stroke_for_page_with_theme(
+                stroke,
+                RenderTheme::for_canvas(false),
+                &RenderOptions::default(),
+            )
+            .color,
+            "#000000"
+        );
+        assert!(
+            render_document_svg(&document, &RenderOptions::default())[0]
+                .svg
+                .contains(r##"stroke="#000000""##)
+        );
+        let layout = layout_document(&document);
+        assert!(
+            super::render_layout_page_replay_svg(&document, &layout, 0, &RenderOptions::default(),)
+                .unwrap()
+                .svg
+                .contains(r##"stroke="#000000""##)
+        );
+
+        let mut public_override = stroke.clone();
+        public_override.color = Some(Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        });
+        assert_eq!(
+            super::stroke_paint(&public_override, false).color,
+            "#336699"
+        );
+        assert_eq!(
+            super::prepare_stroke_for_page(&public_override, false).color,
+            "#336699"
+        );
+
+        let mut saved_override = stroke.clone();
+        saved_override.color = None;
+        saved_override.rendering.as_mut().unwrap().style.color_argb = Some(0xff12_3456);
+        assert_eq!(
+            super::stroke_source_color(&saved_override),
+            Some(Color {
+                r: 0x12,
+                g: 0x34,
+                b: 0x56
+            })
+        );
+
+        let mut generic = stroke.clone();
+        generic.rendering.as_mut().unwrap().metadata = None;
+        assert_eq!(super::stroke_paint(&generic, false).color, "#1a1a1a");
+
+        let mut unknown_version = stroke.clone();
+        unknown_version
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("4;".into());
+        assert_eq!(
+            super::stroke_paint(&unknown_version, false).color,
+            "#1a1a1a"
+        );
     }
 
     #[cfg(feature = "serde")]
