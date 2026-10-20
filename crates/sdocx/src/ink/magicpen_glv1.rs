@@ -154,8 +154,6 @@ pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
     })
 }
 
-
-
 #[derive(Clone, Copy)]
 struct FPoint {
     x: f32,
@@ -304,7 +302,7 @@ fn quad(a: FPoint, b: FPoint, c: FPoint) -> Quad {
 }
 
 fn speed_factor(distance: f32) -> f32 {
-    if distance < 1.5 {
+    if distance < 4.2 {
         1.0
     } else if distance < 9.5 {
         0.6
@@ -338,24 +336,30 @@ fn width_target(old: f32, size: f32, pressure: f32, factor: f32) -> f32 {
 }
 
 fn terminal_width_target(old: f32, size: f32, pressure: f32, factor: f32) -> f32 {
-    let adjustment = if factor < 0.35 {
-        pressure * 1.5 + factor * 0.5
+    let candidate = if factor < 0.35 {
+        size.mul_add(pressure, old) * 0.5
     } else if factor < 0.7 {
-        factor.mul_add(0.5, pressure * 1.5)
+        let adjustment = factor.mul_add(0.5, pressure * 1.5);
+        size.mul_add(adjustment * 0.5, old) * 0.5
     } else {
-        pressure + factor
+        let adjustment = pressure + factor;
+        size.mul_add(adjustment * 0.5, old) * 0.5
     };
-    let candidate = size.mul_add(adjustment * 0.5, old) * 0.5;
+    end_pen_width_target(old, candidate, size)
+}
+
+fn end_pen_width_target(old: f32, candidate: f32, size: f32) -> f32 {
     let delta = candidate - old;
-    if delta > 6.0 {
+    let target = if delta > 6.0 {
         old + 6.0
     } else if delta < -6.0 {
         old - 6.0
-    } else if delta < 0.0 && old > 1.0 && old < 10.0 && -delta < 0.5 {
+    } else if candidate < old && old < 6.0 {
         old - 0.5
     } else {
         candidate
-    }
+    };
+    target.max(size / 10.0)
 }
 
 fn repeat_index(length: f32, interval: f32) -> usize {
@@ -430,7 +434,22 @@ fn source_glv1_curve_trace(
     let raw_terminal = *points.last().unwrap();
     let raw_terminal_pressure = *pressure.last().unwrap();
     let (points, pressure, source_indices) = admit_source_events(points, pressure);
-    if points.len() < 2 {
+    if points.len() == 1 {
+        // With no admitted move, native endPen emits a dot at the retained
+        // initial point using the raw terminal pressure.
+        let size = source_size.clamp(0.4, 800.0);
+        let width = size * raw_terminal_pressure.mul_add(0.5, 0.5);
+        return CurveEmission {
+            records: vec![[
+                points[0][0].to_bits(),
+                points[0][1].to_bits(),
+                (width * 0.5 + 0.5).to_bits(),
+            ]],
+            source_event_ranges: vec![0..0; raw_point_count],
+            terminal_range: 0..1,
+        };
+    }
+    if points.is_empty() {
         return CurveEmission {
             records: Vec::new(),
             source_event_ranges: vec![0..0; raw_point_count],
@@ -449,7 +468,8 @@ fn source_glv1_curve_trace(
             // endPen still closes the path at that raw endpoint and uses its
             // pressure while retaining the accepted point as control.
             let end = source_point(raw_terminal);
-            let terminal = size.mul_add(raw_terminal_pressure.mul_add(0.25, 0.25), width * 0.5);
+            let candidate = size.mul_add(raw_terminal_pressure.mul_add(0.25, 0.25), width * 0.5);
+            let terminal = end_pen_width_target(width, candidate, size);
             paths.push((
                 SourceCurve::Quad([p[0], p[1], end]),
                 width,
@@ -482,7 +502,8 @@ fn source_glv1_curve_trace(
             ));
         } else {
             let c2 = p[1].mid(p[2]);
-            let terminal = size.mul_add(pressure[2].mul_add(0.25, 0.25), width * 0.5);
+            let candidate = size.mul_add(pressure[2].mul_add(0.25, 0.25), width * 0.5);
+            let terminal = end_pen_width_target(width, candidate, size);
             paths.push((
                 SourceCurve::Cubic([p[0], p[1], c2, p[2]]),
                 width,
@@ -817,7 +838,13 @@ mod tests {
             "sdocx-magicpen-glv1-curved-source-events-v1"
         );
         let cases = fixture["cases"].as_array().unwrap();
-        assert_eq!(cases.len(), 13);
+        assert_eq!(cases.len(), 25);
+        let case_ids: std::collections::BTreeSet<_> = cases
+            .iter()
+            .map(|case| case["id"].as_str().unwrap())
+            .collect();
+        assert!(case_ids.contains("curve_terminal_factor_02_pressure_zero"));
+        assert!(case_ids.contains("curve_terminal_factor_02_pressure_one"));
         let mut seen = std::collections::BTreeSet::new();
         for case in cases {
             let id = case["id"].as_str().unwrap();

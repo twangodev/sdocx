@@ -398,8 +398,9 @@ admission, native width transitions and the 0.4–800 size clamp. A
 adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
 ranges and direct-dot fallback, with exact complete streams. A separate
 [curved event capture](../conformance/magicpen-curved-source-events-native.json)
-records line/terminal callback ranges for 13 bounded inputs, including rejected
-final points and changed pressure at duplicate endpoints. Rust matches every
+records line/terminal callback ranges for 25 bounded inputs, including rejected
+final points, duplicate endpoints, direct dots, size limits and low-factor
+terminal pressure controls. Rust matches every
 captured XYZ word and callback range. Pinned native loops exclude line endpoints
 and include terminal endpoints; terminal arguments retain the raw final input.
 General curved sampling and curved production admission remain open.
