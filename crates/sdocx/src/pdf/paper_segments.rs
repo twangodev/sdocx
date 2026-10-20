@@ -386,6 +386,35 @@ mod tests {
     }
 
     #[test]
+    fn quiz_image_cut_uses_native_line_bottom_not_saved_image_bottom() {
+        struct ImageCut;
+        impl SegmentQueries for ImageCut {
+            fn body_cut(&self, band: [f32; 4]) -> Result<BodyCutObservation, PlanError> {
+                assert_eq!(band, [0.0, 6065.0, 1812.0, 6066.0]);
+                Ok(BodyCutObservation {
+                    visible: true,
+                    line_index: Some(112),
+                    line_count: 116,
+                    line_rect: [1111490560, 1168837030, 1141759706, 1170258266].map(f32::from_bits),
+                })
+            }
+        }
+
+        // Native body layout of the quiz's LF/U+FFFC source and block image,
+        // with resolved font 36, frame width 1812 and margins [48,30,48,30].
+        // The saved image ends at 6154.564, but its native line ends at 6167.169.
+        // This tests that one observed cut, not the complete note topology.
+        let planner = Planner {
+            note_width: 1812,
+            note_height: 15372,
+            default_height: 1527,
+            records: &[],
+            queries: &ImageCut,
+        };
+        assert_eq!(planner.normal_height(4539, 6066, None).unwrap(), 1628);
+    }
+
+    #[test]
     fn native_cs61_order_groups_consecutive_source_pages() {
         let spans = [
             (0, 1397),
