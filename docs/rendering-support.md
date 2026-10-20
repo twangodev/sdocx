@@ -268,7 +268,7 @@ coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry. An explicit
 `RenderOptions::inkpen2_profile` enables bounded V9 vector stamps for ordinary
-tool-2 strokes with `9;`, zero tolerance, and complete saved channels. It selects
+solid-color tool-2 strokes with `9;`, zero tolerance, and complete saved channels. It selects
 fresh per-stroke state, identity inverse scale and direct source-over paint
 with enhanced antialiasing disabled; it does not infer an app display profile.
 Without that option, InkPen2 retains the generic approximation. The V9 core
@@ -293,8 +293,9 @@ direct same-color overlap accumulates while the alternate branch preserves
 its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-joined-paint-native.json)
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
-Natural app canvas setup, enhanced-AA selection and device parity remain
-unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
+Native global-AA configuration reaches the per-pen setting and queued RT flag.
+Enhanced-AA paint reconstruction, natural app canvas setup and device defaults
+remain unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
 improves support and color error over the generic fallback in Chromium, Firefox,
 MuPDF and PDFium; a half-alpha 1× control also improves. SVG support IoU is
 about 0.992–0.996, while PDF remains about 0.812–0.955. Independent single-stamp

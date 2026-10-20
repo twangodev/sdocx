@@ -241,14 +241,36 @@ still required because terminal construction dereferences it. This does not
 justify discarding channels or generalizing to live input, other versions or
 effects; [recording](stroke-recording-findings.md) remains separate authority.
 
-[prepare_stroke](../../crates/sdocx/src/ink.rs) does not admit InkPen2 V9;
-it retains original points. [stroke_paint](../../crates/sdocx/src/render.rs)
-uses generic width*(0.3+0.7*clamped pressure), not this time/history law.
-Saved samples/settings remain the source; generated caches are derived.
+Context-free [prepare_stroke](../../crates/sdocx/src/ink.rs) retains original
+InkPen2 points and the generic pressure-width approximation. The explicit
+`RenderOptions::inkpen2_profile` route reconstructs ordinary solid-color tool-2 `9;` strokes
+with zero tolerance and complete channels. It selects fresh state, identity
+inverse scale and direct source-over with enhanced AA disabled; screen dimensions
+are supplied rather than inferred from the page. Saved channels remain the source.
+Native color modes 1 (gradient) and 2 (pattern) configure separate effects;
+the constant-RGB route admits only missing/zero color type and rejects rainbow.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,
 platform services and supplied stroke interfaces remain host boundaries. This
 does not establish device display context, arbitrary incoming state, other
-effects/versions, shader appearance or native PDF equality. The Rust numeric
-core is still unadmitted and does not match every captured path.
+effects/versions, arbitrary enhanced-AA canvas setup or native PDF equality.
+The explicit profile is bounded admission, not a device-default reconstruction.
+
+A hybrid control combines a borrowed type-0 prefix with a host-built 106-byte
+type-1 frame. Native apply/attach restores InkPen2/`9;`, size 4 and `ff123456`;
+source tolerance and all three redraw thresholds are zero. Omitted line/stroke
+types default to zero: the model constructor initializes members 384/464,
+read by getters at `0x2e2a28`/`0x2e16b0`. Rust parses and resolves the same style
+IDs, then matches all 225 native output words at 1920×1080. This is generated
+source evidence, not a native full-source writer or a real InkPen2 document.
+
+When drawable+16/+32 are present, V9 queues enhanced AA from
+`InkPen2Data[0] + 52` at `0x4e274–0x4e294`; helper `0x3e590` copies it into
+task+40. Native manager AA controls 0/1 propagate through `GetPen` into
+`Pen::SetEnhancedAntiAlias` (`0x460a4`, return PC `0x4dce8`), then the queued
+RT setter (`0x4a5b0`) writes RT+68. Draw reads that byte at `0x5458c` and
+reaches default/enhanced continuations `0x54844`/`0x54594`. The enabled control
+produces a MAX mask, source-over color canvas and final RGBA8 composite.
+This verifies configured native handoff, not device policy; the vector renderer
+currently supports only the explicit disabled-AA profile.
