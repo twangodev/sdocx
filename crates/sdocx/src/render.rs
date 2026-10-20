@@ -3552,7 +3552,9 @@ fn prepare_inkpen2_v9(
         || rendering.tool_type_raw != 2
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
         || rendering.style.line_type_raw.unwrap_or(0) != 0
-        || rendering.style.color_type_raw.unwrap_or(0) != 0
+        // InkPen2 has no Patternable interface: Drawing's type-2 branch is
+        // inert. Type 1 still needs the varying-color paint reconstruction.
+        || !matches!(rendering.style.color_type_raw.unwrap_or(0), 0 | 2)
         || rendering.properties.replay_only
         || !rendering.properties.stylus_channels
         || rendering.properties.eraser
@@ -6225,7 +6227,7 @@ mod tests {
     }
 
     #[test]
-    fn inkpen2_constant_rgb_profile_rejects_native_gradient_and_pattern_modes() {
+    fn inkpen2_constant_rgb_profile_rejects_gradient_and_unknown_color_modes() {
         let options = RenderOptions {
             inkpen2_profile: Some(InkPen2RenderProfile {
                 screen_width: 1920,
@@ -6235,10 +6237,9 @@ mod tests {
             ..RenderOptions::default()
         };
         let mut stroke = inkpen2_color_stroke(0xff336699, None);
-        for color_type in [1, 2] {
-            // Native PenColorType 1 selects gradient/rainbow configuration;
-            // type 2 selects pattern configuration. Constant RGB cannot
-            // reconstruct those modes from the base ARGB alone.
+        for color_type in [1, 3, u16::MAX] {
+            // Type 1 needs gradient transport; unknown native modes do not
+            // inherit the separately verified type-2 no-op contract.
             stroke.rendering.as_mut().unwrap().style.color_type_raw = Some(color_type);
             let prepared = prepare_stroke_for_page_with_theme(
                 &stroke,
@@ -6250,6 +6251,50 @@ mod tests {
                 "native color mode {color_type}"
             );
         }
+    }
+
+    #[test]
+    fn inkpen2_pattern_mode_matches_native_solid_geometry_and_paint_input() {
+        // The actual InkPen2 Pen::GetPatternable returns null (PenCommon
+        // RVA 0x46480). Drawing skips pattern setup, and native type 0/2
+        // controls produce this same VBO and full RGBA readback.
+        // Native type-2 capture SHA-256:
+        // 81c2930aff4c3c3ed1271d434c607f1e193fa43d03f49185bde50fd2d9319bdb.
+        let mut stroke = inkpen2_color_stroke(0xff336699, None);
+        stroke
+            .points
+            .extend([Point { x: 16., y: 3. }, Point { x: 24., y: 3. }]);
+        stroke.timestamps = vec![0, 10, 20, 30];
+        stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        stroke.tilts = vec![0.; 4];
+        stroke.orientations = vec![0.; 4];
+        let theme = RenderTheme::for_canvas(false);
+        let profile = InkPen2RenderProfile {
+            screen_width: 1440,
+            screen_height: 2560,
+            enhanced_antialias: false,
+        };
+        let plain = prepare_inkpen2_v9(&stroke, Some(profile), theme).unwrap();
+        let style = &mut stroke.rendering.as_mut().unwrap().style;
+        style.color_type_raw = Some(2);
+        style.pattern_index = Some(7);
+        style.pattern_scale = Some(1.75);
+        let pattern = prepare_inkpen2_v9(&stroke, Some(profile), theme).unwrap();
+        assert_eq!(pattern.records, plain.records);
+        assert_eq!(pattern.sample_ends, plain.sample_ends);
+        assert_eq!(pattern.color, plain.color);
+        assert_eq!(pattern.opacity, plain.opacity);
+        use sha2::Digest;
+        let payload: Vec<u8> = pattern
+            .records
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(payload)),
+            "80ead21b09828b444750eda94ed3bbf2fb7c5628fcce575afc4cb9bfd543e436"
+        );
     }
 
     #[test]
