@@ -249,6 +249,13 @@ inverse scale and an explicit `enhanced_antialias` policy; screen dimensions are
 supplied rather than inferred from the page. Saved channels remain the source.
 Native color modes 1 (gradient) and 2 (pattern) configure separate effects;
 the constant-RGB route admits only missing/zero color type and rejects rainbow.
+Native gradient probes recover palette interpolation at `0x4e9dc`/`0x4ecc0`:
+segment-local distance plus carried offset selects RGB; palette alpha and the
+separate rainbow-time control do not affect the captured streams. Terminal
+color is recalculated only while drawable+376 remains set (no prior stamp);
+a two-point 0.5-unit stroke reaches that branch, unlike the 25-record control.
+Gradient output still needs the normalized source-over color canvas as well as
+the enhanced-AA MAX mask; the constant-color projection alone is insufficient.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
 configured redraw cases and reads the final nine-float RTV3 records separately
 from callback inputs. All 144 dependency initializers run; single-thread locale,
