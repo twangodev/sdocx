@@ -245,8 +245,8 @@ Context-free [prepare_stroke](../../crates/sdocx/src/ink.rs) retains original
 InkPen2 points and the generic pressure-width approximation. The explicit
 `RenderOptions::inkpen2_profile` route reconstructs ordinary solid-color tool-2 `9;` strokes
 with zero tolerance and complete channels. It selects fresh state, identity
-inverse scale and direct source-over with enhanced AA disabled; screen dimensions
-are supplied rather than inferred from the page. Saved channels remain the source.
+inverse scale and an explicit `enhanced_antialias` policy; screen dimensions are
+supplied rather than inferred from the page. Saved channels remain the source.
 Native color modes 1 (gradient) and 2 (pattern) configure separate effects;
 the constant-RGB route admits only missing/zero color type and rejects rainbow.
 The [native saved capture](../../conformance/inkpen2-saved.json) executes three
@@ -272,5 +272,13 @@ task+40. Native manager AA controls 0/1 propagate through `GetPen` into
 RT setter (`0x4a5b0`) writes RT+68. Draw reads that byte at `0x5458c` and
 reaches default/enhanced continuations `0x54844`/`0x54594`. The enabled control
 produces a MAX mask, source-over color canvas and final RGBA8 composite.
-This verifies configured native handoff, not device policy; the vector renderer
-currently supports only the explicit disabled-AA profile.
+This verifies configured native handoff, not device policy. With mask M and
+premultiplied source-over canvas C, the final shader emits alpha `M * ARGB.a`
+and straight RGB `C.rgb / C.a`. For admitted constant RGB, the vector route uses
+MAX coverage and opacity once, omitting intermediate RGBA8 color quantization
+(up to one RGB byte in the opaque 25-record witness, not a general error bound).
+Actual native 1×/2×/4× controls with alpha 0/128/255 preserve the same 900-byte
+upload. Public SVG active-union RGB MAE is 0.55–0.87 for half alpha; MuPDF is
+4.21–12.30, improving over the direct route but leaving substantial sampling error.
+Opaque SVG also improves; opaque PDF regresses at 1×/2× and improves at 4×.
+All alpha-zero controls match blank; exported PDFs contain no image objects.

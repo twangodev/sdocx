@@ -269,8 +269,9 @@ The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry. An explicit
 `RenderOptions::inkpen2_profile` enables bounded V9 vector stamps for ordinary
 solid-color tool-2 strokes with `9;`, zero tolerance, and complete saved channels. It selects
-fresh per-stroke state, identity inverse scale and direct source-over paint
-with enhanced antialiasing disabled; it does not infer an app display profile.
+fresh per-stroke state and identity inverse scale. `enhanced_antialias` selects
+MAX coverage with one saved-alpha composite; false retains per-stamp source-over.
+It does not infer the app's display or antialias policy.
 Without that option, InkPen2 retains the generic approximation. The V9 core
 matches every RTV3 float in three fresh, type-0 saved redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
@@ -294,13 +295,18 @@ its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
 Native global-AA configuration reaches the per-pen setting and queued RT flag.
-Enhanced-AA paint reconstruction, natural app canvas setup and device defaults
-remain unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
+The solid-color enhanced route projects its MAX mask; intermediate RGBA8 color
+normalization can differ from the ideal vector field. Natural app canvas setup
+and device defaults remain unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
 improves support and color error over the generic fallback in Chromium, Firefox,
 MuPDF and PDFium; a half-alpha 1× control also improves. SVG support IoU is
 about 0.992–0.996, while PDF remains about 0.812–0.955. Independent single-stamp
 PDF controls retain the radial-shading sampling error even without the
 converter’s shape bounds or RGB gradient; gradient transport is not pixel parity.
+Nine enhanced-AA controls (1×/2×/4×, alpha 0/128/255) retain the same native VBO.
+The enhanced projection improves SVG and partial-alpha PDF error against those
+native frames compared with selecting the direct route. Opaque PDF error is
+worse at 1×/2× and better at 4×; zero-alpha output is blank and PDFs remain vector-only.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
