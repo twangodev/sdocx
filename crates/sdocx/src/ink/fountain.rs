@@ -567,13 +567,10 @@ mod tests {
                     little_endian_u32(&words[channel])
                 );
             }
-            // The recovered width arithmetic differs by at most one f32 ULP
-            // on this original persisted stroke; preserve that measured bound.
-            assert!(
-                (dots.radii[index] as f32)
-                    .to_bits()
-                    .abs_diff(little_endian_u32(&words[2]))
-                    <= 1
+            assert_eq!(
+                (dots.radii[index] as f32).to_bits(),
+                little_endian_u32(&words[2]),
+                "persisted radius {index}"
             );
             assert_eq!(little_endian_f32(&words[5]), 1.0);
         }
