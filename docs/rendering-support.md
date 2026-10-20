@@ -478,11 +478,12 @@ full host Mesa readback. This does not establish device or export parity;
 production vector integration and broader source validation remain open.
 Live program/sampler queries identify the alpha-atlas shader and native nearest/
 clamp sampling. Opaque, partial and zero source-alpha controls produce identical
-host readbacks. Fixed-logical-page zoom controls are host-selected; SVG/PDF
+host readbacks. Fixed-logical-page scale controls override the native projection; SVG/PDF
 intrinsic-texture prototypes reduce color error against matched generic lines,
 and corrected angular alpha masks improve thin-stamp support in PDF exports.
-Minimum-size controls still miss sparse native pixels. Screen-cache allocation
-uses view dimensions, but stroke-local resolution and projection remain unverified.
+Minimum-size controls still miss sparse native pixels. A separate native canvas-matrix
+capture verifies projection scaling into an existing bitmap; application allocation,
+device transforms and pixel parity remain unverified.
 Native derivatives, texture minification and vector transport remain under investigation;
 these prototypes are not production paint.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)

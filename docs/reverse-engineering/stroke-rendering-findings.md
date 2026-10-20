@@ -348,8 +348,9 @@ unverified because that capture did not construct a ChineseBrush instance.
 
 The live alpha atlas uses nearest/clamp sampling; its complete 144×144 RGBA
 upload hashes to `da75f5d1190e6fe086aa11007b7ed739421cf5d4522e34cb246df273353d2942`.
-Fixed 321×228 logical-page, Y-down host captures separate 1×/2×/4× zoom from
-expanded-canvas controls. The shader's `fwidth(distance)` depends on angle and
+Fixed 321×228 logical-page, Y-down host captures use an overridden projection
+and growing framebuffer for a synthetic 1×/2×/4× scale sweep; this is not native
+canvas zoom. The shader's `fwidth(distance)` depends on angle and
 fragment-quad phase. Constant radial gradients lose thin-stamp PDF support;
 corrected angular alpha bands improve size-3.144 1× support IoU to 1.000 in
 MuPDF and 0.971 in PDFium, with lower color error than matched generic lines.
@@ -377,5 +378,24 @@ The RTV1 `CreatePenCanvas(int,int,queue)` name does not establish target sizing:
 at `0x3b5d0` it discards those arguments and dispatches `Init()` through vtable
 slot `+0x30` (`0x49690 → 0x3b0f4`). `Draw` at `0x3b9f4` receives an external
 `ISPSubBitmap` and combines its matrix with the caller's matrix before shader
-submission. The target's upstream owner, dimensions and device transform remain
-unresolved; the fixed 144×144 pattern atlas is a separate allocation.
+submission. The fixed 144×144 pattern atlas is a separate allocation. Native callback
+workers enumerate tiles of the existing canvas bitmap; the bitmap's upstream
+size producer and application/device transform remain unresolved.
+
+The native matrix helper at `0x3bc98` computes `M_subbitmap × embed(M_canvas)`.
+A separate capture calls native canvas `SetMatrix` and forwards the shader
+uniform unchanged, then verifies it with `glGetUniformfv`. At fixed 321×228
+allocation, canvas scales 1/2/4 produce X/Y terms
+`(2/321, 2/228) × scale` and 33/125/501 alpha-support pixels for one synthetic
+stroke. Growing allocation alone divides the projection terms and preserves
+pixel scale. The capture receipt hashes to
+`dc948f2d0e21aa730881ff717d89e6d052a13550f1be119187783361a01e1b70`;
+it does not establish application matrix provenance or device rasterization.
+
+A CPU mirror of the shader's 2×2 derivative lanes reproduces the minimum-size
+synthetic host readbacks byte-for-byte, including their faint singleton pixels.
+Changing alpha-band counts trades missed coverage for false positives; more
+bands do not consistently improve support. These derivative/quantization
+controls use the overridden Y-down sweep, not the native canvas-zoom capture.
+Their receipt hashes to
+`c680c9ec6f88866287a06110f5a8cd7e8f3586a2c49128ce2340455c2e851cfe`.
