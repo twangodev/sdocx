@@ -170,6 +170,8 @@ fn draw_svg<'h, 'o>(
 struct ProcessContext<'a, 'h, 'o> {
     pub(super) fonts: Fonts<'a>,
     svg_settings: SvgSettings,
+    cull_viewport: Option<usvg::Rect>,
+    cull_candidates: std::collections::HashSet<usize>,
     text_hook: Option<&'h mut TextHook<'o>>,
     ink_ids: Option<&'h std::collections::HashSet<String>>,
     ink_hook: Option<&'h mut InkHook<'o>>,
@@ -181,6 +183,8 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
         Self {
             fonts: Fonts::new(tree_fontdb),
             svg_settings,
+            cull_viewport: None,
+            cull_candidates: std::collections::HashSet::new(),
             text_hook: None,
             ink_ids: None,
             ink_hook: None,
@@ -215,6 +219,207 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             ));
         }
     }
+
+    fn set_cull_viewport(&mut self, root: &usvg::Group, viewport: usvg::Rect) {
+        self.cull_viewport = Some(viewport);
+        collect_cull_candidates(root, &mut self.cull_candidates);
+    }
+
+    pub(super) fn should_cull_node(&self, node: &usvg::Node) -> bool {
+        if !self.cull_candidates.contains(&(node as *const _ as usize)) {
+            return false;
+        }
+        let Some(viewport) = self.cull_viewport else {
+            return false;
+        };
+
+        let bbox = match node {
+            usvg::Node::Group(group) => group.abs_layer_bounding_box().to_rect(),
+            _ => node.abs_stroke_bounding_box(),
+        };
+        if ![bbox.left(), bbox.top(), bbox.right(), bbox.bottom()]
+            .into_iter()
+            .all(f32::is_finite)
+        {
+            return false;
+        }
+        let outside = bbox.right() < viewport.left()
+            || bbox.left() > viewport.right()
+            || bbox.bottom() < viewport.top()
+            || bbox.top() > viewport.bottom();
+        if !outside {
+            return false;
+        }
+
+        if self.svg_settings.reject_images && node_contains_image(node) {
+            return false;
+        }
+        if self.svg_settings.reject_rasterized_filters
+            && (node_contains_pattern(node) || node_contains_unsupported_filter(node))
+        {
+            return false;
+        }
+        let has_custom_painter =
+            self.text_hook.is_some() || self.ink_ids.is_some_and(|ids| !ids.is_empty());
+        let validates_hidden_content =
+            self.svg_settings.reject_images || self.svg_settings.reject_rasterized_filters;
+        if (has_custom_painter || validates_hidden_content) && node_contains_mask_or_clip(node) {
+            return false;
+        }
+        if (self.text_hook.is_some() || validates_hidden_content) && node_contains_text(node) {
+            return false;
+        }
+        if let Some(ink_ids) = self.ink_ids
+            && !ink_ids.is_empty()
+            && node_contains_native_ink(node, ink_ids)
+        {
+            return false;
+        }
+
+        true
+    }
+}
+
+fn collect_cull_candidates(group: &usvg::Group, candidates: &mut std::collections::HashSet<usize>) {
+    // A filter can move pixels from an offscreen child into the viewport. The filtered group's
+    // own layer bounds are a safe culling boundary, but its descendants are not.
+    if !group.filters().is_empty() {
+        return;
+    }
+
+    for node in group.children() {
+        candidates.insert(node as *const _ as usize);
+        if let usvg::Node::Group(child) = node {
+            collect_cull_candidates(child, candidates);
+        }
+    }
+}
+
+fn node_contains_text(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Text(_) => true,
+        usvg::Node::Group(group) => group.children().iter().any(node_contains_text),
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => tree.root().children().iter().any(node_contains_text),
+            _ => false,
+        },
+        usvg::Node::Path(path) => {
+            path_patterns(path).any(|root| root.children().iter().any(node_contains_text))
+        }
+    }
+}
+
+fn node_contains_native_ink(
+    node: &usvg::Node,
+    ink_ids: &std::collections::HashSet<String>,
+) -> bool {
+    match node {
+        usvg::Node::Group(group) => {
+            ink_ids.contains(group.id())
+                || group
+                    .children()
+                    .iter()
+                    .any(|child| node_contains_native_ink(child, ink_ids))
+        }
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => tree
+                .root()
+                .children()
+                .iter()
+                .any(|child| node_contains_native_ink(child, ink_ids)),
+            _ => false,
+        },
+        usvg::Node::Path(path) => path_patterns(path).any(|root| {
+            root.children()
+                .iter()
+                .any(|child| node_contains_native_ink(child, ink_ids))
+        }),
+        usvg::Node::Text(_) => false,
+    }
+}
+
+fn node_contains_image(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Image(_) => true,
+        usvg::Node::Group(group) => group_contains_image(group),
+        usvg::Node::Path(path) => path_patterns(path).any(group_contains_image),
+        usvg::Node::Text(_) => false,
+    }
+}
+
+fn node_contains_pattern(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Group(group) => group.children().iter().any(node_contains_pattern),
+        usvg::Node::Path(path) => path_patterns(path).next().is_some(),
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => tree.root().children().iter().any(node_contains_pattern),
+            _ => false,
+        },
+        usvg::Node::Text(_) => false,
+    }
+}
+
+fn node_contains_unsupported_filter(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Group(group) => {
+            (!group.filters().is_empty() && !colorize::is_supported(group))
+                || group
+                    .children()
+                    .iter()
+                    .any(node_contains_unsupported_filter)
+        }
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => tree
+                .root()
+                .children()
+                .iter()
+                .any(node_contains_unsupported_filter),
+            _ => false,
+        },
+        usvg::Node::Path(path) => path_patterns(path)
+            .any(|root| root.children().iter().any(node_contains_unsupported_filter)),
+        usvg::Node::Text(_) => false,
+    }
+}
+
+fn node_contains_mask_or_clip(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Group(group) => group_contains_mask_or_clip(group),
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => group_contains_mask_or_clip(tree.root()),
+            _ => false,
+        },
+        usvg::Node::Path(path) => path_patterns(path).any(group_contains_mask_or_clip),
+        usvg::Node::Text(_) => false,
+    }
+}
+
+fn group_contains_mask_or_clip(group: &usvg::Group) -> bool {
+    group.mask().is_some()
+        || group.clip_path().is_some()
+        || group.children().iter().any(node_contains_mask_or_clip)
+}
+
+fn group_contains_image(group: &usvg::Group) -> bool {
+    group.filters().iter().any(|filter| {
+        filter
+            .primitives()
+            .iter()
+            .any(|primitive| matches!(primitive.kind(), usvg::filter::Kind::Image(_)))
+    }) || group.children().iter().any(node_contains_image)
+}
+
+fn path_patterns(path: &usvg::Path) -> impl Iterator<Item = &usvg::Group> {
+    [
+        path.fill().map(|fill| fill.paint()),
+        path.stroke().map(|stroke| stroke.paint()),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(|paint| match paint {
+        usvg::Paint::Pattern(pattern) => Some(pattern.root()),
+        _ => None,
+    })
 }
 
 fn render_tree_with_text<'h, 'o>(
@@ -230,6 +435,11 @@ fn render_tree_with_text<'h, 'o>(
     fc.text_hook = hook;
     fc.ink_ids = ink_ids;
     fc.ink_hook = ink_hook;
+    if let Some(viewport) =
+        usvg::Rect::from_xywh(0.0, 0.0, tree.size().width(), tree.size().height())
+    {
+        fc.set_cull_viewport(tree.root(), viewport);
+    }
     group::render(tree.root(), surface, &mut fc);
     fc.error.map_or(Ok(()), Err)
 }
@@ -543,5 +753,140 @@ mod tests {
             page.finish();
             document.finish().unwrap();
         }
+    }
+
+    #[test]
+    fn offscreen_gradient_does_not_add_pdf_paint_or_resources() {
+        fn export(content: &str) -> lopdf::Document {
+            let tree = tree(content);
+            let mut document = Document::new();
+            let mut page =
+                document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+            let mut surface = page.surface();
+            surface
+                .draw_svg(
+                    &tree,
+                    Size::from_wh(100.0, 100.0).unwrap(),
+                    SvgSettings::default(),
+                )
+                .unwrap();
+            surface.finish();
+            page.finish();
+            lopdf::Document::load_mem(&document.finish().unwrap()).unwrap()
+        }
+
+        let visible = r##"<rect x="10" y="10" width="30" height="40" fill="#7a38c1"/>"##;
+        let baseline = export(visible);
+        let candidate = export(&format!(
+            r#"<defs><linearGradient id="unused"><stop stop-color="red"/><stop offset="1" stop-color="blue"/></linearGradient></defs>{visible}<g transform="translate(0 200)"><circle cx="30" cy="30" r="20" fill="url(#unused)"/></g>"#
+        ));
+        let baseline_page = baseline.get_pages()[&1];
+        let candidate_page = candidate.get_pages()[&1];
+        assert_eq!(
+            candidate.get_page_content(candidate_page).unwrap(),
+            baseline.get_page_content(baseline_page).unwrap()
+        );
+        assert_eq!(candidate.objects.len(), baseline.objects.len());
+    }
+
+    #[test]
+    fn offscreen_rejected_image_is_still_validated() {
+        use base64::Engine;
+
+        let header = [
+            0xff, 0xd8, 0xff, 0xc0, 0, 17, 8, 0, 1, 0, 1, 3, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0,
+        ];
+        let data = base64::engine::general_purpose::STANDARD.encode(header);
+        let tree = tree(&format!(
+            r#"<g transform="translate(0 200)"><image id="offscreen-broken" width="10" height="10" href="data:image/jpeg;base64,{data}"/></g>"#
+        ));
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+        let mut surface = page.surface();
+        let result = surface.draw_svg_with_text(
+            &tree,
+            Size::from_wh(100.0, 100.0).unwrap(),
+            SvgSettings {
+                reject_images: true,
+                ..Default::default()
+            },
+            &mut |_, _| Ok(false),
+        );
+        assert!(matches!(result, Err(SvgError::Image(_))), "{result:?}");
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn offscreen_pattern_text_keeps_strict_filter_validation_without_a_hook() {
+        let tree = tree(
+            r#"<defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter><pattern id="pattern" patternUnits="userSpaceOnUse" width="10" height="10"><g filter="url(#blur)"><rect width="10" height="10" fill="red"/></g></pattern></defs><text id="hidden" x="10" y="220" fill="url(#pattern)">A</text>"#,
+        );
+        assert!(matches!(
+            tree.node_by_id("hidden"),
+            Some(usvg::Node::Text(_))
+        ));
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+        let mut surface = page.surface();
+        let result = surface.draw_svg(
+            &tree,
+            Size::from_wh(100.0, 100.0).unwrap(),
+            SvgSettings {
+                reject_rasterized_filters: true,
+                ..Default::default()
+            },
+        );
+        assert!(result.is_none());
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn offscreen_unsupported_filter_is_still_validated() {
+        let tree = tree(
+            r#"<defs><filter id="near-miss" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.1 0 0 0 0 0.2 0 0 0 0 0.3 0 1 0 0 0"/></filter></defs><g transform="translate(0 200)"><g filter="url(#near-miss)"><rect width="20" height="20" fill="white"/></g></g>"#,
+        );
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+        let mut surface = page.surface();
+        let result = surface.draw_svg_with_text(
+            &tree,
+            Size::from_wh(100.0, 100.0).unwrap(),
+            SvgSettings {
+                reject_rasterized_filters: true,
+                ..Default::default()
+            },
+            &mut |_, _| Ok(false),
+        );
+        assert!(matches!(result, Err(SvgError::Filter(_))), "{result:?}");
+        surface.finish();
+        page.finish();
+        document.finish().unwrap();
+    }
+
+    #[test]
+    fn filtered_group_whose_region_meets_viewport_is_retained() {
+        let tree = tree(
+            r#"<defs><filter id="offset" filterUnits="userSpaceOnUse" x="0" y="80" width="100" height="40"><feOffset dy="-20"/></filter></defs><g id="effect" filter="url(#offset)"><rect x="10" y="110" width="20" height="10" fill="black"/></g>"#,
+        );
+        let Some(node @ usvg::Node::Group(effect)) = tree.node_by_id("effect") else {
+            panic!("filtered group absent");
+        };
+        assert!(effect.abs_layer_bounding_box().top() <= 100.0);
+        assert!(effect.abs_layer_bounding_box().bottom() >= 100.0);
+
+        let mut db = tree.fontdb().clone();
+        let mut context = ProcessContext::new(Arc::make_mut(&mut db), SvgSettings::default());
+        context.set_cull_viewport(
+            tree.root(),
+            usvg::Rect::from_xywh(0.0, 0.0, 100.0, 100.0).unwrap(),
+        );
+        assert!(!context.should_cull_node(node));
     }
 }

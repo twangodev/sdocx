@@ -12,9 +12,11 @@ at the existing ordered traversal point. Callback failures stop further traversa
 unwind converter graphics state, and propagate to the PDF exporter. A separate
 strict image setting propagates image-constructor rejection through the same
 ordered traversal/error boundary; Rust document export enables it, while
-generic SVG conversion keeps the compatibility setting. Without a callback or
-strict image setting, conversion retains upstream behavior. Filter rasterization does not
-invoke the text callback; the exporter validates retained-text completeness.
+generic SVG conversion keeps the compatibility setting. Conversion skips content
+wholly outside its existing canvas clip using absolute layer/stroke bounds.
+Filter inputs and referenced SVG subroots retain their own traversal; custom
+painters and strict validation preserve required visits. Filter rasterization
+does not invoke the text callback; the exporter validates retained-text completeness.
 The unused OpenType SVG-glyph callback and its private convenience entry points
 are omitted.
 

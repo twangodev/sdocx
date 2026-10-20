@@ -76,6 +76,9 @@ pub(super) fn render_node(
     if process_context.error.is_some() {
         return;
     }
+    if process_context.should_cull_node(node) {
+        return;
+    }
     match node {
         Node::Group(g) => render(g, surface, process_context),
         Node::Path(p) => path::render(p, surface, process_context),

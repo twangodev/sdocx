@@ -148,6 +148,10 @@ fn recognize(group: &usvg::Group) -> Option<(Rect, &usvg::Group, [u8; 3], f32)> 
     Some((filter_rect, source, color, group.opacity().get()))
 }
 
+pub(super) fn is_supported(group: &usvg::Group) -> bool {
+    recognize(group).is_some()
+}
+
 fn recognize_color_matrix(values: &[f32]) -> Option<[u8; 3]> {
     if values.len() != 20 || values.iter().any(|value| !value.is_finite()) {
         return None;
