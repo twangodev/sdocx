@@ -180,6 +180,9 @@ dispatch with the wrong queue; no host vector-slot assignment is needed.
 In the joined paint capture, renderer-message and vector-delete
 tasks remain deferred; complete queue/lifetime integration, vector edge coverage
 and device pixel parity remain outstanding.
+Further host controls isolate the edge law to finite 2×2 fragment-quad
+derivatives; a continuous-gradient approximation is insufficient. See
+[Marker3 coverage](reverse-engineering/stroke-rendering-findings.md#marker3-fragment-coverage).
 DefaultPen's sampler checks
 position/radius streams in sixteen synthetic
 [cases including degenerate paths](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-saved-native.json).

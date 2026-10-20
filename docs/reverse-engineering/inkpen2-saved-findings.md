@@ -258,6 +258,11 @@ segment-local distance plus carried offset selects RGB; palette alpha and the
 separate rainbow-time control do not affect the captured streams. Terminal
 color is recalculated only while drawable+376 remains set (no prior stamp);
 a two-point 0.5-unit stroke reaches that branch, unlike the 25-record control.
+Drawing context-converts base ARGB (`0x81c1c`–`0x81c4c`) but forwards the
+palette separately (`0x821f4`–`0x82258`). Identity/inverting host callbacks
+change the base color while retaining the palette and complete 900-byte
+gradient stream. This establishes separate inputs, not actual app dark-mode
+values; a solid-color theme policy must not be applied to palette stops.
 Gradient output still needs the normalized source-over color canvas as well as
 the enhanced-AA MAX mask; the constant-color projection alone is insufficient.
 Twelve joined native gradient draws (1×/2×/4×, AA off/on, alpha 128/255)

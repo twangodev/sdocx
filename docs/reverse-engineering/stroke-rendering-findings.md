@@ -158,6 +158,19 @@ The optional post-input coordinate smoother is a separate mechanism:
 ordinary constructor selects no transformer. Input prediction and optional
 beautification are distinct from saved-stroke redraw.
 
+### Marker3 fragment coverage
+
+The captured Marker3 mask uses `clamp((0.5-d)/fwidth(d),0,1) * alpha`,
+where `d` is distance in the stamp's UV coordinates. On host Mesa, `fwidth`
+uses per-lane finite differences across a 2×2 fragment quad. Substituting the
+continuous distance gradient changes the fringe. Replaying the captured VBO,
+projection and quad differences matches isolated-stamp support exactly and
+alpha within two bytes across the tested 1×/2×/4× phase controls. At alpha 128,
+duplicate stamps preserve the single mask and overlapping masks combine by MAX.
+These are bounded host-shader observations, not production vector transport or
+device parity; the audit is in ignored
+`tmp/vector-parity-plan/marker3-admission-next/`.
+
 ## Saved rendering inputs
 
 The semantic `Stroke` carries optional `StrokeRendering`, populated by the
@@ -299,6 +312,6 @@ uv run --project conformance --locked python conformance/ink_visual.py \
 The dense `handwritten.sdocx` fixture resolves to FountainPen `14;`.
 Its separate Rust reconstruction retains native positions, radii, tangent
 directions and sample boundaries. SVG/PDF use directional vector shading;
-Chromium appearance checks pass, while Firefox mask and blending checks remain
-expected failures. The [V14 findings](fountain-v14.md) describe its saved redraw;
+Bounded Chromium and Firefox appearance checks pass; native fringe and PDF
+sampling differences remain. The [V14 findings](fountain-v14.md) describe its saved redraw;
 [vector parity](fountain-parity.md) records current coverage and measured limits.
