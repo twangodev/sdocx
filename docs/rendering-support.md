@@ -374,8 +374,11 @@ three RGBA bytes on these host captures; it does not establish export parity.
 A [GLV1 source matrix](../conformance/magicpen-glv1-source-native.json)
 checks native source getters and complete XYZ streams; the test-only Rust model
 matches all 35 two- to eight-point cases, including duplicate/nearby-event
-admission, native width transitions and the 0.4–800 size clamp. General sampling,
-replay boundaries and production vector admission remain open.
+admission, native width transitions and the 0.4–800 size clamp. A
+[NoCurve event matrix](../conformance/magicpen-nocurve-source-events-native.json)
+adds 16 controls for admission cutoffs, first-admitted width seeding, terminal
+ranges and direct-dot fallback, with exact complete streams. General curved
+sampling, replay boundaries and production vector admission remain open.
 The [ChineseBrush caller](../conformance/chinesebrush-saved-caller-native.json)
 checks seven setting states and captures five four-float records from synthetic
 Model input. A [source matrix](../conformance/chinesebrush-source-native.json)
