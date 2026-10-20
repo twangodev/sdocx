@@ -3,99 +3,64 @@
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 0,
       "source_argb_u32": "0x6cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 14,
       "source_argb_u32": "0xe6cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 15,
       "source_argb_u32": "0xf6cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 16,
       "source_argb_u32": "0x106cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 19,
       "source_argb_u32": "0x136cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x36cdd8f",
       "rt_setpendata_argb_u32": "0x36cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 20,
       "source_argb_u32": "0x146cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x46cdd8f",
       "rt_setpendata_argb_u32": "0x46cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 21,
       "source_argb_u32": "0x156cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x196cdd8f",
       "rt_setpendata_argb_u32": "0x196cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 128,
       "source_argb_u32": "0x806cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x316cdd8f",
       "rt_setpendata_argb_u32": "0x316cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 254,
       "source_argb_u32": "0xfe6cdd8f"
     },
     {
       "direct_native_getter_argb_u32": "0x326cdd8f",
       "rt_setpendata_argb_u32": "0x326cdd8f",
-      "rt_stream_bytes": 416,
-      "rt_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
-      "selected_profile_version": 2,
       "source_alpha_u8": 255,
       "source_argb_u32": "0xff6cdd8f"
     }
   ],
-  "native_contract": {
-    "drawable_getter": "SPen::AirBrushPenStrokeDrawableGL::getColor(), AirBrushPen DSO RVA 0x24c94; reads stored source ARGB then multiplies source alpha byte as f32 by 50.0f, divides by 255.0f, FCVTZS truncates toward zero, clamps output alpha to [3,50], and preserves low 24 RGB bits",
-    "limits": "The 256-result sweep invokes native SetColor and getColor on the drawable selected by an actual explicit-empty Model->Drawing route. Ten separate complete Drawing routes confirm each returned color at RTV1 SetPenData. This records native color conversion, not GPU pixels, blending, or user/app lifecycle.",
-    "setter": "SPen::Pen::SetColor(int), PenCommon RVA 0x4602c: raw W1 store at this+28; getter RVA 0x4603c loads this+28"
-  },
   "schema": "airbrush-color-native-v1",
   "selected_receiver_alpha_sweep": [
     {
@@ -1123,24 +1088,5 @@
       "source_alpha_u8": 255
     }
   ],
-  "source_rgb_u24": "0x6cdd8f",
-  "sources": {
-    "caller_sha256": "c64aa5a51f85ba9abe3755e22ade255dba23f2ef5e24ad82fda4a3c4feeaf5bd",
-    "native_helper_sha256": {
-      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
-      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
-      "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
-    },
-    "native_libraries_sha256": {
-      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
-      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
-      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
-      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
-      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
-      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
-      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
-      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
-      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
-    }
-  }
+  "source_rgb_u24": "0x6cdd8f"
 }

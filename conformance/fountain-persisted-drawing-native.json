@@ -1,786 +1,20 @@
 {
+  "capture_revision": "rust-asserted-native-v1",
+  "original_sha256": "5ae009152b55ef4640900a48b56531ffb4904f144950b273e744018fcfe61fe1",
+  "schema": "sdocx-fountain-persisted-drawing-native-v1",
+  "provenance": {
+    "object_payload": {
+      "prefix_hex": "7900000000006900000002be010400600000a00f0000240062376365633337362d343665302d313165652d623966382d3837306332326361363334357e0e724c1d040600000000800fc58c4000000080926d9640000000e0c4f78c4000000000bd8c96400000000000fff472101b040600380700009e1e0000"
+    }
+  },
   "cases": [
     {
-      "drawing_addpoint_records": [
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d46b6644",
-            "1093b344",
-            "6b5d7d3f",
-            "00000000",
-            "0000803f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "0000803f"
-            ],
-            "position_xyz_f32_bits": [
-              "d46b6644",
-              "1093b344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d1526644",
-            "6a7cb344",
-            "6b5d7d3f",
-            "f87200bf",
-            "4e715dbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "f87200bf",
-              "4e715dbf"
-            ],
-            "position_xyz_f32_bits": [
-              "d1526644",
-              "6a7cb344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d1366644",
-            "f48eb344",
-            "9075983f",
-            "a8b512be",
-            "e55b7d3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "a8b512be",
-              "e55b7d3f"
-            ],
-            "position_xyz_f32_bits": [
-              "d1366644",
-              "f48eb344",
-              "9075983f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "fe2e6644",
-            "8eb2b344",
-            "d3619a3f",
-            "34968ebd",
-            "fa607f3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "34968ebd",
-              "fa607f3f"
-            ],
-            "position_xyz_f32_bits": [
-              "fe2e6644",
-              "8eb2b344",
-              "d3619a3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "932f6644",
-            "76c5b344",
-            "71a09b3f",
-            "93ca213e",
-            "d2c87c3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "93ca213e",
-              "d2c87c3f"
-            ],
-            "position_xyz_f32_bits": [
-              "932f6644",
-              "76c5b344",
-              "71a09b3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "733a6644",
-            "69dfb344",
-            "d4ea9b3f",
-            "82c4833e",
-            "7d60773f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "82c4833e",
-              "7d60773f"
-            ],
-            "position_xyz_f32_bits": [
-              "733a6644",
-              "69dfb344",
-              "d4ea9b3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "224c6644",
-            "90f8b344",
-            "01fb993f",
-            "0b70da3e",
-            "4b88673f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "0b70da3e",
-              "4b88673f"
-            ],
-            "position_xyz_f32_bits": [
-              "224c6644",
-              "90f8b344",
-              "01fb993f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "85656644",
-            "ce0eb444",
-            "c870983f",
-            "49ab033f",
-            "158b5b3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "49ab033f",
-              "158b5b3f"
-            ],
-            "position_xyz_f32_bits": [
-              "85656644",
-              "ce0eb444",
-              "c870983f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "7e806644",
-            "a224b444",
-            "cfef973f",
-            "738e083f",
-            "8289583f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "738e083f",
-              "8289583f"
-            ],
-            "position_xyz_f32_bits": [
-              "7e806644",
-              "a224b444",
-              "cfef973f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "02a06644",
-            "be3bb444",
-            "c6a6963f",
-            "064c1f3f",
-            "9a66483f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "064c1f3f",
-              "9a66483f"
-            ],
-            "position_xyz_f32_bits": [
-              "02a06644",
-              "be3bb444",
-              "c6a6963f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "e5c36644",
-            "134cb444",
-            "da64883f",
-            "9b704e3f",
-            "8b63173f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "9b704e3f",
-              "8b63173f"
-            ],
-            "position_xyz_f32_bits": [
-              "e5c36644",
-              "134cb444",
-              "da64883f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "34f16644",
-            "615bb444",
-            "b089853f",
-            "617a5c3f",
-            "0619023f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "617a5c3f",
-              "0619023f"
-            ],
-            "position_xyz_f32_bits": [
-              "34f16644",
-              "615bb444",
-              "b089853f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "901f6744",
-            "9461b444",
-            "6b5d7d3f",
-            "f1627c3f",
-            "a2712b3e",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "f1627c3f",
-              "a2712b3e"
-            ],
-            "position_xyz_f32_bits": [
-              "901f6744",
-              "9461b444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "205e6744",
-            "3a64b444",
-            "6b5d7d3f",
-            "fab07e3f",
-            "80d1cebd",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "fab07e3f",
-              "80d1cebd"
-            ],
-            "position_xyz_f32_bits": [
-              "205e6744",
-              "3a64b444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "62836744",
-            "c057b444",
-            "6b5d7d3f",
-            "3c99193f",
-            "13cd4cbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "3c99193f",
-              "13cd4cbf"
-            ],
-            "position_xyz_f32_bits": [
-              "62836744",
-              "c057b444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "979c6744",
-            "1841b444",
-            "6b5d7d3f",
-            "3664cd3e",
-            "a27f6abf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "3664cd3e",
-              "a27f6abf"
-            ],
-            "position_xyz_f32_bits": [
-              "979c6744",
-              "1841b444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "e7af6744",
-            "c026b444",
-            "6b5d7d3f",
-            "c42a8c3e",
-            "543876bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "c42a8c3e",
-              "543876bf"
-            ],
-            "position_xyz_f32_bits": [
-              "e7af6744",
-              "c026b444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "c7b86744",
-            "f60db444",
-            "6b5d7d3f",
-            "b584823d",
-            "c77a7fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "b584823d",
-              "c77a7fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "c7b86744",
-              "f60db444",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "65bb6744",
-            "03f5b344",
-            "6b5d7d3f",
-            "b29b493d",
-            "92b07fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "b29b493d",
-              "92b07fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "65bb6744",
-              "03f5b344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "aebd6744",
-            "b7d7b344",
-            "6b5d7d3f",
-            "2566a33c",
-            "f6f27fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "2566a33c",
-              "f6f27fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "aebd6744",
-              "b7d7b344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d4bd6744",
-            "5cbfb344",
-            "6b5d7d3f",
-            "00000000",
-            "000080bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "000080bf"
-            ],
-            "position_xyz_f32_bits": [
-              "d4bd6744",
-              "5cbfb344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d4bd6744",
-            "1ea5b344",
-            "6b5d7d3f",
-            "00000000",
-            "000080bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "000080bf"
-            ],
-            "position_xyz_f32_bits": [
-              "d4bd6744",
-              "1ea5b344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "efbb6744",
-            "588eb344",
-            "6b5d7d3f",
-            "db9f7fbd",
-            "3f807fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "db9f7fbd",
-              "3f807fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "efbb6744",
-              "588eb344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d4b96744",
-            "107fb344",
-            "6b5d7d3f",
-            "db9f7fbd",
-            "3f807fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "db9f7fbd",
-              "3f807fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "d4b96744",
-              "107fb344",
-              "6b5d7d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x100245a0"
-        }
-      ],
-      "drawing_return": 1,
-      "explicit_new_apply_width": 1848,
-      "i_context_width": 1848,
-      "id": "saved_page_width",
-      "loader_calls": [
-        {
-          "fn": "dlopen",
-          "lr": "0x104ece8",
-          "name": "libSPenFountainPen.so"
-        },
-        {
-          "fn": "dlsym",
-          "handle": "0x50000001",
-          "lr": "0x104df74",
-          "name": "createPenInst"
-        }
-      ],
-      "native_advanced_setting": "14;",
-      "native_apply_consumed_bytes": 2119,
       "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
-      "native_point_count": 161,
+      "native_advanced_setting": "14;",
       "native_state_after_apply": {
-        "color_argb": 4278190080,
-        "curve_enabled": 1,
-        "fixed_width_bits": "1006be40",
-        "fixed_width_enabled": 0,
-        "size_bits": "1006be40",
-        "stroke_type": 0,
-        "tool_type": 2
+        "size_bits": "1006be40"
       },
-      "redraw_entries": [
-        {
-          "drawable": "0x10023800",
-          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
-          "stroke": "0x1001ee60"
-        }
-      ],
-      "selected_drawable_class": "GLV14",
       "source_getter_arrays": {
-        "orientation_f32_bits": [
-          "bfbd2b7c",
-          "bfbd2b7c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbca37c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfbc0b7c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c",
-          "bfb5a37c"
-        ],
         "points_f32_bits": [
           "44666bd4",
           "44b39310",
@@ -1105,6 +339,169 @@
           "4467b9d4",
           "44b37f10"
         ],
+        "timestamps_i32": [
+          0,
+          0,
+          4,
+          6,
+          8,
+          10,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          31,
+          33,
+          35,
+          37,
+          39,
+          42,
+          44,
+          44,
+          46,
+          48,
+          50,
+          52,
+          52,
+          54,
+          56,
+          58,
+          60,
+          60,
+          63,
+          64,
+          66,
+          68,
+          69,
+          71,
+          73,
+          75,
+          77,
+          77,
+          79,
+          81,
+          83,
+          85,
+          85,
+          87,
+          89,
+          91,
+          93,
+          95,
+          98,
+          100,
+          102,
+          102,
+          104,
+          106,
+          108,
+          110,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          123,
+          125,
+          127,
+          129,
+          131,
+          133,
+          135,
+          137,
+          139,
+          141,
+          143,
+          145,
+          147,
+          150,
+          151,
+          152,
+          154,
+          156,
+          158,
+          160,
+          162,
+          164,
+          166,
+          168,
+          169,
+          170,
+          172,
+          174,
+          176,
+          177,
+          178,
+          180,
+          183,
+          185,
+          187,
+          189,
+          191,
+          193,
+          194,
+          195,
+          197,
+          199,
+          201,
+          203,
+          206,
+          208,
+          210,
+          212,
+          214,
+          216,
+          218,
+          220,
+          222,
+          224,
+          226,
+          228,
+          230,
+          233,
+          234,
+          236,
+          239,
+          241,
+          243,
+          245,
+          247,
+          249,
+          251,
+          252,
+          253,
+          255,
+          257,
+          259,
+          260,
+          261,
+          263,
+          265,
+          268,
+          269,
+          270,
+          272,
+          274,
+          276,
+          277,
+          278,
+          280,
+          282,
+          284,
+          285,
+          286,
+          288,
+          290,
+          292,
+          295
+        ],
         "pressure_f32_bits": [
           "39800801",
           "39800801",
@@ -1431,813 +828,6 @@
           "3eb49d4a",
           "3eb49d4a"
         ],
-        "timestamps_i32": [
-          0,
-          0,
-          4,
-          6,
-          8,
-          10,
-          11,
-          13,
-          15,
-          17,
-          19,
-          21,
-          23,
-          25,
-          27,
-          29,
-          31,
-          33,
-          35,
-          37,
-          39,
-          42,
-          44,
-          44,
-          46,
-          48,
-          50,
-          52,
-          52,
-          54,
-          56,
-          58,
-          60,
-          60,
-          63,
-          64,
-          66,
-          68,
-          69,
-          71,
-          73,
-          75,
-          77,
-          77,
-          79,
-          81,
-          83,
-          85,
-          85,
-          87,
-          89,
-          91,
-          93,
-          95,
-          98,
-          100,
-          102,
-          102,
-          104,
-          106,
-          108,
-          110,
-          110,
-          112,
-          114,
-          116,
-          118,
-          120,
-          123,
-          125,
-          127,
-          129,
-          131,
-          133,
-          135,
-          137,
-          139,
-          141,
-          143,
-          145,
-          147,
-          150,
-          151,
-          152,
-          154,
-          156,
-          158,
-          160,
-          162,
-          164,
-          166,
-          168,
-          169,
-          170,
-          172,
-          174,
-          176,
-          177,
-          178,
-          180,
-          183,
-          185,
-          187,
-          189,
-          191,
-          193,
-          194,
-          195,
-          197,
-          199,
-          201,
-          203,
-          206,
-          208,
-          210,
-          212,
-          214,
-          216,
-          218,
-          220,
-          222,
-          224,
-          226,
-          228,
-          230,
-          233,
-          234,
-          236,
-          239,
-          241,
-          243,
-          245,
-          247,
-          249,
-          251,
-          252,
-          253,
-          255,
-          257,
-          259,
-          260,
-          261,
-          263,
-          265,
-          268,
-          269,
-          270,
-          272,
-          274,
-          276,
-          277,
-          278,
-          280,
-          282,
-          284,
-          285,
-          286,
-          288,
-          290,
-          292,
-          295
-        ]
-      }
-    },
-    {
-      "drawing_addpoint_records": [
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "0e666f44",
-            "2592ba44",
-            "3e9e833f",
-            "00000000",
-            "0000803f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "0000803f"
-            ],
-            "position_xyz_f32_bits": [
-              "0e666f44",
-              "2592ba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "834d6f44",
-            "1e7bba44",
-            "3e9e833f",
-            "e146f7be",
-            "022a60bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "e146f7be",
-              "022a60bf"
-            ],
-            "position_xyz_f32_bits": [
-              "834d6f44",
-              "1e7bba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d4316f44",
-            "628dba44",
-            "a7579e3f",
-            "411737be",
-            "ecdf7b3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "411737be",
-              "ecdf7b3f"
-            ],
-            "position_xyz_f32_bits": [
-              "d4316f44",
-              "628dba44",
-              "a7579e3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "90276f44",
-            "f1b1ba44",
-            "525da03f",
-            "8da6c5bd",
-            "16ce7e3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "8da6c5bd",
-              "16ce7e3f"
-            ],
-            "position_xyz_f32_bits": [
-              "90276f44",
-              "f1b1ba44",
-              "525da03f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "f1266f44",
-            "dfc4ba44",
-            "8796a13f",
-            "d7661b3e",
-            "ed087d3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "d7661b3e",
-              "ed087d3f"
-            ],
-            "position_xyz_f32_bits": [
-              "f1266f44",
-              "dfc4ba44",
-              "8796a13f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "5b316f44",
-            "c4deba44",
-            "fbfda13f",
-            "37517a3e",
-            "c13b783f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "37517a3e",
-              "c13b783f"
-            ],
-            "position_xyz_f32_bits": [
-              "5b316f44",
-              "c4deba44",
-              "fbfda13f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "0f426f44",
-            "30f8ba44",
-            "ddfa9f3f",
-            "1aa4c93e",
-            "974f6b3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "1aa4c93e",
-              "974f6b3f"
-            ],
-            "position_xyz_f32_bits": [
-              "0f426f44",
-              "30f8ba44",
-              "ddfa9f3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "ea596f44",
-            "080ebb44",
-            "3c619e3f",
-            "51d2023f",
-            "a30c5c3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "51d2023f",
-              "a30c5c3f"
-            ],
-            "position_xyz_f32_bits": [
-              "ea596f44",
-              "080ebb44",
-              "3c619e3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "6f756f44",
-            "4325bb44",
-            "5da09d3f",
-            "06a2003f",
-            "fe555d3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "06a2003f",
-              "fe555d3f"
-            ],
-            "position_xyz_f32_bits": [
-              "6f756f44",
-              "4325bb44",
-              "5da09d3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "15926f44",
-            "623abb44",
-            "17489c3f",
-            "75c71c3f",
-            "6b604a3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "75c71c3f",
-              "6b604a3f"
-            ],
-            "position_xyz_f32_bits": [
-              "15926f44",
-              "623abb44",
-              "17489c3f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "d7b56f44",
-            "2e4fbb44",
-            "05ff973f",
-            "e09f3a3f",
-            "253c2f3f",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "e09f3a3f",
-              "253c2f3f"
-            ],
-            "position_xyz_f32_bits": [
-              "d7b56f44",
-              "2e4fbb44",
-              "05ff973f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "bede6f44",
-            "e95bbb44",
-            "8160853f",
-            "9467623f",
-            "f1f8ee3e",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "9467623f",
-              "f1f8ee3e"
-            ],
-            "position_xyz_f32_bits": [
-              "bede6f44",
-              "e95bbb44",
-              "8160853f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "09157044",
-            "f068bb44",
-            "3e9e833f",
-            "62eb6f3f",
-            "0c9ab23e",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "62eb6f3f",
-              "0c9ab23e"
-            ],
-            "position_xyz_f32_bits": [
-              "09157044",
-              "f068bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "84427044",
-            "6e6abb44",
-            "3e9e833f",
-            "02bb7f3f",
-            "dae73bbd",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "02bb7f3f",
-              "dae73bbd"
-            ],
-            "position_xyz_f32_bits": [
-              "84427044",
-              "6e6abb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "f9797044",
-            "b564bb44",
-            "3e9e833f",
-            "71c4613f",
-            "355ff1be",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "71c4613f",
-              "355ff1be"
-            ],
-            "position_xyz_f32_bits": [
-              "f9797044",
-              "b564bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "1d9b7044",
-            "e052bb44",
-            "3e9e833f",
-            "6093023f",
-            "02325cbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "6093023f",
-              "02325cbf"
-            ],
-            "position_xyz_f32_bits": [
-              "1d9b7044",
-              "e052bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "3bb27044",
-            "0039bb44",
-            "3e9e833f",
-            "2e6a8f3e",
-            "84c075bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "2e6a8f3e",
-              "84c075bf"
-            ],
-            "position_xyz_f32_bits": [
-              "3bb27044",
-              "0039bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "dabb7044",
-            "8620bb44",
-            "3e9e833f",
-            "d9f62b3e",
-            "485d7cbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "d9f62b3e",
-              "485d7cbf"
-            ],
-            "position_xyz_f32_bits": [
-              "dabb7044",
-              "8620bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "eac27044",
-            "4306bb44",
-            "3e9e833f",
-            "669dba3d",
-            "5eef7ebf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "669dba3d",
-              "5eef7ebf"
-            ],
-            "position_xyz_f32_bits": [
-              "eac27044",
-              "4306bb44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "2cc57044",
-            "d7ecba44",
-            "3e9e833f",
-            "7990223c",
-            "c7fc7fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "7990223c",
-              "c7fc7fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "2cc57044",
-              "d7ecba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "3ac57044",
-            "a2d0ba44",
-            "3e9e833f",
-            "00000000",
-            "000080bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "000080bf"
-            ],
-            "position_xyz_f32_bits": [
-              "3ac57044",
-              "a2d0ba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "3ac57044",
-            "6fb7ba44",
-            "3e9e833f",
-            "00000000",
-            "000080bf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "00000000",
-              "000080bf"
-            ],
-            "position_xyz_f32_bits": [
-              "3ac57044",
-              "6fb7ba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "6dc37044",
-            "0d9eba44",
-            "3e9e833f",
-            "9ce85bbd",
-            "7ba17fbf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "9ce85bbd",
-              "7ba17fbf"
-            ],
-            "position_xyz_f32_bits": [
-              "6dc37044",
-              "0d9eba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "0ac07044",
-            "2083ba44",
-            "3e9e833f",
-            "f266b8bd",
-            "cef57ebf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "f266b8bd",
-              "cef57ebf"
-            ],
-            "position_xyz_f32_bits": [
-              "0ac07044",
-              "2083ba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        },
-        {
-          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
-          "float_words_s0_s5": [
-            "12c17044",
-            "5d7dba44",
-            "3e9e833f",
-            "f266b8bd",
-            "cef57ebf",
-            "0000803f"
-          ],
-          "native_addpoint_channels": {
-            "direction_xy_f32_bits": [
-              "f266b8bd",
-              "cef57ebf"
-            ],
-            "position_xyz_f32_bits": [
-              "12c17044",
-              "5d7dba44",
-              "3e9e833f"
-            ],
-            "transparency_f32_bits": "0000803f"
-          },
-          "receiver": "0x1003f2c0"
-        }
-      ],
-      "drawing_return": 1,
-      "explicit_new_apply_width": 1920,
-      "i_context_width": 1920,
-      "id": "host_width_control",
-      "loader_calls": [
-        {
-          "fn": "dlopen",
-          "lr": "0x104ece8",
-          "name": "libSPenFountainPen.so"
-        },
-        {
-          "fn": "dlsym",
-          "handle": "0x50000001",
-          "lr": "0x104df74",
-          "name": "createPenInst"
-        }
-      ],
-      "native_advanced_setting": "14;",
-      "native_apply_consumed_bytes": 2119,
-      "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
-      "native_point_count": 161,
-      "native_state_after_apply": {
-        "color_argb": 4278190080,
-        "curve_enabled": 1,
-        "fixed_width_bits": "5d6dc540",
-        "fixed_width_enabled": 0,
-        "size_bits": "5d6dc540",
-        "stroke_type": 0,
-        "tool_type": 2
-      },
-      "redraw_entries": [
-        {
-          "drawable": "0x1003e520",
-          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
-          "stroke": "0x10039fc0"
-        }
-      ],
-      "selected_drawable_class": "GLV14",
-      "source_getter_arrays": {
         "orientation_f32_bits": [
           "bfbd2b7c",
           "bfbd2b7c",
@@ -2400,7 +990,258 @@
           "bfb5a37c",
           "bfb5a37c",
           "bfb5a37c"
-        ],
+        ]
+      },
+      "drawing_addpoint_records": [
+        {
+          "float_words_s0_s5": [
+            "d46b6644",
+            "1093b344",
+            "6b5d7d3f",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d1526644",
+            "6a7cb344",
+            "6b5d7d3f",
+            "f87200bf",
+            "4e715dbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d1366644",
+            "f48eb344",
+            "9075983f",
+            "a8b512be",
+            "e55b7d3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "fe2e6644",
+            "8eb2b344",
+            "d3619a3f",
+            "34968ebd",
+            "fa607f3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "932f6644",
+            "76c5b344",
+            "71a09b3f",
+            "93ca213e",
+            "d2c87c3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "733a6644",
+            "69dfb344",
+            "d4ea9b3f",
+            "82c4833e",
+            "7d60773f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "224c6644",
+            "90f8b344",
+            "01fb993f",
+            "0b70da3e",
+            "4b88673f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "85656644",
+            "ce0eb444",
+            "c870983f",
+            "49ab033f",
+            "158b5b3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "7e806644",
+            "a224b444",
+            "cfef973f",
+            "738e083f",
+            "8289583f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "02a06644",
+            "be3bb444",
+            "c6a6963f",
+            "064c1f3f",
+            "9a66483f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "e5c36644",
+            "134cb444",
+            "da64883f",
+            "9b704e3f",
+            "8b63173f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "34f16644",
+            "615bb444",
+            "b089853f",
+            "617a5c3f",
+            "0619023f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "901f6744",
+            "9461b444",
+            "6b5d7d3f",
+            "f1627c3f",
+            "a2712b3e",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "205e6744",
+            "3a64b444",
+            "6b5d7d3f",
+            "fab07e3f",
+            "80d1cebd",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "62836744",
+            "c057b444",
+            "6b5d7d3f",
+            "3c99193f",
+            "13cd4cbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "979c6744",
+            "1841b444",
+            "6b5d7d3f",
+            "3664cd3e",
+            "a27f6abf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "e7af6744",
+            "c026b444",
+            "6b5d7d3f",
+            "c42a8c3e",
+            "543876bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "c7b86744",
+            "f60db444",
+            "6b5d7d3f",
+            "b584823d",
+            "c77a7fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "65bb6744",
+            "03f5b344",
+            "6b5d7d3f",
+            "b29b493d",
+            "92b07fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "aebd6744",
+            "b7d7b344",
+            "6b5d7d3f",
+            "2566a33c",
+            "f6f27fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d4bd6744",
+            "5cbfb344",
+            "6b5d7d3f",
+            "00000000",
+            "000080bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d4bd6744",
+            "1ea5b344",
+            "6b5d7d3f",
+            "00000000",
+            "000080bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "efbb6744",
+            "588eb344",
+            "6b5d7d3f",
+            "db9f7fbd",
+            "3f807fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d4b96744",
+            "107fb344",
+            "6b5d7d3f",
+            "db9f7fbd",
+            "3f807fbf",
+            "0000803f"
+          ]
+        }
+      ]
+    },
+    {
+      "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+      "native_advanced_setting": "14;",
+      "native_state_after_apply": {
+        "size_bits": "5d6dc540"
+      },
+      "source_getter_arrays": {
         "points_f32_bits": [
           "446f660e",
           "44ba9225",
@@ -2725,6 +1566,169 @@
           "4470c112",
           "44ba7d5d"
         ],
+        "timestamps_i32": [
+          0,
+          0,
+          4,
+          6,
+          8,
+          10,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          31,
+          33,
+          35,
+          37,
+          39,
+          42,
+          44,
+          44,
+          46,
+          48,
+          50,
+          52,
+          52,
+          54,
+          56,
+          58,
+          60,
+          60,
+          63,
+          64,
+          66,
+          68,
+          69,
+          71,
+          73,
+          75,
+          77,
+          77,
+          79,
+          81,
+          83,
+          85,
+          85,
+          87,
+          89,
+          91,
+          93,
+          95,
+          98,
+          100,
+          102,
+          102,
+          104,
+          106,
+          108,
+          110,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          123,
+          125,
+          127,
+          129,
+          131,
+          133,
+          135,
+          137,
+          139,
+          141,
+          143,
+          145,
+          147,
+          150,
+          151,
+          152,
+          154,
+          156,
+          158,
+          160,
+          162,
+          164,
+          166,
+          168,
+          169,
+          170,
+          172,
+          174,
+          176,
+          177,
+          178,
+          180,
+          183,
+          185,
+          187,
+          189,
+          191,
+          193,
+          194,
+          195,
+          197,
+          199,
+          201,
+          203,
+          206,
+          208,
+          210,
+          212,
+          214,
+          216,
+          218,
+          220,
+          222,
+          224,
+          226,
+          228,
+          230,
+          233,
+          234,
+          236,
+          239,
+          241,
+          243,
+          245,
+          247,
+          249,
+          251,
+          252,
+          253,
+          255,
+          257,
+          259,
+          260,
+          261,
+          263,
+          265,
+          268,
+          269,
+          270,
+          272,
+          274,
+          276,
+          277,
+          278,
+          280,
+          282,
+          284,
+          285,
+          286,
+          288,
+          290,
+          292,
+          295
+        ],
         "pressure_f32_bits": [
           "39800801",
           "39800801",
@@ -3051,274 +2055,422 @@
           "3eb49d4a",
           "3eb49d4a"
         ],
-        "timestamps_i32": [
-          0,
-          0,
-          4,
-          6,
-          8,
-          10,
-          11,
-          13,
-          15,
-          17,
-          19,
-          21,
-          23,
-          25,
-          27,
-          29,
-          31,
-          33,
-          35,
-          37,
-          39,
-          42,
-          44,
-          44,
-          46,
-          48,
-          50,
-          52,
-          52,
-          54,
-          56,
-          58,
-          60,
-          60,
-          63,
-          64,
-          66,
-          68,
-          69,
-          71,
-          73,
-          75,
-          77,
-          77,
-          79,
-          81,
-          83,
-          85,
-          85,
-          87,
-          89,
-          91,
-          93,
-          95,
-          98,
-          100,
-          102,
-          102,
-          104,
-          106,
-          108,
-          110,
-          110,
-          112,
-          114,
-          116,
-          118,
-          120,
-          123,
-          125,
-          127,
-          129,
-          131,
-          133,
-          135,
-          137,
-          139,
-          141,
-          143,
-          145,
-          147,
-          150,
-          151,
-          152,
-          154,
-          156,
-          158,
-          160,
-          162,
-          164,
-          166,
-          168,
-          169,
-          170,
-          172,
-          174,
-          176,
-          177,
-          178,
-          180,
-          183,
-          185,
-          187,
-          189,
-          191,
-          193,
-          194,
-          195,
-          197,
-          199,
-          201,
-          203,
-          206,
-          208,
-          210,
-          212,
-          214,
-          216,
-          218,
-          220,
-          222,
-          224,
-          226,
-          228,
-          230,
-          233,
-          234,
-          236,
-          239,
-          241,
-          243,
-          245,
-          247,
-          249,
-          251,
-          252,
-          253,
-          255,
-          257,
-          259,
-          260,
-          261,
-          263,
-          265,
-          268,
-          269,
-          270,
-          272,
-          274,
-          276,
-          277,
-          278,
-          280,
-          282,
-          284,
-          285,
-          286,
-          288,
-          290,
-          292,
-          295
+        "orientation_f32_bits": [
+          "bfbd2b7c",
+          "bfbd2b7c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbca37c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfbc0b7c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c",
+          "bfb5a37c"
         ]
-      }
-    }
-  ],
-  "provenance": {
-    "base_caller": {
-      "path": "conformance/fountain_saved_caller_native.py",
-      "sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19"
-    },
-    "boundary": "Native ObjectStroke NewApplyBinary receives the reconstructed original object payload and StringID table, then native ObjectDrawing::drawObjectStroke executes GLV14 RedrawPen and captures RTV4 AddPoint callback arguments. This fixture stops at the complete six-float callback stream: it does not execute RTV4 SendDataToGPU/Update/Draw. The 1920 control changes both the explicit NewApply width and IContext width, so it is a combined control, not an isolated argument-only comparison. No Samsung SDK outer page-loader or device raster claim.",
-    "host_adapters": "Pinned caller adapters provide IContext/CanvasProbe, task queue dispatch, allocator, and synthetic dlopen/dlsym handles for the already pinned FountainPen and DefaultPen DSOs.",
-    "native_closure": {
-      "executed_tools": {
-        "c++filt": {
-          "path": "/usr/bin/x86_64-linux-gnu-c++filt",
-          "sha256": "7d54ea6797a5e8c69255f711b79577efd9934c3502c6edee4bc25b7dc7d97bd2"
+      },
+      "drawing_addpoint_records": [
+        {
+          "float_words_s0_s5": [
+            "0e666f44",
+            "2592ba44",
+            "3e9e833f",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ]
         },
-        "nm": {
-          "path": "/usr/bin/x86_64-linux-gnu-nm",
-          "sha256": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+        {
+          "float_words_s0_s5": [
+            "834d6f44",
+            "1e7bba44",
+            "3e9e833f",
+            "e146f7be",
+            "022a60bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d4316f44",
+            "628dba44",
+            "a7579e3f",
+            "411737be",
+            "ecdf7b3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "90276f44",
+            "f1b1ba44",
+            "525da03f",
+            "8da6c5bd",
+            "16ce7e3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "f1266f44",
+            "dfc4ba44",
+            "8796a13f",
+            "d7661b3e",
+            "ed087d3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "5b316f44",
+            "c4deba44",
+            "fbfda13f",
+            "37517a3e",
+            "c13b783f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "0f426f44",
+            "30f8ba44",
+            "ddfa9f3f",
+            "1aa4c93e",
+            "974f6b3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "ea596f44",
+            "080ebb44",
+            "3c619e3f",
+            "51d2023f",
+            "a30c5c3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "6f756f44",
+            "4325bb44",
+            "5da09d3f",
+            "06a2003f",
+            "fe555d3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "15926f44",
+            "623abb44",
+            "17489c3f",
+            "75c71c3f",
+            "6b604a3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "d7b56f44",
+            "2e4fbb44",
+            "05ff973f",
+            "e09f3a3f",
+            "253c2f3f",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "bede6f44",
+            "e95bbb44",
+            "8160853f",
+            "9467623f",
+            "f1f8ee3e",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "09157044",
+            "f068bb44",
+            "3e9e833f",
+            "62eb6f3f",
+            "0c9ab23e",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "84427044",
+            "6e6abb44",
+            "3e9e833f",
+            "02bb7f3f",
+            "dae73bbd",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "f9797044",
+            "b564bb44",
+            "3e9e833f",
+            "71c4613f",
+            "355ff1be",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "1d9b7044",
+            "e052bb44",
+            "3e9e833f",
+            "6093023f",
+            "02325cbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "3bb27044",
+            "0039bb44",
+            "3e9e833f",
+            "2e6a8f3e",
+            "84c075bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "dabb7044",
+            "8620bb44",
+            "3e9e833f",
+            "d9f62b3e",
+            "485d7cbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "eac27044",
+            "4306bb44",
+            "3e9e833f",
+            "669dba3d",
+            "5eef7ebf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "2cc57044",
+            "d7ecba44",
+            "3e9e833f",
+            "7990223c",
+            "c7fc7fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "3ac57044",
+            "a2d0ba44",
+            "3e9e833f",
+            "00000000",
+            "000080bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "3ac57044",
+            "6fb7ba44",
+            "3e9e833f",
+            "00000000",
+            "000080bf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "6dc37044",
+            "0d9eba44",
+            "3e9e833f",
+            "9ce85bbd",
+            "7ba17fbf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "0ac07044",
+            "2083ba44",
+            "3e9e833f",
+            "f266b8bd",
+            "cef57ebf",
+            "0000803f"
+          ]
+        },
+        {
+          "float_words_s0_s5": [
+            "12c17044",
+            "5d7dba44",
+            "3e9e833f",
+            "f266b8bd",
+            "cef57ebf",
+            "0000803f"
+          ]
         }
-      },
-      "mapped_dsos": {
-        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
-        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
-        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
-        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
-        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
-        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
-        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
-        "ObliquePen": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
-        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
-        "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
-      },
-      "mapped_oblique_pen_sha256": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
-      "pinned_helpers": {
-        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
-        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
-        "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
-        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
-      }
-    },
-    "object_payload": {
-      "frame_length": 1998,
-      "length": 2119,
-      "new_apply_width_source": "u32 at page-header byte offset 22",
-      "prefix_hex": "7900000000006900000002be010400600000a00f0000240062376365633337362d343665302d313165652d623966382d3837306332326361363334357e0e724c1d040600000000800fc58c4000000080926d9640000000e0c4f78c4000000000bd8c96400000000000fff472101b040600380700009e1e0000",
-      "prefix_length": 121,
-      "sha256": "f9666805d1390cfbb7606d6dbdb62bc0c95408e51174058faf1146bfbba66f83"
-    },
-    "page_header": {
-      "first_30_bytes_hex": "e3000000800000000400000000047104000000000000380700009e1e0000",
-      "page_entry_sha256": "c7c834e0eeb751966517f354dc55ea056b5eb2453a5b9e16b7be08ca7b3a9591",
-      "source_archive_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
-      "width": 1848,
-      "width_bytes_hex": "38070000",
-      "width_offset": 22
-    },
-    "runner_sha256": "9e0ef723a936b697c65b2ed0c476123287430fc2ff9d66b41945c2815ca5f59a",
-    "runtime": {
-      "python": {
-        "path": "/usr/bin/python3.13",
-        "sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
-      },
-      "unicorn": {
-        "files": {
-          "native_library": {
-            "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/lib/libunicorn.so.2",
-            "sha256": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c"
-          },
-          "package_init": {
-            "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/__init__.py",
-            "sha256": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b"
-          },
-          "python_backend": {
-            "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/unicorn_py3/unicorn.py",
-            "sha256": "62ffe84341f4288e309040e06555b81798031817d32fd19a945e250813f872f0"
-          }
-        },
-        "version": "2.1.4"
-      }
-    },
-    "source_fixture": {
-      "case": "real_v14_handwritten_flat1445",
-      "frame_sha256": "78ac51193c78862ba6ce9e992e8e7f3433667dc08fe2c2fa71ad9d81dcd4194c",
-      "path": "conformance/fountain-saved-color-native.json",
-      "sha256": "de23cf21f239fc9e12794bc55777fa18406d1129162f8198b1544b8f009f932d"
-    },
-    "string_id_manager": {
-      "bytes_hex": "020000000000330063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00700065006e002e00700065006e002e007000720065006c006f00610064002e0046006f0075006e007400610069006e00500065006e00010000000300310034003b00",
-      "entries": [
-        "0=com.samsung.android.sdk.pen.pen.preload.FountainPen",
-        "1=14;"
-      ],
-      "length": 122,
-      "sha256": "ecd7cefed7929088a0cb42d950e23e87e51e6c7f968c742f6c1ed10504a42df0",
-      "source": "Original 122-byte table extracted from the same persisted page; saved-color fixture retains the frame but not this table."
+      ]
     }
-  },
-  "saved_object_state": {
-    "color_argb": 4278190080,
-    "curve_enabled": 1,
-    "point_count": 161,
-    "size_f32_bits": "1006be40",
-    "stroke_type": 0,
-    "tool_type": 2
-  },
-  "schema": "sdocx-fountain-persisted-drawing-native-v1"
+  ]
 }

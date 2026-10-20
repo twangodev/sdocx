@@ -1,26 +1,15 @@
 {
+  "capture_revision": "rust-asserted-native-v1",
+  "original_sha256": "57880d801ef2ca3921d965aafb40b420191fca46b34046ed0c80e4438f9aa1a9",
+  "schema": "sdocx-fountain-v16-addpoint-native-v1",
   "cases": [
     {
       "case_id": "radius_0_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "00000000",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "zero_radius_edge",
       "radius": 0.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -29,38 +18,15 @@
         "0000803f",
         "0000c07f",
         "00000000"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        "NaN",
-        "NaN",
-        1.0,
-        "NaN",
-        0.0
       ]
     },
     {
       "case_id": "radius_0.1_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -69,38 +35,15 @@
         "0000803f",
         "00000000",
         "cdcc4c3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.0,
-        1.0,
-        1.0,
-        0.0,
-        0.20000000298023224
       ]
     },
     {
       "case_id": "radius_0.499_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "ee7cff3e",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 0.499,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -109,38 +52,15 @@
         "0000803f",
         "00000000",
         "ed7c7f3f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.0,
-        1.0,
-        1.0,
-        0.0,
-        0.9979999661445618
       ]
     },
     {
       "case_id": "radius_0.5_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "0000003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 0.5,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -149,38 +69,15 @@
         "0000803f",
         "00000000",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.0,
-        1.0,
-        1.0,
-        0.0,
-        1.0
       ]
     },
     {
       "case_id": "radius_0.501_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "8941003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 0.501,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -189,38 +86,15 @@
         "0000803f",
         "7cee023a",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.000999927520752,
-        1.000999927520752,
-        1.0,
-        0.000499464338645339,
-        1.0
       ]
     },
     {
       "case_id": "radius_1_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "0000803f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 1.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -229,38 +103,15 @@
         "0000803f",
         "abaa2a3e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.5,
-        1.5,
-        1.0,
-        0.1666666716337204,
-        1.0
       ]
     },
     {
       "case_id": "radius_2_scale_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803f"
-        ],
-        "radius": "00000040",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         1.0
       ],
-      "kind": "positive_radius",
       "radius": 2.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -269,38 +120,15 @@
         "0000803f",
         "9a99993e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        2.5,
-        2.5,
-        1.0,
-        0.30000001192092896,
-        1.0
       ]
     },
     {
       "case_id": "radius_0_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "00000000",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "zero_radius_edge",
       "radius": 0.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -309,38 +137,15 @@
         "0000803f",
         "0000c07f",
         "00000000"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        "NaN",
-        "NaN",
-        1.0,
-        "NaN",
-        0.0
       ]
     },
     {
       "case_id": "radius_0.1_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -349,38 +154,15 @@
         "0000803f",
         "00000000",
         "cdcccc3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.5,
-        0.5,
-        1.0,
-        0.0,
-        0.4000000059604645
       ]
     },
     {
       "case_id": "radius_0.499_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "ee7cff3e",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 0.499,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -389,38 +171,15 @@
         "0000803f",
         "01362a3e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.7490000128746033,
-        0.7490000128746033,
-        1.0,
-        0.16622163355350494,
-        1.0
       ]
     },
     {
       "case_id": "radius_0.5_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "0000003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 0.5,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -429,38 +188,15 @@
         "0000803f",
         "abaa2a3e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.75,
-        0.75,
-        1.0,
-        0.1666666716337204,
-        1.0
       ]
     },
     {
       "case_id": "radius_0.501_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "8941003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 0.501,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -469,38 +205,15 @@
         "0000803f",
         "051f2b3e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.7509999871253967,
-        0.7509999871253967,
-        1.0,
-        0.16711051762104034,
-        1.0
       ]
     },
     {
       "case_id": "radius_1_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "0000803f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 1.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -509,38 +222,15 @@
         "0000803f",
         "9a99993e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.25,
-        1.25,
-        1.0,
-        0.30000001192092896,
-        1.0
       ]
     },
     {
       "case_id": "radius_2_scale_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000003f"
-        ],
-        "radius": "00000040",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         0.5
       ],
-      "kind": "positive_radius",
       "radius": 2.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -549,38 +239,15 @@
         "0000803f",
         "721cc73e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        2.25,
-        2.25,
-        1.0,
-        0.3888888955116272,
-        1.0
       ]
     },
     {
       "case_id": "radius_0_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "00000000",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "zero_radius_edge",
       "radius": 0.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -589,38 +256,15 @@
         "0000803f",
         "0000c07f",
         "00000000"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        "NaN",
-        "NaN",
-        1.0,
-        "NaN",
-        0.0
       ]
     },
     {
       "case_id": "radius_0.1_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -629,38 +273,15 @@
         "0000803f",
         "00000000",
         "cdcc4c3f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.25,
-        0.25,
-        1.0,
-        0.0,
-        0.800000011920929
       ]
     },
     {
       "case_id": "radius_0.499_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "ee7cff3e",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 0.499,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -669,38 +290,15 @@
         "0000803f",
         "976f993e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.6240000128746033,
-        0.6240000128746033,
-        1.0,
-        0.2996794879436493,
-        1.0
       ]
     },
     {
       "case_id": "radius_0.5_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "0000003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 0.5,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -709,38 +307,15 @@
         "0000803f",
         "9a99993e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.625,
-        0.625,
-        1.0,
-        0.30000001192092896,
-        1.0
       ]
     },
     {
       "case_id": "radius_0.501_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "8941003f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 0.501,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -749,38 +324,15 @@
         "0000803f",
         "7ac3993e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.6259999871253967,
-        0.6259999871253967,
-        1.0,
-        0.30031949281692505,
-        1.0
       ]
     },
     {
       "case_id": "radius_1_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "0000803f",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 1.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -789,38 +341,15 @@
         "0000803f",
         "721cc73e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.125,
-        1.125,
-        1.0,
-        0.3888888955116272,
-        1.0
       ]
     },
     {
       "case_id": "radius_2_scale_4",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803e"
-        ],
-        "radius": "00000040",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         0.25
       ],
-      "kind": "positive_radius",
       "radius": 2.0,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -829,38 +358,15 @@
         "0000803f",
         "e2e1e13e",
         "0000803f"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        2.125,
-        2.125,
-        1.0,
-        0.44117647409439087,
-        1.0
       ]
     },
     {
       "case_id": "anisotropic_0",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000003f",
-          "0000803f"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.5,
         1.0
       ],
-      "kind": "anisotropic_inverse_scale",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -869,38 +375,15 @@
         "0000803f",
         "abaa2a3e",
         "cdcc4c3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.75,
-        1.0,
-        1.0,
-        0.1666666716337204,
-        0.20000000298023224
       ]
     },
     {
       "case_id": "anisotropic_1",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000003f"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         0.5
       ],
-      "kind": "anisotropic_inverse_scale",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -909,38 +392,15 @@
         "0000803f",
         "abaa2a3e",
         "cdcc4c3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.0,
-        0.75,
-        1.0,
-        0.1666666716337204,
-        0.20000000298023224
       ]
     },
     {
       "case_id": "anisotropic_2",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803e",
-          "0000803f"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         0.25,
         1.0
       ],
-      "kind": "anisotropic_inverse_scale",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -949,38 +409,15 @@
         "0000803f",
         "9a99993e",
         "cdcc4c3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        0.625,
-        1.0,
-        1.0,
-        0.30000001192092896,
-        0.20000000298023224
       ]
     },
     {
       "case_id": "anisotropic_3",
-      "input_f32_le_hex_words": {
-        "center": [
-          "00000142",
-          "00000142"
-        ],
-        "inverse_xy": [
-          "0000803f",
-          "0000803e"
-        ],
-        "radius": "cdcccc3d",
-        "transparency": "0000803f"
-      },
       "inverse_xy": [
         1.0,
         0.25
       ],
-      "kind": "anisotropic_inverse_scale",
       "radius": 0.1,
-      "record_byte_count": 28,
       "record_f32_le_hex_words": [
         "00000142",
         "00000142",
@@ -989,39 +426,7 @@
         "0000803f",
         "9a99993e",
         "cdcc4c3e"
-      ],
-      "record_values": [
-        32.25,
-        32.25,
-        1.0,
-        0.625,
-        1.0,
-        0.30000001192092896,
-        0.20000000298023224
       ]
     }
-  ],
-  "host_boundaries": [
-    "Direct native RTV5 AddPoint call with explicit drawable vector storage and inverse-axis scale. No saved Drawing call, GL shader execution, or device raster is included.",
-    "The zero-radius row documents native edge output only; finite positive-radius rows establish the radial record fields."
-  ],
-  "provenance": {
-    "helper": "conformance/fountain_native.py",
-    "helper_sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
-    "library": "libSPenFountainPen.so",
-    "library_sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
-    "runner_sha256": "a567fda05cc23925b755af5045341d47ce40e828a37adc808ac9bd9785c79a86",
-    "rva": "0x9f700",
-    "symbol": "SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)"
-  },
-  "record_layout": [
-    "center_x",
-    "center_y",
-    "extent_x",
-    "extent_y",
-    "transparency",
-    "inner_radius",
-    "alpha_by_width"
-  ],
-  "schema": "sdocx-fountain-v16-addpoint-native-v1"
+  ]
 }

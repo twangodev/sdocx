@@ -1,393 +1,9 @@
 {
   "schema": "sdocx.airbrush-saved-native.v1",
-  "source": {
-    "apk": "Samsung Notes 4.4.45.37",
-    "library": "libSPenAirBrushPen.so",
-    "sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423"
-  },
-  "supporting_libraries": {
-    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
-    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
-    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
-  },
-  "native_context": {
-    "Pen::Pen_default_version": 1,
-    "AirBrushPen::AirBrushPen_default_version": 2,
-    "default_GetStrokeDrawableGL_selection": {
-      "constructor_version": 2,
-      "input_pen_version": 2,
-      "version_field_override": false,
-      "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV2::AirBrushPenStrokeDrawableGLV2(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
-      "returned_ptr": "0x10000470"
-    },
-    "version_dispatch": [
-      {
-        "constructor_version": 2,
-        "input_pen_version": 1,
-        "version_field_override": true,
-        "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV1::AirBrushPenStrokeDrawableGLV1(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
-        "returned_ptr": "0x10000470"
-      },
-      {
-        "constructor_version": 2,
-        "input_pen_version": 2,
-        "version_field_override": true,
-        "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV2::AirBrushPenStrokeDrawableGLV2(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
-        "returned_ptr": "0x10000470"
-      }
-    ],
-    "profile_constructor_boundary": "Pen::Pen and AirBrushPen constructors plus Pen::getVersion execute natively; the default version-2 GetStrokeDrawableGL route selects the V2 constructor; V1 selection was separately observed after an explicit synthetic pen-version field override; saved-redraw cases execute the corresponding GL constructor body directly. No named application setter is established."
-  },
-  "default_v2_saved_redraw": {
-    "profile_version": 2,
-    "record_storage": "per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays",
-    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures construct CPU pattern bytes and pass them through the synthetic SPTextureBitmap UpdateBitmap interface",
-    "cases": [
-      {
-        "input_id": "stylus-straight-size10",
-        "runtime_context": {
-          "drawable_profile_version": 2,
-          "data_size": 10.0,
-          "data_color_argb": 4281558681,
-          "previous_position": [
-            0.0,
-            0.0
-          ],
-          "drawline_tolerance": 0.5,
-          "counter_seed": 0
-        },
-        "native": {
-          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
-          "constructor_executed_natively": true,
-          "drawable_profile_version": 2,
-          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
-          "rt_object_offset": "GLV2+0x10",
-          "rt_vtable_address_point": "0x3036450",
-          "rt_vtable_symbol": "0x3036440",
-          "stamp_count": 40,
-          "stamp_stream_sha256": "80375fcd1614a9ebe5637fb23658d2badf37d79f822f1ade51bef4697620819a",
-          "texture_build_factory": {
-            "width": 96,
-            "height": 96,
-            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
-            "data_ptr": "0x0",
-            "bool": 0,
-            "int": 0,
-            "bool2": 0,
-            "stack_args": [
-              6,
-              2
-            ]
-          },
-          "cpu_pattern": {
-            "dimensions": [
-              96,
-              96
-            ],
-            "bytes": 36864,
-            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
-            "sample_red_bytes": [
-              124,
-              93,
-              131,
-              168,
-              161,
-              125,
-              147,
-              198
-            ],
-            "other_channels_nonzero": false,
-            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
-            "update_call": {
-              "interface": "0x100093c0",
-              "payload_ptr": "0x10009560",
-              "size_arg": 0,
-              "payload_bytes": 36864
-            }
-          }
-        },
-        "matches_v1_records_bitwise": true
-      },
-      {
-        "input_id": "stylus-diagonal-size6",
-        "runtime_context": {
-          "drawable_profile_version": 2,
-          "data_size": 6.0,
-          "data_color_argb": 4281558681,
-          "previous_position": [
-            0.0,
-            0.0
-          ],
-          "drawline_tolerance": 0.5,
-          "counter_seed": 0
-        },
-        "native": {
-          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
-          "constructor_executed_natively": true,
-          "drawable_profile_version": 2,
-          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
-          "rt_object_offset": "GLV2+0x10",
-          "rt_vtable_address_point": "0x3036450",
-          "rt_vtable_symbol": "0x3036440",
-          "stamp_count": 49,
-          "stamp_stream_sha256": "88035ee8b7c7dab64cbccbf1b7db248311d8f6f2361ca7498afd8e05a7f6ceab",
-          "texture_build_factory": {
-            "width": 96,
-            "height": 96,
-            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
-            "data_ptr": "0x0",
-            "bool": 0,
-            "int": 0,
-            "bool2": 0,
-            "stack_args": [
-              6,
-              2
-            ]
-          },
-          "cpu_pattern": {
-            "dimensions": [
-              96,
-              96
-            ],
-            "bytes": 36864,
-            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
-            "sample_red_bytes": [
-              124,
-              93,
-              131,
-              168,
-              161,
-              125,
-              147,
-              198
-            ],
-            "other_channels_nonzero": false,
-            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
-            "update_call": {
-              "interface": "0x100093a0",
-              "payload_ptr": "0x10009540",
-              "size_arg": 0,
-              "payload_bytes": 36864
-            }
-          }
-        },
-        "matches_v1_records_bitwise": true
-      },
-      {
-        "input_id": "tool2-offset-size14",
-        "runtime_context": {
-          "drawable_profile_version": 2,
-          "data_size": 14.0,
-          "data_color_argb": 4281558681,
-          "previous_position": [
-            0.0,
-            0.0
-          ],
-          "drawline_tolerance": 0.5,
-          "counter_seed": 0
-        },
-        "native": {
-          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
-          "constructor_executed_natively": true,
-          "drawable_profile_version": 2,
-          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
-          "rt_object_offset": "GLV2+0x10",
-          "rt_vtable_address_point": "0x3036450",
-          "rt_vtable_symbol": "0x3036440",
-          "stamp_count": 16,
-          "stamp_stream_sha256": "7dc8c858af8818b40467e60500048d74f14dfdfe7e3d0596707445b7df7e8241",
-          "texture_build_factory": {
-            "width": 96,
-            "height": 96,
-            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
-            "data_ptr": "0x0",
-            "bool": 0,
-            "int": 0,
-            "bool2": 0,
-            "stack_args": [
-              6,
-              2
-            ]
-          },
-          "cpu_pattern": {
-            "dimensions": [
-              96,
-              96
-            ],
-            "bytes": 36864,
-            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
-            "sample_red_bytes": [
-              124,
-              93,
-              131,
-              168,
-              161,
-              125,
-              147,
-              198
-            ],
-            "other_channels_nonzero": false,
-            "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int), reached through GetTextureBitmap()",
-            "update_call": {
-              "interface": "0x100093a0",
-              "payload_ptr": "0x10009540",
-              "size_arg": 0,
-              "payload_bytes": 36864
-            }
-          }
-        },
-        "matches_v1_records_bitwise": true
-      }
-    ]
-  },
-  "texture": {
-    "build_factory": {
-      "width": 96,
-      "height": 96,
-      "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
-      "data_ptr": "0x0",
-      "bool": 0,
-      "int": 0,
-      "bool2": 0,
-      "stack_args": [
-        6,
-        2
-      ]
-    },
-    "texture_dimensions": [
-      96,
-      96
-    ],
-    "packed_pixel_count": 9216,
-    "payload_bytes": 36864,
-    "payload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
-    "sample_red_bytes": [
-      124,
-      93,
-      131,
-      168,
-      161,
-      125,
-      147,
-      198
-    ],
-    "other_byte_channels_nonzero": false,
-    "captured_at": "synthetic SPTextureBitmap texture-buffer interface UpdateBitmap(void const*, int) after GetTextureBitmap slot +168",
-    "update_call": {
-      "interface": "0x100006a0",
-      "payload_ptr": "0x10000830",
-      "size_arg": 0,
-      "payload_bytes": 36864
-    },
-    "native_vtable_provenance": {
-      "library": "libSPenGraphics.so",
-      "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
-      "factory": "SPGraphicsFactory::CreateBitmap at 0xc04ac constructs SPTextureBitmap at 0x8f140",
-      "primary_address_point": "0xcfd28",
-      "texture_getter": {
-        "caller_slot_offset": 168,
-        "vtable_entry": "0xcfdd0",
-        "symbol": "SPTextureBitmap::GetTextureBitmap",
-        "address": "0x92020",
-        "returns_this_plus": "0xb0"
-      },
-      "buffer_update_interface": {
-        "subobject_offset": "0xb0",
-        "address_point": "0xcff30",
-        "caller_slot_offset": 48,
-        "vtable_entry": "0xcff60",
-        "symbol": "non-virtual thunk to SPTextureBitmap::UpdateBitmap(void const*, int)",
-        "address": "0x90b08",
-        "native_target": "0x90a94"
-      },
-      "filter_requests": [
-        {
-          "caller": "AirBrushPenStrokeDrawableRTV1::buildTextures at 0x27744",
-          "readable_getter_slot": 144,
-          "setter_slot": 32,
-          "args": [
-            4,
-            0
-          ]
-        },
-        {
-          "caller": "AirBrushPenStrokeDrawableRTV1::buildTextures at 0x2776c",
-          "readable_getter_slot": 144,
-          "setter_slot": 32,
-          "args": [
-            5,
-            0
-          ]
-        }
-      ]
-    },
-    "pixel_bytes_order": "little-endian uint32; observed R varying, G/B/A zero",
-    "shader_contract": "fragment preserves input RGB and multiplies input alpha by sampled pattern red",
-    "native_shader_resources": {
-      "SPen::AirBrushPenStrokeDrawableShader::szVertexShader": {
-        "sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
-        "bytes": 386,
-        "source": "precision highp float; uniform mat4 ProjectionMatrix; attribute vec4 vertex; attribute vec4 transform; varying vec2 vUV; void main(void) { mat4 modelMatrix = mat4( transform.w, transform.z, 0.0, 0.0, -transform.z, transform.w, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, transform.x, transform.y, 0.0, 1.0); gl_Position = ProjectionMatrix * modelMatrix * vec4(vertex.xy, 0.0, 1.0); vUV = vertex.zw; }"
-      },
-      "SPen::AirBrushPenStrokeDrawableShader::szFragmentShader": {
-        "sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
-        "bytes": 218,
-        "source": "precision highp float; uniform sampler2D sampler0; uniform vec4 inputColor; varying vec2 vUV; void main(void) { float pattern = texture2D(sampler0, vUV).r; gl_FragColor = vec4(inputColor.rgb, inputColor.a * pattern); }"
-      }
-    }
-  },
-  "host_stubs": {
-    "motion_event": [
-      "GetHistorySize",
-      "GetHistoricalX",
-      "GetHistoricalY",
-      "GetX",
-      "GetY",
-      "GetToolType",
-      "GetPressure",
-      "GetTilt",
-      "GetOrientation",
-      "GetSource",
-      "GetEventTime",
-      "GetDownTime",
-      "GetButtonState",
-      "GetFlags"
-    ],
-    "redraw": [
-      "queue task Run synchronous",
-      "PenGLDataManager::GetMsgQueue",
-      "PenReturnCallback constructor/destructor/GetBuffer/SetPenRect",
-      "PenDrawableRT::SetBuffer",
-      "Error::SetError",
-      "synthetic RT virtual slots"
-    ],
-    "texture": [
-      "SPGraphicsFactory::CreateBitmap",
-      "synthetic SPTextureBitmap::GetTextureBitmap result",
-      "synthetic texture-buffer UpdateBitmap(void const*, int) payload capture"
-    ],
-    "runtime": [
-      "operator new/new[] and nothrow overloads use bounded Unicorn arena",
-      "malloc uses bounded Unicorn arena; free is no-op",
-      "memcpy/memmove/memset operate only in emulated memory",
-      "strlen bounded to 4096 bytes; atoi bounded to 128 bytes",
-      "sincosf uses host math.sin/math.cos",
-      "Android logging/cxa_atexit are stubs; cxa guards follow single-thread first-acquire then initialized behavior"
-    ]
-  },
-  "boundaries": [
-    "synthetic MotionEvent historical/current coordinate callbacks listed per case",
-    "synthetic manager and queue host; queue task Run invoked synchronously",
-    "synthetic RT vtable methods except actual RTV1::AddPoint",
-    "synthetic SPGraphicsFactory::CreateBitmap; actual RTV1::setTextures constructs CPU pattern bytes and passes the pointer through a synthetic SPTextureBitmap texture-buffer UpdateBitmap slot +48 after GetTextureBitmap slot +168; no texture allocation, GPU upload, or GPU execution is exercised",
-    "bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached",
-    "ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run"
-  ],
   "cases": [
     {
       "input": {
         "id": "stylus-straight-size10",
-        "tool": 1,
         "size": 10.0,
         "history": [
           [
@@ -402,28 +18,12 @@
         "endpoint": [
           40.0,
           0.0
-        ],
-        "event": {
-          "pressure": 0.75,
-          "tilt": 0.0,
-          "orientation": 0.0,
-          "source": 0,
-          "time": 30
-        }
+        ]
       },
       "runtime_context": {
-        "drawable_profile_version": 1,
-        "data_size": 10.0,
-        "data_color_argb": 4281558681,
-        "previous_position": [
-          0.0,
-          0.0
-        ],
-        "drawline_tolerance": 0.5,
         "counter_seed": 0
       },
       "native": {
-        "stamp_count": 40,
         "stamps": [
           [
             "00000000",
@@ -665,14 +265,12 @@
             "bf56b302",
             "3f0b6da1"
           ]
-        ],
-        "host_render_callbacks": []
+        ]
       }
     },
     {
       "input": {
         "id": "stylus-diagonal-size6",
-        "tool": 1,
         "size": 6.0,
         "history": [
           [
@@ -687,28 +285,12 @@
         "endpoint": [
           24.0,
           18.0
-        ],
-        "event": {
-          "pressure": 0.75,
-          "tilt": 0.0,
-          "orientation": 0.0,
-          "source": 0,
-          "time": 30
-        }
+        ]
       },
       "runtime_context": {
-        "drawable_profile_version": 1,
-        "data_size": 6.0,
-        "data_color_argb": 4281558681,
-        "previous_position": [
-          0.0,
-          0.0
-        ],
-        "drawline_tolerance": 0.5,
         "counter_seed": 0
       },
       "native": {
-        "stamp_count": 49,
         "stamps": [
           [
             "00000000",
@@ -1004,14 +586,12 @@
             "3f7e98ff",
             "bdd61233"
           ]
-        ],
-        "host_render_callbacks": []
+        ]
       }
     },
     {
       "input": {
         "id": "tool2-offset-size14",
-        "tool": 2,
         "size": 14.0,
         "history": [
           [
@@ -1026,28 +606,12 @@
         "endpoint": [
           19.0,
           4.0
-        ],
-        "event": {
-          "pressure": 0.75,
-          "tilt": 0.0,
-          "orientation": 0.0,
-          "source": 0,
-          "time": 30
-        }
+        ]
       },
       "runtime_context": {
-        "drawable_profile_version": 1,
-        "data_size": 14.0,
-        "data_color_argb": 4281558681,
-        "previous_position": [
-          0.0,
-          0.0
-        ],
-        "drawline_tolerance": 0.5,
         "counter_seed": 0
       },
       "native": {
-        "stamp_count": 16,
         "stamps": [
           [
             "c0a00000",
@@ -1145,8 +709,7 @@
             "bf7746ea",
             "be8483ef"
           ]
-        ],
-        "host_render_callbacks": []
+        ]
       }
     }
   ]

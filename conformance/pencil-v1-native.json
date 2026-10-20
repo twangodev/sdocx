@@ -1,11 +1,4 @@
 {
-  "evidence": {
-    "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
-    "pencil3_sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
-    "scope": "Pencil3 V1 drawPoint and RTV1 AddPoint native bodies; explicit rand results; five-float packed vector and RectF output",
-    "saved_scope": "ObjectStroke adapter through V1 saved-event redraw, native line/point particle generation and endPen; BionicRandom TYPE_3 model; queued work execution and texture/GPU appearance excluded",
-    "rng_profile": "AOSP bionic rand/srand delegates to NetBSD-derived random TYPE_3; saved redraw calls srand(1); algorithm profile pinned to AOSP source, not Samsung device execution"
-  },
   "cases": [
     {
       "name": "small-size-zero-rng",
@@ -248,20 +241,20 @@
             0.0
           ]
         ],
-        "pressures": [
-          0.4
-        ],
         "timestamps": [
           100
+        ],
+        "tool_type": 1,
+        "size": 4.0,
+        "pressures": [
+          0.4
         ],
         "tilts": [
           0.0
         ],
         "orientations": [
           0.0
-        ],
-        "tool_type": 1,
-        "size": 4.0
+        ]
       }
     },
     {
@@ -277,13 +270,15 @@
             -5.0
           ]
         ],
-        "pressures": [
-          0.4,
-          0.5
-        ],
         "timestamps": [
           100,
           120
+        ],
+        "tool_type": 1,
+        "size": 3.99,
+        "pressures": [
+          0.4,
+          0.5
         ],
         "tilts": [
           0.0,
@@ -292,9 +287,7 @@
         "orientations": [
           0.0,
           0.1
-        ],
-        "tool_type": 1,
-        "size": 3.99
+        ]
       }
     },
     {
@@ -314,15 +307,17 @@
             10.0
           ]
         ],
-        "pressures": [
-          0.4,
-          0.5,
-          0.6000000000000001
-        ],
         "timestamps": [
           100,
           120,
           140
+        ],
+        "tool_type": 1,
+        "size": 4.0,
+        "pressures": [
+          0.4,
+          0.5,
+          0.6000000000000001
         ],
         "tilts": [
           0.0,
@@ -333,9 +328,7 @@
           0.0,
           0.1,
           0.2
-        ],
-        "tool_type": 1,
-        "size": 4.0
+        ]
       }
     },
     {
@@ -359,17 +352,19 @@
             -15.0
           ]
         ],
-        "pressures": [
-          0.4,
-          0.5,
-          0.6000000000000001,
-          0.7000000000000001
-        ],
         "timestamps": [
           100,
           120,
           140,
           160
+        ],
+        "tool_type": 1,
+        "size": 4.01,
+        "pressures": [
+          0.4,
+          0.5,
+          0.6000000000000001,
+          0.7000000000000001
         ],
         "tilts": [
           0.0,
@@ -382,9 +377,7 @@
           0.1,
           0.2,
           0.30000000000000004
-        ],
-        "tool_type": 1,
-        "size": 4.01
+        ]
       }
     },
     {
@@ -412,19 +405,21 @@
             20.0
           ]
         ],
-        "pressures": [
-          0.4,
-          0.5,
-          0.6000000000000001,
-          0.7000000000000001,
-          0.8
-        ],
         "timestamps": [
           100,
           120,
           140,
           160,
           180
+        ],
+        "tool_type": 1,
+        "size": 20.0,
+        "pressures": [
+          0.4,
+          0.5,
+          0.6000000000000001,
+          0.7000000000000001,
+          0.8
         ],
         "tilts": [
           0.0,
@@ -439,9 +434,7 @@
           0.2,
           0.30000000000000004,
           0.4
-        ],
-        "tool_type": 1,
-        "size": 20.0
+        ]
       }
     },
     {
@@ -461,15 +454,17 @@
             -4.0
           ]
         ],
-        "pressures": [
-          0.2,
-          0.6,
-          0.9
-        ],
         "timestamps": [
           10,
           10,
           20
+        ],
+        "tool_type": 1,
+        "size": 4.0,
+        "pressures": [
+          0.2,
+          0.6,
+          0.9
         ],
         "tilts": [
           0.0,
@@ -480,9 +475,7 @@
           0.0,
           0.2,
           0.4
-        ],
-        "tool_type": 1,
-        "size": 4.0
+        ]
       }
     },
     {
@@ -506,17 +499,19 @@
             -3.0
           ]
         ],
-        "pressures": [
-          0.4,
-          0.2,
-          0.8,
-          0.6
-        ],
         "timestamps": [
           -20,
           -10,
           -30,
           0
+        ],
+        "tool_type": 2,
+        "size": 6.0,
+        "pressures": [
+          0.4,
+          0.2,
+          0.8,
+          0.6
         ],
         "tilts": [
           0.0,
@@ -529,9 +524,7 @@
           0.1,
           0.2,
           0.3
-        ],
-        "tool_type": 2,
-        "size": 6.0
+        ]
       }
     },
     {
@@ -555,22 +548,22 @@
             -9.0
           ]
         ],
-        "pressures": [
-          0.15,
-          0.45,
-          0.8,
-          0.35
-        ],
         "timestamps": [
           0,
           -3,
           -6,
           -9
         ],
-        "tilts": [],
-        "orientations": [],
         "tool_type": 3,
-        "size": 5.25
+        "size": 5.25,
+        "pressures": [
+          0.15,
+          0.45,
+          0.8,
+          0.35
+        ],
+        "tilts": [],
+        "orientations": []
       }
     },
     {
@@ -590,20 +583,20 @@
             -2.0
           ]
         ],
-        "pressures": [
-          0.5,
-          0.75,
-          0.25
-        ],
         "timestamps": [
           -2,
           5,
           -1
         ],
-        "tilts": [],
-        "orientations": [],
         "tool_type": 2,
-        "size": 4.01
+        "size": 4.01,
+        "pressures": [
+          0.5,
+          0.75,
+          0.25
+        ],
+        "tilts": [],
+        "orientations": []
       }
     },
     {
@@ -623,24 +616,24 @@
             5.0
           ]
         ],
-        "pressures": [
-          0.1,
-          0.8,
-          0.3
-        ],
         "timestamps": [
           5,
           1,
           -5
+        ],
+        "tool_type": 1,
+        "size": 8.0,
+        "pressures": [
+          0.1,
+          0.8,
+          0.3
         ],
         "tilts": [
           0.1,
           0.2,
           0.3
         ],
-        "orientations": [],
-        "tool_type": 1,
-        "size": 8.0
+        "orientations": []
       }
     }
   ],
@@ -654,8 +647,6 @@
         0.0,
         0.0
       ],
-      "sample_boundaries": [],
-      "seed": 1,
       "rand_values": [],
       "particle_count": 0
     },
@@ -879,8 +870,6 @@
         13.539219856262207,
         3.906053066253662
       ],
-      "sample_boundaries": [],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -1401,23 +1390,6 @@
         23.264083862304688,
         12.657041549682617
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            10.0,
-            -5.0,
-            0.5,
-            0.05000000074505806
-          ],
-          "bool_arg": true,
-          "line_width": 0.3199999928474426,
-          "spacing": 0.03999999910593033,
-          "end_float": 35
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -2355,37 +2327,6 @@
         34.36445999145508,
         12.0
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            10.0,
-            -5.0,
-            0.5,
-            0.05000000074505806
-          ],
-          "bool_arg": true,
-          "line_width": 0.3208000063896179,
-          "spacing": 0.04010000079870224,
-          "end_float": 35
-        },
-        {
-          "line_call_index": 1,
-          "start_float": 35,
-          "xy": [
-            20.0,
-            10.0,
-            0.5,
-            0.10000000149011612
-          ],
-          "bool_arg": true,
-          "line_width": 0.3208000063896179,
-          "spacing": 0.04010000079870224,
-          "end_float": 205
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -2987,51 +2928,6 @@
         52.636653900146484,
         29.136117935180664
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            10.0,
-            -5.0,
-            0.5,
-            0.05000000074505806
-          ],
-          "bool_arg": true,
-          "line_width": 1.5999999046325684,
-          "spacing": 0.19999998807907104,
-          "end_float": 35
-        },
-        {
-          "line_call_index": 1,
-          "start_float": 35,
-          "xy": [
-            20.0,
-            10.0,
-            0.5,
-            0.10000000149011612
-          ],
-          "bool_arg": true,
-          "line_width": 1.5999999046325684,
-          "spacing": 0.19999998807907104,
-          "end_float": 65
-        },
-        {
-          "line_call_index": 2,
-          "start_float": 65,
-          "xy": [
-            30.0,
-            -15.0,
-            0.5,
-            0.15000000596046448
-          ],
-          "bool_arg": true,
-          "line_width": 1.5999999046325684,
-          "spacing": 0.19999998807907104,
-          "end_float": 65
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -3183,23 +3079,6 @@
         5.0,
         -2.0
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            3.0,
-            -4.0,
-            0.5,
-            0.10000000149011612
-          ],
-          "bool_arg": true,
-          "line_width": 0.3199999928474426,
-          "spacing": 0.03999999910593033,
-          "end_float": 35
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -3635,37 +3514,6 @@
         17.50945281982422,
         11.0
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            12.0,
-            -3.0,
-            0.20000000298023224,
-            0.05000000074505806
-          ],
-          "bool_arg": false,
-          "line_width": 0.47999998927116394,
-          "spacing": 0.05999999865889549,
-          "end_float": 95
-        },
-        {
-          "line_call_index": 1,
-          "start_float": 95,
-          "xy": [
-            -8.0,
-            9.0,
-            0.800000011920929,
-            0.10000000149011612
-          ],
-          "bool_arg": false,
-          "line_width": 0.47999998927116394,
-          "spacing": 0.05999999865889549,
-          "end_float": 200
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -3955,37 +3803,6 @@
         -3.0,
         -7.0
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            -5.0,
-            -9.0,
-            0.5,
-            0.0
-          ],
-          "bool_arg": true,
-          "line_width": 0.41999998688697815,
-          "spacing": 0.05249999836087227,
-          "end_float": 35
-        },
-        {
-          "line_call_index": 1,
-          "start_float": 35,
-          "xy": [
-            4.0,
-            2.0,
-            0.5,
-            0.0
-          ],
-          "bool_arg": true,
-          "line_width": 0.41999998688697815,
-          "spacing": 0.05249999836087227,
-          "end_float": 35
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -4756,23 +4573,6 @@
         7.908810615539551,
         2.830000162124634
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            -10.0,
-            -2.0,
-            0.75,
-            0.0
-          ],
-          "bool_arg": false,
-          "line_width": 0.3208000063896179,
-          "spacing": 0.04010000079870224,
-          "end_float": 265
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,
@@ -5313,23 +5113,6 @@
         7.724999904632568,
         16.740957260131836
       ],
-      "sample_boundaries": [
-        {
-          "line_call_index": 0,
-          "start_float": 35,
-          "xy": [
-            2.0,
-            -12.0,
-            0.5,
-            0.20000000298023224
-          ],
-          "bool_arg": true,
-          "line_width": 0.6399999856948853,
-          "spacing": 0.07999999821186066,
-          "end_float": 35
-        }
-      ],
-      "seed": 1,
       "rand_values": [
         1804289383,
         846930886,

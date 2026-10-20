@@ -1,25 +1,7 @@
 {
   "cases": {
     "six_point_tool1_nonstationary": {
-      "case_id": "six_point_tool1_nonstationary",
-      "host_boundaries": [
-        "ObjectStroke field values are host-supplied through native Model setters; Model getters, Drawing route, DefaultPen selection, and RT AddPoint geometry execute natively.",
-        "The explicit IContext profile supplies 1920x1080 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
-      ],
       "input": {
-        "advanced_getter_pointer_nonnull": false,
-        "advanced_setting_state": "default_unset",
-        "curve_enabled": true,
-        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
-        "orientation_f32_bits": [
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000"
-        ],
-        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
         "pen_size_f32_bits": "00002041",
         "points_f32_bits": [
           [
@@ -47,281 +29,62 @@
             "0000a041"
           ]
         ],
-        "pressure_f32_bits": [
-          "0000803e",
-          "3333b33e",
-          "0000003f",
-          "6666263f",
-          "cdcc4c3f",
-          "0000803f"
-        ],
-        "stroke_type": 0,
-        "tilt_f32_bits": [
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000",
-          "00000000"
-        ],
-        "timestamps_i32": [
-          10,
-          20,
-          30,
-          40,
-          50,
-          60
-        ],
         "tool_type": 1
-      },
-      "libraries": {
-        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
-        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
-        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
-        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
-        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
-        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
-        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
-        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
-        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
-        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
-      },
-      "loader": [
-        {
-          "flags": 2,
-          "fn": "dlopen",
-          "name": "libSPenDefaultPen.so"
-        },
-        {
-          "fn": "dlsym",
-          "handle": "0x50000001",
-          "name": "createPenInst"
-        }
-      ],
-      "motion_event_source_returns": [
-        {
-          "phase": "draw_object_stroke",
-          "source_u32": 0
-        },
-        {
-          "phase": "saved_redraw",
-          "source_u32": 0
-        }
-      ],
-      "native_model_getters": {
-        "SPen::ObjectStroke::GetOrientation() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dffbc"
-        },
-        "SPen::ObjectStroke::GetPenSize() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2e0d54"
-        },
-        "SPen::ObjectStroke::GetPoint() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dfa28"
-        },
-        "SPen::ObjectStroke::GetPointCount() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dfa98"
-        },
-        "SPen::ObjectStroke::GetPressure() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dfaf0"
-        },
-        "SPen::ObjectStroke::GetStrokeType() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2e16b0"
-        },
-        "SPen::ObjectStroke::GetTilt() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dff4c"
-        },
-        "SPen::ObjectStroke::GetTimeStamp() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2dfb60"
-        },
-        "SPen::ObjectStroke::GetToolType() const": {
-          "host_callback_present": false,
-          "native_symbol_rva": "0x2e1550"
-        }
       },
       "native_redraw_callback_boundaries": [
         {
-          "callback_end": 0,
-          "callback_start": 0,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "draw_object_stroke",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41200000",
-            "0x0",
-            "0x41200000",
-            "0xff000000"
-          ],
-          "source_sample_index_zero_based": 1
+          "phase": "draw_object_stroke"
         },
         {
-          "callback_end": 0,
-          "callback_start": 0,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "draw_object_stroke",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41a00000",
-            "0x0",
-            "0x41a00000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 2
+          "phase": "draw_object_stroke"
         },
         {
-          "callback_end": 7,
-          "callback_start": 0,
           "callbacks_emitted": 7,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "draw_object_stroke",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41f00000",
-            "0x41200000",
-            "0x41f00000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 3
+          "phase": "draw_object_stroke"
         },
         {
-          "callback_end": 7,
-          "callback_start": 7,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "draw_object_stroke",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x42200000",
-            "0x0",
-            "0x42200000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 4
+          "phase": "draw_object_stroke"
         },
         {
-          "callback_end": 22,
-          "callback_start": 7,
           "callbacks_emitted": 15,
-          "entry_pc": "0x50179b4",
           "method": "DefaultPenStrokeDrawableGL::endPen",
-          "phase": "draw_object_stroke",
-          "return_pc": "0x50187d0",
-          "return_pc_expected": "0x50187d0",
-          "s0_s3_bits": [
-            "0x100349b0",
-            "0xb",
-            "0x41200000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 5
+          "phase": "draw_object_stroke"
         },
         {
-          "callback_end": 22,
-          "callback_start": 22,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "saved_redraw",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41200000",
-            "0x0",
-            "0x41200000",
-            "0xff000000"
-          ],
-          "source_sample_index_zero_based": 1
+          "phase": "saved_redraw"
         },
         {
-          "callback_end": 22,
-          "callback_start": 22,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "saved_redraw",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41a00000",
-            "0x0",
-            "0x41a00000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 2
+          "phase": "saved_redraw"
         },
         {
-          "callback_end": 29,
-          "callback_start": 22,
           "callbacks_emitted": 7,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "saved_redraw",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x41f00000",
-            "0x41200000",
-            "0x41f00000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 3
+          "phase": "saved_redraw"
         },
         {
-          "callback_end": 29,
-          "callback_start": 29,
           "callbacks_emitted": 0,
-          "entry_pc": "0x5018928",
           "method": "DefaultPenStrokeDrawableGL::redrawLine",
-          "phase": "saved_redraw",
-          "return_pc": "0x5018698",
-          "return_pc_expected": "0x5018698",
-          "s0_s3_bits": [
-            "0x42200000",
-            "0x0",
-            "0x42200000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 4
+          "phase": "saved_redraw"
         },
         {
-          "callback_end": 44,
-          "callback_start": 29,
           "callbacks_emitted": 15,
-          "entry_pc": "0x50179b4",
           "method": "DefaultPenStrokeDrawableGL::endPen",
-          "phase": "saved_redraw",
-          "return_pc": "0x50187d0",
-          "return_pc_expected": "0x50187d0",
-          "s0_s3_bits": [
-            "0x10035390",
-            "0xb",
-            "0x41200000",
-            "0x0"
-          ],
-          "source_sample_index_zero_based": 5
+          "phase": "saved_redraw"
         }
       ],
       "phase_final_vectors": {
         "draw_object_stroke": {
-          "callback_count": 22,
-          "sha256": "f8e51cae6084037bb2e43610c395ed27d8cbbdc10fcb8621aa8ea37fd48bc728",
           "triples_f32_bits": [
             [
               "00000000",
@@ -436,8 +199,6 @@
           ]
         },
         "saved_redraw": {
-          "callback_count": 22,
-          "sha256": "f8e51cae6084037bb2e43610c395ed27d8cbbdc10fcb8621aa8ea37fd48bc728",
           "triples_f32_bits": [
             [
               "00000000",
@@ -550,354 +311,8 @@
               "0000b040"
             ]
           ]
-        }
-      },
-      "profile": {
-        "canvas_model_matrix_f32_bits": [
-          "0000803f",
-          "00000000",
-          "00000000",
-          "00000000",
-          "0000803f",
-          "00000000",
-          "00000000",
-          "00000000",
-          "0000803f"
-        ],
-        "height": 1080,
-        "width": 1920
-      },
-      "route": {
-        "drawing_return": 1,
-        "factory_symbol": "createPenInst",
-        "redraw_entry": "non-virtual thunk to SPen::DefaultPenStrokeDrawableGL::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
-        "same_rt_id": "rt0",
-        "saved_redraw_return": 1,
-        "selected_drawable_class": "SPen::DefaultPenStrokeDrawableGL",
-        "selected_drawable_vtable_id": "DefaultPenStrokeDrawableGL"
-      },
-      "runtime_event_order": [
-        {
-          "event": "Pen::SetScreenResolution",
-          "height": 1080,
-          "phase": "draw_object_stroke",
-          "width": 1920
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "draw_object_stroke"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        },
-        {
-          "event": "AddPoint",
-          "phase": "saved_redraw"
-        }
-      ],
-      "schema": "defaultpen-saved-caller-native-v1",
-      "scope": "Native Drawing caller and direct replay of its selected unsuffixed DefaultPen RedrawPen entry under an explicit synthetic context. Does not claim Samsung device defaults, SDK deserialization, renderer pixels, or export parity.",
-      "screen_resolution": [
-        {
-          "height": 1080,
-          "width": 1920
-        }
-      ],
-      "source_hashes": {
-        "caller_sha256": "14e1b1d85df0aaebdc889871656217b927bedfc45ad1eba309fbe562eedd559a",
-        "defaultpen_saved_caller_native.py": "14e1b1d85df0aaebdc889871656217b927bedfc45ad1eba309fbe562eedd559a",
-        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
-        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
-        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
-        "runner_sha256_normalized_self_pin": "884981df10cce74b3fc5b3c9958a8fea0fa7332f9bd677794fd56a2effa940c1"
-      },
-      "source_zero_disassembly_contract": {
-        "base_array_ctor_calls_default_ctor_rva": "0xbfdd4",
-        "base_array_motion_event_ctor_rva": "0xbfd84",
-        "base_default_ctor_zeroes_inner_source_offset_8_rva": "0xbf46c",
-        "base_get_source_loads_inner_offset_8_rva": "0xc0aa0",
-        "defaultpen_event_ctor_call_rva": "0x18c00",
-        "defaultpen_objectstroke_redraw_rva": "0x18b54",
-        "instructions": [
-          {
-            "bytes_little_endian": "9c090094",
-            "instruction_word_hex": "9400099c",
-            "library": "libSPenDefaultPen.so",
-            "operation": "BL MotionEvent(int,int,PointF const*,...) from ObjectStroke RedrawPen",
-            "rva": "0x18c00"
-          },
-          {
-            "bytes_little_endian": "8b9b0094",
-            "instruction_word_hex": "94009b8b",
-            "library": "libSPenBase.so",
-            "operation": "BL MotionEvent() from MotionEvent array constructor",
-            "rva": "0xbfdd4"
-          },
-          {
-            "bytes_little_endian": "1f0800b9",
-            "instruction_word_hex": "b900081f",
-            "library": "libSPenBase.so",
-            "operation": "STR WZR,[X0,#8], initializes MotionEvent source to zero",
-            "rva": "0xbf46c"
-          },
-          {
-            "bytes_little_endian": "000940b9",
-            "instruction_word_hex": "b9400900",
-            "library": "libSPenBase.so",
-            "operation": "LDR W0,[X8,#8], MotionEvent::GetSource reads that field",
-            "rva": "0xc0aa0"
-          }
-        ],
-        "source_field_offset_from_motion_event_data": 8
-      },
-      "streams": {
-        "draw_object_stroke": {
-          "callback_count": 22,
-          "float_count": 66,
-          "sha256": "f8e51cae6084037bb2e43610c395ed27d8cbbdc10fcb8621aa8ea37fd48bc728",
-          "values_f32_bits": [
-            "00000000",
-            "00000000",
-            "0000b040",
-            "83503c40",
-            "c2a3dd3d",
-            "0000b040",
-            "8350bc40",
-            "c2a3dd3e",
-            "0000b040",
-            "623c0d41",
-            "3a58793f",
-            "0000b040",
-            "28b83a41",
-            "97e6d93f",
-            "0000b040",
-            "6d256741",
-            "dbf62640",
-            "0000b040",
-            "5ac98941",
-            "69506d40",
-            "0000b040",
-            "0000a041",
-            "0000a040",
-            "0000b040",
-            "7e5bb241",
-            "8bfcc240",
-            "0000b040",
-            "df2bc841",
-            "f96de940",
-            "0000b040",
-            "0723dd41",
-            "262c0641",
-            "0000b040",
-            "c855f141",
-            "7c551641",
-            "0000b040",
-            "7baf0342",
-            "076a2741",
-            "0000b040",
-            "f3d60e42",
-            "413f3841",
-            "0000b040",
-            "1ad21842",
-            "32fe4641",
-            "0000b040",
-            "8e5e2342",
-            "714e5641",
-            "0000b040",
-            "507c2e42",
-            "fe2f6641",
-            "0000b040",
-            "52f63942",
-            "a9587641",
-            "0000b040",
-            "0b004442",
-            "5b278241",
-            "0000b040",
-            "456c4e42",
-            "a3538941",
-            "0000b040",
-            "023b5942",
-            "2bb19041",
-            "0000b040",
-            "3f6c6442",
-            "f43f9841",
-            "0000b040"
-          ]
-        },
-        "saved_redraw": {
-          "callback_count": 22,
-          "float_count": 66,
-          "same_bytes_as_drawing_phase": true,
-          "same_rt_as_drawing_phase": true,
-          "sha256": "f8e51cae6084037bb2e43610c395ed27d8cbbdc10fcb8621aa8ea37fd48bc728"
         }
       }
     }
-  },
-  "schema": "sdocx-defaultpen-redraw-boundaries-native-v1"
+  }
 }
