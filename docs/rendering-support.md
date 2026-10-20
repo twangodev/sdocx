@@ -303,6 +303,10 @@ MuPDF and PDFium; a half-alpha 1× control also improves. SVG support IoU is
 about 0.992–0.996, while PDF remains about 0.812–0.955. Independent single-stamp
 PDF controls retain the radial-shading sampling error even without the
 converter’s shape bounds or RGB gradient; gradient transport is not pixel parity.
+Active-gradient transport is staged internally with per-record RGB and separate
+color/coverage fields. Bounded Chromium/Firefox witnesses improve, but reflected
+resvg masks, fractional zoom, PDF appearance and real-document evidence remain
+open; public gradient admission stays off. See the V9 saved trace above.
 Nine enhanced-AA controls (1×/2×/4×, alpha 0/128/255) retain the same native VBO.
 The enhanced projection improves SVG and partial-alpha PDF error against those
 native frames compared with selecting the direct route. Opaque PDF error is
