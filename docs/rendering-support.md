@@ -132,13 +132,16 @@ admission, production vector paint and device parity remain open.
 
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
-Pencil profiles currently use the generic pressure approximation. A test-only
+Pencil profiles default to the generic pressure approximation. An explicit
+`Pencil3RenderProfile` admits bounded V3 intrinsic-texture paint for ordinary
+tool-2 strokes with empty/`4;` settings, supplied screen/canvas dimensions and
+a chosen paper sampler; canvas dimensions must match the page. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
 The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
-The test-only [V3 particle kernel](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-v3-native.json)
+The [V3 particle kernel](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-v3-native.json)
 matches all 48 particles in two redraw phases, including private RNG state and
-reset behavior. The test-only [V3 saved sampler](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-sampler-inputs-native.json)
+reset behavior. The [V3 saved sampler](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-sampler-inputs-native.json)
 reconstructs complete native particle streams from source channels across five
 profiles, including varied pressure, tilt, tools and context dimensions.
 A [V3 host paint join](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil-v3-paint-join.json) replays those
@@ -155,19 +158,18 @@ That capture stops at a missing host framebuffer target. A separate
 [native paper paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-paper-paint-native.json)
 completes same-RT Mesa Draw with the native paper resource and white/zero controls,
 retaining full RGBA readbacks. Bitmap/texture ownership and lifecycle remain host
-adapters; production vector paint and device parity remain open.
+adapters; natural context and device parity remain open.
 A [one-particle vector sampling witness](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
-including embedded paper. Public PDF export drops that hint; general runtime
-paper coverage and production vector paint integration remain outstanding.
-Fresh selector probes confirm empty/`4;` selects Pencil3 V3, while `3;`
-selects V1. The V3 sampler now has an output budget; public routing remains
-unimplemented. An intrinsic-texture/vector-stamp prototype preserves source
-assets and improves the generic fallback in bounded host comparisons, but its
-paper-repeat assumption differs from the oracle's supplied bitmap clamp state;
-all captured particles stay inside the first tile, so this case cannot distinguish them.
-Built-in paper repeats; supplied-paper sampling is producer-owned. Context,
-sampler selection and real-document/device validation remain integration gates.
+including embedded paper. That vectorized-texel hint is lost in PDF; the
+intrinsic-image route below remains subject to consumer sampling.
+Fresh selectors distinguish empty/`4;` (V3) from `3;` (V1). V3 preparation has
+source/output budgets and native size clamps. Public SVG/PDF reuse the original
+brush and paper textures with vector stamp geometry; these are intrinsic image
+assets, not rendered-stroke bitmaps. Matching sampler controls improve on the
+generic fallback across five consumers; PDF residuals remain. Supplied-paper
+sampling is producer-owned, while built-in paper repeats. Context defaults,
+replay and real-document/device validation remain integration gaps.
 Marker3 V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp

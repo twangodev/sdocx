@@ -1,4 +1,4 @@
-# Pencil3 V1 saved-stroke source authority
+# Pencil3 saved-stroke source authority
 
 ## Evidence and scope
 
@@ -89,6 +89,11 @@ those pixels and dimensions (`0x41188`, `0x41224`), calls the same interface
 (`0x41254`), then releases its local reference (`0x41260`). This proves a
 configuration input, without establishing a concrete app paper-file producer.
 
+APK `SpenPaintingViewImpl.setPaintingDoc` loads the bundled 770×965
+`paper_kent_depthmap.jpg` through `Native_setPaperDepthMap`. That painting API
+is distinct from the pen depth-map setter; the extracted smali does not connect
+it to Pencil3, so it is not evidence for this pen's runtime paper default.
+
 V1's GL setter releases its old member 488 bitmap and references an accepted
 new pointer (`0x108964–0x108998`); its destructor releases it (`0x106f68`).
 Saved redraw supplies it to PenReturnCallback (`0x107c4c`), whose destructor
@@ -134,8 +139,10 @@ The paper bitmap is distinct from an [editable Painting source](painting-source-
 and does not replace saved XY. No inspected route proves this runtime input
 is serialized in an ordinary stroke. Preserve original samples, optional
 channel presence, tool, pen/settings identities and source bytes independently
-of generated particles. Rust currently uses the [pressure approximation](stroke-rendering-findings.md#current-sdk-behavior)
-for Pencil profiles. [Native PDF stroke bitmaps](native-pdf-stroke-findings.md)
+of generated particles. Pencil profiles use the [pressure approximation](stroke-rendering-findings.md#current-sdk-behavior)
+by default. An explicit `RenderOptions::pencil3_profile` now selects bounded V3
+source reconstruction and intrinsic-texture paint; it requires a matching page
+canvas, supplied screen dimensions and an explicit paper sampler. [Native PDF stroke bitmaps](native-pdf-stroke-findings.md)
 are derived output; original vector channels and configured coverage inputs
 remain separate source boundaries.
 
@@ -165,9 +172,15 @@ are synthetic, and its pixel fixture does not establish Android/device
 parity. The app's real render-queue execution and framebuffer remain outside
 these captures.
 
-The test-only V3 sampler now stops at an output budget without partial output
-or caller RNG changes on rejection, while retaining complete native streams.
-Public Pencil rendering remains generic.
+V3 preparation now stops at 2,048 particles and 65,536 source points, with no
+partial stream or caller RNG changes on rejection. Admission requires exact
+Pencil3 empty/`4;` settings, ordinary tool 2, complete finite channels, explicit
+ARGB and supported style defaults. Replay retains the established fallback.
+Native `Pen::SetSize` at PenCommon `0x45fdc` clamps to [0.4,800]. Drawing forwards
+omitted size as zero, yielding 0.4; explicit 0/0.1 and 800/900 controls match
+complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted
+optional axes remain distinct. The strict ordinary-style gate does not establish
+native behavior for the rejected effects or all property combinations.
 
 Single-stamp transport probes also separate source sampling from export
 rasterization. Nearest texel selection matched all 25/100 tested fragment
@@ -179,11 +192,15 @@ SVG-to-PDF route; they establish neither device parity nor a production
 transport. The scripts and measurements remain in the ignored
 `tmp/vector-parity-plan/pencil-stamp-*` experiments.
 
-A separate 48-particle prototype reuses the original brush atlas and paper as
-two intrinsic images with vector stamp geometry; decoded SVG alpha and SDK PDF
-soft-mask payloads preserve source values. On one shared native/candidate/fallback
-support union per renderer, RGB MAE is 1.94 in Firefox and about 17 in MuPDF/PDFium,
-versus 57–65 for the generic fallback. This is one synthetic 320×180 host frame.
-All particles lie within the first 150×150 paper tile, so repeat and clamp variants
-render identically and do not validate wrapping. A boundary-crossing native control,
-real paper/projection inputs and broader source profiles remain required.
+The explicit public route reuses the original brush atlas and paper as two
+intrinsic images with vector stamp geometry. Decoded SVG alpha and PDF image
+soft masks preserve source values; the two assets are shared across strokes.
+Canonical top-down host controls use a 320×180 canvas and explicit screen
+2560×1440, yielding paper scale 1. The native matrix is supplied through the
+host GL adapter, not recovered from Samsung's natural app context.
+Paired CLAMP/REPEAT controls share the complete 48-record native stream and
+source textures; the matching vector sampler lowers error across Chromium,
+Firefox, resvg, MuPDF and PDFium against the no-profile fallback. PDF raster residuals,
+consumer sampling, real paper/projection inputs, broader source
+profiles and Samsung-device comparisons remain open. Scratch captures and
+cross-renderer reports stay outside maintained conformance files.
