@@ -4003,9 +4003,62 @@ mod tests {
     }
 
     #[cfg(feature = "pdf")]
+    fn assert_inkpen2_pdf_export(
+        ink: &crate::PreparedInkPen2V9,
+        transform: [f64; 6],
+        options: &crate::PdfOptions,
+        artifact: Option<(&std::path::Path, &str)>,
+    ) {
+        use super::vector::{Group, Scene, Styled, Svg, Transform};
+
+        let mut scene = Scene::new(Svg::new().width(128).height(96));
+        scene.retain_text();
+        scene.scope(
+            Group::new().transformed(Transform::matrix_unrounded(transform)),
+            |scene| super::inkpen2_vector::render(scene, ink, None),
+        );
+        let text = scene.take_native_text();
+        let registered = scene.take_native_ink();
+        assert_eq!(registered.len(), usize::from(ink.opacity != 0.));
+        let text_error = scene.take_native_text_error();
+        assert!(text_error.is_none(), "{text_error:?}");
+        let svg = scene.finish();
+        let retained = super::RenderedScene {
+            page: super::RenderedPage {
+                source_page_index: 0,
+                width: 128,
+                height: 96,
+                svg: svg.clone(),
+                text_diagnostics: vec![],
+                object_diagnostics: vec![],
+                geometry_diagnostics: vec![],
+                paint_diagnostics: vec![],
+            },
+            text,
+            ink: registered,
+            text_error,
+        };
+        let pdf = crate::pdf::render_native_scene_pdf_for_test(&retained, options).unwrap();
+        let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+        assert_eq!(parsed.get_pages().len(), 1);
+        assert!(
+            !parsed
+                .objects
+                .values()
+                .any(|object| object.as_stream().is_ok_and(|stream| stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))))
+        );
+        if let Some((dir, name)) = artifact {
+            std::fs::write(dir.join(format!("{name}.pdf")), &pdf).unwrap();
+            std::fs::write(dir.join(format!("{name}.svg")), &svg).unwrap();
+        }
+    }
+
+    #[cfg(feature = "pdf")]
     #[test]
     fn inkpen2_native_gradient_records_reach_retained_vector_pdf() {
-        use super::vector::{Group, Scene, Styled, Svg, Transform};
         use crate::ink::inkpen2::{Input, Rainbow, Runtime, redraw, source_point};
         use sha2::Digest;
 
@@ -4068,6 +4121,7 @@ mod tests {
         for enhanced in [false, true] {
             for alpha in [0_u8, 128, 255] {
                 for scale in [1, 2, 4] {
+                    let name = format!("scale{scale}_aa{}_alpha{alpha}", u8::from(enhanced));
                     let ink = crate::PreparedInkPen2V9 {
                         per_stamp_rgb: true,
                         enhanced_antialias: enhanced,
@@ -4081,59 +4135,119 @@ mod tests {
                         opacity: f64::from(f32::from(alpha) / 255.),
                         bounds,
                     };
-                    let mut scene = Scene::new(Svg::new().width(128).height(96));
-                    scene.retain_text();
-                    scene.scope(
-                        Group::new().transformed(Transform::matrix_unrounded([
-                            f64::from(scale),
-                            0.,
-                            0.,
-                            -f64::from(scale),
-                            0.,
-                            96.,
-                        ])),
-                        |scene| super::inkpen2_vector::render(scene, &ink, None),
+                    assert_inkpen2_pdf_export(
+                        &ink,
+                        [f64::from(scale), 0., 0., -f64::from(scale), 0., 96.],
+                        &options,
+                        artifact_dir.as_deref().map(|dir| (dir, name.as_str())),
                     );
-                    let text = scene.take_native_text();
-                    let registered = scene.take_native_ink();
-                    assert_eq!(registered.len(), usize::from(alpha != 0));
-                    let text_error = scene.take_native_text_error();
-                    assert!(text_error.is_none(), "{text_error:?}");
-                    let svg = scene.finish();
-                    let retained = super::RenderedScene {
-                        page: super::RenderedPage {
-                            source_page_index: 0,
-                            width: 128,
-                            height: 96,
-                            svg: svg.clone(),
-                            text_diagnostics: vec![],
-                            object_diagnostics: vec![],
-                            geometry_diagnostics: vec![],
-                            paint_diagnostics: vec![],
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_native_thin_rainbow_records_reach_retained_vector_pdf() {
+        use crate::ink::inkpen2::{Input, Rainbow, Runtime, redraw, source_point};
+        use sha2::Digest;
+
+        let points = [(0., 0.), (8., 0.), (16., 3.), (24., 3.)].map(|(x, y)| source_point(x, y));
+        let cases = [
+            (
+                0.4_f32,
+                "0_4",
+                "9a439505b800212c5dcaf83bd6033dc9a84ed246a6b2bc5ae51b486200f3ac84",
+            ),
+            (
+                0.6_f32,
+                "0_6",
+                "913714dd5d0f6dcf390f6c7b86a3cc669343cc64e6f1b7f88e07b1100f185809",
+            ),
+            (
+                1.0_f32,
+                "1_0",
+                "021014a354c5f65195836a8c7a0ba017884a422dacf91813f73455914a4591b4",
+            ),
+        ];
+        let artifact_dir =
+            std::env::var_os("SDOCX_INKPEN2_THIN_PDF_DIR").map(std::path::PathBuf::from);
+        if let Some(dir) = &artifact_dir {
+            std::fs::create_dir(dir).unwrap();
+        }
+        let options =
+            crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
+        for (size, size_tag, expected_hash) in cases {
+            let output = redraw(Input {
+                points: &points,
+                times: &[0, 10, 20, 30],
+                tools: &[2; 4],
+                pressures: &[0.2, 0.4, 0.6, 0.8],
+                rgb: [18, 52, 86],
+                rainbow: Some(Rainbow {
+                    distance: 5,
+                    offset: 2.5,
+                    palette_argb: &[0xffff0000, 0xff0000ff],
+                }),
+                size,
+                curve_enabled: true,
+                is_shape: false,
+                runtime: Runtime {
+                    inverse_scale: [1., 1.],
+                    spacing: 1.,
+                    tolerance: 0.,
+                    tool_threshold: 20.,
+                    resolution_min: 1080,
+                    initial_alternation: false,
+                    initial_time: 0,
+                },
+            })
+            .unwrap();
+            let bytes: Vec<_> = output
+                .vertices
+                .iter()
+                .flatten()
+                .flat_map(|value| value.to_le_bytes())
+                .collect();
+            assert_eq!(bytes.len(), 900);
+            assert_eq!(format!("{:x}", sha2::Sha256::digest(&bytes)), expected_hash);
+            let mut bounds = BoundingBox {
+                x_min: f64::INFINITY,
+                y_min: f64::INFINITY,
+                x_max: f64::NEG_INFINITY,
+                y_max: f64::NEG_INFINITY,
+            };
+            for &[x, y, rx, ry, ..] in &output.vertices {
+                bounds.x_min = bounds.x_min.min(f64::from(x) - f64::from(rx));
+                bounds.y_min = bounds.y_min.min(f64::from(y) - f64::from(ry));
+                bounds.x_max = bounds.x_max.max(f64::from(x) + f64::from(rx));
+                bounds.y_max = bounds.y_max.max(f64::from(y) + f64::from(ry));
+            }
+            for enhanced in [false, true] {
+                for scale in [1, 4] {
+                    let name = format!(
+                        "thin_size{size_tag}_scale{scale}_aa{}_alpha128",
+                        u8::from(enhanced)
+                    );
+                    let ink = crate::PreparedInkPen2V9 {
+                        per_stamp_rgb: true,
+                        enhanced_antialias: enhanced,
+                        records: output.vertices.clone(),
+                        sample_ends: output.sample_ends.clone(),
+                        color: Color {
+                            r: 18,
+                            g: 52,
+                            b: 86,
                         },
-                        text,
-                        ink: registered,
-                        text_error,
+                        opacity: f64::from(128_f32 / 255.),
+                        bounds,
                     };
-                    let pdf =
-                        crate::pdf::render_native_scene_pdf_for_test(&retained, &options).unwrap();
-                    let parsed = lopdf::Document::load_mem(&pdf).unwrap();
-                    assert_eq!(parsed.get_pages().len(), 1);
-                    assert!(
-                        !parsed
-                            .objects
-                            .values()
-                            .any(|object| object
-                                .as_stream()
-                                .is_ok_and(|stream| stream.dict.get(b"Subtype").is_ok_and(|v| v
-                                    .as_name()
-                                    .is_ok_and(|name| name == b"Image"))))
+                    assert_inkpen2_pdf_export(
+                        &ink,
+                        [f64::from(scale), 0., 0., f64::from(scale), 16., 16.],
+                        &options,
+                        artifact_dir.as_deref().map(|dir| (dir, name.as_str())),
                     );
-                    if let Some(dir) = &artifact_dir {
-                        let name = format!("scale{scale}_aa{}_alpha{alpha}", u8::from(enhanced));
-                        std::fs::write(dir.join(format!("{name}.pdf")), &pdf).unwrap();
-                        std::fs::write(dir.join(format!("{name}.svg")), &svg).unwrap();
-                    }
                 }
             }
         }
