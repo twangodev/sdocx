@@ -1661,4 +1661,283 @@ mod tests {
             .is_none()
         );
     }
+
+    #[test]
+    fn rainbow_native_saved_caller_matrix_matches_full_vbo_hashes() {
+        // Native matrix capture SHA-256: 8366510f0ca3e73c1fcd9970cfa79061b926b9eec8d05b9852be619d1ef68cf3.
+        // Digests cover complete native Vector9<f32> little-endian buffers.
+        // Runtime/getter values are captured per case; the 1920x1080 profile
+        // is an explicit synthetic host context.
+        struct Case {
+            name: &'static str,
+            points: &'static [[u32; 2]],
+            times: &'static [i32],
+            size: u32,
+            curve: bool,
+            distance: i32,
+            offset: u32,
+            palette: &'static [u32],
+            records: usize,
+            sha256: &'static str,
+        }
+        const RB: &[u32] = &[0xffff_0000, 0xff00_00ff];
+        const RGB: &[u32] = &[0xffff_0000, 0xff00_ff00, 0xff00_00ff];
+        const SEVEN: &[u32] = &[
+            0xffff_0000,
+            0xff00_ff00,
+            0xff00_00ff,
+            0xffff_ff00,
+            0xffff_00ff,
+            0xff00_ffff,
+            0xffff_ffff,
+        ];
+        const CASES: &[Case] = &[
+            Case {
+                name: "short_negative_period",
+                points: &[[0, 0], [0x3f00_0000, 0]],
+                times: &[0, 1],
+                size: 0x4080_0000,
+                curve: true,
+                distance: -5,
+                offset: 0xbf80_0000,
+                palette: RB,
+                records: 1,
+                sha256: "cf6beeeb5db11fd4cd1bc6fddef4c0bbac71b219cc117a0c8f4cd2691e4a9ab9",
+            },
+            Case {
+                name: "repeat_zero_bend",
+                points: &[[0, 0], [0, 0], [0x4040_0000, 0]],
+                times: &[0, 1, 2],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 5,
+                offset: 0x4020_0000,
+                palette: RB,
+                records: 4,
+                sha256: "0daaed87ea54b096d0b9db520bebf789d78073e195dfad87a89ba1a129be5ef8",
+            },
+            Case {
+                name: "subspacing_point1_n1",
+                points: &[[0, 0], [0x3dcccccd, 0], [0x3f00_0000, 0]],
+                times: &[0, 1, 2],
+                size: 0x3ecccccd,
+                curve: true,
+                distance: 4,
+                offset: 0x3e80_0000,
+                palette: &[0xff00_ff00],
+                records: 1,
+                sha256: "bc3339b2df5afe8cf1212227c060f4682efafddf76da4ac3ad0ee43396612ed9",
+            },
+            Case {
+                name: "subspacing_point5_n3_line",
+                points: &[[0, 0], [0x3f00_0000, 0], [0x3f80_0000, 0x3f80_0000]],
+                times: &[0, 0, 1],
+                size: 0x3f00_0000,
+                curve: false,
+                distance: 1,
+                offset: 0,
+                palette: RGB,
+                records: 2,
+                sha256: "211d4175cd5c52f510fb97bb2df11b4d87d16863bded5dea400536fc0d9eaf22",
+            },
+            Case {
+                name: "sharp_curve_n7",
+                points: &[
+                    [0, 0],
+                    [0x3f00_0000, 0],
+                    [0x3f00_0000, 0x3f00_0000],
+                    [0, 0x3f00_0000],
+                    [0x3e80_0000, 0x3e80_0000],
+                    [0x3f80_0000, 0x3f80_0000],
+                ],
+                times: &[0, 0, 1, 1, 2, 1000],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 5,
+                offset: 0x409f_f7cf,
+                palette: SEVEN,
+                records: 3,
+                sha256: "dcabcc277fdf4130ded08eef5d49316ac885ebca1b2105309d0651b9e6182540",
+            },
+            Case {
+                name: "sharp_line_n3",
+                points: &[
+                    [0, 0],
+                    [0x3f00_0000, 0],
+                    [0x3f00_0000, 0x3f00_0000],
+                    [0, 0x3f00_0000],
+                    [0x3e80_0000, 0x3e80_0000],
+                    [0x3f80_0000, 0x3f80_0000],
+                ],
+                times: &[0, 1, 2, 3, 4, 5],
+                size: 0x4080_0000,
+                curve: false,
+                distance: 4,
+                offset: 0x3e80_0000,
+                palette: RGB,
+                records: 3,
+                sha256: "7115c93058c5fafc6e501b99670b743151ad0e3b884da03c2c63727821862b5a",
+            },
+            Case {
+                name: "zero_time_curve",
+                points: &[[0, 0], [0x3f80_0000, 0], [0x3f80_0000, 0x3f80_0000]],
+                times: &[0, 0, 0],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 5,
+                offset: 0x3e80_0000,
+                palette: RB,
+                records: 2,
+                sha256: "033c7c94f54f37f6325ffc21b654fc4acbf7022e99c09d0b329d5af1ea3bd346",
+            },
+            Case {
+                name: "large_time_n7",
+                points: &[
+                    [0, 0],
+                    [0x4100_0000, 0],
+                    [0x4180_0000, 0x4040_0000],
+                    [0x41c0_0000, 0x4040_0000],
+                ],
+                times: &[0, 1_000_000, 2_000_000, 3_000_000],
+                size: 0x4080_0000,
+                curve: false,
+                distance: 5,
+                offset: 0x4020_0000,
+                palette: SEVEN,
+                records: 25,
+                sha256: "558017abf6afb0d8d41dd2362188656564e06c984543c60036ae4ef444eb025c",
+            },
+            Case {
+                name: "repeated_bend_d1",
+                points: &[
+                    [0, 0],
+                    [0x3f00_0000, 0],
+                    [0x3f00_0000, 0],
+                    [0x3f00_0000, 0x3f00_0000],
+                    [0, 0x3f00_0000],
+                    [0x3f80_0000, 0x3f80_0000],
+                ],
+                times: &[0, 1, 2, 3, 4, 5],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 1,
+                offset: 0x3dcccccd,
+                palette: RB,
+                records: 3,
+                sha256: "0e4089b295954014608d0ea528ec6bfe9acd0f4e39049c98823f94ce97f2e533",
+            },
+            Case {
+                name: "period_boundary_n3",
+                points: &[
+                    [0, 0],
+                    [0x4100_0000, 0],
+                    [0x4180_0000, 0x4040_0000],
+                    [0x41c0_0000, 0x4040_0000],
+                ],
+                times: &[0, 10, 20, 30],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 5,
+                offset: 0x40a0_0000,
+                palette: RGB,
+                records: 25,
+                sha256: "ade65740ce645e5368de44cf982d03329d759bcaffe3272457dfc3a4c9aac47c",
+            },
+            Case {
+                name: "small_negative_phase",
+                points: &[[0, 0], [0x3f00_0000, 0]],
+                times: &[0, 1],
+                size: 0x4080_0000,
+                curve: true,
+                distance: 5,
+                offset: 0xbe80_0000,
+                palette: RB,
+                records: 1,
+                sha256: "f7c01ed96ce0eaeb15d8ea8378c85d477c262a3c88b808e8456664929145023f",
+            },
+            Case {
+                name: "empty_palette_d0",
+                points: &[[0, 0], [0x4100_0000, 0], [0x4180_0000, 0x4040_0000]],
+                times: &[0, 1, 2],
+                size: 0x4080_0000,
+                curve: false,
+                distance: 0,
+                offset: 0x3e80_0000,
+                palette: &[],
+                records: 17,
+                sha256: "bc25e1a3170d73f1d17c07674f4af721a56de1b083c2ea852179b515c033c06e",
+            },
+        ];
+        fn digest(bytes: &[u8]) -> String {
+            use sha2::{Digest, Sha256};
+            Sha256::digest(bytes)
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect()
+        }
+        let mut total = 0;
+        for case in CASES {
+            assert_eq!(
+                case.points.len(),
+                case.times.len(),
+                "{} source lengths",
+                case.name
+            );
+            let points: Vec<P> = case
+                .points
+                .iter()
+                .map(|[x, y]| P {
+                    x: f32::from_bits(*x),
+                    y: f32::from_bits(*y),
+                })
+                .collect();
+            let tools = vec![2; points.len()];
+            let pressures = vec![0.5; points.len()];
+            let output = redraw(Input {
+                points: &points,
+                times: case.times,
+                tools: &tools,
+                pressures: &pressures,
+                rgb: [0; 3],
+                rainbow: Some(Rainbow {
+                    distance: case.distance,
+                    offset: f32::from_bits(case.offset),
+                    palette_argb: case.palette,
+                }),
+                size: f32::from_bits(case.size),
+                curve_enabled: case.curve,
+                is_shape: false,
+                runtime: Runtime {
+                    inverse_scale: [1.0, 1.0],
+                    spacing: 1.0,
+                    tolerance: 0.0,
+                    tool_threshold: 20.0,
+                    resolution_min: 1080,
+                    initial_alternation: false,
+                    initial_time: case.times[0],
+                },
+            })
+            .unwrap_or_else(|| panic!("{} native input rejected", case.name));
+            assert_eq!(
+                output.vertices.len(),
+                case.records,
+                "{} record count",
+                case.name
+            );
+            let bytes: Vec<u8> = output
+                .vertices
+                .iter()
+                .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+                .collect();
+            assert_eq!(
+                digest(&bytes),
+                case.sha256,
+                "{} full Vector9<f32> stream",
+                case.name
+            );
+            total += output.vertices.len();
+        }
+        assert_eq!(CASES.len(), 12);
+        assert_eq!(total, 87);
+    }
 }
