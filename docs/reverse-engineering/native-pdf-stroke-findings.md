@@ -182,6 +182,18 @@ For the 161-point witness, the PDF's 20 circle triples exactly match the prefix
 of the 22 native GL/Rust dots at tolerance `1.5`; source-tolerance GL/Rust
 instead produce 24 dots. The complete saved-GL stream is a separate contract.
 
+A three-point BrushPen control executes Composer `PDFBrushPen::WriteObject`
+(`0x3735c0`) and captures 26 circle triples from native `GetDrawnPointData`.
+At factory scale 1 these match the sink arguments exactly. Paired GL radii
+also match, but GL centers include `tilt * radius`: BrushPen `drawPattern`
+(`0x5c6f8`/`0x5c6fc`) applies that offset before `RTV1::AddPoint`. All 26
+records satisfy this mapping within `1e-7`; the GL stream SHA-256 is
+`57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92`.
+The helper sets tolerance 2.6 (`0x5c200`), so this one-to-one correspondence
+does not establish other profiles. The mocked sink records solid circles,
+not the GL texture field or serialized PDF. Capture and mapping remain in
+ignored `tmp/vector-parity-plan/native-pdf-brush-route/`.
+
 There is also a backend limitation. In pinned `libSPenPdf.so`,
 `PDFEnginePdfium::CreatePDFPath` (`0x73270`) returns null, and its `Circle`
 (`0x73288`) is a bare return. `PDFPath::Circle` (`0x66500`) forwards through
