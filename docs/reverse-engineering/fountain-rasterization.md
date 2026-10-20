@@ -153,6 +153,16 @@ pixel parity: PDF raster output differs from SVG, and device-dependent scale
 compensation remains unimplemented. V14 uses tangents and its separate
 saved-stroke geometry algorithm.
 
+A saved HF02 Drawing/queue control keeps the same 76 RTV5 records while native
+`ObjectStroke::SetColor` changes ARGB to `00336699`, `80336699`, and `ff336699`.
+The upload SHA-256 is `3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a`.
+Native Draw uses `FUNC_ADD`, `ONE`, `ONE_MINUS_SRC_ALPHA`: source alpha multiplies
+each instance before ordered source-over. Zero alpha contributes no ink; for partial
+alpha, a pixel-center source-over model has mean alpha error 0.00148 versus
+0.35876 for MAX over active pixels. V16 now uses colored radial gradients with
+per-stamp alpha; Rust tests retain overlap, replay and vector-PDF regressions.
+This is one host identity-profile control, not device or enhanced-AA parity.
+
 ## Live-tip attributes and shader execution
 
 The same tools cover FountainPenStrokeTipDrawableRT::AddPoint

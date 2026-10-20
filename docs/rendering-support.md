@@ -82,7 +82,7 @@ outer SDK loading is not exercised.
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
 | Fountain V14, saved `14;` | Reconstructed stamps/directions with [saved defaults](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-defaults-native.json); vector directional shading, colorizer and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [host shader captures](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-field-native.json) a [full saved-stroke replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-real-native.json) and an [original-frame Drawing check](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-persisted-drawing-native.json). V14 colorizer witnesses render in Chromium and Firefox with vector-only PDF export. Native [expansion parameters](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-addpoint-native.json) and [synthetic thin-stamp shader checks](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v14-fringe-native.json) cover fringe behavior, which is not yet painted; minimum-width dots can disappear, and partial-alpha/PDF raster appearance still differ. |
-| Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; saved size/tolerance defaults and relative endpoint time; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry, [saved Drawing defaults](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-defaults-native.json), [endpoint timing](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-event-time-native.json), [radial field records](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-addpoint-native.json) scalar coverage checks and a [persisted native queue replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-saved-render-native.json). Four of five paired default cases lower mean error across Chromium, Firefox, MuPDF and PDFium; the fifth is unchanged. PDF peak errors and raster sampling gaps remain. PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified. This setting selects drawing V16, not V18. |
+| Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; saved size/tolerance defaults and relative endpoint time; tools 1–3; ordered source-over radial stamps with ARGB alpha per instance at canonical unit inverse scale | Executed native geometry, [saved Drawing defaults](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-defaults-native.json), [endpoint timing](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-event-time-native.json), [radial field records](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-v16-addpoint-native.json) scalar coverage checks and a [persisted native queue replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-saved-render-native.json). Native queue controls with zero, partial and opaque ARGB establish per-instance alpha and source-over accumulation. Pixel-center source-over matches the partial-alpha native field far more closely than MAX; SVG/PDF edge sampling still differs. PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified. This setting selects drawing V16, not V18. |
 | DefaultPen, ordinary saved tools 0–3 | Native positions/radii rendered as ordered source-over circles; omitted size uses the native 0.4 clamp | Native geometry, replay-boundary and [admission controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/defaultpen-admission-native.json); paired vector exports improve on the generic fallback. Shader edge coverage and device pixel parity remain unverified. |
 | Marker2 | Sampled circular stamps, native integer size and saved alpha | [Native caller controls](../conformance/marker2-saved-caller-native.json) check full XY streams and size defaults; [host paint controls](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker2-zero-paint-native.json) confirm zero-width strokes produce no ink. V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 / StraightHighlighter V7, saved `7;` | Stylus midpoint sampling, saved style size and fractional rounded rectangular tip | Native geometry and [Drawing size/alias controls](../conformance/marker4-saved-caller-native.json); public support remains approximate because filtering/zoom coverage differ. |
@@ -266,10 +266,13 @@ event cutoffs. Paired SVG/PDF exports improve native-referenced error across
 General V4 admission, app display setup, device parity and exact scale-dependent
 coverage remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
-establishes selected time/history radius and derived cache geometry; InkPen2
-also uses the generic approximation, separately from native live filtering.
-A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
-redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
+establishes selected time/history radius and derived cache geometry. An explicit
+`RenderOptions::inkpen2_profile` enables bounded V9 vector stamps for ordinary
+tool-2 strokes with `9;`, zero tolerance, and complete saved channels. It selects
+fresh per-stroke state, identity inverse scale and direct source-over paint
+with enhanced antialiasing disabled; it does not infer an app display profile.
+Without that option, InkPen2 retains the generic approximation. The V9 core
+matches every RTV3 float in three fresh, type-0 saved redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay
 using native body-normalized sampling state. The [reuse oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-reuse-native.json)
@@ -290,13 +293,13 @@ direct same-color overlap accumulates while the alternate branch preserves
 its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-joined-paint-native.json)
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
-Natural app canvas setup, production vector admission and device parity remain
-unverified. A paired radial-gradient experiment preserves native support in
-SVG at 1×/2×/4×, but the public vector-only PDF path has active-region RGBA
-mean errors of 18.65/12.44/6.64 bytes in MuPDF, with large edge alpha errors
-also present in PDFium. Its forms and gradient bounds match the source;
-scale-dependent raster sampling remains unresolved. This candidate is not
-production-admitted.
+Natural app canvas setup, enhanced-AA selection and device parity remain
+unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
+improves support and color error over the generic fallback in Chromium, Firefox,
+MuPDF and PDFium; a half-alpha 1× control also improves. SVG support IoU is
+about 0.992–0.996, while PDF remains about 0.812–0.955. Independent single-stamp
+PDF controls retain the radial-shading sampling error even without the
+converter’s shape bounds or RGB gradient; gradient transport is not pixel parity.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and retained drawable state.
 Production SVG/PDF rendering now uses its three native mesh lanes for admitted
