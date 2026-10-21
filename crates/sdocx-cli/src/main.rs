@@ -172,6 +172,28 @@ fn parse_pdf_dpi(value: &str) -> Result<f32, String> {
     Ok(dpi)
 }
 
+fn parse_pdf_load_width(value: &str) -> Result<u32, String> {
+    let width = value.parse::<u32>().map_err(|error| error.to_string())?;
+    if !(32..=i32::MAX as u32).contains(&width) {
+        return Err("PDF load width must be between 32 and 2147483647".into());
+    }
+    Ok(width)
+}
+
+fn validate_pdf_only_options(
+    format: Format,
+    has_pdf_dpi: bool,
+    has_pdf_load_width: bool,
+) -> Result<(), &'static str> {
+    if format != Format::Pdf && has_pdf_dpi {
+        return Err("--pdf-dpi applies to PDF output; use -f pdf or a .pdf output path");
+    }
+    if format != Format::Pdf && has_pdf_load_width {
+        return Err("--pdf-load-width applies to PDF output; use -f pdf or a .pdf output path");
+    }
+    Ok(())
+}
+
 fn svg_to_png(svg: &str, options: &resvg::usvg::Options<'_>) -> Result<Vec<u8>, String> {
     let tree =
         resvg::usvg::Tree::from_str(svg, options).map_err(|e| format!("invalid SVG: {e}"))?;
@@ -222,6 +244,14 @@ struct Cli {
 
     #[arg(long, value_parser = parse_pdf_dpi, help = "SVG units per inch for PDF physical page size (default: 96)")]
     pdf_dpi: Option<f32>,
+
+    #[arg(
+        long,
+        value_name = "WIDTH",
+        value_parser = parse_pdf_load_width,
+        help = "Samsung Notes load width for PDF-backed notes; preserves stored width by default"
+    )]
+    pdf_load_width: Option<u32>,
 
     #[arg(
         long,
@@ -383,8 +413,10 @@ fn main() {
             std::process::exit(1);
         }
     };
-    if format != Format::Pdf && cli.pdf_dpi.is_some() {
-        eprintln!("Error: --pdf-dpi applies to PDF output; use -f pdf or a .pdf output path");
+    if let Err(message) =
+        validate_pdf_only_options(format, cli.pdf_dpi.is_some(), cli.pdf_load_width.is_some())
+    {
+        eprintln!("Error: {message}");
         std::process::exit(1);
     }
     let fonts = load_fonts(&cli.font_files).unwrap_or_else(|error| {
@@ -411,6 +443,7 @@ fn main() {
         if let Some(dpi) = cli.pdf_dpi {
             options.dpi = dpi;
         }
+        options.pdf_paper_fixed_axis_size = cli.pdf_load_width;
         let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
             &doc,
             &layout,
@@ -433,6 +466,7 @@ fn main() {
                 &page.background_diagnostics,
             );
         }
+        let page_count = output.pages.len();
         let pdf = output.bytes;
         if let Err(error) = fs::write(&output_base, &pdf) {
             eprintln!("Error: failed to write {}: {error}", output_base.display());
@@ -442,7 +476,7 @@ fn main() {
             "Wrote {} ({} bytes, {} pages)",
             output_base.display(),
             pdf.len(),
-            page_indices.len()
+            page_count
         );
         return;
     }
@@ -488,7 +522,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, resolve_format};
+    use super::{Format, resolve_format, validate_pdf_only_options};
     use std::path::Path;
 
     #[test]
@@ -686,6 +720,50 @@ mod tests {
         assert_eq!(cli.format, Some(Format::Pdf));
         assert_eq!(cli.pdf_dpi, Some(129.6));
         assert_eq!(cli.font_files, vec![Path::new("Roboto.ttf")]);
+    }
+
+    #[test]
+    fn pdf_load_width_accepts_only_the_native_signed_range() {
+        use clap::Parser;
+        for value in ["0", "31", "2147483648", "4294967295", "-1080", "words"] {
+            assert!(
+                super::Cli::try_parse_from([
+                    "sdocx",
+                    "note.sdocx",
+                    "-f",
+                    "pdf",
+                    "--pdf-load-width",
+                    value,
+                ])
+                .is_err(),
+                "width {value} must be rejected"
+            );
+        }
+        for width in ["32", "1080", "2147483647"] {
+            let cli = super::Cli::try_parse_from([
+                "sdocx",
+                "note.sdocx",
+                "-f",
+                "pdf",
+                "--pdf-load-width",
+                width,
+            ])
+            .unwrap();
+            assert_eq!(cli.pdf_load_width, Some(width.parse().unwrap()));
+        }
+    }
+
+    #[test]
+    fn pdf_load_width_is_rejected_for_non_pdf_formats() {
+        assert!(validate_pdf_only_options(Format::Pdf, false, true).is_ok());
+        assert!(matches!(
+            validate_pdf_only_options(Format::Svg, false, true),
+            Err(message) if message.contains("--pdf-load-width")
+        ));
+        assert!(matches!(
+            validate_pdf_only_options(Format::Png, true, false),
+            Err(message) if message.contains("--pdf-dpi")
+        ));
     }
 
     #[test]
