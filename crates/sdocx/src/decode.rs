@@ -306,4 +306,77 @@ mod tests {
         assert_eq!(signed_delta(0x8048, 32.0), -2.25);
         assert_eq!(signed_delta(0x8200, 4096.0), -0.125);
     }
+
+    #[test]
+    fn native_rotated_stroke_roundtrips_keep_serialized_samples() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/object-stroke-rotation-roundtrip-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["model_library_sha256"],
+            "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+        );
+        let expected_bbox: Vec<u32> = fixture["saved_bbox_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+            .collect();
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 4);
+        for case in cases {
+            let payload = bytes(case["payload_hex"].as_str().unwrap());
+            assert_eq!(
+                payload.len(),
+                case["native_payload_size"].as_u64().unwrap() as usize
+            );
+            let stroke = decode_stroke(&payload, &ParseLimits::default()).unwrap();
+
+            let rotation =
+                u32::from_str_radix(case["rotation_f32_bits"].as_str().unwrap(), 16).unwrap();
+            let metadata = stroke
+                .rendering
+                .as_ref()
+                .unwrap()
+                .metadata
+                .as_ref()
+                .unwrap();
+            assert_eq!(
+                (metadata.rotation_degrees.unwrap_or_default() as f32).to_bits(),
+                rotation,
+                "rotation bits {rotation:08x}"
+            );
+
+            let actual_points: Vec<u32> = stroke
+                .points
+                .iter()
+                .flat_map(|point| [point.x as f32, point.y as f32])
+                .map(f32::to_bits)
+                .collect();
+            let expected_points: Vec<u32> = case["native_loaded_point_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(
+                actual_points, expected_points,
+                "rotation bits {rotation:08x}"
+            );
+
+            let actual_bbox = [
+                stroke.bbox.x_min,
+                stroke.bbox.y_min,
+                stroke.bbox.x_max,
+                stroke.bbox.y_max,
+            ]
+            .map(|value| (value as f32).to_bits());
+            assert_eq!(
+                actual_bbox.as_slice(),
+                expected_bbox,
+                "rotation bits {rotation:08x}"
+            );
+        }
+    }
 }
