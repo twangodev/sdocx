@@ -1029,12 +1029,13 @@ fn empty_cell_height(
     let marker_width = paragraph
         .bullet
         .and_then(|bullet| {
-            super::marker::PreparedMarker::prepare(
+            super::marker::PreparedMarker::prepare_with_profile(
                 bullet,
                 paragraph.indent_level,
                 &style,
                 theme,
                 renderer,
+                super::marker::PointMarkerSizingProfile::CellManager,
             )
         })
         .map_or(0.0, |marker| marker.reserved_width()) as f32;

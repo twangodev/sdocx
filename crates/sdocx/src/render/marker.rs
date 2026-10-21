@@ -32,6 +32,13 @@ impl PointMarkerTarget {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PointMarkerSizingProfile {
+    BodyLayout,
+    CellManager,
+    Legacy,
+}
+
 pub(super) enum PreparedMarker {
     Point {
         artwork: PointMarker,
@@ -42,21 +49,41 @@ pub(super) enum PreparedMarker {
 }
 
 impl PreparedMarker {
+    #[cfg(test)]
     pub fn prepare(
-        mut bullet: ParagraphBullet,
+        bullet: ParagraphBullet,
         indent: u32,
         style: &TextStyle,
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
     ) -> Option<Self> {
+        Self::prepare_with_profile(
+            bullet,
+            indent,
+            style,
+            theme,
+            renderer,
+            PointMarkerSizingProfile::Legacy,
+        )
+    }
+
+    pub(super) fn prepare_with_profile(
+        mut bullet: ParagraphBullet,
+        indent: u32,
+        style: &TextStyle,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+        sizing_profile: PointMarkerSizingProfile,
+    ) -> Option<Self> {
         if bullet.kind == BulletType::SolidCircle && indent % 2 == 1 {
             bullet.kind = BulletType::WhiteCircle;
         }
         if let Some(artwork) = PointMarker::from_bullet(bullet.kind) {
-            let metrics = PointMarkerMetrics::measure(
+            let metrics = PointMarkerMetrics::measure_with_profile(
                 style.font_size,
                 renderer.settings,
                 renderer.point_marker_target,
+                sizing_profile,
             );
             if metrics.is_none() {
                 renderer.invalid_geometry("sans-serif");
@@ -424,25 +451,53 @@ pub(super) struct PointMarkerMetrics {
 }
 
 impl PointMarkerMetrics {
+    #[cfg(test)]
     pub fn measure(
         font_size: f64,
         settings: TextSettings,
         target: PointMarkerTarget,
+    ) -> Option<Self> {
+        Self::measure_with_profile(
+            font_size,
+            settings,
+            target,
+            PointMarkerSizingProfile::Legacy,
+        )
+    }
+
+    fn measure_with_profile(
+        font_size: f64,
+        settings: TextSettings,
+        target: PointMarkerTarget,
+        sizing_profile: PointMarkerSizingProfile,
     ) -> Option<Self> {
         let font_size = font_size as f32;
         let scale = settings.scale;
         if !font_size.is_finite() || !scale.is_finite() || scale <= 0.0 {
             return None;
         }
+        let sizing_profile = if target == PointMarkerTarget::Mobile {
+            sizing_profile
+        } else {
+            PointMarkerSizingProfile::Legacy
+        };
+        let helper_density = match sizing_profile {
+            PointMarkerSizingProfile::BodyLayout | PointMarkerSizingProfile::Legacy => scale,
+            PointMarkerSizingProfile::CellManager => 1.0,
+        };
+        let reservation_density = match sizing_profile {
+            PointMarkerSizingProfile::CellManager => 1.0,
+            PointMarkerSizingProfile::BodyLayout | PointMarkerSizingProfile::Legacy => scale,
+        };
         let (max_font, min_pixels, max_pixels) = target.image_range();
-        let min_pixels = min_pixels * scale;
-        let max_pixels = max_pixels * scale;
-        let button_width = 20.0_f32 * scale;
-        let reserved_width = button_width + 6.0_f32 * scale;
+        let min_pixels = min_pixels * helper_density;
+        let max_pixels = max_pixels * helper_density;
+        let button_width = 20.0_f32 * reservation_density;
+        let reserved_width = button_width + 6.0_f32 * reservation_density;
         if !reserved_width.is_finite() || !max_pixels.is_finite() {
             return None;
         }
-        let font = ((font_size / scale) as i32).max(1);
+        let font = ((font_size / helper_density) as i32).max(1);
         let step = (max_pixels - min_pixels) / (max_font - 1) as f32;
         let mut pixels = max_pixels;
         for threshold in (1..=max_font).rev() {
@@ -454,7 +509,17 @@ impl PointMarkerMetrics {
             }
             pixels -= step;
         }
-        let image_size = pixels.round() as i32;
+        let mut image_size = pixels.round() as i32;
+        if matches!(
+            sizing_profile,
+            PointMarkerSizingProfile::BodyLayout | PointMarkerSizingProfile::CellManager
+        ) && font >= max_font
+        {
+            let configured_minimum = max_pixels.round() as i32;
+            let raw_font_growth = (font_size / 5.0) as i32;
+            let native_cap = (helper_density * 20.0) as i32;
+            image_size = configured_minimum.max(raw_font_growth.min(native_cap));
+        }
         let radius = ((image_size as f32) / 2.0).ceil();
         Some(Self {
             reserved_width: f64::from(reserved_width),
@@ -926,6 +991,25 @@ mod tests {
         .unwrap()
     }
 
+    fn profiled_metrics(
+        font_size: f64,
+        scale: f32,
+        target: PointMarkerTarget,
+        profile: PointMarkerSizingProfile,
+    ) -> PointMarkerMetrics {
+        PointMarkerMetrics::measure_with_profile(
+            font_size,
+            TextSettings {
+                scale,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            target,
+            profile,
+        )
+        .unwrap()
+    }
+
     #[test]
     fn zero_pixel_spacing_centers_on_native_post_line_cursor_and_base_height() {
         assert_eq!(
@@ -1036,6 +1120,61 @@ mod tests {
             assert_eq!(measured.reserved_width, 26.0 * f64::from(density));
             assert_eq!(measured.button_width, 20.0 * f64::from(density));
             assert_eq!(measured.radius, radius);
+        }
+    }
+
+    #[test]
+    fn mobile_body_profile_grows_past_the_configured_range_with_density_cap() {
+        for (density, fonts, radii) in [
+            (
+                1.0,
+                [25.0, 50.0, 75.0, 100.0, 150.0, 200.0],
+                [3.0, 5.0, 8.0, 10.0, 10.0, 10.0],
+            ),
+            (
+                3.0,
+                [25.0, 50.0, 75.0, 100.0, 150.0, 200.0],
+                [8.0, 8.0, 8.0, 10.0, 15.0, 20.0],
+            ),
+        ] {
+            for (font, radius) in fonts.into_iter().zip(radii) {
+                let measured = profiled_metrics(
+                    font,
+                    density,
+                    PointMarkerTarget::Mobile,
+                    PointMarkerSizingProfile::BodyLayout,
+                );
+                assert_eq!(measured.radius, radius, "density={density}, font={font}");
+                assert_eq!(
+                    measured.reserved_width,
+                    26.0 * f64::from(density),
+                    "density={density}, font={font}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mobile_cell_profile_uses_resolved_font_and_density_one_manager_metrics() {
+        for (font, radius) in [
+            (15.0, 3.0),
+            (25.0, 3.0),
+            (45.0, 5.0),
+            (50.0, 5.0),
+            (75.0, 8.0),
+            (100.0, 10.0),
+            (150.0, 10.0),
+            (200.0, 10.0),
+        ] {
+            let measured = profiled_metrics(
+                font,
+                3.0,
+                PointMarkerTarget::Mobile,
+                PointMarkerSizingProfile::CellManager,
+            );
+            assert_eq!(measured.radius, radius, "resolved font={font}");
+            assert_eq!(measured.button_width, 20.0);
+            assert_eq!(measured.reserved_width, 26.0);
         }
     }
 

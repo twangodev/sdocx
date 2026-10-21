@@ -800,6 +800,13 @@ observes real `ObjectTextLayout`/`BulletLayout` initialization and getters,
 but not serialized metadata loading or a complete BodyText update: the latter
 reaches an unavailable context callback after these measurements.
 
+A configured body sweep at resolved fonts 25/50/75/100/150/200 returns
+5/10/15/20/20/20 pixels at D1 and 15/15/15/20/30/40 at D3: the large-font
+branch grows beyond the table maximum, capped by helper density times 20.
+The sweep logs `body-bullet-sweep-density1.log` and `...density3.log` in the
+same directory have SHA-256 `86862dbe517de3d278c46865a058c4db0f3c0d7e510c5209b8152438933d85e4`
+and `ac42941e3f3495e1e464a2a1dc0eb15e933edc17e7dce72ca3b5bdfc5cd3ce74`.
+
 Text `TextUtil::GetLineSpacing`, `0x8e180`, computes `pixels` when nonzero,
 otherwise `(multiplier - 1) * metric`. `GetLineHeightWithSpacing`, `0x8e100`,
 adds that amount to a base height. Thus a pixel value is extra spacing in

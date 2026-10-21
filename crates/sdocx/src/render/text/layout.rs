@@ -13,7 +13,7 @@ pub(in crate::render) use native_object_bound::{
 pub(in crate::render) use native_page_layout::layout_native_page_text;
 
 use crate::render::RenderTheme;
-use crate::render::marker::{PreparedMarker, marker_center_y};
+use crate::render::marker::{PointMarkerSizingProfile, PreparedMarker, marker_center_y};
 use crate::text_index::Paragraph;
 use crate::{
     BoundingBox, BulletType, LineSpacingType, ParagraphAlignment, ParagraphBullet,
@@ -1060,6 +1060,11 @@ fn try_layout_text_with_context(
 ) -> Result<TextLayout, ObjectDiagnosticKind> {
     let scoped_renderer = renderer.local_measurement_scope();
     let renderer = &scoped_renderer;
+    let marker_sizing_profile = match (context, native_cell_measurement.is_some()) {
+        (LayoutContext::Flow, false) => PointMarkerSizingProfile::BodyLayout,
+        (_, true) => PointMarkerSizingProfile::CellManager,
+        _ => PointMarkerSizingProfile::Legacy,
+    };
     let native_cell_obstacles_supported = frame.exclusions.is_empty()
         || renderer
             .native_cell_page_obstacles
@@ -1131,12 +1136,13 @@ fn try_layout_text_with_context(
             marker_style.font_size = styled.font_size_at_caret(paragraph.content.start);
         }
         let mut marker = layout.bullet.and_then(|bullet| {
-            PreparedMarker::prepare(
+            PreparedMarker::prepare_with_profile(
                 bullet,
                 layout.indent_level,
                 &marker_style,
                 theme,
                 &marker_renderer,
+                marker_sizing_profile,
             )
         });
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
@@ -2303,6 +2309,56 @@ mod tests {
         assert_eq!(marker.source, 0);
         assert_eq!(marker.center_y, 106.75);
         assert!(plan.lines[1..].iter().all(|line| line.marker.is_none()));
+    }
+
+    #[test]
+    fn flow_and_native_cell_entrypoints_select_their_native_mobile_marker_profiles() {
+        let mut content = text("A");
+        content.font_size = Some(50.0);
+        add_point_bullet(&mut content);
+        let settings = TextSettings {
+            scale: 3.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let frame = || TextFrame {
+            bbox: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 800.0,
+                y_max: 200.0,
+            },
+            gravity: None,
+            exclusions: &[],
+        };
+        let artwork_width = |layout: &TextLayout| {
+            let marker = layout.lines[0].marker.as_ref().unwrap();
+            let bounds = marker.marker.bounds(marker.x, marker.center_y).unwrap();
+            bounds.x_max - bounds.x_min
+        };
+
+        let body = layout_flow_text(&styled, frame(), RenderTheme::for_canvas(false), &renderer);
+        let body_marker = body.lines[0].marker.as_ref().unwrap();
+        assert_eq!(body_marker.marker.reserved_width(), 78.0);
+        assert_eq!(artwork_width(&body), 30.0);
+
+        let cell = layout_table_cell_text(
+            &styled,
+            frame(),
+            NativeCellTextConstraints {
+                width: 800,
+                height_limit: 200.0,
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+        .unwrap();
+        let cell_marker = cell.lines[0].marker.as_ref().unwrap();
+        assert_eq!(cell_marker.marker.reserved_width(), 26.0);
+        assert_eq!(artwork_width(&cell), 20.0);
     }
 
     #[test]
