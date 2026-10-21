@@ -635,6 +635,13 @@ This executes loaded-model measurement and queries, without drawing or pixel
 proof. The summary receipt SHA-256 is
 `2e6067ec4c9c60bae9f76ece3d98345faefbc9623a2222fbfbc681656761b215`.
 
+Across all 3228 strokes, saved bounds, sample coordinates, and pen widths match
+`f32(1080/1812)` scaling exactly. Recomputing native selection bounds after
+scaling reproduces each of the seven query sequences, including source order.
+Derived bounds retain fixed-unit margins; scaling already-expanded bounds is
+incorrect. The comparison receipt SHA-256 is
+`304afbad7abef675101aabc439062d942efb0f570662d51ee02dc5747b56debb`.
+
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
 band's top, and can return `trunc(line_bottom - f32(y))`

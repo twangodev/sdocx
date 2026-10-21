@@ -1090,17 +1090,40 @@ pub(super) fn render_singlex_pdf_paper_plan(
     scene_page.page.width = plan.note_width;
     scene_page.page.height = plan.note_height;
     scene_page.page.background.pdf_paper = None;
-    scene_page.body_text = None;
+    let inspection_object_index = source_layout
+        .single_page_continuous_body(document)
+        .and_then(|_| {
+            source_layout
+                .body_text_slice()
+                .map(|body| body.object_index)
+        });
+    // Each scene puts the validated inspection node first, regardless of its
+    // position in the source layout. PreparedBodyText intercepts it and paints
+    // the full source body into this slice.
+    let mut body_text = scene_page.body_text.clone();
+    if let (Some(_), Some(body)) = (inspection_object_index, body_text.as_mut()) {
+        body.object_index = 0;
+    } else {
+        body_text = None;
+    }
+    scene_page.body_text = body_text;
     let original_objects = &source_layout.page.objects;
     // PageSceneRequest borrows each page. Keep the page clones alive for the render call.
     let mut scene_pages = Vec::with_capacity(plan.output_pages.len());
     for output in &plan.output_pages {
         let mut page = scene_page.clone();
-        page.page.objects = output
-            .selected_objects
-            .iter()
-            .map(|index| original_objects[*index].clone())
-            .collect();
+        page.page.objects = Vec::with_capacity(
+            output.selected_objects.len() + usize::from(inspection_object_index.is_some()),
+        );
+        if let Some(index) = inspection_object_index {
+            page.page.objects.push(original_objects[index].clone());
+        }
+        page.page.objects.extend(
+            output
+                .selected_objects
+                .iter()
+                .map(|index| original_objects[*index].clone()),
+        );
         scene_pages.push(page);
     }
     let requests = plan
@@ -3623,6 +3646,257 @@ mod tests {
         );
         let options = PdfOptions::new(Arc::new(crate::pdf::fontdb::Database::new()));
         super::super::render_svg_pages_pdf(&[page], &options).unwrap()
+    }
+
+    fn color_stroke(color: crate::Color, y: f64) -> crate::PageObject {
+        crate::Stroke {
+            rendering: None,
+            bbox: crate::BoundingBox::default(),
+            points: vec![crate::Point { x: 70.0, y }, crate::Point { x: 170.0, y }],
+            pressures: Vec::new(),
+            timestamps: Vec::new(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: Some(color),
+            pen_width: 18.0,
+        }
+        .into()
+    }
+
+    fn page_colors(bytes: &[u8], page_number: u32) -> Vec<[f32; 3]> {
+        let pdf = Document::load_mem(bytes).unwrap();
+        let page_id = pdf.get_pages()[&page_number];
+        let content = pdf.get_page_content(page_id).unwrap();
+        Content::decode(&content)
+            .unwrap()
+            .operations
+            .into_iter()
+            .filter_map(|operation| {
+                if operation.operator != "rg" && operation.operator != "RG" {
+                    return None;
+                }
+                let rgb = operation
+                    .operands
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_float()
+                            .or_else(|_| value.as_i64().map(|number| number as f32))
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+                    .ok()?;
+                (rgb.len() == 3).then(|| [rgb[0], rgb[1], rgb[2]])
+            })
+            .collect()
+    }
+
+    fn page_actual_texts(bytes: &[u8], page_number: u32) -> Vec<Vec<u8>> {
+        let pdf = Document::load_mem(bytes).unwrap();
+        let page_id = pdf.get_pages()[&page_number];
+        let content = pdf.get_page_content(page_id).unwrap();
+        Content::decode(&content)
+            .unwrap()
+            .operations
+            .into_iter()
+            .filter_map(|operation| {
+                if operation.operator != "BDC" {
+                    return None;
+                }
+                operation
+                    .operands
+                    .get(1)?
+                    .as_dict()
+                    .ok()?
+                    .get(b"ActualText")
+                    .ok()?
+                    .as_str()
+                    .ok()
+                    .map(<[u8]>::to_vec)
+            })
+            .collect()
+    }
+
+    fn color_index(colors: &[[f32; 3]], expected: [f32; 3]) -> Option<usize> {
+        colors.iter().position(|actual| {
+            actual
+                .iter()
+                .zip(expected)
+                .all(|(actual, expected)| (actual - expected).abs() < 0.01)
+        })
+    }
+
+    #[test]
+    fn sliced_singlex_scenes_retain_validated_body_image_and_selected_stroke_order() {
+        let page = crate::Page {
+            uuid: "continuous-body".to_owned(),
+            width: 1_812,
+            height: 7_000,
+            content_bbox: crate::BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![
+                color_stroke(crate::Color { r: 0, g: 0, b: 255 }, 100.0),
+                color_stroke(crate::Color { r: 0, g: 255, b: 0 }, 5_500.0),
+                color_stroke(
+                    crate::Color {
+                        r: 255,
+                        g: 255,
+                        b: 0,
+                    },
+                    6_000.0,
+                ),
+            ],
+        };
+        let body = crate::RichTextBox {
+            text_area_type: None,
+            bbox: crate::BoundingBox {
+                x_min: 10.0,
+                y_min: 20.0,
+                x_max: 95.0,
+                y_max: 90.0,
+            },
+            rotation_degrees: None,
+            text: format!("{}\u{fffc}tail", "\n".repeat(112)),
+            color: Some(crate::Color { r: 0, g: 0, b: 0 }),
+            highlight_color: None,
+            underline: false,
+            font_size: Some(12.0),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: vec![crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(crate::RichTextObjectContent::Image(Box::new(
+                    crate::PlacedImage {
+                        bbox: crate::BoundingBox {
+                            x_min: 40.0,
+                            y_min: 5_450.0,
+                            x_max: 180.0,
+                            y_max: 5_550.0,
+                        },
+                        rotation_degrees: None,
+                        media_id: Some(7),
+                        media_index: Some(0),
+                        crop_rect: None,
+                        original_bbox: None,
+                        border_media_id: None,
+                        original_media_id: None,
+                    },
+                ))),
+                text_index_utf16: 112,
+                layout_option: crate::ObjectSpanLayoutOption::Block,
+                layout_constraint: crate::ObjectSpanLayoutConstraint::Normal,
+            }],
+            text_sections: vec![crate::RichTextSection {
+                start_utf16: 0,
+                length_utf16: 36,
+            }],
+            margins: None,
+            gravity: None,
+        };
+        let document = crate::Document {
+            pages: vec![page],
+            metadata: crate::DocumentMetadata {
+                page_mode: Some(1),
+                orientation: Some(0),
+                page_dimensions: Some((1_812, 7_000)),
+                default_page_dimensions: Some((1_080, 1_527)),
+                flow_dimensions: Some((1_080, 7_000)),
+                note_text: Some(body),
+                media_assets: vec![crate::MediaAsset {
+                    name: "0.svg".to_owned(),
+                    archive_id: Some(0),
+                    mime_type: "image/svg+xml".to_owned(),
+                    data: br##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#ff0000"/></svg>"##.to_vec(),
+                }],
+                ..crate::DocumentMetadata::default()
+            },
+        };
+        let mut layout = crate::layout_document(&document);
+        let layout_page = &mut layout.pages[0];
+        let generated_inspection_index = layout_page.body_text_slice().unwrap().object_index;
+        layout_page.page.objects.swap(generated_inspection_index, 1);
+        layout_page.body_text.as_mut().unwrap().object_index = 1;
+        assert!(layout_page.single_page_continuous_body(&document).is_some());
+        let inspection = layout_page.body_text_slice().unwrap().object_index;
+        assert_eq!(inspection, 1);
+        let selected_objects = (0..layout_page.page.objects.len())
+            .filter(|index| *index != inspection)
+            .collect::<Vec<_>>();
+        assert_eq!(selected_objects.len(), 3);
+
+        let plan = SingleXPaperPlan {
+            parsed_sources: std::collections::BTreeMap::new(),
+            source_key: String::new(),
+            note_width: 1_812,
+            note_height: 7_000,
+            output_pages: [(0, 5_000, 505.0), (5_000, 2_000, 202.0)]
+                .into_iter()
+                .map(
+                    |(query_y, scene_height, physical_height)| SingleXOutputPage {
+                        query_y,
+                        scene_height,
+                        physical_width: 600.0,
+                        physical_height,
+                        imported_source: None,
+                        selected_objects: selected_objects.clone(),
+                    },
+                )
+                .collect(),
+        };
+        let fonts = crate::fonts::FontBook::default();
+        let mut cache = crate::render::DocumentTextCache::default();
+        let output = render_singlex_pdf_paper_plan(
+            &document,
+            &layout,
+            plan,
+            &crate::RenderOptions::default(),
+            &PdfOptions::from_font_book(&fonts),
+            &fonts,
+            &mut cache,
+            &mut |_| {},
+        )
+        .unwrap();
+
+        let first_page = page_colors(&output.bytes, 1);
+        let second_page = page_colors(&output.bytes, 2);
+        let blue = [0.0, 0.0, 1.0];
+        let green = [0.0, 1.0, 0.0];
+        let yellow = [1.0, 1.0, 0.0];
+        let red = [1.0, 0.0, 0.0];
+        assert!(
+            color_index(&first_page, blue).is_some(),
+            "first selected stroke missing"
+        );
+        assert!(
+            color_index(&first_page, red).is_none(),
+            "later-slice body image leaked upward"
+        );
+        assert!(color_index(&first_page, green).is_none());
+        assert!(
+            color_index(&second_page, red).is_some(),
+            "resolved body image missing from second slice"
+        );
+        let green_index = color_index(&second_page, green).expect("second selected stroke missing");
+        let yellow_index =
+            color_index(&second_page, yellow).expect("third selected stroke missing");
+        assert!(
+            green_index < yellow_index,
+            "selected strokes changed source order"
+        );
+        assert!(
+            color_index(&second_page, blue).is_none(),
+            "first-slice stroke leaked downward"
+        );
+        assert!(
+            page_actual_texts(&output.bytes, 2)
+                .iter()
+                .any(|source| source == b"tail"),
+            "full-source body text beyond the inspection slice was omitted"
+        );
+        assert_eq!(output.pages.len(), 2);
     }
 
     fn source_without_resources() -> Vec<u8> {
