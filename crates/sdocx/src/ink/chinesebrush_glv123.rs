@@ -897,6 +897,55 @@ mod tests {
         format!("{:x}", Sha256::digest(bytes))
     }
 
+    // Native Drawing captures: identity canvas, IContext display profile passed
+    // through SetScreenResolution; hashes cover complete packed Vector4 buffers.
+    // This checks source sampling, not device antialiasing or final paint.
+    #[test]
+    fn adversarial_display_profiles_match_complete_native_chinesebrush_addpoint_streams() {
+        fn stream_hash(
+            xy: &[[f32; 2]],
+            pressure: &[f32],
+            times: &[i32],
+            width: i32,
+            height: i32,
+        ) -> String {
+            let records = run_model_bounded(
+                xy, pressure, times, 3.144, 3, width, height, 2, true, 100_000,
+            )
+            .unwrap();
+            let mut bytes = Vec::with_capacity(records.len() * 16);
+            for [x, y, z, phase, scalar] in records {
+                for value in [x, y, z, packed_w(phase, scalar)] {
+                    bytes.extend_from_slice(&value.to_le_bytes());
+                }
+            }
+            format!("{:x}", Sha256::digest(bytes))
+        }
+
+        let pressure = [0.3, 0.6, 0.85];
+        let gate_points = [[0.0, 0.0], [2.0, 2.0], [20.0, 20.0]];
+        let gate_times = [300, 310, 320];
+        assert_eq!(
+            stream_hash(&gate_points, &pressure, &gate_times, 960, 540),
+            "ef5cbb45538aa4337cf1cbb5fa43beceb6ee7ddaa04828f343054c435a4bb4da"
+        );
+        assert_eq!(
+            stream_hash(&gate_points, &pressure, &gate_times, 3840, 2160),
+            "355e0cb61a293685cc3cd6db059276288f742d1aa12178e7d00d18f77f56d77c"
+        );
+
+        let speed_points = [[0.0, 0.0], [3.0, 0.0], [6.0, 0.0]];
+        let speed_times = [300, 10300, 20300];
+        assert_eq!(
+            stream_hash(&speed_points, &pressure, &speed_times, 960, 540),
+            "03878604d0724394dd75d2f3b830b4514a7c99ac4fac9da24673cb3f42aeab9c"
+        );
+        assert_eq!(
+            stream_hash(&speed_points, &pressure, &speed_times, 3840, 2160),
+            "6fdfea2bc5aa51cf8479db0a5fa73091460ea64ab305a8bd3dbb297e4c2da1fb"
+        );
+    }
+
     fn stress_source(count: usize, shifted: bool) -> (Vec<[f32; 2]>, Vec<f32>, Vec<i32>) {
         let mut points64: Vec<[f64; 2]> = Vec::with_capacity(count);
         for i in 0..count {
