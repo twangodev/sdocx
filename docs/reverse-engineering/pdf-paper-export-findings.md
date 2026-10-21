@@ -557,6 +557,15 @@ pair to `updatePage` (`0x35e220–0x35e23c`). PDF-record rectangles therefore
 participate in single-mode segmentation even though they are not arguments to
 the final PDF import operation.
 
+Ordinary output surfaces use a separate integer size. The delegate constructor
+stores the constant pair `(1800,600)` at offsets `40/44` (`0x3573c4–0x3573d8`,
+constant bytes `0807000058020000` at `0x1f94a0`). SingleX setup retains that
+600-point width. `exportNormalPages` computes height with signed integer
+division, `width * slice_height / note_width` (`0x35e364–0x35e380`). An executed
+synthetic-note control with the real quiz PDF therefore produces `600×505`
+continuations from `1527`-unit bands at note width `1812`; imported source
+pages retain their own physical boxes. Query bands and output clips differ.
+
 The loop advances the vertical offset by the chosen slice height, increments
 the output page index, and increments the PDF-record cursor only when the
 current segment contains PDF records (`0x35dbb8–0x35dbf8`). A single physical
@@ -572,7 +581,9 @@ confirms this topology on its actual loaded WNote: one PDF record at
 slices starting at `1485,3012,4539,6066,7593,9120,10647,12174,13701,15228`,
 each height `1527`. The Rust planner regression checks all eleven slices.
 This execution uses host platform/display/math services; it does not establish
-archive-object admission, final PDF placement, or native device pixels.
+final PDF placement or native device pixels. A separate
+[archive-backed query comparison](object-selection-findings.md) verifies
+ordinary stroke admission and order for this sample.
 
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
