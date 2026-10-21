@@ -1,7 +1,7 @@
 //! Bounded source-driven numeric model for ChineseBrush GLV1/2/3 calls.
 //!
-//! Test evidence for pinned synthetic source-event Drawing fixtures.
-//! Saved-note parsing, renderer state and production admission remain separate.
+//! Numeric contracts are pinned to synthetic native Drawing fixtures. Saved-source
+//! admission and intrinsic-atlas paint live in the renderer adapter.
 
 use super::path::{P, Quad};
 
@@ -259,6 +259,7 @@ fn effective_pressure(pressure: f32, tool: i32) -> f32 {
     if tool == 1 { 0.5 } else { pressure.min(1.0) }
 }
 
+#[cfg(test)]
 pub fn packed_w(phase: f32, scalar: f32) -> f32 {
     (phase as f64).mul_add(1.0, scalar as f64 * 0.001) as f32
 }
@@ -427,6 +428,7 @@ fn model_line(
 
 // This boundary mirrors the source arrays and explicit native profile.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub fn model_event_loop(
     xy: &[[f32; 2]],
     pressure: &[f32],
@@ -667,6 +669,7 @@ fn model_event_loop_inner(
 
 // Keep the compatibility wrapper's source and runtime parameters explicit.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub fn run_model(
     xy: &[[f32; 2]],
     pressure: &[f32],
@@ -699,6 +702,7 @@ pub fn run_model(
 /// Source-event boundaries are intentionally not returned: current native
 /// fixtures capture append order but do not attribute rows to source events.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub fn run_model_bounded(
     xy: &[[f32; 2]],
     pressure: &[f32],

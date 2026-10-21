@@ -66,6 +66,7 @@ pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
 use viewport::Viewport;
+mod chinesebrush;
 #[cfg(all(test, feature = "serde"))]
 mod native_table_cache_tests;
 #[cfg(all(test, feature = "serde"))]
@@ -118,6 +119,17 @@ pub struct Pencil3RenderProfile {
     pub paper_sampler: Pencil3PaperSampler,
 }
 
+/// Explicit source-device dimensions used to reconstruct ChineseBrush V1–V3 dabs.
+/// This opts into an approximate vector paint with intrinsic atlas alpha and
+/// hard-circle coverage; native screen-space `fwidth` fringe is not reproduced.
+/// Dimensions are never inferred from the page or consumer viewport.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ChineseBrushRenderProfile {
+    pub screen_width: u32,
+    pub screen_height: u32,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -128,6 +140,9 @@ pub struct RenderOptions {
     /// explicitly selects its enhanced-antialiasing paint route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen2_profile: Option<InkPen2RenderProfile>,
+    /// Opt into bounded, approximate ChineseBrush V1–V3 vector paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -588,6 +603,7 @@ impl DocumentTextCache {
             body_text.as_ref(),
             retain_text,
             options.inkpen2_profile,
+            options.chinesebrush_profile,
             options.pencil3_profile,
             slice,
             observer,
@@ -997,6 +1013,7 @@ fn render_page_contents_svg(
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1055,6 +1072,7 @@ fn render_page_contents_svg(
         replay,
         body_text,
         inkpen2_profile,
+        chinesebrush_profile,
         pencil3_profile,
         slice,
     };
@@ -1089,6 +1107,7 @@ struct CompositionContext<'a> {
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 }
@@ -1152,6 +1171,7 @@ fn render_object(
                 native_allowed,
                 [context.page.width, context.page.height],
                 context.inkpen2_profile,
+                context.chinesebrush_profile,
                 context.pencil3_profile,
                 context.slice,
             );
@@ -3311,6 +3331,7 @@ fn render_stroke(
     native_allowed: bool,
     viewport: [u32; 2],
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 ) {
@@ -3318,6 +3339,13 @@ fn render_stroke(
     // pen-name dispatch. Keep the context-free prepare_stroke compatibility
     // path unchanged; this renderer only paints persisted page objects.
     if stroke.points.len() <= 1 {
+        return;
+    }
+    if native_allowed
+        && let Some(profile) = chinesebrush_profile
+        && let Some(ink) = chinesebrush::prepare(stroke, profile)
+    {
+        chinesebrush::render(svg, &ink, replay_index);
         return;
     }
     if native_allowed
@@ -4288,10 +4316,10 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        InkPen2RenderProfile, RenderColorMode, RenderOptions, RenderTheme, is_dark_background,
-        normalized_stroke_width, prepare_inkpen2_v9, prepare_stroke_for_page_with_theme,
-        render_document_svg, render_layout_page_replay_svg, render_layout_page_svg,
-        sanitize_hyperlink_target,
+        ChineseBrushRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
+        RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
+        prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
+        render_layout_page_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -4785,6 +4813,7 @@ mod tests {
         };
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             color_mode: RenderColorMode::Light,
             ..RenderOptions::default()
         };
@@ -5469,6 +5498,7 @@ mod tests {
         let document = document(page);
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             ..RenderOptions::default()
         };
         let bytes =
@@ -7351,6 +7381,7 @@ mod tests {
             RenderTheme::for_canvas(false),
             &RenderOptions {
                 inkpen2_profile: Some(profile),
+                chinesebrush_profile: None,
                 ..RenderOptions::default()
             },
         );
@@ -7417,6 +7448,7 @@ mod tests {
                     RenderTheme::for_canvas(false),
                     &RenderOptions {
                         inkpen2_profile: Some(profile),
+                        chinesebrush_profile: None,
                         ..RenderOptions::default()
                     },
                 )
@@ -7551,6 +7583,7 @@ mod tests {
         let doc = document(page);
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             ..RenderOptions::default()
         };
         let svg = render_document_svg(&doc, &options).remove(0).svg;
@@ -7897,6 +7930,7 @@ mod tests {
             page.objects = vec![black.clone().into()];
             let options = RenderOptions {
                 inkpen2_profile: Some(profile),
+                chinesebrush_profile: None,
                 color_mode: mode,
                 ..RenderOptions::default()
             };
@@ -7923,6 +7957,7 @@ mod tests {
         let resolved = RenderTheme::resolve(&page, &metadata, RenderColorMode::Dark);
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             color_mode: RenderColorMode::Dark,
             ..RenderOptions::default()
         };
@@ -7956,6 +7991,7 @@ mod tests {
 
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             ..RenderOptions::default()
         };
         let prepared_light =
@@ -7974,6 +8010,7 @@ mod tests {
         page.objects = vec![partial.into()];
         let mut options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             ..RenderOptions::default()
         };
         options.color_mode = RenderColorMode::Light;
@@ -8014,6 +8051,7 @@ mod tests {
         let document = document(page);
         let options = RenderOptions {
             inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
             ..RenderOptions::default()
         };
         let theme =
@@ -8461,6 +8499,146 @@ mod tests {
         assert_eq!(
             super::stroke_paint(&unknown_version, false).color,
             "#1a1a1a"
+        );
+    }
+
+    #[test]
+    fn opt_in_chinesebrush_paints_parsed_records_and_keeps_atomic_fallback() {
+        let document = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let profile = ChineseBrushRenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let options = RenderOptions {
+            chinesebrush_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let paint = render_document_svg(&document, &options).remove(0).svg;
+        let paint_xml = roxmltree::Document::parse(&paint).unwrap();
+        let images = paint_xml
+            .descendants()
+            .filter(|node| node.has_tag_name("image"))
+            .collect::<Vec<_>>();
+        assert_eq!(images.len(), 33, "the native source stream has 33 dabs");
+        assert!(images.iter().all(|image| {
+            image
+                .attribute("href")
+                .is_some_and(|href| href.starts_with("data:image/png;base64,"))
+        }));
+        let oracle = include_bytes!("../tests/assets/chinesebrush/native_packed.bin");
+        assert_eq!(oracle.len(), images.len() * 16);
+        for (image, record) in images.iter().zip(oracle.as_chunks::<16>().0) {
+            let lane = |index: usize| {
+                f64::from(f32::from_le_bytes(
+                    record[index * 4..index * 4 + 4].try_into().unwrap(),
+                ))
+            };
+            let transform = image
+                .parent_element()
+                .unwrap()
+                .attribute("transform")
+                .unwrap()
+                .parse::<svgtypes::Transform>()
+                .unwrap();
+            assert_eq!(
+                [
+                    transform.a,
+                    transform.b,
+                    transform.c,
+                    transform.d,
+                    transform.e,
+                    transform.f
+                ],
+                [lane(2), 0.0, 0.0, lane(2), lane(0), lane(1)],
+                "public paint must retain native dab geometry and order"
+            );
+        }
+        let render_with_size = |size| {
+            let mut sized = document.clone();
+            sized.pages[0]
+                .strokes_mut()
+                .next()
+                .unwrap()
+                .rendering
+                .as_mut()
+                .unwrap()
+                .style
+                .pen_size = Some(size);
+            render_document_svg(&sized, &options).remove(0).svg
+        };
+        assert_eq!(render_with_size(0.0), render_with_size(0.4));
+        assert_eq!(render_with_size(900.0), render_with_size(800.0));
+
+        let layout = layout_document(&document);
+        let replay = super::render_layout_page_replay_svg(&document, &layout, 0, &options)
+            .unwrap()
+            .svg;
+        let replay_xml = roxmltree::Document::parse(&replay).unwrap();
+        let replay_stamps = replay_xml
+            .descendants()
+            .filter(|node| node.has_tag_name("g") && node.attribute("data-replay-part").is_some())
+            .collect::<Vec<_>>();
+        assert_eq!(replay_stamps.len(), 33);
+
+        let generic = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let generic_xml = roxmltree::Document::parse(&generic).unwrap();
+        assert_eq!(
+            generic_xml
+                .descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            0,
+            "the route remains opt-in"
+        );
+
+        let mut unsupported = document.clone();
+        unsupported.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("4;".into());
+        let fallback = render_document_svg(&unsupported, &options).remove(0).svg;
+        let fallback_xml = roxmltree::Document::parse(&fallback).unwrap();
+        assert_eq!(
+            fallback_xml
+                .descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            0,
+            "unsupported settings fall back for the whole stroke"
+        );
+
+        let mut over_budget = document.clone();
+        let stroke = over_budget.pages[0].strokes_mut().next().unwrap();
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point {
+                x: 100_000_000.0,
+                y: 0.0,
+            },
+        ];
+        stroke.pressures = vec![1.0, 1.0];
+        stroke.timestamps = vec![0, 100];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.properties.compressed = false;
+        rendering.style.pen_size = Some(800.0);
+        let bounded_fallback = render_document_svg(&over_budget, &options).remove(0).svg;
+        let bounded_xml = roxmltree::Document::parse(&bounded_fallback).unwrap();
+        assert_eq!(
+            bounded_xml
+                .descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            0,
+            "bounded record generation must fall back atomically"
         );
     }
 

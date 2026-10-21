@@ -331,6 +331,10 @@ sampling differences remain. The [V14 findings](fountain-v14.md) describe its sa
 
 ## ChineseBrush source and paint controls
 
+The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
+them (PenCommon RVA `0x45fdc`, SHA-256
+`afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`).
+
 For the pinned ChineseBrush DSO (`25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5`),
 GLV1/2/3 `endPen` at RVAs `0x32624`/`0x35868`/`0x385b4` reads the raw final
 MotionEvent even when its movement was rejected. Quadratic tails retain the
