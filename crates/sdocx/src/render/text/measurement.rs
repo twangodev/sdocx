@@ -820,10 +820,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             );
         }
         let bold = style.bold && matches!(self.styled.context(), super::TextContext::Placed);
-        if tab
-            || direction != Direction::LeftToRight
-            || !matches!(script, Script::Latin | Script::Common | Script::Inherited)
-        {
+        if tab || direction != Direction::LeftToRight || !supports_grapheme_fallback(script) {
             let selected = self
                 .renderer
                 .fonts
@@ -849,41 +846,31 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             .index
             .char_to_byte(source.start)
             .ok_or(MeasurementError::InvalidRange)?;
-        let mut segments = Vec::<(Range<usize>, ResolvedFace)>::new();
-        for (byte, grapheme) in text.grapheme_indices(true) {
-            let selected =
-                self.renderer
-                    .fonts
-                    .resolve_for_text(&face, grapheme, bold, face_italic)?;
+        let segments = grapheme_face_segments(text, |grapheme| {
+            self.renderer
+                .fonts
+                .resolve_for_text(&face, grapheme, bold, face_italic)
+        })?;
+        let mut measured = MeasuredSegment {
+            advance: 0.0,
+            clusters: Vec::new(),
+        };
+        for (bytes, selected) in segments {
             let start = self
                 .styled
                 .index
-                .byte_to_char(start_byte + byte)
+                .byte_to_char(start_byte + bytes.start)
                 .ok_or(MeasurementError::InvalidRange)?
                 - self.range.start;
             let end = self
                 .styled
                 .index
-                .byte_to_char(start_byte + byte + grapheme.len())
+                .byte_to_char(start_byte + bytes.end)
                 .ok_or(MeasurementError::InvalidRange)?
                 - self.range.start;
-            if let Some((previous, previous_face)) = segments.last_mut()
-                && previous.end == start
-                && previous_face.id == selected.id
-            {
-                previous.end = end;
-            } else {
-                segments.push((start..end, selected));
-            }
-        }
-        let mut measured = MeasuredSegment {
-            advance: 0.0,
-            clusters: Vec::new(),
-        };
-        for (range, selected) in segments {
             let coverage_fallback = selected.id != face.id;
             let part = self.shape_face(
-                range,
+                start..end,
                 style,
                 direction,
                 script,
@@ -1027,6 +1014,39 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
     }
 }
 
+fn supports_grapheme_fallback(script: Script) -> bool {
+    matches!(
+        script,
+        Script::Latin
+            | Script::Common
+            | Script::Inherited
+            | Script::Han
+            | Script::Hiragana
+            | Script::Katakana
+            | Script::Hangul
+    )
+}
+
+fn grapheme_face_segments(
+    text: &str,
+    mut resolve: impl FnMut(&str) -> Result<ResolvedFace, FontError>,
+) -> Result<Vec<(Range<usize>, ResolvedFace)>, FontError> {
+    let mut segments = Vec::<(Range<usize>, ResolvedFace)>::new();
+    for (byte, grapheme) in text.grapheme_indices(true) {
+        let selected = resolve(grapheme)?;
+        let end = byte + grapheme.len();
+        if let Some((previous, previous_face)) = segments.last_mut()
+            && previous.end == byte
+            && previous_face.id == selected.id
+        {
+            previous.end = end;
+        } else {
+            segments.push((byte..end, selected));
+        }
+    }
+    Ok(segments)
+}
+
 #[cfg(test)]
 fn measure_text(
     styled: &StyledText<'_>,
@@ -1073,6 +1093,151 @@ mod tests {
     use super::*;
     use crate::fonts::FontBook;
     use crate::{BoundingBox, RichTextBox, RichTextRun, RichTextSpan, RichTextSpanType};
+
+    fn font_with_unicode_mappings(source: &[u8], mappings: &[(char, u16)]) -> Vec<u8> {
+        use rustybuzz::ttf_parser::RawFace;
+        use write_fonts::{FontBuilder, types::Tag};
+
+        let face = RawFace::parse(source, 0).unwrap();
+        let cmap_tag = rustybuzz::ttf_parser::Tag::from_bytes(b"cmap");
+        let original_cmap = face.table(cmap_tag).unwrap();
+        let records = usize::from(u16::from_be_bytes(original_cmap[2..4].try_into().unwrap()));
+        let record = (0..records)
+            .find_map(|index| {
+                let start = 4 + index * 8;
+                let platform =
+                    u16::from_be_bytes(original_cmap[start..start + 2].try_into().unwrap());
+                let encoding =
+                    u16::from_be_bytes(original_cmap[start + 2..start + 4].try_into().unwrap());
+                let offset =
+                    u32::from_be_bytes(original_cmap[start + 4..start + 8].try_into().unwrap())
+                        as usize;
+                (platform == 3
+                    && encoding == 10
+                    && u16::from_be_bytes(original_cmap[offset..offset + 2].try_into().unwrap())
+                        == 12)
+                    .then_some((index, offset))
+            })
+            .expect("Roboto has a Unicode format 12 cmap");
+        let (record_index, subtable_offset) = record;
+        let subtable = &original_cmap[subtable_offset..];
+        let group_count = u32::from_be_bytes(subtable[12..16].try_into().unwrap()) as usize;
+        let mut groups = (0..group_count)
+            .map(|index| {
+                let start = 16 + index * 12;
+                (
+                    u32::from_be_bytes(subtable[start..start + 4].try_into().unwrap()),
+                    u32::from_be_bytes(subtable[start + 4..start + 8].try_into().unwrap()),
+                    u32::from_be_bytes(subtable[start + 8..start + 12].try_into().unwrap()),
+                )
+            })
+            .collect::<Vec<_>>();
+        for &(character, glyph) in mappings {
+            let scalar = u32::from(character);
+            assert!(
+                !groups
+                    .iter()
+                    .any(|(start, end, _)| (*start..=*end).contains(&scalar))
+            );
+            groups.push((scalar, scalar, u32::from(glyph)));
+        }
+        groups.sort_unstable_by_key(|group| group.0);
+        let length = 16 + groups.len() * 12;
+        let mut format12 = Vec::with_capacity(length);
+        format12.extend_from_slice(&12_u16.to_be_bytes());
+        format12.extend_from_slice(&0_u16.to_be_bytes());
+        format12.extend_from_slice(&u32::try_from(length).unwrap().to_be_bytes());
+        format12.extend_from_slice(&0_u32.to_be_bytes());
+        format12.extend_from_slice(&u32::try_from(groups.len()).unwrap().to_be_bytes());
+        for (start, end, glyph) in groups {
+            format12.extend_from_slice(&start.to_be_bytes());
+            format12.extend_from_slice(&end.to_be_bytes());
+            format12.extend_from_slice(&glyph.to_be_bytes());
+        }
+        let mut cmap = original_cmap.to_vec();
+        let new_offset = u32::try_from(cmap.len()).unwrap();
+        let offset_record = 4 + record_index * 8 + 4;
+        cmap[offset_record..offset_record + 4].copy_from_slice(&new_offset.to_be_bytes());
+        cmap.extend_from_slice(&format12);
+
+        let mut builder = FontBuilder::new();
+        for record in face.table_records {
+            let tag = record.tag.to_bytes();
+            let data = if record.tag == cmap_tag {
+                cmap.as_slice()
+            } else {
+                face.table(record.tag).unwrap()
+            };
+            builder.add_raw(Tag::new(&tag), data);
+        }
+        builder.build()
+    }
+
+    fn split_cjk_font_book() -> FontBook {
+        use crate::fonts::fontdb;
+        use std::sync::Arc;
+
+        let original = FontBook::default().resolve("Roboto", false, false).unwrap();
+        let mut database = fontdb::Database::new();
+        for (family, mappings) in [
+            ("Roboto", vec![]),
+            ("CJK Han", vec![("漢".chars().next().unwrap(), 36)]),
+            (
+                "CJK Kana",
+                vec![("か".chars().next().unwrap(), 37), ('\u{3099}', 38)],
+            ),
+            (
+                "CJK Other",
+                vec![
+                    ("字".chars().next().unwrap(), 39),
+                    ("な".chars().next().unwrap(), 40),
+                ],
+            ),
+        ] {
+            let bytes = font_with_unicode_mappings(original.bytes(), &mappings);
+            let mut info = FontBook::default()
+                .database()
+                .face(original.id)
+                .unwrap()
+                .clone();
+            info.id = fontdb::ID::dummy();
+            info.families[0].0 = family.into();
+            info.source = fontdb::Source::Binary(Arc::new(bytes));
+            database.push_face_info(info);
+        }
+        database.set_sans_serif_family("Roboto");
+        FontBook::new(Arc::new(database))
+    }
+
+    #[test]
+    fn cjk_fallback_selects_across_supplied_fonts_and_keeps_combining_graphemes_together() {
+        let fonts = split_cjk_font_book();
+        let measured =
+            measure_with_fonts(&text_box("漢字か\u{3099}な"), TextContext::Placed, &fonts);
+        let faces = measured
+            .clusters
+            .iter()
+            .map(|cluster| cluster.run.face.family.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(faces, ["CJK Han", "CJK Other", "CJK Kana", "CJK Other"]);
+        assert!(measured.clusters.iter().all(|cluster| {
+            cluster.run.coverage_fallback
+                && cluster.run.glyphs[cluster.glyphs.clone()]
+                    .iter()
+                    .all(|glyph| glyph.id != 0)
+        }));
+
+        let mut seen = Vec::new();
+        let preferred = fonts.resolve("Roboto", false, false).unwrap();
+        let segments = grapheme_face_segments("か\u{3099}", |grapheme| {
+            seen.push(grapheme.to_owned());
+            fonts.resolve_for_text(&preferred, grapheme, false, false)
+        })
+        .unwrap();
+        assert_eq!(seen, ["か\u{3099}"]);
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0].1.family, "CJK Kana");
+    }
 
     #[test]
     fn paragraph_measurement_uses_captured_native_entries_and_owner_positions() {
