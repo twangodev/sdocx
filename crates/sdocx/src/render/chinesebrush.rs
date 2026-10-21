@@ -2,8 +2,8 @@
 //! native intrinsic atlas. Circles provide geometric coverage; this does not
 //! reproduce the native screen-space `fwidth` fringe.
 use super::vector::{
-    Circle, Clip, ClipPath, Definition, Definitions, Group, Image, Paint, ReplayPart, Scene,
-    StrokeIndex, Styled, Transform,
+    Circle, Clip, ClipPath, Definition, Definitions, Group, Image, ImageId, Paint, ReplayPart,
+    Scene, StrokeIndex, Styled, Transform, Use,
 };
 use crate::Stroke;
 
@@ -12,6 +12,7 @@ const MAX_SOURCE_EVENTS: usize = 65_536;
 const MAX_OUTPUT_RECORDS: usize = 32_768;
 const MAX_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const STAMP_FIXED_MARKUP_BUDGET: usize = 1_024;
+const TILE_DEFINITION_FIXED_MARKUP_BUDGET: usize = 256;
 const ATLAS_WIDTH: usize = 144;
 const TILE_SIZE: usize = 48;
 const TILE_COUNT: usize = 7;
@@ -217,16 +218,18 @@ pub(crate) fn prepare(
             tiles.push((tile, png_tile(tile, rgb)?));
         }
     }
-    // The current SVG image API inlines each PNG as a data URI. Account for
-    // that repeated base64 payload so dense strokes atomically fall back
-    // instead of generating an unexpectedly large SVG.
-    let estimated = stamps.iter().try_fold(0usize, |total, stamp| {
-        let png_len = tiles.iter().find(|(tile, _)| *tile == stamp.tile)?.1.len();
-        let base64_len = png_len.checked_add(2)?.checked_div(3)?.checked_mul(4)?;
-        total
-            .checked_add(STAMP_FIXED_MARKUP_BUDGET)?
-            .checked_add(base64_len)
-    })?;
+    // Each intrinsic PNG appears once in defs; stamp references only add
+    // bounded transform, opacity, clip, replay, and href markup.
+    let estimated = stamps
+        .len()
+        .checked_mul(STAMP_FIXED_MARKUP_BUDGET)?
+        .checked_add(tiles.iter().try_fold(0usize, |total, (_, png)| {
+            let png_len = png.len();
+            let base64_len = png_len.checked_add(2)?.checked_div(3)?.checked_mul(4)?;
+            total
+                .checked_add(TILE_DEFINITION_FIXED_MARKUP_BUDGET)?
+                .checked_add(base64_len)
+        })?)?;
     if estimated > MAX_ESTIMATED_MARKUP_BYTES {
         return None;
     }
@@ -250,6 +253,11 @@ pub(crate) fn render(svg: &mut Scene, prepared: &Prepared, replay_index: Option<
 
 fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
     let clip: Definition<Clip> = svg.definition();
+    let tile_definitions: Vec<_> = prepared
+        .tiles
+        .iter()
+        .map(|(tile, _)| (*tile, svg.definition::<ImageId>()))
+        .collect();
     svg.scope(Definitions::new(), |svg| {
         svg.scope(ClipPath::new(&clip), |svg| {
             svg.push(
@@ -260,9 +268,24 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
                     .fill(Paint::from_hex("#ffffff")),
             );
         });
+        for ((_, image), (_, definition)) in prepared.tiles.iter().zip(&tile_definitions) {
+            svg.push(
+                Image::embedded(image, "image/png")
+                    .id(&definition.id_text())
+                    .x(-1.0)
+                    .y(-1.0)
+                    .width(2.0)
+                    .height(2.0)
+                    .stretched()
+                    .pixelated(),
+            );
+        }
     });
     for (record_index, stamp) in prepared.stamps.iter().enumerate() {
-        let Some((_, image)) = prepared.tiles.iter().find(|(tile, _)| *tile == stamp.tile) else {
+        let Some((_, definition)) = tile_definitions
+            .iter()
+            .find(|(tile, _)| *tile == stamp.tile)
+        else {
             unreachable!("all referenced atlas cells were prepared before emission");
         };
         let transform =
@@ -276,16 +299,7 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
                 .opacity(stamp.opacity)
                 .replay_part(replay.then_some(ReplayPart(source_event + 1))),
             |svg| {
-                svg.push(
-                    Image::embedded(image, "image/png")
-                        .x(-1.0)
-                        .y(-1.0)
-                        .width(2.0)
-                        .height(2.0)
-                        .stretched()
-                        .pixelated()
-                        .clipped(&clip),
-                );
+                svg.push(Use::image(definition).clipped(&clip));
             },
         );
     }

@@ -345,6 +345,8 @@ pub(super) enum Clip {}
 pub(super) enum Filter {}
 #[derive(Clone, Copy)]
 pub(super) enum FilterResult {}
+#[derive(Clone, Copy)]
+pub(super) enum ImageId {}
 
 #[derive(Clone, Copy)]
 pub(super) enum FilterInput {
@@ -482,7 +484,7 @@ pub(super) trait Styled: NodeAccess + Sized {
 macro_rules! styles { ($($name:ident),*) => { $(impl Styled for $name {})* }; }
 styles!(
     Svg, Group, Path, Circle, Ellipse, Rectangle, Line, Polygon, Polyline, Image, Text, TSpan,
-    Anchor
+    Anchor, Use
 );
 
 macro_rules! numeric_attributes {
@@ -646,6 +648,10 @@ impl Use {
         let mut node = Node::new(svg_element::Use::new());
         node.attr("href", format!("#{id}"));
         Self(node)
+    }
+
+    pub fn image(id: &Definition<ImageId>) -> Self {
+        Self::href(&id.id())
     }
 }
 impl Text {

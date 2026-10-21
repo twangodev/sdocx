@@ -8522,23 +8522,34 @@ mod tests {
             .descendants()
             .filter(|node| node.has_tag_name("image"))
             .collect::<Vec<_>>();
-        assert_eq!(images.len(), 33, "the native source stream has 33 dabs");
+        assert_eq!(images.len(), 7, "the native atlas has seven used cells");
         assert!(images.iter().all(|image| {
             image
                 .attribute("href")
                 .is_some_and(|href| href.starts_with("data:image/png;base64,"))
+                && image
+                    .attribute("image-rendering")
+                    .is_some_and(|value| value == "pixelated")
         }));
+        let stamps = paint_xml
+            .descendants()
+            .filter(|node| node.has_tag_name("use"))
+            .collect::<Vec<_>>();
+        assert_eq!(stamps.len(), 33, "one ordered reference per native dab");
         let oracle = include_bytes!("../tests/assets/chinesebrush/native_packed.bin");
-        assert_eq!(oracle.len(), images.len() * 16);
-        for (image, record) in images.iter().zip(oracle.as_chunks::<16>().0) {
+        assert_eq!(oracle.len(), stamps.len() * 16);
+        let definition_ids = images
+            .iter()
+            .map(|image| image.attribute("id").unwrap())
+            .collect::<Vec<_>>();
+        for (stamp, record) in stamps.iter().zip(oracle.as_chunks::<16>().0) {
             let lane = |index: usize| {
                 f64::from(f32::from_le_bytes(
                     record[index * 4..index * 4 + 4].try_into().unwrap(),
                 ))
             };
-            let transform = image
-                .parent_element()
-                .unwrap()
+            let group = stamp.parent_element().unwrap();
+            let transform = group
                 .attribute("transform")
                 .unwrap()
                 .parse::<svgtypes::Transform>()
@@ -8555,6 +8566,12 @@ mod tests {
                 [lane(2), 0.0, 0.0, lane(2), lane(0), lane(1)],
                 "public paint must retain native dab geometry and order"
             );
+            let tile = lane(3).floor() as usize;
+            assert_eq!(
+                stamp.attribute("href"),
+                Some(format!("#{}", definition_ids[tile]).as_str())
+            );
+            assert!(stamp.attribute("clip-path").is_some());
         }
         let render_with_size = |size| {
             let mut sized = document.clone();
@@ -8594,6 +8611,14 @@ mod tests {
                 .count(),
             0,
             "the route remains opt-in"
+        );
+        assert_eq!(
+            generic_xml
+                .descendants()
+                .filter(|node| node.has_tag_name("use"))
+                .count(),
+            0,
+            "generic fallback has no atlas references"
         );
 
         let mut unsupported = document.clone();
