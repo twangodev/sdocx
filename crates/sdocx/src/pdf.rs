@@ -579,9 +579,16 @@ fn render_pages_pdf_with_progress<'a>(
     let bytes = pdf
         .finish()
         .map_err(|error| PdfError::Conversion(error.to_string()))?;
+    let bytes = if retained_text {
+        flatten_nested_actual_text(&bytes).map_err(|error| {
+            PdfError::Conversion(format!("nested ActualText normalization failed: {error}"))
+        })?
+    } else {
+        bytes
+    };
     if ink_fields.is_empty() {
-        // Keep ordinary SVG/text exports byte-for-byte as Krilla serialized
-        // them; only PDFs with registered marker images need lopdf rewriting.
+        // Native-text exports have already received the targeted marked-content
+        // normalization above; marker replacement is only needed for ink fields.
         return Ok(bytes);
     }
     let fields = ink_fields
@@ -610,6 +617,130 @@ fn render_pages_pdf_with_progress<'a>(
     ink_field::replace_markers(&bytes, &fields).map_err(|error| {
         PdfError::Conversion(format!("native ink PDF replacement failed: {error}"))
     })
+}
+
+/// Keep the source text from an outer tagged text block authoritative. Krilla
+/// may emit nested ActualText spans for glyph mapping conflicts; several PDF
+/// extractors concatenate those replacements with the enclosing replacement.
+/// This only visits generated page content from SDK exports that retained text.
+fn flatten_nested_actual_text(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    use lopdf::{Document, content::Content};
+
+    let mut document = Document::load_mem(bytes).map_err(|error| error.to_string())?;
+    let pages = document.get_pages().values().copied().collect::<Vec<_>>();
+    let mut replacements_removed = 0;
+    for page_id in pages {
+        let raw_content = document
+            .get_page_content(page_id)
+            .map_err(|error| error.to_string())?;
+        let mut content = Content::decode(&raw_content).map_err(|error| error.to_string())?;
+        let page_replacements_removed =
+            flatten_nested_actual_text_content(&document, page_id, &mut content)?;
+        replacements_removed += page_replacements_removed;
+        if page_replacements_removed > 0 {
+            let encoded = content.encode().map_err(|error| error.to_string())?;
+            document
+                .change_page_content(page_id, encoded)
+                .map_err(|error| error.to_string())?;
+        }
+    }
+    if replacements_removed == 0 {
+        return Ok(bytes.to_vec());
+    }
+    let mut output = Vec::new();
+    document
+        .save_to(&mut output)
+        .map_err(|error| error.to_string())?;
+    Ok(output)
+}
+
+fn flatten_nested_actual_text_content(
+    document: &lopdf::Document,
+    page_id: lopdf::ObjectId,
+    content: &mut lopdf::content::Content,
+) -> Result<usize, String> {
+    use lopdf::Object;
+
+    let mut stack = Vec::new();
+    let mut active_actual_text = 0usize;
+    let mut replacements_removed = 0;
+    for operation in &mut content.operations {
+        match operation.operator.as_str() {
+            "BDC" => {
+                let resolved = operation
+                    .operands
+                    .get(1)
+                    .and_then(|properties| content_properties(document, page_id, properties));
+                let has_actual_text = resolved
+                    .as_ref()
+                    .is_some_and(|properties| properties.has(b"ActualText"));
+                if has_actual_text && active_actual_text > 0 {
+                    let operand = operation
+                        .operands
+                        .get_mut(1)
+                        .ok_or_else(|| "BDC has no property operand".to_owned())?;
+                    let mut dictionary = resolved.unwrap();
+                    dictionary.remove(b"ActualText");
+                    *operand = Object::Dictionary(dictionary);
+                    replacements_removed += 1;
+                    stack.push(false);
+                } else {
+                    if has_actual_text {
+                        active_actual_text += 1;
+                    }
+                    stack.push(has_actual_text);
+                }
+            }
+            "BMC" => stack.push(false),
+            "EMC" => {
+                let Some(owns_actual_text) = stack.pop() else {
+                    return Err("unbalanced EMC in page content".into());
+                };
+                if owns_actual_text {
+                    active_actual_text -= 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    if !stack.is_empty() {
+        return Err("unclosed marked-content sequence in page content".into());
+    }
+    Ok(replacements_removed)
+}
+
+fn content_properties(
+    document: &lopdf::Document,
+    page_id: lopdf::ObjectId,
+    properties: &lopdf::Object,
+) -> Option<lopdf::Dictionary> {
+    use lopdf::Object;
+
+    fn dictionary<'a>(
+        document: &'a lopdf::Document,
+        object: &'a Object,
+    ) -> Option<&'a lopdf::Dictionary> {
+        match object {
+            Object::Dictionary(dictionary) => Some(dictionary),
+            Object::Reference(id) => document.get_dictionary(*id).ok(),
+            _ => None,
+        }
+    }
+
+    match properties {
+        Object::Dictionary(dictionary) => Some(dictionary.clone()),
+        Object::Name(name) => {
+            let (direct, inherited) = document.get_page_resources(page_id).ok()?;
+            let resources = direct.or_else(|| {
+                inherited
+                    .iter()
+                    .find_map(|id| document.get_dictionary(*id).ok())
+            })?;
+            let properties = dictionary(document, resources.get(b"Properties").ok()?)?;
+            dictionary(document, properties.get(name).ok()?).cloned()
+        }
+        _ => None,
+    }
 }
 
 fn draw_retained_page(
@@ -759,6 +890,258 @@ fn validate_png(bytes: &[u8]) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::{BoundingBox, CoverageMesh};
+
+    fn actual_text_properties(text: &str, mcid: i64) -> lopdf::Object {
+        let mut properties = lopdf::Dictionary::new();
+        properties.set(
+            "ActualText",
+            lopdf::Object::string_literal(text.as_bytes().to_vec()),
+        );
+        properties.set("MCID", lopdf::Object::Integer(mcid));
+        lopdf::Object::Dictionary(properties)
+    }
+
+    fn bdc(properties: lopdf::Object) -> lopdf::content::Operation {
+        lopdf::content::Operation::new(
+            "BDC",
+            vec![lopdf::Object::Name(b"Span".to_vec()), properties],
+        )
+    }
+
+    fn marked_content(actual_texts: &[Option<&str>]) -> lopdf::content::Content {
+        let mut operations = Vec::new();
+        for (index, text) in actual_texts.iter().enumerate() {
+            operations.push(bdc(match text {
+                Some(text) => actual_text_properties(text, index as i64),
+                None => lopdf::Object::Dictionary(lopdf::Dictionary::new()),
+            }));
+        }
+        for _ in actual_texts {
+            operations.push(lopdf::content::Operation::new("EMC", Vec::new()));
+        }
+        lopdf::content::Content { operations }
+    }
+
+    #[test]
+    fn nested_actual_text_is_removed_but_outer_siblings_and_mcids_remain() {
+        use lopdf::{Document, Object, content::Operation};
+
+        let document = Document::new();
+        let mut content = lopdf::content::Content {
+            operations: vec![
+                bdc(actual_text_properties("whole source", 0)),
+                Operation::new("BMC", vec![Object::Name(b"Artifact".to_vec())]),
+                bdc(actual_text_properties("glyph replacement", 1)),
+                Operation::new("EMC", Vec::new()),
+                Operation::new("EMC", Vec::new()),
+                Operation::new("EMC", Vec::new()),
+                bdc(actual_text_properties("neighbor", 2)),
+                Operation::new("EMC", Vec::new()),
+            ],
+        };
+
+        assert_eq!(
+            flatten_nested_actual_text_content(&document, (0, 0), &mut content).unwrap(),
+            1
+        );
+        let outer = content.operations[0].operands[1].as_dict().unwrap();
+        assert_eq!(
+            outer.get(b"ActualText").unwrap().as_str().unwrap(),
+            b"whole source"
+        );
+        let nested = content.operations[2].operands[1].as_dict().unwrap();
+        assert!(!nested.has(b"ActualText"));
+        assert_eq!(nested.get(b"MCID").unwrap().as_i64().unwrap(), 1);
+        let sibling = content.operations[6].operands[1].as_dict().unwrap();
+        assert_eq!(
+            sibling.get(b"ActualText").unwrap().as_str().unwrap(),
+            b"neighbor"
+        );
+
+        let mut malformed = marked_content(&[Some("unclosed")]);
+        malformed.operations.pop();
+        assert!(flatten_nested_actual_text_content(&document, (0, 0), &mut malformed).is_err());
+    }
+
+    #[test]
+    fn nested_named_property_is_inlined_without_mutating_shared_resources() {
+        use lopdf::{Dictionary, Document, Object, content::Operation};
+
+        let mut document = Document::new();
+        let page_id = (7, 0);
+        let parent_id = (8, 0);
+        let resource_id = (9, 0);
+        let mut named = Dictionary::new();
+        named.set(
+            "ActualText",
+            Object::string_literal(b"shared replacement".to_vec()),
+        );
+        named.set("MCID", Object::Integer(9));
+        let mut properties = Dictionary::new();
+        properties.set("P", Object::Dictionary(named));
+        let mut resources = Dictionary::new();
+        resources.set("Properties", Object::Dictionary(properties));
+        document
+            .objects
+            .insert(resource_id, Object::Dictionary(resources));
+        let mut parent = Dictionary::new();
+        parent.set("Resources", Object::Reference(resource_id));
+        document
+            .objects
+            .insert(parent_id, Object::Dictionary(parent));
+        let mut page = Dictionary::new();
+        page.set("Parent", Object::Reference(parent_id));
+        document.objects.insert(page_id, Object::Dictionary(page));
+
+        let mut content = lopdf::content::Content {
+            operations: vec![
+                bdc(actual_text_properties("whole source", 0)),
+                Operation::new(
+                    "BDC",
+                    vec![Object::Name(b"Span".to_vec()), Object::Name(b"P".to_vec())],
+                ),
+                Operation::new("EMC", Vec::new()),
+                Operation::new("EMC", Vec::new()),
+            ],
+        };
+        assert_eq!(
+            flatten_nested_actual_text_content(&document, page_id, &mut content).unwrap(),
+            1
+        );
+
+        let nested = content.operations[1].operands[1].as_dict().unwrap();
+        assert!(!nested.has(b"ActualText"));
+        assert_eq!(nested.get(b"MCID").unwrap().as_i64().unwrap(), 9);
+        let shared = document
+            .get_dictionary(resource_id)
+            .unwrap()
+            .get(b"Properties")
+            .unwrap()
+            .as_dict()
+            .unwrap()
+            .get(b"P")
+            .unwrap()
+            .as_dict()
+            .unwrap();
+        assert_eq!(
+            shared.get(b"ActualText").unwrap().as_str().unwrap(),
+            b"shared replacement"
+        );
+
+        // A page's own Resources dictionary shadows the inherited one as a
+        // whole. Do not fall back to a parent Properties entry when absent.
+        let mut shadowed = document.clone();
+        shadowed
+            .get_object_mut(page_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set("Resources", Object::Dictionary(Dictionary::new()));
+        let mut unresolved = lopdf::content::Content {
+            operations: vec![
+                bdc(actual_text_properties("whole source", 0)),
+                Operation::new(
+                    "BDC",
+                    vec![Object::Name(b"Span".to_vec()), Object::Name(b"P".to_vec())],
+                ),
+                Operation::new("EMC", Vec::new()),
+                Operation::new("EMC", Vec::new()),
+            ],
+        };
+        assert_eq!(
+            flatten_nested_actual_text_content(&shadowed, page_id, &mut unresolved).unwrap(),
+            0
+        );
+        assert_eq!(
+            unresolved.operations[1].operands[1].as_name().unwrap(),
+            b"P"
+        );
+    }
+
+    #[test]
+    fn nested_actual_text_pass_handles_content_arrays_and_preserves_noop_bytes() {
+        use krilla::{geom::Size, page::PageSettings};
+        use lopdf::{Document, Object, Stream, content::Content};
+
+        let mut source = PdfDocument::new();
+        let mut page =
+            source.start_page_with(PageSettings::new(Size::from_wh(20.0, 20.0).unwrap()));
+        page.surface().finish();
+        page.finish();
+        let bytes = source.finish().unwrap();
+        assert_eq!(flatten_nested_actual_text(&bytes).unwrap(), bytes);
+
+        let mut document = Document::load_mem(&bytes).unwrap();
+        let page_id = document.get_pages()[&1];
+        let first = Content {
+            operations: vec![
+                bdc(actual_text_properties("whole source", 0)),
+                lopdf::content::Operation::new("BMC", vec![Object::Name(b"Artifact".to_vec())]),
+            ],
+        }
+        .encode()
+        .unwrap();
+        let second = Content {
+            operations: vec![
+                bdc(actual_text_properties("glyph replacement", 1)),
+                lopdf::content::Operation::new("EMC", Vec::new()),
+                lopdf::content::Operation::new("EMC", Vec::new()),
+                lopdf::content::Operation::new("EMC", Vec::new()),
+                bdc(actual_text_properties("sibling", 2)),
+                lopdf::content::Operation::new("EMC", Vec::new()),
+            ],
+        }
+        .encode()
+        .unwrap();
+        let first_id = document.add_object(Stream::new(Default::default(), first));
+        let second_id = document.add_object(Stream::new(Default::default(), second));
+        document
+            .get_object_mut(page_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set(
+                "Contents",
+                Object::Array(vec![
+                    Object::Reference(first_id),
+                    Object::Reference(second_id),
+                ]),
+            );
+        let mut split_streams = Vec::new();
+        document.save_to(&mut split_streams).unwrap();
+
+        let flattened = flatten_nested_actual_text(&split_streams).unwrap();
+        let flattened = Document::load_mem(&flattened).unwrap();
+        let page_id = flattened.get_pages()[&1];
+        let content = Content::decode(&flattened.get_page_content(page_id).unwrap()).unwrap();
+        assert_eq!(flattened.get_page_contents(page_id).len(), 1);
+        assert_eq!(
+            content.operations[0].operands[1]
+                .as_dict()
+                .unwrap()
+                .get(b"ActualText")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            b"whole source"
+        );
+        assert!(
+            !content.operations[2].operands[1]
+                .as_dict()
+                .unwrap()
+                .has(b"ActualText")
+        );
+        assert_eq!(
+            content.operations[6].operands[1]
+                .as_dict()
+                .unwrap()
+                .get(b"ActualText")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            b"sibling"
+        );
+    }
 
     fn native_ink_registry() -> NativeInkRegistry {
         let mesh = CoverageMesh {

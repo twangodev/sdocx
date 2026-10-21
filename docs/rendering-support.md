@@ -588,7 +588,7 @@ group-opacity contract.
 | --- | --- | --- |
 | SVG preview/export | Typed Rust elements, validated numeric/path values, escaped content, vector ink and embedded fonts | Supported geometry and text transport do not imply complete native appearance. |
 | Replay | Reveals the same generated vector geometry at saved sample boundaries | No pen geometry in the UI; no native live prediction or all-layer replay-state guarantee. |
-| Document PDF | Shared scene plus retained selected fonts/glyphs/XY, vector masks/shadings/clips and selectable logical source; embedded image resolver/constructor rejections become export errors | Inherits rendering gaps; source images remain images; deferred image decoding and universal PDF accessibility are not certified. |
+| Document PDF | Shared scene plus retained selected fonts/glyphs/XY, vector masks/shadings/clips and selectable logical source with authoritative outer PDF text replacements; embedded image resolver/constructor rejections become export errors | Inherits rendering gaps; source images remain images; deferred image decoding and universal PDF accessibility are not certified. |
 | Arbitrary SVG to PDF | Compatibility conversion through the SVG importer | Can reshape text and rasterize imported filter effects; lacks the document exporter's private retained-glyph guarantee. |
 
 The [conformance guide](../conformance/README.md) records fixture identities,
