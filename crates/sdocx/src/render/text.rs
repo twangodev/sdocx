@@ -24,6 +24,7 @@ pub(in crate::render) mod native_paint_plan;
 mod native_runs;
 mod native_wrap;
 mod objects;
+mod outline;
 mod pagination;
 mod paint;
 mod resources;

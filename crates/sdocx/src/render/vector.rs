@@ -562,6 +562,12 @@ impl Group {
     }
 }
 impl Path {
+    /// Hide decorative vector paths from the SVG accessibility tree.
+    pub(in crate::render) fn aria_hidden(mut self) -> Self {
+        self.0.attr("aria-hidden", "true");
+        self
+    }
+
     /// Request the SVG crisp-edges rasterization hint for mesh boundaries.
     pub fn crisp_edges(mut self) -> Self {
         self.0.attr("shape-rendering", "crispEdges");

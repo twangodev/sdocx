@@ -8,13 +8,13 @@ use krilla::paint::{Fill, Stroke};
 use krilla::surface::Surface;
 use krilla::tagging::{ContentTag, SpanTag, Tag, TagGroup};
 use krilla::text::{Font, GlyphId, KrillaGlyph};
-use rustybuzz::ttf_parser;
 
 use crate::Color;
 use crate::fonts::{ResolvedFace, fontdb};
 use crate::text_index::{TextIndex, TextSource};
 
 use super::native_paint_plan::{NativePaintPlan, NativePaintRun};
+use super::outline::{OutlineCache, OutlineCommand, OutlineSink, serialize, transformed};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct NativeTextId(usize);
@@ -351,7 +351,7 @@ fn positive_native(value: f64) -> bool {
 
 pub(crate) struct NativePdfPainter {
     fonts: HashMap<(fontdb::ID, u32), Font>,
-    outlines: HashMap<(fontdb::ID, u32, u32), Arc<[OutlineCommand]>>,
+    outlines: OutlineCache,
     stroke_width: f64,
 }
 
@@ -365,7 +365,7 @@ impl NativePdfPainter {
     pub fn new(dpi: f32) -> Self {
         Self {
             fonts: HashMap::new(),
-            outlines: HashMap::new(),
+            outlines: OutlineCache::default(),
             stroke_width: 0.25 * f64::from(dpi) / 72.0,
         }
     }
@@ -466,70 +466,16 @@ impl NativePdfPainter {
         face: &ResolvedFace,
         glyph_id: u32,
     ) -> Result<Arc<[OutlineCommand]>, NativeTextError> {
-        let key = (face.id, face.index, glyph_id);
-        if let Some(outline) = self.outlines.get(&key) {
-            return Ok(outline.clone());
-        }
-        let data = face.shared_data();
-        let parsed = ttf_parser::Face::parse(data.as_ref().as_ref(), face.index)
-            .map_err(|_| NativeTextError::InvalidFont(face.family.clone()))?;
-        let id = u16::try_from(glyph_id)
-            .ok()
-            .filter(|&id| id < parsed.number_of_glyphs())
-            .map(ttf_parser::GlyphId)
-            .ok_or(NativeTextError::UnsupportedOutline(glyph_id))?;
-        let tables = parsed.tables();
-        if (tables.glyf.is_none() && tables.cff.is_none())
-            || parsed.is_color_glyph(id)
-            || parsed.glyph_svg_image(id).is_some()
-            || parsed.glyph_raster_image(id, u16::MAX).is_some()
-        {
-            return Err(NativeTextError::UnsupportedOutline(glyph_id));
-        }
-        let mut outline = GlyphOutline::default();
-        if parsed.outline_glyph(id, &mut outline).is_none()
-            && (!outline.0.is_empty() || tables.glyf.is_some_and(|table| table.bbox(id).is_some()))
-        {
-            return Err(NativeTextError::UnsupportedOutline(glyph_id));
-        }
-        let outline: Arc<[OutlineCommand]> = outline.0.into();
-        self.outlines.insert(key, outline.clone());
-        Ok(outline)
-    }
-}
-
-#[derive(Debug)]
-enum OutlineCommand {
-    Move([f32; 2]),
-    Line([f32; 2]),
-    Quad([[f32; 2]; 2]),
-    Cubic([[f32; 2]; 3]),
-    Close,
-}
-
-#[derive(Default)]
-struct GlyphOutline(Vec<OutlineCommand>);
-
-impl ttf_parser::OutlineBuilder for GlyphOutline {
-    fn move_to(&mut self, x: f32, y: f32) {
-        self.0.push(OutlineCommand::Move([x, y]));
-    }
-
-    fn line_to(&mut self, x: f32, y: f32) {
-        self.0.push(OutlineCommand::Line([x, y]));
-    }
-
-    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
-        self.0.push(OutlineCommand::Quad([[x1, y1], [x, y]]));
-    }
-
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        self.0
-            .push(OutlineCommand::Cubic([[x1, y1], [x2, y2], [x, y]]));
-    }
-
-    fn close(&mut self) {
-        self.0.push(OutlineCommand::Close);
+        self.outlines
+            .get(face, glyph_id)
+            .map_err(|error| match error {
+                super::outline::OutlineError::InvalidFace(family) => {
+                    NativeTextError::InvalidFont(family)
+                }
+                super::outline::OutlineError::UnsupportedGlyph(glyph_id) => {
+                    NativeTextError::UnsupportedOutline(glyph_id)
+                }
+            })
     }
 }
 
@@ -542,45 +488,38 @@ fn outline_path(
         return Ok(None);
     }
     let scale = run.font_size / f64::from(run.face.metrics.units_per_em);
-    let point = |[x, y]: [f32; 2]| {
-        let dy = -f64::from(y) * scale;
-        let result = [
-            glyph.origin[0] + f64::from(x) * scale + f64::from(run.paint.skew_x) * dy,
-            glyph.origin[1] + dy,
-        ];
-        if !result.into_iter().all(finite_native) {
-            return Err(NativeTextError::InvalidGeometry);
-        }
-        Ok(result.map(|coordinate| coordinate as f32))
-    };
-    let mut path = PathBuilder::new();
-    for command in outline {
-        match *command {
-            OutlineCommand::Move(p) => {
-                let [x, y] = point(p)?;
-                path.move_to(x, y);
-            }
-            OutlineCommand::Line(p) => {
-                let [x, y] = point(p)?;
-                path.line_to(x, y);
-            }
-            OutlineCommand::Quad([p1, p]) => {
-                let [x1, y1] = point(p1)?;
-                let [x, y] = point(p)?;
-                path.quad_to(x1, y1, x, y);
-            }
-            OutlineCommand::Cubic([p1, p2, p]) => {
-                let [x1, y1] = point(p1)?;
-                let [x2, y2] = point(p2)?;
-                let [x, y] = point(p)?;
-                path.cubic_to(x1, y1, x2, y2, x, y);
-            }
-            OutlineCommand::Close => path.close(),
-        }
-    }
-    path.finish()
+    let transformed = transformed(outline, glyph.origin, scale, run.paint.skew_x)
+        .ok_or(NativeTextError::InvalidGeometry)?;
+    let mut sink = PdfOutlineSink(PathBuilder::new());
+    serialize(&transformed, &mut sink);
+    sink.0
+        .finish()
         .map(Some)
         .ok_or(NativeTextError::UnsupportedOutline(glyph.glyph_id))
+}
+
+struct PdfOutlineSink(PathBuilder);
+
+impl OutlineSink for PdfOutlineSink {
+    fn move_to(&mut self, [x, y]: [f32; 2]) {
+        self.0.move_to(x, y);
+    }
+
+    fn line_to(&mut self, [x, y]: [f32; 2]) {
+        self.0.line_to(x, y);
+    }
+
+    fn quad_to(&mut self, [x1, y1]: [f32; 2], [x, y]: [f32; 2]) {
+        self.0.quad_to(x1, y1, x, y);
+    }
+
+    fn cubic_to(&mut self, [x1, y1]: [f32; 2], [x2, y2]: [f32; 2], [x, y]: [f32; 2]) {
+        self.0.cubic_to(x1, y1, x2, y2, x, y);
+    }
+
+    fn close(&mut self) {
+        self.0.close();
+    }
 }
 
 fn glyph_shear(run: &NativeGlyphRun) -> Result<Option<Transform>, NativeTextError> {

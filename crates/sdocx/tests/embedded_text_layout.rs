@@ -242,7 +242,7 @@ fn mixed_flow_italic_shear_keeps_source_order_and_selectable_pdf_text() {
 
 #[cfg(feature = "pdf")]
 #[test]
-fn flow_italic_combining_cluster_without_uniform_glyph_origins_stays_unsheared() {
+fn flow_italic_combining_cluster_uses_per_glyph_vector_outlines() {
     let value = "x\u{0327}\u{0301}";
     let body = RichTextBox {
         text_area_type: None,
@@ -254,7 +254,10 @@ fn flow_italic_combining_cluster_without_uniform_glyph_origins_stays_unsheared()
         underline: false,
         font_size: Some(20.0),
         runs: Vec::new(),
-        spans: vec![span(RichTextSpanType::Italic, 0, 3, &[1, 0])],
+        spans: vec![
+            span(RichTextSpanType::Italic, 0, 3, &[1, 0]),
+            span(RichTextSpanType::Underline, 0, 3, &[1, 0]),
+        ],
         paragraphs: Vec::new(),
         object_spans: Vec::new(),
         text_sections: Vec::new(),
@@ -293,6 +296,60 @@ fn flow_italic_combining_cluster_without_uniform_glyph_origins_stays_unsheared()
                 .attribute("transform")
                 .is_some_and(|value| value.contains("-0.25000"))
     }));
+    let source_carrier = xml
+        .descendants()
+        .find(|node| node.has_tag_name("tspan") && node.text() == Some(value))
+        .expect("the original Unicode cluster remains in the SVG text tree");
+    assert_eq!(
+        source_carrier
+            .attribute("fill-opacity")
+            .and_then(|opacity| opacity.parse::<f32>().ok()),
+        Some(0.0),
+        "vector outlines replace only the visible fallback glyphs"
+    );
+    assert!(source_carrier.attribute("aria-hidden").is_none());
+    let outlines = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("path") && node.attribute("aria-hidden") == Some("true"))
+        .filter_map(|node| node.attribute("d"))
+        .collect::<Vec<_>>();
+    assert_eq!(outlines.len(), 3, "emit each shaped glyph as its own path");
+    assert!(outlines.iter().all(|outline| outline.len() > 10));
+    let move_points = outlines
+        .iter()
+        .flat_map(|outline| {
+            svgtypes::PathParser::from(*outline)
+                .map(|segment| segment.unwrap())
+                .filter_map(|segment| match segment {
+                    svgtypes::PathSegment::MoveTo { x, y, .. } => Some((x, y)),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        move_points
+            .iter()
+            .any(|&(x, y)| (x - 65.109375).abs() < 0.001 && (y - 89.70703125).abs() < 0.001),
+        "the cedilla outline retains its measured nonzero owner-y offset"
+    );
+    assert!(
+        move_points
+            .iter()
+            .any(|&(x, y)| (x - 77.0625).abs() < 0.001 && (y - 45.29296875).abs() < 0.001),
+        "the acute outline retains its independent measured owner-y offset"
+    );
+    assert!(
+        xml.descendants().any(|node| {
+            node.has_tag_name("rect")
+                && node.attribute("fill") == Some("#000000")
+                && node
+                    .attribute("height")
+                    .and_then(|height| height.parse::<f32>().ok())
+                    .is_some_and(|height| height > 0.0)
+        }),
+        "the hidden source carrier is replaced without dropping its underline"
+    );
 }
 
 fn lines(svg: &str) -> Vec<(String, f64, f64)> {

@@ -6,6 +6,7 @@ use krilla::page::PageSettings;
 use krilla::paint::FillRule;
 use krilla::tagging::TagTree;
 use lopdf::content::Content;
+use rustybuzz::ttf_parser;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
