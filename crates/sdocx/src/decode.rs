@@ -378,5 +378,67 @@ mod tests {
                 "rotation bits {rotation:08x}"
             );
         }
+
+        let style_roundtrip = &fixture["raw_size_2_style_roundtrip"];
+        assert_eq!(style_roundtrip["source_pen_size_f32_bits"], "4111de6a");
+        assert_eq!(style_roundtrip["applied_pen_size_f32_bits"], "40000000");
+        let style_cases = style_roundtrip["cases"].as_array().unwrap();
+        assert_eq!(style_cases.len(), 4);
+        for case in style_cases {
+            let payload = bytes(case["payload_hex"].as_str().unwrap());
+            assert_eq!(
+                payload.len(),
+                case["native_payload_size"].as_u64().unwrap() as usize
+            );
+            let stroke = decode_stroke(&payload, &ParseLimits::default()).unwrap();
+            let rotation =
+                u32::from_str_radix(case["rotation_f32_bits"].as_str().unwrap(), 16).unwrap();
+            let rendering = stroke.rendering.as_ref().unwrap();
+            assert_eq!(
+                rendering.style.pen_size.unwrap().to_bits(),
+                u32::from_str_radix(case["raw_pen_size_f32_bits"].as_str().unwrap(), 16).unwrap(),
+                "raw pen size at rotation {rotation:08x}"
+            );
+            let metadata = rendering.metadata.as_ref().unwrap();
+            assert_eq!(
+                (metadata.rotation_degrees.unwrap_or_default() as f32).to_bits(),
+                rotation,
+                "rotation bits {rotation:08x}"
+            );
+            let actual_points: Vec<u32> = stroke
+                .points
+                .iter()
+                .flat_map(|point| [point.x as f32, point.y as f32])
+                .map(f32::to_bits)
+                .collect();
+            let expected_points: Vec<u32> = case["native_loaded_point_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(
+                actual_points, expected_points,
+                "loaded samples at rotation {rotation:08x}"
+            );
+            let actual_bbox = [
+                stroke.bbox.x_min,
+                stroke.bbox.y_min,
+                stroke.bbox.x_max,
+                stroke.bbox.y_max,
+            ]
+            .map(|value| (value as f32).to_bits());
+            let expected_bbox: Vec<u32> = case["saved_bbox_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(
+                actual_bbox.as_slice(),
+                expected_bbox,
+                "saved bbox at rotation {rotation:08x}"
+            );
+        }
     }
 }
