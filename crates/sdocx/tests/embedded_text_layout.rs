@@ -830,7 +830,15 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
         .unwrap();
     assert_eq!(styled.attribute("font-size"), Some("60.00"));
     assert_eq!(styled.attribute("fill"), Some("#ff0000"));
-    assert_eq!(styled.attribute("font-style"), Some("italic"));
+    assert_eq!(styled.attribute("font-style"), Some("normal"));
+    let shear = styled
+        .ancestors()
+        .filter_map(|node| node.attribute("transform"))
+        .filter_map(|value| value.parse::<svgtypes::Transform>().ok())
+        .find(|transform| transform.c == -0.25)
+        .expect("native synthetic italic uses an explicit shear");
+    assert!((shear.c * 129.75 + shear.e).abs() < 0.00001);
+    assert_eq!(shear.f, 0.0);
     let PageElement::TextBox(flow) = doc.pages[0].elements().next().unwrap() else {
         panic!()
     };

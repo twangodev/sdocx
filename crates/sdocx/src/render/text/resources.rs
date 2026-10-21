@@ -377,12 +377,22 @@ impl<'a> TextRenderer<'a> {
         context: TextContext,
         direction: Direction,
     ) -> Option<(ResolvedFace, bool)> {
+        self.resolve_face_with_native_synthesis(style, context, direction)
+            .map(|(face, italic, _)| (face, italic))
+    }
+
+    pub(super) fn resolve_face_with_native_synthesis(
+        &self,
+        style: &TextStyle,
+        context: TextContext,
+        direction: Direction,
+    ) -> Option<(ResolvedFace, bool, bool)> {
         let family = style.family.as_deref().unwrap_or(self.default_family);
         if matches!(context, TextContext::Flow)
             && style.italic
             && let Some(face) = self.resolve_native(style.family.as_deref(), direction)
         {
-            return Some((face, false));
+            return Some((face, false, true));
         }
         let bold = style.bold && matches!(context, TextContext::Placed);
         match self.fonts.resolve_with_fallback(family, bold, style.italic) {
@@ -394,7 +404,7 @@ impl<'a> TextRenderer<'a> {
                         codepoints: Vec::new(),
                     });
                 }
-                Some((selection.face, style.italic))
+                Some((selection.face, style.italic, false))
             }
             Err(error) => {
                 self.record(TextDiagnostic {

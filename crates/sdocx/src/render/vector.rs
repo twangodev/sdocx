@@ -722,6 +722,17 @@ impl TSpan {
         );
         self
     }
+    pub fn font_style(mut self, style: fontdb::Style) -> Self {
+        self.0.attr(
+            "font-style",
+            match style {
+                fontdb::Style::Normal => "normal",
+                fontdb::Style::Italic => "italic",
+                fontdb::Style::Oblique => "oblique",
+            },
+        );
+        self
+    }
     pub fn font_synthesis(mut self, synthesis: crate::fonts::FontSynthesis) -> Self {
         if synthesis.bold {
             self = self.bold();

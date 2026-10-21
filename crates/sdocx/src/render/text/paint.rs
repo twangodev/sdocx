@@ -4,11 +4,12 @@ use crate::fonts::{FontSynthesis, fontdb};
 use unicode_bidi::{BidiClass, bidi_class};
 
 use crate::render::vector::{
-    FontFamily, Paint, Rectangle, Scene, Styled, Text, TextAnchor, decimal,
+    FontFamily, Group, Paint, Rectangle, Scene, Styled, Text, TextAnchor, Transform, decimal,
 };
 use crate::render::{RenderTheme, push_text_span, render_flow_line, styled_tspan};
 use crate::{ParagraphAlignment, PredefinedTextStyle};
 
+use super::NativeTextVisualTransform;
 #[cfg(feature = "pdf")]
 use super::native_runs::{NativeBoundaryEntry, NativeRunBoundary, native_run_boundary};
 use super::{StyledText, TextRenderer, TextStyle, WrappedLine};
@@ -27,6 +28,47 @@ struct PositionedSpan {
     font_face: Option<(fontdb::Weight, fontdb::Style)>,
     synthesis: FontSynthesis,
     positioned: bool,
+    native_synthetic_italic: bool,
+}
+
+fn native_visual_transform(skew_x: f32, baseline_y: f64) -> Option<Transform> {
+    let metadata = NativeTextVisualTransform::new(skew_x, baseline_y)?;
+    Some(Transform::matrix(metadata.forward(), 8, 8))
+}
+
+fn homogeneous_native_synthetic_italic(spans: &[PositionedSpan]) -> bool {
+    !spans.is_empty()
+        && spans.iter().all(|span| {
+            span.native_synthetic_italic && span.synthesis.italic && span.offset_y == 0.0
+        })
+}
+
+fn native_synthetic_italic_skew(spans: &[PositionedSpan]) -> Option<f32> {
+    homogeneous_native_synthetic_italic(spans)
+        .then(|| spans.first().map(|span| span.synthesis.skew_x()))
+        .flatten()
+}
+
+#[cfg(feature = "pdf")]
+fn retained_visual_shear(
+    placements: &[super::wrapping::PositionedCluster],
+    baseline: f64,
+) -> Option<NativeTextVisualTransform> {
+    let first = placements.first()?;
+    let skew_x = first.cluster.run.synthesis.skew_x();
+    if !skew_x.is_finite() || skew_x == 0.0 || !first.cluster.run.synthesis.italic {
+        return None;
+    }
+    let uniform = placements.iter().all(|placement| {
+        placement.cluster.run.native_flow_synthetic_italic
+            && placement.cluster.run.synthesis.italic
+            && placement.cluster.run.synthesis.skew_x() == skew_x
+            && placement
+                .cluster
+                .retained_glyphs()
+                .is_ok_and(|mut glyphs| glyphs.all(|glyph| glyph.offset_y == 0.0))
+    });
+    uniform.then(|| NativeTextVisualTransform::new(skew_x, baseline))?
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -93,37 +135,54 @@ pub(in crate::render) fn render_measured_line(
         render_text_fragments(svg, styled, line, x, baseline, theme, predefined, renderer);
         return;
     };
-    svg.scope(
-        Text::new("")
-            .x(decimal(x, 2))
-            .y(decimal(baseline, 2))
-            .anchor(TextAnchor::Start)
-            .family(FontFamily::Roboto)
-            .preserve_space(),
-        |svg| {
-            for span in &spans {
-                let mut style = span.style.clone();
-                if span.positioned {
-                    style.underline = false;
-                    style.strikethrough = false;
-                }
-                let mut node = styled_tspan(
-                    styled.index.slice(span.source.clone()).unwrap(),
-                    &style,
-                    styled.context(),
-                )
-                .y(decimal(baseline + span.offset_y, 5));
-                if !span.positions.is_empty() {
-                    node = node.x_positions(&span.positions, 5);
-                }
-                if let Some((weight, face_style)) = span.font_face {
-                    node = node.font_face(weight, face_style);
-                }
-                node = node.font_synthesis(span.synthesis);
-                push_text_span(svg, node, &style);
+    let visual_shear = native_synthetic_italic_skew(&spans)
+        .and_then(|skew_x| native_visual_transform(skew_x, baseline));
+    let has_visual_shear = visual_shear.is_some();
+    let text = Text::new("")
+        .x(decimal(x, 2))
+        .y(decimal(baseline, 2))
+        .anchor(TextAnchor::Start)
+        .family(FontFamily::Roboto)
+        .preserve_space();
+    let emit_spans = |svg: &mut Scene| {
+        for span in &spans {
+            let mut style = span.style.clone();
+            if span.positioned {
+                style.underline = false;
+                style.strikethrough = false;
             }
-        },
-    );
+            let mut node = styled_tspan(
+                styled.index.slice(span.source.clone()).unwrap(),
+                &style,
+                styled.context(),
+            )
+            .y(decimal(baseline + span.offset_y, 5));
+            if !span.positions.is_empty() {
+                node = node.x_positions(&span.positions, 5);
+            }
+            if let Some((weight, face_style)) = span.font_face {
+                node = node.font_face(weight, face_style);
+            }
+            if span.native_synthetic_italic && has_visual_shear {
+                node = node
+                    .font_synthesis(FontSynthesis {
+                        italic: false,
+                        ..span.synthesis
+                    })
+                    .font_style(fontdb::Style::Normal);
+            } else {
+                node = node.font_synthesis(span.synthesis);
+            }
+            push_text_span(svg, node, &style);
+        }
+    };
+    if let Some(transform) = visual_shear {
+        svg.scope(Group::new().transformed(transform), |svg| {
+            svg.scope(text, emit_spans)
+        });
+    } else {
+        svg.scope(text, emit_spans);
+    }
     for segment in spans
         .iter()
         .filter(|span| span.positioned)
@@ -335,57 +394,73 @@ fn render_retained_fragment(
     });
     let id = svg
         .native_text()
-        .register(source_start, NativeTextBlock { source, runs })
+        .register_with_visual_transform(
+            source_start,
+            NativeTextBlock { source, runs },
+            retained_visual_shear(&line.placements[first_cluster..last_cluster], baseline),
+        )
         .map_err(|error| error.to_string())?;
-    svg.scope(
-        Text::new("")
-            .native_id(id)
-            .x(decimal(x, 5))
-            .y(decimal(baseline, 5))
-            .anchor(TextAnchor::Start)
-            .family(FontFamily::Roboto)
-            .preserve_space(),
-        |svg| {
-            for (index, placement) in line
-                .placements
-                .iter()
-                .enumerate()
-                .take(last_cluster)
-                .skip(first_cluster)
+    let visual_shear = svg.native_text().visual_transform(id);
+    let text = Text::new("")
+        .native_id(id)
+        .x(decimal(x, 5))
+        .y(decimal(baseline, 5))
+        .anchor(TextAnchor::Start)
+        .family(FontFamily::Roboto)
+        .preserve_space();
+    let emit_spans = |svg: &mut Scene| {
+        for (index, placement) in line
+            .placements
+            .iter()
+            .enumerate()
+            .take(last_cluster)
+            .skip(first_cluster)
+        {
+            let position = line.text_position(index, true).unwrap();
+            let style = styled.style_at(placement.cluster.source.start, theme, predefined);
+            let mut style = renderer.output_style_with_face(&style, &placement.cluster.run.face);
+            style.underline = false;
+            style.strikethrough = false;
+            let mut span = styled_tspan(
+                styled
+                    .index
+                    .slice(placement.cluster.source.clone())
+                    .unwrap(),
+                &style,
+                styled.context(),
+            )
+            .x_positions(&[x + position.x], 5)
+            .font_face(
+                placement.cluster.run.face.weight,
+                placement.cluster.run.face.style,
+            )
+            .font_synthesis(placement.cluster.run.synthesis);
+            if visual_shear.is_some()
+                && placement.cluster.run.native_flow_synthetic_italic
+                && placement.cluster.run.synthesis.italic
             {
-                let position = line.text_position(index, true).unwrap();
-                let style = styled.style_at(placement.cluster.source.start, theme, predefined);
-                let mut style =
-                    renderer.output_style_with_face(&style, &placement.cluster.run.face);
-                style.underline = false;
-                style.strikethrough = false;
-                let span = styled_tspan(
-                    styled
-                        .index
-                        .slice(placement.cluster.source.clone())
-                        .unwrap(),
-                    &style,
-                    styled.context(),
-                )
-                .x_positions(&[x + position.x], 5)
-                .font_face(
-                    placement.cluster.run.face.weight,
-                    placement.cluster.run.face.style,
-                )
-                .font_synthesis(placement.cluster.run.synthesis);
-                push_text_span(svg, span, &style);
+                span = span.font_style(fontdb::Style::Normal);
             }
-            if inkless {
-                let face = &line.placements[first_cluster].cluster.run.face;
-                svg.push(
-                    crate::render::vector::TSpan::new(".")
-                        .font_size(1)
-                        .family(FontFamily::Named(&face.svg_family()))
-                        .font_face(face.weight, face.style),
-                );
-            }
-        },
-    );
+            push_text_span(svg, span, &style);
+        }
+        if inkless {
+            let face = &line.placements[first_cluster].cluster.run.face;
+            svg.push(
+                crate::render::vector::TSpan::new(".")
+                    .font_size(1)
+                    .family(FontFamily::Named(&face.svg_family()))
+                    .font_face(face.weight, face.style),
+            );
+        }
+    };
+    if let Some(transform) = visual_shear {
+        let affine = Transform::matrix(transform.forward(), 8, 8);
+        svg.scope(Group::new().transformed(affine), |svg| {
+            svg.scope(text, emit_spans)
+        });
+    } else {
+        svg.scope(text, emit_spans);
+    }
     Ok(())
 }
 
@@ -669,6 +744,8 @@ fn positioned_spans(
                             .then_some((run.face.weight, run.face.style)),
                         synthesis: run.synthesis,
                         positioned: false,
+                        native_synthetic_italic: run.native_flow_synthetic_italic
+                            && run.synthesis.italic,
                     });
                 }
                 continue;
@@ -709,6 +786,8 @@ fn positioned_spans(
                 font_face,
                 synthesis,
                 positioned: true,
+                native_synthetic_italic: first.cluster.run.native_flow_synthetic_italic
+                    && synthesis.italic,
             });
         }
     }
@@ -820,6 +899,51 @@ fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
 mod tests {
     use super::*;
     use crate::text_index::TextIndex;
+
+    fn synthetic_italic_span(offset_y: f64) -> PositionedSpan {
+        PositionedSpan {
+            source: 0..1,
+            positions: vec![0.0],
+            offset_y,
+            style: TextStyle {
+                font_size: 12.0,
+                family: None,
+                color: "#000000".into(),
+                source_color: crate::Color { r: 0, g: 0, b: 0 },
+                bold: false,
+                italic: true,
+                underline: false,
+                strikethrough: false,
+                link_target: None,
+            },
+            font_face: None,
+            synthesis: FontSynthesis {
+                bold: false,
+                italic: true,
+            },
+            positioned: true,
+            native_synthetic_italic: true,
+        }
+    }
+
+    #[test]
+    fn svg_shear_admission_requires_uniform_native_italic_baseline() {
+        assert!(homogeneous_native_synthetic_italic(&[
+            synthetic_italic_span(0.0)
+        ]));
+        assert!(!homogeneous_native_synthetic_italic(&[]));
+        assert!(!homogeneous_native_synthetic_italic(&[
+            synthetic_italic_span(0.0),
+            PositionedSpan {
+                native_synthetic_italic: false,
+                synthesis: FontSynthesis::default(),
+                ..synthetic_italic_span(0.0)
+            },
+        ]));
+        assert!(!homogeneous_native_synthetic_italic(&[
+            synthetic_italic_span(1.0)
+        ]));
+    }
 
     #[test]
     fn paragraph_contexts_are_lazy_and_shared_across_wrapped_lines() {

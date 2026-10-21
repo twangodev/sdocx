@@ -37,6 +37,7 @@ struct MeasuredSegment {
 struct RunFace {
     face: ResolvedFace,
     coverage_fallback: bool,
+    native_flow_synthetic_italic: bool,
     measurement_issue: TextDiagnosticKind,
 }
 
@@ -59,6 +60,7 @@ pub(in crate::render) struct MeasuredRun {
     pub tab: bool,
     pub coverage_fallback: bool,
     pub native_entries: Option<NativeMeasuredEntries>,
+    pub native_flow_synthetic_italic: bool,
     measurement_issue: Option<TextDiagnosticKind>,
     browser_shapes: Mutex<HashMap<String, Arc<Vec<ShapedGlyph>>>>,
 }
@@ -740,6 +742,10 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 tab: false,
                 coverage_fallback: false,
                 native_entries: Some(geometry.entries),
+                native_flow_synthetic_italic: matches!(
+                    self.styled.context(),
+                    super::TextContext::Flow
+                ) && synthesis.italic,
                 measurement_issue: None,
                 browser_shapes: Mutex::new(HashMap::new()),
             });
@@ -771,8 +777,8 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
     ) -> Result<MeasuredSegment, MeasurementError> {
         let source = self.range.start + range.start..self.range.start + range.end;
         let renderer = self.renderer.for_source(source.clone());
-        let (face, face_italic) = renderer
-            .resolve_face(style, self.styled.context(), direction)
+        let (face, face_italic, native_flow_synthetic_italic) = renderer
+            .resolve_face_with_native_synthesis(style, self.styled.context(), direction)
             .ok_or_else(|| {
                 MeasurementError::UnavailableFace(
                     style.family.as_deref().unwrap_or("Roboto").to_owned(),
@@ -796,6 +802,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face,
                     coverage_fallback: false,
+                    native_flow_synthetic_italic,
                     measurement_issue,
                 },
             );
@@ -819,6 +826,8 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face: selected,
                     coverage_fallback,
+                    native_flow_synthetic_italic: native_flow_synthetic_italic
+                        && !coverage_fallback,
                     measurement_issue,
                 },
             );
@@ -870,6 +879,8 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face: selected,
                     coverage_fallback,
+                    native_flow_synthetic_italic: native_flow_synthetic_italic
+                        && !coverage_fallback,
                     measurement_issue: measurement_issue.clone(),
                 },
             )?;
@@ -984,6 +995,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             tab,
             coverage_fallback: selected.coverage_fallback,
             native_entries: None,
+            native_flow_synthetic_italic: selected.native_flow_synthetic_italic,
             measurement_issue: Some(selected.measurement_issue),
             browser_shapes: Mutex::new(HashMap::new()),
         });
@@ -2192,6 +2204,20 @@ mod tests {
                 );
             }
         }
+        let flow = measure_compatibility(&content, TextContext::Flow);
+        assert!(flow.clusters.iter().all(|cluster| {
+            cluster.run.native_entries.is_none()
+                && cluster.run.face.style == fontdb::Style::Normal
+                && cluster.run.synthesis.italic
+                && !cluster.run.native_flow_synthetic_italic
+        }));
+        let placed = measure_compatibility(&content, TextContext::Placed);
+        assert!(placed.clusters.iter().all(|cluster| {
+            cluster.run.native_entries.is_none()
+                && cluster.run.face.style == fontdb::Style::Normal
+                && cluster.run.synthesis.italic
+                && !cluster.run.native_flow_synthetic_italic
+        }));
         let real_styles = measure(&content, TextContext::Placed);
         assert!(real_styles.clusters.iter().all(|cluster| {
             cluster.run.face.weight == fontdb::Weight::BOLD
@@ -2213,14 +2239,18 @@ mod tests {
         let flow = measure(&content, TextContext::Flow);
         assert!(flow.clusters.iter().all(|cluster| {
             cluster.run.face.style == fontdb::Style::Normal
+                && cluster.run.native_entries.is_none()
+                && !cluster.run.coverage_fallback
                 && cluster.run.synthesis.italic
                 && cluster.run.synthesis.skew_x() == -0.25
+                && cluster.run.native_flow_synthetic_italic
         }));
 
         let placed = measure(&content, TextContext::Placed);
         assert!(placed.clusters.iter().all(|cluster| {
             cluster.run.face.style == fontdb::Style::Italic
                 && cluster.run.synthesis == FontSynthesis::default()
+                && !cluster.run.native_flow_synthetic_italic
         }));
     }
 
@@ -2349,6 +2379,7 @@ mod tests {
             tab: false,
             coverage_fallback: false,
             native_entries: None,
+            native_flow_synthetic_italic: false,
             measurement_issue: None,
             browser_shapes: Mutex::new(HashMap::new()),
         });

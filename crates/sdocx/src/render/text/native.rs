@@ -90,7 +90,10 @@ pub(crate) struct NativeTextRegistry {
 struct RegisteredText {
     block: NativeTextBlock,
     order: Vec<usize>,
+    visual_transform: Option<NativeTextVisualTransform>,
 }
+
+pub(crate) use super::NativeTextVisualTransform;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ReadingScopeKind {
@@ -184,6 +187,15 @@ impl NativeTextRegistry {
         source_start: usize,
         block: NativeTextBlock,
     ) -> Result<NativeTextId, NativeTextError> {
+        self.register_with_visual_transform(source_start, block, None)
+    }
+
+    pub fn register_with_visual_transform(
+        &mut self,
+        source_start: usize,
+        block: NativeTextBlock,
+        visual_transform: Option<NativeTextVisualTransform>,
+    ) -> Result<NativeTextId, NativeTextError> {
         block.validate()?;
         let mut order = self.scopes.last().map_or_else(
             || {
@@ -195,8 +207,16 @@ impl NativeTextRegistry {
         );
         order.extend([source_start, ReadingPhase::Content as usize]);
         let id = NativeTextId(self.blocks.len());
-        self.blocks.push(RegisteredText { block, order });
+        self.blocks.push(RegisteredText {
+            block,
+            order,
+            visual_transform,
+        });
         Ok(id)
+    }
+
+    pub fn visual_transform(&self, id: NativeTextId) -> Option<NativeTextVisualTransform> {
+        self.blocks.get(id.0)?.visual_transform
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (NativeTextId, &NativeTextBlock)> {
@@ -634,6 +654,21 @@ mod tests {
     use krilla::{Document, geom::Size, page::PageSettings, text::Glyph};
     use lopdf::{Object, content::Content};
     use std::ops::Range;
+
+    #[test]
+    fn native_visual_transform_has_matching_finite_inverse() {
+        let transform = NativeTextVisualTransform::new(-0.25, 1427.1).unwrap();
+        assert_eq!(
+            transform.forward(),
+            [1.0, 0.0, -0.25, 1.0, f64::from(356.775_f32), 0.0]
+        );
+        assert_eq!(
+            transform.inverse(),
+            [1.0, 0.0, 0.25, 1.0, -f64::from(356.775_f32), 0.0]
+        );
+        assert!(NativeTextVisualTransform::new(f32::INFINITY, 1.0).is_none());
+        assert!(NativeTextVisualTransform::new(-0.25, f64::MAX).is_none());
+    }
 
     fn source_from_utf8(text: &str, bytes: Range<usize>) -> TextSource {
         let index = TextIndex::new(text);

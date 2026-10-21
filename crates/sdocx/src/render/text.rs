@@ -1592,3 +1592,48 @@ mod tests {
         assert_eq!(names, ["😀", "cd", "e"]);
     }
 }
+
+/// A shear applied to the SVG text carrier for renderers that cannot synthesize
+/// the native font's faux italic. Retained PDF painting cancels this carrier
+/// transform because its glyph outlines already apply the same shear.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct NativeTextVisualTransform {
+    skew_x: f32,
+    translate_x: f32,
+}
+
+impl NativeTextVisualTransform {
+    pub fn new(skew_x: f32, baseline_y: f64) -> Option<Self> {
+        if !skew_x.is_finite() || skew_x == 0.0 || !baseline_y.is_finite() {
+            return None;
+        }
+        let translate_x = (-f64::from(skew_x) * baseline_y) as f32;
+        (translate_x.is_finite()).then_some(Self {
+            skew_x,
+            translate_x,
+        })
+    }
+
+    pub fn forward(self) -> [f64; 6] {
+        [
+            1.0,
+            0.0,
+            f64::from(self.skew_x),
+            1.0,
+            f64::from(self.translate_x),
+            0.0,
+        ]
+    }
+
+    #[cfg(feature = "pdf")]
+    pub fn inverse(self) -> [f64; 6] {
+        [
+            1.0,
+            0.0,
+            -f64::from(self.skew_x),
+            1.0,
+            -f64::from(self.translate_x),
+            0.0,
+        ]
+    }
+}

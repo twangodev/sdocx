@@ -41,6 +41,27 @@ fn carrier(
     origin: [f64; 2],
     size: f64,
 ) -> u16 {
+    carrier_with_shear(
+        scene,
+        source,
+        actual_glyph,
+        face,
+        origin,
+        size,
+        (0.0, false),
+    )
+}
+
+fn carrier_with_shear(
+    scene: &mut Scene,
+    source: &str,
+    actual_glyph: char,
+    face: &ResolvedFace,
+    origin: [f64; 2],
+    size: f64,
+    shear: (f32, bool),
+) -> u16 {
+    let (skew_x, transport) = shear;
     let font = Face::parse(face.bytes(), face.index).unwrap();
     let id = font.glyph_index(actual_glyph).unwrap();
     let block = NativeTextBlock {
@@ -56,7 +77,7 @@ fn carrier(
                 },
                 alpha: 255,
                 bold: false,
-                skew_x: 0.0,
+                skew_x,
             },
             glyphs: vec![NativeGlyph {
                 glyph_id: u32::from(id.0),
@@ -67,16 +88,35 @@ fn carrier(
             variable: false,
         }],
     };
-    let retained = scene.native_text().register(0, block).unwrap();
+    let visual = transport
+        .then(|| crate::render::text::NativeTextVisualTransform::new(skew_x, origin[1]).unwrap());
+    let retained = scene
+        .native_text()
+        .register_with_visual_transform(0, block, visual)
+        .unwrap();
     let family = face.svg_family();
-    scene.scope(
-        Text::new("")
-            .native_id(retained)
-            .x(origin[0])
-            .y(origin[1])
-            .family(FontFamily::Named(&family)),
-        |scene| scene.push(TSpan::new(source).font_size(size)),
-    );
+    let draw = |scene: &mut Scene| {
+        scene.scope(
+            Text::new("")
+                .native_id(retained)
+                .x(origin[0])
+                .y(origin[1])
+                .family(FontFamily::Named(&family)),
+            |scene| scene.push(TSpan::new(source).font_size(size)),
+        )
+    };
+    if let Some(visual) = visual {
+        scene.scope(
+            Group::new().transformed(crate::render::vector::Transform::matrix(
+                visual.forward(),
+                8,
+                8,
+            )),
+            draw,
+        );
+    } else {
+        draw(scene);
+    }
     id.0
 }
 
@@ -397,5 +437,111 @@ fn scoped_native_svg_clips_reach_retained_pdf_glyphs_and_restore_neighbors() {
             "{}",
             case.name
         );
+    }
+}
+
+#[test]
+fn visual_italic_shear_cancels_only_its_carrier_inside_a_transformed_clip() {
+    fn matrices(transport: bool) -> Vec<[f64; 6]> {
+        let fonts = FontBook::default();
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        let mut scene = Scene::new(Svg::new().width(300).height(300));
+        scene.retain_text();
+        let clip = NativeCellTextClipContext::new([0., 0., 150., 150.], [0., 0.])
+            .unwrap()
+            .decide([-10., 10., 120., 200.])
+            .unwrap();
+        assert!(matches!(clip, NativeCellRunClip::Clipped { .. }));
+        scene.scope(
+            Group::new().transformed(crate::render::vector::Transform::matrix(
+                [0., 1., -1., 0., 200., 10.],
+                8,
+                8,
+            )),
+            |scene| {
+                NativeRunClip::new(clip, [0., 0.])
+                    .unwrap()
+                    .paint(scene, |scene| {
+                        carrier_with_shear(
+                            scene,
+                            "A",
+                            'V',
+                            &face,
+                            [13.125, 43.375],
+                            17.,
+                            (-0.25, transport),
+                        );
+                    });
+                carrier(scene, "B", 'M', &face, [90., 100.], 19.);
+            },
+        );
+        let text = scene.take_native_text();
+        let ink = scene.take_native_ink();
+        let scene = RenderedScene {
+            page: RenderedPage {
+                source_page_index: 0,
+                width: 300,
+                height: 300,
+                svg: scene.finish(),
+                text_diagnostics: Vec::new(),
+                object_diagnostics: Vec::new(),
+                geometry_diagnostics: Vec::new(),
+                paint_diagnostics: Vec::new(),
+                background_diagnostics: Vec::new(),
+            },
+            text,
+            ink,
+            text_error: None,
+        };
+        let mut options = PdfOptions::from_font_book(&fonts);
+        options.dpi = 72.;
+        let pdf =
+            lopdf::Document::load_mem(&render_native_scene_pdf_for_test(&scene, &options).unwrap())
+                .unwrap();
+        let content = Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap()).unwrap();
+        let mut state = State {
+            matrix: Transform::default(),
+            clipped: false,
+            font: Vec::new(),
+        };
+        let mut stack = Vec::new();
+        let mut text_matrix = [1., 0., 0., 1., 0., 0.];
+        let mut result = Vec::new();
+        for operation in content.operations {
+            let numbers = || {
+                operation
+                    .operands
+                    .iter()
+                    .map(|v| f64::from(v.as_float().unwrap()))
+                    .collect::<Vec<_>>()
+            };
+            match operation.operator.as_str() {
+                "q" => stack.push(state.clone()),
+                "Q" => state = stack.pop().unwrap(),
+                "cm" => state.concat(numbers().try_into().unwrap()),
+                "Tm" => text_matrix = numbers().try_into().unwrap(),
+                "Tj" => {
+                    let mut glyph = state.clone();
+                    glyph.concat(text_matrix);
+                    let t = glyph.matrix;
+                    result.push([t.a, t.b, t.c, t.d, t.e, t.f]);
+                }
+                "Do" | "BI" => panic!("retained text must remain vector glyphs"),
+                _ => {}
+            }
+        }
+        assert!(stack.is_empty());
+        assert_eq!(result.len(), 2);
+        result
+    }
+    let native = matrices(false);
+    let transported = matrices(true);
+    for (expected, actual) in native.iter().zip(&transported) {
+        for (expected, actual) in expected.iter().zip(actual) {
+            assert!(
+                (expected - actual).abs() < 0.0001,
+                "{native:?} != {transported:?}"
+            );
+        }
     }
 }

@@ -629,7 +629,10 @@ fn draw_retained_page(
                 id.svg_id()
             )));
         };
-        nodes.insert(text.as_ref() as *const usvg::Text, (id, block));
+        nodes.insert(
+            text.as_ref() as *const usvg::Text,
+            (id, block, registry.visual_transform(id)),
+        );
     }
     let mut ink_entries = HashMap::with_capacity(ink_registry.len());
     for (id, entry) in ink_registry.iter() {
@@ -679,11 +682,23 @@ fn draw_retained_page(
             ..Default::default()
         },
         &mut |text, surface| {
-            let Some(&(id, block)) = nodes.get(&(text as *const usvg::Text)) else {
+            let Some(&(id, block, visual_transform)) = nodes.get(&(text as *const usvg::Text))
+            else {
                 return Ok(false);
             };
             if tags.contains_key(&id) {
                 return Err("retained text was painted more than once".into());
+            }
+            if let Some(transform) = visual_transform {
+                let [a, b, c, d, e, f] = transform.inverse();
+                surface.push_transform(&krilla::geom::Transform::from_row(
+                    a as f32, b as f32, c as f32, d as f32, e as f32, f as f32,
+                ));
+                let result = painter.paint(block, surface);
+                surface.pop();
+                let tag = result.map_err(|error| error.to_string())?;
+                tags.insert(id, tag);
+                return Ok(true);
             }
             let tag = painter
                 .paint(block, surface)
