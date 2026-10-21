@@ -462,17 +462,19 @@ fn visual_italic_shear_cancels_only_its_carrier_inside_a_transformed_clip() {
                 NativeRunClip::new(clip, [0., 0.])
                     .unwrap()
                     .paint(scene, |scene| {
+                        carrier(scene, "A", 'M', &face, [3., 43.375], 17.);
                         carrier_with_shear(
                             scene,
-                            "A",
+                            "B",
                             'V',
                             &face,
                             [13.125, 43.375],
                             17.,
                             (-0.25, transport),
                         );
+                        carrier(scene, "C", 'N', &face, [40., 43.375], 17.);
                     });
-                carrier(scene, "B", 'M', &face, [90., 100.], 19.);
+                carrier(scene, "D", 'M', &face, [90., 100.], 19.);
             },
         );
         let text = scene.take_native_text();
@@ -531,7 +533,7 @@ fn visual_italic_shear_cancels_only_its_carrier_inside_a_transformed_clip() {
             }
         }
         assert!(stack.is_empty());
-        assert_eq!(result.len(), 2);
+        assert_eq!(result.len(), 4);
         result
     }
     let native = matrices(false);

@@ -367,7 +367,14 @@ fn local_styles_remain_on_both_sides_of_the_object_and_end_at_the_next_line() {
             assert_eq!(node.attribute("font-size"), Some(size));
             assert_eq!(node.attribute("fill"), Some(color));
         }
-        assert_eq!(span(&xml, "B").attribute("font-style"), Some("italic"));
+        let italic = span(&xml, "B");
+        assert_eq!(italic.attribute("font-style"), Some("normal"));
+        assert!(italic.ancestors().any(|node| {
+            node.attribute("transform").is_some_and(|value| {
+                let transform: svgtypes::Transform = value.parse().unwrap();
+                transform.c == -0.25
+            })
+        }));
         assert_eq!(span(&xml, "C").attribute("font-style"), None);
         assert_eq!(position(span(&xml, "B"), "x"), 59.74);
         assert_eq!(position(span(&xml, "C"), "y"), 127.70099);

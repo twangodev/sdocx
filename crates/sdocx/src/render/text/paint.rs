@@ -20,6 +20,7 @@ pub(in crate::render) use native_plan_paint::{NativePaintDispatcher, NativePaint
 #[cfg(all(test, feature = "pdf"))]
 mod identity_tests;
 
+#[derive(Clone)]
 struct PositionedSpan {
     source: Range<usize>,
     positions: Vec<f64>,
@@ -36,11 +37,38 @@ fn native_visual_transform(skew_x: f32, baseline_y: f64) -> Option<Transform> {
     Some(Transform::matrix(metadata.forward(), 8, 8))
 }
 
+fn text_carrier(x: f64, baseline: f64) -> Text {
+    Text::new("")
+        .x(decimal(x, 2))
+        .y(decimal(baseline, 2))
+        .anchor(TextAnchor::Start)
+        .family(FontFamily::Roboto)
+        .preserve_space()
+}
+
 fn homogeneous_native_synthetic_italic(spans: &[PositionedSpan]) -> bool {
     !spans.is_empty()
         && spans.iter().all(|span| {
             span.native_synthetic_italic && span.synthesis.italic && span.offset_y == 0.0
         })
+}
+
+fn cluster_native_synthetic_italic(cluster: &super::measurement::MeasuredCluster) -> bool {
+    cluster.run.native_flow_synthetic_italic
+        && cluster.run.synthesis.italic
+        && cluster.has_zero_glyph_owner_y_offsets()
+}
+
+fn has_positioned_mixed_native_synthetic_italic(spans: &[PositionedSpan]) -> bool {
+    spans
+        .iter()
+        .any(|span| span.native_synthetic_italic && span.synthesis.italic)
+        && spans
+            .iter()
+            .any(|span| !span.native_synthetic_italic || !span.synthesis.italic)
+        && spans
+            .iter()
+            .all(|span| span.positioned && !span.positions.is_empty())
 }
 
 fn native_synthetic_italic_skew(spans: &[PositionedSpan]) -> Option<f32> {
@@ -63,6 +91,7 @@ fn retained_visual_shear(
         placement.cluster.run.native_flow_synthetic_italic
             && placement.cluster.run.synthesis.italic
             && placement.cluster.run.synthesis.skew_x() == skew_x
+            && cluster_native_synthetic_italic(&placement.cluster)
             && placement
                 .cluster
                 .retained_glyphs()
@@ -138,49 +167,97 @@ pub(in crate::render) fn render_measured_line(
     let visual_shear = native_synthetic_italic_skew(&spans)
         .and_then(|skew_x| native_visual_transform(skew_x, baseline));
     let has_visual_shear = visual_shear.is_some();
-    let text = Text::new("")
-        .x(decimal(x, 2))
-        .y(decimal(baseline, 2))
-        .anchor(TextAnchor::Start)
-        .family(FontFamily::Roboto)
-        .preserve_space();
-    let emit_spans = |svg: &mut Scene| {
-        for span in &spans {
-            let mut style = span.style.clone();
-            if span.positioned {
-                style.underline = false;
-                style.strikethrough = false;
-            }
-            let mut node = styled_tspan(
-                styled.index.slice(span.source.clone()).unwrap(),
-                &style,
-                styled.context(),
-            )
-            .y(decimal(baseline + span.offset_y, 5));
-            if !span.positions.is_empty() {
-                node = node.x_positions(&span.positions, 5);
-            }
-            if let Some((weight, face_style)) = span.font_face {
-                node = node.font_face(weight, face_style);
-            }
-            if span.native_synthetic_italic && has_visual_shear {
-                node = node
-                    .font_synthesis(FontSynthesis {
-                        italic: false,
-                        ..span.synthesis
-                    })
-                    .font_style(fontdb::Style::Normal);
-            } else {
-                node = node.font_synthesis(span.synthesis);
-            }
-            push_text_span(svg, node, &style);
+    let mixed_native_synthetic_italic = has_positioned_mixed_native_synthetic_italic(&spans);
+    let text = text_carrier(x, baseline);
+    let emit_span = |svg: &mut Scene, span: &PositionedSpan, synthetic_shear: bool| {
+        let mut style = span.style.clone();
+        if span.positioned {
+            style.underline = false;
+            style.strikethrough = false;
         }
+        let mut node = styled_tspan(
+            styled.index.slice(span.source.clone()).unwrap(),
+            &style,
+            styled.context(),
+        )
+        .y(decimal(baseline + span.offset_y, 5));
+        if !span.positions.is_empty() {
+            node = node.x_positions(&span.positions, 5);
+        }
+        if let Some((weight, face_style)) = span.font_face {
+            node = node.font_face(weight, face_style);
+        }
+        let synthetic_italic = span.native_synthetic_italic
+            && span.synthesis.italic
+            && synthetic_shear
+            && span.offset_y == 0.0;
+        if synthetic_italic {
+            node = node
+                .font_synthesis(FontSynthesis {
+                    italic: false,
+                    ..span.synthesis
+                })
+                .font_style(fontdb::Style::Normal);
+        } else {
+            node = node.font_synthesis(span.synthesis);
+        }
+        push_text_span(svg, node, &style);
     };
-    if let Some(transform) = visual_shear {
+    if mixed_native_synthetic_italic {
+        let mut start = 0;
+        while start < spans.len() {
+            let shear = spans[start].native_synthetic_italic
+                && spans[start].synthesis.italic
+                && spans[start].offset_y == 0.0;
+            let mut end = start + 1;
+            while end < spans.len()
+                && (spans[end].native_synthetic_italic
+                    && spans[end].synthesis.italic
+                    && spans[end].offset_y == 0.0)
+                    == shear
+            {
+                end += 1;
+            }
+            let emit_group_spans = |svg: &mut Scene| {
+                for span in &spans[start..end] {
+                    emit_span(svg, span, false);
+                }
+            };
+            let text = text_carrier(x, baseline);
+            if shear {
+                let skew_x = spans[start].synthesis.skew_x();
+                if let Some(transform) = native_visual_transform(skew_x, baseline) {
+                    let emit_sheared_spans = |svg: &mut Scene| {
+                        for span in &spans[start..end] {
+                            emit_span(svg, span, true);
+                        }
+                    };
+                    svg.scope(Group::new().transformed(transform), |svg| {
+                        svg.scope(text, emit_sheared_spans)
+                    });
+                } else {
+                    svg.scope(text, emit_group_spans);
+                }
+            } else {
+                svg.scope(text, emit_group_spans);
+            }
+            start = end;
+        }
+    } else if let Some(transform) = visual_shear {
+        let emit_spans = |svg: &mut Scene| {
+            for span in &spans {
+                emit_span(svg, span, has_visual_shear);
+            }
+        };
         svg.scope(Group::new().transformed(transform), |svg| {
             svg.scope(text, emit_spans)
         });
     } else {
+        let emit_spans = |svg: &mut Scene| {
+            for span in &spans {
+                emit_span(svg, span, false);
+            }
+        };
         svg.scope(text, emit_spans);
     }
     for segment in spans
@@ -244,7 +321,7 @@ fn render_retained_line(
     }
     let [left, width, baseline] = frame;
     let x = left + super::line_alignment_offset(advance, width, alignment);
-    for range in text_ranges(line) {
+    for range in retained_text_ranges(line) {
         render_retained_fragment(
             svg,
             styled,
@@ -578,6 +655,49 @@ pub(in crate::render) fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
     ranges
 }
 
+#[cfg(feature = "pdf")]
+fn retained_text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
+    let mut ranges = Vec::new();
+    for range in text_ranges(line) {
+        let first = line
+            .placements
+            .partition_point(|placement| placement.cluster.source.end <= range.start);
+        let last = line
+            .placements
+            .partition_point(|placement| placement.cluster.source.start < range.end);
+        if first == last {
+            ranges.push(range);
+            continue;
+        }
+        let synthetic_italic = |index: usize| {
+            let placement = &line.placements[index];
+            placement.cluster.run.native_flow_synthetic_italic
+                && placement.cluster.run.synthesis.italic
+                && placement
+                    .cluster
+                    .retained_glyphs()
+                    .is_ok_and(|mut glyphs| glyphs.all(|glyph| glyph.offset_y == 0.0))
+        };
+        let mut start = range.start;
+        let mut previous = synthetic_italic(first);
+        for index in first + 1..last {
+            let current = synthetic_italic(index);
+            if current != previous {
+                let boundary = line.placements[index].cluster.source.start;
+                if start < boundary {
+                    ranges.push(start..boundary);
+                }
+                start = boundary;
+                previous = current;
+            }
+        }
+        if start < range.end {
+            ranges.push(start..range.end);
+        }
+    }
+    ranges
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_text_fragments(
     svg: &mut Scene,
@@ -713,6 +833,7 @@ fn positioned_spans(
                 let mut source = first.cluster.source.clone();
                 let origin = x + first.x;
                 let run = &first.cluster.run;
+                let mut native_synthetic_italic = cluster_native_synthetic_italic(&first.cluster);
                 let context = cluster_contexts[index];
                 index += 1;
                 while let Some(next) = line.placements.get(index)
@@ -725,7 +846,10 @@ fn positioned_spans(
                     && next.cluster.run.style.font_size == run.style.font_size
                     && next.cluster.run.coverage_fallback == run.coverage_fallback
                     && next.cluster.run.synthesis == run.synthesis
+                    && next.cluster.run.native_flow_synthetic_italic
+                        == run.native_flow_synthetic_italic
                 {
+                    native_synthetic_italic &= cluster_native_synthetic_italic(&next.cluster);
                     source.end = next.cluster.source.end;
                     index += 1;
                 }
@@ -744,8 +868,7 @@ fn positioned_spans(
                             .then_some((run.face.weight, run.face.style)),
                         synthesis: run.synthesis,
                         positioned: false,
-                        native_synthetic_italic: run.native_flow_synthetic_italic
-                            && run.synthesis.italic,
+                        native_synthetic_italic,
                     });
                 }
                 continue;
@@ -760,6 +883,7 @@ fn positioned_spans(
                 .coverage_fallback
                 .then_some((face.weight, face.style));
             let synthesis = first.cluster.run.synthesis;
+            let native_synthetic_italic = cluster_native_synthetic_italic(&first.cluster);
             index += 1;
             if source.len() == 1 {
                 while let Some(next) = line.placements.get(index)
@@ -767,6 +891,10 @@ fn positioned_spans(
                     && next.cluster.source.end <= segment.end
                     && next.cluster.source.len() == 1
                     && next.cluster.run.face.id == face.id
+                    && next.cluster.run.synthesis == synthesis
+                    && next.cluster.run.native_flow_synthetic_italic
+                        == first.cluster.run.native_flow_synthetic_italic
+                    && cluster_native_synthetic_italic(&next.cluster) == native_synthetic_italic
                     && offsets[index].is_some()
                     && offsets[index]?.y == offset_y
                 {
@@ -786,8 +914,7 @@ fn positioned_spans(
                 font_face,
                 synthesis,
                 positioned: true,
-                native_synthetic_italic: first.cluster.run.native_flow_synthetic_italic
-                    && synthesis.italic,
+                native_synthetic_italic,
             });
         }
     }
@@ -942,6 +1069,38 @@ mod tests {
         ]));
         assert!(!homogeneous_native_synthetic_italic(&[
             synthetic_italic_span(1.0)
+        ]));
+        assert!(homogeneous_native_synthetic_italic(&[PositionedSpan {
+            positioned: false,
+            ..synthetic_italic_span(0.0)
+        }]));
+    }
+
+    #[test]
+    fn mixed_svg_shear_requires_explicit_fragment_positions() {
+        let normal = PositionedSpan {
+            native_synthetic_italic: false,
+            synthesis: FontSynthesis::default(),
+            style: TextStyle {
+                italic: false,
+                ..synthetic_italic_span(0.0).style
+            },
+            ..synthetic_italic_span(0.0)
+        };
+        let italic = synthetic_italic_span(0.0);
+        assert!(has_positioned_mixed_native_synthetic_italic(&[
+            normal.clone(),
+            italic.clone(),
+            normal.clone(),
+        ]));
+        assert!(!has_positioned_mixed_native_synthetic_italic(&[
+            normal.clone(),
+            PositionedSpan {
+                positions: Vec::new(),
+                positioned: false,
+                ..italic
+            },
+            normal,
         ]));
     }
 

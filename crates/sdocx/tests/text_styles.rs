@@ -204,6 +204,27 @@ fn tspan<'a>(xml: &'a roxmltree::Document<'a>, value: &str) -> roxmltree::Node<'
         .unwrap_or_else(|| panic!("missing text span {value:?}"))
 }
 
+fn assert_italic_presentation(
+    node: roxmltree::Node<'_, '_>,
+    native_synthetic: bool,
+    context: impl std::fmt::Debug,
+) {
+    if native_synthetic {
+        assert_ne!(node.attribute("font-style"), Some("italic"), "{context:?}");
+        assert!(
+            node.ancestors().any(|ancestor| {
+                ancestor.has_tag_name("g")
+                    && ancestor
+                        .attribute("transform")
+                        .is_some_and(|value| value.contains("-0.25000"))
+            }),
+            "{context:?}: native synthetic italic lacks its shear"
+        );
+    } else {
+        assert_eq!(node.attribute("font-style"), Some("italic"), "{context:?}");
+    }
+}
+
 fn assert_decoration(
     xml: &roxmltree::Document<'_>,
     node: roxmltree::Node<'_, '_>,
@@ -652,11 +673,7 @@ fn modern_composition_flags_preserve_native_styling_in_every_text_context() {
             assert_decoration(&xml, tspan(&xml, value), Some("underline"));
         }
         let tag_false = tspan(&xml, "D");
-        assert_eq!(
-            tag_false.attribute("font-style"),
-            Some("italic"),
-            "{context}"
-        );
+        assert_italic_presentation(tag_false, context != "Standalone", &context);
         assert!(
             tag_false.attribute("font-weight") == Some("bold")
                 || tag_false.attribute("stroke").is_some(),
@@ -2336,7 +2353,7 @@ fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
         }
         for value in ["a", "c"] {
             let node = tspan(&xml, value);
-            assert_eq!(node.attribute("font-style"), Some("italic"), "{context:?}");
+            assert_italic_presentation(node, !matches!(context, Context::Standalone), context);
             assert_eq!(node.attribute("text-decoration"), None, "{context:?}");
             match context {
                 Context::Standalone => assert_eq!(node.attribute("font-weight"), Some("bold")),
@@ -2750,10 +2767,10 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
         assert_eq!(css.len(), if placed { 3 } else { 1 }, "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         for value in ["c", "d"] {
-            assert_eq!(
-                tspan(&xml, value).attribute("font-style"),
-                Some("italic"),
-                "{context:?}: logical italics survive regular-face synthesis",
+            assert_italic_presentation(
+                tspan(&xml, value),
+                !matches!(context, Context::Standalone),
+                context,
             );
         }
         for (weight, slant, hash) in [

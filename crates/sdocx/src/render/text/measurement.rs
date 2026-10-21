@@ -196,6 +196,18 @@ pub(in crate::render) struct RetainedGlyph<'a> {
 }
 
 impl MeasuredCluster {
+    pub fn has_zero_glyph_owner_y_offsets(&self) -> bool {
+        self.run
+            .glyphs
+            .get(self.glyphs.clone())
+            .is_some_and(|glyphs| {
+                !glyphs.is_empty()
+                    && glyphs.iter().all(|glyph| {
+                        glyph.source.characters() == &self.source && glyph.owner_offset[1] == 0.0
+                    })
+            })
+    }
+
     #[cfg(any(feature = "pdf", test))]
     pub fn retained_glyphs(
         &self,

@@ -143,6 +143,158 @@ fn render(content: RichTextObjectContent) -> String {
         .svg
 }
 
+#[cfg(feature = "pdf")]
+#[test]
+fn mixed_flow_italic_shear_keeps_source_order_and_selectable_pdf_text() {
+    let value = "normal italic normal";
+    let body = RichTextBox {
+        text_area_type: None,
+        bbox: BoundingBox::default(),
+        rotation_degrees: None,
+        text: value.into(),
+        color: Some(Color { r: 0, g: 0, b: 0 }),
+        highlight_color: None,
+        underline: false,
+        font_size: Some(20.0),
+        runs: Vec::new(),
+        spans: vec![span(RichTextSpanType::Italic, 7, 13, &[1, 0])],
+        paragraphs: Vec::new(),
+        object_spans: Vec::new(),
+        text_sections: Vec::new(),
+        margins: None,
+        gravity: None,
+    };
+    let document = Document {
+        pages: vec![Page {
+            uuid: "mixed-flow-italic".into(),
+            width: 1080,
+            height: 1527,
+            content_bbox: BoundingBox::default(),
+            background_color: Some(Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            }),
+            template: None,
+            background: Default::default(),
+            objects: Vec::new(),
+        }],
+        metadata: DocumentMetadata {
+            page_mode: Some(0),
+            default_page_dimensions: Some((1080, 1527)),
+            note_text: Some(body),
+            ..Default::default()
+        },
+    };
+    let fonts = sdocx::fonts::FontBook::default();
+    let svg = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)[0]
+        .svg
+        .clone();
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let spans: Vec<_> = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("tspan"))
+        .filter_map(|node| node.text())
+        .collect();
+    assert_eq!(spans, ["normal ", "italic", " normal"]);
+    let sheared: Vec<_> = xml
+        .descendants()
+        .filter(|node| {
+            node.has_tag_name("g")
+                && node
+                    .attribute("transform")
+                    .is_some_and(|value| value.contains("-0.25000"))
+        })
+        .collect();
+    assert_eq!(sheared.len(), 1);
+    let italic_carrier = sheared[0]
+        .descendants()
+        .find(|node| node.has_tag_name("tspan"))
+        .unwrap();
+    assert_eq!(italic_carrier.text(), Some("italic"));
+    assert_ne!(italic_carrier.attribute("font-style"), Some("italic"));
+    assert!(italic_carrier.attribute("x").is_some());
+
+    let bytes = sdocx::render_document_pdf(
+        &document,
+        &Default::default(),
+        &sdocx::PdfOptions::from_font_book(&fonts),
+    )
+    .unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let extracted = pdf.extract_text(&[1]).unwrap();
+    assert_eq!(
+        extracted.split_whitespace().collect::<Vec<_>>().join(" "),
+        value
+    );
+    let page = pdf.get_pages()[&1];
+    let content = lopdf::content::Content::decode(&pdf.get_page_content(page).unwrap()).unwrap();
+    let actual_text: Vec<_> = content
+        .operations
+        .iter()
+        .filter(|operation| operation.operator == "BDC")
+        .filter_map(|operation| operation.operands[1].as_dict().ok())
+        .filter_map(|properties| properties.get(b"ActualText").ok())
+        .map(|text| lopdf::decode_text_string(text).unwrap())
+        .collect();
+    assert_eq!(actual_text.concat(), value);
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn flow_italic_combining_cluster_without_uniform_glyph_origins_stays_unsheared() {
+    let value = "x\u{0327}\u{0301}";
+    let body = RichTextBox {
+        text_area_type: None,
+        bbox: BoundingBox::default(),
+        rotation_degrees: None,
+        text: value.into(),
+        color: Some(Color { r: 0, g: 0, b: 0 }),
+        highlight_color: None,
+        underline: false,
+        font_size: Some(20.0),
+        runs: Vec::new(),
+        spans: vec![span(RichTextSpanType::Italic, 0, 3, &[1, 0])],
+        paragraphs: Vec::new(),
+        object_spans: Vec::new(),
+        text_sections: Vec::new(),
+        margins: None,
+        gravity: None,
+    };
+    let document = Document {
+        pages: vec![Page {
+            uuid: "flow-italic-combining".into(),
+            width: 1080,
+            height: 1527,
+            content_bbox: BoundingBox::default(),
+            background_color: Some(Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            }),
+            template: None,
+            background: Default::default(),
+            objects: Vec::new(),
+        }],
+        metadata: DocumentMetadata {
+            page_mode: Some(0),
+            default_page_dimensions: Some((1080, 1527)),
+            note_text: Some(body),
+            ..Default::default()
+        },
+    };
+    let svg = sdocx::render_document_svg(&document, &Default::default())[0]
+        .svg
+        .clone();
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    assert!(!xml.descendants().any(|node| {
+        node.has_tag_name("g")
+            && node
+                .attribute("transform")
+                .is_some_and(|value| value.contains("-0.25000"))
+    }));
+}
+
 fn lines(svg: &str) -> Vec<(String, f64, f64)> {
     let xml = roxmltree::Document::parse(svg).unwrap();
     xml.descendants()
