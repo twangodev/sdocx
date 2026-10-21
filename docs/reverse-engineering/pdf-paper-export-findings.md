@@ -618,9 +618,22 @@ A follow-up with the same 1812 profile measures 116 body lines. Native
 `[80.5333,9182.8164,952.1088,10347.1309]`, approximately `1812/1080` times the
 SDK's flow-space geometry. This executes measurement and visibility without
 body/query injection, but does not establish an SDK geometry bug or resolve
-and draw the image object. An app-equivalent 1080 load remains to be compared.
+and draw the image object.
 The event receipt SHA-256 is
 `1f2237fc0f7288b913d0fa2260b0fa68dd5c1b750d599ae49c422f0412bc2c6e`.
+
+An app-equivalent 1080 load of the same archive yields a 1080×9162 note,
+default pages 1080×1527, density 3, and load scale 1. Its 116 body lines include
+line 112 at `[48,5473.2061,567.4821,6167.1689]`, matching the SDK body layout.
+The inline image's saved bounds also match the SDK; native drawn bounds add
+0.0048828125 vertically. Page-space strokes and PDF-paper records instead
+normalize from the saved 1812-wide page header: the first record ends at
+885.099304, and native slices start at `0,885,2412,3939,5466,6993,8520`.
+The first slice has height 885; the others have height 1527. These are distinct
+page and body coordinate domains, not a reason to rescale the SDK body.
+This executes loaded-model measurement and queries, without drawing or pixel
+proof. The summary receipt SHA-256 is
+`2e6067ec4c9c60bae9f76ece3d98345faefbc9623a2222fbfbc681656761b215`.
 
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
