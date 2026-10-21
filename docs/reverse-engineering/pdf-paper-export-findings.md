@@ -567,6 +567,16 @@ pair to `updatePage` (`0x35e220–0x35e23c`). PDF-record rectangles therefore
 participate in single-mode segmentation even though they are not arguments to
 the final PDF import operation.
 
+Blank-body admission has a separate native predicate: Bodytext `HasVisibleText`
+(`0xcbe84`) obtains a line range, then Widget `HasVisibleTextNParagraph`
+(`0xde170`) scans source UTF-16 and paragraph bullet fields. LF-only text with
+no bullets is invisible regardless of font size, foreground or margins. Widget
+`ConvertParagraphs` zeroes the bullet field at record `+40` (`0xdadc8`,
+`0xdae6c`); only paragraph type 5 writes it (`convertParagraphImpl`, `0xdba5c`).
+The Rust adapter admits known nonpainting styles on LF-only bodies and excludes
+bullet paragraphs, visible characters and inline objects. This predicate does
+not establish body-object drawing or general text placement.
+
 Ordinary output surfaces use a separate integer size. The delegate constructor
 stores the constant pair `(1800,600)` at offsets `40/44` (`0x3573c4–0x3573d8`,
 constant bytes `0807000058020000` at `0x1f94a0`). SingleX setup retains that

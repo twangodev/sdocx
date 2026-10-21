@@ -508,6 +508,13 @@ struct PreparedPdfPaperRecords {
     records: Vec<PreparedPdfPaperRecord>,
 }
 
+#[derive(Clone, Copy)]
+struct ImportedSourcePage {
+    source_page_index: i32,
+    source_to_display: [f64; 6],
+    source_crop: [f64; 4],
+}
+
 /// A page in the measured SingleX output stream. `query_height` controls native
 /// object admission; `scene_height` covers the independently measured physical
 /// surface so selected geometry can cross the query edge and be clipped by the
@@ -517,15 +524,13 @@ struct SingleXOutputPage {
     scene_height: u32,
     physical_width: f64,
     physical_height: f64,
+    imported_source: Option<ImportedSourcePage>,
     selected_objects: Vec<usize>,
 }
 
 pub(super) struct SingleXPaperPlan {
     parsed_sources: std::collections::BTreeMap<String, ParsedSource>,
     source_key: String,
-    source_page_index: i32,
-    source_to_display: [f64; 6],
-    source_crop: [f64; 4],
     note_width: u32,
     note_height: u32,
     output_pages: Vec<SingleXOutputPage>,
@@ -635,12 +640,13 @@ pub(super) fn plan_singlex_pdf_paper(
                 })
         })
     };
+    let first_source_page = u32::try_from(records[0].page_index).ok();
     let supported_template = match selected.page.template {
         None => true,
         Some(crate::PageTemplate {
-            source: crate::PageTemplateSource::CustomPdf { page_index: 0 },
+            source: crate::PageTemplateSource::CustomPdf { page_index },
             ..
-        }) => true,
+        }) => first_source_page == Some(page_index),
         Some(_) => false,
     };
     if !native_default_color(document.metadata.background_color)
@@ -669,77 +675,113 @@ pub(super) fn plan_singlex_pdf_paper(
     if note_width == 0 || note_height == 0 || default_height == 0 {
         return Err(reject(0, "native note dimensions must be positive"));
     }
-    if records.len() != 1 {
-        return Err(reject(
-            0,
-            "exactly one retained PDF-paper record is supported",
-        ));
-    }
-    let record = records[0];
-    let PdfPaperRectangle::Integer([0, 0, right, bottom]) = record.rectangle else {
-        return Err(reject(
-            0,
-            "PDF-paper rectangle must be a modern integer rectangle",
-        ));
-    };
-    if record.page_index != 0
-        || right != i32::try_from(note_width).unwrap_or(-1)
-        || bottom <= 0
-        || u32::try_from(bottom).map_or(true, |height| height > note_height)
-    {
-        return Err(reject(
-            0,
-            "PDF-paper record must be top-aligned, full-width, and within the note",
-        ));
+    let note_width_i32 =
+        i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?;
+    let note_height_i32 =
+        i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?;
+    let mut expected_y = 0_i32;
+    let mut previous_source_index = None;
+    for (record_index, record) in records.iter().enumerate() {
+        let PdfPaperRectangle::Integer([0, top, right, bottom]) = record.rectangle else {
+            return Err(reject(
+                record_index,
+                "PDF-paper records must use modern integer rectangles",
+            ));
+        };
+        if top != expected_y || right != note_width_i32 || bottom <= top || bottom > note_height_i32
+        {
+            return Err(reject(
+                record_index,
+                "PDF-paper records must be contiguous, top-aligned, full-width, and within the note",
+            ));
+        }
+        if record.page_index < 0
+            || previous_source_index
+                .is_some_and(|previous: i32| previous.checked_add(1) != Some(record.page_index))
+        {
+            return Err(reject(
+                record_index,
+                "PDF-paper source page indexes must be nonnegative and consecutive",
+            ));
+        }
+        expected_y = bottom;
+        previous_source_index = Some(record.page_index);
     }
 
     let prepared = prepare_pdf_paper_records(&document.metadata, records)?;
-    let prepared_record = prepared
+    let first_prepared = prepared
         .records
         .first()
         .ok_or_else(|| reject(0, "PDF-paper source record was not resolved"))?;
-    if prepared_record.inferred {
-        return Err(reject(0, "PDF-paper media binding must be authoritative"));
+    let source_key = first_prepared.source_key.clone();
+    for (record_index, prepared_record) in prepared.records.iter().enumerate() {
+        if prepared_record.inferred {
+            return Err(reject(
+                record_index,
+                "PDF-paper media binding must be authoritative",
+            ));
+        }
+        if prepared_record.source_key != source_key {
+            return Err(reject(
+                record_index,
+                "contiguous PDF-paper records must resolve to one source PDF",
+            ));
+        }
+        if prepared_record.source_page_index != records[record_index].page_index {
+            return Err(reject(
+                record_index,
+                "resolved PDF-paper source page differs from its saved record",
+            ));
+        }
     }
-    let source_key = prepared_record.source_key.clone();
-    let source_page_index = prepared_record.source_page_index;
     let source = prepared
         .sources
         .get(&source_key)
         .ok_or_else(|| reject(0, "resolved PDF-paper source is missing"))?;
-    let source_number = u32::try_from(record.page_index)
-        .ok()
-        .and_then(|index| index.checked_add(1))
-        .ok_or_else(|| reject(0, "source page index is invalid"))?;
-    let source_id = *source
-        .pages
-        .get(&source_number)
-        .ok_or_else(|| reject(0, "source page index is out of range"))?;
-    let source_page = source
-        .doc
-        .get_dictionary(source_id)
-        .map_err(|_| reject(0, "source page dictionary is invalid"))?;
-    let (source_to_display, crop) = page_to_display(&source.doc, source_page)
-        .map_err(|_| reject(0, "source page geometry is unsupported"))?;
-    let unit = page_user_unit(&source.doc, source_page)
-        .map_err(|_| reject(0, "source UserUnit is invalid"))?;
-    if page_rotation(&source.doc, source_page).ok() != Some(0)
-        || unit != 1.0
-        || crop[0] != 0.0
-        || crop[1] != 0.0
-        || source_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-    {
-        return Err(reject(
-            0,
-            "only origin-zero, unrotated UserUnit 1 source pages are supported",
-        ));
-    }
-    let source_surface = [crop[2] - crop[0], crop[3] - crop[1]];
-    if source_surface
-        .iter()
-        .any(|value| !value.is_finite() || *value <= 0.0)
-    {
-        return Err(reject(0, "source physical dimensions are invalid"));
+    let mut imported_sources = Vec::with_capacity(prepared.records.len());
+    for (record_index, prepared_record) in prepared.records.iter().enumerate() {
+        let source_number = u32::try_from(prepared_record.source_page_index)
+            .ok()
+            .and_then(|index| index.checked_add(1))
+            .ok_or_else(|| reject(record_index, "source page index is invalid"))?;
+        let source_id = *source
+            .pages
+            .get(&source_number)
+            .ok_or_else(|| reject(record_index, "source page index is out of range"))?;
+        let source_page = source
+            .doc
+            .get_dictionary(source_id)
+            .map_err(|_| reject(record_index, "source page dictionary is invalid"))?;
+        let (source_to_display, crop) = page_to_display(&source.doc, source_page)
+            .map_err(|_| reject(record_index, "source page geometry is unsupported"))?;
+        let unit = page_user_unit(&source.doc, source_page)
+            .map_err(|_| reject(record_index, "source page UserUnit is invalid"))?;
+        if page_rotation(&source.doc, source_page).ok() != Some(0)
+            || unit != 1.0
+            || crop[0] != 0.0
+            || crop[1] != 0.0
+            || source_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+        {
+            return Err(reject(
+                record_index,
+                "only origin-zero, unrotated UserUnit 1 source pages are supported",
+            ));
+        }
+        let source_surface = [crop[2] - crop[0], crop[3] - crop[1]];
+        if source_surface
+            .iter()
+            .any(|value| !value.is_finite() || *value <= 0.0)
+        {
+            return Err(reject(
+                record_index,
+                "source physical dimensions are invalid",
+            ));
+        }
+        imported_sources.push(ImportedSourcePage {
+            source_page_index: prepared_record.source_page_index,
+            source_to_display,
+            source_crop: crop,
+        });
     }
 
     let source_objects = selected
@@ -763,10 +805,12 @@ pub(super) fn plan_singlex_pdf_paper(
             unreachable!("non-stroke objects rejected above")
         };
         let Some(rendering) = stroke.rendering.as_ref() else {
-            return Err(reject(0, "generated strokes are not supported"));
+            return Err(reject(0, "saved stroke rendering metadata is required"));
         };
-        if rendering.properties.generated
-            || rendering.properties.replay_only
+        // Native ObjectStroke selection uses geometry/pen size, independent
+        // of IsGenerated; retain this serialized provenance bit while applying
+        // the same supported-style gates as ordinary saved strokes.
+        if rendering.properties.replay_only
             || rendering.properties.eraser
             || rendering.properties.rainbow_effect
             || rendering.properties.reveal_mode
@@ -789,14 +833,19 @@ pub(super) fn plan_singlex_pdf_paper(
             })
         }
     }
-    let rectangle = paper_segments::RuntimeRect::from_saved(record.rectangle)
-        .map_err(|_| reject(0, "PDF-paper rectangle is not valid native geometry"))?;
-    let resolved = [paper_segments::ResolvedRecord {
-        source_key: &source_key,
-        page_index: record.page_index,
-        rectangle,
-        source_record_index: 0,
-    }];
+    let resolved = records
+        .iter()
+        .enumerate()
+        .map(|(record_index, record)| {
+            Ok(paper_segments::ResolvedRecord {
+                source_key: &source_key,
+                page_index: record.page_index,
+                rectangle: paper_segments::RuntimeRect::from_saved(record.rectangle)
+                    .map_err(|_| reject(record_index, "PDF-paper record geometry is invalid"))?,
+                source_record_index: record_index,
+            })
+        })
+        .collect::<Result<Vec<_>, PdfPaperAdmissionError>>()?;
     let segments = paper_segments::plan_segments(
         i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?,
         i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?,
@@ -812,15 +861,50 @@ pub(super) fn plan_singlex_pdf_paper(
     let note_height_i32 =
         i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?;
     let mut output_pages = Vec::new();
+    let mut imported_record_count = 0_usize;
+    let mut ordinary_pages_started = false;
     for segment in segments {
         let imported = !segment.record_indices.is_empty();
-        if imported && (segment.record_indices != [0] || !output_pages.is_empty()) {
+        if imported
+            && (ordinary_pages_started || segment.record_indices.len() != segment.slices.len())
+        {
             return Err(reject(
                 output_pages.len(),
-                "PDF-paper record grouping is unsupported",
+                "PDF-paper records must map one-to-one to an imported prefix segment",
             ));
         }
-        for slice in segment.slices {
+        if !imported {
+            ordinary_pages_started = true;
+        }
+        let segment_records = if imported {
+            segment.record_indices
+        } else {
+            Vec::new()
+        };
+        for (slice_index, slice) in segment.slices.into_iter().enumerate() {
+            let imported_source = if imported {
+                let record_index = segment_records[slice_index];
+                if record_index != imported_record_count {
+                    return Err(reject(
+                        output_pages.len(),
+                        "PDF-paper segment records are not in source order",
+                    ));
+                }
+                let rect = match records[record_index].rectangle {
+                    PdfPaperRectangle::Integer(rect) => rect,
+                    _ => unreachable!("record geometry validated above"),
+                };
+                if slice.y != rect[1] || slice.height != rect[3] - rect[1] {
+                    return Err(reject(
+                        output_pages.len(),
+                        "native imported slice does not match its saved PDF-paper rectangle",
+                    ));
+                }
+                imported_record_count += 1;
+                Some(imported_sources[record_index])
+            } else {
+                None
+            };
             let query = [
                 0.0,
                 slice.y as f32,
@@ -848,8 +932,9 @@ pub(super) fn plan_singlex_pdf_paper(
                     }
                 }
             }
-            let (physical_width, physical_height) = if imported {
-                (source_surface[0], source_surface[1])
+            let (physical_width, physical_height) = if let Some(imported_source) = imported_source {
+                let crop = imported_source.source_crop;
+                (crop[2] - crop[0], crop[3] - crop[1])
             } else {
                 let height =
                     native_surface_height(600, slice.height, note_width_i32).map_err(|_| {
@@ -883,9 +968,16 @@ pub(super) fn plan_singlex_pdf_paper(
                 scene_height,
                 physical_width,
                 physical_height,
+                imported_source,
                 selected_objects,
             });
         }
+    }
+    if imported_record_count != records.len() {
+        return Err(reject(
+            output_pages.len(),
+            "native segmentation did not import every contiguous PDF-paper record",
+        ));
     }
     if output_pages.is_empty() {
         return Err(reject(0, "native segmentation produced no output pages"));
@@ -894,9 +986,6 @@ pub(super) fn plan_singlex_pdf_paper(
     Ok(Some(SingleXPaperPlan {
         parsed_sources: prepared.sources,
         source_key,
-        source_page_index,
-        source_to_display,
-        source_crop: crop,
         note_width,
         note_height,
         output_pages,
@@ -907,6 +996,9 @@ fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
     // Native controls establish empty and LF-only text as not visible. Spaces,
     // tabs, CR, and other Unicode whitespace are deliberately not generalized
     // from that result: they may still affect native line measurement/cuts.
+    // Widget HasVisibleText scans source UTF-16, independent of foreground,
+    // font size or margins. Its paragraph fallback additionally admits bullets;
+    // keep paragraph kinds restricted to Alignment and ParsingState below.
     let utf16_len = text.text.encode_utf16().count();
     text.text.chars().all(|character| character == '\n')
         && text.object_spans.is_empty()
@@ -914,20 +1006,34 @@ fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
         && text.text_area_type.is_none()
         && text.bbox == crate::BoundingBox::default()
         && text.rotation_degrees.is_none()
-        && text.color.is_none()
         && text.highlight_color.is_none()
         && !text.underline
-        && text.font_size.is_none()
-        && text.text_sections.is_empty()
-        && text.margins.is_none()
-        && text.gravity.is_none()
+        && text
+            .font_size
+            .is_none_or(|size| size.is_finite() && size > 0.0)
+        && text.text_sections.iter().all(|section| {
+            section.start_utf16 >= 0
+                && section.length_utf16 >= 0
+                && section
+                    .start_utf16
+                    .checked_add(section.length_utf16)
+                    .and_then(|end| usize::try_from(end).ok())
+                    .is_some_and(|end| end <= utf16_len)
+        })
+        && text.margins.is_none_or(|margins| {
+            margins
+                .iter()
+                .all(|value| value.is_finite() && *value >= 0.0)
+        })
+        && text.gravity.is_none_or(|gravity| gravity == 0)
         && text.spans.iter().all(|span| match span.kind {
             crate::RichTextSpanType::FontSize => {
-                let size = (span.payload.len() == 4)
-                    .then(|| f32::from_le_bytes(span.payload[..4].try_into().unwrap()));
-                size.is_some_and(|size| size.is_finite() && size > 0.0)
+                matches!(span.payload.len(), 4 | 8)
+                    && span
+                        .font_size_value()
+                        .is_some_and(|size| size.is_finite() && size > 0.0)
             }
-            crate::RichTextSpanType::ForegroundColor => span.payload.len() == 4,
+            crate::RichTextSpanType::ForegroundColor => matches!(span.payload.len(), 4 | 8),
             _ => false,
         })
         && text.spans.iter().all(|span| {
@@ -1013,7 +1119,10 @@ pub(super) fn render_singlex_pdf_paper_plan(
     let overlay_units = 72.0 / f64::from(pdf_options.dpi);
     let mut output_overlay = Document::load_mem(&overlay_bytes)
         .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
-    for (index, output) in plan.output_pages.iter().enumerate().skip(1) {
+    for (index, output) in plan.output_pages.iter().enumerate() {
+        if output.imported_source.is_some() {
+            continue;
+        }
         let page_number = u32::try_from(index + 1)
             .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
         constrain_overlay_page_in_document(
@@ -1033,35 +1142,35 @@ pub(super) fn render_singlex_pdf_paper_plan(
     output_overlay
         .save_to(&mut constrained_overlay_bytes)
         .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
-    let (display_to_source, clip) = imported_overlay_placement(
-        plan.source_to_display,
-        plan.source_crop,
-        [
-            plan.output_pages[0].physical_width,
-            plan.output_pages[0].physical_height,
-        ],
-        [
-            f64::from(plan.note_width),
-            f64::from(plan.output_pages[0].scene_height),
-        ],
-        0.0,
-        overlay_units,
-    )
-    .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
-    let mut outputs = vec![OutputPage::Imported {
-        source_key: &plan.source_key,
-        source_page_index: plan.source_page_index,
-        overlay_bytes: &constrained_overlay_bytes,
-        overlay_page_number: 1,
-        display_to_source,
-        clip,
-    }];
-    outputs.extend(
-        (1..plan.output_pages.len()).map(|index| OutputPage::OverlayOnly {
-            overlay_bytes: &constrained_overlay_bytes,
-            overlay_page_number: u32::try_from(index + 1).unwrap_or(u32::MAX),
-        }),
-    );
+    let mut outputs = Vec::with_capacity(plan.output_pages.len());
+    for (index, output) in plan.output_pages.iter().enumerate() {
+        let overlay_page_number = u32::try_from(index + 1)
+            .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
+        if let Some(imported_source) = output.imported_source {
+            let (display_to_source, clip) = imported_overlay_placement(
+                imported_source.source_to_display,
+                imported_source.source_crop,
+                [output.physical_width, output.physical_height],
+                [f64::from(plan.note_width), f64::from(output.scene_height)],
+                0.0,
+                overlay_units,
+            )
+            .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
+            outputs.push(OutputPage::Imported {
+                source_key: &plan.source_key,
+                source_page_index: imported_source.source_page_index,
+                overlay_bytes: &constrained_overlay_bytes,
+                overlay_page_number,
+                display_to_source,
+                clip,
+            });
+        } else {
+            outputs.push(OutputPage::OverlayOnly {
+                overlay_bytes: &constrained_overlay_bytes,
+                overlay_page_number,
+            });
+        }
+    }
     let assembled = assemble_prepared_output_pages(&plan.parsed_sources, &outputs)
         .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
     let pages = scenes
@@ -3115,7 +3224,28 @@ mod tests {
                 payload: 1_u32.to_le_bytes().to_vec(),
             },
         ];
+        text.color = Some(crate::Color {
+            r: 37,
+            g: 37,
+            b: 37,
+        });
+        text.font_size = Some(17.0);
+        text.margins = Some([16.0, 10.0, 16.0, 10.0]);
+        text.gravity = Some(0);
+        text.text_sections = vec![crate::RichTextSection {
+            start_utf16: 0,
+            length_utf16: 1,
+        }];
         assert!(rich_text_is_benign_blank(&text));
+
+        let mut bullet = text.clone();
+        bullet.paragraphs.push(crate::RichTextParagraph {
+            kind: crate::RichTextParagraphType::Bullet,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: 1_u32.to_le_bytes().to_vec(),
+        });
+        assert!(!rich_text_is_benign_blank(&bullet));
 
         text.spans.push(crate::RichTextSpan {
             kind: crate::RichTextSpanType::Underline,
@@ -3138,6 +3268,15 @@ mod tests {
         assert!(!rich_text_is_benign_blank(&text));
 
         text = blank_rich_text("\n");
+        text.text_sections = vec![crate::RichTextSection {
+            start_utf16: 0,
+            length_utf16: 2,
+        }];
+        assert!(!rich_text_is_benign_blank(&text));
+        text.text_sections.clear();
+        text.margins = Some([f32::NAN, 0.0, 0.0, 0.0]);
+        assert!(!rich_text_is_benign_blank(&text));
+        text.margins = None;
         text.spans.push(crate::RichTextSpan {
             kind: crate::RichTextSpanType::FontSize,
             start_utf16: 0,

@@ -612,14 +612,17 @@ all ordered signed PDF records, version-dependent rectangles and raw template ty
 modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
 PDF export now preserves source PDF paper for a bounded continuous-note class:
-one authoritative, top-aligned, full-width integer paper record, an unrotated
-origin-zero source page with UserUnit 1, native-default background, and ordinary
-saved unrotated strokes. Native-derived query bands select whole strokes;
+one authoritative source PDF with contiguous, top-aligned, full-width integer
+paper records and consecutive source-page indices; each source page must be
+unrotated, origin-zero and UserUnit 1. The note must use the native-default
+background and supported saved unrotated strokes. Native-derived query bands select whole strokes;
 source pages retain their physical boxes, while continuation pages use the
 native 600-point width and integer-truncated height, independently of SDK DPI.
-Empty or LF-only body text with supported formatting is accepted. Visible body
-text, inline images, multiple paper records and other unverified cases still
-fail explicitly. In particular, the real quiz note contains a visible body image
+Empty or LF-only body text with supported formatting is accepted, including
+foreground/font-size spans, finite margins and valid saved text sections;
+bullets remain unsupported. A saved stroke's generated flag alone does not
+exclude it. Visible body text, inline images, multiple source PDFs, gaps between
+records and other unverified cases still fail explicitly. In particular, the real quiz note contains a visible body image
 and is not yet supported by this route. SVG previews continue to report omitted
 PDF backgrounds; converting those diagnostic-aware pages to PDF fails explicitly.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
@@ -627,6 +630,9 @@ recovered contracts to the Rust model and verified vector PDF transport.
 Rust assembly tests cover scoped resources, overlay tags, reordered/duplicate
 pages and ordinary tails; public export tests cover source preservation,
 cross-band whole-stroke admission and DPI-independent physical page sizes.
+The real `cs61bl_su22` note exports 20 pages: both MuPDF and PDFium render them,
+and source page boxes, text, font streams and image bytes survive. This verifies
+SDK transport; a connected native multi-record export comparison remains open.
 Real-source and retained-text transport match MuPDF/PDFium at 1×/2×. The stroke
 selector matches native identities and order across all 11 observed bands of
 one actually loaded quiz archive: 3,228 unique strokes and 3,261 admissions,
