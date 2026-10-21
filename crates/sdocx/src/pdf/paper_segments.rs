@@ -427,6 +427,42 @@ mod tests {
     }
 
     #[test]
+    fn native_body_cut_extends_nominal_page_to_measured_image_line_bottom() {
+        struct ImageCut;
+        impl SegmentQueries for ImageCut {
+            fn body_cut(&self, band: [f32; 4]) -> Result<BodyCutObservation, PlanError> {
+                assert_eq!(band, [0.0, 6_084.0, 1_080.0, 6_085.0]);
+                Ok(BodyCutObservation {
+                    visible: true,
+                    line_index: Some(112),
+                    line_count: 116,
+                    line_rect: [
+                        48.0,
+                        f32::from_bits(0x45ab09a6),
+                        f32::from_bits(0x440ddeda),
+                        f32::from_bits(0x45c0b95a),
+                    ],
+                })
+            }
+        }
+
+        // The native body-query control measured this LF-plus-image line and
+        // `updateHeightByBodyText(1300, 1080, 4785)` returned 1382. This pins
+        // the planner's corresponding height selection; the native
+        // accumulateNormalPage append path was not executed by that control.
+        let planner = Planner {
+            note_width: 1_080,
+            note_height: 8_000,
+            default_height: 1_300,
+            records: &[],
+            queries: &ImageCut,
+        };
+        let selected_height = planner.normal_height(4_785, 6_085, None).unwrap();
+        assert_eq!(selected_height, 1_382);
+        assert_eq!(4_785 + selected_height, 6_167);
+    }
+
+    #[test]
     fn native_cs61_order_groups_consecutive_source_pages() {
         let spans = [
             (0, 1397),
