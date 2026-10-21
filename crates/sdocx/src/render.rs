@@ -67,6 +67,8 @@ pub use theme::RenderTheme;
 use theme::is_dark_background;
 use viewport::Viewport;
 mod chinesebrush;
+#[cfg(test)]
+mod chinesebrush_native_fringe_test;
 #[cfg(all(test, feature = "serde"))]
 mod native_table_cache_tests;
 #[cfg(all(test, feature = "serde"))]
