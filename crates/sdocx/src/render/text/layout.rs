@@ -2218,6 +2218,49 @@ mod tests {
     }
 
     #[test]
+    fn empty_arrow_marker_matches_native_gravity_centers() {
+        // Native ObjectTextDrawing -> UpdateBulletView -> UpdateBulletPosition,
+        // density/text scale 1, zero margins, font 50, frame (0, 0, 720, 200).
+        // These are absolute marker centers, not ImageView artwork bounds.
+        let mut content = text("");
+        content.font_size = Some(50.0);
+        add_point_bullet(&mut content);
+        content.paragraphs[0].payload[..4].copy_from_slice(&1_u32.to_le_bytes());
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        for (gravity, expected_y) in [(0, 33.75), (1, 100.0), (2, 166.25)] {
+            content.gravity = Some(gravity);
+            let styled = StyledText::new(&content, TextContext::Placed, settings);
+            let plan = layout_text_with_context(
+                &styled,
+                TextFrame {
+                    bbox: BoundingBox {
+                        x_min: 0.0,
+                        y_min: 0.0,
+                        x_max: 720.0,
+                        y_max: 200.0,
+                    },
+                    gravity: content.gravity,
+                    exclusions: &[],
+                },
+                RenderTheme::for_canvas(false),
+                &renderer,
+                LayoutContext::Frame,
+                None,
+            );
+            assert_eq!(plan.lines.len(), 1);
+            assert!(plan.lines[0].line.source.is_empty());
+            let marker = plan.lines[0].marker.as_ref().unwrap();
+            assert_eq!(marker.center_y, expected_y, "gravity {gravity}");
+        }
+    }
+
+    #[test]
     fn space_arrow_bullet_keeps_original_character_and_marker() {
         let mut content = text(" ");
         add_point_bullet(&mut content);
