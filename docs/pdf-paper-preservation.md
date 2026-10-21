@@ -52,13 +52,12 @@ The body-text preparation cache is not a paper-rendering cache. A source asset
 index alone does not identify immutable bytes when public document assets can
 be replaced.
 
-Current PDF export consumes an SVG carrier plus retained Rust text operations.
-The SVG begins with an opaque paper rectangle. Composition order for imported
-paper is consequently **canvas → imported paper → note content**; drawing an
-imported page behind that opaque rectangle would hide it. Imported PDF font
-resources are independent of the `FontBook` used to measure note text.
-Retaining metadata alone does not establish drawing support: the existing
-`UnsupportedPageTemplate` diagnostic still describes omitted PDF paper.
+Ordinary PDF export consumes an SVG carrier plus retained Rust text operations.
+The bounded continuous-paper route instead renders canvas-free note scenes and
+grafts them over preserved source pages; see the supported class and remaining
+gaps in [rendering support](rendering-support.md). Source resources stay separate
+from the `FontBook` used to measure note text. SVG previews still report omitted
+paper through `UnsupportedPageTemplate`; unsupported PDF cases fail explicitly.
 
 ## Existing vector PDF transport
 
