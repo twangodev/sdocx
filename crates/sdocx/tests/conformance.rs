@@ -552,16 +552,19 @@ fn external_corpus_matches_locked_expectations() {
     for fixture in read_manifest(MANIFEST).unwrap().fixtures {
         let path = verified_asset(&root, &fixture.sdocx)
             .unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
-        let reference = verified_asset(&root, &fixture.reference_pdf)
+        let _reference = verified_asset(&root, &fixture.reference_pdf)
             .unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
-        let reference = lopdf::Document::load(reference)
-            .unwrap_or_else(|error| panic!("{}: invalid reference PDF: {error}", fixture.id));
-        check_count(
-            "reference PDF pages",
-            reference.get_pages().len(),
-            Some(fixture.expected.visible_pages),
-        )
-        .unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
+        #[cfg(feature = "pdf")]
+        {
+            let reference = lopdf::Document::load(_reference)
+                .unwrap_or_else(|error| panic!("{}: invalid reference PDF: {error}", fixture.id));
+            check_count(
+                "reference PDF pages",
+                reference.get_pages().len(),
+                Some(fixture.expected.visible_pages),
+            )
+            .unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
+        }
         let parsed =
             sdocx::parse_detailed(path).unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
         check_document(&parsed, &fixture.expected)

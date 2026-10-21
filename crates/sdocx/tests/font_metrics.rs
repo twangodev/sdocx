@@ -1,11 +1,14 @@
 #![cfg(feature = "render")]
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(feature = "pdf")]
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use sdocx::fonts::{FontBook, FontError, UnicodeBuffer, fontdb};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+#[cfg(feature = "pdf")]
 use svgtypes::Transform;
 
 #[derive(Deserialize)]
@@ -14,6 +17,7 @@ struct Fixture {
     common_font_metrics: Metrics,
     fonts: Vec<Font>,
     font_samples: Vec<Sample>,
+    #[cfg(feature = "pdf")]
     native_reference: NativeReference,
 }
 
@@ -50,6 +54,7 @@ struct Sample {
     clusters_utf8: Vec<u32>,
 }
 
+#[cfg(feature = "pdf")]
 #[derive(Deserialize)]
 struct NativeReference {
     fixture: String,
@@ -66,12 +71,14 @@ struct NativeReference {
     additional_pages: Vec<NativePage>,
 }
 
+#[cfg(feature = "pdf")]
 #[derive(Deserialize)]
 struct NativePage {
     page_index: usize,
     lines: Vec<NativeLine>,
 }
 
+#[cfg(feature = "pdf")]
 #[derive(Deserialize)]
 struct NativeLine {
     text: String,
@@ -102,6 +109,7 @@ fn sha256(bytes: &[u8]) -> String {
 }
 
 #[test]
+#[cfg(feature = "pdf")]
 #[ignore = "requires the external Hugging Face compatibility corpus"]
 fn native_first_five_page_text_origins_match_independent_pdf_layout() {
     let reference = fixture().native_reference;
@@ -156,6 +164,7 @@ fn native_first_five_page_text_origins_match_independent_pdf_layout() {
     }
 }
 
+#[cfg(feature = "pdf")]
 fn compose_transform(left: Transform, right: Transform) -> Transform {
     Transform::new(
         left.a * right.a + left.c * right.b,
@@ -167,6 +176,7 @@ fn compose_transform(left: Transform, right: Transform) -> Transform {
     )
 }
 
+#[cfg(feature = "pdf")]
 fn inherited_number(node: roxmltree::Node<'_, '_>, attribute: &str) -> f64 {
     node.ancestors()
         .find_map(|ancestor| ancestor.attribute(attribute))
@@ -178,6 +188,7 @@ fn inherited_number(node: roxmltree::Node<'_, '_>, attribute: &str) -> f64 {
         .unwrap()
 }
 
+#[cfg(feature = "pdf")]
 fn assert_native_lines(
     svg: &str,
     page_index: usize,

@@ -445,7 +445,7 @@ fn mixed_vector_pdf_preserves_paint_order_and_selectable_text_without_image_obje
 
 #[test]
 fn vector_progress_preserves_svg_and_repeated_page_pdf_bytes() {
-    use sdocx::{DocumentTextCache, PdfOptions, Progress, ProgressStage};
+    use sdocx::{DocumentTextCache, Progress, ProgressStage};
     let document = document(vec![container(vec![stroke(
         Color { r: 255, g: 0, b: 0 },
         [[10.0, 10.0], [110.0, 90.0]],
@@ -473,36 +473,41 @@ fn vector_progress_preserves_svg_and_repeated_page_pdf_bytes() {
     assert_eq!(normal.svg, reported.svg);
     assert!(events.contains(&Progress::new(ProgressStage::Rendering, 1, Some(2))));
     assert!(events.contains(&Progress::new(ProgressStage::Rendering, 2, Some(2))));
-    let normal = sdocx::render_layout_pages_pdf_detailed_with_cache(
-        &document,
-        &layout,
-        &[0, 0],
-        &options,
-        &PdfOptions::default(),
-        &fonts,
-        &mut cache,
-    )
-    .unwrap();
-    events.clear();
-    let reported = sdocx::render_layout_pages_pdf_detailed_with_cache_and_progress(
-        &document,
-        &layout,
-        &[0, 0],
-        &options,
-        &PdfOptions::default(),
-        &fonts,
-        &mut cache,
-        &mut |event| events.push(event),
-    )
-    .unwrap();
-    assert_eq!(normal.bytes, reported.bytes);
-    assert_eq!(normal.pages, reported.pages);
-    let counts = events
-        .iter()
-        .filter(|event| event.stage == ProgressStage::WritingPdf)
-        .map(|event| (event.completed, event.total))
-        .collect::<Vec<_>>();
-    assert_eq!(counts, [(0, Some(2)), (1, Some(2)), (2, Some(2))]);
-    assert_eq!(events.last().unwrap().stage, ProgressStage::Finalizing);
-    assert_eq!(events.last().unwrap().total, None);
+    #[cfg(feature = "pdf")]
+    {
+        use sdocx::PdfOptions;
+
+        let normal = sdocx::render_layout_pages_pdf_detailed_with_cache(
+            &document,
+            &layout,
+            &[0, 0],
+            &options,
+            &PdfOptions::default(),
+            &fonts,
+            &mut cache,
+        )
+        .unwrap();
+        events.clear();
+        let reported = sdocx::render_layout_pages_pdf_detailed_with_cache_and_progress(
+            &document,
+            &layout,
+            &[0, 0],
+            &options,
+            &PdfOptions::default(),
+            &fonts,
+            &mut cache,
+            &mut |event| events.push(event),
+        )
+        .unwrap();
+        assert_eq!(normal.bytes, reported.bytes);
+        assert_eq!(normal.pages, reported.pages);
+        let counts = events
+            .iter()
+            .filter(|event| event.stage == ProgressStage::WritingPdf)
+            .map(|event| (event.completed, event.total))
+            .collect::<Vec<_>>();
+        assert_eq!(counts, [(0, Some(2)), (1, Some(2)), (2, Some(2))]);
+        assert_eq!(events.last().unwrap().stage, ProgressStage::Finalizing);
+        assert_eq!(events.last().unwrap().total, None);
+    }
 }
