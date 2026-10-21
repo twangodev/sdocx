@@ -663,6 +663,12 @@ it clips that candidate to `trunc(pdf_top - f32(y))`
 (`0x35fc54–0x35fcc4`). This is evidence of content-aware slice selection, not
 fixed-height division of the continuous canvas.
 
+A native LF-plus-image control at width 1080, nominal height 1300 and y=4785
+queries `[6084,6085]` and returns height 1382 from line 112's bottom
+6167.1689453125. It executes native height selection; segment-list append was
+not executed. Receipt SHA-256:
+`232d64ac1144ccbba1c167390af2df1da2b6ea77dd9d88a20cc15aa19330b9fa`.
+
 Single-mode placed text and images also rebase their note-space bounds before
 writing. `writeObjectTextBox` offsets a copied rectangle by
 `(0, f32(neg_i32(slice_y)))` at `0x35f46c–0x35f488`; `writeObjectImage` does the
