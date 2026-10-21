@@ -533,6 +533,24 @@ mod tests {
         let plan = PaintPlan::prepare(&paint, true).unwrap();
         assert!(!plan.outside(touching), "the V16 +0.5 extent touches y=11");
         assert!(plan.outside(separated), "the V16 fringe ends before y=12");
+
+        // Compare identical viewports with culling on/off, including a visible
+        // fringe and the adjacent empty slice. This is transport equivalence,
+        // not a native pixel oracle.
+        for y in [10, 11, 12] {
+            let request = crate::render::PageSceneRequest::sliced(&page, y, 10, false).unwrap();
+            let images = [request, request.with_fountain_paint_culling(false)].map(|request| {
+                let mut scene = Scene::new(Svg::new().width(64).height(10).view_box(
+                    super::super::vector::ViewBox::unrounded(0., f64::from(y), 64., 10.),
+                ));
+                assert!(render(&mut scene, &paint, false, request.slice()));
+                preview(&scene.finish())
+            });
+            assert!(images[0].data() == images[1].data(), "slice y={y}");
+            if y == 10 {
+                assert!(images[0].pixels().iter().any(|pixel| pixel.alpha() > 0));
+            }
+        }
     }
 
     #[test]
