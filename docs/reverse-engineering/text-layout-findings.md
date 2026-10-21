@@ -764,6 +764,42 @@ units, paragraph 60 is empty and paragraph 61 contains the table. Neither
 suppression applies to paragraph 59: its 12 scaled units remain when entering
 paragraph 60; the later table cannot suppress them across that empty paragraph.
 
+### Mobile point-bullet size control
+
+On the pinned Samsung Notes 4.4.45.37 APK
+(`daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`) and
+`libSPenWidget.so` (`cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9`),
+the captured Model source-object to Widget/Text/BulletManager path passes the
+resolved source font directly to `GetBulletGlyphImageSize`; the manager keeps
+its constructor density at 1. With nominal source font 15, caller Display/source-font
+controls 1 and 3 observed helper inputs/results 15/5 and 45/9, respectively.
+Both controls returned button width 20, right margin 6, and row reservation
+width 26. The native helper's table for raw font 1–7 is
+`[2,2,3,3,4,4,5]`; from 8 onward it truncates font/5 and clamps to 5–20.
+The controls are retained at `/tmp/drawn-bullet-mesa-bridge/source-view-font15-density1.log`
+(SHA-256 `cfd6ac721bdd85f24cbfc68388c24e97cf8517450b2690d714754ea76b4e298f`)
+and `...density3.log` (SHA-256
+`f02e53e58216818df721a7f573aaac1455f2933de320760cad1287ac2efa5088`). They
+exercise the native source-object setter and Widget conversion, not serialized
+document metadata loading or the complete Flow body initialization path.
+
+The body `ObjectTextLayout` path is distinct. Its constructor invokes
+`initBulletPoint` (`0xd95f8`), which installs glyph-size ranges through
+`BulletLayout::SetBulletGlyphSize` (`0xcfc34`) using `Constant::GetPixels`
+values supplied by `ITextManager`. A native constructor probe with an explicit
+`ITextManager` DocumentPixel control D=1/D=3 and nominal source font 15/resolved
+font 15/45 observed body helper sizes 5/15, button widths 20/60, and right
+margins 6/18. Thus body reservation scales to 26/78, matching its separate
+range setup; these values must not be replaced by the old Widget
+`BulletManager` D3 values. The probe's retained logs are
+`/tmp/drawn-bullet-mesa-bridge/body-bullet-profile-density1.log` (SHA-256
+`7ac25480b37ff3ccde15c1134b8d457756064489be916aa43210a60edab25cd3`) and
+`...density3.log` (SHA-256
+`034d68ec90d88f46e9ec50f5b0ac607bbac40db819cc48f02dacc1e74b072ced`). It
+observes real `ObjectTextLayout`/`BulletLayout` initialization and getters,
+but not serialized metadata loading or a complete BodyText update: the latter
+reaches an unavailable context callback after these measurements.
+
 Text `TextUtil::GetLineSpacing`, `0x8e180`, computes `pixels` when nonzero,
 otherwise `(multiplier - 1) * metric`. `GetLineHeightWithSpacing`, `0x8e100`,
 adds that amount to a base height. Thus a pixel value is extra spacing in
