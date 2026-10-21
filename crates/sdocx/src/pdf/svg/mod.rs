@@ -9,7 +9,7 @@ use krilla::surface::Surface;
 use usvg::{Tree, fontdb};
 
 use self::text::Fonts;
-use self::util::RectExt;
+use self::util::{RectExt, UsvgTransformExt};
 
 mod clip_path;
 mod colorize;
@@ -91,6 +91,193 @@ pub(super) fn raster_image(kind: &usvg::ImageKind) -> Result<Option<krilla::imag
         ImageKind::SVG(_) => return Ok(None),
     }
     .map(Some)
+}
+
+/// Render an SVG-table color glyph through the same vector and image handlers used for
+/// document SVG content. Krilla already applies the glyph origin and em-space Y flip before
+/// invoking this callback; this function only adapts the SVG viewport to the font's em square.
+pub(super) fn render_svg_glyph(
+    data: &[u8],
+    context_color: krilla::color::rgb::Color,
+    glyph: krilla::text::GlyphId,
+    default_size: (f32, f32),
+    surface: &mut Surface<'_>,
+) -> Option<()> {
+    let default_size = usvg::Size::from_wh(default_size.0, default_size.1)?;
+    let decoded;
+    let data = if data.starts_with(&[0x1f, 0x8b]) {
+        decoded = usvg::decompress_svgz(data).ok()?;
+        decoded.as_slice()
+    } else {
+        data
+    };
+    let xml = std::str::from_utf8(data).ok()?;
+    let document = roxmltree::Document::parse(xml).ok()?;
+    let root_element = document.root_element();
+    let options = usvg::Options {
+        style_sheet: Some(format!(
+            "svg {{ color: rgb({}, {}, {}) }}",
+            context_color.red(),
+            context_color.green(),
+            context_color.blue()
+        )),
+        default_size,
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            // Font glyph resources are self-contained. Do not allow font bytes to cause
+            // host filesystem reads through a relative or absolute image href.
+            resolve_string: Box::new(|_, _| None),
+        },
+        ..Default::default()
+    };
+    let tree = Tree::from_xmltree(&document, &options).ok()?;
+    let root_transform = root_glyph_transform(root_element, default_size)?;
+    let parsed_root_transform = root_view_box_transform(root_element, tree.size())?;
+    let node = tree.node_by_id(&format!("glyph{}", glyph.to_u32()));
+    let requires_raster_filter = node.map_or_else(
+        || {
+            tree.root()
+                .children()
+                .iter()
+                .any(node_requires_raster_filter)
+        },
+        node_requires_raster_filter,
+    );
+    if requires_raster_filter {
+        return None;
+    }
+
+    let settings = SvgSettings {
+        reject_rasterized_filters: true,
+        ..SvgSettings::default()
+    };
+    let mut database = tree.fontdb().clone();
+    let mut context = ProcessContext::new(Arc::make_mut(&mut database), settings);
+    if let Some(node) = node {
+        // OpenType requires glyph elements to behave like SVG <use> references. The root
+        // viewport transform and the glyph element's own transform apply; transforms on
+        // intervening ancestor groups do not.
+        surface.push_transform(&root_transform.to_krilla());
+        group::render_node(node, surface, &mut context);
+        surface.pop();
+    } else {
+        // Some fonts put the glyph identifier on the root <svg>, which usvg does not retain.
+        let correction = root_transform.pre_concat(parsed_root_transform.invert()?);
+        surface.push_transform(&correction.to_krilla());
+        group::render(tree.root(), surface, &mut context);
+        surface.pop();
+    }
+    // The preflight and permissive image setting prevent all known renderer errors. Keep the
+    // callback consumed on unexpected partial failures so Krilla does not overlay a monochrome
+    // outline on vector/image content that was already emitted.
+    Some(())
+}
+
+fn root_glyph_transform(
+    root: roxmltree::Node<'_, '_>,
+    em_size: usvg::Size,
+) -> Option<usvg::Transform> {
+    use std::str::FromStr;
+    use svgtypes::LengthUnit;
+
+    let dimension = |attribute: &str, default: f32| {
+        let Some(value) = root.attribute(attribute) else {
+            return Some(default);
+        };
+        let length = svgtypes::Length::from_str(value).ok()?;
+        let value = match length.unit {
+            LengthUnit::None | LengthUnit::Px => length.number as f32,
+            LengthUnit::In => length.number as f32 * 96.0,
+            LengthUnit::Cm => length.number as f32 * (96.0 / 2.54),
+            LengthUnit::Mm => length.number as f32 * (96.0 / 25.4),
+            LengthUnit::Pt => length.number as f32 * (96.0 / 72.0),
+            LengthUnit::Pc => length.number as f32 * 16.0,
+            LengthUnit::Percent => default * (length.number as f32 / 100.0),
+            LengthUnit::Em | LengthUnit::Ex => return None,
+        };
+        (value.is_finite() && value > 0.0).then_some(value)
+    };
+    let viewport_size = usvg::Size::from_wh(
+        dimension("width", em_size.width())?,
+        dimension("height", em_size.height())?,
+    )?;
+    let view_box_transform = root_view_box_transform(root, viewport_size)?;
+    let viewport_to_em = usvg::Transform::from_scale(
+        em_size.width() / viewport_size.width(),
+        em_size.height() / viewport_size.height(),
+    );
+    Some(viewport_to_em.pre_concat(view_box_transform))
+}
+
+fn root_view_box_transform(
+    root: roxmltree::Node<'_, '_>,
+    size: usvg::Size,
+) -> Option<usvg::Transform> {
+    use std::str::FromStr;
+    use svgtypes::Align;
+
+    let Some(view_box) = root.attribute("viewBox") else {
+        return Some(usvg::Transform::identity());
+    };
+    let view_box = svgtypes::ViewBox::from_str(view_box).ok()?;
+    let aspect = root
+        .attribute("preserveAspectRatio")
+        .map(svgtypes::AspectRatio::from_str)
+        .transpose()
+        .ok()?
+        .unwrap_or_default();
+
+    let mut sx = size.width() / view_box.w as f32;
+    let mut sy = size.height() / view_box.h as f32;
+    if aspect.align != Align::None {
+        let scale = if aspect.slice { sx.max(sy) } else { sx.min(sy) };
+        sx = scale;
+        sy = scale;
+    }
+
+    let x = -(view_box.x as f32) * sx;
+    let y = -(view_box.y as f32) * sy;
+    let extra_x = size.width() - view_box.w as f32 * sx;
+    let extra_y = size.height() - view_box.h as f32 * sy;
+    let align_x = match aspect.align {
+        Align::XMidYMin | Align::XMidYMid | Align::XMidYMax => 0.5,
+        Align::XMaxYMin | Align::XMaxYMid | Align::XMaxYMax => 1.0,
+        _ => 0.0,
+    };
+    let align_y = match aspect.align {
+        Align::XMinYMid | Align::XMidYMid | Align::XMaxYMid => 0.5,
+        Align::XMinYMax | Align::XMidYMax | Align::XMaxYMax => 1.0,
+        _ => 0.0,
+    };
+    Some(usvg::Transform::from_row(
+        sx,
+        0.0,
+        0.0,
+        sy,
+        x + extra_x * align_x,
+        y + extra_y * align_y,
+    ))
+}
+
+fn node_requires_raster_filter(node: &usvg::Node) -> bool {
+    match node {
+        usvg::Node::Group(group) => {
+            (!group.filters().is_empty() && !colorize::is_supported(group))
+                || group.children().iter().any(node_requires_raster_filter)
+        }
+        usvg::Node::Image(image) => match image.kind() {
+            usvg::ImageKind::SVG(tree) => tree
+                .root()
+                .children()
+                .iter()
+                .any(node_requires_raster_filter),
+            _ => false,
+        },
+        usvg::Node::Path(path) => {
+            path_patterns(path).any(|root| root.children().iter().any(node_requires_raster_filter))
+        }
+        usvg::Node::Text(_) => false,
+    }
 }
 
 pub(super) type TextHook<'a> =
@@ -462,6 +649,39 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[test]
+    fn root_view_box_transform_honors_aspect_ratio_and_nonzero_origin() {
+        let size = usvg::Size::from_wh(200.0, 200.0).unwrap();
+        let transform_for = |attributes: &str| {
+            let xml = format!(r#"<svg xmlns="http://www.w3.org/2000/svg" {attributes}/>"#);
+            let document = roxmltree::Document::parse(&xml).unwrap();
+            root_glyph_transform(document.root_element(), size).unwrap()
+        };
+
+        assert_eq!(
+            transform_for(r#"viewBox="10 20 100 50""#),
+            usvg::Transform::from_row(2.0, 0.0, 0.0, 2.0, -20.0, 10.0)
+        );
+        assert_eq!(
+            transform_for(r#"viewBox="10 20 100 50" preserveAspectRatio="none""#),
+            usvg::Transform::from_row(2.0, 0.0, 0.0, 4.0, -20.0, -80.0)
+        );
+        assert_eq!(
+            transform_for(r#"viewBox="10 20 100 50" preserveAspectRatio="xMaxYMax slice""#),
+            usvg::Transform::from_row(4.0, 0.0, 0.0, 4.0, -240.0, -80.0)
+        );
+        assert_eq!(
+            transform_for(
+                r#"viewBox="10 20 100 50" width="400" height="100" preserveAspectRatio="xMidYMid""#
+            ),
+            usvg::Transform::from_row(1.0, 0.0, 0.0, 4.0, 40.0, -80.0)
+        );
+        assert_eq!(
+            transform_for(r#"width="400" height="400""#),
+            usvg::Transform::from_scale(0.5, 0.5)
+        );
     }
 
     #[test]

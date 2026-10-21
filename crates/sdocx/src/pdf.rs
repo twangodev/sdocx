@@ -6,7 +6,7 @@ use std::{
 
 use self::svg::{SurfaceExt, SvgError, SvgSettings};
 use krilla::{
-    Document as PdfDocument,
+    Document as PdfDocument, SerializeSettings,
     geom::Size,
     page::PageSettings,
     tagging::{TagGroup, TagTree},
@@ -416,7 +416,10 @@ fn render_pages_pdf_with_progress<'a>(
         select_fallback,
     } = physical_families.usvg_resolver();
     let data_resolver = usvg::ImageHrefResolver::default_data_resolver();
-    let mut pdf = PdfDocument::new();
+    let mut pdf = PdfDocument::new_with(SerializeSettings {
+        render_svg_glyph_fn: svg::render_svg_glyph,
+        ..Default::default()
+    });
     let mut painter = NativePdfPainter::new(options.dpi);
     let mut tags = TagTree::default();
     let mut page_count = 0;
