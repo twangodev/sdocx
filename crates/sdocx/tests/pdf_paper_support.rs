@@ -237,9 +237,19 @@ fn document(paper: bool, rotation: Option<f32>, source_rotation: i64, user_unit:
 }
 
 fn export(document: &Document, indices: &[usize], dpi: f32) -> Result<sdocx::PdfOutput, PdfError> {
+    export_with_fixed_axis(document, indices, dpi, None)
+}
+
+fn export_with_fixed_axis(
+    document: &Document,
+    indices: &[usize],
+    dpi: f32,
+    fixed_axis_size: Option<u32>,
+) -> Result<sdocx::PdfOutput, PdfError> {
     let layout = sdocx::layout_document(document);
     let mut options = PdfOptions::default();
     options.dpi = dpi;
+    options.pdf_paper_fixed_axis_size = fixed_axis_size;
     render_layout_pages_pdf_detailed_with_fonts(
         document,
         &layout,
@@ -331,21 +341,35 @@ fn number(object: &Object) -> Option<f64> {
         .ok()
 }
 
-fn point_matches(operation: &lopdf::content::Operation, operator: &str, point: [f64; 2]) -> bool {
+fn point_matches(
+    operation: &lopdf::content::Operation,
+    operator: &str,
+    point: [f64; 2],
+    epsilon: f64,
+) -> bool {
     operation.operator == operator
         && operation.operands.len() >= 2
-        && number(&operation.operands[0]).is_some_and(|value| value == point[0])
-        && number(&operation.operands[1]).is_some_and(|value| value == point[1])
+        && number(&operation.operands[0]).is_some_and(|value| (value - point[0]).abs() <= epsilon)
+        && number(&operation.operands[1]).is_some_and(|value| (value - point[1]).abs() <= epsilon)
 }
 
 fn content_has_crossing_stroke(content: &Content) -> bool {
+    content_has_stroke_segment(content, [100.0, 1_460.0], [300.0, 1_550.0], 0.0)
+}
+
+fn content_has_stroke_segment(
+    content: &Content,
+    start: [f64; 2],
+    end: [f64; 2],
+    epsilon: f64,
+) -> bool {
     let mut started = false;
     let mut completed = false;
     for operation in &content.operations {
-        if point_matches(operation, "m", [100.0, 1460.0]) {
+        if point_matches(operation, "m", start, epsilon) {
             started = true;
             completed = false;
-        } else if started && point_matches(operation, "l", [300.0, 1550.0]) {
+        } else if started && point_matches(operation, "l", end, epsilon) {
             completed = true;
         } else if completed && operation.operator == "S" {
             return true;
@@ -360,11 +384,14 @@ fn content_has_crossing_stroke(content: &Content) -> bool {
     false
 }
 
-fn form_has_crossing_stroke(
+fn form_has_stroke_segment(
     pdf: &PdfDocument,
     form: &lopdf::Stream,
     inherited_resources: &Dictionary,
     depth: usize,
+    start: [f64; 2],
+    end: [f64; 2],
+    epsilon: f64,
 ) -> bool {
     if depth > 16 {
         return false;
@@ -375,7 +402,7 @@ fn form_has_crossing_stroke(
     let Ok(content) = Content::decode(&bytes) else {
         return false;
     };
-    if content_has_crossing_stroke(&content) {
+    if content_has_stroke_segment(&content, start, end, epsilon) {
         return true;
     }
 
@@ -408,12 +435,30 @@ fn form_has_crossing_stroke(
                         .dict
                         .get(b"Subtype")
                         .is_ok_and(|subtype| subtype.as_name().is_ok_and(|name| name == b"Form"))
-                        && form_has_crossing_stroke(pdf, nested, resources, depth + 1)
+                        && form_has_stroke_segment(
+                            pdf,
+                            nested,
+                            resources,
+                            depth + 1,
+                            start,
+                            end,
+                            epsilon,
+                        )
                 })
     })
 }
 
 fn page_invokes_crossing_stroke_form(pdf: &PdfDocument, page_number: u32) -> bool {
+    page_invokes_stroke_segment_form(pdf, page_number, [100.0, 1_460.0], [300.0, 1_550.0], 0.0)
+}
+
+fn page_invokes_stroke_segment_form(
+    pdf: &PdfDocument,
+    page_number: u32,
+    start: [f64; 2],
+    end: [f64; 2],
+    epsilon: f64,
+) -> bool {
     let Some(page_id) = pdf.get_pages().get(&page_number).copied() else {
         return false;
     };
@@ -453,9 +498,24 @@ fn page_invokes_crossing_stroke_form(pdf: &PdfDocument, page_number: u32) -> boo
                     form.dict
                         .get(b"Subtype")
                         .is_ok_and(|subtype| subtype.as_name().is_ok_and(|name| name == b"Form"))
-                        && form_has_crossing_stroke(pdf, form, resources, 0)
+                        && form_has_stroke_segment(pdf, form, resources, 0, start, end, epsilon)
                 })
     })
+}
+
+fn page_has_stroke_segment(
+    pdf: &PdfDocument,
+    page_number: u32,
+    start: [f64; 2],
+    end: [f64; 2],
+    epsilon: f64,
+) -> bool {
+    pdf.get_pages()
+        .get(&page_number)
+        .copied()
+        .and_then(|page_id| pdf.get_page_content(page_id).ok())
+        .and_then(|bytes| Content::decode(&bytes).ok())
+        .is_some_and(|content| content_has_stroke_segment(&content, start, end, epsilon))
 }
 
 fn page_has_crossing_stroke(pdf: &PdfDocument, page_number: u32) -> bool {
@@ -609,6 +669,37 @@ fn public_pdf_paper_physical_boxes_do_not_depend_on_overlay_dpi() {
             );
         }
     }
+}
+
+#[test]
+fn public_pdf_paper_fixed_axis_profile_scales_note_geometry_but_not_source_pdf_boxes() {
+    let document = document(true, None, 0, 1);
+    let default_output = export(&document, &[0], 96.0).unwrap();
+    let explicit_default = export_with_fixed_axis(&document, &[0], 96.0, None).unwrap();
+    assert_eq!(explicit_default.bytes, default_output.bytes);
+
+    let fixed_axis = export_with_fixed_axis(&document, &[0], 96.0, Some(1_080)).unwrap();
+    let pdf = PdfDocument::load_mem(&fixed_axis.bytes).unwrap();
+    assert_eq!(pdf.get_pages().len(), 7);
+    assert_eq!(fixed_axis.pages.len(), 7);
+    assert_eq!(
+        page_box(&pdf, 1),
+        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)],
+        "the imported source PDF remains in its physical page coordinates"
+    );
+    for page_number in 2..=6 {
+        assert_eq!(page_box(&pdf, page_number), [0.0, 0.0, 600.0, 848.0]);
+    }
+    assert_eq!(page_box(&pdf, 7), [0.0, 0.0, 600.0, 848.0]);
+    let scale = 1_080.0_f32 / 1_812.0_f32;
+    let start = [f64::from(100.0_f32 * scale), f64::from(1_460.0_f32 * scale)];
+    let end = [f64::from(300.0_f32 * scale), f64::from(1_550.0_f32 * scale)];
+    assert!(page_invokes_stroke_segment_form(&pdf, 1, start, end, 0.01));
+    assert!(page_has_stroke_segment(&pdf, 2, start, end, 0.01));
+    assert!(matches!(
+        export_with_fixed_axis(&document, &[0], 96.0, Some(31)),
+        Err(PdfError::InvalidPdfPaperFixedAxisSize)
+    ));
 }
 
 #[test]

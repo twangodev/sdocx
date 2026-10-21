@@ -569,6 +569,7 @@ pub(super) fn plan_singlex_pdf_paper(
     document: &crate::Document,
     layout: &crate::LayoutDocument,
     page_indices: &[usize],
+    fixed_axis_profile: Option<super::paper_scale::FixedAxisProfile>,
 ) -> Result<Option<SingleXPaperPlan>, PdfPaperAdmissionError> {
     if page_indices.is_empty() {
         return Ok(None);
@@ -676,10 +677,15 @@ pub(super) fn plan_singlex_pdf_paper(
     if note_width == 0 || note_height == 0 || default_height == 0 {
         return Err(reject(0, "native note dimensions must be positive"));
     }
-    let note_width_i32 =
-        i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?;
-    let note_height_i32 =
-        i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?;
+    let [record_validation_width, record_validation_height] = fixed_axis_profile
+        .map(|profile| profile.source_dimensions)
+        .unwrap_or([note_width, note_height]);
+    let default_height_i32 = i32::try_from(default_height)
+        .map_err(|_| reject(0, "default page height exceeds native range"))?;
+    let record_validation_width_i32 = i32::try_from(record_validation_width)
+        .map_err(|_| reject(0, "source note width exceeds native range"))?;
+    let record_validation_height_i32 = i32::try_from(record_validation_height)
+        .map_err(|_| reject(0, "source note height exceeds native range"))?;
     let mut expected_y = 0_i32;
     let mut previous_source_index = None;
     for (record_index, record) in records.iter().enumerate() {
@@ -689,7 +695,10 @@ pub(super) fn plan_singlex_pdf_paper(
                 "PDF-paper records must use modern integer rectangles",
             ));
         };
-        if top != expected_y || right != note_width_i32 || bottom <= top || bottom > note_height_i32
+        if top != expected_y
+            || right != record_validation_width_i32
+            || bottom <= top
+            || bottom > record_validation_height_i32
         {
             return Err(reject(
                 record_index,
@@ -847,8 +856,18 @@ pub(super) fn plan_singlex_pdf_paper(
             Ok(paper_segments::ResolvedRecord {
                 source_key: &source_key,
                 page_index: record.page_index,
-                rectangle: paper_segments::RuntimeRect::from_saved(record.rectangle)
-                    .map_err(|_| reject(record_index, "PDF-paper record geometry is invalid"))?,
+                rectangle: {
+                    let rectangle = paper_segments::RuntimeRect::from_saved(record.rectangle)
+                        .map_err(|_| {
+                            reject(record_index, "PDF-paper record geometry is invalid")
+                        })?;
+                    match fixed_axis_profile {
+                        Some(profile) => rectangle.scaled(profile.scale).map_err(|_| {
+                            reject(record_index, "scaled PDF-paper record geometry is invalid")
+                        })?,
+                        None => rectangle,
+                    }
+                },
                 source_record_index: record_index,
             })
         })
@@ -856,8 +875,7 @@ pub(super) fn plan_singlex_pdf_paper(
     let segments = paper_segments::plan_segments(
         i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?,
         i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?,
-        i32::try_from(default_height)
-            .map_err(|_| reject(0, "default page height exceeds native range"))?,
+        default_height_i32,
         &resolved,
         &NoBody,
     )
@@ -897,11 +915,24 @@ pub(super) fn plan_singlex_pdf_paper(
                         "PDF-paper segment records are not in source order",
                     ));
                 }
-                let rect = match records[record_index].rectangle {
-                    PdfPaperRectangle::Integer(rect) => rect,
-                    _ => unreachable!("record geometry validated above"),
-                };
-                if slice.y != rect[1] || slice.height != rect[3] - rect[1] {
+                let rect = paper_segments::RuntimeRect::from_saved(records[record_index].rectangle)
+                    .and_then(|rect| match fixed_axis_profile {
+                        Some(profile) => rect.scaled(profile.scale),
+                        None => Ok(rect),
+                    })
+                    .map_err(|_| reject(record_index, "PDF-paper record geometry is invalid"))?;
+                let matches_slice =
+                    if fixed_axis_profile.is_some_and(|profile| profile.scale != 1.0) {
+                        rect.matches_native_slice(slice.y, slice.height, default_height_i32)
+                    } else {
+                        match records[record_index].rectangle {
+                            PdfPaperRectangle::Integer([0, top, _, bottom]) => {
+                                slice.y == top && slice.height == bottom - top
+                            }
+                            _ => false,
+                        }
+                    };
+                if !matches_slice {
                     return Err(reject(
                         output_pages.len(),
                         "native imported slice does not match its saved PDF-paper rectangle",

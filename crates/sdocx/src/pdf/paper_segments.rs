@@ -37,6 +37,24 @@ impl RuntimeRect {
         Ok(Self(values))
     }
 
+    pub(super) fn scaled(self, scale: f32) -> Result<Self, PlanError> {
+        if !scale.is_finite() || scale <= 0.0 {
+            return Err(PlanError::NonFiniteGeometry);
+        }
+        Self::new(self.0.map(|value| value * scale))
+    }
+
+    pub(super) fn matches_native_slice(self, y: i32, height: i32, default_height: i32) -> bool {
+        let top_delta = (y as f32 - self.0[1]).abs();
+        let Ok(top_delta) = trunc_i32(top_delta) else {
+            return false;
+        };
+        let Ok(selected_height) = trunc_i32(self.0[3] - y as f32) else {
+            return false;
+        };
+        top_delta < 2 && stored_height(selected_height, default_height) == height
+    }
+
     fn intersects(self, other: [f32; 4]) -> bool {
         let [left, top, right, bottom] = self.0;
         let [other_left, other_top, other_right, other_bottom] = other;
@@ -546,5 +564,20 @@ mod tests {
             RuntimeRect::from_saved(PdfPaperRectangle::Integer([0, 0, 0, 1])),
             Err(PlanError::DegenerateGeometry)
         );
+    }
+
+    #[test]
+    fn scaled_saved_paper_rectangle_matches_native_fixed_axis_segment() {
+        let scale = 1_080.0_f32 / 1_812.0_f32;
+        let rectangle = RuntimeRect::from_saved(PdfPaperRectangle::Integer([0, 0, 1_812, 1_485]))
+            .unwrap()
+            .scaled(scale)
+            .unwrap();
+        assert_eq!(rectangle.0[2].to_bits(), 1_080.0_f32.to_bits());
+        assert_eq!(
+            rectangle.0[3].to_bits(),
+            f32::from_bits(0x445d465b).to_bits()
+        );
+        assert!(rectangle.matches_native_slice(0, 885, 1_527));
     }
 }

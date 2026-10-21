@@ -619,6 +619,9 @@ native-default background and supported saved unrotated strokes.
 Native-derived query bands select whole strokes;
 source pages retain their physical boxes, while continuation pages use the
 native 600-point width and integer-truncated height, independently of SDK DPI.
+An explicit `PdfOptions::pdf_paper_fixed_axis_size` normalizes saved page/stroke
+geometry using native f32 rules; its default preserves the stored coordinate
+profile. Body coordinates and source PDF boxes stay in their own domains.
 Empty or LF-only body text with supported formatting is accepted, including
 foreground/font-size spans, finite margins and valid saved text sections;
 bullets remain unsupported. A saved stroke's generated flag alone does not

@@ -13,6 +13,7 @@ use krilla::{
 };
 
 mod ink_field;
+mod paper_scale;
 mod paper_segments;
 mod paper_selection;
 mod paper_support;
@@ -60,6 +61,9 @@ pub struct PdfOptions {
     pub dpi: f32,
     pub font_database: Arc<fontdb::Database>,
     pub native_font_names: Option<NativeFontNameConfig>,
+    /// Load retained PDF-paper notes at this native portrait fixed-axis size.
+    /// `None` preserves the stored page-header coordinate system.
+    pub pdf_paper_fixed_axis_size: Option<u32>,
     retained_fonts: Option<FontBook>,
 }
 
@@ -69,6 +73,7 @@ impl PdfOptions {
             dpi: 96.0,
             font_database,
             native_font_names: None,
+            pdf_paper_fixed_axis_size: None,
             retained_fonts: None,
         }
     }
@@ -78,6 +83,7 @@ impl PdfOptions {
             dpi: 96.0,
             font_database: fonts.database(),
             native_font_names: fonts.native_name_config().cloned(),
+            pdf_paper_fixed_axis_size: None,
             retained_fonts: Some(fonts.clone()),
         }
     }
@@ -157,6 +163,8 @@ pub enum PdfError {
     EmptyDocument,
     #[error("PDF DPI must be finite and greater than zero")]
     InvalidDpi,
+    #[error("PDF-paper fixed-axis size must be greater than 31 and fit the native signed range")]
+    InvalidPdfPaperFixedAxisSize,
     #[error("invalid PDF dimensions for page {page_index}")]
     InvalidPageSize { page_index: usize },
     #[error("visible page index {page_index} is out of bounds")]
@@ -284,15 +292,49 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
 
+    let requested_fixed_axis = pdf_options.pdf_paper_fixed_axis_size;
+    if requested_fixed_axis.is_some_and(|axis| axis <= 31 || axis > i32::MAX as u32) {
+        return Err(PdfError::InvalidPdfPaperFixedAxisSize);
+    }
+    let has_selected_pdf_paper = selected_pages.first().is_some_and(|page| {
+        page.page
+            .background
+            .pdf_paper
+            .as_ref()
+            .is_some_and(|records| !records.is_empty())
+    });
+    let normalized = if has_selected_pdf_paper {
+        requested_fixed_axis
+            .map(|axis| paper_scale::normalize_for_fixed_axis(document, layout, page_indices, axis))
+            .transpose()?
+    } else {
+        None
+    };
+    let (paper_document, paper_layout, paper_profile) = normalized
+        .as_ref()
+        .map(|normalized| {
+            (
+                &normalized.document,
+                &normalized.layout,
+                Some(normalized.profile),
+            )
+        })
+        .unwrap_or((document, layout, None));
+
     // A validated SingleX plan owns its expanded physical-page topology. The
     // normal scene path below remains unchanged for documents without retained
     // PDF paper, while unsupported retained-paper cases fail closed here.
-    let paper_plan = paper_support::plan_singlex_pdf_paper(document, layout, page_indices)
-        .map_err(|error| error.to_pdf_error())?;
+    let paper_plan = paper_support::plan_singlex_pdf_paper(
+        paper_document,
+        paper_layout,
+        page_indices,
+        paper_profile,
+    )
+    .map_err(|error| error.to_pdf_error())?;
     if let Some(plan) = paper_plan {
         return paper_support::render_singlex_pdf_paper_plan(
-            document,
-            layout,
+            paper_document,
+            paper_layout,
             plan,
             render_options,
             &pdf_options,
