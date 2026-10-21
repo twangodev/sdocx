@@ -4224,6 +4224,7 @@ fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
     stroke.color.or_else(|| {
         chinesebrush_source_color(stroke)
             .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
+            .or_else(|| crate::ink::saved_airbrush_argb(stroke).map(argb_rgb))
     })
 }
 
@@ -8265,6 +8266,108 @@ mod tests {
                     .collect::<Vec<_>>();
                 assert_eq!(parts, ["2", "3"]);
             }
+        }
+    }
+
+    #[test]
+    fn parsed_airbrush_missing_color_recovers_native_rgb_without_group_opacity() {
+        let source = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let make_airbrush = |mut document: Document, metadata_present: bool| {
+            let stroke = document.pages[0].strokes_mut().next().unwrap();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.AirBrushPen".into());
+            rendering.advanced_settings = None;
+            rendering.tool_type_raw = 2;
+            rendering.style.color_argb = None;
+            if !metadata_present {
+                rendering.metadata = None;
+            }
+            stroke.color = None;
+            document
+        };
+        let generic = make_airbrush(source.clone(), false);
+        let corrected = make_airbrush(source, true);
+        let stroke = corrected.pages[0].strokes().next().unwrap();
+
+        // This is an authored parsed-fixture mutation to exercise rendering
+        // integration; the native evidence comes from the separate Drawing
+        // caller control (null/empty settings -> black GetColor/SetPenData).
+        // Native per-stamp alpha remains outside the generic path, whose group
+        // opacity must stay unchanged.
+        assert!(
+            render_document_svg(&generic, &RenderOptions::default())[0]
+                .svg
+                .contains(r##"stroke="#1a1a1a""##)
+        );
+        assert!(
+            render_document_svg(&corrected, &RenderOptions::default())[0]
+                .svg
+                .contains(r##"stroke="#000000""##)
+        );
+        assert_eq!(super::stroke_paint(stroke, false).color, "#000000");
+        let prepared = super::prepare_stroke_for_page(stroke, false);
+        assert_eq!(prepared.color, "#000000");
+        assert_eq!(prepared.opacity, 1.0);
+        let layout = layout_document(&corrected);
+        assert!(
+            super::render_layout_page_replay_svg(&corrected, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg
+                .contains(r##"stroke="#000000""##)
+        );
+
+        let mut empty_setting = stroke.clone();
+        empty_setting.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        assert_eq!(super::stroke_paint(&empty_setting, false).color, "#000000");
+        assert_eq!(
+            super::prepare_stroke_for_page(&empty_setting, false).opacity,
+            1.0
+        );
+
+        let mut public_color = stroke.clone();
+        public_color.color = Some(Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        });
+        assert_eq!(super::stroke_paint(&public_color, false).color, "#336699");
+
+        let mut saved_color = stroke.clone();
+        saved_color.color = None;
+        saved_color.rendering.as_mut().unwrap().style.color_argb = Some(0x326c_dd8f);
+        assert_eq!(super::stroke_paint(&saved_color, false).color, "#6cdd8f");
+        assert_eq!(
+            super::prepare_stroke_for_page(&saved_color, false).opacity,
+            1.0
+        );
+
+        type RejectedCase = (&'static str, fn(&mut Stroke));
+        let rejected: [RejectedCase; 5] = [
+            ("setting", |s| {
+                s.rendering.as_mut().unwrap().advanced_settings = Some("1;".into())
+            }),
+            ("tool", |s| s.rendering.as_mut().unwrap().tool_type_raw = 1),
+            ("fixed opacity", |s| {
+                s.rendering.as_mut().unwrap().properties.fixed_opacity = true
+            }),
+            ("rainbow", |s| {
+                s.rendering.as_mut().unwrap().properties.rainbow_effect = true
+            }),
+            ("metadata", |s| {
+                s.rendering.as_mut().unwrap().metadata = None
+            }),
+        ];
+        for (reason, mutate) in rejected {
+            let mut unsupported = stroke.clone();
+            mutate(&mut unsupported);
+            assert_eq!(
+                super::stroke_paint(&unsupported, false).color,
+                "#1a1a1a",
+                "{reason}"
+            );
         }
     }
 

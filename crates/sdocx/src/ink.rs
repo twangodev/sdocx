@@ -562,6 +562,40 @@ fn prepare_stroke_inner(
     }
 }
 
+pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    if rendering.metadata.is_none()
+        || rendering.pen_name.as_deref()
+            != Some("com.samsung.android.sdk.pen.pen.preload.AirBrushPen")
+        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
+        || rendering.tool_type_raw != 2
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || rendering
+            .style
+            .stroke_type_raw
+            .is_some_and(|value| value != 0)
+        || rendering
+            .style
+            .color_type_raw
+            .is_some_and(|value| value != 0)
+    {
+        return None;
+    }
+    // Native V1 (null setting) and V2 (empty setting) both retain ObjectStroke's
+    // opaque-black default. This recovers RGB only; native alpha is transformed
+    // per stamp and cannot be applied as opacity to the generic whole-stroke path.
+    Some(rendering.style.color_argb.unwrap_or(0xff00_0000))
+}
+
 // V1 and V4 use RTV1's MAX coverage pass followed by one source-color
 // composite. That paint contract does not depend on V4's display-dependent
 // geometry; keep the geometry approximate while retaining saved source ARGB.
