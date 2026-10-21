@@ -45,7 +45,11 @@ mod marker3;
 #[allow(dead_code)]
 mod oblique;
 pub use marker::PointMarkerTarget;
+#[cfg(feature = "pdf")]
+mod body_query;
 mod native_body_pages;
+#[cfg(feature = "pdf")]
+pub(crate) use body_query::{BodyQueryObservation, ContinuousBodyQuerySnapshot};
 #[cfg(feature = "pdf")]
 mod native_ink;
 mod pdf_slice;
@@ -281,6 +285,36 @@ impl DocumentTextCache {
     pub fn clear(&mut self) {
         self.context = None;
         self.plans.clear();
+    }
+
+    /// Snapshot the bounded continuous-body line query over the same cached
+    /// plan used by page rendering. Callers must pass their normalized scene
+    /// document and page, if they render a normalized scene.
+    #[cfg(feature = "pdf")]
+    pub(crate) fn continuous_body_query_snapshot(
+        &mut self,
+        document: &Document,
+        layout_page: &crate::LayoutPage,
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+    ) -> Option<ContinuousBodyQuerySnapshot> {
+        let source_flow_width = document.metadata.flow_dimensions.map(|(width, _)| width);
+        if document.metadata.page_mode != Some(1)
+            || source_flow_width.is_none_or(|width| width == 0 || width != layout_page.page.width)
+            || layout_page.single_page_continuous_body(document).is_none()
+            || !document
+                .metadata
+                .note_text
+                .as_ref()
+                .is_some_and(|text| body_query::query_image_source(text, document).is_some())
+        {
+            return None;
+        }
+        self.bind(document, options, fonts);
+        let theme = RenderTheme::resolve(&layout_page.page, &document.metadata, options.color_mode);
+        let renderer = page_text_renderer(document, layout_page, options, fonts);
+        let body = PreparedBodyText::new(document, layout_page, theme, &renderer, self, None)?;
+        ContinuousBodyQuerySnapshot::from_plan(&body.plan, document)
     }
 
     /// Render a visible page, sharing compatible body measurements with prior calls.
@@ -604,18 +638,7 @@ impl DocumentTextCache {
     ) -> (RenderedPage, Scene) {
         let page = &layout_page.page;
         let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
-        let settings = TextSettings::from_document(&document.metadata);
-        let text_renderer = TextRenderer::new(settings, fonts)
-            .with_point_marker_target(options.point_marker_target)
-            .with_native_object_page_obstacles(text::NativeObjectPageObstacles::from_document(
-                document,
-            ))
-            .with_table_export_page(table::TableExportPage::for_page(page, &document.metadata))
-            .with_page_exclusions(text::PageExclusions::for_page(
-                document,
-                layout_page.source_page_index,
-                settings,
-            ));
+        let text_renderer = page_text_renderer(document, layout_page, options, fonts);
         observer(Progress::pending(ProgressStage::Preparing));
         let body_text =
             PreparedBodyText::new(document, layout_page, theme, &text_renderer, self, slice);
@@ -915,6 +938,27 @@ impl PreparedBodyPlan {
             native_pages,
         })
     }
+}
+
+fn page_text_renderer<'a>(
+    document: &Document,
+    layout_page: &crate::LayoutPage,
+    options: &RenderOptions,
+    fonts: &'a fonts::FontBook,
+) -> TextRenderer<'a> {
+    let settings = TextSettings::from_document(&document.metadata);
+    TextRenderer::new(settings, fonts)
+        .with_point_marker_target(options.point_marker_target)
+        .with_native_object_page_obstacles(text::NativeObjectPageObstacles::from_document(document))
+        .with_table_export_page(table::TableExportPage::for_page(
+            &layout_page.page,
+            &document.metadata,
+        ))
+        .with_page_exclusions(text::PageExclusions::for_page(
+            document,
+            layout_page.source_page_index,
+            settings,
+        ))
 }
 
 struct VisibleTextSources {
@@ -9385,15 +9429,20 @@ mod tests {
 
         for (anchor, image_height, width, density, delta, native_bits) in cases {
             let quiz = anchor == 112;
-            let page_height = if quiz { 15_372 } else { 9_162 };
+            let frame_width = if quiz { 1_080 } else { width };
+            let page_height = 9_162;
             let flow_width = if quiz { 1_080 } else { width };
             let image_top = if quiz { 5_473.2021484375 } else { 100.0 };
             let mut body = theme_test_text();
-            body.bbox = BoundingBox {
-                x_min: 0.0,
-                y_min: 0.0,
-                x_max: f64::from(width),
-                y_max: f64::from(page_height),
+            body.bbox = if quiz {
+                BoundingBox::default()
+            } else {
+                BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: f64::from(width),
+                    y_max: f64::from(page_height),
+                }
             };
             body.text = format!("{}\u{fffc}\n\n\n", "\n".repeat(anchor));
             body.font_size = Some(17.0);
@@ -9423,7 +9472,7 @@ mod tests {
             }];
 
             let mut page = page_with_uncolored_stroke();
-            page.width = width;
+            page.width = frame_width;
             page.height = page_height;
             let mut document = document(page);
             document.metadata.page_mode = Some(1);
@@ -9432,6 +9481,14 @@ mod tests {
             document.metadata.flow_page_padding = Some((0, 24));
             document.metadata.body_font_size_delta = Some(delta);
             document.metadata.note_text = Some(body);
+            if quiz {
+                document.metadata.media_assets = vec![MediaAsset {
+                    name: "0.png".to_owned(),
+                    archive_id: Some(0),
+                    mime_type: "image/png".to_owned(),
+                    data: include_bytes!("../tests/assets/crop-quadrants.png").to_vec(),
+                }];
+            }
 
             let layout = layout_document(&document);
             let fonts = super::fonts::FontBook::default();
@@ -9527,6 +9584,86 @@ mod tests {
                     (6_167.1689453125, 6_168.1689453125, false),
                 ] {
                     assert_eq!(visible(a as f32, b as f32), expected, "quiz band {a}..{b}");
+                }
+
+                let cached_plan = super::Rc::clone(&cache.plans[0].1);
+                let snapshot = cache
+                    .continuous_body_query_snapshot(
+                        &document,
+                        &layout.pages[0],
+                        &RenderOptions::default(),
+                        &fonts,
+                    )
+                    .expect("bounded LF-plus-resolved-image body query snapshot");
+                assert!(super::Rc::ptr_eq(&cached_plan, &cache.plans[0].1));
+                let first_line = snapshot.line_rect(0).unwrap();
+                assert_eq!(first_line[0].to_bits(), 0.0_f32.to_bits());
+                assert_eq!(first_line[2].to_bits(), 0.0_f32.to_bits());
+                let image_line = snapshot.line_rect(112).unwrap();
+                assert_eq!(image_line[0].to_bits(), 48.0_f32.to_bits());
+                assert_eq!(image_line[1].to_bits(), native_bits[0]);
+                assert_eq!(
+                    image_line[2].to_bits(),
+                    f32::from_bits(0x440ddeda).to_bits()
+                );
+                assert_eq!(image_line[3].to_bits(), native_bits[1]);
+                assert_eq!(
+                    snapshot
+                        .query([
+                            0.0,
+                            f32::from_bits(0x45ab09a6),
+                            1_080.0,
+                            f32::from_bits(0x45ab11a6)
+                        ])
+                        .line_count,
+                    116
+                );
+                assert_eq!(
+                    snapshot.line_index(f32::from_bits(native_bits[0])),
+                    Some(111)
+                );
+                assert_eq!(
+                    snapshot.line_index(f32::from_bits(native_bits[0] + 1)),
+                    Some(112)
+                );
+                for (left, top, right, bottom, expected) in [
+                    (
+                        0.0,
+                        f32::from_bits(0x45a984d9),
+                        1_080.0,
+                        f32::from_bits(0x45ab09a6),
+                        false,
+                    ),
+                    (
+                        0.0,
+                        f32::from_bits(0x45ab09a6),
+                        1_080.0,
+                        f32::from_bits(0x45ab11a6),
+                        true,
+                    ),
+                    (0.0, 6_155.0, 1_080.0, 6_160.0, true),
+                    (
+                        0.0,
+                        f32::from_bits(0x45c0b15a),
+                        1_080.0,
+                        f32::from_bits(0x45c0b95a),
+                        true,
+                    ),
+                    (
+                        0.0,
+                        f32::from_bits(0x45c0b95a),
+                        1_080.0,
+                        f32::from_bits(0x45c0c15a),
+                        false,
+                    ),
+                    (0.0, 6_170.0, 1_080.0, 6_180.0, false),
+                    (2_000.0, 5_500.0, 2_010.0, 5_510.0, false),
+                ] {
+                    assert_eq!(
+                        snapshot.query([left, top, right, bottom]).visible,
+                        expected,
+                        "native body query band ({left}, {top}, {right}, {bottom})"
+                    );
                 }
             }
         }

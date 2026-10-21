@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::{paper_segments, paper_selection};
+use crate::render::ContinuousBodyQuerySnapshot;
 
 use lopdf::{Dictionary, Document, Object, ObjectId, Stream, content::Content, dictionary};
 
@@ -570,6 +571,7 @@ pub(super) fn plan_singlex_pdf_paper(
     layout: &crate::LayoutDocument,
     page_indices: &[usize],
     fixed_axis_profile: Option<super::paper_scale::FixedAxisProfile>,
+    body_query_snapshot: Option<&ContinuousBodyQuerySnapshot>,
 ) -> Result<Option<SingleXPaperPlan>, PdfPaperAdmissionError> {
     if page_indices.is_empty() {
         return Ok(None);
@@ -620,12 +622,19 @@ pub(super) fn plan_singlex_pdf_paper(
     let inspection_object_index = verified_body
         .as_ref()
         .and_then(|_| selected.body_text_slice().map(|body| body.object_index));
-    let body_has_unsupported_content = document
+    let body_requires_query = document
         .metadata
         .note_text
         .as_ref()
-        .is_some_and(|text| !rich_text_is_benign_blank(text))
-        || (selected.body_text.is_some() && document.metadata.note_text.is_none());
+        .is_some_and(|text| !rich_text_is_benign_blank(text));
+    let body_has_unowned_source =
+        selected.body_text.is_some() && document.metadata.note_text.is_none();
+    let body_query_axis_matches = document
+        .metadata
+        .flow_dimensions
+        .is_some_and(|(flow_width, _)| flow_width == selected.page.width);
+    let body_has_unsupported_content = body_has_unowned_source
+        || (body_requires_query && (body_query_snapshot.is_none() || !body_query_axis_matches));
     if body_has_unsupported_content {
         return Err(reject(
             0,
@@ -835,17 +844,33 @@ pub(super) fn plan_singlex_pdf_paper(
         }
     }
 
-    struct NoBody;
-    impl paper_segments::SegmentQueries for NoBody {
+    struct BodyQueries<'a> {
+        snapshot: Option<&'a ContinuousBodyQuerySnapshot>,
+    }
+    impl paper_segments::SegmentQueries for BodyQueries<'_> {
         fn body_cut(
             &self,
-            _band: [f32; 4],
+            band: [f32; 4],
         ) -> Result<paper_segments::BodyCutObservation, paper_segments::PlanError> {
+            let Some(snapshot) = self.snapshot else {
+                return Ok(paper_segments::BodyCutObservation {
+                    visible: false,
+                    line_index: None,
+                    line_count: 0,
+                    line_rect: [0.0; 4],
+                });
+            };
+            let observation: crate::render::BodyQueryObservation = snapshot.query(band);
             Ok(paper_segments::BodyCutObservation {
-                visible: false,
-                line_index: None,
-                line_count: 0,
-                line_rect: [0.0; 4],
+                visible: observation.visible,
+                line_index: observation
+                    .line_index
+                    .map(i32::try_from)
+                    .transpose()
+                    .map_err(|_| paper_segments::PlanError::ArithmeticOverflow)?,
+                line_count: i32::try_from(observation.line_count)
+                    .map_err(|_| paper_segments::PlanError::ArithmeticOverflow)?,
+                line_rect: observation.line_rect,
             })
         }
     }
@@ -877,7 +902,9 @@ pub(super) fn plan_singlex_pdf_paper(
         i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?,
         default_height_i32,
         &resolved,
-        &NoBody,
+        &BodyQueries {
+            snapshot: body_query_snapshot,
+        },
     )
     .map_err(|_| reject(0, "native page segmentation is unsupported"))?;
 

@@ -642,6 +642,15 @@ Derived bounds retain fixed-unit margins; scaling already-expanded bounds is
 incorrect. The comparison receipt SHA-256 is
 `304afbad7abef675101aabc439062d942efb0f570662d51ee02dc5747b56debb`.
 
+The SDK's explicit 1080 route exports this quiz as seven pages without
+diagnostics. MuPDF and PDFium render all seven; the inline PNG's decoded RGB
+pixels survive unchanged on page 5, with bounds within 0.00002 points of the
+native context rectangle after page offset and physical scaling. The source
+PDF page box, text and original image stream also survive. This checks SDK
+transport against native model placement, not native export pixels. Consumer
+receipt SHA-256:
+`62319db0b18ed8f3a4571c36cec8c1199c82d9fc78634bfdba69b685d8721243`.
+
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
 band's top, and can return `trunc(line_bottom - f32(y))`

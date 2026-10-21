@@ -624,11 +624,15 @@ geometry using native f32 rules; its default preserves the stored coordinate
 profile. Body coordinates and source PDF boxes stay in their own domains.
 Empty or LF-only body text with supported formatting is accepted, including
 foreground/font-size spans, finite margins and valid saved text sections;
-bullets remain unsupported. A saved stroke's generated flag alone does not
-exclude it. Visible body text, inline images, multiple source PDFs, gaps between
-records and other unverified cases still fail explicitly. In particular, the
-real quiz note contains a visible body image
-and is not yet supported by this route. SVG previews continue to report omitted
+bullets remain unsupported. LF text with one resolved, unrotated block image is
+also accepted when the page and body flow axes agree; body-aware page cuts use
+the same cached layout as painting. The real quiz exports seven pages with an
+explicit 1080 load width. MuPDF and PDFium render every page; its image pixels
+are preserved and its page-5 bounds match native model placement within
+0.00002 points. This is model/transport validation, not native pixel parity.
+A saved stroke's generated flag alone does not exclude it. Other visible text,
+image transforms, multiple source PDFs, gaps between records and unverified
+cases still fail explicitly. SVG previews continue to report omitted
 PDF backgrounds; converting those diagnostic-aware pages to PDF fails explicitly.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the Rust model and verified vector PDF transport.

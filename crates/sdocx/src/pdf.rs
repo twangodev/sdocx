@@ -320,6 +320,13 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
             )
         })
         .unwrap_or((document, layout, None));
+    let body_query_snapshot = has_selected_pdf_paper
+        .then(|| {
+            paper_layout.pages.first().and_then(|page| {
+                cache.continuous_body_query_snapshot(paper_document, page, render_options, fonts)
+            })
+        })
+        .flatten();
 
     // A validated SingleX plan owns its expanded physical-page topology. The
     // normal scene path below remains unchanged for documents without retained
@@ -329,6 +336,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
         paper_layout,
         page_indices,
         paper_profile,
+        body_query_snapshot.as_ref(),
     )
     .map_err(|error| error.to_pdf_error())?;
     if let Some(plan) = paper_plan {

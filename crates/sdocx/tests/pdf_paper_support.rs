@@ -333,6 +333,62 @@ fn page_box(pdf: &PdfDocument, page_number: u32) -> [f64; 4] {
         .unwrap()
 }
 
+fn page_references_image_size(
+    pdf: &PdfDocument,
+    page_number: u32,
+    width: i64,
+    height: i64,
+) -> bool {
+    let Some(page_id) = pdf.get_pages().get(&page_number).copied() else {
+        return false;
+    };
+    let Some(resources) = pdf
+        .get_dictionary(page_id)
+        .ok()
+        .and_then(|page| page.get(b"Resources").ok())
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+    else {
+        return false;
+    };
+    let Some(xobjects) = resources
+        .get(b"XObject")
+        .ok()
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+    else {
+        return false;
+    };
+    let Ok(bytes) = pdf.get_page_content(page_id) else {
+        return false;
+    };
+    let Ok(content) = Content::decode(&bytes) else {
+        return false;
+    };
+    content.operations.iter().any(|operation| {
+        operation.operator == "Do"
+            && operation
+                .operands
+                .first()
+                .and_then(|object| object.as_name().ok())
+                .and_then(|name| xobjects.get(name).ok())
+                .and_then(|object| pdf.dereference(object).ok())
+                .is_some_and(|(_, object)| {
+                    object.as_stream().is_ok_and(|stream| {
+                        stream.dict.get(b"Subtype").is_ok_and(|subtype| {
+                            subtype.as_name().is_ok_and(|name| name == b"Image")
+                        }) && stream
+                            .dict
+                            .get(b"Width")
+                            .is_ok_and(|value| value.as_i64().is_ok_and(|value| value == width))
+                            && stream.dict.get(b"Height").is_ok_and(|value| {
+                                value.as_i64().is_ok_and(|value| value == height)
+                            })
+                    })
+                })
+    })
+}
+
 fn number(object: &Object) -> Option<f64> {
     object
         .as_float()
@@ -761,6 +817,67 @@ fn public_pdf_paper_accepts_styled_blank_body_and_rejects_visible_inline_image_b
         export(&image_body, &[0], 96.0),
         Err(PdfError::UnsupportedPdfPaper { .. })
     ));
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn public_pdf_paper_keeps_one_resolved_image_body_and_the_source_pdf_resource() {
+    let mut document = document(true, None, 0, 1);
+    let anchor = 112;
+    let mut body = rich_text(&format!("{}\u{fffc}\n\n\n", "\n".repeat(anchor)), vec![]);
+    body.font_size = Some(17.0);
+    body.margins = Some([16.0, 10.0, 16.0, 10.0]);
+    body.gravity = Some(0);
+    let placed_image: sdocx::PlacedImage = serde_json::from_value(serde_json::json!({
+        "bbox": {
+            "x_min": 48.0,
+            "y_min": 5473.2021484375,
+            "x_max": 567.48206,
+            "y_max": 6154.563965,
+        },
+        "rotation_degrees": null,
+        "media_id": 0,
+        "media_index": 0,
+        "crop_rect": null,
+        "original_bbox": null,
+        "border_media_id": null,
+        "original_media_id": null,
+    }))
+    .unwrap();
+    body.object_spans.push(RichTextObjectSpan {
+        object_type: sdocx::ObjectType::Image,
+        object_data: Vec::new(),
+        content: Some(sdocx::RichTextObjectContent::Image(Box::new(placed_image))),
+        text_index_utf16: anchor as i32,
+        layout_option: ObjectSpanLayoutOption::Block,
+        layout_constraint: ObjectSpanLayoutConstraint::Normal,
+    });
+    document.metadata.note_text = Some(body);
+    document.metadata.media_assets = vec![sdocx::MediaAsset {
+        name: "0.png".to_owned(),
+        archive_id: Some(0),
+        mime_type: "image/png".to_owned(),
+        data: include_bytes!("assets/crop-quadrants.png").to_vec(),
+    }];
+
+    let output = export_with_fixed_axis(&document, &[0], 96.0, Some(1_080)).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(pdf.get_pages().len(), 7);
+    assert_eq!(output.pages.len(), 7);
+    assert_eq!(
+        page_box(&pdf, 1),
+        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)],
+        "the retained source PDF keeps its original physical page box"
+    );
+    assert!(
+        (2..=7).any(|page_number| page_references_image_size(&pdf, page_number, 4, 3)),
+        "the resolved source PNG must be present in a rendered continuation page"
+    );
+    assert_eq!(
+        document.metadata.media_assets[0].data,
+        include_bytes!("assets/crop-quadrants.png"),
+        "PDF export must leave the caller-owned PNG bytes intact"
+    );
 }
 
 #[test]
