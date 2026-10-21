@@ -368,20 +368,14 @@ mod tests {
         assert_eq!(segments.len(), 2);
         assert_eq!(segments[0].record_indices, [0]);
         assert_eq!(segments[0].slices, [NoteSlice { y: 0, height: 1485 }]);
-        assert_eq!(segments[1].slices.len(), 10);
+        // Observed from SingleX on the ConstructLoad-loaded archive, not a
+        // synthetic WNote (see the Single-mode findings).
         assert_eq!(
-            segments[1].slices[0],
-            NoteSlice {
-                y: 1485,
-                height: 1527
-            }
-        );
-        assert_eq!(
-            segments[1].slices[9],
-            NoteSlice {
-                y: 15228,
-                height: 1527
-            }
+            segments[1].slices,
+            [
+                1485, 3012, 4539, 6066, 7593, 9120, 10647, 12174, 13701, 15228
+            ]
+            .map(|y| NoteSlice { y, height: 1527 })
         );
     }
 

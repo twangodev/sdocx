@@ -564,6 +564,16 @@ continuous note page can produce many PDF output pages. Its records are
 consumed through a cursor, rather than independently finding every rectangle
 that intersects each strip.
 
+An executed `ConstructLoad` → `SingleX::initializeExport` → `buildPageSegments`
+check on the quiz archive (SHA-256
+`38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a`)
+confirms this topology on its actual loaded WNote: one PDF record at
+`[0,0,1812,1485]`, a PDF segment with slice `(0,1485)`, then ten ordinary
+slices starting at `1485,3012,4539,6066,7593,9120,10647,12174,13701,15228`,
+each height `1527`. The Rust planner regression checks all eleven slices.
+This execution uses host platform/display/math services; it does not establish
+archive-object admission, final PDF placement, or native device pixels.
+
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
 band's top, and can return `trunc(line_bottom - f32(y))`
