@@ -494,7 +494,9 @@ hard-circle coverage. Public SDK exports reduce alpha error in 116 of 117 paired
 host-capture comparisons across resvg, MuPDF and PDFium, with one tie, but lose
 some faint edge support. Identical-radius masks are shared and output budgets
 are checked before emission. Texture minification, arbitrary output affines and
-device pixel parity remain unverified.
+device pixel parity remain unverified. Three captured output transforms also show
+that an analytic radial derivative differs from native finite helper-lane
+derivatives before SVG/PDF rasterization; the masks remain an approximation.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
@@ -620,7 +622,11 @@ and SDK overlay tags through reordered/duplicate pages and ordinary tails.
 Real-source and retained-text transport match MuPDF/PDFium at 1×/2×; the
 native-derived slice planner is also test-only. A bounded block-image query
 candidate matches the measured native query and planner replays; general query
-and placement integration remain open. A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
+and placement integration remain open. On one actually loaded quiz archive,
+the test-only stroke selector matches native identities and order across all
+11 bands: 3,228 unique strokes and 3,261 admissions, including cross-band repeats.
+This verifies query admission for that sample, not exported appearance.
+A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)
 also executes native PNG decoding and image placement for a synthetic rectangle.

@@ -64,7 +64,13 @@ sample segment strictly inside it can still be accepted. The
 [executed stroke controls](../../conformance/pdf-stroke-selection-native.json)
 pin this case, containment/edge behavior, zero-extent bounds and raw sizes up to
 900 without the drawable pen's size clamp. They exercise constructed native
-objects; archive-backed query admission remains a separate validation step.
+objects. An archive-backed capture of `quiz.sdocx` (SHA-256
+`38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a`) ran
+native `WNote::ConstructLoad` and `SingleX::getPageObjectList` across 11 ordered
+queries on the loaded page. Its 3,228 stroke identities and native getter
+geometry matched the Rust test-only comparator exactly: 3,261 total selections,
+including 33 cross-band repeats. This establishes query selection for that
+archive sample only; PDF-paper export and raster parity remain separate.
 
 Shape partial-content checking at Model `0x39c578` includes template margins,
 path intersection and containment of the overlap rectangle's center.
