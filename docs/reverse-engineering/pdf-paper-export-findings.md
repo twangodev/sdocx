@@ -605,13 +605,20 @@ final PDF placement or native device pixels. A separate
 [archive-backed query comparison](object-selection-findings.md) verifies
 ordinary stroke admission and order for this sample.
 
-A follow-up on the same loaded archive measures 116 body lines. Native
+Those archive probes supply `ConstructLoad` fixed-axis size 1812 and exporter
+default height 1527. The app's common portrait PDF open paths instead supply
+fixed-axis size 1080 (`DocumentFileUtil.Document`, `TaskMakePdf`). Native
+[`LoadHeader_Scale`](vector-retention-findings.md#native-opening-normalizes-the-requested-fixed-axis)
+normalizes page/object geometry using the requested and saved page-header axes.
+The probes establish the supplied profile, rather than the app's load defaults.
+
+A follow-up with the same 1812 profile measures 116 body lines. Native
 `BodyTextContext::HasVisibleText` returns true for the full note and the
 `9120–10647` band; the other ten observed page bands are false. Line 112 spans
-`[80.5333,9182.8164,952.1088,10347.1309]`. These bounds are approximately
-`1812/1080` times the SDK's current flow-space geometry; the responsible model
-or layout conversion remains open. This executes measurement and visibility,
-with no body/query injection, but does not resolve or draw the image object.
+`[80.5333,9182.8164,952.1088,10347.1309]`, approximately `1812/1080` times the
+SDK's flow-space geometry. This executes measurement and visibility without
+body/query injection, but does not establish an SDK geometry bug or resolve
+and draw the image object. An app-equivalent 1080 load remains to be compared.
 The event receipt SHA-256 is
 `1f2237fc0f7288b913d0fa2260b0fa68dd5c1b750d599ae49c422f0412bc2c6e`.
 
