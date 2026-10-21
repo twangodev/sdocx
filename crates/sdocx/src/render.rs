@@ -9671,6 +9671,96 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn continuous_body_two_block_images_keep_one_sdk_owner_per_anchor() {
+        let mut body = theme_test_text();
+        body.bbox = BoundingBox::default();
+        body.text = "\u{fffc}\n\u{fffc}".into();
+        body.font_size = Some(20.0);
+        body.margins = Some([0.0; 4]);
+        body.object_spans = [(0_i32, 0.0_f64, 0_u32), (2, 24.0, 1)]
+            .into_iter()
+            .map(|(anchor, x, media_id)| RichTextObjectSpan {
+                object_type: ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: x,
+                        y_min: 0.0,
+                        x_max: x + 20.0,
+                        y_max: 20.0,
+                    },
+                    rotation_degrees: None,
+                    media_id: Some(media_id),
+                    media_index: Some(media_id as usize),
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                }))),
+                text_index_utf16: anchor,
+                layout_option: ObjectSpanLayoutOption::Block,
+                layout_constraint: ObjectSpanLayoutConstraint::Normal,
+            })
+            .collect();
+
+        let mut page = page_with_uncolored_stroke();
+        page.width = 200;
+        page.height = 200;
+        page.objects.clear();
+        let mut document = document(page);
+        document.metadata.page_mode = Some(1);
+        // Density 1 preserves the native 20px body font and 200px Widget width.
+        document.metadata.default_page_dimensions = Some((360, 1_527));
+        document.metadata.flow_dimensions = Some((200, 200));
+        document.metadata.flow_page_padding = Some((0, 0));
+        document.metadata.note_text = Some(body);
+        document.metadata.media_assets = [0_u32, 1_u32]
+            .into_iter()
+            .map(|archive_id| MediaAsset {
+                name: format!("{archive_id}.png"),
+                archive_id: Some(archive_id),
+                mime_type: "image/png".to_owned(),
+                data: include_bytes!("../tests/assets/crop-quadrants.png").to_vec(),
+            })
+            .collect();
+
+        let layout = layout_document(&document);
+        let fonts = super::fonts::FontBook::default();
+        let mut cache = super::DocumentTextCache::default();
+        cache
+            .render_layout_page_svg(&document, &layout, 0, &RenderOptions::default(), &fonts)
+            .expect("page renders");
+        let plan = &cache.plans[0].1;
+        assert_eq!(plan.text.text, "\u{fffc}\n\u{fffc}");
+        assert_eq!(plan.text.object_spans.len(), 2);
+        assert!(plan.object_issues.is_empty());
+        assert_eq!(plan.layout.lines.len(), 2);
+        let owners = plan
+            .layout
+            .lines
+            .iter()
+            .flat_map(|line| line.line.objects.iter())
+            .map(|object| (object.object.span_index, object.object.source.clone()))
+            .collect::<Vec<_>>();
+        assert_eq!(owners, [(0, 0..1), (1, 2..3)]);
+        for (span_index, anchor) in [(0, 0), (1, 2)] {
+            assert_eq!(
+                plan.text.text.chars().nth(anchor),
+                Some('\u{fffc}'),
+                "span {span_index} must own a replacement-character anchor"
+            );
+            let span = &plan.text.object_spans[span_index];
+            assert_eq!(span.text_index_utf16, anchor as i32);
+            let Some(RichTextObjectContent::Image(image)) = span.content.as_ref() else {
+                panic!("span {span_index} should retain resolved image content");
+            };
+            assert_eq!(image.media_index, Some(span_index));
+            assert_eq!(image.media_id, Some(span_index as u32));
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn single_page_continuous_uses_full_source_without_replacing_inspection_slice() {
         let mut body = theme_test_text();
         body.text = format!("{}\u{fffc}tail", "\n".repeat(112));
