@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "scope": "ordinary unrotated ObjectStroke query admission; geometry callbacks empty",
+  "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "native_rvas": {
+    "ObjectBase::IsIntersect(SPen::RectF)": "0x2d2470",
+    "RectF::IsIntersect(SPen::RectF const&) const [Base]": "0xb127c",
+    "ObjectStroke::GetRect() const": "0x2e6b18",
+    "ObjectStroke::getSelectionRect() const": "0x2e6d9c"
+  },
+  "receipt_sha256": "63f3a75385e7ac85f0f530526f947c7c16b1dfe602bcb6354f6a4c9411593ac9",
+  "zero_size_receipt_sha256": "e13952224a0028b259f424ca5d70ee73e3520c04eb67a9e9c550999b8971c2b2",
+  "retired_helper_commit": "84d6e2fca4b2882e0b28b688c5e71964c723976a",
+  "rect_layout": "left,top,right,bottom",
+  "bbox_f32_bits": ["00000000", "00000000", "41200000", "00000000"],
+  "samples_f32_bits": [["00000000", "00000000"], ["41200000", "00000000"]],
+  "raw_pen_size_f32_bits": "40000000",
+  "selection_f32_bits": ["bf800000", "bf800000", "41300000", "40000000"],
+  "queries": [
+    {"name":"full_contains", "bits":["c0000000","c0000000","41300000","40000000"], "admitted":true},
+    {"name":"equal_selection", "bits":["bf800000","bf800000","41300000","40000000"], "admitted":true},
+    {"name":"strict_edge_touch", "bits":["c0000000","bf800000","bf800000","40000000"], "admitted":false},
+    {"name":"partial_sample_hit", "bits":["41100000","00000000","41300000","3f000000"], "admitted":true},
+    {"name":"partial_bbox_only", "bits":["40a00000","3fc00000","40c00000","3fe66666"], "admitted":false},
+    {"name":"zero_width_query", "bits":["40a00000","00000000","40a00000","3f800000"], "admitted":false}
+  ],
+  "one_point": {
+    "bbox_f32_bits":["00000000","00000000","00000000","00000000"],
+    "samples_f32_bits":[["00000000","00000000"]],
+    "raw_pen_size_f32_bits":"40000000",
+    "selection_f32_bits":["bf800000","bf800000","40000000","40000000"],
+    "contained_query_bits":["bf800000","bf800000","40000000","40000000"],
+    "partial_query_bits":["00000000","00000000","3f000000","3f000000"],
+    "contained_query_admitted":true,
+    "partial_query_admitted":false
+  },
+  "zero_size_segment": {
+    "bbox_f32_bits":["bf800000","bf800000","41300000","40000000"],
+    "samples_f32_bits":[["00000000","00000000"],["41200000","00000000"]],
+    "raw_pen_size_f32_bits":"00000000",
+    "query_f32_bits":["40a00000","bf000000","40c00000","3f000000"],
+    "admitted":true,
+    "is_intersect_arguments":[
+      {"receiver":["40a00000","bf000000","40c00000","3f000000"],"operand":["bf800000","bf800000","41300000","40000000"]},
+      {"receiver":["40a00000","bf000000","40c00000","3f000000"],"operand":["00000000","00000000","41200000","00000000"]}
+    ]
+  },
+  "raw_size_controls": [
+    {"input":"00000000","getter":"00000000","selection":["00000000","00000000","41200000","3f800000"]},
+    {"input":"3e4ccccd","getter":"3e4ccccd","selection":["bdcccccd","bdcccccd","4121999a","3f8ccccd"]},
+    {"input":"44480000","getter":"44480000","selection":["c3c80000","c3c80000","43cd0000","43c88000"]},
+    {"input":"44610000","getter":"44610000","selection":["c3e10000","c3e10000","43e60000","43e18000"]}
+  ]
+}

@@ -59,6 +59,12 @@ For partially intersecting strokes, Model
 `ObjectStroke::hasValidDataInIntersectRect`, `0x2e6e88`, checks successive
 sample-segment rectangles expanded by half pen size at `0x2e6f10`–`0x2e6f54`.
 A one-sample stroke has no segment in this loop; full containment bypasses it.
+The positive-area overlap is the `RectF::IsIntersect` receiver, so a zero-height
+sample segment strictly inside it can still be accepted. The
+[executed stroke controls](../../conformance/pdf-stroke-selection-native.json)
+pin this case, containment/edge behavior, zero-extent bounds and raw sizes up to
+900 without the drawable pen's size clamp. They exercise constructed native
+objects; archive-backed query admission remains a separate validation step.
 
 Shape partial-content checking at Model `0x39c578` includes template margins,
 path intersection and containment of the overlap rectangle's center.

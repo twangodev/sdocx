@@ -24,6 +24,9 @@ mod paper;
 #[cfg(test)]
 #[path = "pdf/paper_segments.rs"]
 mod paper_segments;
+#[cfg(test)]
+#[path = "pdf/paper_selection.rs"]
+mod paper_selection;
 
 use crate::render::{
     DocumentTextCache, NativeInkPayload, NativeInkRegistry, NativePdfPainter, NativeTextRegistry,
