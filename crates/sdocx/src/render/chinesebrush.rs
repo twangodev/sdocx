@@ -1,11 +1,13 @@
 //! Approximate ChineseBrush vector paint from parsed source records and the
-//! native intrinsic atlas. Circles provide geometric coverage; this does not
-//! reproduce the native screen-space `fwidth` fringe.
+//! native intrinsic atlas. Optional output-scale masks approximate native
+//! screen-space `fwidth` coverage.
 use super::vector::{
-    Circle, Clip, ClipPath, Definition, Definitions, Group, Image, ImageId, Paint, ReplayPart,
-    Scene, StrokeIndex, Styled, Transform, Use,
+    Circle, Clip, ClipPath, ColorValue, Data, Definition, Definitions, Gradient, Group, Image,
+    ImageId, Mask, Paint, Path, RadialGradient, ReplayPart, Scene, Stop, StrokeIndex, Styled,
+    SvgMask, Transform, Use,
 };
 use crate::Stroke;
+use std::collections::HashMap;
 
 const MAX_SOURCE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_SOURCE_EVENTS: usize = 65_536;
@@ -13,6 +15,9 @@ const MAX_OUTPUT_RECORDS: usize = 32_768;
 const MAX_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const STAMP_FIXED_MARKUP_BUDGET: usize = 1_024;
 const TILE_DEFINITION_FIXED_MARKUP_BUDGET: usize = 256;
+const FWIDTH_SECTORS: usize = 64;
+const FWIDTH_SECTOR_BUDGET: usize = 4_096;
+const FWIDTH_STAMP_BUDGET: usize = 512;
 const ATLAS_WIDTH: usize = 144;
 const TILE_SIZE: usize = 48;
 const TILE_COUNT: usize = 7;
@@ -21,6 +26,27 @@ const TILE_COUNT: usize = 7;
 // stroke RGB from a separate uniform; retaining the full image pins that split.
 const SOURCE_ATLAS: &[u8; ATLAS_WIDTH * ATLAS_WIDTH * 4] =
     include_bytes!("chinesebrush_atlas_rgba_144x144.bin");
+
+fn estimated_markup_bytes(
+    stamp_count: usize,
+    tiles: &[(usize, Vec<u8>)],
+    mask_count: usize,
+) -> Option<usize> {
+    stamp_count
+        .checked_mul(STAMP_FIXED_MARKUP_BUDGET)?
+        .checked_add(mask_count.checked_mul(FWIDTH_SECTORS.checked_mul(FWIDTH_SECTOR_BUDGET)?)?)?
+        .checked_add(if mask_count == 0 {
+            0
+        } else {
+            stamp_count.checked_mul(FWIDTH_STAMP_BUDGET)?
+        })?
+        .checked_add(tiles.iter().try_fold(0usize, |total, (_, png)| {
+            let base64_len = png.len().checked_add(2)?.checked_div(3)?.checked_mul(4)?;
+            total
+                .checked_add(TILE_DEFINITION_FIXED_MARKUP_BUDGET)?
+                .checked_add(base64_len)
+        })?)
+}
 
 fn source_alpha(x: usize, y: usize) -> u8 {
     SOURCE_ATLAS[(y * ATLAS_WIDTH + x) * 4 + 3]
@@ -33,6 +59,13 @@ struct Stamp {
     radius: f64,
     tile: usize,
     opacity: f64,
+    mask: Option<usize>,
+}
+
+#[derive(Debug)]
+struct FringeMask {
+    widths: [f64; FWIDTH_SECTORS],
+    core_radius: f64,
 }
 
 #[derive(Debug)]
@@ -40,6 +73,7 @@ pub(crate) struct Prepared {
     sample_ends: Vec<usize>,
     stamps: Vec<Stamp>,
     tiles: Vec<(usize, Vec<u8>)>,
+    fringe_masks: Vec<FringeMask>,
 }
 
 fn gl_version(setting: &str) -> Option<i32> {
@@ -111,7 +145,13 @@ fn tile_opacity(phase: f32, scalar: f32) -> Option<(usize, f32)> {
 pub(crate) fn prepare(
     stroke: &Stroke,
     profile: super::ChineseBrushRenderProfile,
+    output_profile: Option<super::ChineseBrushFwidthOutputProfile>,
 ) -> Option<Prepared> {
+    let pixels_per_page_unit =
+        output_profile.map(|profile| f64::from(profile.pixels_per_page_unit));
+    if pixels_per_page_unit.is_some_and(|scale| !scale.is_finite() || scale <= 0.0) {
+        return None;
+    }
     let rendering = stroke.rendering.as_ref()?;
     if rendering.metadata.is_none()
         || rendering.pen_name.as_deref()
@@ -190,6 +230,8 @@ pub(crate) fn prepare(
         (argb & 0xff) as u8,
     ];
     let mut stamps = Vec::with_capacity(sample.records.len());
+    let mut fringe_masks = Vec::new();
+    let mut fringe_indices = HashMap::<u64, usize>::new();
     let mut used_tiles = [false; TILE_COUNT];
     for [x, y, radius, phase, scalar] in sample.records {
         if ![x, y, radius, phase, scalar]
@@ -204,12 +246,51 @@ pub(crate) fn prepare(
         let (tile, opacity) = tile_opacity(phase, scalar)?;
         used_tiles[tile] = true;
         let (x, y, radius) = (f64::from(x), f64::from(y), f64::from(radius));
+        let mask = if let Some(scale) = pixels_per_page_unit {
+            let device_radius = radius * scale;
+            if !device_radius.is_finite() || device_radius <= 0.0 {
+                return None;
+            }
+            let key = radius.to_bits();
+            Some(if let Some(index) = fringe_indices.get(&key) {
+                *index
+            } else {
+                let inverse_radius = device_radius.recip();
+                if !inverse_radius.is_finite() || inverse_radius <= 0.0 {
+                    return None;
+                }
+                let widths = std::array::from_fn(|sector| {
+                    let angle =
+                        (sector as f64 + 0.5) * (std::f64::consts::TAU / FWIDTH_SECTORS as f64);
+                    (angle.cos().abs() + angle.sin().abs()) * inverse_radius
+                });
+                if widths.iter().any(|width| {
+                    !width.is_finite() || *width <= 0.0 || (*width < 1.0 && 1.0 - *width == 1.0)
+                }) {
+                    return None;
+                }
+                let core_radius = (1.0 - std::f64::consts::SQRT_2 * inverse_radius).max(0.0);
+                if !core_radius.is_finite() || core_radius >= 1.0 {
+                    return None;
+                }
+                let index = fringe_masks.len();
+                fringe_masks.push(FringeMask {
+                    widths,
+                    core_radius,
+                });
+                fringe_indices.insert(key, index);
+                index
+            })
+        } else {
+            None
+        };
         stamps.push(Stamp {
             x,
             y,
             radius,
             tile,
             opacity: f64::from(opacity),
+            mask,
         });
     }
     let mut tiles = Vec::new();
@@ -220,16 +301,7 @@ pub(crate) fn prepare(
     }
     // Each intrinsic PNG appears once in defs; stamp references only add
     // bounded transform, opacity, clip, replay, and href markup.
-    let estimated = stamps
-        .len()
-        .checked_mul(STAMP_FIXED_MARKUP_BUDGET)?
-        .checked_add(tiles.iter().try_fold(0usize, |total, (_, png)| {
-            let png_len = png.len();
-            let base64_len = png_len.checked_add(2)?.checked_div(3)?.checked_mul(4)?;
-            total
-                .checked_add(TILE_DEFINITION_FIXED_MARKUP_BUDGET)?
-                .checked_add(base64_len)
-        })?)?;
+    let estimated = estimated_markup_bytes(stamps.len(), &tiles, fringe_masks.len())?;
     if estimated > MAX_ESTIMATED_MARKUP_BYTES {
         return None;
     }
@@ -237,6 +309,7 @@ pub(crate) fn prepare(
         sample_ends: sample.sample_ends,
         stamps,
         tiles,
+        fringe_masks,
     })
 }
 
@@ -257,6 +330,16 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
         .tiles
         .iter()
         .map(|(tile, _)| (*tile, svg.definition::<ImageId>()))
+        .collect();
+    let fringe_definitions: Vec<_> = prepared
+        .fringe_masks
+        .iter()
+        .map(|_| {
+            (
+                svg.definition::<Mask>(),
+                std::array::from_fn::<_, FWIDTH_SECTORS, _>(|_| svg.definition::<Gradient>()),
+            )
+        })
         .collect();
     svg.scope(Definitions::new(), |svg| {
         svg.scope(ClipPath::new(&clip), |svg| {
@@ -280,6 +363,57 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
                     .pixelated(),
             );
         }
+        for (mask, (mask_definition, gradients)) in
+            prepared.fringe_masks.iter().zip(&fringe_definitions)
+        {
+            let mut definition = SvgMask::alpha(&mask_definition.id_text(), -1.0, -1.0, 2.0, 2.0);
+            for (sector, (width, gradient_id)) in mask.widths.iter().zip(gradients).enumerate() {
+                let gradient = if *width < 1.0 {
+                    RadialGradient::new(gradient_id)
+                        .cx(0.0)
+                        .cy(0.0)
+                        .r(1.0)
+                        .add(Stop::new(0.0, Some(ColorValue::WHITE)).opacity(1.0))
+                        .add(Stop::new(1.0 - *width, Some(ColorValue::WHITE)).opacity(1.0))
+                        .add(Stop::new(1.0, Some(ColorValue::WHITE)).opacity(0.0))
+                } else {
+                    RadialGradient::new(gradient_id)
+                        .cx(0.0)
+                        .cy(0.0)
+                        .r(1.0)
+                        .add(Stop::new(0.0, Some(ColorValue::WHITE)).opacity(1.0 / *width))
+                        .add(Stop::new(1.0, Some(ColorValue::WHITE)).opacity(0.0))
+                };
+                svg.push(gradient);
+                let start = sector as f64 * (std::f64::consts::TAU / FWIDTH_SECTORS as f64);
+                let end = (sector + 1) as f64 * (std::f64::consts::TAU / FWIDTH_SECTORS as f64);
+                let wedge = Data::new()
+                    .move_to((0.0, 0.0))
+                    .line_to((start.cos(), start.sin()))
+                    .elliptical_arc_by((
+                        1.0,
+                        1.0,
+                        0.0,
+                        false,
+                        true,
+                        (end.cos() - start.cos()) as f32,
+                        (end.sin() - start.sin()) as f32,
+                    ))
+                    .close();
+                definition =
+                    definition.add(Path::new().data(wedge).fill(Paint::Gradient(*gradient_id)));
+            }
+            if mask.core_radius > 0.0 {
+                definition = definition.add(
+                    Circle::new()
+                        .cx(0.0)
+                        .cy(0.0)
+                        .r(mask.core_radius)
+                        .fill(Paint::from_hex("#ffffff")),
+                );
+            }
+            svg.push(definition);
+        }
     });
     for (record_index, stamp) in prepared.stamps.iter().enumerate() {
         let Some((_, definition)) = tile_definitions
@@ -299,7 +433,12 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
                 .opacity(stamp.opacity)
                 .replay_part(replay.then_some(ReplayPart(source_event + 1))),
             |svg| {
-                svg.push(Use::image(definition).clipped(&clip));
+                let image = Use::image(definition);
+                if let Some(mask) = stamp.mask {
+                    svg.push(image.masked(&fringe_definitions[mask].0));
+                } else {
+                    svg.push(image.clipped(&clip));
+                }
             },
         );
     }
@@ -308,7 +447,8 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
 #[cfg(test)]
 mod tests {
     use super::{
-        ATLAS_WIDTH, SOURCE_ATLAS, TILE_COUNT, TILE_SIZE, png_tile, source_alpha, tile_opacity,
+        ATLAS_WIDTH, MAX_ESTIMATED_MARKUP_BYTES, SOURCE_ATLAS, TILE_COUNT, TILE_SIZE,
+        estimated_markup_bytes, png_tile, source_alpha, tile_opacity,
     };
     use png::{BitDepth, ColorType, Decoder};
     use std::io::Cursor;
@@ -380,5 +520,16 @@ mod tests {
         assert!((opacity - 1.0).abs() < 1e-6);
         assert!(tile_opacity(7.0, 0.0).is_none());
         assert!(tile_opacity(6.0, 255.5).is_none());
+    }
+
+    #[test]
+    fn fwidth_definition_budget_bounds_unique_masks_before_emission() {
+        let tiles = vec![(0, vec![0; 48 * 48 * 4])];
+        let one_mask = estimated_markup_bytes(33, &tiles, 1).unwrap();
+        let two_masks = estimated_markup_bytes(33, &tiles, 2).unwrap();
+        assert_eq!(two_masks - one_mask, 64 * 4_096);
+        let many_unique_masks = estimated_markup_bytes(33, &tiles, 129).unwrap();
+        assert!(many_unique_masks > MAX_ESTIMATED_MARKUP_BYTES);
+        assert!(estimated_markup_bytes(usize::MAX, &tiles, 1).is_none());
     }
 }

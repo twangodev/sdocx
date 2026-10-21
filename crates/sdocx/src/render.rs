@@ -120,15 +120,35 @@ pub struct Pencil3RenderProfile {
 }
 
 /// Explicit source-device dimensions used to reconstruct ChineseBrush V1–V3 dabs.
-/// This opts into an approximate vector paint with intrinsic atlas alpha and
-/// hard-circle coverage; native screen-space `fwidth` fringe is not reproduced.
-/// Dimensions are never inferred from the page or consumer viewport.
+/// This opts into approximate vector paint with intrinsic atlas alpha. It uses
+/// hard-circle coverage unless `RenderOptions::chinesebrush_fwidth_output_profile`
+/// supplies an explicit output scale. Dimensions are never inferred from the
+/// page or consumer viewport.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChineseBrushRenderProfile {
     pub screen_width: u32,
     pub screen_height: u32,
 }
+
+/// Explicit uniform output scale for ChineseBrush screen-space coverage.
+/// The caller must use a uniform scale plus translation from page units to
+/// output pixels. This is never inferred from source-device or page dimensions.
+/// Equality uses the exact `f32` bit pattern; nonfinite and nonpositive values
+/// are invalid for rendering and trigger generic whole-stroke fallback. Thus
+/// equal numeric values with different bits (including signed zero or NaNs)
+/// remain distinct option values.
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ChineseBrushFwidthOutputProfile {
+    pub pixels_per_page_unit: f32,
+}
+impl PartialEq for ChineseBrushFwidthOutputProfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.pixels_per_page_unit.to_bits() == other.pixels_per_page_unit.to_bits()
+    }
+}
+impl Eq for ChineseBrushFwidthOutputProfile {}
 
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -143,6 +163,10 @@ pub struct RenderOptions {
     /// Opt into bounded, approximate ChineseBrush V1–V3 vector paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub chinesebrush_profile: Option<ChineseBrushRenderProfile>,
+    /// Opt into a bounded approximation of the native screen-space fringe.
+    /// Invalid explicit values fall back to generic rendering for the whole stroke.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -604,6 +628,7 @@ impl DocumentTextCache {
             retain_text,
             options.inkpen2_profile,
             options.chinesebrush_profile,
+            options.chinesebrush_fwidth_output_profile,
             options.pencil3_profile,
             slice,
             observer,
@@ -1014,6 +1039,7 @@ fn render_page_contents_svg(
     retain_text: bool,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
+    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1073,6 +1099,7 @@ fn render_page_contents_svg(
         body_text,
         inkpen2_profile,
         chinesebrush_profile,
+        chinesebrush_fwidth_output_profile,
         pencil3_profile,
         slice,
     };
@@ -1108,6 +1135,7 @@ struct CompositionContext<'a> {
     body_text: Option<&'a PreparedBodyText>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
+    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 }
@@ -1172,6 +1200,7 @@ fn render_object(
                 [context.page.width, context.page.height],
                 context.inkpen2_profile,
                 context.chinesebrush_profile,
+                context.chinesebrush_fwidth_output_profile,
                 context.pencil3_profile,
                 context.slice,
             );
@@ -3332,6 +3361,7 @@ fn render_stroke(
     viewport: [u32; 2],
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
+    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 ) {
@@ -3343,7 +3373,11 @@ fn render_stroke(
     }
     if native_allowed
         && let Some(profile) = chinesebrush_profile
-        && let Some(ink) = chinesebrush::prepare(stroke, profile)
+        && (chinesebrush_fwidth_output_profile.is_none_or(|output| {
+            output.pixels_per_page_unit.is_finite() && output.pixels_per_page_unit > 0.0
+        }))
+        && let Some(ink) =
+            chinesebrush::prepare(stroke, profile, chinesebrush_fwidth_output_profile)
     {
         chinesebrush::render(svg, &ink, replay_index);
         return;
@@ -4316,10 +4350,10 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        ChineseBrushRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
-        RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
-        prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
-        render_layout_page_svg, sanitize_hyperlink_target,
+        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, InkPen2RenderProfile,
+        RenderColorMode, RenderOptions, RenderTheme, is_dark_background, normalized_stroke_width,
+        prepare_inkpen2_v9, prepare_stroke_for_page_with_theme, render_document_svg,
+        render_layout_page_replay_svg, render_layout_page_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -8619,6 +8653,144 @@ mod tests {
                 .count(),
             0,
             "generic fallback has no atlas references"
+        );
+
+        let fwidth_options = RenderOptions {
+            chinesebrush_profile: Some(profile),
+            chinesebrush_fwidth_output_profile: Some(ChineseBrushFwidthOutputProfile {
+                pixels_per_page_unit: 10.0,
+            }),
+            ..RenderOptions::default()
+        };
+        let fwidth_svg = render_document_svg(&document, &fwidth_options)
+            .remove(0)
+            .svg;
+        let fwidth_xml = roxmltree::Document::parse(&fwidth_svg).unwrap();
+        let fwidth_stamps = fwidth_xml
+            .descendants()
+            .filter(|node| node.has_tag_name("use"))
+            .collect::<Vec<_>>();
+        assert_eq!(fwidth_stamps.len(), 33);
+        assert!(fwidth_stamps.iter().all(|stamp| {
+            stamp.attribute("mask").is_some() && stamp.attribute("clip-path").is_none()
+        }));
+        let masks = fwidth_xml
+            .descendants()
+            .filter(|node| node.has_tag_name("mask"))
+            .collect::<Vec<_>>();
+        let distinct_mask_refs = fwidth_stamps
+            .iter()
+            .map(|stamp| stamp.attribute("mask").unwrap())
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(masks.len(), distinct_mask_refs.len());
+        assert!(masks.iter().all(|mask| {
+            mask.children()
+                .filter(|child| child.has_tag_name("path"))
+                .count()
+                == 64
+                && mask.children().any(|child| child.has_tag_name("circle"))
+        }));
+        assert_eq!(
+            fwidth_xml
+                .descendants()
+                .filter(|node| node.has_tag_name("radialGradient"))
+                .count(),
+            masks.len() * 64,
+            "masks are reused exactly by source dab radius"
+        );
+
+        for invalid_scale in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            let invalid = RenderOptions {
+                chinesebrush_profile: Some(profile),
+                chinesebrush_fwidth_output_profile: Some(ChineseBrushFwidthOutputProfile {
+                    pixels_per_page_unit: invalid_scale,
+                }),
+                ..RenderOptions::default()
+            };
+            assert_eq!(
+                render_document_svg(&document, &invalid).remove(0).svg,
+                generic,
+                "invalid explicit output scales fall back atomically"
+            );
+        }
+
+        let mut budget_case = document.clone();
+        let stroke = budget_case.pages[0].strokes_mut().next().unwrap();
+        stroke.points = (0..512)
+            .map(|index| Point {
+                x: f64::from(index) * 16.0,
+                y: 100.0 + f64::from((index % 7) * 3) * 0.01,
+            })
+            .collect();
+        stroke.pressures = (0..512)
+            .map(|index| 0.1 + f64::from((index * 37) % 512) * (0.8 / 512.0))
+            .collect();
+        stroke.timestamps = (0..512).map(|index| i64::from(index * 10)).collect();
+        let rendering = stroke.rendering.as_ref().unwrap();
+        let source_points = stroke
+            .points
+            .iter()
+            .map(|point| [point.x as f32, point.y as f32])
+            .collect::<Vec<_>>();
+        let source_pressures = stroke
+            .pressures
+            .iter()
+            .map(|pressure| *pressure as f32)
+            .collect::<Vec<_>>();
+        let source_times = stroke
+            .timestamps
+            .iter()
+            .map(|time| i32::try_from(*time).unwrap())
+            .collect::<Vec<_>>();
+        let source_samples = crate::ink::chinesebrush_glv123::run_model_bounded_with_sample_ends(
+            &source_points,
+            &source_pressures,
+            &source_times,
+            rendering.style.pen_size.unwrap(),
+            3,
+            profile.screen_width as i32,
+            profile.screen_height as i32,
+            i32::from(rendering.tool_type_raw),
+            rendering.properties.compressed,
+            32_768,
+        )
+        .unwrap();
+        let unique_radii = source_samples
+            .records
+            .iter()
+            .map(|record| record[2].to_bits())
+            .collect::<std::collections::HashSet<_>>();
+        assert!(
+            unique_radii.len() > 128,
+            "fixture exercises unique-mask budget"
+        );
+        assert!(
+            super::chinesebrush::prepare(
+                budget_case.pages[0].strokes().next().unwrap(),
+                profile,
+                None,
+            )
+            .is_some(),
+            "the hard-circle control admits this otherwise-supported stroke"
+        );
+        assert!(
+            super::chinesebrush::prepare(
+                budget_case.pages[0].strokes().next().unwrap(),
+                profile,
+                fwidth_options.chinesebrush_fwidth_output_profile,
+            )
+            .is_none(),
+            "more than 128 distinct masks exceed the pre-emission budget"
+        );
+        let budget_generic = render_document_svg(&budget_case, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert_eq!(
+            render_document_svg(&budget_case, &fwidth_options)
+                .remove(0)
+                .svg,
+            budget_generic,
+            "an over-budget Fwidth stroke falls back atomically"
         );
 
         let mut unsupported = document.clone();
