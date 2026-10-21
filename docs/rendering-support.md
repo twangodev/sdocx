@@ -358,8 +358,10 @@ AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-saved-caller-native.json)
 selects V1 for null settings and V2 for empty settings. The numeric model matches
-both 416-byte streams bit for bit under an explicit 1920×1080 display profile;
-the [color oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-color-native.json) checks all 256 source
+both 416-byte streams bit for bit under an explicit 1920×1080 display profile.
+Admitted source-owned tool-2 profiles preserve saved RGB or native omitted-color
+black in generic rendering. Native per-stamp alpha is not applied as whole-stroke opacity.
+The [color oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-color-native.json) checks all 256 source
 alpha bytes and ten full Drawing routes: native output alpha is
 `clamp(trunc(f32(f32(alpha) * 50) / 255), 3, 50)`, preserving RGB.
 This includes source alpha zero becoming output alpha three; GPU compositing
