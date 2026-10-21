@@ -123,8 +123,13 @@ this branch does not place a new solid-color rectangle over it.
 This is not a global claim that every PDF template suppresses every background
 color under every option. It is the inspected Standard list-page import route.
 
-`openPDFWriter` opens the destination page and an application-tagged writer
-group (`0x358788–0x3587c4`). In Pdfium,
+`openPDFWriter` loads the destination page before opening its application-tagged
+writer group (`0x358788–0x3587c4`). `PDFManager::CreateWriter` (`Pdf 0x60104`)
+initializes the writer's page index at `+36` to `-1`; `PDFWriter::LoadPage`
+(`0x65b88`) calls the engine loader and stores the index. `OpenPDFWriter`
+(`0x65bfc`) rejects `-1`. A direct object-drawing probe that substitutes success
+for this lifecycle can report a destination rectangle without serializing an
+overlay; it does not establish final PDF placement. In Pdfium,
 `PdfiumExportHandler::CloseWriter` (`0x7c93c`) checks the group's form-object
 content, calls `FPDFFormObj_GenarateStream` at `0x7c980`, inserts it with
 `FPDFPage_InsertObject` at `0x7c98c`, and generates page content at `0x7c994`.
