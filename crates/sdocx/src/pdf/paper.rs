@@ -2195,6 +2195,227 @@ fn add_overlay_form(
     Ok(form_id)
 }
 
+const SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI: f64 = 0.75;
+
+/// Reproduce the measured SingleX integer AddPage height calculation. Query height and
+/// physical output height remain separate because this truncating scale can undershoot.
+fn native_surface_height(
+    output_width: i32,
+    query_height: i32,
+    note_width: i32,
+) -> Result<i32, String> {
+    if output_width <= 0 || query_height <= 0 || note_width <= 0 {
+        return Err("native page dimensions must be positive".into());
+    }
+    let height = output_width
+        .checked_mul(query_height)
+        .ok_or("native output page height overflow")?
+        / note_width;
+    if height <= 0 {
+        return Err("native output page height is empty".into());
+    }
+    Ok(height)
+}
+
+/// Map a full-note SDK overlay PDF page to one measured imported source surface.
+/// `source_to_display` and `source_crop` come from the source PDF page tree; physical
+/// dimensions and note dimensions are explicit caller inputs. This composes PDF geometry;
+/// it does not establish that the native writer honors `/UserUnit` in the same way.
+fn imported_overlay_placement(
+    source_to_display: [f64; 6],
+    source_crop: [f64; 4],
+    source_surface: [f64; 2],
+    note_size: [f64; 2],
+    note_offset: f64,
+    overlay_pdf_units_per_note_unit: f64,
+) -> Result<([f64; 6], [f64; 4]), String> {
+    if !source_to_display
+        .iter()
+        .chain(source_crop.iter())
+        .chain(source_surface.iter())
+        .chain(note_size.iter())
+        .chain(std::iter::once(&note_offset))
+        .chain(std::iter::once(&overlay_pdf_units_per_note_unit))
+        .all(|value| value.is_finite())
+        || source_surface.iter().any(|value| *value <= 0.0)
+        || note_size.iter().any(|value| *value <= 0.0)
+        || note_offset < 0.0
+        || note_offset >= note_size[1]
+        || overlay_pdf_units_per_note_unit <= 0.0
+        || source_crop[2] <= source_crop[0]
+        || source_crop[3] <= source_crop[1]
+    {
+        return Err("imported overlay geometry must be finite and positive".into());
+    }
+    let overlay_to_display = note_canvas_to_physical_affine(
+        note_size,
+        note_offset,
+        source_surface,
+        overlay_pdf_units_per_note_unit,
+    )?;
+    let display_to_source = compose_affine(
+        invert_affine(source_to_display).ok_or("source display transform is singular")?,
+        overlay_to_display,
+    );
+    if !display_to_source.iter().all(|value| value.is_finite()) {
+        return Err("imported overlay matrix is non-finite".into());
+    }
+    Ok((display_to_source, source_crop))
+}
+
+/// Convert full-note SDK PDF coordinates to one physical output surface while
+/// preserving the native note offset and width-derived scale.
+fn note_canvas_to_physical_affine(
+    note_size: [f64; 2],
+    note_offset: f64,
+    physical_surface: [f64; 2],
+    overlay_pdf_units_per_note_unit: f64,
+) -> Result<[f64; 6], String> {
+    if !note_size
+        .iter()
+        .chain(physical_surface.iter())
+        .chain(std::iter::once(&note_offset))
+        .chain(std::iter::once(&overlay_pdf_units_per_note_unit))
+        .all(|value| value.is_finite())
+        || note_size.iter().any(|value| *value <= 0.0)
+        || physical_surface.iter().any(|value| *value <= 0.0)
+        || note_offset < 0.0
+        || note_offset >= note_size[1]
+        || overlay_pdf_units_per_note_unit <= 0.0
+    {
+        return Err("note and physical surface geometry must be finite and positive".into());
+    }
+    let scale = physical_surface[0] / note_size[0];
+    let pdf_scale = scale / overlay_pdf_units_per_note_unit;
+    let translation_y = physical_surface[1] - scale * (note_size[1] - note_offset);
+    let matrix = [pdf_scale, 0.0, 0.0, pdf_scale, 0.0, translation_y];
+    if matrix.iter().all(|value| value.is_finite()) {
+        Ok(matrix)
+    } else {
+        Err("note-to-surface transform is non-finite".into())
+    }
+}
+
+/// Wrap a full-note overlay with an independent physical page box and clip. The scene
+/// retains complete selected object paths; only the PDF page's physical surface clips ink.
+fn constrain_overlay_page(
+    bytes: &[u8],
+    page_number: u32,
+    query_offset: i32,
+    note_width: i32,
+    note_height: i32,
+    physical_width: i32,
+    physical_height: i32,
+) -> Result<Vec<u8>, String> {
+    if query_offset < 0
+        || note_width <= 0
+        || note_height <= 0
+        || physical_width <= 0
+        || physical_height <= 0
+        || query_offset >= note_height
+    {
+        return Err("note and physical surface dimensions must be positive".into());
+    }
+    let mut pdf = Document::load_mem(bytes).map_err(|error| error.to_string())?;
+    let page_id = *pdf
+        .get_pages()
+        .get(&page_number)
+        .ok_or("missing overlay page")?;
+    let page = pdf
+        .get_dictionary(page_id)
+        .map_err(|error| error.to_string())?
+        .clone();
+    let (overlay_to_display, overlay_crop) = page_to_display(&pdf, &page)?;
+    let expected_crop = [
+        0.0,
+        0.0,
+        f64::from(note_width) * SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+        f64::from(note_height) * SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+    ];
+    if overlay_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+        || overlay_crop
+            .iter()
+            .zip(expected_crop)
+            .any(|(actual, expected)| (actual - expected).abs() > 1e-6)
+    {
+        return Err("SDK overlay page must have an origin-zero, unrotated 96-DPI scene box".into());
+    }
+    let content = contents_bytes(&pdf, &page)?;
+    let [pdf_scale, _, _, _, _, translate_y] = note_canvas_to_physical_affine(
+        [f64::from(note_width), f64::from(note_height)],
+        f64::from(query_offset),
+        [f64::from(physical_width), f64::from(physical_height)],
+        SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+    )?;
+    let prefix = format!(
+        "q 0 0 {physical_width} {physical_height} re W n {pdf_scale:.12} 0 0 {pdf_scale:.12} 0 {translate_y:.12} cm\n"
+    );
+    let prefix_id = pdf.add_object(Stream::new(Dictionary::new(), prefix.into_bytes()));
+    let body_id = pdf.add_object(Stream::new(Dictionary::new(), content));
+    let suffix_id = pdf.add_object(Stream::new(Dictionary::new(), b"Q\n".to_vec()));
+    let dict = pdf
+        .get_dictionary_mut(page_id)
+        .map_err(|error| error.to_string())?;
+    dict.set(
+        "MediaBox",
+        vec![
+            0.into(),
+            0.into(),
+            physical_width.into(),
+            physical_height.into(),
+        ],
+    );
+    dict.set(
+        "CropBox",
+        vec![
+            0.into(),
+            0.into(),
+            physical_width.into(),
+            physical_height.into(),
+        ],
+    );
+    dict.set("Rotate", 0);
+    dict.set("UserUnit", 1);
+    dict.set(
+        "Contents",
+        vec![prefix_id.into(), body_id.into(), suffix_id.into()],
+    );
+    let mut output = Vec::new();
+    pdf.save_to(&mut output)
+        .map_err(|error| error.to_string())?;
+    Ok(output)
+}
+
+fn invert_affine(m: [f64; 6]) -> Option<[f64; 6]> {
+    let det = m[0] * m[3] - m[1] * m[2];
+    if !det.is_finite() || det == 0.0 {
+        return None;
+    }
+    let a = m[3] / det;
+    let b = -m[1] / det;
+    let c = -m[2] / det;
+    let d = m[0] / det;
+    Some([a, b, c, d, -(a * m[4] + c * m[5]), -(b * m[4] + d * m[5])])
+}
+
+fn compose_affine(a: [f64; 6], b: [f64; 6]) -> [f64; 6] {
+    [
+        a[0] * b[0] + a[2] * b[1],
+        a[1] * b[0] + a[3] * b[1],
+        a[0] * b[2] + a[2] * b[3],
+        a[1] * b[2] + a[3] * b[3],
+        a[0] * b[4] + a[2] * b[5] + a[4],
+        a[1] * b[4] + a[3] * b[5] + a[5],
+    ]
+}
+
+fn transform_point(matrix: [f64; 6], point: [f64; 2]) -> [f64; 2] {
+    [
+        matrix[0] * point[0] + matrix[2] * point[1] + matrix[4],
+        matrix[1] * point[0] + matrix[3] * point[1] + matrix[5],
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2310,6 +2531,116 @@ mod tests {
         let page = RenderedPage::new(0, 150, 115, svg);
         let options = PdfOptions::new(Arc::new(crate::pdf::fontdb::Database::new()));
         super::super::render_svg_pages_pdf(&[page], &options).unwrap()
+    }
+
+    #[test]
+    fn native_singlex_physical_surface_height_uses_checked_integer_truncation() {
+        assert_eq!(native_surface_height(600, 1527, 1812).unwrap(), 505);
+        assert!(native_surface_height(0, 1527, 1812).is_err());
+        assert!(native_surface_height(600, 1527, 0).is_err());
+        assert!(native_surface_height(i32::MAX, i32::MAX, 1).is_err());
+    }
+
+    #[test]
+    fn continuation_surface_clips_full_crossing_path_at_physical_bottom() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="1812" height="15372" viewBox="0 0 1812 15372">
+          <path d="M 100 3007 L 100 3025" fill="none" stroke="#111111" stroke-width="2"/>
+        </svg>"##;
+        let overlay = RenderedPage::new(0, 1812, 15372, svg);
+        let options = PdfOptions::new(Arc::new(crate::pdf::fontdb::Database::new()));
+        let full_note_pdf = super::super::render_svg_pages_pdf(&[overlay], &options).unwrap();
+        let original = Document::load_mem(&full_note_pdf).unwrap();
+        let original_page = original.get_dictionary(original.get_pages()[&1]).unwrap();
+        let (orientation, crop) = page_to_display(&original, original_page).unwrap();
+        assert_eq!(orientation, [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
+        assert_eq!(crop, [0.0, 0.0, 1359.0, 11529.0]);
+        assert_eq!(page_rotation(&original, original_page).unwrap(), 0);
+        assert_eq!(page_user_unit(&original, original_page).unwrap(), 1.0);
+        let original_content = contents_bytes(&original, original_page).unwrap();
+
+        let wrapped =
+            constrain_overlay_page(&full_note_pdf, 1, 1485, 1812, 15372, 600, 505).unwrap();
+        let constrained = Document::load_mem(&wrapped).unwrap();
+        let page_id = constrained.get_pages()[&1];
+        let page = constrained.get_dictionary(page_id).unwrap();
+        let (orientation, physical_box) = page_to_display(&constrained, page).unwrap();
+        assert_eq!(orientation, [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
+        assert_eq!(physical_box, [0.0, 0.0, 600.0, 505.0]);
+        assert_eq!(page_rotation(&constrained, page).unwrap(), 0);
+        assert_eq!(page_user_unit(&constrained, page).unwrap(), 1.0);
+        let wrapped_content = contents_bytes(&constrained, page).unwrap();
+        assert!(
+            wrapped_content
+                .windows(original_content.len())
+                .any(|window| window == original_content)
+        );
+
+        let scale = 600.0 / 1812.0;
+        let query_scaled_height = scale * 1527.0;
+        assert!(query_scaled_height > 505.0);
+        let path_start = 505.0 - scale * (3007.0 - 1485.0);
+        let path_end = 505.0 - scale * (3025.0 - 1485.0);
+        assert!(path_start > 0.0 && path_end < 0.0);
+        assert!(wrapped_content.starts_with(b"q 0 0 600 505 re W n"));
+    }
+
+    #[test]
+    fn imported_overlay_mapping_composes_crop_rotation_and_user_unit() {
+        let source = Document::load_mem(&source_pdf()).unwrap();
+        let page = source.get_dictionary(source.get_pages()[&1]).unwrap();
+        let (source_to_display, crop) = page_to_display(&source, page).unwrap();
+        assert_eq!(crop, [10.0, 12.0, 190.0, 148.0]);
+        assert_eq!(page_rotation(&source, page).unwrap(), 90);
+        assert_eq!(page_user_unit(&source, page).unwrap(), 2.0);
+        assert_eq!(source_to_display, [0.0, -2.0, 2.0, 0.0, -24.0, 380.0]);
+
+        // This checks generic CropBox/Rotate/UserUnit affine composition only. Native
+        // SingleX `GetPageSize` was observed to ignore UserUnit, so production must reject
+        // or separately gate UserUnit != 1 until native source-page placement is pinned.
+        let source_surface = [272.0, 360.0];
+        let note_size = [1812.0, 15372.0];
+        let (overlay_to_source, clip) = imported_overlay_placement(
+            source_to_display,
+            crop,
+            source_surface,
+            note_size,
+            1485.0,
+            SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+        )
+        .unwrap();
+        assert_eq!(clip, crop);
+
+        let scale = source_surface[0] / note_size[0];
+        let expected_overlay_to_display = [
+            scale / SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+            0.0,
+            0.0,
+            scale / SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+            0.0,
+            source_surface[1] - scale * (note_size[1] - 1485.0),
+        ];
+        for point in [[0.0, 0.0], [13.25, 41.5], [1359.0, 11529.0]] {
+            let source_user = transform_point(overlay_to_source, point);
+            let displayed = transform_point(source_to_display, source_user);
+            let expected = transform_point(expected_overlay_to_display, point);
+            assert!(
+                displayed
+                    .iter()
+                    .zip(expected)
+                    .all(|(actual, expected)| (actual - expected).abs() < 1e-9)
+            );
+        }
+        let crop_corners = [
+            [crop[0], crop[1]],
+            [crop[0], crop[3]],
+            [crop[2], crop[1]],
+            [crop[2], crop[3]],
+        ]
+        .map(|point| transform_point(source_to_display, point));
+        assert_eq!(
+            crop_corners,
+            [[0.0, 360.0], [272.0, 360.0], [0.0, 0.0], [272.0, 0.0]]
+        );
     }
 
     fn sdk_retained_text_overlay_pdf() -> Vec<u8> {
