@@ -1,7 +1,7 @@
 //! Pure planner for the recovered positive-geometry SingleX PDF-paper slicing path.
 //!
-//! This is deliberately test-only until the page-writer integration and its query adapters are
-//! independently reviewed. It plans note slices; it does not load or render source PDF pages.
+//! The bounded production paper adapter supplies validated records and body queries.
+//! This module plans note slices; it does not load or render source PDF pages.
 
 use crate::PdfPaperRectangle;
 

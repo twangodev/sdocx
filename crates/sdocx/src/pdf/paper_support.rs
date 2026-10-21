@@ -1,13 +1,12 @@
-//! Test-only source-preserving PDF paper graft prototype.
-//!
-//! This module is intentionally not wired into production. Placement remains an explicit
-//! caller input until the full native writer-to-source-page coordinate chain is verified.
+//! Private source-preserving PDF paper grafting and SingleX planning support.
 
 use std::collections::{HashMap, HashSet};
 
+use super::{paper_segments, paper_selection};
+
 use lopdf::{Dictionary, Document, Object, ObjectId, Stream, content::Content, dictionary};
 
-use crate::{ArchiveResourceError, DocumentMetadata, PdfPaperRecord};
+use crate::{ArchiveResourceError, DocumentMetadata, PdfPaperRecord, PdfPaperRectangle};
 
 fn obj_dict<'a>(doc: &'a Document, object: &'a Object) -> Result<&'a Dictionary, String> {
     match object {
@@ -244,6 +243,7 @@ fn content_items(doc: &Document, object: &Object) -> Result<Vec<Object>, String>
 /// coordinates. `clip` is the corresponding clip rectangle in source user
 /// coordinates. Keeping this explicit avoids asserting Samsung's unresolved
 /// object-placement rule.
+#[cfg(test)]
 fn graft_overlay_page(
     source_bytes: &[u8],
     source_page_number: u32,
@@ -413,6 +413,7 @@ fn graft_overlay_page(
 
 /// A source document admitted to the output assembler. `key` is the retained
 /// resource identity from the note archive, not a guessed page relationship.
+#[cfg(test)]
 struct SourcePdf<'a> {
     key: &'a str,
     bytes: &'a [u8],
@@ -441,7 +442,14 @@ struct ParsedSource {
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-enum PdfPaperAdmissionError {
+pub(super) enum PdfPaperAdmissionError {
+    #[error("unsupported SingleX PDF paper at output page {output_page_index}: {reason}")]
+    UnsupportedTopology {
+        output_page_index: usize,
+        source_page_index: usize,
+        record_count: usize,
+        reason: &'static str,
+    },
     #[error(
         "PDF paper record {record_index} refers to external PDF paper (-1000), which has no archive source"
     )]
@@ -498,6 +506,577 @@ struct PreparedPdfPaperRecord {
 struct PreparedPdfPaperRecords {
     sources: std::collections::BTreeMap<String, ParsedSource>,
     records: Vec<PreparedPdfPaperRecord>,
+}
+
+/// A page in the measured SingleX output stream. `query_height` controls native
+/// object admission; `scene_height` covers the independently measured physical
+/// surface so selected geometry can cross the query edge and be clipped by the
+/// final page box.
+struct SingleXOutputPage {
+    query_y: u32,
+    scene_height: u32,
+    physical_width: f64,
+    physical_height: f64,
+    selected_objects: Vec<usize>,
+}
+
+pub(super) struct SingleXPaperPlan {
+    parsed_sources: std::collections::BTreeMap<String, ParsedSource>,
+    source_key: String,
+    source_page_index: i32,
+    source_to_display: [f64; 6],
+    source_crop: [f64; 4],
+    note_width: u32,
+    note_height: u32,
+    output_pages: Vec<SingleXOutputPage>,
+}
+
+impl PdfPaperAdmissionError {
+    pub(super) fn to_pdf_error(&self) -> super::PdfError {
+        let (output_page_index, source_page_index, record_count) = match self {
+            Self::UnsupportedTopology {
+                output_page_index,
+                source_page_index,
+                record_count,
+                ..
+            } => (*output_page_index, *source_page_index, *record_count),
+            Self::ExternalPdfUnavailable { record_index }
+            | Self::NegativeBinding { record_index, .. }
+            | Self::Binding { record_index, .. }
+            | Self::SourceTooLarge { record_index, .. }
+            | Self::InvalidPdf { record_index, .. }
+            | Self::EmptyPdf { record_index, .. }
+            | Self::NegativePageIndex { record_index, .. }
+            | Self::PageIndexOutOfRange { record_index, .. } => (*record_index, 0, 1),
+        };
+        super::PdfError::UnsupportedPdfPaper {
+            output_page_index,
+            source_page_index,
+            record_count,
+        }
+    }
+}
+
+/// Plan the positive, source-preserving SingleX subset. The source PDF is parsed
+/// here so admission and rendering use the same bound resource and page identity.
+pub(super) fn plan_singlex_pdf_paper(
+    document: &crate::Document,
+    layout: &crate::LayoutDocument,
+    page_indices: &[usize],
+) -> Result<Option<SingleXPaperPlan>, PdfPaperAdmissionError> {
+    if page_indices.is_empty() {
+        return Ok(None);
+    }
+    let selected = page_indices
+        .first()
+        .and_then(|index| layout.pages.get(*index))
+        .ok_or(PdfPaperAdmissionError::UnsupportedTopology {
+            output_page_index: 0,
+            source_page_index: 0,
+            record_count: 0,
+            reason: "SingleX PDF paper requires a selected visible page",
+        })?;
+    let records = selected
+        .page
+        .background
+        .pdf_paper
+        .as_deref()
+        .unwrap_or_default();
+    if records.is_empty() {
+        return Ok(None);
+    }
+    let record_count = records.len();
+    let reject = |output_page_index, reason| PdfPaperAdmissionError::UnsupportedTopology {
+        output_page_index,
+        source_page_index: selected.source_page_index,
+        record_count,
+        reason,
+    };
+
+    if document.metadata.page_mode != Some(1)
+        || document.metadata.orientation != Some(0)
+        || document.pages.len() != 1
+        || layout.pages.len() != 1
+        || page_indices != [0]
+        || selected.source_page_index != 0
+    {
+        return Err(reject(
+            0,
+            "unsupported page mode, orientation, or page selection",
+        ));
+    }
+    // The renderer inserts a validated inspection TextBox into layout output
+    // for the source-owned continuous body. It is metadata plumbing rather
+    // than a saved page object; exclude only the node whose association with
+    // the authoritative body has been checked by LayoutPage.
+    let verified_body = selected.single_page_continuous_body(document);
+    let inspection_object_index = verified_body
+        .as_ref()
+        .and_then(|_| selected.body_text_slice().map(|body| body.object_index));
+    let body_has_unsupported_content = document
+        .metadata
+        .note_text
+        .as_ref()
+        .is_some_and(|text| !rich_text_is_benign_blank(text))
+        || (selected.body_text.is_some() && document.metadata.note_text.is_none());
+    if body_has_unsupported_content {
+        return Err(reject(
+            0,
+            "visible continuous body text or inline objects are not supported by this PDF-paper route",
+        ));
+    }
+    let native_default_color = |color: Option<crate::Color>| {
+        color.is_none_or(|color| {
+            color
+                == (crate::Color {
+                    r: 252,
+                    g: 252,
+                    b: 252,
+                })
+        })
+    };
+    let supported_template = match selected.page.template {
+        None => true,
+        Some(crate::PageTemplate {
+            source: crate::PageTemplateSource::CustomPdf { page_index: 0 },
+            ..
+        }) => true,
+        Some(_) => false,
+    };
+    if !native_default_color(document.metadata.background_color)
+        || !native_default_color(selected.page.background_color)
+        || document.metadata.dark_mode_compatibility == Some(true)
+        || selected.page.background.template_uri.is_some()
+        || selected.page.background.image_id.is_some()
+        || selected
+            .page
+            .background
+            .template_type
+            .is_some_and(|kind| kind != 0)
+        || !supported_template
+    {
+        return Err(reject(
+            0,
+            "only the native default page background and PDF template are supported",
+        ));
+    }
+    let Some((note_width, note_height)) = document.metadata.page_dimensions else {
+        return Err(reject(0, "native note dimensions are missing"));
+    };
+    let Some((_, default_height)) = document.metadata.default_page_dimensions else {
+        return Err(reject(0, "native default page dimensions are missing"));
+    };
+    if note_width == 0 || note_height == 0 || default_height == 0 {
+        return Err(reject(0, "native note dimensions must be positive"));
+    }
+    if records.len() != 1 {
+        return Err(reject(
+            0,
+            "exactly one retained PDF-paper record is supported",
+        ));
+    }
+    let record = records[0];
+    let PdfPaperRectangle::Integer([0, 0, right, bottom]) = record.rectangle else {
+        return Err(reject(
+            0,
+            "PDF-paper rectangle must be a modern integer rectangle",
+        ));
+    };
+    if record.page_index != 0
+        || right != i32::try_from(note_width).unwrap_or(-1)
+        || bottom <= 0
+        || u32::try_from(bottom).map_or(true, |height| height > note_height)
+    {
+        return Err(reject(
+            0,
+            "PDF-paper record must be top-aligned, full-width, and within the note",
+        ));
+    }
+
+    let prepared = prepare_pdf_paper_records(&document.metadata, records)?;
+    let prepared_record = prepared
+        .records
+        .first()
+        .ok_or_else(|| reject(0, "PDF-paper source record was not resolved"))?;
+    if prepared_record.inferred {
+        return Err(reject(0, "PDF-paper media binding must be authoritative"));
+    }
+    let source_key = prepared_record.source_key.clone();
+    let source_page_index = prepared_record.source_page_index;
+    let source = prepared
+        .sources
+        .get(&source_key)
+        .ok_or_else(|| reject(0, "resolved PDF-paper source is missing"))?;
+    let source_number = u32::try_from(record.page_index)
+        .ok()
+        .and_then(|index| index.checked_add(1))
+        .ok_or_else(|| reject(0, "source page index is invalid"))?;
+    let source_id = *source
+        .pages
+        .get(&source_number)
+        .ok_or_else(|| reject(0, "source page index is out of range"))?;
+    let source_page = source
+        .doc
+        .get_dictionary(source_id)
+        .map_err(|_| reject(0, "source page dictionary is invalid"))?;
+    let (source_to_display, crop) = page_to_display(&source.doc, source_page)
+        .map_err(|_| reject(0, "source page geometry is unsupported"))?;
+    let unit = page_user_unit(&source.doc, source_page)
+        .map_err(|_| reject(0, "source UserUnit is invalid"))?;
+    if page_rotation(&source.doc, source_page).ok() != Some(0)
+        || unit != 1.0
+        || crop[0] != 0.0
+        || crop[1] != 0.0
+        || source_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+    {
+        return Err(reject(
+            0,
+            "only origin-zero, unrotated UserUnit 1 source pages are supported",
+        ));
+    }
+    let source_surface = [crop[2] - crop[0], crop[3] - crop[1]];
+    if source_surface
+        .iter()
+        .any(|value| !value.is_finite() || *value <= 0.0)
+    {
+        return Err(reject(0, "source physical dimensions are invalid"));
+    }
+
+    let source_objects = selected
+        .page
+        .objects
+        .iter()
+        .enumerate()
+        .filter(|(index, _)| Some(*index) != inspection_object_index)
+        .collect::<Vec<_>>();
+    if source_objects.iter().any(|(_, object)| {
+        object.render_layer != crate::ObjectRenderLayer::Base
+            || !matches!(object.content, crate::PageObjectContent::Stroke(_))
+    }) {
+        return Err(reject(
+            0,
+            "only root-level base-layer saved strokes are supported",
+        ));
+    }
+    for (_, object) in &source_objects {
+        let crate::PageObjectContent::Stroke(stroke) = &object.content else {
+            unreachable!("non-stroke objects rejected above")
+        };
+        let Some(rendering) = stroke.rendering.as_ref() else {
+            return Err(reject(0, "generated strokes are not supported"));
+        };
+        if rendering.properties.generated
+            || rendering.properties.replay_only
+            || rendering.properties.eraser
+            || rendering.properties.rainbow_effect
+            || rendering.properties.reveal_mode
+        {
+            return Err(reject(0, "non-ordinary stroke styles are not supported"));
+        }
+    }
+
+    struct NoBody;
+    impl paper_segments::SegmentQueries for NoBody {
+        fn body_cut(
+            &self,
+            _band: [f32; 4],
+        ) -> Result<paper_segments::BodyCutObservation, paper_segments::PlanError> {
+            Ok(paper_segments::BodyCutObservation {
+                visible: false,
+                line_index: None,
+                line_count: 0,
+                line_rect: [0.0; 4],
+            })
+        }
+    }
+    let rectangle = paper_segments::RuntimeRect::from_saved(record.rectangle)
+        .map_err(|_| reject(0, "PDF-paper rectangle is not valid native geometry"))?;
+    let resolved = [paper_segments::ResolvedRecord {
+        source_key: &source_key,
+        page_index: record.page_index,
+        rectangle,
+        source_record_index: 0,
+    }];
+    let segments = paper_segments::plan_segments(
+        i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?,
+        i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?,
+        i32::try_from(default_height)
+            .map_err(|_| reject(0, "default page height exceeds native range"))?,
+        &resolved,
+        &NoBody,
+    )
+    .map_err(|_| reject(0, "native page segmentation is unsupported"))?;
+
+    let note_width_i32 =
+        i32::try_from(note_width).map_err(|_| reject(0, "note width exceeds native range"))?;
+    let note_height_i32 =
+        i32::try_from(note_height).map_err(|_| reject(0, "note height exceeds native range"))?;
+    let mut output_pages = Vec::new();
+    for segment in segments {
+        let imported = !segment.record_indices.is_empty();
+        if imported && (segment.record_indices != [0] || !output_pages.is_empty()) {
+            return Err(reject(
+                output_pages.len(),
+                "PDF-paper record grouping is unsupported",
+            ));
+        }
+        for slice in segment.slices {
+            let query = [
+                0.0,
+                slice.y as f32,
+                note_width as f32,
+                slice.y.checked_add(slice.height).ok_or_else(|| {
+                    reject(
+                        output_pages.len(),
+                        "query band overflows native coordinates",
+                    )
+                })? as f32,
+            ];
+            let mut selected_objects = Vec::new();
+            for (object_index, object) in &source_objects {
+                let crate::PageObjectContent::Stroke(stroke) = &object.content else {
+                    unreachable!("non-stroke objects rejected above")
+                };
+                match paper_selection::admit_stroke(stroke, query) {
+                    paper_selection::StrokeAdmission::Admit => selected_objects.push(*object_index),
+                    paper_selection::StrokeAdmission::Reject => {}
+                    paper_selection::StrokeAdmission::Unsupported(_) => {
+                        return Err(reject(
+                            output_pages.len(),
+                            "stroke admission geometry is unsupported",
+                        ));
+                    }
+                }
+            }
+            let (physical_width, physical_height) = if imported {
+                (source_surface[0], source_surface[1])
+            } else {
+                let height =
+                    native_surface_height(600, slice.height, note_width_i32).map_err(|_| {
+                        reject(
+                            output_pages.len(),
+                            "continuation surface dimensions overflow",
+                        )
+                    })?;
+                (600.0, f64::from(height))
+            };
+            let note_scale = physical_width / f64::from(note_width);
+            let scene_height_f64 = (physical_height / note_scale).ceil();
+            if !scene_height_f64.is_finite()
+                || scene_height_f64 <= 0.0
+                || scene_height_f64 > f64::from(u32::MAX)
+            {
+                return Err(reject(
+                    output_pages.len(),
+                    "physical scene viewport is invalid",
+                ));
+            }
+            let scene_height = scene_height_f64 as u32;
+            if scene_height == 0 || slice.y < 0 || slice.height <= 0 || slice.y >= note_height_i32 {
+                return Err(reject(
+                    output_pages.len(),
+                    "query slice is outside the note",
+                ));
+            }
+            output_pages.push(SingleXOutputPage {
+                query_y: slice.y as u32,
+                scene_height,
+                physical_width,
+                physical_height,
+                selected_objects,
+            });
+        }
+    }
+    if output_pages.is_empty() {
+        return Err(reject(0, "native segmentation produced no output pages"));
+    }
+
+    Ok(Some(SingleXPaperPlan {
+        parsed_sources: prepared.sources,
+        source_key,
+        source_page_index,
+        source_to_display,
+        source_crop: crop,
+        note_width,
+        note_height,
+        output_pages,
+    }))
+}
+
+fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
+    // Native controls establish empty and LF-only text as not visible. Spaces,
+    // tabs, CR, and other Unicode whitespace are deliberately not generalized
+    // from that result: they may still affect native line measurement/cuts.
+    let utf16_len = text.text.encode_utf16().count();
+    text.text.chars().all(|character| character == '\n')
+        && text.object_spans.is_empty()
+        && text.runs.is_empty()
+        && text.text_area_type.is_none()
+        && text.bbox == crate::BoundingBox::default()
+        && text.rotation_degrees.is_none()
+        && text.color.is_none()
+        && text.highlight_color.is_none()
+        && !text.underline
+        && text.font_size.is_none()
+        && text.text_sections.is_empty()
+        && text.margins.is_none()
+        && text.gravity.is_none()
+        && text.spans.iter().all(|span| match span.kind {
+            crate::RichTextSpanType::FontSize => {
+                let size = (span.payload.len() == 4)
+                    .then(|| f32::from_le_bytes(span.payload[..4].try_into().unwrap()));
+                size.is_some_and(|size| size.is_finite() && size > 0.0)
+            }
+            crate::RichTextSpanType::ForegroundColor => span.payload.len() == 4,
+            _ => false,
+        })
+        && text.spans.iter().all(|span| {
+            span.start_utf16 <= span.end_utf16
+                && usize::try_from(span.end_utf16).is_ok_and(|end| end <= utf16_len)
+        })
+        && text
+            .paragraphs
+            .iter()
+            .all(|paragraph| match paragraph.kind {
+                crate::RichTextParagraphType::Alignment => {
+                    matches!(
+                        paragraph.alignment(),
+                        Some(
+                            crate::ParagraphAlignment::Left
+                                | crate::ParagraphAlignment::Right
+                                | crate::ParagraphAlignment::Center
+                                | crate::ParagraphAlignment::Both
+                        )
+                    )
+                }
+                crate::RichTextParagraphType::ParsingState => paragraph.is_parsed().is_some(),
+                _ => false,
+            })
+}
+
+/// Render complete admitted objects into physical-covering per-page scenes, then
+/// graft each scene once over its retained vector source page or continuation page.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn render_singlex_pdf_paper_plan(
+    document: &crate::Document,
+    layout: &crate::LayoutDocument,
+    plan: SingleXPaperPlan,
+    render_options: &crate::RenderOptions,
+    pdf_options: &super::PdfOptions,
+    fonts: &crate::fonts::FontBook,
+    cache: &mut crate::render::DocumentTextCache,
+    observer: &mut dyn FnMut(crate::Progress),
+) -> Result<super::PdfOutput, super::PdfError> {
+    if !pdf_options.dpi.is_finite() || pdf_options.dpi <= 0.0 {
+        return Err(super::PdfError::InvalidDpi);
+    }
+    let source_layout = layout.pages.first().ok_or(super::PdfError::EmptyDocument)?;
+    let mut scene_page = source_layout.clone();
+    scene_page.page.width = plan.note_width;
+    scene_page.page.height = plan.note_height;
+    scene_page.page.background.pdf_paper = None;
+    scene_page.body_text = None;
+    let original_objects = &source_layout.page.objects;
+    // PageSceneRequest borrows each page. Keep the page clones alive for the render call.
+    let mut scene_pages = Vec::with_capacity(plan.output_pages.len());
+    for output in &plan.output_pages {
+        let mut page = scene_page.clone();
+        page.page.objects = output
+            .selected_objects
+            .iter()
+            .map(|index| original_objects[*index].clone())
+            .collect();
+        scene_pages.push(page);
+    }
+    let requests = plan
+        .output_pages
+        .iter()
+        .zip(&scene_pages)
+        .map(|(output, page)| {
+            crate::render::PageSceneRequest::sliced(
+                page,
+                output.query_y,
+                output.scene_height,
+                false,
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
+    let scenes = cache.render_layout_page_scene_requests(
+        document,
+        &requests,
+        render_options,
+        fonts,
+        observer,
+    );
+    let overlay_bytes = super::render_scenes_pdf_with_progress(&scenes, pdf_options, observer)?;
+    let overlay_units = 72.0 / f64::from(pdf_options.dpi);
+    let mut output_overlay = Document::load_mem(&overlay_bytes)
+        .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
+    for (index, output) in plan.output_pages.iter().enumerate().skip(1) {
+        let page_number = u32::try_from(index + 1)
+            .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
+        constrain_overlay_page_in_document(
+            &mut output_overlay,
+            page_number,
+            0,
+            i32::try_from(plan.note_width)
+                .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?,
+            i32::try_from(output.scene_height)
+                .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?,
+            [output.physical_width as i32, output.physical_height as i32],
+            overlay_units,
+        )
+        .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
+    }
+    let mut constrained_overlay_bytes = Vec::new();
+    output_overlay
+        .save_to(&mut constrained_overlay_bytes)
+        .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
+    let (display_to_source, clip) = imported_overlay_placement(
+        plan.source_to_display,
+        plan.source_crop,
+        [
+            plan.output_pages[0].physical_width,
+            plan.output_pages[0].physical_height,
+        ],
+        [
+            f64::from(plan.note_width),
+            f64::from(plan.output_pages[0].scene_height),
+        ],
+        0.0,
+        overlay_units,
+    )
+    .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
+    let mut outputs = vec![OutputPage::Imported {
+        source_key: &plan.source_key,
+        source_page_index: plan.source_page_index,
+        overlay_bytes: &constrained_overlay_bytes,
+        overlay_page_number: 1,
+        display_to_source,
+        clip,
+    }];
+    outputs.extend(
+        (1..plan.output_pages.len()).map(|index| OutputPage::OverlayOnly {
+            overlay_bytes: &constrained_overlay_bytes,
+            overlay_page_number: u32::try_from(index + 1).unwrap_or(u32::MAX),
+        }),
+    );
+    let assembled = assemble_prepared_output_pages(&plan.parsed_sources, &outputs)
+        .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
+    let pages = scenes
+        .into_iter()
+        .map(|scene| super::PdfPageDiagnostics {
+            page_index: 0,
+            source_page_index: scene.page.source_page_index,
+            text_diagnostics: scene.page.text_diagnostics,
+            object_diagnostics: scene.page.object_diagnostics,
+            geometry_diagnostics: scene.page.geometry_diagnostics,
+            paint_diagnostics: scene.page.paint_diagnostics,
+            background_diagnostics: scene.page.background_diagnostics,
+        })
+        .collect();
+    Ok(super::PdfOutput::new(assembled, pages))
 }
 
 /// Resolve saved PDF records in order and parse each bound source once.
@@ -584,6 +1163,7 @@ fn prepare_pdf_paper_records(
 
 /// Assemble the exact output topology selected by the document-aware caller.
 /// No fit, scale, page index, or clipping decision is inferred here.
+#[cfg(test)]
 fn assemble_output_pages(
     sources: &[SourcePdf<'_>],
     output_pages: &[OutputPage<'_>],
@@ -601,6 +1181,7 @@ fn assemble_output_pages(
     assemble_prepared_output_pages(&parsed, output_pages)
 }
 
+#[cfg(test)]
 fn parse_source_pdf(key: &str, bytes: &[u8]) -> Result<ParsedSource, String> {
     if bytes.len() > 1024 * 1024 * 1024 {
         return Err(format!(
@@ -625,7 +1206,9 @@ fn assemble_prepared_output_pages(
     if output_pages.len() > 10_000 {
         return Err("PDF paper output exceeds 10,000 pages".into());
     }
-    let mut overlays = Vec::with_capacity(output_pages.len());
+    let mut overlays = Vec::<Document>::new();
+    let mut overlay_indices = Vec::with_capacity(output_pages.len());
+    let mut overlay_by_buffer = HashMap::<(usize, usize), usize>::new();
     let mut selected_sources = HashSet::<String>::new();
     for page in output_pages {
         let (bytes, number) = match page {
@@ -672,7 +1255,17 @@ fn assemble_prepared_output_pages(
         if bytes.len() > 1024 * 1024 * 1024 {
             return Err("overlay PDF exceeds the 1 GiB admission limit".into());
         }
-        let overlay = Document::load_mem(bytes).map_err(|e| e.to_string())?;
+        let buffer_key = (bytes.as_ptr() as usize, bytes.len());
+        let overlay_index = if let Some(index) = overlay_by_buffer.get(&buffer_key) {
+            *index
+        } else {
+            let overlay = Document::load_mem(bytes).map_err(|e| e.to_string())?;
+            let index = overlays.len();
+            overlays.push(overlay);
+            overlay_by_buffer.insert(buffer_key, index);
+            index
+        };
+        let overlay = &overlays[overlay_index];
         if !overlay.get_pages().contains_key(&number) {
             return Err(format!("overlay page number {number} is missing"));
         }
@@ -684,16 +1277,16 @@ fn assemble_prepared_output_pages(
                 "overlay page annotations cannot be represented by the imported-page Form".into(),
             );
         }
-        if !overlay_catalog_is_graftable(&overlay)? {
+        if !overlay_catalog_is_graftable(overlay)? {
             return Err(
                 "overlay PDF has document-level context that cannot be retained by page grafting"
                     .into(),
             );
         }
-        overlays.push(overlay);
+        overlay_indices.push(overlay_index);
     }
     if selected_sources.is_empty() {
-        return assemble_overlay_only(output_pages, &overlays);
+        return assemble_overlay_only(output_pages, &overlays, &overlay_indices);
     }
 
     // A single source catalog can be retained wholesale. Combining unrelated
@@ -717,7 +1310,8 @@ fn assemble_prepared_output_pages(
         .map(|_| output.new_object_id())
         .collect::<Vec<_>>();
     let mut tagged = TaggedOutput::new(&mut output);
-    for (spec, overlay) in output_pages.iter().zip(&overlays) {
+    for (index, spec) in output_pages.iter().enumerate() {
+        let overlay = &overlays[overlay_indices[index]];
         let overlay_number = match spec {
             OutputPage::Imported {
                 overlay_page_number,
@@ -801,7 +1395,7 @@ fn assemble_prepared_output_pages(
     let catalog_id = output.add_object(catalog);
 
     for (index, (spec, output_id)) in output_pages.iter().zip(&output_page_ids).enumerate() {
-        let overlay = &overlays[index];
+        let overlay = &overlays[overlay_indices[index]];
         let overlay_number = match spec {
             OutputPage::Imported {
                 overlay_page_number,
@@ -845,7 +1439,7 @@ fn assemble_prepared_output_pages(
                 let form_id = add_overlay_form(
                     &mut output,
                     &mut page,
-                    &overlays[index],
+                    overlay,
                     overlay_page_id,
                     *display_to_source,
                     *clip,
@@ -1816,6 +2410,7 @@ fn parent_slot_mut(array: &mut Vec<Object>, mcid: i64) -> Result<&mut Object, St
 fn assemble_overlay_only(
     specs: &[OutputPage<'_>],
     overlays: &[Document],
+    overlay_indices: &[usize],
 ) -> Result<Vec<u8>, String> {
     let mut output = Document::with_version("1.7");
     let pages_root_id = output.new_object_id();
@@ -1831,7 +2426,7 @@ fn assemble_overlay_only(
         else {
             unreachable!("overlay-only assembly has no imported page")
         };
-        let overlay = &overlays[index];
+        let overlay = &overlays[overlay_indices[index]];
         let source_page_id = overlay.get_pages()[overlay_page_number];
         let source_page = overlay
             .get_dictionary(source_page_id)
@@ -2195,6 +2790,7 @@ fn add_overlay_form(
     Ok(form_id)
 }
 
+#[cfg(test)]
 const SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI: f64 = 0.75;
 
 /// Reproduce the measured SingleX integer AddPage height calculation. Query height and
@@ -2298,15 +2894,42 @@ fn note_canvas_to_physical_affine(
 
 /// Wrap a full-note overlay with an independent physical page box and clip. The scene
 /// retains complete selected object paths; only the PDF page's physical surface clips ink.
+#[cfg(test)]
 fn constrain_overlay_page(
     bytes: &[u8],
     page_number: u32,
     query_offset: i32,
     note_width: i32,
     note_height: i32,
-    physical_width: i32,
-    physical_height: i32,
+    physical_size: [i32; 2],
+    overlay_pdf_units_per_note_unit: f64,
 ) -> Result<Vec<u8>, String> {
+    let mut pdf = Document::load_mem(bytes).map_err(|error| error.to_string())?;
+    constrain_overlay_page_in_document(
+        &mut pdf,
+        page_number,
+        query_offset,
+        note_width,
+        note_height,
+        physical_size,
+        overlay_pdf_units_per_note_unit,
+    )?;
+    let mut output = Vec::new();
+    pdf.save_to(&mut output)
+        .map_err(|error| error.to_string())?;
+    Ok(output)
+}
+
+fn constrain_overlay_page_in_document(
+    pdf: &mut Document,
+    page_number: u32,
+    query_offset: i32,
+    note_width: i32,
+    note_height: i32,
+    physical_size: [i32; 2],
+    overlay_pdf_units_per_note_unit: f64,
+) -> Result<(), String> {
+    let [physical_width, physical_height] = physical_size;
     if query_offset < 0
         || note_width <= 0
         || note_height <= 0
@@ -2316,7 +2939,6 @@ fn constrain_overlay_page(
     {
         return Err("note and physical surface dimensions must be positive".into());
     }
-    let mut pdf = Document::load_mem(bytes).map_err(|error| error.to_string())?;
     let page_id = *pdf
         .get_pages()
         .get(&page_number)
@@ -2325,12 +2947,15 @@ fn constrain_overlay_page(
         .get_dictionary(page_id)
         .map_err(|error| error.to_string())?
         .clone();
-    let (overlay_to_display, overlay_crop) = page_to_display(&pdf, &page)?;
+    let (overlay_to_display, overlay_crop) = page_to_display(pdf, &page)?;
+    if !overlay_pdf_units_per_note_unit.is_finite() || overlay_pdf_units_per_note_unit <= 0.0 {
+        return Err("overlay PDF scale must be finite and positive".into());
+    }
     let expected_crop = [
         0.0,
         0.0,
-        f64::from(note_width) * SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
-        f64::from(note_height) * SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+        f64::from(note_width) * overlay_pdf_units_per_note_unit,
+        f64::from(note_height) * overlay_pdf_units_per_note_unit,
     ];
     if overlay_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
         || overlay_crop
@@ -2340,12 +2965,12 @@ fn constrain_overlay_page(
     {
         return Err("SDK overlay page must have an origin-zero, unrotated 96-DPI scene box".into());
     }
-    let content = contents_bytes(&pdf, &page)?;
+    let content = contents_bytes(pdf, &page)?;
     let [pdf_scale, _, _, _, _, translate_y] = note_canvas_to_physical_affine(
         [f64::from(note_width), f64::from(note_height)],
         f64::from(query_offset),
         [f64::from(physical_width), f64::from(physical_height)],
-        SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+        overlay_pdf_units_per_note_unit,
     )?;
     let prefix = format!(
         "q 0 0 {physical_width} {physical_height} re W n {pdf_scale:.12} 0 0 {pdf_scale:.12} 0 {translate_y:.12} cm\n"
@@ -2380,10 +3005,7 @@ fn constrain_overlay_page(
         "Contents",
         vec![prefix_id.into(), body_id.into(), suffix_id.into()],
     );
-    let mut output = Vec::new();
-    pdf.save_to(&mut output)
-        .map_err(|error| error.to_string())?;
-    Ok(output)
+    Ok(())
 }
 
 fn invert_affine(m: [f64; 6]) -> Option<[f64; 6]> {
@@ -2409,6 +3031,7 @@ fn compose_affine(a: [f64; 6], b: [f64; 6]) -> [f64; 6] {
     ]
 }
 
+#[cfg(test)]
 fn transform_point(matrix: [f64; 6], point: [f64; 2]) -> [f64; 2] {
     [
         matrix[0] * point[0] + matrix[2] * point[1] + matrix[4],
@@ -2425,6 +3048,105 @@ mod tests {
     };
     use lopdf::{Object, dictionary};
     use std::sync::Arc;
+
+    fn blank_rich_text(text: &str) -> crate::RichTextBox {
+        crate::RichTextBox {
+            text_area_type: None,
+            bbox: crate::BoundingBox::default(),
+            rotation_degrees: None,
+            text: text.to_owned(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    #[test]
+    fn blank_body_admission_is_limited_to_native_confirmed_empty_and_lf_controls() {
+        assert!(rich_text_is_benign_blank(&blank_rich_text("")));
+        assert!(rich_text_is_benign_blank(&blank_rich_text("\n\n")));
+
+        for text in [" ", "\t", "\r", "\r\n", "\u{00a0}", "\u{fffc}"] {
+            assert!(
+                !rich_text_is_benign_blank(&blank_rich_text(text)),
+                "unexpectedly admitted {text:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn blank_body_admission_allows_only_nonpainting_known_attributes() {
+        let mut text = blank_rich_text("\n");
+        text.spans = vec![
+            crate::RichTextSpan {
+                kind: crate::RichTextSpanType::FontSize,
+                start_utf16: 0,
+                end_utf16: 1,
+                interval_type: crate::SpanIntervalType::ClosedOpen,
+                payload: 12.0_f32.to_le_bytes().to_vec(),
+            },
+            crate::RichTextSpan {
+                kind: crate::RichTextSpanType::ForegroundColor,
+                start_utf16: 0,
+                end_utf16: 1,
+                interval_type: crate::SpanIntervalType::ClosedOpen,
+                payload: [0, 0, 0, 0xff].to_vec(),
+            },
+        ];
+        text.paragraphs = vec![
+            crate::RichTextParagraph {
+                kind: crate::RichTextParagraphType::Alignment,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: 0_u32.to_le_bytes().to_vec(),
+            },
+            crate::RichTextParagraph {
+                kind: crate::RichTextParagraphType::ParsingState,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: 1_u32.to_le_bytes().to_vec(),
+            },
+        ];
+        assert!(rich_text_is_benign_blank(&text));
+
+        text.spans.push(crate::RichTextSpan {
+            kind: crate::RichTextSpanType::Underline,
+            start_utf16: 0,
+            end_utf16: 1,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload: vec![1, 0],
+        });
+        assert!(!rich_text_is_benign_blank(&text));
+    }
+
+    #[test]
+    fn blank_body_admission_rejects_unknown_geometry_or_malformed_known_attributes() {
+        let mut text = blank_rich_text("");
+        text.gravity = Some(1);
+        assert!(!rich_text_is_benign_blank(&text));
+
+        text.gravity = None;
+        text.bbox.x_max = 1.0;
+        assert!(!rich_text_is_benign_blank(&text));
+
+        text = blank_rich_text("\n");
+        text.spans.push(crate::RichTextSpan {
+            kind: crate::RichTextSpanType::FontSize,
+            start_utf16: 0,
+            end_utf16: 1,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload: f32::NAN.to_le_bytes().to_vec(),
+        });
+        assert!(!rich_text_is_benign_blank(&text));
+    }
 
     fn source_pdf() -> Vec<u8> {
         let mut pdf = Document::with_version("1.7");
@@ -2558,8 +3280,16 @@ mod tests {
         assert_eq!(page_user_unit(&original, original_page).unwrap(), 1.0);
         let original_content = contents_bytes(&original, original_page).unwrap();
 
-        let wrapped =
-            constrain_overlay_page(&full_note_pdf, 1, 1485, 1812, 15372, 600, 505).unwrap();
+        let wrapped = constrain_overlay_page(
+            &full_note_pdf,
+            1,
+            1485,
+            1812,
+            15372,
+            [600, 505],
+            SDK_OVERLAY_PDF_UNITS_PER_NOTE_UNIT_AT_96_DPI,
+        )
+        .unwrap();
         let constrained = Document::load_mem(&wrapped).unwrap();
         let page_id = constrained.get_pages()[&1];
         let page = constrained.get_dictionary(page_id).unwrap();

@@ -1,6 +1,6 @@
-//! Native-compatible stroke query admission prototype.
+//! Native-compatible stroke query admission for bounded PDF-paper export.
 //!
-//! This is test-only and deliberately not connected to PDF paper export. It covers only
+//! The production paper planner uses this for
 //! ordinary saved strokes with retained source metadata and unrotated sample geometry.
 
 use crate::{BoundingBox, Stroke};

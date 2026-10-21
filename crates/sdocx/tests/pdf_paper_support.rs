@@ -1,0 +1,611 @@
+#![cfg(feature = "pdf")]
+
+#[path = "support/mod.rs"]
+mod support;
+
+use lopdf::{Dictionary, Document as PdfDocument, Object, Stream, content::Content, dictionary};
+use sdocx::{
+    ArchiveResource, ArchiveResourceContent, BoundingBox, Document, ObjectSpanLayoutConstraint,
+    ObjectSpanLayoutOption, PageElement, PdfError, PdfOptions, RichTextBox, RichTextObjectSpan,
+    RichTextParagraph, RichTextParagraphType, RichTextSpan, RichTextSpanType, SpanIntervalType,
+    fonts::FontBook, parse_media_manifest_bytes, render_layout_pages_pdf_detailed_with_fonts,
+};
+
+const NOTE_WIDTH: u32 = 1812;
+const NOTE_HEIGHT: u32 = 15_372;
+const SEGMENT_HEIGHT: u32 = 1527;
+const PDF_BINDING: u32 = 42;
+const SOURCE_WIDTH: f32 = 726.204_3;
+const SOURCE_HEIGHT: f32 = 595.440_06;
+
+fn media_manifest() -> sdocx::MediaManifest {
+    let file_name = "paper.pdf";
+    let mut record = Vec::new();
+    record.extend_from_slice(&PDF_BINDING.to_le_bytes());
+    record.extend_from_slice(&(file_name.len() as u16).to_le_bytes());
+    for unit in file_name.encode_utf16() {
+        record.extend_from_slice(&unit.to_le_bytes());
+    }
+    record.extend_from_slice(&[0, 0]); // no recorded SHA-256
+    record.extend_from_slice(&1_u16.to_le_bytes());
+    record.extend_from_slice(&0_i64.to_le_bytes());
+    record.push(0); // not an attached asset
+
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&5500_u32.to_le_bytes());
+    bytes.extend_from_slice(&1_u16.to_le_bytes());
+    bytes.extend_from_slice(&(record.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&record);
+    bytes.extend_from_slice(b"EOFX");
+    parse_media_manifest_bytes(&bytes).expect("test manifest is valid")
+}
+
+fn bbox(x0: f64, y0: f64, x1: f64, y1: f64) -> BoundingBox {
+    BoundingBox {
+        x_min: x0,
+        y_min: y0,
+        x_max: x1,
+        y_max: y1,
+    }
+}
+
+fn frame(kind: i16, properties: u16, fields: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
+    let offset = 18 + fixed.len();
+    [
+        ((offset + flexible.len()) as u32).to_le_bytes().to_vec(),
+        kind.to_le_bytes().to_vec(),
+        (offset as u32).to_le_bytes().to_vec(),
+        vec![2],
+        properties.to_le_bytes().to_vec(),
+        vec![4],
+        fields.to_le_bytes().to_vec(),
+        fixed.to_vec(),
+        flexible.to_vec(),
+    ]
+    .concat()
+}
+
+fn encoded_stroke(rotation_degrees: Option<f32>) -> Vec<u8> {
+    // Two uncompressed samples cross the first 1485-unit source-page edge.
+    let stroke_box = bbox(100.0, 1460.0, 300.0, 1550.0);
+    let mut base = 5500_u32.to_le_bytes().to_vec();
+    let uuid = "00000000-0000-0000-0000-000000000042";
+    base.extend_from_slice(&(uuid.len() as u16).to_le_bytes());
+    base.extend_from_slice(uuid.as_bytes());
+    base.extend_from_slice(&1_i64.to_le_bytes());
+    for value in [
+        stroke_box.x_min,
+        stroke_box.y_min,
+        stroke_box.x_max,
+        stroke_box.y_max,
+    ] {
+        base.extend_from_slice(&value.to_le_bytes());
+    }
+    base.extend_from_slice(&0_i32.to_le_bytes());
+    base.push(0);
+    let mut base_flexible = Vec::new();
+    if let Some(rotation) = rotation_degrees {
+        base_flexible.extend_from_slice(&rotation.to_le_bytes());
+    }
+    let base_frame = frame(
+        0,
+        1 << 3,
+        0x6000 | u32::from(rotation_degrees.is_some()),
+        &base,
+        &base_flexible,
+    );
+
+    let mut channels = Vec::new();
+    for value in [100.0_f64, 1460.0, 300.0, 1550.0] {
+        channels.extend_from_slice(&value.to_le_bytes());
+    }
+    for value in [0.8_f32, 0.8] {
+        channels.extend_from_slice(&value.to_le_bytes());
+    }
+    for value in [100_i32, 110] {
+        channels.extend_from_slice(&value.to_le_bytes());
+    }
+    let mut fixed = 2_u16.to_le_bytes().to_vec();
+    fixed.extend(channels);
+    fixed.extend_from_slice(&[1, 0]);
+    let mut style = 0xff20_6090_u32.to_le_bytes().to_vec();
+    style.extend_from_slice(&8.0_f32.to_le_bytes());
+    let stroke_frame = frame(1, 1 << 10, (1 << 2) | (1 << 3), &fixed, &style);
+    [base_frame, stroke_frame].concat()
+}
+
+fn source_pdf(rotate: i64, user_unit: i64) -> Vec<u8> {
+    let mut pdf = PdfDocument::with_version("1.7");
+    let pages_id = pdf.new_object_id();
+    let image_id = pdf.add_object(Stream::new(
+        dictionary! {
+            "Type" => "XObject", "Subtype" => "Image", "Width" => 1,
+            "Height" => 1, "ColorSpace" => "DeviceRGB", "BitsPerComponent" => 8,
+        },
+        vec![0x31, 0x62, 0x93],
+    ));
+    let content_id = pdf.add_object(Stream::new(
+        Dictionary::new(),
+        b"q 1 0 0 1 70 80 cm /Im0 Do Q\n0.1 0.2 0.8 RG 2 w 8 12 m 700 560 l S\n".to_vec(),
+    ));
+    let page_id = pdf.add_object(dictionary! {
+        "Type" => "Page", "Parent" => pages_id,
+        "MediaBox" => vec![0.into(), 0.into(), f64::from(SOURCE_WIDTH).into(), f64::from(SOURCE_HEIGHT).into()],
+        "Rotate" => rotate, "UserUnit" => user_unit,
+        "Resources" => dictionary! { "XObject" => dictionary! { "Im0" => image_id } },
+        "Contents" => content_id,
+    });
+    pdf.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages", "Kids" => vec![page_id.into()], "Count" => 1,
+        }),
+    );
+    let root_id = pdf.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+    pdf.trailer.set("Root", root_id);
+    let mut bytes = Vec::new();
+    pdf.save_to(&mut bytes).unwrap();
+    bytes
+}
+
+fn document(paper: bool, rotation: Option<f32>, source_rotation: i64, user_unit: i64) -> Document {
+    let mut records = Vec::new();
+    if paper {
+        // The native default page color is opaque near-white, not the parser's
+        // implicit ARGB zero value.
+        records.extend_from_slice(&0xfffc_fcfc_u32.to_le_bytes());
+        records.extend_from_slice(&1_u16.to_le_bytes());
+        for value in [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485] {
+            records.extend_from_slice(&value.to_le_bytes());
+        }
+    }
+    let object = support::object(1, &encoded_stroke(rotation), &[]);
+    if paper {
+        records.extend_from_slice(&0_u32.to_le_bytes()); // template type follows PDF records
+    }
+    let field_mask = if paper {
+        (1 << 5) | (1 << 8) | (1 << 9)
+    } else {
+        0
+    };
+    let raw_page = support::page(&[vec![object]], field_mask, &records);
+    let mut document = sdocx::parse_bytes(&support::archive(&raw_page)).unwrap();
+    assert!(matches!(
+        document.pages[0].objects[0].content,
+        sdocx::PageObjectContent::Stroke(ref stroke)
+            if stroke.rendering.as_ref().is_some_and(|rendering| !rendering.properties.generated)
+    ));
+    document.pages[0].width = NOTE_WIDTH;
+    document.pages[0].height = NOTE_HEIGHT;
+    document.metadata.page_mode = Some(1);
+    document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+    document.metadata.page_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    document.metadata.flow_dimensions = Some((1080, 9162));
+    document.metadata.flow_page_padding = Some((0, 0));
+    document.metadata.orientation = Some(0);
+    if paper {
+        document.metadata.archive_resources = vec![ArchiveResource {
+            name: "media/paper.pdf".into(),
+            archive_id: None,
+            content: ArchiveResourceContent::Opaque {
+                data: source_pdf(source_rotation, user_unit),
+            },
+        }];
+        document.metadata.media_manifest = Some(media_manifest());
+    }
+    document
+}
+
+fn export(document: &Document, indices: &[usize], dpi: f32) -> Result<sdocx::PdfOutput, PdfError> {
+    let layout = sdocx::layout_document(document);
+    let mut options = PdfOptions::default();
+    options.dpi = dpi;
+    render_layout_pages_pdf_detailed_with_fonts(
+        document,
+        &layout,
+        indices,
+        &Default::default(),
+        &options,
+        &FontBook::default(),
+    )
+}
+
+fn rich_text(text: &str, object_spans: Vec<RichTextObjectSpan>) -> RichTextBox {
+    let length = text.encode_utf16().count() as u32;
+    let paragraph_count = text.chars().filter(|character| *character == '\n').count() as u32 + 1;
+    RichTextBox {
+        text_area_type: None,
+        bbox: BoundingBox::default(),
+        rotation_degrees: None,
+        text: text.to_owned(),
+        color: None,
+        highlight_color: None,
+        underline: false,
+        font_size: None,
+        runs: Vec::new(),
+        spans: vec![
+            RichTextSpan {
+                kind: RichTextSpanType::FontSize,
+                start_utf16: 0,
+                end_utf16: length,
+                interval_type: SpanIntervalType::ClosedOpen,
+                payload: 18.0_f32.to_le_bytes().to_vec(),
+            },
+            RichTextSpan {
+                kind: RichTextSpanType::ForegroundColor,
+                start_utf16: 0,
+                end_utf16: length,
+                interval_type: SpanIntervalType::ClosedOpen,
+                payload: 0xff00_0000_u32.to_le_bytes().to_vec(),
+            },
+        ],
+        paragraphs: vec![
+            RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: 0,
+                end_paragraph: paragraph_count,
+                payload: 0_u32.to_le_bytes().to_vec(),
+            },
+            RichTextParagraph {
+                kind: RichTextParagraphType::ParsingState,
+                start_paragraph: 0,
+                end_paragraph: paragraph_count,
+                payload: 1_u32.to_le_bytes().to_vec(),
+            },
+        ],
+        object_spans,
+        text_sections: Vec::new(),
+        margins: None,
+        gravity: None,
+    }
+}
+
+fn page_box(pdf: &PdfDocument, page_number: u32) -> [f64; 4] {
+    let id = pdf.get_pages()[&page_number];
+    let values = pdf
+        .get_dictionary(id)
+        .unwrap()
+        .get(b"MediaBox")
+        .unwrap()
+        .as_array()
+        .unwrap();
+    values
+        .iter()
+        .map(|value| {
+            value
+                .as_float()
+                .map(f64::from)
+                .or_else(|_| value.as_i64().map(|integer| integer as f64))
+                .unwrap()
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
+}
+
+fn number(object: &Object) -> Option<f64> {
+    object
+        .as_float()
+        .map(f64::from)
+        .or_else(|_| object.as_i64().map(|value| value as f64))
+        .ok()
+}
+
+fn point_matches(operation: &lopdf::content::Operation, operator: &str, point: [f64; 2]) -> bool {
+    operation.operator == operator
+        && operation.operands.len() >= 2
+        && number(&operation.operands[0]).is_some_and(|value| value == point[0])
+        && number(&operation.operands[1]).is_some_and(|value| value == point[1])
+}
+
+fn content_has_crossing_stroke(content: &Content) -> bool {
+    let mut started = false;
+    let mut completed = false;
+    for operation in &content.operations {
+        if point_matches(operation, "m", [100.0, 1460.0]) {
+            started = true;
+            completed = false;
+        } else if started && point_matches(operation, "l", [300.0, 1550.0]) {
+            completed = true;
+        } else if completed && operation.operator == "S" {
+            return true;
+        } else if matches!(
+            operation.operator.as_str(),
+            "m" | "l" | "c" | "v" | "y" | "re"
+        ) {
+            started = false;
+            completed = false;
+        }
+    }
+    false
+}
+
+fn form_has_crossing_stroke(
+    pdf: &PdfDocument,
+    form: &lopdf::Stream,
+    inherited_resources: &Dictionary,
+    depth: usize,
+) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    let Ok(bytes) = form.decompressed_content() else {
+        return false;
+    };
+    let Ok(content) = Content::decode(&bytes) else {
+        return false;
+    };
+    if content_has_crossing_stroke(&content) {
+        return true;
+    }
+
+    let resources = form
+        .dict
+        .get(b"Resources")
+        .ok()
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+        .unwrap_or(inherited_resources);
+    let Some(xobjects) = resources
+        .get(b"XObject")
+        .ok()
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+    else {
+        return false;
+    };
+    content.operations.iter().any(|operation| {
+        operation.operator == "Do"
+            && operation
+                .operands
+                .first()
+                .and_then(|object| object.as_name().ok())
+                .and_then(|name| xobjects.get(name).ok())
+                .and_then(|object| pdf.dereference(object).ok())
+                .and_then(|(_, object)| object.as_stream().ok())
+                .is_some_and(|nested| {
+                    nested
+                        .dict
+                        .get(b"Subtype")
+                        .is_ok_and(|subtype| subtype.as_name().is_ok_and(|name| name == b"Form"))
+                        && form_has_crossing_stroke(pdf, nested, resources, depth + 1)
+                })
+    })
+}
+
+fn page_invokes_crossing_stroke_form(pdf: &PdfDocument, page_number: u32) -> bool {
+    let Some(page_id) = pdf.get_pages().get(&page_number).copied() else {
+        return false;
+    };
+    let Some(resources) = pdf
+        .get_dictionary(page_id)
+        .ok()
+        .and_then(|page| page.get(b"Resources").ok())
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+    else {
+        return false;
+    };
+    let Some(xobjects) = resources
+        .get(b"XObject")
+        .ok()
+        .and_then(|object| pdf.dereference(object).ok())
+        .and_then(|(_, object)| object.as_dict().ok())
+    else {
+        return false;
+    };
+    let Ok(bytes) = pdf.get_page_content(page_id) else {
+        return false;
+    };
+    let Ok(content) = Content::decode(&bytes) else {
+        return false;
+    };
+    content.operations.iter().any(|operation| {
+        operation.operator == "Do"
+            && operation
+                .operands
+                .first()
+                .and_then(|object| object.as_name().ok())
+                .and_then(|name| xobjects.get(name).ok())
+                .and_then(|object| pdf.dereference(object).ok())
+                .and_then(|(_, object)| object.as_stream().ok())
+                .is_some_and(|form| {
+                    form.dict
+                        .get(b"Subtype")
+                        .is_ok_and(|subtype| subtype.as_name().is_ok_and(|name| name == b"Form"))
+                        && form_has_crossing_stroke(pdf, form, resources, 0)
+                })
+    })
+}
+
+fn page_has_crossing_stroke(pdf: &PdfDocument, page_number: u32) -> bool {
+    let Some(page_id) = pdf.get_pages().get(&page_number).copied() else {
+        return false;
+    };
+    pdf.get_page_content(page_id)
+        .ok()
+        .and_then(|bytes| Content::decode(&bytes).ok())
+        .is_some_and(|content| content_has_crossing_stroke(&content))
+        || page_invokes_crossing_stroke_form(pdf, page_number)
+}
+
+#[test]
+fn public_pdf_export_preserves_source_page_resources_and_native_physical_continuations() {
+    let document = document(true, None, 0, 1);
+    let layout = sdocx::layout_document(&document);
+    assert_eq!(layout.pages.len(), 1);
+    let output = render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &layout,
+        &[0],
+        &Default::default(),
+        &PdfOptions::default(),
+        &FontBook::default(),
+    )
+    .unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let pages = pdf.get_pages();
+    assert_eq!(pages.len(), 11);
+    assert_eq!(
+        page_box(&pdf, 1),
+        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)]
+    );
+    for page_number in 2..=11 {
+        assert_eq!(page_box(&pdf, page_number), [0.0, 0.0, 600.0, 505.0]);
+    }
+    assert_eq!(output.pages.len(), pages.len());
+    assert!(output.pages.iter().all(|page| page.page_index == 0));
+    assert!(output.pages.iter().all(|page| page.source_page_index == 0));
+
+    // The source's vector path and image invocation survive once on its imported
+    // page; the repeated overlay strokes remain page-local vector content.
+    let first_content = Content::decode(&pdf.get_page_content(pages[&1]).unwrap()).unwrap();
+    assert_eq!(
+        first_content
+            .operations
+            .iter()
+            .filter(|op| op.operator == "S")
+            .count(),
+        1
+    );
+    assert_eq!(
+        first_content
+            .operations
+            .iter()
+            .filter(|op| {
+                op.operator == "Do"
+                    && op
+                        .operands
+                        .last()
+                        .is_some_and(|object| object.as_name().is_ok_and(|name| name == b"Im0"))
+            })
+            .count(),
+        1
+    );
+    let image_count = pdf
+        .objects
+        .values()
+        .filter(|object| {
+            object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|subtype| subtype.as_name().is_ok_and(|name| name == b"Image"))
+            })
+        })
+        .count();
+    assert_eq!(image_count, 1);
+
+    assert!(
+        page_invokes_crossing_stroke_form(&pdf, 1),
+        "the imported source page should include the first vector-rendered stroke segment"
+    );
+    let continuation_content = Content::decode(&pdf.get_page_content(pages[&2]).unwrap()).unwrap();
+    assert!(
+        content_has_crossing_stroke(&continuation_content) || page_has_crossing_stroke(&pdf, 2),
+        "the first continuation should paint the other vector-rendered segment of the crossing stroke"
+    );
+}
+
+#[test]
+fn public_pdf_paper_physical_boxes_do_not_depend_on_overlay_dpi() {
+    let document = document(true, None, 0, 1);
+    for dpi in [72.0, 96.0, 144.0] {
+        let output = export(&document, &[0], dpi).unwrap();
+        let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+        assert_eq!(pdf.get_pages().len(), 11, "dpi={dpi}");
+        for page_number in 2..=11 {
+            assert_eq!(
+                page_box(&pdf, page_number),
+                [0.0, 0.0, 600.0, 505.0],
+                "dpi={dpi}"
+            );
+        }
+    }
+}
+
+#[test]
+fn public_pdf_export_without_paper_keeps_the_ordinary_single_page_route() {
+    let document = document(false, None, 0, 1);
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(pdf.get_pages().len(), 1);
+    assert_eq!(output.pages.len(), 1);
+    assert_eq!(output.pages[0].page_index, 0);
+    assert_eq!(output.pages[0].source_page_index, 0);
+}
+
+#[test]
+fn public_pdf_paper_accepts_styled_blank_body_and_rejects_visible_inline_image_body() {
+    let mut blank = document(true, None, 0, 1);
+    blank.metadata.note_text = Some(rich_text("\n", Vec::new()));
+    let output = export(&blank, &[0], 96.0).unwrap();
+    assert_eq!(
+        PdfDocument::load_mem(&output.bytes)
+            .unwrap()
+            .get_pages()
+            .len(),
+        11
+    );
+
+    let mut image_body = document(true, None, 0, 1);
+    image_body.metadata.note_text = Some(rich_text(
+        "\u{fffc}",
+        vec![RichTextObjectSpan {
+            object_type: sdocx::ObjectType::Image,
+            object_data: Vec::new(),
+            content: None,
+            text_index_utf16: 0,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        }],
+    ));
+    assert!(matches!(
+        export(&image_body, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+}
+
+#[test]
+fn public_pdf_paper_route_rejects_unproven_objects_transforms_and_partial_selection() {
+    assert!(matches!(
+        export(&document(true, Some(15.0), 0, 1), &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+    assert!(matches!(
+        export(&document(true, None, 90, 1), &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+    assert!(matches!(
+        export(&document(true, None, 0, 2), &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+
+    let mut with_image = document(true, None, 0, 1);
+    with_image.pages[0].objects.push(
+        PageElement::Image {
+            bbox: bbox(10.0, 10.0, 50.0, 50.0),
+            media_index: 0,
+        }
+        .into(),
+    );
+    assert!(matches!(
+        export(&with_image, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+
+    // An incomplete visible-page selection cannot be interpreted as the full
+    // document's expanded SingleX output topology.
+    let document = document(true, None, 0, 1);
+    let mut layout = sdocx::layout_document(&document);
+    layout.pages.push(layout.pages[0].clone());
+    let result = render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &layout,
+        &[0],
+        &Default::default(),
+        &PdfOptions::default(),
+        &FontBook::default(),
+    );
+    assert!(matches!(result, Err(PdfError::UnsupportedPdfPaper { .. })));
+}

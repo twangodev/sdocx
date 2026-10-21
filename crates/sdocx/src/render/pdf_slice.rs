@@ -15,7 +15,7 @@ pub(crate) struct PageSlice {
     cull_fountain_paint: bool,
 }
 
-#[cfg(all(feature = "pdf", test))]
+#[cfg(feature = "pdf")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum PageSliceError {
     ZeroHeight,
@@ -24,7 +24,7 @@ pub(crate) enum PageSliceError {
 }
 
 impl PageSlice {
-    #[cfg(all(feature = "pdf", test))]
+    #[cfg(feature = "pdf")]
     pub(crate) fn new_for_page(
         page: &LayoutPage,
         y: u32,
@@ -98,7 +98,7 @@ impl<'a> PageSceneRequest<'a> {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(feature = "pdf")]
     pub(crate) fn sliced(
         layout_page: &'a LayoutPage,
         y: u32,

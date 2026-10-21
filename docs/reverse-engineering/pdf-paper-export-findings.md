@@ -123,6 +123,16 @@ this branch does not place a new solid-color rectangle over it.
 This is not a global claim that every PDF template suppresses every background
 color under every option. It is the inspected Standard list-page import route.
 
+SingleX uses a separate background predicate (`Composer 0x35e51c`): without a
+background image or template, it captures color only when `ARGB + 0x30304` is
+nonzero, making `0xfffcfcfc` (RGB 252) the default sentinel. That false branch
+skips `SetPageContents` and `saveThumbnailByRect`; when a custom color is
+captured, `drawPage` paints it before `drawPdf`, and `drawTemplate` returns for
+`HasPDF`. The bounded probe69 PDF has no image, form or content stream on its
+ordinary tail pages 2–10; this establishes serialized emptiness, not page
+pixels or a device-backdrop color. The inspected Composer binary has SHA-256
+`52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f`.
+
 `openPDFWriter` loads the destination page before opening its application-tagged
 writer group (`0x358788–0x3587c4`). `PDFManager::CreateWriter` (`Pdf 0x60104`)
 initializes the writer's page index at `+36` to `-1`; `PDFWriter::LoadPage`
@@ -613,8 +623,10 @@ list-mode first-record selection cannot be generalized to single-mode notes.
 
 The Rust model retains all ordered signed PDF records and version-dependent placement
 rectangles, with manifest/source-byte resolution separate from the `CustomPdf`
-compatibility summary. It does not yet import PDF paper into note output or reproduce
-viewer composition. The first-index summary alone remains insufficient.
+compatibility summary. The private PDF adapter now imports source pages for the
+bounded continuous-note class listed in [rendering support](../rendering-support.md).
+General viewer composition and body-aware export remain open; the first-index
+summary alone remains insufficient.
 
 The evidence distinguishes three operations:
 
@@ -627,8 +639,8 @@ The evidence distinguishes three operations:
 Samsung's PDF export does not provide an SVG representation of the imported
 paper. Preserving a source PDF page in PDF output and representing that page in
 SVG are different capabilities. The current Rust document-to-PDF transport
-starts from its SVG graphics plus retained text; it has no imported-source-page
-operation. Its vector guarantee for supported note graphics does not establish
+uses SVG graphics plus retained text for overlays and preserves source pages
+through a separate imported-page operation. This bounded implementation does not establish
 support for arbitrary PDF paper or for PDF-to-SVG conversion.
 
 Likewise, turning a PDF page into a bitmap would change the retained content

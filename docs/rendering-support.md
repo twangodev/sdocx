@@ -611,21 +611,29 @@ parse warnings were PDF-backed paper in two local research notes. Rust now retai
 all ordered signed PDF records, version-dependent rectangles and raw template type;
 modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
-PDF-backed paper remains unrendered; PDF export rejects selected pages containing
-retained paper records rather than omitting their backgrounds. SVG previews report
-the omitted background through a structured notice; converting those diagnostic-aware
-pages to PDF also fails explicitly. Retained bytes do not certify native composition.
+PDF export now preserves source PDF paper for a bounded continuous-note class:
+one authoritative, top-aligned, full-width integer paper record, an unrotated
+origin-zero source page with UserUnit 1, native-default background, and ordinary
+saved unrotated strokes. Native-derived query bands select whole strokes;
+source pages retain their physical boxes, while continuation pages use the
+native 600-point width and integer-truncated height, independently of SDK DPI.
+Empty or LF-only body text with supported formatting is accepted. Visible body
+text, inline images, multiple paper records and other unverified cases still
+fail explicitly. In particular, the real quiz note contains a visible body image
+and is not yet supported by this route. SVG previews continue to report omitted
+PDF backgrounds; converting those diagnostic-aware pages to PDF fails explicitly.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
-recovered contracts to the current Rust model and verified vector PDF transport;
-test-only Rust assembly preserves selected source pages, scoped vector resources
-and SDK overlay tags through reordered/duplicate pages and ordinary tails.
-Real-source and retained-text transport match MuPDF/PDFium at 1×/2×; the
-native-derived slice planner is also test-only. A bounded block-image query
-candidate matches the measured native query and planner replays; general query
-and placement integration remain open. On one actually loaded quiz archive,
-the test-only stroke selector matches native identities and order across all
-11 bands: 3,228 unique strokes and 3,261 admissions, including cross-band repeats.
-This verifies query admission for that sample, not exported appearance.
+recovered contracts to the Rust model and verified vector PDF transport.
+Rust assembly tests cover scoped resources, overlay tags, reordered/duplicate
+pages and ordinary tails; public export tests cover source preservation,
+cross-band whole-stroke admission and DPI-independent physical page sizes.
+Real-source and retained-text transport match MuPDF/PDFium at 1×/2×. The stroke
+selector matches native identities and order across all 11 observed bands of
+one actually loaded quiz archive: 3,228 unique strokes and 3,261 admissions,
+including cross-band repeats. This verifies query admission in that loaded
+state, not body-aware final pagination or exported appearance. A bounded
+block-image query candidate also matches measured native queries; integrating
+native body layout and placement remains open.
 A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)
@@ -650,8 +658,8 @@ texture/subbitmap readback through actual host Mesa textures and framebuffers,
 then native adapter/libpng encoding. Two synthetic 2×2 controls preserve alpha
 and verify rounded, clamped RGB unpremultiplication, including zero alpha;
 queue scheduling and zlib remain host bridges. The native raster-batch producer and
-Drawing-to-insertion, saved-note placement and production PDF-paper rendering
-remain outstanding.
+Drawing-to-insertion and general saved-note/body placement remain outstanding;
+the production PDF-paper subset above does not establish those contracts.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)

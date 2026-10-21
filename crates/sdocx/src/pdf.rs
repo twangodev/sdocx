@@ -13,21 +13,14 @@ use krilla::{
 };
 
 mod ink_field;
+mod paper_segments;
+mod paper_selection;
+mod paper_support;
 mod svg;
 
 #[cfg(test)]
 #[path = "pdf/font_identity_tests.rs"]
 mod font_identity_tests;
-#[cfg(test)]
-#[path = "pdf/paper.rs"]
-mod paper;
-#[cfg(test)]
-#[path = "pdf/paper_segments.rs"]
-mod paper_segments;
-#[cfg(test)]
-#[path = "pdf/paper_selection.rs"]
-mod paper_selection;
-
 use crate::render::{
     DocumentTextCache, NativeInkPayload, NativeInkRegistry, NativePdfPainter, NativeTextRegistry,
 };
@@ -290,6 +283,25 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
                 .ok_or(PdfError::InvalidPageIndex { page_index })
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
+
+    // A validated SingleX plan owns its expanded physical-page topology. The
+    // normal scene path below remains unchanged for documents without retained
+    // PDF paper, while unsupported retained-paper cases fail closed here.
+    let paper_plan = paper_support::plan_singlex_pdf_paper(document, layout, page_indices)
+        .map_err(|error| error.to_pdf_error())?;
+    if let Some(plan) = paper_plan {
+        return paper_support::render_singlex_pdf_paper_plan(
+            document,
+            layout,
+            plan,
+            render_options,
+            &pdf_options,
+            fonts,
+            cache,
+            observer,
+        );
+    }
+
     for (output_page_index, layout_page) in selected_pages.iter().enumerate() {
         let record_count = layout_page
             .page
