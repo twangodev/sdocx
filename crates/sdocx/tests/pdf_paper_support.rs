@@ -679,7 +679,7 @@ fn public_pdf_paper_route_rejects_unproven_objects_transforms_and_partial_select
         Err(PdfError::UnsupportedPdfPaper { .. })
     ));
     assert!(matches!(
-        export(&document(true, None, 90, 1), &[0], 96.0),
+        export(&document(true, None, 15, 1), &[0], 96.0),
         Err(PdfError::UnsupportedPdfPaper { .. })
     ));
     assert!(matches!(
@@ -781,4 +781,82 @@ fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_b
         export(&invalid, &[0], 96.0),
         Err(PdfError::UnsupportedPdfPaper { .. })
     ));
+}
+
+#[test]
+fn public_pdf_paper_uses_native_crop_and_quarter_turn_placement() {
+    // Native AddPages/body-writer controls establish these source-to-display
+    // inverse matrices. Object rotations remain a separate unsupported case.
+    let crop = [20.0_f64, 35.0, 570.0, 535.0];
+    for rotation in [0, 90, 180, 270] {
+        let mut document = document(true, None, rotation, 1);
+        let ArchiveResourceContent::Opaque { data } =
+            &mut document.metadata.archive_resources[0].content
+        else {
+            panic!("test source PDF must be retained bytes");
+        };
+        let mut source = PdfDocument::load_mem(data).unwrap();
+        let page_id = source.get_pages()[&1];
+        source
+            .get_object_mut(page_id)
+            .unwrap()
+            .as_dict_mut()
+            .unwrap()
+            .set("CropBox", crop.map(Object::from).to_vec());
+        let mut source_bytes = Vec::new();
+        source.save_to(&mut source_bytes).unwrap();
+        *data = source_bytes;
+        for dpi in [72.0_f32, 144.0] {
+            let output = export(&document, &[0], dpi).unwrap();
+            let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+            assert_eq!(pdf.get_pages().len(), 11);
+            let page_id = pdf.get_pages()[&1];
+            let page = pdf.get_dictionary(page_id).unwrap();
+            assert_eq!(page.get(b"Rotate").unwrap().as_i64().unwrap(), rotation);
+            assert_eq!(
+                page_box(&pdf, 1),
+                [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)]
+            );
+            let saved_crop = page.get(b"CropBox").unwrap().as_array().unwrap();
+            let values = saved_crop
+                .iter()
+                .map(|v| f64::from(v.as_float().unwrap()))
+                .collect::<Vec<_>>();
+            assert_eq!(values, crop);
+            assert_eq!(page_box(&pdf, 2), [0.0, 0.0, 600.0, 505.0]);
+            assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+
+            let (width, height) = if rotation % 180 == 0 {
+                (550.0, 500.0)
+            } else {
+                (500.0, 550.0)
+            };
+            let scale = width / f64::from(NOTE_WIDTH);
+            let scene_height = (height / scale).ceil();
+            let k = scale / (72.0 / f64::from(dpi));
+            let dy = height - scale * scene_height;
+            let expected = match rotation {
+                0 => [k, 0.0, 0.0, k, crop[0], crop[1] + dy],
+                90 => [0.0, k, -k, 0.0, crop[2] - dy, crop[1]],
+                180 => [-k, 0.0, 0.0, -k, crop[2], crop[3] - dy],
+                270 => [0.0, -k, k, 0.0, crop[0] + dy, crop[3]],
+                _ => unreachable!(),
+            };
+            let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+            let matrix = content
+                .operations
+                .iter()
+                .rev()
+                .find(|op| op.operator == "cm")
+                .unwrap();
+            assert_eq!(matrix.operands.len(), 6);
+            for (actual, expected) in matrix.operands.iter().zip(expected) {
+                let actual = actual.as_float().map(f64::from).unwrap();
+                assert!(
+                    (actual - expected).abs() < 0.0001,
+                    "rotation={rotation} dpi={dpi}: actual={actual} expected={expected}"
+                );
+            }
+        }
+    }
 }

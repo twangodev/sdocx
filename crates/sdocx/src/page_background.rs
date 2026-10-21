@@ -44,6 +44,9 @@ pub(crate) fn template_pattern(
     let Some(template) = page.template else {
         return Ok(None);
     };
+    if matches!(template.source, PageTemplateSource::CustomPdf { .. }) {
+        return Err("PDF paper is retained; SVG previews omit its source PDF background");
+    }
     if template.source != PageTemplateSource::BuiltIn || !matches!(template.id, 1..=3 | 7..=9) {
         return Err("page template is retained but not supported");
     }

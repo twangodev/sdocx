@@ -605,6 +605,16 @@ final PDF placement or native device pixels. A separate
 [archive-backed query comparison](object-selection-findings.md) verifies
 ordinary stroke admission and order for this sample.
 
+A follow-up on the same loaded archive measures 116 body lines. Native
+`BodyTextContext::HasVisibleText` returns true for the full note and the
+`9120–10647` band; the other ten observed page bands are false. Line 112 spans
+`[80.5333,9182.8164,952.1088,10347.1309]`. These bounds are approximately
+`1812/1080` times the SDK's current flow-space geometry; the responsible model
+or layout conversion remains open. This executes measurement and visibility,
+with no body/query injection, but does not resolve or draw the image object.
+The event receipt SHA-256 is
+`1f2237fc0f7288b913d0fa2260b0fa68dd5c1b750d599ae49c422f0412bc2c6e`.
+
 For ordinary strips, `updateHeightByBodyText` checks the full-width band between
 `y + nominal_height - 1` and `y + nominal_height`, finds the body line at the
 band's top, and can return `trunc(line_bottom - f32(y))`

@@ -613,16 +613,18 @@ modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
 PDF export now preserves source PDF paper for a bounded continuous-note class:
 one authoritative source PDF with contiguous, top-aligned, full-width integer
-paper records and consecutive source-page indices; each source page must be
-unrotated, origin-zero and UserUnit 1. The note must use the native-default
-background and supported saved unrotated strokes. Native-derived query bands select whole strokes;
+paper records and consecutive source-page indices. Source CropBox origins and
+quarter-turn rotations are preserved; UserUnit must be 1. The note must use the
+native-default background and supported saved unrotated strokes.
+Native-derived query bands select whole strokes;
 source pages retain their physical boxes, while continuation pages use the
 native 600-point width and integer-truncated height, independently of SDK DPI.
 Empty or LF-only body text with supported formatting is accepted, including
 foreground/font-size spans, finite margins and valid saved text sections;
 bullets remain unsupported. A saved stroke's generated flag alone does not
 exclude it. Visible body text, inline images, multiple source PDFs, gaps between
-records and other unverified cases still fail explicitly. In particular, the real quiz note contains a visible body image
+records and other unverified cases still fail explicitly. In particular, the
+real quiz note contains a visible body image
 and is not yet supported by this route. SVG previews continue to report omitted
 PDF backgrounds; converting those diagnostic-aware pages to PDF fails explicitly.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the

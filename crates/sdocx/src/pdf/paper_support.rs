@@ -513,6 +513,7 @@ struct ImportedSourcePage {
     source_page_index: i32,
     source_to_display: [f64; 6],
     source_crop: [f64; 4],
+    physical_surface: [f64; 2],
 }
 
 /// A page in the measured SingleX output stream. `query_height` controls native
@@ -756,18 +757,23 @@ pub(super) fn plan_singlex_pdf_paper(
             .map_err(|_| reject(record_index, "source page geometry is unsupported"))?;
         let unit = page_user_unit(&source.doc, source_page)
             .map_err(|_| reject(record_index, "source page UserUnit is invalid"))?;
-        if page_rotation(&source.doc, source_page).ok() != Some(0)
-            || unit != 1.0
-            || crop[0] != 0.0
-            || crop[1] != 0.0
-            || source_to_display != [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-        {
+        let rotation = page_rotation(&source.doc, source_page)
+            .map_err(|_| reject(record_index, "source page rotation is invalid"))?;
+        if unit != 1.0 {
             return Err(reject(
                 record_index,
-                "only origin-zero, unrotated UserUnit 1 source pages are supported",
+                "source pages with UserUnit other than 1 are not supported",
             ));
         }
-        let source_surface = [crop[2] - crop[0], crop[3] - crop[1]];
+        let crop_width = crop[2] - crop[0];
+        let crop_height = crop[3] - crop[1];
+        let source_surface = match rotation {
+            0 | 180 => [crop_width, crop_height],
+            90 | 270 => [crop_height, crop_width],
+            _ => {
+                return Err(reject(record_index, "source page geometry is unsupported"));
+            }
+        };
         if source_surface
             .iter()
             .any(|value| !value.is_finite() || *value <= 0.0)
@@ -781,6 +787,7 @@ pub(super) fn plan_singlex_pdf_paper(
             source_page_index: prepared_record.source_page_index,
             source_to_display,
             source_crop: crop,
+            physical_surface: source_surface,
         });
     }
 
@@ -933,8 +940,10 @@ pub(super) fn plan_singlex_pdf_paper(
                 }
             }
             let (physical_width, physical_height) = if let Some(imported_source) = imported_source {
-                let crop = imported_source.source_crop;
-                (crop[2] - crop[0], crop[3] - crop[1])
+                (
+                    imported_source.physical_surface[0],
+                    imported_source.physical_surface[1],
+                )
             } else {
                 let height =
                     native_surface_height(600, slice.height, note_width_i32).map_err(|_| {
