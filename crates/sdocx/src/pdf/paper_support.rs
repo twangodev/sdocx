@@ -1710,7 +1710,7 @@ fn assemble_prepared_output_pages(
         return Err("assembled PDF exceeds 2,000,000 reachable and structural objects".into());
     }
     let mut bytes = Vec::new();
-    output.save_to(&mut bytes).map_err(|e| e.to_string())?;
+    output.save_modern(&mut bytes).map_err(|e| e.to_string())?;
     Ok(bytes)
 }
 
@@ -2671,7 +2671,7 @@ fn assemble_overlay_only(
         return Err("assembled PDF exceeds 2,000,000 reachable and structural objects".into());
     }
     let mut bytes = Vec::new();
-    output.save_to(&mut bytes).map_err(|e| e.to_string())?;
+    output.save_modern(&mut bytes).map_err(|e| e.to_string())?;
     Ok(bytes)
 }
 
@@ -3247,6 +3247,20 @@ mod tests {
     };
     use lopdf::{Object, dictionary};
     use std::sync::Arc;
+
+    fn assert_modern_pdf_serialization(doc: &Document) {
+        assert_eq!(doc.version, "1.7");
+        assert!(doc.objects.values().any(|object| matches!(
+            object,
+            Object::Stream(stream)
+                if stream.dict.get(b"Type").and_then(Object::as_name).is_ok_and(|name| name == b"ObjStm")
+        )), "final output should use compressed object streams");
+        assert!(doc.objects.values().any(|object| matches!(
+            object,
+            Object::Stream(stream)
+                if stream.dict.get(b"Type").and_then(Object::as_name).is_ok_and(|name| name == b"XRef")
+        )), "final output should use a cross-reference stream");
+    }
 
     fn blank_rich_text(text: &str) -> crate::RichTextBox {
         crate::RichTextBox {
@@ -4670,6 +4684,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let output = Document::load_mem(&output).unwrap();
+        assert_modern_pdf_serialization(&output);
         let pages = output.get_pages();
         assert_eq!(
             pages.len(),
@@ -5144,6 +5159,7 @@ mod tests {
         )
         .unwrap();
         let tail = Document::load_mem(&tail).unwrap();
+        assert_modern_pdf_serialization(&tail);
         let page_id = tail.get_pages()[&1];
         let page = tail.get_dictionary(page_id).unwrap();
         let key = page.get(b"StructParents").unwrap().as_i64().unwrap();
