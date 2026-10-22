@@ -745,6 +745,10 @@ error check returns zero. Composer's native `ExportFile` writes that exclusion
 at `0x35774c` through the capture pointer at owner+176; `drawPdf` checks capture+88
 at `0x32e400` and returns without `NotePDFCapture::DrawPDF` when set. This explains
 the PDF exclusion, but does not establish the cause of every white pixel.
+The separate static export path imports source PDF pages through
+`PDFExport::AddPages` → `FPDF_ImportPages`, then applies note overlays;
+`AddPages` takes a zero-based, end-exclusive page range. Actual preservation
+of source objects still requires inspection of a completed export.
 Source-PDF pixel contribution, completed PDF output
 and Samsung device pixel parity remain unproven. The readback pixel SHA-256 is
 `593269c57197ea5a8d646e3d40fdbd23d8d08abe40758f792a78b828b707fc94`.
