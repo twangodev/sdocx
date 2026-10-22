@@ -220,6 +220,15 @@ is established by these constructor bodies. Exporter admission of finite,
 in-range, nondecreasing consumed stops is a bounded projection, distinct
 from native loading or constructor acceptance.
 
+Both cache initializers (`0x267f34`, `0x268074`) traverse adjacent stops in
+source order after endpoint extension and quantization. A final increasing
+span from 0 to 1 overwrites all 256 entries,
+including both endpoints; later nonpositive spans do not restore earlier colors.
+A synthetic type-8 control with blue at 1 followed by red at 0 produced only
+premultiplied red pixels. Paired SDK SVG/PDF interiors match that red, with
+different edge coverage. This supports the full-span overwrite rule, not general
+descending-stop interpolation or saved-archive appearance parity.
+
 Drawing passes shader flags 0. The static cache branch interpolates RGB
 and alpha separately before eventual output premultiplication
 (`0x2674dc`, `0x26753c`). Stop alpha is the saved ARGB high byte; no extra
