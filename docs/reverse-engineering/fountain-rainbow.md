@@ -1151,7 +1151,15 @@ verification path. This is joined native CPU geometry/orchestration evidence,
 not end-to-end worker execution or Android framebuffer parity. This fixture
 does not execute cache hits or native cache insertion.
 
-## V17 inverse scale and cache comparison at zoom boundaries
+## Inverse scale and cache comparison at zoom boundaries
+
+V14's `getInverseScale()` (`0x72228`) reads the canvas Matrix3 through
+vtable slot +216 and derives reciprocal basis-column lengths; RedrawPen
+stores the pair in RTV4 fields +264/+268. RTV4 encodes its fringe in the
+stamp extent, `innerRadius` and `alphaByWidth`, without shader `fwidth`.
+These are canvas-matrix scales, not a measured framebuffer pixel scale:
+retained identity and synthetic 1×/2×/4× captures do not establish the
+live Samsung canvas-to-output mapping.
 
 `conformance/fountain_v17_scale_cache.py` executes native `getInverseScale()`
 at `0x7af08` with a supplied canvas matrix. For a finite matrix with nonzero
