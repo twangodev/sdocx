@@ -310,15 +310,17 @@ fn render_max(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
     for [_, _, _, _, edge, coverage, ..] in &ink.records {
         let id = svg.definition::<Gradient>();
         let stop = (*edge * 2.).clamp(0., 1.);
+        let gray = ColorValue::gray(f64::from(*coverage))
+            .expect("prepared InkPen2 coverage is normalized");
         let mut gradient = RadialGradient::new(&id)
             .cx(0)
             .cy(0)
             .r(1)
-            .add(Stop::new(0, ColorValue::WHITE).opacity(*coverage));
+            .add(Stop::new(0, gray));
         if stop > 0. {
-            gradient = gradient.add(Stop::new(stop, ColorValue::WHITE).opacity(*coverage));
+            gradient = gradient.add(Stop::new(stop, gray));
         }
-        let gradient = gradient.add(Stop::new(1, ColorValue::WHITE).opacity(0));
+        let gradient = gradient.add(Stop::new(1, ColorValue::BLACK));
         definitions = definitions.add(gradient);
         fields.push(id);
     }
@@ -348,8 +350,20 @@ fn render_max(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
                         .isolated()
                         .transformed(matrix)
                         .replay_part(replay.then_some(ReplayPart(index + 1)))
-                        .add(Circle::new().cx(0).cy(0).r(1).fill(Paint::BLACK))
-                        .add(Circle::new().cx(0).cy(0).r(1).fill(Paint::Gradient(id))),
+                        // Lighten equals MAX only for opaque input fields.
+                        // A circle's antialiased boundary has partial alpha,
+                        // which makes coincident stamps accumulate there.
+                        .add(
+                            Rectangle::new()
+                                // Keep raster work local to this stamp. The
+                                // padded boundary lies in the black spread,
+                                // away from the nonzero coverage field.
+                                .x(-1. - 2. / f64::from(*rx))
+                                .y(-1. - 2. / f64::from(*ry))
+                                .width(2. + 4. / f64::from(*rx))
+                                .height(2. + 4. / f64::from(*ry))
+                                .fill(Paint::Gradient(id)),
+                        ),
                 );
             }
         });
@@ -360,6 +374,89 @@ fn render_max(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
 mod tests {
     use super::super::vector::Svg;
     use super::*;
+
+    #[test]
+    fn enhanced_max_is_idempotent_at_fractional_stamp_edges() {
+        for extent in [1., 1.5, 2., 8.] {
+            let mut ink = PreparedInkPen2V9 {
+                per_stamp_rgb: false,
+                enhanced_antialias: true,
+                records: vec![[32.25, 32.5, extent, extent, 0.2, 0.7, 0., 0., 0.]],
+                sample_ends: vec![1],
+                color: crate::Color {
+                    r: 51,
+                    g: 102,
+                    b: 153,
+                },
+                opacity: 0.5,
+                bounds: crate::BoundingBox {
+                    x_min: 32.25 - f64::from(extent),
+                    y_min: 32.5 - f64::from(extent),
+                    x_max: 32.25 + f64::from(extent),
+                    y_max: 32.5 + f64::from(extent),
+                },
+            };
+            let raster = |ink: &PreparedInkPen2V9| {
+                let mut scene = Scene::new(Svg::new().width(64).height(64));
+                render(&mut scene, ink, None);
+                let svg = scene.finish();
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pixels = resvg::tiny_skia::Pixmap::new(64, 64).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixels.as_mut(),
+                );
+                (pixels.take(), svg)
+            };
+            let (single, single_svg) = raster(&ink);
+            ink.records.push(ink.records[0]);
+            ink.sample_ends = vec![2];
+            let (duplicate, duplicate_svg) = raster(&ink);
+            assert!(
+                single == duplicate,
+                "MAX changed for duplicate extent {extent}"
+            );
+            #[cfg(feature = "pdf")]
+            for svg in [single_svg, duplicate_svg] {
+                let page = crate::RenderedPage::new(0, 64, 64, svg);
+                let bytes = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let mut shading = false;
+                let mut lighten = false;
+                for object in pdf.objects.values() {
+                    let dict = match object {
+                        lopdf::Object::Dictionary(dict) => dict,
+                        lopdf::Object::Stream(stream) => &stream.dict,
+                        _ => continue,
+                    };
+                    assert_ne!(
+                        dict.get(b"Subtype").and_then(lopdf::Object::as_name).ok(),
+                        Some(b"Image".as_slice())
+                    );
+                    shading |= dict.has(b"ShadingType");
+                    lighten |= dict.get(b"BM").and_then(lopdf::Object::as_name).ok()
+                        == Some(b"Lighten".as_slice());
+                }
+                assert!(shading && lighten, "MAX field lost vector PDF composition");
+            }
+            #[cfg(not(feature = "pdf"))]
+            let _ = (single_svg, duplicate_svg);
+            ink.records[1][0] += 0.5;
+            let (overlap, _) = raster(&ink);
+            ink.records.remove(0);
+            let (offset, _) = raster(&ink);
+            for ((a, b), actual) in single
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(offset.as_chunks::<4>().0)
+                .zip(overlap.as_chunks::<4>().0)
+            {
+                assert_eq!(actual[3], a[3].max(b[3]), "offset MAX extent {extent}");
+            }
+        }
+    }
 
     fn center_alpha(enhanced_antialias: bool, alpha: u8) -> u8 {
         // RTV3's minimum-size expansion yields extent=1, inner=0 and
