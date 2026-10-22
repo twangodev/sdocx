@@ -752,8 +752,12 @@ at `0x32e400` and returns without `NotePDFCapture::DrawPDF` when set. This expla
 the PDF exclusion, but does not establish the cause of every white pixel.
 The separate static export path imports source PDF pages through
 `PDFExport::AddPages` → `FPDF_ImportPages`, then applies note overlays;
-`AddPages` takes a zero-based, end-exclusive page range. Actual preservation
-of source objects still requires inspection of a completed export.
+`AddPages` takes a zero-based, end-exclusive page range. `CloseWriter`
+appends its nonempty overlay form after the imported page objects. The
+background tag does not move it behind them; `addBackground` passes a new
+paint with alpha 255 and Normal blend unchanged to `DrawImage`. Image
+contents, intrinsic alpha and bounds still require runtime inspection;
+these static paths do not prove occlusion or source-object preservation.
 Source-PDF pixel contribution, completed PDF output
 and Samsung device pixel parity remain unproven. The readback pixel SHA-256 is
 `593269c57197ea5a8d646e3d40fdbd23d8d08abe40758f792a78b828b707fc94`.
