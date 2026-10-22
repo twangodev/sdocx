@@ -182,6 +182,18 @@ operations or higher-level object-alpha composition.
 
 ## SDK implications and validation
 
+A bounded native RTV2/Mesa llvmpipe mask capture confirms the thin-edge
+branch for integer widths 1, 2 and 3. With one explicit stamp at
+`(128.25,128.5)` in a 256×256 subbitmap, caller identity produces the
+subbitmap projection; `Draw` multiplies that projection by the caller matrix.
+On pixel row 128, the nonzero red mask values are `85,215` at x=127–128
+for width 1, `255,255,94` at x=127–129 for width 2, and `50,212,251,142`
+at x=126–129 for width 3. The native `aaScaler` uniform is respectively
+`0.5,0.5,1`. The capture checks the active instance buffer, projection,
+framebuffer and shader bindings, with no GL errors. Its instance vector is
+explicit host input replacing the saved caller's vector; these are mask
+controls, not full-page or Samsung device appearance comparisons.
+
 `ink/marker2.rs` reconstructs that saved model for V1 and V2: one stamp
 radius, one path opacity, and midpoint sampling. Overlapping stamps in one
 stroke are a single filled path, so coverage is a union rather than stacked
