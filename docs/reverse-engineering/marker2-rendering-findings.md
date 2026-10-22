@@ -133,7 +133,7 @@ stored color alpha or UI size level. At equal local derivatives, the
 smaller scale narrows the edge ramp. Actual output still depends on the
 projection, rasterization and GPU precision behavior.
 
-For the bounded host-Mesa widths 1–3 replay above, computing normalized
+For the original canonical host-Mesa widths 1–3 replay above, computing normalized
 radial distance at pixel centers, taking finite differences within even
 2×2 window-pixel pairs, quantizing each stamp and applying MAX reproduces
 the captured red coverage plane byte-for-byte. The model uses source-derived
@@ -141,6 +141,11 @@ centers without fitting pixel values. It does not predict the readback alpha
 channel or establish Samsung-device derivative behavior. A continuous
 angular derivative or constant radial feather does not reproduce these
 fields exactly; this distinction matters when approximating them in vectors.
+Further controls at translation `(0.25, 0.5)` and canonical ARGB alpha 128
+match five red planes exactly, with one width-3 translated pixel differing by
+one byte level. Typed composite color uniforms and output alpha confirm that
+partial ARGB alpha is applied after MAX coverage; all three alpha-128 red
+planes remain identical to their opaque canonical controls.
 
 ## Shared point generation
 
