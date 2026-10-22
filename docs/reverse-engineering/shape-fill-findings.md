@@ -229,6 +229,20 @@ premultiplied red pixels. Paired SDK SVG/PDF interiors match that red, with
 different edge coverage. This supports the full-span overwrite rule, not general
 descending-stop interpolation or saved-archive appearance parity.
 
+Two further radial-line controls used ascending wire stops red at `.5`, blue
+at `.75`, then off-grid float32 positions `.503` and `.751`. Actual factory
+arguments retained the reversed raw positions; both 640×640 framebuffers were
+byte-identical. All 2,175 nontransparent pixels matched the predicted blue/red
+partition by dominant channel. Cache construction (`0x2680a4–0x2680d8`) writes
+inclusive index spans: for an interior position `p`, the lower bucket is
+`trunc(f64(p) * 65536) >> 8`. The later red span overwrites from bucket 128,
+giving a step at `.5`. These synthetic paints on HF02 line geometry establish
+this cache behavior, not continuous interpolation or saved/device pixel parity.
+Paired vector SVG/PDF hard-step controls match interior color classification,
+but miss narrow native color blending at the boundary (maximum channel error
+56). Actual GPU transition behavior remains unresolved; the cache rule alone
+does not justify admitting this partial-overlap projection.
+
 Drawing passes shader flags 0. The static cache branch interpolates RGB
 and alpha separately before eventual output premultiplication
 (`0x2674dc`, `0x26753c`). Stop alpha is the saved ARGB high byte; no extra
