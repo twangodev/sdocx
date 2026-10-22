@@ -144,6 +144,57 @@ fn line_linear_gradient_is_independent_of_endpoint_direction() {
 }
 
 #[test]
+fn line_radial_geometry_matches_centered_and_off_center_native_factory_words() {
+    // V23 and V24 each enter the real Skia CreateRadial factory on HF02's
+    // unchanged reference bbox. V23 uses the centered half-diagonal branch;
+    // V24 uses position (.25,.75), the full diagonal radius, and an off-center
+    // computed center. Their serialized effect is synthetic, not archive paint.
+    let frame = BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    };
+    for (position, center_words, radius_word) in [
+        ([0.5_f32, 0.5], [0x4320_1844, 0x43fb_b093], 0x42b9_b42b),
+        ([0.25_f32, 0.75], [0x4300_deab, 0x4406_6f1a], 0x4339_b42b),
+    ] {
+        let mut source = line_source();
+        source.gradient_type = 1;
+        source.position = position.map(|value| PaintFloat32::from_bits(value.to_bits()));
+        let plan = Plan::for_line(&line(frame), &source).unwrap();
+        let Geometry::Radial { center, radius } = plan.geometry else {
+            panic!("type-8 radial outline must use radial geometry");
+        };
+        assert_eq!(center.map(f32::to_bits), center_words);
+        assert_eq!(radius.to_bits(), radius_word);
+        assert_eq!(plan.stops.len(), 2);
+    }
+}
+
+#[test]
+fn line_radial_geometry_rejects_nonfinite_active_position_before_paint_allocation() {
+    let frame = BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    };
+    let mut radial = line_source();
+    radial.gradient_type = 1;
+    radial.position[0] = PaintFloat32::from_bits(f32::NAN.to_bits());
+    assert!(matches!(
+        Plan::for_line(&line(frame), &radial),
+        Err(PaintDiagnosticKind::UnrepresentableGradient)
+    ));
+
+    // Position is dormant for a linear line gradient and must not become a
+    // new rejection condition on the existing linear route.
+    radial.gradient_type = 0;
+    assert!(Plan::for_line(&line(frame), &radial).is_ok());
+}
+
+#[test]
 fn line_gradient_keeps_unproven_frames_and_styles_on_fallback() {
     let frame = BoundingBox {
         x_min: 97.64480590820312,

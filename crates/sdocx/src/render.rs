@@ -7045,6 +7045,78 @@ mod tests {
             Some(expected_stroke.as_str())
         );
 
+        let mut radial_line = super::gradient::tests::hf02_line_with_gradient();
+        let Some(crate::ShapePaintSource::Color(radial_source)) =
+            radial_line.style.paint_source.as_mut()
+        else {
+            unreachable!("fixture has a color gradient source");
+        };
+        radial_source.gradient_type = 1;
+        radial_source.position =
+            [0.25_f32, 0.75_f32].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+        let mut page = page_with_uncolored_stroke();
+        page.width = 640;
+        page.height = 640;
+        page.objects = vec![crate::PageElement::Line(radial_line).into()];
+        let rendered = render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+        assert!(rendered.paint_diagnostics.is_empty());
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let radial_gradients = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("radialGradient"))
+            .collect::<Vec<_>>();
+        assert_eq!(radial_gradients.len(), 1);
+        for (attribute, expected) in [
+            ("cx", f64::from(f32::from_bits(0x4300_deab))),
+            ("cy", f64::from(f32::from_bits(0x4406_6f1a))),
+            ("r", f64::from(f32::from_bits(0x4339_b42b))),
+        ] {
+            let actual = radial_gradients[0]
+                .attribute(attribute)
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert!(
+                (actual - expected).abs() < 1e-4,
+                "{attribute}: {actual} != {expected}"
+            );
+        }
+        assert_eq!(
+            radial_gradients[0]
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .count(),
+            2
+        );
+        assert!(
+            !xml.descendants()
+                .any(|node| node.has_tag_name("linearGradient"))
+        );
+
+        let mut invalid_radial = super::gradient::tests::hf02_line_with_gradient();
+        let Some(crate::ShapePaintSource::Color(invalid_source)) =
+            invalid_radial.style.paint_source.as_mut()
+        else {
+            unreachable!("fixture has a color gradient source");
+        };
+        invalid_source.gradient_type = 1;
+        invalid_source.position[0] = crate::PaintFloat32::from_bits(f32::NAN.to_bits());
+        let mut page = page_with_uncolored_stroke();
+        page.width = 640;
+        page.height = 640;
+        page.objects = vec![crate::PageElement::Line(invalid_radial).into()];
+        let rendered = render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+        assert_eq!(
+            rendered.paint_diagnostics[0].kind,
+            crate::PaintDiagnosticKind::UnrepresentableGradient
+        );
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        assert!(
+            !xml.descendants()
+                .any(|node| node.has_tag_name("radialGradient")
+                    || node.has_tag_name("linearGradient"))
+        );
+
         let mut rejected_line = super::gradient::tests::hf02_line_with_gradient();
         rejected_line.metadata.rotation_degrees = Some(1.0);
         let mut page = page_with_uncolored_stroke();

@@ -42,9 +42,9 @@ pub(super) struct Plan {
 }
 
 impl Plan {
-    /// The V21 native scene capture passed the HF02 line's `reference_bbox` to
-    /// the linear helper and verified its endpoints at Skia's factory. This is
-    /// a synthetic-paint frame witness,
+    /// V21 (linear) and V23/V24 (radial) native captures passed the HF02 line's
+    /// `reference_bbox` to Drawing and verified geometry at Skia's factories.
+    /// These are synthetic-paint frame witnesses,
     /// not proof of saved archive paint or pixels; keep admission to straight,
     /// unrotated, unadorned lines until broader line cases have paired evidence.
     pub fn for_line(
@@ -54,7 +54,7 @@ impl Plan {
         if source.outline_color_type != Some(1) || !source.trailing_data.is_empty() {
             return Err(PaintDiagnosticKind::UnsupportedPaint);
         }
-        if source.gradient_type != 0 || source.gradient_rotatable() {
+        if !matches!(source.gradient_type, 0 | 1) || source.gradient_rotatable() {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
         let rect = bounds(line.reference_bbox);
@@ -86,12 +86,23 @@ impl Plan {
         {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
-        let points = linear_points(rect, source.linear_angle);
-        if points.iter().flatten().any(|value| !value.is_finite()) || points[0] == points[1] {
-            return Err(PaintDiagnosticKind::UnrepresentableGradient);
-        }
+        let geometry = if source.gradient_type == 0 {
+            let points = linear_points(rect, source.linear_angle);
+            if points.iter().flatten().any(|value| !value.is_finite()) || points[0] == points[1] {
+                return Err(PaintDiagnosticKind::UnrepresentableGradient);
+            }
+            Geometry::Linear(points)
+        } else {
+            let (center, radius) =
+                radial_points(rect, source.position.map(|value| value.value()), 0.0, false);
+            if center.iter().any(|value| !value.is_finite()) || !radius.is_finite() || radius <= 0.0
+            {
+                return Err(PaintDiagnosticKind::UnrepresentableGradient);
+            }
+            Geometry::Radial { center, radius }
+        };
         Ok(Self {
-            geometry: Geometry::Linear(points),
+            geometry,
             stops: project_outline_stops(source)?,
             element_rotation: None,
         })

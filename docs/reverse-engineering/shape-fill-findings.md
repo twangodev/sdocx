@@ -461,10 +461,10 @@ fields and trailing bytes. Other image/coedit forms and background effects remai
 opaque. Supported type-7 shapes can project canonical linear/radial color
 fill and outline records into vector paint. Patterns, rectangular/other
 gradients, image fills and background effects remain unsupported. Straight,
-unrotated, simple type-8 lines also project nonrotatable linear outlines from
+unrotated, simple type-8 lines also project nonrotatable linear/radial outlines from
 their reference bounds; routing, compound/dashed strokes and arrows retain
-fallback. A synthetic native control verifies the actual Skia factory endpoints
-and consumed stops. Its paired SVG/PDF opaque interiors agree, while edge
+fallback. Synthetic native controls verify the actual Skia factory endpoints, radial
+centers/radii and consumed stops. Paired SVG/PDF opaque interiors agree, while edge
 coverage differs; saved gradient appearance and broader line styles remain unverified.
 
 The preserved record needs to remain distinct from the paint that a native
