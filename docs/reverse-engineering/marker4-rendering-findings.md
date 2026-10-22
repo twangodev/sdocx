@@ -35,6 +35,22 @@ Addresses are from the existing Samsung Notes 4.4.45.37 ARM64
   rounded rectangle [1,1,199,199] with corner radii 50. The vector tip
   approximates those proportions, with alpha applied once to the stamp union.
 
+The initialized GLV8 `GetDrawnPointData` callback (`0x54d44`, slot `+0x38`)
+has a separate fractional geometry contract. Two native executions reconstructed
+HF04 stroke 35 from its 253 saved points and five source channels, changing
+only size from 36.21053695678711 to 36.0. Each returned 341 `RectF` records:
+stamp widths were 28.652099609375 and 28.489990234375 respectively, with
+heights approximately 37.21054 and 37.0. Raw callback checkpoints matched
+the captured records. These controls establish private callback geometry,
+not archive loading, Standard PDF behavior or raster coverage.
+
+Standard PDF export uses `RasterListX` and `ObjectPDFWriter::WriteObjectListAsBitmap`
+(Composer `0x37c3bc`). Its batch dimensions are bounds divided by export scale,
+then truncated to integers (`0x37c45c`, `0x37c488`); floating-point bounds remain
+for placement. This allocation rule does not establish per-stroke size handling.
+An actual Standard export must identify the selected Marker4 drawable and size
+before the private callback can justify changing the public vector profile.
+
 ## Real-file comparison
 
 At 600×848, Chromium SVG output was compared with the Samsung PDF rendered
