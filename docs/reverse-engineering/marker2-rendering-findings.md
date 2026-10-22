@@ -16,6 +16,15 @@ differences include mask-fragment precision and a thinner antialiasing ramp
 for drawing sizes below 3. These are shader and instruction-level findings,
 not measured visual equivalence with Samsung output.
 
+A bounded host-Mesa replay now pairs V2 widths 1–3 with current SDK SVG/PDF
+exports. All 22 sampled X/Y pairs match bitwise, including sample ends
+`[1, 5, 14, 22]`; the PDFs contain no image objects. Native final color and
+SDK output still differ at thin edges: support IoU ranges from 0.907 to 1.0
+across resvg, MuPDF and PDFium. This uses synthetic saved-stroke setters, an
+unchanged native point stream copied into the render-thread buffer, and
+opaque color only. It does not establish archive loading, partial-alpha or
+Samsung device appearance parity.
+
 ## V2 keeps the same color-alpha composition
 
 V2's GL constructor stores Marker2Data at member 72 (`0x21f18`) and creates
