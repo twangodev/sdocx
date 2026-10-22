@@ -46,6 +46,8 @@ struct V16Plan {
     color: crate::Color,
     stamps: Vec<V16Stamp>,
     y_bounds: Option<(f64, f64)>,
+    #[cfg(feature = "pdf")]
+    bounds: Option<crate::BoundingBox>,
 }
 
 impl PaintPlan {
@@ -277,9 +279,8 @@ struct V16GradientKey {
     rgb: Option<[u32; 3]>,
 }
 
-/// Retain the V16 RTV5 radial coverage as vector gradients at canonical unit
-/// inverse scale. This is the saved shader equation, not a device-pixel match
-/// for arbitrary SVG zoom or PDF viewing scale.
+/// Prepare the V16 RTV5 source geometry used by both canonical SVG gradients
+/// and the bounded retained-PDF full-coverage circle route.
 impl V16Plan {
     fn prepare(paint: &PreparedStroke<'_>) -> Option<Self> {
         let (Some(radii), Some(_bounds)) = (&paint.dot_radii, paint.bounds) else {
@@ -320,6 +321,8 @@ impl V16Plan {
         // identical f32 bits.
         let mut stamps = Vec::with_capacity(radii.len());
         let mut y_bounds: Option<(f64, f64)> = None;
+        #[cfg(feature = "pdf")]
+        let mut field_bounds: Option<crate::BoundingBox> = None;
         for (index, (point, radius)) in paint.points.iter().zip(radii).enumerate() {
             let radius = *radius as f32;
             if !radius.is_finite() || radius <= 0. {
@@ -359,6 +362,27 @@ impl V16Plan {
                     f64::from(next_up(y + extent_y)),
                 ),
             });
+            #[cfg(feature = "pdf")]
+            {
+                let x_min = f64::from(x) - f64::from(extent_x);
+                let x_max = f64::from(x) + f64::from(extent_x);
+                let y_min = f64::from(y) - f64::from(extent_y);
+                let y_max = f64::from(y) + f64::from(extent_y);
+                field_bounds = Some(match field_bounds {
+                    Some(bounds) => crate::BoundingBox {
+                        x_min: bounds.x_min.min(x_min),
+                        y_min: bounds.y_min.min(y_min),
+                        x_max: bounds.x_max.max(x_max),
+                        y_max: bounds.y_max.max(y_max),
+                    },
+                    None => crate::BoundingBox {
+                        x_min,
+                        y_min,
+                        x_max,
+                        y_max,
+                    },
+                });
+            }
             stamps.push(V16Stamp {
                 x,
                 y,
@@ -372,10 +396,56 @@ impl V16Plan {
             color,
             stamps,
             y_bounds,
+            #[cfg(feature = "pdf")]
+            bounds: field_bounds,
         })
     }
 
+    #[cfg(feature = "pdf")]
+    fn radial_circle_records(&self) -> Option<Vec<[f32; 9]>> {
+        if self.stamps.is_empty() || self.stamps.len() > 4096 {
+            return None;
+        }
+        self.stamps
+            .iter()
+            .map(|stamp| {
+                if stamp.extent_x.to_bits() != stamp.extent_y.to_bits() {
+                    return None;
+                }
+                let coverage = f32::from_bits(stamp.gradient_key.alpha);
+                if coverage != 1.0 || stamp.extent_x < 1.0 {
+                    return None;
+                }
+                let [red, green, blue] = stamp.gradient_key.rgb?;
+                let radius = stamp.extent_x - 0.5;
+                Some([
+                    stamp.x,
+                    stamp.y,
+                    radius,
+                    radius,
+                    0.0,
+                    1.0,
+                    f32::from_bits(red),
+                    f32::from_bits(green),
+                    f32::from_bits(blue),
+                ])
+            })
+            .collect()
+    }
+
     fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
+        #[cfg(feature = "pdf")]
+        let native_ink_id = if svg.retains_text() {
+            self.radial_circle_records()
+                .zip(self.bounds)
+                .and_then(|(records, bounds)| {
+                    svg.native_ink()
+                        .register_radial_circles(&records, bounds, paint.opacity as f32)
+                        .ok()
+                })
+        } else {
+            None
+        };
         let mut unique = Vec::<(V16GradientKey, super::vector::Definition<Gradient>)>::new();
         let mut indices = HashMap::<V16GradientKey, usize>::new();
         for stamp in &self.stamps {
@@ -412,7 +482,13 @@ impl V16Plan {
             definitions = definitions.add(gradient.add(Stop::new(1, color).opacity(0)));
         }
         svg.scope(definitions, |_| {});
-        svg.scope(Group::new(), |svg| {
+        let outer = Group::new();
+        #[cfg(feature = "pdf")]
+        let outer = match native_ink_id {
+            Some(id) => outer.native_ink_id(id),
+            None => outer,
+        };
+        svg.scope(outer, |svg| {
             // RTV5 submits each instance with source-over blending. Keep the
             // per-instance ARGB alpha in its radial field so overlaps accumulate
             // in draw order; applying it to this parent group would apply it once
@@ -982,6 +1058,163 @@ mod tests {
         assert!(
             !non_normal_blend,
             "V16 instances use source-over compositing"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v17_rainbow_pdf_uses_bounded_circles_and_falls_back_atomically() {
+        let render_one = |radius: f64, retained: bool, count: usize| {
+            let reference: serde_json::Value =
+                serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                    .unwrap();
+            let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+            let mut paint = crate::prepare_stroke(&stroke, false);
+            paint.profile = Some("FountainPen");
+            paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }; count]);
+            paint.dot_radii = Some(vec![radius; count]);
+            paint.dot_directions = None;
+            paint.bounds = Some(BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 64.0,
+                y_max: 64.0,
+            });
+            paint.color = "#000000".into();
+            paint.opacity = 0.5;
+            paint.fountain_v17_rgb = Some(vec![[0.25, 0.5, 0.75]; count]);
+            let mut scene = Scene::new(Svg::new().width(64).height(64));
+            if retained {
+                scene.retain_text();
+            }
+            assert!(render(&mut scene, &paint, false, None));
+            if retained {
+                let ink = scene.take_native_ink();
+                let text = scene.take_native_text();
+                let svg = scene.finish();
+                return (svg, ink, text);
+            }
+            (
+                scene.finish(),
+                super::super::native_ink::NativeInkRegistry::default(),
+                super::super::text::native::NativeTextRegistry::default(),
+            )
+        };
+
+        let (_, wide_ink, _) = render_one(20.0, true, 1);
+        assert_eq!(
+            wide_ink.iter().count(),
+            1,
+            "wide full-coverage circles are supported"
+        );
+        let (fallback_svg, fallback_ink, _) = render_one(1.5, true, 4097);
+        let (canonical_fallback_svg, _, _) = render_one(1.5, false, 4097);
+        assert_eq!(fallback_svg, canonical_fallback_svg);
+        assert!(fallback_ink.is_empty());
+        let (_, thin_fallback_ink, _) = render_one(0.25, true, 1);
+        assert!(
+            thin_fallback_ink.is_empty(),
+            "partial-coverage thin stamps retain the original SVG field"
+        );
+
+        let (svg, ink, text) = render_one(1.5, true, 1);
+        let entries = ink.iter().collect::<Vec<_>>();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(
+            entries[0].1.opacity, 1.0,
+            "saved opacity lives in the Form once"
+        );
+        let crate::render::native_ink::NativeInkPayload::RadialCircles {
+            records,
+            saved_alpha,
+        } = &entries[0].1.payload
+        else {
+            panic!("expected Fountain V17 radial-circle payload");
+        };
+        assert_eq!(
+            records[0][2], 1.5,
+            "native radius is expanded extent minus the half-unit fringe"
+        );
+        assert_eq!(records[0][4], 0.0);
+        assert_eq!(records[0][5], 1.0);
+        assert_eq!(records[0][6..9], [0.25, 0.5, 0.75]);
+        assert_eq!(*saved_alpha, 0.5);
+        assert!(svg.contains("id=\"sdocx-native-ink-0\""));
+        assert!(!svg.contains("<image"));
+
+        let page = crate::RenderedPage {
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+            background_diagnostics: Vec::new(),
+            source_page_index: 0,
+            width: 64,
+            height: 64,
+            svg,
+        };
+        let scene = crate::render::RenderedScene {
+            page,
+            text,
+            ink,
+            text_error: None,
+        };
+        let bytes = crate::pdf::render_scenes_pdf_with_progress(
+            &[scene],
+            &crate::PdfOptions::default(),
+            &mut |_| {},
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let mut circle_form = false;
+        for object in pdf.objects.values() {
+            let lopdf::Object::Stream(stream) = object else {
+                continue;
+            };
+            assert_ne!(
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .ok(),
+                Some(b"Image".as_slice()),
+                "retained Fountain V17 remains vector-only"
+            );
+            if stream
+                .dict
+                .get(b"Subtype")
+                .and_then(lopdf::Object::as_name)
+                .ok()
+                != Some(b"Form".as_slice())
+            {
+                continue;
+            }
+            let content = stream.decompressed_content().unwrap_or_default();
+            let operators = lopdf::content::Content::decode(&content).unwrap();
+            if operators
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "rg")
+                && operators
+                    .operations
+                    .iter()
+                    .any(|operation| operation.operator == "c")
+            {
+                let group = stream.dict.get(b"Group").unwrap().as_dict().unwrap();
+                assert!(matches!(group.get(b"I"), Ok(lopdf::Object::Boolean(true))));
+                assert!(matches!(group.get(b"K"), Ok(lopdf::Object::Boolean(false))));
+                assert!(
+                    !operators
+                        .operations
+                        .iter()
+                        .any(|operation| operation.operator == "re")
+                );
+                circle_form = true;
+            }
+        }
+        assert!(
+            circle_form,
+            "PDF marker is replaced with the radial-circle form"
         );
     }
 

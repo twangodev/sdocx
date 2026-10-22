@@ -51,6 +51,19 @@ pub(crate) fn validate_radial_ink(
     )
 }
 
+pub(crate) fn validate_radial_circles(
+    records: &[ink_field::PdfRadialCircleRecord],
+    bounds: crate::BoundingBox,
+    saved_alpha: f32,
+) -> Result<(), String> {
+    ink_field::radial_circles::compile(
+        records,
+        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+        saved_alpha,
+    )
+    .map(|_| ())
+}
+
 const PDF_POINTS_PER_INCH: f32 = 72.0;
 const MAX_PDF_PAGE_POINTS: f32 = 14_400.0;
 const MAX_PNG_DECODED_BYTES: usize = 64 * 1024 * 1024;
@@ -680,6 +693,10 @@ fn render_pages_pdf_with_progress<'a>(
                 },
                 *bounds,
             ),
+            NativeInkPayload::RadialCircles {
+                records,
+                saved_alpha,
+            } => ink_field::PdfInkField::radial_circles(*marker_id, records, *saved_alpha, *bounds),
         })
         .collect::<Vec<_>>();
     ink_field::replace_markers(&bytes, &fields).map_err(|error| {

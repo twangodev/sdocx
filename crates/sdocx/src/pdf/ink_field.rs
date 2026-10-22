@@ -20,8 +20,11 @@ use lopdf::{Dictionary, Document, Object, ObjectId, Stream};
 
 #[path = "ink_field/radial.rs"]
 mod radial;
+#[path = "ink_field/radial_circles.rs"]
+pub(crate) mod radial_circles;
 
 pub(crate) use radial::{PdfRadialCoverage, PdfRadialRecord};
+pub(crate) use radial_circles::PdfRadialCircleRecord;
 
 /// Validate a native radial payload before it is retained by the page
 /// registry. This performs all normalization and Type 4 size checks without
@@ -58,6 +61,10 @@ pub(crate) enum PdfInkPayload<'a> {
         saved_alpha: f32,
         coverage: PdfRadialCoverage,
     },
+    RadialCircles {
+        records: &'a [PdfRadialCircleRecord],
+        saved_alpha: f32,
+    },
 }
 
 impl<'a> PdfInkField<'a> {
@@ -88,6 +95,22 @@ impl<'a> PdfInkField<'a> {
                 records,
                 saved_alpha,
                 coverage,
+            },
+        }
+    }
+
+    pub(crate) fn radial_circles(
+        marker_id: u64,
+        records: &'a [PdfRadialCircleRecord],
+        saved_alpha: f32,
+        bounds: BoundingBox,
+    ) -> Self {
+        Self {
+            marker_id,
+            bounds,
+            payload: PdfInkPayload::RadialCircles {
+                records,
+                saved_alpha,
             },
         }
     }
@@ -1162,7 +1185,56 @@ fn field_form_with_limits(
             saved_alpha,
             coverage,
         } => radial_field_form(document, records, *saved_alpha, *coverage, field.bounds),
+        PdfInkPayload::RadialCircles {
+            records,
+            saved_alpha,
+        } => radial_circles_field_form(document, records, *saved_alpha, field.bounds),
     }
+}
+
+fn radial_circles_field_form(
+    document: &mut Document,
+    records: &[PdfRadialCircleRecord],
+    saved_alpha: f32,
+    bounds: BoundingBox,
+) -> Result<Object, String> {
+    // Compile the entire form before adding objects; unsupported input never
+    // leaves a partially populated PDF object graph.
+    let program = radial_circles::compile(
+        records,
+        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+        saved_alpha,
+    )?;
+    let mut states = Dictionary::new();
+    let state = document.add_object(Dictionary::from_iter([(
+        b"ca".to_vec(),
+        Object::Real(program.alpha),
+    )]));
+    states.set("GS0", Object::Reference(state));
+    let mut resources = Dictionary::new();
+    resources.set("ExtGState", states);
+    Ok(Object::Stream(Stream::new(
+        Dictionary::from_iter([
+            (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+            (b"Subtype".to_vec(), Object::Name(b"Form".to_vec())),
+            (b"FormType".to_vec(), Object::Integer(1)),
+            (
+                b"BBox".to_vec(),
+                Object::Array(vec![0.into(), 0.into(), 1.into(), 1.into()]),
+            ),
+            (b"Resources".to_vec(), Object::Dictionary(resources)),
+            (
+                b"Group".to_vec(),
+                Object::Dictionary(Dictionary::from_iter([
+                    (b"S".to_vec(), Object::Name(b"Transparency".to_vec())),
+                    (b"CS".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+                    (b"I".to_vec(), Object::Boolean(true)),
+                    (b"K".to_vec(), Object::Boolean(false)),
+                ])),
+            ),
+        ]),
+        program.content,
+    )))
 }
 
 fn mesh_field_form_with_limits(
@@ -2301,5 +2373,68 @@ mod tests {
             .dict
             .set("ColorSpace", Object::Name(b"DeviceGray".to_vec()));
         assert_eq!(marker_id_from_image(&soft_mask), None);
+    }
+
+    #[test]
+    fn radial_circle_marker_becomes_transparent_ordered_rgb_vector_form() {
+        let bounds = BoundingBox {
+            x_min: 1.0,
+            y_min: 1.0,
+            x_max: 5.0,
+            y_max: 5.0,
+        };
+        let records = [
+            [3.0, 3.0, 1.5, 1.5, 0.0, 1.0, 0.25, 0.5, 0.75],
+            [3.25, 3.0, 1.25, 1.25, 0.0, 1.0, 0.8, 0.1, 0.2],
+        ];
+        let replaced = replace_markers(
+            &marker_pdf(0, false),
+            &[PdfInkField::radial_circles(0, &records, 0.5, bounds)],
+        )
+        .unwrap();
+        let document = Document::load_mem(&replaced).unwrap();
+        assert_eq!(image_count(&document), 0, "the marker image is replaced");
+        let form = document
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .find(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .ok()
+                    .and_then(|value| value.as_name().ok())
+                    == Some(b"Form")
+                    && stream
+                        .decompressed_content()
+                        .ok()
+                        .is_some_and(|content| content.windows(2).any(|w| w == b" c"))
+            })
+            .expect("radial circle form exists");
+        let group = form.dict.get(b"Group").unwrap().as_dict().unwrap();
+        assert_eq!(group.get(b"S").unwrap().as_name().unwrap(), b"Transparency");
+        assert_eq!(group.get(b"CS").unwrap().as_name().unwrap(), b"DeviceRGB");
+        assert!(matches!(group.get(b"I"), Ok(Object::Boolean(true))));
+        assert!(matches!(group.get(b"K"), Ok(Object::Boolean(false))));
+        let content = String::from_utf8(form.decompressed_content().unwrap()).unwrap();
+        let colors: Vec<Vec<f32>> = lopdf::content::Content::decode(content.as_bytes())
+            .unwrap()
+            .operations
+            .iter()
+            .filter(|operation| operation.operator == "rg")
+            .map(|operation| {
+                operation
+                    .operands
+                    .iter()
+                    .map(|value| value.as_float().unwrap())
+                    .collect()
+            })
+            .collect();
+        assert_eq!(colors, vec![vec![0.25, 0.5, 0.75], vec![0.8, 0.1, 0.2]]);
+        assert_eq!(content.matches(" c ").count(), 8);
+        assert!(
+            !content.contains(" re f"),
+            "no test/background fill is emitted"
+        );
     }
 }

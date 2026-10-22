@@ -32,6 +32,10 @@ pub(crate) enum NativeInkPayload {
         saved_alpha: f32,
         enhanced_antialias: bool,
     },
+    RadialCircles {
+        records: Vec<[f32; 9]>,
+        saved_alpha: f32,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -135,6 +139,27 @@ impl NativeInkRegistry {
             } else {
                 1.0
             },
+        });
+        Ok(id)
+    }
+
+    pub(crate) fn register_radial_circles(
+        &mut self,
+        records: &[[f32; 9]],
+        bounds: BoundingBox,
+        saved_alpha: f32,
+    ) -> Result<NativeInkId, String> {
+        // Only the full-coverage equal-circle branch is admitted; validate
+        // before adding an ID or copying any payload.
+        crate::pdf::validate_radial_circles(records, bounds, saved_alpha)?;
+        let id = NativeInkId(self.entries.len());
+        self.entries.push(NativeInk {
+            payload: NativeInkPayload::RadialCircles {
+                records: records.to_vec(),
+                saved_alpha,
+            },
+            bounds,
+            opacity: 1.0,
         });
         Ok(id)
     }
@@ -267,6 +292,26 @@ mod tests {
         assert!(registry.is_empty());
         let first = registry.register(&mesh(), [1, 2, 3], 1.).unwrap();
         assert_eq!(first.svg_id(), "sdocx-native-ink-0");
+    }
+
+    #[test]
+    fn circle_preflight_failure_does_not_register_a_partial_stroke() {
+        let mut registry = NativeInkRegistry::default();
+        let records = [[2.0, 3.0, 1.0, 1.0, 0.0, 0.5, 1.0, 0.0, 0.0]];
+        let bounds = BoundingBox {
+            x_min: 1.0,
+            y_min: 1.0,
+            x_max: 3.0,
+            y_max: 5.0,
+        };
+        assert!(
+            registry
+                .register_radial_circles(&records, bounds, 0.5)
+                .is_err()
+        );
+        assert!(registry.is_empty());
+        let next = registry.register(&mesh(), [1, 2, 3], 1.0).unwrap();
+        assert_eq!(next.svg_id(), "sdocx-native-ink-0");
     }
 
     #[test]

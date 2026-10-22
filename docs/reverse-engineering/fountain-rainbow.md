@@ -169,12 +169,18 @@ other tool configurations, rainbow framebuffer compositing, saved-cache
 lookup/reuse, and live V17-to-tip handoff
 remain outside this fixture's evidence.
 
-The Rust implementation additionally checks 48 output-stamp RGB triples against
-a captured native right-angle redraw, including the terminal stamp's reuse of
-the preceding color. SVG gradients retain fractional RGB; PDF retains vector
-shading but its SVG parser rounds color channels to 8-bit values. These CPU
-color and export-structure checks do not establish
-native framebuffer or SVG/PDF pixel parity.
+The Rust implementation checks 48 output-stamp RGB triples against a captured
+native right-angle redraw, including terminal color reuse. Canonical SVG keeps
+its fractional-RGB gradients unchanged. Retained PDF uses ordered circle paths
+for the explicit profile's full-coverage branch (native radius at least 0.5),
+with fractional RGB and saved alpha applied once. Thin or over-budget strokes
+keep the gradient transport. Five matched RTV6/Mesa controls cover the 48-stamp
+frame, three fractional translations and ARGB128 alpha: PDF support IoU is
+0.983–1.000 and native-support RGB MAE is 2.9–5.2 levels in the two pinned
+readers, versus 31–37 for the matched opaque radial-shading controls.
+The executed route includes constructor/AddPoint/Update/Draw with host graphics
+interfaces; native initialization, device appearance and arbitrary-scale pixel
+parity remain unverified.
 
 ## RTV6 attributes and upload
 

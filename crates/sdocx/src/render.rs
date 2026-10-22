@@ -4558,6 +4558,19 @@ mod tests {
                         assert_eq!(expected_alpha.to_bits(), actual_alpha.to_bits());
                         assert_eq!(expected_enhanced, actual_enhanced);
                     }
+                    (
+                        crate::render::native_ink::NativeInkPayload::RadialCircles {
+                            records: expected_records,
+                            saved_alpha: expected_alpha,
+                        },
+                        crate::render::native_ink::NativeInkPayload::RadialCircles {
+                            records: actual_records,
+                            saved_alpha: actual_alpha,
+                        },
+                    ) => {
+                        assert_eq!(expected_records, actual_records);
+                        assert_eq!(expected_alpha.to_bits(), actual_alpha.to_bits());
+                    }
                     _ => panic!("native ink payload route changed"),
                 }
             }
