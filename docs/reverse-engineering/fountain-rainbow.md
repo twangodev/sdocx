@@ -734,10 +734,13 @@ restored stack pointers. The captured 152-byte descriptor has three components
 and a 12-byte stride; initial vertex/index counts are zero, matching Mesa's
 NULL, zero-byte array-buffer allocation. Native deactivation then queries
 framebuffer binding `1` and twice forwards an empty attachment list to real
-Mesa `glInvalidateFramebuffer`. The next unsupported import is `glColorMask`
-with all four channels enabled. Drawing/readback remain incomplete; there is
-no PDF or Samsung device pixel-parity result. The event log SHA-256 is
-`3b8ae5d9596954b4ffb4826f96fc911d535b3ffe6d3f1fa91ceccae3fa830aa6`.
+Mesa `glInvalidateFramebuffer`. Native color-mask and uniform uploads now
+forward to Mesa; the matrix's scale bits match float32 `2/1800` and `2/1516`.
+The bitmap descriptor has float3/float2 attributes at offsets 0/12, stride 20,
+and a real 120-byte buffer upload. Execution stops at vertex-attribute enable;
+driver acceptance of the uniforms, drawing/readback, PDF output and Samsung
+device pixel parity remain unproven. The event log SHA-256 is
+`91578ae33e91f173e27831ef5b0c44c84bea77021ffb17b3383082f5b3bacd4a`.
 
 ## Independent tiled mask and complete-frame prediction
 
