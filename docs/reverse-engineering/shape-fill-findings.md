@@ -238,6 +238,9 @@ inclusive index spans: for an interior position `p`, the lower bucket is
 `trunc(f64(p) * 65536) >> 8`. The later red span overwrites from bucket 128,
 giving a step at `.5`. These synthetic paints on HF02 line geometry establish
 this cache behavior, not continuous interpolation or saved/device pixel parity.
+These controls used inherited synthetic GL synchronization callbacks alongside
+actual Mesa draw calls. A later guarded capture stopped at `glFenceSync`;
+real synchronization forwarding remains to be verified.
 Paired vector SVG/PDF hard-step controls match interior color classification,
 but miss narrow native color blending at the boundary (maximum channel error
 56). Actual GPU transition behavior remains unresolved; the cache rule alone
