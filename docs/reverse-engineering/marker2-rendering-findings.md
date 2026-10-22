@@ -133,6 +133,15 @@ stored color alpha or UI size level. At equal local derivatives, the
 smaller scale narrows the edge ramp. Actual output still depends on the
 projection, rasterization and GPU precision behavior.
 
+For the bounded host-Mesa widths 1–3 replay above, computing normalized
+radial distance at pixel centers, taking finite differences within even
+2×2 window-pixel pairs, quantizing each stamp and applying MAX reproduces
+the captured red coverage plane byte-for-byte. The model uses source-derived
+centers without fitting pixel values. It does not predict the readback alpha
+channel or establish Samsung-device derivative behavior. A continuous
+angular derivative or constant radial feather does not reproduce these
+fields exactly; this distinction matters when approximating them in vectors.
+
 ## Shared point generation
 
 Disassembly comparison establishes the same operations and control flow for
