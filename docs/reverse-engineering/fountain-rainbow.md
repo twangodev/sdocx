@@ -200,11 +200,11 @@ early return with no instance. Shared `attributes` and `native_attributes`
 helpers in `fountain_raster.py` support RTV6. The shared GPU export also
 includes RTV6 cases and its native shaders.
 
-`conformance/fountain_v17_raster.py` compares 3,807 native attribute cases
-byte-for-byte against the shared model. Cases include half-pixel boundary
-radii, anisotropic and zoom scales, variable opacity, black/white/random
-RGB, and zero-scale exits. There are 3,615 emitted records and 192 exits.
-The existing 3,765 RTV4/RTV5/tip cases also pass unchanged.
+The archived `conformance/fountain_v17_raster.py` run reported 3,807 byte-exact
+native attribute cases: 3,615 emitted records and 192 zero-scale exits,
+covering radius boundaries, anisotropic/zoom scales, opacity and RGB.
+Per-case output was not retained. Current Rust tests pin the 48-stamp
+right-angle color/offset witness and profile behavior, not this full matrix.
 
 The saved redraw fixture observes and executes actual RTV6 AddPoint
 instead of replacing it with a stamp collector. Native vector allocation
