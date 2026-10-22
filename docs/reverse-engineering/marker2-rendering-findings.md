@@ -70,11 +70,14 @@ stamp geometry and V2's edge-smoothing selection.
 
 V2 `Update`, `0x25d04`, converts member 60 back to float and calls
 `setRectData` at `0x25d1c`. The rectangle builder, `0x25c58`, uses offsets
-`0.5 - size / 2` and `0.5 + size / 2` in each axis and pairs the four corners
-with normalized texture coordinates. Its operations match V1's builder at
-`0x23c54`. These offsets belong to the native drawable's coordinate space;
-they do not by themselves establish a universal half-pixel translation in
-exported SVG coordinates.
+`-(size / 2 + 0.5)` and `size / 2 + 0.5` in each axis and pairs the four
+corners with normalized texture coordinates. In particular, the `FNMADD`
+instruction at `0x25ca4` negates the whole multiply-add; it does not compute
+`0.5 - size / 2`. An isolated execution of its instruction word `0x1f210403`
+with size 1, 2 and 3 yields lower bounds -1, -1.5 and -2. The resulting
+quad is centered on the supplied point and has half-extent `(size + 1) / 2`.
+Its operations match V1's builder at `0x23c54`. Confirmation of the final
+runtime vertex-buffer payload remains a separate check.
 
 V2 `AddPoint`, `0x259c8`, appends an X/Y pair to the point buffer. `Update`
 uploads that buffer and sets the instance count from its byte length divided
