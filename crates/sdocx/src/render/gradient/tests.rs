@@ -209,6 +209,100 @@ fn first_ten_and_singleton_ignore_only_unconsumed_positions() {
 }
 
 #[test]
+fn descending_stops_project_only_when_last_positive_span_covers_full_range() {
+    // V13 native synthetic-effect capture used blue@1 followed by red@0.
+    // Endpoint extension yields blue@0, blue@1, red@0, red@1. The V13
+    // synthetic native readback was solid red; broader cache behavior is not
+    // asserted here. Colors are source ARGB.
+    let mut reversed = source(&[1.0, 0.0]);
+    reversed.stops[0].argb = 0xff00_00ff;
+    reversed.stops[1].argb = 0xffff_0000;
+    assert_eq!(
+        project_stops(&reversed).unwrap(),
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
+
+    // The final equal interval is skipped after a full-range overwrite.
+    // This pair has equal colors intentionally.
+    let mut equal = source(&[1.0, 0.5, 0.0, 1.0, 1.0]);
+    equal.stops[2].argb = 0xff12_3456;
+    equal.stops[3].argb = 0xff12_3456;
+    assert_eq!(
+        project_stops(&equal).unwrap(),
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff12_3456,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff12_3456,
+            },
+        ]
+    );
+
+    // Full-range overwrite can occur after arbitrary earlier spans; preserve
+    // the colors on that final positive interval rather than fixture constants.
+    let mut late = source(&[0.2, 0.8, 0.0, 1.0, 1.0]);
+    late.stops[2].argb = 0xff11_2233;
+    late.stops[3].argb = 0xff44_5566;
+    assert_eq!(
+        project_stops(&late).unwrap(),
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff11_2233,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff44_5566,
+            },
+        ]
+    );
+}
+
+#[test]
+fn descending_partial_overwrite_stays_rejected_and_consumption_stays_capped() {
+    // Endpoint extension appends a positive 0.5-to-1 span, so an earlier
+    // full-range span is insufficient to describe the final cache.
+    assert!(matches!(
+        project_stops(&source(&[0.0, 1.0, 0.5, 0.5])),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+
+    assert!(matches!(
+        project_stops(&source(&[0.1, 0.8, 0.2, 0.9])),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+
+    let mut many = source(&[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, f32::NAN]);
+    many.stops[8].argb = 0xff01_0203;
+    many.stops[9].argb = 0xff04_0506;
+    assert_eq!(
+        project_stops(&many).unwrap(),
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff01_0203,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff04_0506,
+            },
+        ]
+    );
+}
+
+#[test]
 fn svg_stops_keep_hidden_rgb_alpha_and_inverse_element_rotation() {
     for radial in [false, true] {
         let geometry = if radial {

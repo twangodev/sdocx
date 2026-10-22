@@ -197,11 +197,13 @@ fn project_stops(source: &ColorPaintSource) -> Result<Vec<ProjectedStop>, PaintD
         ]);
     }
     let mut previous = 0.0;
+    let mut descending = false;
     for stop in saved {
         let offset = stop.position.value();
-        if !offset.is_finite() || !(0.0..=1.0).contains(&offset) || offset < previous {
+        if !offset.is_finite() || !(0.0..=1.0).contains(&offset) {
             return Err(PaintDiagnosticKind::InvalidGradient);
         }
+        descending |= offset < previous;
         previous = offset;
     }
     let mut stops = Vec::with_capacity(saved.len() + 2);
@@ -225,6 +227,33 @@ fn project_stops(source: &ColorPaintSource) -> Result<Vec<ProjectedStop>, PaintD
             offset: 1.0,
             argb: last.argb,
         });
+    }
+    if descending {
+        // The pinned Skia notes establish source order and skipping of
+        // non-increasing quantized spans. A final positive [0, 1] span is the
+        // only descending shape projected here; partial overlap depends on
+        // discrete cache-index/interpolation details, so keep rejecting it.
+        // This is not a claim of native cache or pixel equality.
+        let last_positive = stops
+            .windows(2)
+            .rposition(|pair| pair[1].offset > pair[0].offset);
+        let Some(index) = last_positive else {
+            return Err(PaintDiagnosticKind::InvalidGradient);
+        };
+        let pair = &stops[index..=index + 1];
+        if pair[0].offset == 0.0 && pair[1].offset == 1.0 {
+            return Ok(vec![
+                ProjectedStop {
+                    offset: pair[0].offset,
+                    argb: pair[0].argb,
+                },
+                ProjectedStop {
+                    offset: pair[1].offset,
+                    argb: pair[1].argb,
+                },
+            ]);
+        }
+        return Err(PaintDiagnosticKind::InvalidGradient);
     }
     Ok(stops)
 }
