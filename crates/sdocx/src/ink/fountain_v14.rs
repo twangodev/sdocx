@@ -33,6 +33,10 @@ pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
         points: vec![],
         radii: vec![],
         sample_ends: vec![0; s.points.len()],
+        rgb: None,
+        rainbow_final_offset: None,
+        #[cfg(test)]
+        rainbow_path_offsets: Vec::new(),
     };
     const REPEAT: f32 = 0.82;
     for i in 1..s.points.len() {

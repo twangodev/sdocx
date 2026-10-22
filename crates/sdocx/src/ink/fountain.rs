@@ -121,6 +121,71 @@ pub(super) struct Dots {
     pub radii: Vec<f64>,
     pub sample_ends: Vec<usize>,
     pub directions: Option<Vec<Point>>,
+    pub rgb: Option<Vec<[f32; 3]>>,
+    pub rainbow_final_offset: Option<f32>,
+    #[cfg(test)]
+    pub rainbow_path_offsets: Vec<f32>,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct V17Rainbow<'a> {
+    pub palette_argb: &'a [u32],
+    pub period: i32,
+    pub offset: f32,
+}
+
+struct RainbowState<'a> {
+    palette_argb: &'a [u32],
+    period: f32,
+    offset: f32,
+    current_rgb: Option<[f32; 3]>,
+    invalid: bool,
+    #[cfg(test)]
+    path_offsets: Vec<f32>,
+}
+
+impl RainbowState<'_> {
+    fn color_at(&self, distance: f32) -> Option<[f32; 3]> {
+        let sum = distance + self.offset;
+        if !sum.is_finite() || sum < 0. || !self.period.is_finite() || self.period <= 0. {
+            return None;
+        }
+        let phase = (sum % self.period) / self.period;
+        if !phase.is_finite() || phase < 0. {
+            return None;
+        }
+        // Native computes the division in double precision, stores as float,
+        // then uses FMA for the per-sector remainder.
+        let step = (1.0_f64 / self.palette_argb.len() as f64) as f32;
+        let scaled = phase / step;
+        if !scaled.is_finite() || scaled < 0. {
+            return None;
+        }
+        let index = (scaled as usize).min(self.palette_argb.len() - 1);
+        let next = (index + 1) % self.palette_argb.len();
+        let fraction = (-(index as f32)).mul_add(step, phase) / step;
+        if !fraction.is_finite() {
+            return None;
+        }
+        let channel = |shift: u32| {
+            let a = ((self.palette_argb[index] >> shift) & 0xff_u32) as f32;
+            let b = ((self.palette_argb[next] >> shift) & 0xff_u32) as f32;
+            (b - a).mul_add(fraction, a) / 255.0
+        };
+        let rgb = [channel(16), channel(8), channel(0)];
+        rgb.iter()
+            .all(|value| value.is_finite() && (0.0..=1.0).contains(value))
+            .then_some(rgb)
+    }
+
+    fn advance(&mut self, length: f32) {
+        self.offset += length;
+        if !self.offset.is_finite() {
+            self.invalid = true;
+        }
+        #[cfg(test)]
+        self.path_offsets.push(self.offset);
+    }
 }
 struct Pass<'a> {
     size: f32,
@@ -135,11 +200,36 @@ struct Pass<'a> {
     ratios: &'a mut [f32; 3],
     ratio_count: &'a mut usize,
     history: &'a mut History,
+    rainbow: Option<RainbowState<'a>>,
+    rainbow_rgb: Vec<[f32; 3]>,
+    rainbow_stamp_budget: usize,
+    store_rainbow_rgb: bool,
     dots: Dots,
 }
 impl Pass<'_> {
-    fn dot(&mut self, p: P, r: f32) {
+    fn dot(&mut self, p: P, r: f32, local_distance: Option<f32>) {
         self.first = false;
+        if let Some(rainbow) = &mut self.rainbow {
+            if let Some(distance) = local_distance {
+                match rainbow.color_at(distance) {
+                    Some(rgb) => rainbow.current_rgb = Some(rgb),
+                    None => rainbow.invalid = true,
+                }
+            }
+            if self.store_rainbow_rgb {
+                if self.dots.points.len() >= self.rainbow_stamp_budget
+                    || self.rainbow_rgb.len() >= self.rainbow_stamp_budget
+                {
+                    rainbow.invalid = true;
+                    return;
+                } else if let Some(rgb) = rainbow.current_rgb {
+                    self.rainbow_rgb.push(rgb);
+                } else {
+                    rainbow.invalid = true;
+                    self.rainbow_rgb.push([0.0; 3]);
+                }
+            }
+        }
         if !self.history.replay {
             return;
         }
@@ -203,8 +293,11 @@ impl Pass<'_> {
         let mut d = self.residual;
         while d <= q.length {
             w += increment;
-            self.dot(q.at(d), w * 0.5);
+            self.dot(q.at(d), w * 0.5, Some(d));
             d += REPEAT;
+        }
+        if let Some(rainbow) = &mut self.rainbow {
+            rainbow.advance(q.length);
         }
         self.residual = d - q.length;
         self.previous = p;
@@ -215,22 +308,40 @@ impl Pass<'_> {
     fn end(&mut self, p: P, time: i64) {
         if self.first {
             let width = self.history.width(time, self.size * 0.5);
-            self.dot(self.previous, width * 0.5);
+            // The native V17 single-point path still evaluates rainbow at
+            // local distance zero before appending its one stamp. Ordinary
+            // V14/V16 passes keep their original no-color path.
+            self.dot(
+                self.previous,
+                width * 0.5,
+                self.rainbow.as_ref().map(|_| 0.0),
+            );
         } else {
             let q = Quad::new(self.midpoint, self.previous, p);
             let mut d = self.residual;
             if q.length > 0. {
                 while d <= q.length {
-                    self.dot(q.at(d), self.width * 0.5);
+                    self.dot(q.at(d), self.width * 0.5, Some(d));
                     d += REPEAT;
                 }
             }
-            self.dot(p, self.width * 0.5);
+            if let Some(rainbow) = &mut self.rainbow {
+                rainbow.advance(q.length);
+            }
+            self.dot(p, self.width * 0.5, None);
         }
     }
 }
 
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
+    prepare_with_rainbow(s, None)
+}
+
+pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option<Dots> {
+    prepare_with_rainbow(s, Some(profile))
+}
+
+fn prepare_with_rainbow(s: &Stroke, profile: Option<V17Rainbow<'_>>) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
     // Both saved drawable versions consume ObjectStroke's saved style size.
@@ -248,13 +359,47 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     // Legacy saved pressure quantization can produce small negative values.
     // Both profiles handle these through native width and stamp-radius floors.
     let minimum_pressure = -1.;
+    let rainbow = if let Some(profile) = profile {
+        if r.advanced_settings.as_deref() != Some("18;0;100;")
+            || r.tool_type_raw != 2
+            || !r.properties.rainbow_effect
+            || r.properties.fixed_width
+            || r.properties.fixed_opacity
+            || r.properties.alpha_lock
+            || r.properties.replay_only
+            || r.properties.reveal_mode
+            || r.properties.top_layer_pen
+            || r.properties.generated
+            || !r.properties.binary_added
+            || !r.properties.stylus_channels
+            || profile.period <= 0
+            || !profile.offset.is_finite()
+            || profile.offset < 0.0
+            || !(2..=256).contains(&profile.palette_argb.len())
+        {
+            return None;
+        }
+        Some(profile)
+    } else {
+        None
+    };
     if r.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
-        || !matches!(r.advanced_settings.as_deref(), Some("14;" | "18;0;100;"))
+        || (!matches!(r.advanced_settings.as_deref(), Some("14;" | "18;0;100;")))
+        || (rainbow.is_some() && v14)
         || !input_supported
         || !fixed_width_supported
         || r.properties.eraser
         || r.properties.straighten
-        || r.properties.rainbow_effect
+        || (r.properties.rainbow_effect && rainbow.is_none())
+        || (rainbow.is_some()
+            && (r.properties.fixed_opacity
+                || r.properties.alpha_lock
+                || r.properties.replay_only
+                || r.properties.reveal_mode
+                || r.properties.top_layer_pen
+                || !r.properties.stylus_channels
+                || r.style.stroke_type_raw.is_some_and(|value| value != 0)
+                || r.style.line_type_raw.is_some_and(|value| value != 0)))
         || s.points.is_empty()
         || s.pressures.len() != s.points.len()
         || s.timestamps.len() != s.points.len()
@@ -290,6 +435,9 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     if distance > 400_000. || s.points.len() > 100_000 {
         return None;
     }
+    if rainbow.is_some() && (distance > f64::from(REPEAT) * 32_000.0 || s.points.len() > 32_768) {
+        return None;
+    }
     if v14 {
         return Some(super::fountain_v14::prepare(s, size, tolerance));
     }
@@ -301,6 +449,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let mut ratio_count = 0;
     let mut output = None;
     for _ in 0..2 {
+        let store_rainbow_rgb = history.replay;
         let width = history.width(s.timestamps[0], (size * 0.5) * pressure_at(0).min(1.));
         let mut pass = Pass {
             size,
@@ -315,11 +464,31 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             ratios: &mut ratios,
             ratio_count: &mut ratio_count,
             history: &mut history,
+            rainbow: rainbow.map(|profile| RainbowState {
+                palette_argb: profile.palette_argb,
+                period: profile.period as f32,
+                offset: profile.offset,
+                current_rgb: None,
+                invalid: false,
+                #[cfg(test)]
+                path_offsets: Vec::new(),
+            }),
+            rainbow_rgb: if store_rainbow_rgb {
+                Vec::with_capacity(32_000)
+            } else {
+                Vec::new()
+            },
+            rainbow_stamp_budget: 32_000,
+            store_rainbow_rgb,
             dots: Dots {
                 directions: None,
                 points: vec![],
                 radii: vec![],
                 sample_ends: vec![0; s.points.len()],
+                rgb: None,
+                rainbow_final_offset: None,
+                #[cfg(test)]
+                rainbow_path_offsets: Vec::new(),
             },
         };
         for i in 1..s.points.len().saturating_sub(1) {
@@ -340,6 +509,19 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
         let terminal_event_time = s.timestamps[last] - s.timestamps[0];
         pass.end(s.points[last].into(), terminal_event_time);
         pass.dots.sample_ends[last] = pass.dots.points.len();
+        if let Some(rainbow) = pass.rainbow {
+            if rainbow.invalid {
+                return None;
+            }
+            if store_rainbow_rgb {
+                pass.dots.rgb = Some(pass.rainbow_rgb);
+                pass.dots.rainbow_final_offset = Some(rainbow.offset);
+                #[cfg(test)]
+                {
+                    pass.dots.rainbow_path_offsets = rainbow.path_offsets;
+                }
+            }
+        }
         output = Some(pass.dots);
         if !history.replay {
             history.smooth(stylus);
@@ -914,5 +1096,269 @@ mod tests {
             s.rendering.as_mut().unwrap().style.fixed_width = width;
             assert!(prepare(&s).is_none(), "{width:?}");
         }
+    }
+
+    #[test]
+    fn v17_rainbow_right_angle_matches_native_rgb_words_and_terminal_reuse() {
+        // V6 receipt SHA-256 0bc7651bfc571eac372d061e728986e2416d39c8d1ce8397a795743bc7721198;
+        // archive 05e3d22aa91fc3c1a975f46c84890622abd63719; Fountain DSO
+        // SHA-256 1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec.
+        const NATIVE_RGB: [[u32; 3]; 48] = [
+            [0x3f46c6c7, 0x3e008081, 0x3e28a8a9],
+            [0x3ddc6182, 0x3e008081, 0x3f5564c1],
+            [0x3e53b4fb, 0x3f3fde95, 0x3e8244d8],
+            [0x3f1e37d1, 0x3eed9169, 0x3d808081],
+            [0x3f0c4edf, 0x3e008081, 0x3ec94424],
+            [0x3dd73da1, 0x3e9e37ce, 0x3f31e51a],
+            [0x3e8ef55b, 0x3f678b63, 0x3d808081],
+            [0x3f4b319b, 0x3e714321, 0x3d808081],
+            [0x3ea3ade0, 0x3e008081, 0x3f1f1a01],
+            [0x3e21975b, 0x3f0993d3, 0x3eeeda5c],
+            [0x3ee8e8e3, 0x3f2d137e, 0x3d808081],
+            [0x3f42999e, 0x3e008081, 0x3e395d4c],
+            [0x3dbaf858, 0x3e008081, 0x3f5991e6],
+            [0x3e578fe0, 0x3f440bb8, 0x3e73d525],
+            [0x3f216e40, 0x3ee53715, 0x3d808081],
+            [0x3f0821ac, 0x3e008081, 0x3ed19e8b],
+            [0x3ddef384, 0x3ea6922e, 0x3f2db7ea],
+            [0x3e956239, 0x3f635e39, 0x3d808081],
+            [0x3f4e6804, 0x3e608e97, 0x3d808081],
+            [0x3e9b53aa, 0x3e008081, 0x3f23471c],
+            [0x3e257239, 0x3f0dc0ee, 0x3ee68026],
+            [0x3eef55ae, 0x3f28e660, 0x3d808081],
+            [0x3f3e6c8f, 0x3e008081, 0x3e4a1189],
+            [0x3d998f15, 0x3e008081, 0x3f5dbf0e],
+            [0x3e5b6ac9, 0x3f4838df, 0x3e632087],
+            [0x3f24a4a4, 0x3edcdcdf, 0x3d808081],
+            [0x3f03f49d, 0x3e008081, 0x3ed9f8a9],
+            [0x3de6a929, 0x3eaeec4c, 0x3f298adb],
+            [0x3e9bceee, 0x3f5f312a, 0x3d808081],
+            [0x3f519e5e, 0x3e4fda5a, 0x3d808081],
+            [0x3e92f955, 0x3e008081, 0x3f277446],
+            [0x3e294d25, 0x3f11ee18, 0x3ede25d2],
+            [0x3ef5c289, 0x3f24b939, 0x3d808081],
+            [0x3f3a3f65, 0x3e008081, 0x3e5ac62e],
+            [0x3d826ddc, 0x3e04ad72, 0x3f5fd5a5],
+            [0x3e5f45b5, 0x3f4c6609, 0x3e526bdf],
+            [0x3f27db13, 0x3ed4828b, 0x3d808081],
+            [0x3eff8ee8, 0x3e008081, 0x3ee252fa],
+            [0x3dee5efe, 0x3eb7469e, 0x3f255db2],
+            [0x3ea23bcc, 0x3f5b0400, 0x3d808081],
+            [0x3f54d4cc, 0x3e3f25bc, 0x3d808081],
+            [0x3e8a9f37, 0x3e008081, 0x3f2ba155],
+            [0x3e2d27f8, 0x3f161b27, 0x3ed5cbb4],
+            [0x3efc2f3d, 0x3f208c2a, 0x3d808081],
+            [0x3f361256, 0x3e008081, 0x3e6b7a6a],
+            [0x3d8a2382, 0x3e1561af, 0x3f5ba896],
+            [0x3e63206e, 0x3f5092fd, 0x3e41b80e],
+            [0x3e63206e, 0x3f5092fd, 0x3e41b80e],
+        ];
+        let reference = reference();
+        let mut stroke = reference.stroke;
+        let case = reference
+            .cases
+            .into_iter()
+            .find(|case| case.name == "right angle")
+            .unwrap();
+        stroke.pen_width = case.size;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.style.pen_size = Some(case.size);
+        rendering.style.initial_tolerance = Some(case.tolerance);
+        rendering.properties.rainbow_effect = false;
+        for (x, y, pressure, tilt, time) in case.samples {
+            stroke.points.push(Point { x, y });
+            stroke.pressures.push(pressure);
+            stroke.tilts.push(tilt);
+            stroke.timestamps.push(time);
+        }
+        let plain = prepare(&stroke).expect("fixture's ordinary V16 sampler");
+        let mut profile_stroke = stroke.clone();
+        profile_stroke
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        let colored = prepare_v17_rainbow(
+            &profile_stroke,
+            V17Rainbow {
+                palette_argb: &[0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                period: 3,
+                offset: 0.125,
+            },
+        )
+        .expect("explicit V17 host profile");
+        assert_eq!(colored.sample_ends, [0, 7, 19, 28, 48]);
+        assert_eq!(colored.points, plain.points);
+        assert_eq!(colored.radii, plain.radii);
+        let rgb = colored.rgb.expect("native per-stamp RGB");
+        assert_eq!(rgb.len(), 48);
+        assert_eq!(
+            rgb.iter()
+                .map(|channels| channels.map(f32::to_bits))
+                .collect::<Vec<_>>(),
+            NATIVE_RGB
+        );
+        assert_eq!(
+            colored
+                .rainbow_path_offsets
+                .iter()
+                .map(|offset| offset.to_bits())
+                .collect::<Vec<_>>(),
+            [0x40a4_0000, 0x4172_0000, 0x41b8_3edc, 0x4218_1f6e]
+        );
+        assert_eq!(
+            colored.rainbow_final_offset.map(f32::to_bits),
+            Some(0x4218_1f6e)
+        );
+        assert_eq!(
+            rgb[46], rgb[47],
+            "terminal endpoint retains previous selected RGB"
+        );
+    }
+
+    #[test]
+    fn v17_rainbow_single_tap_and_duplicate_zero_length_select_at_zero() {
+        // Tiny native receipt SHA-256 72ce4cc1c35e335db4075c17ecff2eb72888da5c8410fa0a88db574a1a519d9e.
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 20., y: 30. }];
+        stroke.pressures = vec![0.5];
+        stroke.tilts = vec![0.];
+        stroke.timestamps = vec![0];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.properties.rainbow_effect = true;
+        let profile = V17Rainbow {
+            palette_argb: &[0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+            period: 3,
+            offset: 0.125,
+        };
+
+        let mut plain_stroke = stroke.clone();
+        plain_stroke
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = false;
+        let plain = prepare(&plain_stroke).expect("ordinary single-point pass");
+        let colored = prepare_v17_rainbow(&stroke, profile).expect("native V17 tap control");
+        assert_eq!(colored.sample_ends, [1]);
+        assert_eq!(colored.points, plain.points);
+        assert_eq!(colored.radii, plain.radii);
+        assert_eq!(
+            colored.rgb.unwrap()[0].map(f32::to_bits),
+            [0x3f46_c6c7, 0x3e00_8081, 0x3e28_a8a9]
+        );
+
+        // Duplicate samples do not enter drawLine; the native tap path selects
+        // at zero and keeps the one terminal stamp in both modes.
+        let mut duplicate = stroke;
+        duplicate.points.push(Point { x: 20., y: 30. });
+        duplicate.pressures.push(0.5);
+        duplicate.tilts.push(0.);
+        duplicate.timestamps.push(1);
+        let mut ordinary_duplicate = duplicate.clone();
+        ordinary_duplicate
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = false;
+        let ordinary = prepare(&ordinary_duplicate).expect("default zero-length terminal stamp");
+        assert_eq!(ordinary.points.len(), 1);
+        let colored = prepare_v17_rainbow(&duplicate, profile).expect("native zero-length tap");
+        assert_eq!(colored.points.len(), 1);
+        assert_eq!(
+            colored.rgb.unwrap()[0].map(f32::to_bits),
+            [0x3f46_c6c7, 0x3e00_8081, 0x3e28_a8a9,]
+        );
+    }
+
+    #[test]
+    fn v17_rainbow_rejects_invalid_or_unbounded_profiles_before_sampling() {
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 0., y: 0. }, Point { x: 8., y: 0. }];
+        stroke.pressures = vec![0.5; 2];
+        stroke.tilts = vec![0.; 2];
+        stroke.timestamps = vec![0, 1];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.properties.rainbow_effect = true;
+        let palette = [0x40e0_2010, 0x8010_20e0, 0x7f40_f010];
+        for (palette, period, offset) in [
+            (&[][..], 3, 0.125),
+            (&palette[..], 0, 0.125),
+            (&palette[..], -3, 0.125),
+            (&palette[..], 3, f32::NAN),
+            (&palette[..], 3, -0.125),
+        ] {
+            assert!(
+                prepare_v17_rainbow(
+                    &stroke,
+                    V17Rainbow {
+                        palette_argb: palette,
+                        period,
+                        offset,
+                    },
+                )
+                .is_none()
+            );
+        }
+    }
+
+    #[test]
+    fn v17_rainbow_five_color_sector_uses_native_fma_remainder() {
+        let palette = [0, 0, 0, 0, 0x00ff_0000];
+        let state = RainbowState {
+            palette_argb: &palette,
+            period: 1.0,
+            offset: f32::from_bits(0x3f37_9b1d),
+            current_rgb: None,
+            invalid: false,
+            #[cfg(test)]
+            path_offsets: Vec::new(),
+        };
+
+        // With native step=(1.0f64 / 5.0) as f32 and FMA remainder,
+        // the selected red channel is 0x3f160790. The previous rounded
+        // phase - index*step expression produced 0x3f16078f.
+        assert_eq!(
+            state.color_at(0.0).unwrap().map(f32::to_bits),
+            [0x3f16_0790, 0, 0]
+        );
+    }
+
+    #[test]
+    fn v17_rainbow_skipped_samples_do_not_advance_or_reject_the_profile() {
+        let reference = reference();
+        let case = reference
+            .cases
+            .into_iter()
+            .find(|case| case.name == "right angle")
+            .unwrap();
+        let mut stroke = reference.stroke;
+        stroke.pen_width = case.size;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.style.pen_size = Some(case.size);
+        rendering.style.initial_tolerance = Some(1000.0);
+        rendering.properties.rainbow_effect = true;
+        for (x, y, pressure, tilt, time) in case.samples {
+            stroke.points.push(Point { x, y });
+            stroke.pressures.push(pressure);
+            stroke.tilts.push(tilt);
+            stroke.timestamps.push(time);
+        }
+
+        let prepared = prepare_v17_rainbow(
+            &stroke,
+            V17Rainbow {
+                palette_argb: &[0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                period: 3,
+                offset: 0.125,
+            },
+        )
+        .expect("native skipped-line path remains supported");
+        assert_eq!(prepared.points.len(), 1);
+        assert_eq!(prepared.rainbow_final_offset, Some(0.125));
+        assert!(prepared.rgb.is_some());
     }
 }

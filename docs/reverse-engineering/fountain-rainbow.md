@@ -1,7 +1,10 @@
 # Fountain pen rainbow colors
 
 The experiment scripts cited here are archived at Git revision `40de721`.
-FountainPen rainbow rendering is not implemented in the SDK. See
+The SDK exposes an opt-in `FountainV17RainbowRenderProfile` for saved AS18
+variable-width stylus strokes at canonical scale. Callers supply the palette,
+period and initial offset; these are not inferred from archive metadata.
+The default remains generic fallback for rainbow strokes. See
 [native geometry checks](../../conformance/README.md#native-geometry-checks)
 for current validation and archive recovery.
 
@@ -165,6 +168,13 @@ variable-width stylus configuration at canonical scale. Fixed-width and
 other tool configurations, rainbow framebuffer compositing, saved-cache
 lookup/reuse, and live V17-to-tip handoff
 remain outside this fixture's evidence.
+
+The Rust implementation additionally checks 48 output-stamp RGB triples against
+a captured native right-angle redraw, including the terminal stamp's reuse of
+the preceding color. SVG gradients retain fractional RGB; PDF retains vector
+shading but its SVG parser rounds color channels to 8-bit values. These CPU
+color and export-structure checks do not establish
+native framebuffer or SVG/PDF pixel parity.
 
 ## RTV6 attributes and upload
 

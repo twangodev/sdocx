@@ -156,6 +156,26 @@ impl PartialEq for ChineseBrushFwidthOutputProfile {
 }
 impl Eq for ChineseBrushFwidthOutputProfile {}
 
+/// Explicit host-supplied palette and phase for the saved Fountain V17
+/// rainbow path. These values are never inferred from archive-global state.
+/// The profile currently admits saved AS18 stylus variable-width output in
+/// canonical page units; unsupported metadata or invalid values use generic paint.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FountainV17RainbowRenderProfile {
+    pub palette_argb: Vec<u32>,
+    pub period: i32,
+    pub initial_offset: f32,
+}
+impl PartialEq for FountainV17RainbowRenderProfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.palette_argb == other.palette_argb
+            && self.period == other.period
+            && self.initial_offset.to_bits() == other.initial_offset.to_bits()
+    }
+}
+impl Eq for FountainV17RainbowRenderProfile {}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -173,6 +193,10 @@ pub struct RenderOptions {
     /// Invalid explicit values fall back to generic rendering for the whole stroke.
     #[cfg_attr(feature = "serde", serde(default))]
     pub chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
+    /// Explicit host palette and phase for supported Fountain V17 strokes.
+    /// `None` retains the existing Fountain paint path.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub fountain_v17_rainbow_profile: Option<FountainV17RainbowRenderProfile>,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -654,6 +678,7 @@ impl DocumentTextCache {
             options.inkpen2_profile,
             options.chinesebrush_profile,
             options.chinesebrush_fwidth_output_profile,
+            options.fountain_v17_rainbow_profile.as_ref(),
             options.pencil3_profile,
             slice,
             observer,
@@ -1086,6 +1111,7 @@ fn render_page_contents_svg(
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
+    fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1146,6 +1172,7 @@ fn render_page_contents_svg(
         inkpen2_profile,
         chinesebrush_profile,
         chinesebrush_fwidth_output_profile,
+        fountain_v17_rainbow_profile,
         pencil3_profile,
         slice,
     };
@@ -1182,6 +1209,7 @@ struct CompositionContext<'a> {
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
+    fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 }
@@ -1247,6 +1275,7 @@ fn render_object(
                 context.inkpen2_profile,
                 context.chinesebrush_profile,
                 context.chinesebrush_fwidth_output_profile,
+                context.fountain_v17_rainbow_profile,
                 context.pencil3_profile,
                 context.slice,
             );
@@ -3408,6 +3437,7 @@ fn render_stroke(
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
+    fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 ) {
@@ -3416,6 +3446,32 @@ fn render_stroke(
     // path unchanged; this renderer only paints persisted page objects.
     if stroke.points.len() <= 1 {
         return;
+    }
+    if native_allowed
+        && stroke.rendering.as_ref().is_some_and(|rendering| {
+            rendering.pen_name.as_deref()
+                == Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
+                && rendering.properties.rainbow_effect
+        })
+        && let Some(profile) = fountain_v17_rainbow_profile
+    {
+        let paint = crate::ink::prepare_stroke_for_context_with_fountain_v17_rainbow(
+            stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+            &profile.palette_argb,
+            profile.period,
+            profile.initial_offset,
+        );
+        if paint.fountain_v17_rgb.is_some() {
+            if let Some(index) = replay_index {
+                svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
+                    render_prepared_stroke(svg, &paint, true, slice);
+                });
+            } else {
+                render_prepared_stroke(svg, &paint, false, slice);
+            }
+            return;
+        }
     }
     if native_allowed
         && let Some(profile) = chinesebrush_profile
@@ -3623,6 +3679,7 @@ fn empty_saved_stroke_paint(stroke: &Stroke, theme: RenderTheme) -> crate::Prepa
         dot_radii: None,
         ordered_disk_replay: None,
         inkpen2_v9: None,
+        fountain_v17_rgb: None,
         dot_directions: None,
         rect_stamp: None,
         coverage_mesh: None,
@@ -4396,10 +4453,11 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, InkPen2RenderProfile,
-        RenderColorMode, RenderOptions, RenderTheme, is_dark_background, normalized_stroke_width,
-        prepare_inkpen2_v9, prepare_stroke_for_page_with_theme, render_document_svg,
-        render_layout_page_replay_svg, render_layout_page_svg, sanitize_hyperlink_target,
+        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile,
+        FountainV17RainbowRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
+        RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
+        prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
+        render_layout_page_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -8969,6 +9027,148 @@ mod tests {
             .remove(0)
             .svg;
         assert!(svg.contains(r##"stroke="#1a1a1a""##));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn fountain_v17_rainbow_is_explicit_and_invalid_profiles_fall_back_atomically() {
+        let mut stroke = fountain_color_stroke("18;0;100;");
+        stroke.rendering.as_mut().unwrap().properties.rainbow_effect = true;
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let document = document(page);
+
+        let generic = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let invalid = render_document_svg(
+            &document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: f32::NAN,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(
+            invalid, generic,
+            "invalid explicit values use whole-stroke fallback"
+        );
+
+        let options = RenderOptions {
+            fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                period: 3,
+                initial_offset: 0.125,
+            }),
+            ..RenderOptions::default()
+        };
+        let actual = render_document_svg(&document, &options).remove(0).svg;
+        let xml = roxmltree::Document::parse(&actual).unwrap();
+        let colors = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("stop"))
+            .filter_map(|node| node.attribute("stop-color"))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert!(
+            colors.len() > 3,
+            "per-stamp RGB retains fractional channels"
+        );
+        assert!(
+            xml.descendants()
+                .any(|node| node.has_tag_name("radialGradient"))
+        );
+
+        let layout = layout_document(&document);
+        let replay = super::render_layout_page_replay_svg(&document, &layout, 0, &options)
+            .unwrap()
+            .svg;
+        let replay_xml = roxmltree::Document::parse(&replay).unwrap();
+        let parts = replay_xml
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .collect::<Vec<_>>();
+        assert!(!parts.is_empty());
+        assert!(parts.iter().all(|part| part.parse::<usize>().unwrap() > 0));
+
+        #[cfg(feature = "pdf")]
+        {
+            let bytes =
+                crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
+                    .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            assert_eq!(pdf.get_pages().len(), 1);
+            let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+            let mut radial_shadings = 0;
+            let mut initial_palette_color = false;
+            for dictionary in dictionaries {
+                // The first native V17 color is fractional RGB. The PDF SVG
+                // parser rounds it to bytes, so check the actual transported
+                // color as well as the presence of vector shading.
+                for key in [b"C0", b"C1"] {
+                    if let Ok(channels) = dictionary.get(key).and_then(lopdf::Object::as_array)
+                        && channels.len() == 3
+                    {
+                        initial_palette_color |=
+                            channels
+                                .iter()
+                                .zip([198., 32., 42.])
+                                .all(|(channel, byte)| {
+                                    channel
+                                        .as_float()
+                                        .is_ok_and(|value| (value - byte / 255.).abs() < 0.00002)
+                                });
+                    }
+                }
+                assert_ne!(
+                    dictionary
+                        .get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .ok(),
+                    Some(b"Image".as_slice()),
+                    "the explicit rainbow profile must retain vector paint"
+                );
+                radial_shadings += usize::from(
+                    dictionary
+                        .get(b"ShadingType")
+                        .and_then(lopdf::Object::as_i64)
+                        .ok()
+                        == Some(3),
+                );
+            }
+            assert!(
+                radial_shadings > 0,
+                "stamp coverage must remain vector shading"
+            );
+            assert!(
+                initial_palette_color,
+                "PDF must retain the initial palette color"
+            );
+        }
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn fountain_v17_profile_serde_preserves_legacy_default_and_explicit_controls() {
+        let mut legacy = serde_json::to_value(RenderOptions::default()).unwrap();
+        legacy
+            .as_object_mut()
+            .unwrap()
+            .remove("fountain_v17_rainbow_profile");
+        let restored: RenderOptions = serde_json::from_value(legacy).unwrap();
+        assert!(restored.fountain_v17_rainbow_profile.is_none());
+        let profile = FountainV17RainbowRenderProfile {
+            palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+            period: 3,
+            initial_offset: 0.125,
+        };
+        let restored: FountainV17RainbowRenderProfile =
+            serde_json::from_value(serde_json::to_value(&profile).unwrap()).unwrap();
+        assert_eq!(restored, profile);
     }
 
     #[cfg(feature = "serde")]

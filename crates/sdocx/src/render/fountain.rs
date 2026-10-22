@@ -267,7 +267,14 @@ struct V16Stamp {
     y: f32,
     extent_x: f32,
     extent_y: f32,
-    gradient_key: (u32, u32),
+    gradient_key: V16GradientKey,
+}
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+struct V16GradientKey {
+    alpha: u32,
+    inner: u32,
+    rgb: Option<[u32; 3]>,
 }
 
 /// Retain the V16 RTV5 radial coverage as vector gradients at canonical unit
@@ -286,6 +293,26 @@ impl V16Plan {
             return None;
         }
         let color = parse_rgb(&paint.color)?;
+        let stamp_rgb = paint.fountain_v17_rgb.as_deref();
+        if stamp_rgb.is_some_and(|colors| {
+            colors.len() != paint.points.len()
+                || colors.iter().any(|rgb| {
+                    rgb.iter()
+                        .any(|value| !value.is_finite() || !(0.0..=1.0).contains(value))
+                })
+        }) {
+            return None;
+        }
+        if stamp_rgb.is_some()
+            && (radii.len() > 32_000
+                || radii
+                    .len()
+                    .checked_mul(1024)
+                    .and_then(|bytes| bytes.checked_add(4096))
+                    .is_none_or(|bytes| bytes > 32 * 1024 * 1024))
+        {
+            return None;
+        }
 
         // RTV5::AddPoint float32 arithmetic at sx=sy=1, in native instruction
         // order: rx/ry, min and factor, width compensation, extents, then inner.
@@ -293,7 +320,7 @@ impl V16Plan {
         // identical f32 bits.
         let mut stamps = Vec::with_capacity(radii.len());
         let mut y_bounds: Option<(f64, f64)> = None;
-        for (point, radius) in paint.points.iter().zip(radii) {
+        for (index, (point, radius)) in paint.points.iter().zip(radii).enumerate() {
             let radius = *radius as f32;
             if !radius.is_finite() || radius <= 0. {
                 return None;
@@ -317,7 +344,11 @@ impl V16Plan {
             {
                 return None;
             }
-            let key = (alpha.to_bits(), inner.to_bits());
+            let key = V16GradientKey {
+                alpha: alpha.to_bits(),
+                inner: inner.to_bits(),
+                rgb: stamp_rgb.map(|colors| colors[index].map(f32::to_bits)),
+            };
             y_bounds = Some(match y_bounds {
                 Some((min_y, max_y)) => (
                     min_y.min(f64::from(next_down(y - extent_y))),
@@ -345,33 +376,40 @@ impl V16Plan {
     }
 
     fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
-        let mut unique = Vec::<(u32, u32, super::vector::Definition<Gradient>)>::new();
-        let mut indices = HashMap::<(u32, u32), usize>::new();
+        let mut unique = Vec::<(V16GradientKey, super::vector::Definition<Gradient>)>::new();
+        let mut indices = HashMap::<V16GradientKey, usize>::new();
         for stamp in &self.stamps {
             let key = stamp.gradient_key;
             indices.entry(key).or_insert_with(|| {
                 let index = unique.len();
-                unique.push((key.0, key.1, svg.definition::<Gradient>()));
+                unique.push((key, svg.definition::<Gradient>()));
                 index
             });
         }
         let mut definitions = Definitions::new();
-        for (alpha_bits, inner_bits, id) in &unique {
-            let alpha = f32::from_bits(*alpha_bits);
-            let inner = f32::from_bits(*inner_bits);
+        for (key, id) in &unique {
+            let alpha = f32::from_bits(key.alpha);
+            let inner = f32::from_bits(key.inner);
             let source_alpha = alpha * paint.opacity as f32;
+            let color = if let Some(rgb) = key.rgb {
+                ColorValue::rgb_components(
+                    f64::from(f32::from_bits(rgb[0])),
+                    f64::from(f32::from_bits(rgb[1])),
+                    f64::from(f32::from_bits(rgb[2])),
+                )
+                .expect("prepared Fountain rainbow RGB is finite and normalized")
+            } else {
+                ColorValue::Rgb(self.color)
+            };
             let mut gradient = RadialGradient::new(id)
                 .cx(0)
                 .cy(0)
                 .r(1)
-                .add(Stop::new(0, ColorValue::Rgb(self.color)).opacity(source_alpha));
+                .add(Stop::new(0, color).opacity(source_alpha));
             if inner > 0. {
-                gradient = gradient.add(
-                    Stop::new(inner + inner, ColorValue::Rgb(self.color)).opacity(source_alpha),
-                );
+                gradient = gradient.add(Stop::new(inner + inner, color).opacity(source_alpha));
             }
-            definitions =
-                definitions.add(gradient.add(Stop::new(1, ColorValue::Rgb(self.color)).opacity(0)));
+            definitions = definitions.add(gradient.add(Stop::new(1, color).opacity(0)));
         }
         svg.scope(definitions, |_| {});
         svg.scope(Group::new(), |svg| {
@@ -383,7 +421,7 @@ impl V16Plan {
                 let Some(&gradient_index) = indices.get(&stamp.gradient_key) else {
                     continue;
                 };
-                let Some((_, _, gradient)) = unique.get(gradient_index) else {
+                let Some((_, gradient)) = unique.get(gradient_index) else {
                     continue;
                 };
                 let transform = Transform::matrix_unrounded([
@@ -971,6 +1009,7 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
+                None,
                 None,
                 None,
                 None,

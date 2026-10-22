@@ -242,7 +242,26 @@ pub(crate) fn prepare_stroke_for_context<'a>(
     dark_mode: bool,
     context: InkRenderContext,
 ) -> PreparedStroke<'a> {
-    prepare_stroke_inner(stroke, dark_mode, Some(context))
+    prepare_stroke_inner(stroke, dark_mode, Some(context), None)
+}
+
+pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
+    stroke: &'a Stroke,
+    context: InkRenderContext,
+    palette_argb: &[u32],
+    period: i32,
+    offset: f32,
+) -> PreparedStroke<'a> {
+    prepare_stroke_inner(
+        stroke,
+        false,
+        Some(context),
+        Some(fountain::V17Rainbow {
+            palette_argb,
+            period,
+            offset,
+        }),
+    )
 }
 
 /// Reconstruct the typed Oblique V4 geometry for an explicit saved/runtime
@@ -333,6 +352,9 @@ pub struct PreparedStroke<'a> {
     /// Exact nine-lane native InkPen2 V9 records for profile-aware page rendering.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub inkpen2_v9: Option<PreparedInkPen2V9>,
+    /// Per-stamp Fountain V17 RGB from an explicit output profile.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub(crate) fountain_v17_rgb: Option<Vec<[f32; 3]>>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_directions: Option<Vec<crate::Point>>,
@@ -381,19 +403,23 @@ pub struct PreparedInkPen2V9 {
 /// Prepare a verified native geometry profile when its saved inputs match.
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
-    prepare_stroke_inner(stroke, dark_mode, None)
+    prepare_stroke_inner(stroke, dark_mode, None, None)
 }
 
-fn prepare_stroke_inner(
-    stroke: &Stroke,
+fn prepare_stroke_inner<'a>(
+    stroke: &'a Stroke,
     dark_mode: bool,
     context: Option<InkRenderContext>,
-) -> PreparedStroke<'_> {
+    fountain_v17_rainbow: Option<fountain::V17Rainbow<'_>>,
+) -> PreparedStroke<'a> {
     let mut paint = stroke_paint(stroke, dark_mode);
     let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
     let oblique = context.and_then(|context| prepare_oblique_stroke(stroke, context));
     let marker3 = context.and_then(|_| marker3::prepare_for_page(stroke));
-    let mut fountain = fountain::prepare(stroke);
+    let mut fountain = match fountain_v17_rainbow {
+        Some(profile) => fountain::prepare_v17_rainbow(stroke, profile),
+        None => fountain::prepare(stroke),
+    };
     if fountain.is_some()
         && stroke.color.is_none()
         && stroke
@@ -407,6 +433,7 @@ fn prepare_stroke_inner(
         paint.color = if dark_mode { "#ffffff" } else { "#000000" }.into();
     }
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
+    let fountain_v17_rgb = fountain.as_mut().and_then(|ink| ink.rgb.take());
     let native = fountain
         .map(|ink| {
             let opacity = stroke
@@ -543,6 +570,7 @@ fn prepare_stroke_inner(
         dot_radii,
         ordered_disk_replay,
         inkpen2_v9: None,
+        fountain_v17_rgb,
         dot_directions,
         rect_stamp,
         coverage_mesh,

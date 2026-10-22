@@ -107,11 +107,11 @@ pub use progress::{Progress, ProgressStage};
 #[cfg(feature = "render")]
 pub use render::{
     BackgroundDiagnostic, ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile,
-    DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, InkPen2RenderProfile,
-    ObjectDiagnostic, ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole,
-    Pencil3PaperSampler, Pencil3RenderProfile, PointMarkerTarget, RenderColorMode, RenderOptions,
-    RenderTheme, RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts,
-    prepare_stroke_for_page, prepare_stroke_for_page_with_theme,
+    DocumentTextCache, FountainV17RainbowRenderProfile, GeometryDiagnostic, GeometryDiagnosticKind,
+    InkPen2RenderProfile, ObjectDiagnostic, ObjectDiagnosticKind, PaintDiagnostic,
+    PaintDiagnosticKind, PaintRole, Pencil3PaperSampler, Pencil3RenderProfile, PointMarkerTarget,
+    RenderColorMode, RenderOptions, RenderTheme, RenderedPage, StrokePaint, TextDiagnostic,
+    TextDiagnosticKind, fonts, prepare_stroke_for_page, prepare_stroke_for_page_with_theme,
     prepare_stroke_for_viewport_with_theme, render_document_svg, render_document_svg_with_fonts,
     render_layout_page_replay_svg, render_layout_page_replay_svg_with_fonts,
     render_layout_page_svg, render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
