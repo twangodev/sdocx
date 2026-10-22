@@ -737,10 +737,12 @@ framebuffer binding `1` and twice forwards an empty attachment list to real
 Mesa `glInvalidateFramebuffer`. Native color-mask and uniform uploads now
 forward to Mesa; the matrix's scale bits match float32 `2/1800` and `2/1516`.
 The bitmap descriptor has float3/float2 attributes at offsets 0/12, stride 20,
-and a real 120-byte buffer upload. Execution stops at vertex-attribute enable;
-driver acceptance of the uniforms, drawing/readback, PDF output and Samsung
-device pixel parity remain unproven. The event log SHA-256 is
-`91578ae33e91f173e27831ef5b0c44c84bea77021ffb17b3383082f5b3bacd4a`.
+and a real 120-byte buffer upload. Two native `glDrawArrays` calls now forward
+six triangle vertices to Mesa after checking both attribute fetch ranges
+(112 and 120 bytes). Execution stops at `glFinish` in native readback;
+pixel contents, PDF output and Samsung device pixel parity remain unproven.
+The event log SHA-256 is
+`2f2711890c56c567de0067003ceb015db35cd85e687cd64c510f4a4731c35204`.
 
 ## Independent tiled mask and complete-frame prediction
 
