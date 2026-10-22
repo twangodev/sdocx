@@ -92,7 +92,7 @@ outer SDK loading is not exercised.
 | Marker4 / StraightHighlighter V7, saved `7;` | Stylus midpoint sampling, saved style size and fractional rounded rectangular tip | Native geometry and [Drawing size/alias controls](../conformance/marker4-saved-caller-native.json); public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 / StraightHighlighter V8, saved `8;` | Sampled rounded rectangular tip centered on saved AddPoint positions, native integer size, tool-specific rotation and saved alpha | Executed Drawing size/alias controls and controlled native RTV4-to-Mesa frames verify saved XY through the instance VBO and rotation about the centered quad; filtering/zoom coverage remain approximate. |
 | Other pens, unknown names or rejected settings | Generic straight segments with pressure width, polyline or tap circle | No pen-specific native texture, smoothing or width-law guarantee. |
-| Rainbow, eraser and straighten effects | Metadata retained; InkPen2 V9 and saved Fountain V17 rainbow have explicit profiles | Fountain V17 admits AS18 variable-width stylus strokes at canonical scale with a caller-supplied palette, period and offset. Native CPU colors and a bounded monochrome-profile RTV6/Mesa framebuffer control are checked against public SVG/PDF exports: SVG support matches; PDF raster coverage differs by reader. Multipoint rainbow framebuffer and device parity remain open. Other native effect semantics remain unsupported. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
+| Rainbow, eraser and straighten effects | Metadata retained; InkPen2 V9 and saved Fountain V17 rainbow have explicit profiles | Fountain V17 admits AS18 variable-width stylus strokes at canonical scale with a caller-supplied palette, period and offset. Native CPU colors and bounded monochrome and 48-stamp rainbow RTV6/Mesa framebuffer controls are checked against public SVG/PDF exports: the multipoint SVG matches all 168 support pixels; PDF coverage and color differ substantially by reader. Native initialization and device parity remain open. Other native effect semantics remain unsupported. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
 A [native RTV4 paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-rtv4-paint-native.json)
@@ -317,8 +317,10 @@ its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
 Native global-AA configuration reaches the per-pen setting and queued RT flag.
-The solid-color enhanced route projects its MAX mask; intermediate RGBA8 color
-normalization can differ from the ideal vector field. Natural app canvas setup
+The solid-color enhanced route uses opaque grayscale fields before MAX blending;
+Rust regressions check exact duplicate invariance and pointwise MAX at subpixel
+edges, with vector-only PDF export. Intermediate RGBA8 color normalization can
+differ from the ideal vector field. Natural app canvas setup
 and device defaults remain unverified. For one 25-record native stream at 1×/2×/4×, the explicit profile
 improves support and color error over the generic fallback in Chromium, Firefox,
 MuPDF and PDFium; a half-alpha 1× control also improves. SVG support IoU is
