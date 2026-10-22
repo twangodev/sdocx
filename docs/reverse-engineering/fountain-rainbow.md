@@ -727,11 +727,14 @@ Native `InitParameters` (`0x4bb58`) queries Mesa rather than using seeded
 capabilities. Native texture creation uses `GL_TEXTURE_2D`, RGBA/unsigned-byte
 NULL data and six sampler parameters; its own `glGetError` returns zero.
 `CreateFbo` and `AttachColorToFbo` then generate a real framebuffer, attach
-that same texture and receive actual status `0x8cd5` (complete). The control
-stops at the unsupported graphics-object factory before drawing or readback;
-it produces no PDF and establishes no Samsung device pixel parity. Its event
-log SHA-256 is
-`08953263147c46dea0779e14d2038f95d3326398c04b63486bb10a0aba6a4e52`.
+that same texture and receive actual status `0x8cd5` (complete). Direct traces
+also confirm entry and return for `GreateGraphicsObject` (`0x5ad14`), the
+`GraphicsObject` constructor (`0x52fc0`) and `CreateBuffer` (`0x52c7c`), with
+restored stack pointers. The captured 152-byte descriptor has three components
+and a 12-byte stride; initial vertex/index counts are zero, matching Mesa's
+NULL, zero-byte array-buffer allocation. Drawing/readback remain incomplete;
+there is no PDF or Samsung device pixel-parity result. The event log SHA-256 is
+`fd82532418906572752f2ebe7d9994640ce692cd666da092d8e8994096bb4c41`.
 
 ## Independent tiled mask and complete-frame prediction
 
