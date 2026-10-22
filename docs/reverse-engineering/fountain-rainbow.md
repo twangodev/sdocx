@@ -6,9 +6,7 @@ Rainbow rendering is not implemented in the SDK. See
 for current validation and archive recovery.
 
 This describes the hash-pinned Samsung Notes 4.4.45.37 ARM64 FountainPen
-library. `conformance/fountain_native.py` in this checkout covers saved V16
-geometry only. The rainbow model and native comparisons named below are at
-`40de721`. No APK code is distributed.
+library. No APK code is distributed.
 
 ## Palette interpolation
 
