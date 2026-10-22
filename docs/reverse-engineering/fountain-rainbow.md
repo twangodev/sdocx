@@ -741,7 +741,9 @@ and a real 120-byte buffer upload. Two native `glDrawArrays` calls now forward
 six triangle vertices to Mesa after checking both attribute fetch ranges
 (112 and 120 bytes). The first 1800×1516 RGBA8 readback is uniformly opaque
 white, with the native PDF-excluded capture flag set; the native post-read
-error check returns zero. Composer's native `ExportFile` writes that exclusion
+error check returns zero. The shipped libjpeg encoder also produces a valid
+1800×1516 RGB JPEG of that white capture, verified by decoding the saved file.
+Composer's native `ExportFile` writes that exclusion
 at `0x35774c` through the capture pointer at owner+176; `drawPdf` checks capture+88
 at `0x32e400` and returns without `NotePDFCapture::DrawPDF` when set. This explains
 the PDF exclusion, but does not establish the cause of every white pixel.
