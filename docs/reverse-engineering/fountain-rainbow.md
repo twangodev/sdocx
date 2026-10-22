@@ -266,6 +266,11 @@ divides accumulated color RGB by accumulated color alpha, and multiplies
 that normalized RGB by maximum coverage. Its output alpha is maximum
 coverage. It does not use maximum-per-channel RGB as the final color.
 
+Pixel comparisons must match tint and alpha association. The tested MuPDF
+alpha pixmaps have premultiplied RGB; PDFium's PIL output and resvg PNG have
+straight RGB. The white field oracle stores `R=G=B=A`, so raw RGBA error
+against tinted exports does not establish native color parity.
+
 Pen alpha is already applied in the two mask shaders. Although the native
 composite wrapper offers a `uInputColor` upload, that uniform is unused by
 the inspected composite GLSL. Effective binding behavior after a real
