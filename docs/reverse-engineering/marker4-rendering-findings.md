@@ -44,6 +44,21 @@ heights approximately 37.21054 and 37.0. Raw callback checkpoints matched
 the captured records. These controls establish private callback geometry,
 not archive loading, Standard PDF behavior or raster coverage.
 
+A separate actual HF04 archive load selected stroke 35 by its saved UUID
+`f0ef06a2-b6d1-11f1-b1b6-8f2ef4b7d1ae`. Its 253 pressure, timestamp, tilt and
+orientation samples matched the current source decoder byte for byte. All 506
+XY floats matched `f32(source * f32(1080 / 1848))`; the same factor mapped saved
+width 36.21053695678711 to native width 21.16200065612793. The harness passed
+1080 to `WNote::ConstructLoad`; the source object's owner dimensions are
+1848×2613. Model `ObjectStroke::NewApplyBinary` calls `GetLoadMagnification`
+at `0x2e58d8`; the compressed restore scales points at
+`0x2ee8bc`–`0x2ee8f0` and flexible width at `0x2ed920`–`0x2ed934`.
+The raw capture's SHA-256 is
+`62ef0868161d36904d56334d388491c46f20430894be8f555135593f7ad3650e`.
+It establishes post-load data, not Standard export size handling; the scale's
+runtime S0 was not captured. The earlier pressure-hash discrepancy came from
+a retained parser report predating float32 delta accumulation, not this load.
+
 Standard PDF export uses `RasterListX` and `ObjectPDFWriter::WriteObjectListAsBitmap`
 (Composer `0x37c3bc`). Its batch dimensions are bounds divided by export scale,
 then truncated to integers (`0x37c45c`, `0x37c488`); floating-point bounds remain
