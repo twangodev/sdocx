@@ -718,6 +718,21 @@ loss, depth/stencil attachment creation and physical Android GPU behavior
 remain outside the experiment. Caller Unref operations are observed rather
 than executing object destruction.
 
+A separate SingleX export control, without loading an archive, now constructs
+an 1800×1516 RGBA8 texture and offscreen target through native constructors
+against real host Mesa GLES.
+Renderer SHA-256 is
+`f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed`.
+Native `InitParameters` (`0x4bb58`) queries Mesa rather than using seeded
+capabilities. Native texture creation uses `GL_TEXTURE_2D`, RGBA/unsigned-byte
+NULL data and six sampler parameters; its own `glGetError` returns zero.
+`CreateFbo` and `AttachColorToFbo` then generate a real framebuffer, attach
+that same texture and receive actual status `0x8cd5` (complete). The control
+stops at the unsupported graphics-object factory before drawing or readback;
+it produces no PDF and establishes no Samsung device pixel parity. Its event
+log SHA-256 is
+`08953263147c46dea0779e14d2038f95d3326398c04b63486bb10a0aba6a4e52`.
+
 ## Independent tiled mask and complete-frame prediction
 
 The captured-frame GPU test also maintains an independent scalar state
