@@ -739,10 +739,11 @@ forward to Mesa; the matrix's scale bits match float32 `2/1800` and `2/1516`.
 The bitmap descriptor has float3/float2 attributes at offsets 0/12, stride 20,
 and a real 120-byte buffer upload. Two native `glDrawArrays` calls now forward
 six triangle vertices to Mesa after checking both attribute fetch ranges
-(112 and 120 bytes). Execution stops at `glFinish` in native readback;
-pixel contents, PDF output and Samsung device pixel parity remain unproven.
-The event log SHA-256 is
-`2f2711890c56c567de0067003ceb015db35cd85e687cd64c510f4a4731c35204`.
+(112 and 120 bytes). The first 1800×1516 RGBA8 readback is uniformly opaque
+white, with the native PDF-excluded capture flag set; the native post-read
+error check returns zero. Source-PDF pixel contribution, completed PDF output
+and Samsung device pixel parity remain unproven. The readback pixel SHA-256 is
+`593269c57197ea5a8d646e3d40fdbd23d8d08abe40758f792a78b828b707fc94`.
 
 ## Independent tiled mask and complete-frame prediction
 
