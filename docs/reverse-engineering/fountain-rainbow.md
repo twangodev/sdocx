@@ -1,7 +1,7 @@
 # Fountain pen rainbow colors
 
 The experiment scripts cited here are archived at Git revision `40de721`.
-Rainbow rendering is not implemented in the SDK. See
+FountainPen rainbow rendering is not implemented in the SDK. See
 [native geometry checks](../../conformance/README.md#native-geometry-checks)
 for current validation and archive recovery.
 

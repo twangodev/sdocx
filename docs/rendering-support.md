@@ -92,7 +92,7 @@ outer SDK loading is not exercised.
 | Marker4 / StraightHighlighter V7, saved `7;` | Stylus midpoint sampling, saved style size and fractional rounded rectangular tip | Native geometry and [Drawing size/alias controls](../conformance/marker4-saved-caller-native.json); public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 / StraightHighlighter V8, saved `8;` | Sampled rounded rectangular tip centered on saved AddPoint positions, native integer size, tool-specific rotation and saved alpha | Executed Drawing size/alias controls and controlled native RTV4-to-Mesa frames verify saved XY through the instance VBO and rotation about the centered quad; filtering/zoom coverage remain approximate. |
 | Other pens, unknown names or rejected settings | Generic straight segments with pressure width, polyline or tap circle | No pen-specific native texture, smoothing or width-law guarantee. |
-| Rainbow, eraser and straighten effects | Metadata retained; native effect semantics not reproduced | Gates vary by profile. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
+| Rainbow, eraser and straighten effects | Metadata retained; InkPen2 V9 rainbow has an explicit profile | Other native effect semantics remain unsupported. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
 A [native RTV4 paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/fountain-rtv4-paint-native.json)
