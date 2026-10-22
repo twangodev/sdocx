@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.1.0...sdocx-wasm-v1.2.0) (2026-10-22)
+
+
+### Features
+
+* **ink:** reconstruct bounded InkPen V1 page vectors ([6dd6aae](https://github.com/twangodev/sdocx/commit/6dd6aae8dc9db7d620ef92f2ad10272b31612dc6))
+
+
+### Bug Fixes
+
+* **ink:** reject singleton sources in saved-page rendering ([974186e](https://github.com/twangodev/sdocx/commit/974186e86d0ea0f312996e7e2735a4b260962bcb))
+* **render:** report omitted imported PDF backgrounds ([e54afb3](https://github.com/twangodev/sdocx/commit/e54afb3d1bc68a7817e320875c646420af2856c0))
+* **wasm:** enable browser randomness for PDF dependencies ([0de8a12](https://github.com/twangodev/sdocx/commit/0de8a12e77d310b400cb8d029c67fcaf8798d18b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.1.0 to 1.2.0
+
 ## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.0.0...sdocx-wasm-v1.1.0) (2026-10-09)
 
 

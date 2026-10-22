@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v1.0.1...sdocx-cli-v1.1.0) (2026-10-22)
+
+
+### Features
+
+* **cli:** expose native PDF paper load width ([bada6ab](https://github.com/twangodev/sdocx/commit/bada6ab810e75d3ce2c572092141932de4e1dd17))
+
+
+### Bug Fixes
+
+* **cli:** warn when imported PDF backgrounds are omitted ([8b9b61e](https://github.com/twangodev/sdocx/commit/8b9b61e3be46b9056886c09357d5da6d54cc55ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.1.0 to 1.2.0
+
 ## [1.0.1](https://github.com/twangodev/sdocx/compare/sdocx-cli-v1.0.0...sdocx-cli-v1.0.1) (2026-10-09)
 
 
