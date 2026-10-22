@@ -741,7 +741,11 @@ and a real 120-byte buffer upload. Two native `glDrawArrays` calls now forward
 six triangle vertices to Mesa after checking both attribute fetch ranges
 (112 and 120 bytes). The first 1800×1516 RGBA8 readback is uniformly opaque
 white, with the native PDF-excluded capture flag set; the native post-read
-error check returns zero. Source-PDF pixel contribution, completed PDF output
+error check returns zero. Composer's native `ExportFile` writes that exclusion
+at `0x35774c` through the capture pointer at owner+176; `drawPdf` checks capture+88
+at `0x32e400` and returns without `NotePDFCapture::DrawPDF` when set. This explains
+the PDF exclusion, but does not establish the cause of every white pixel.
+Source-PDF pixel contribution, completed PDF output
 and Samsung device pixel parity remain unproven. The readback pixel SHA-256 is
 `593269c57197ea5a8d646e3d40fdbd23d8d08abe40758f792a78b828b707fc94`.
 
