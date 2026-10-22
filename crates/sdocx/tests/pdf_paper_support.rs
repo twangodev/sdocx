@@ -821,63 +821,103 @@ fn public_pdf_paper_accepts_styled_blank_body_and_rejects_visible_inline_image_b
 
 #[test]
 #[cfg(feature = "serde")]
-fn public_pdf_paper_keeps_one_resolved_image_body_and_the_source_pdf_resource() {
-    let mut document = document(true, None, 0, 1);
-    let anchor = 112;
-    let mut body = rich_text(&format!("{}\u{fffc}\n\n\n", "\n".repeat(anchor)), vec![]);
-    body.font_size = Some(17.0);
-    body.margins = Some([16.0, 10.0, 16.0, 10.0]);
-    body.gravity = Some(0);
-    let placed_image: sdocx::PlacedImage = serde_json::from_value(serde_json::json!({
-        "bbox": {
-            "x_min": 48.0,
-            "y_min": 5473.2021484375,
-            "x_max": 567.48206,
-            "y_max": 6154.563965,
-        },
-        "rotation_degrees": null,
-        "media_id": 0,
-        "media_index": 0,
-        "crop_rect": null,
-        "original_bbox": null,
-        "border_media_id": null,
-        "original_media_id": null,
-    }))
-    .unwrap();
-    body.object_spans.push(RichTextObjectSpan {
-        object_type: sdocx::ObjectType::Image,
-        object_data: Vec::new(),
-        content: Some(sdocx::RichTextObjectContent::Image(Box::new(placed_image))),
-        text_index_utf16: anchor as i32,
-        layout_option: ObjectSpanLayoutOption::Block,
-        layout_constraint: ObjectSpanLayoutConstraint::Normal,
-    });
-    document.metadata.note_text = Some(body);
-    document.metadata.media_assets = vec![sdocx::MediaAsset {
-        name: "0.png".to_owned(),
-        archive_id: Some(0),
-        mime_type: "image/png".to_owned(),
-        data: include_bytes!("assets/crop-quadrants.png").to_vec(),
-    }];
+fn public_pdf_paper_keeps_resolved_image_bodies_and_the_source_pdf_resource() {
+    for image_count in [1, 2] {
+        let mut document = document(true, None, 0, 1);
+        let anchor = 112;
+        let mut body = rich_text(&format!("{}\u{fffc}\n\n\n", "\n".repeat(anchor)), vec![]);
+        body.font_size = Some(17.0);
+        body.margins = Some([16.0, 10.0, 16.0, 10.0]);
+        body.gravity = Some(0);
+        let placed_image: sdocx::PlacedImage = serde_json::from_value(serde_json::json!({
+            "bbox": {
+                "x_min": 48.0,
+                "y_min": 5473.2021484375,
+                "x_max": 567.48206,
+                "y_max": 6154.563965,
+            },
+            "rotation_degrees": null,
+            "media_id": 0,
+            "media_index": 0,
+            "crop_rect": null,
+            "original_bbox": null,
+            "border_media_id": null,
+            "original_media_id": null,
+        }))
+        .unwrap();
+        body.object_spans.push(RichTextObjectSpan {
+            object_type: sdocx::ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(sdocx::RichTextObjectContent::Image(Box::new(placed_image))),
+            text_index_utf16: anchor as i32,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        });
+        if image_count == 2 {
+            let mut second = body.object_spans[0].clone();
+            second.text_index_utf16 = body.text.encode_utf16().count() as i32;
+            body.text.push('\u{fffc}');
+            let Some(sdocx::RichTextObjectContent::Image(image)) = second.content.as_mut() else {
+                panic!("test image span has image content");
+            };
+            image.bbox = bbox(24.0, 0.0, 44.0, 20.0);
+            image.media_id = Some(1);
+            image.media_index = Some(1);
+            body.object_spans.push(second);
+        }
+        document.metadata.note_text = Some(body);
+        document.metadata.media_assets = vec![sdocx::MediaAsset {
+            name: "0.png".to_owned(),
+            archive_id: Some(0),
+            mime_type: "image/png".to_owned(),
+            data: include_bytes!("assets/crop-quadrants.png").to_vec(),
+        }];
 
-    let output = export_with_fixed_axis(&document, &[0], 96.0, Some(1_080)).unwrap();
-    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
-    assert_eq!(pdf.get_pages().len(), 7);
-    assert_eq!(output.pages.len(), 7);
-    assert_eq!(
-        page_box(&pdf, 1),
-        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)],
-        "the retained source PDF keeps its original physical page box"
-    );
-    assert!(
-        (2..=7).any(|page_number| page_references_image_size(&pdf, page_number, 4, 3)),
-        "the resolved source PNG must be present in a rendered continuation page"
-    );
-    assert_eq!(
-        document.metadata.media_assets[0].data,
-        include_bytes!("assets/crop-quadrants.png"),
-        "PDF export must leave the caller-owned PNG bytes intact"
-    );
+        if image_count == 2 {
+            let mut encoded = Vec::new();
+            {
+                let mut encoder = png::Encoder::new(&mut encoded, 2, 1);
+                encoder.set_color(png::ColorType::Rgb);
+                encoder.set_depth(png::BitDepth::Eight);
+                encoder
+                    .write_header()
+                    .unwrap()
+                    .write_image_data(&[0, 0, 255, 0, 255, 0])
+                    .unwrap();
+            }
+            document.metadata.media_assets.push(sdocx::MediaAsset {
+                name: "1.png".to_owned(),
+                archive_id: Some(1),
+                mime_type: "image/png".to_owned(),
+                data: encoded,
+            });
+        }
+
+        let output = export_with_fixed_axis(&document, &[0], 96.0, Some(1_080)).unwrap();
+        let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+        assert_eq!(pdf.get_pages().len(), 7);
+        assert_eq!(output.pages.len(), 7);
+        assert_eq!(
+            page_box(&pdf, 1),
+            [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)],
+            "the retained source PDF keeps its original physical page box"
+        );
+        assert!(
+            (2..=7).any(|page_number| page_references_image_size(&pdf, page_number, 4, 3)),
+            "the resolved source PNG must be present in a rendered continuation page"
+        );
+        if image_count == 2 {
+            assert!(
+                (2..=7).any(|page_number| page_references_image_size(&pdf, page_number, 2, 1)),
+                "the independently resolved second PNG must survive alongside the first"
+            );
+        }
+        assert_eq!(
+            document.metadata.media_assets[0].data,
+            include_bytes!("assets/crop-quadrants.png"),
+            "PDF export must leave the caller-owned PNG bytes intact"
+        );
+    }
 }
 
 #[test]

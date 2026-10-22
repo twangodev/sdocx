@@ -624,12 +624,15 @@ geometry using native f32 rules; its default preserves the stored coordinate
 profile. Body coordinates and source PDF boxes stay in their own domains.
 Empty or LF-only body text with supported formatting is accepted, including
 foreground/font-size spans, finite margins and valid saved text sections;
-bullets remain unsupported. LF text with one resolved, unrotated block image is
-also accepted when the page and body flow axes agree; body-aware page cuts use
+bullets remain unsupported. LF-separated resolved, unrotated block images are
+also accepted when the page and body flow axes agree; every image must have a
+unique source anchor and measured owner. Body-aware page cuts use
 the same cached layout as painting. The real quiz exports seven pages with an
 explicit 1080 load width. MuPDF and PDFium render every page; its image pixels
 are preserved and its page-5 bounds match native model placement within
-0.00002 points. This is model/transport validation, not native pixel parity.
+0.00002 points. Two-image and blank-gap controls match native line geometry and
+queries; multi-image SDK export has synthetic coverage. This is model/transport
+validation, not native pixel parity.
 A saved stroke's generated flag alone does not exclude it. Other visible text,
 image transforms, multiple source PDFs, gaps between records and unverified
 cases still fail explicitly. SVG previews continue to report omitted
@@ -644,11 +647,10 @@ and source page boxes, text, font streams and image bytes survive. This verifies
 SDK transport; a connected native multi-record export comparison remains open.
 Real-source and retained-text transport match MuPDF/PDFium at 1×/2×. The stroke
 selector matches native identities and order across all 11 observed bands of
-one actually loaded quiz archive: 3,228 unique strokes and 3,261 admissions,
+one quiz archive loaded at width 1812: 3,228 unique strokes and 3,261 admissions,
 including cross-band repeats. This verifies query admission in that loaded
-state, not body-aware final pagination or exported appearance. A bounded
-block-image query candidate also matches measured native queries; integrating
-native body layout and placement remains open.
+state, not exported appearance. General native body layout and placement remain
+open beyond the bounded LF-plus-image route.
 A [native source-PDF export probe](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf_paper_pdfium_quiz_source_native.py)
 preserves one retained document's image bytes and page geometry while adding a
 vector path. A [PNG overlay capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-pdfium-image-export.json)

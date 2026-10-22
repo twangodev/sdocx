@@ -21,21 +21,31 @@ struct BodyQueryLine {
     owns_visible_image: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct BodyQueryImageAnchor {
+    source_index: usize,
+    span_index: usize,
+}
+
 /// A narrow source-query view of the cached body layout used by the renderer.
-/// It admits only blank-LF source with one resolved image replacement object.
+/// It admits only LF-separated resolved image replacement objects.
 pub(crate) struct ContinuousBodyQuerySnapshot {
     lines: Vec<BodyQueryLine>,
 }
 
 impl ContinuousBodyQuerySnapshot {
     pub(super) fn from_plan(plan: &PreparedBodyPlan, document: &Document) -> Option<Self> {
-        let (anchor, span) = query_image_source(&plan.text, document)?;
+        let anchors = query_image_sources(&plan.text, document)?;
         if !plan.object_issues.is_empty() {
             return None;
         }
 
+        let mut source_by_span = vec![None; plan.text.object_spans.len()];
+        for anchor in anchors {
+            *source_by_span.get_mut(anchor.span_index)? = Some(anchor.source_index);
+        }
+        let mut owner_counts = vec![0_u8; source_by_span.len()];
         let mut lines = Vec::with_capacity(plan.layout.lines.len());
-        let mut owning_lines = 0;
         for (index, line) in plan.layout.lines.iter().enumerate() {
             let x = line.x
                 + super::text::line_alignment_offset(line.line.advance, line.width, line.alignment);
@@ -53,21 +63,28 @@ impl ContinuousBodyQuerySnapshot {
             if !valid_line_rect(rect) {
                 return None;
             }
-            let owns_visible_image = line.line.objects.iter().any(|object| {
-                object.object.source.contains(&anchor)
-                    && plan
-                        .text
-                        .object_spans
-                        .get(object.object.span_index)
-                        .is_some_and(|candidate| std::ptr::eq(candidate, span))
-            });
-            owning_lines += usize::from(owns_visible_image);
+            let mut owns_visible_image = false;
+            for object in &line.line.objects {
+                let source_index = source_by_span
+                    .get(object.object.span_index)
+                    .copied()
+                    .flatten()?;
+                if object.object.source != (source_index..source_index + 1) {
+                    return None;
+                }
+                let owner_count = owner_counts.get_mut(object.object.span_index)?;
+                *owner_count = owner_count.checked_add(1)?;
+                owns_visible_image = true;
+            }
             lines.push(BodyQueryLine {
                 rect,
                 owns_visible_image,
             });
         }
-        (owning_lines == 1 && !lines.is_empty()).then_some(Self { lines })
+        if lines.is_empty() || owner_counts.iter().any(|&count| count != 1) {
+            return None;
+        }
+        Some(Self { lines })
     }
 
     /// Return the source line rectangle as `[left, top, right, bottom]`.
@@ -121,20 +138,14 @@ impl ContinuousBodyQuerySnapshot {
     }
 }
 
-pub(super) fn query_image_source<'a>(
-    text: &'a RichTextBox,
+pub(super) fn query_image_sources(
+    text: &RichTextBox,
     document: &Document,
-) -> Option<(usize, &'a crate::RichTextObjectSpan)> {
+) -> Option<Vec<BodyQueryImageAnchor>> {
     if text
         .text
         .chars()
         .any(|character| !matches!(character, '\n' | '\u{fffc}'))
-        || text
-            .text
-            .chars()
-            .filter(|&character| character == '\u{fffc}')
-            .count()
-            != 1
         || !text.runs.is_empty()
         || text.text_area_type.is_some()
         || text.bbox != crate::BoundingBox::default()
@@ -153,6 +164,24 @@ pub(super) fn query_image_source<'a>(
     {
         return None;
     }
+
+    let mut marker_offsets = Vec::new();
+    let mut utf16_offset = 0_usize;
+    for (source_index, character) in text.text.chars().enumerate() {
+        if character == '\u{fffc}' {
+            marker_offsets.push((source_index, utf16_offset));
+        }
+        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
+    }
+    if marker_offsets.is_empty()
+        || marker_offsets.len() != text.object_spans.len()
+        || marker_offsets
+            .windows(2)
+            .any(|pair| pair[1].0 == pair[0].0 + 1)
+    {
+        return None;
+    }
+
     let utf16_len = text.text.encode_utf16().count();
     if text.text_sections.iter().any(|section| {
         section.start_utf16 < 0
@@ -196,41 +225,53 @@ pub(super) fn query_image_source<'a>(
         return None;
     }
 
-    let anchor = text.text.find('\u{fffc}')?;
-    let anchor_char = text.text[..anchor].chars().count();
-    let anchor_utf16 = u32::try_from(text.text[..anchor].encode_utf16().count()).ok()?;
-    let [span] = text.object_spans.as_slice() else {
-        return None;
-    };
-    if u32::try_from(span.text_index_utf16).ok()? != anchor_utf16
-        || span.object_type != ObjectType::Image
-        || span.layout_option != ObjectSpanLayoutOption::Block
-        || span.layout_constraint != ObjectSpanLayoutConstraint::Normal
-    {
-        return None;
+    let mut span_by_marker = vec![None; marker_offsets.len()];
+    for (span_index, span) in text.object_spans.iter().enumerate() {
+        let anchor_utf16 = usize::try_from(span.text_index_utf16).ok()?;
+        let marker_index = marker_offsets
+            .binary_search_by_key(&anchor_utf16, |&(_, marker_utf16)| marker_utf16)
+            .ok()?;
+        if span_by_marker[marker_index].is_some()
+            || span.object_type != ObjectType::Image
+            || span.layout_option != ObjectSpanLayoutOption::Block
+            || span.layout_constraint != ObjectSpanLayoutConstraint::Normal
+        {
+            return None;
+        }
+        let Some(RichTextObjectContent::Image(image)) = span.content.as_ref() else {
+            return None;
+        };
+        if image.rotation_degrees.is_some()
+            || image.crop_rect.is_some()
+            || image.original_bbox.is_some()
+            || image.border_media_id.is_some()
+            || image.original_media_id.is_some()
+            || !valid_bbox(image.bbox)
+        {
+            return None;
+        }
+        let asset = document.metadata.media_assets.get(image.media_index?)?;
+        if asset.data.is_empty()
+            || !asset.mime_type.starts_with("image/")
+            || image
+                .media_id
+                .is_some_and(|id| asset.archive_id.is_some_and(|archive_id| id != archive_id))
+        {
+            return None;
+        }
+        span_by_marker[marker_index] = Some(span_index);
     }
-    let Some(RichTextObjectContent::Image(image)) = span.content.as_ref() else {
-        return None;
-    };
-    if image.rotation_degrees.is_some()
-        || image.crop_rect.is_some()
-        || image.original_bbox.is_some()
-        || image.border_media_id.is_some()
-        || image.original_media_id.is_some()
-        || !valid_bbox(image.bbox)
-    {
-        return None;
-    }
-    let asset = document.metadata.media_assets.get(image.media_index?)?;
-    if asset.data.is_empty()
-        || !asset.mime_type.starts_with("image/")
-        || image
-            .media_id
-            .is_some_and(|id| asset.archive_id.is_some_and(|archive_id| id != archive_id))
-    {
-        return None;
-    }
-    Some((anchor_char, span))
+
+    marker_offsets
+        .into_iter()
+        .zip(span_by_marker)
+        .map(|((source_index, _), span_index)| {
+            Some(BodyQueryImageAnchor {
+                source_index,
+                span_index: span_index?,
+            })
+        })
+        .collect()
 }
 
 fn valid_bbox(bbox: crate::BoundingBox) -> bool {

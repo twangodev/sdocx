@@ -306,7 +306,7 @@ impl DocumentTextCache {
                 .metadata
                 .note_text
                 .as_ref()
-                .is_some_and(|text| body_query::query_image_source(text, document).is_some())
+                .is_some_and(|text| body_query::query_image_sources(text, document).is_some())
         {
             return None;
         }
@@ -9757,6 +9757,134 @@ mod tests {
             assert_eq!(image.media_index, Some(span_index));
             assert_eq!(image.media_id, Some(span_index as u32));
         }
+
+        // Reject duplicate anchors before layout can collapse distinct spans.
+        let mut duplicate_anchor = document.metadata.note_text.clone().unwrap();
+        duplicate_anchor.object_spans[1].text_index_utf16 = 0;
+        assert!(super::body_query::query_image_sources(&duplicate_anchor, &document).is_none());
+
+        // The recovered multi-image contract has LF-separated Block objects.
+        let mut adjacent = document.metadata.note_text.clone().unwrap();
+        adjacent.text = "\u{fffc}\u{fffc}".into();
+        adjacent.object_spans[1].text_index_utf16 = 1;
+        assert!(super::body_query::query_image_sources(&adjacent, &document).is_none());
+
+        let mut missing_span = document.metadata.note_text.clone().unwrap();
+        missing_span.object_spans.pop();
+        assert!(super::body_query::query_image_sources(&missing_span, &document).is_none());
+
+        let mut extra_span = document.metadata.note_text.clone().unwrap();
+        extra_span
+            .object_spans
+            .push(extra_span.object_spans[0].clone());
+        assert!(super::body_query::query_image_sources(&extra_span, &document).is_none());
+
+        let mut out_of_range_anchor = document.metadata.note_text.clone().unwrap();
+        out_of_range_anchor.object_spans[1].text_index_utf16 = 3;
+        assert!(super::body_query::query_image_sources(&out_of_range_anchor, &document).is_none());
+
+        let snapshot = cache
+            .continuous_body_query_snapshot(
+                &document,
+                &layout.pages[0],
+                &RenderOptions::default(),
+                &fonts,
+            )
+            .expect("both resolved image anchors have one measured owner");
+        let expected_lines = [
+            [0, 0, 1_101_004_800, 1_104_675_340],
+            [0, 1_104_675_340, 1_101_004_800, 1_113_063_948],
+        ];
+        for (index, expected) in expected_lines.into_iter().enumerate() {
+            assert_eq!(
+                snapshot.line_rect(index).unwrap().map(f32::to_bits),
+                expected,
+                "native two-image Block line {index}"
+            );
+        }
+        let second_top = f32::from_bits(1_104_675_340);
+        assert!(snapshot.query([0.0, 0.0, 200.0, 20.0]).visible);
+        assert!(
+            snapshot
+                .query([0.0, second_top, 200.0, second_top + 20.0])
+                .visible
+        );
+        assert!(!snapshot.query([0.0, second_top, 200.0, second_top]).visible);
+        assert_eq!(snapshot.line_index(second_top), Some(0));
+        assert_eq!(
+            snapshot.line_index(f32::from_bits(second_top.to_bits() + 1)),
+            Some(1)
+        );
+
+        let mut gap_document = document.clone();
+        let gap_body = gap_document.metadata.note_text.as_mut().unwrap();
+        gap_body.text = "\u{fffc}\n\n\u{fffc}".into();
+        gap_body.object_spans[1].text_index_utf16 = 3;
+        let gap_layout = layout_document(&gap_document);
+        let mut gap_cache = super::DocumentTextCache::default();
+        gap_cache
+            .render_layout_page_svg(
+                &gap_document,
+                &gap_layout,
+                0,
+                &RenderOptions::default(),
+                &fonts,
+            )
+            .expect("LF-gap page renders");
+        let gap_plan = &gap_cache.plans[0].1;
+        assert_eq!(gap_plan.layout.lines.len(), 3);
+        let gap_owners = gap_plan
+            .layout
+            .lines
+            .iter()
+            .flat_map(|line| line.line.objects.iter())
+            .map(|object| (object.object.span_index, object.object.source.clone()))
+            .collect::<Vec<_>>();
+        assert_eq!(gap_owners, [(0, 0..1), (1, 3..4)]);
+        let gap_snapshot = gap_cache
+            .continuous_body_query_snapshot(
+                &gap_document,
+                &gap_layout.pages[0],
+                &RenderOptions::default(),
+                &fonts,
+            )
+            .expect("LF-gap image anchors retain unique owners");
+        let expected_gap_lines = [
+            [0, 0, 1_101_004_800, 1_104_675_340],
+            [0, 1_104_675_340, 0, 1_113_063_686],
+            [0, 1_113_063_686, 1_101_004_800, 1_117_913_350],
+        ];
+        for (index, expected) in expected_gap_lines.into_iter().enumerate() {
+            assert_eq!(
+                gap_snapshot.line_rect(index).unwrap().map(f32::to_bits),
+                expected,
+                "native two-image LF-gap line {index}"
+            );
+        }
+        let gap_top = f32::from_bits(1_104_675_340);
+        let second_image_top = f32::from_bits(1_113_063_686);
+        assert!(!gap_snapshot.query([0.0, 30.0, 200.0, 50.0]).visible);
+        assert!(
+            !gap_snapshot
+                .query([0.0, gap_top, 200.0, second_image_top])
+                .visible
+        );
+        assert!(gap_snapshot.query([0.0, 0.0, 200.0, 20.0]).visible);
+        assert!(
+            gap_snapshot
+                .query([0.0, second_image_top, 200.0, f32::from_bits(1_116_995_715)])
+                .visible
+        );
+        assert_eq!(gap_snapshot.line_index(gap_top), Some(0));
+        assert_eq!(
+            gap_snapshot.line_index(f32::from_bits(gap_top.to_bits() + 1)),
+            Some(1)
+        );
+        assert_eq!(gap_snapshot.line_index(second_image_top), Some(1));
+        assert_eq!(
+            gap_snapshot.line_index(f32::from_bits(second_image_top.to_bits() + 1)),
+            Some(2)
+        );
     }
 
     #[cfg(feature = "pdf")]
