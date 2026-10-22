@@ -76,8 +76,9 @@ instruction at `0x25ca4` negates the whole multiply-add; it does not compute
 `0.5 - size / 2`. An isolated execution of its instruction word `0x1f210403`
 with size 1, 2 and 3 yields lower bounds -1, -1.5 and -2. The resulting
 quad is centered on the supplied point and has half-extent `(size + 1) / 2`.
-Its operations match V1's builder at `0x23c54`. Confirmation of the final
-runtime vertex-buffer payload remains a separate check.
+Its operations match V1's builder at `0x23c54`. Bounded native RTV2 captures
+confirm the final 64-byte `aRectPoint` buffer uses half-extents 1, 1.5 and 2
+for widths 1, 2 and 3, with normalized UVs and unchanged mask pixels.
 
 V2 `AddPoint`, `0x259c8`, appends an X/Y pair to the point buffer. `Update`
 uploads that buffer and sets the instance count from its byte length divided
@@ -204,7 +205,9 @@ transparency. Root strokes selected into the Top pass are painted after the
 Base pass and before the Masking pass. Their shared group uses Darken on light
 paper and Lighten on dark paper; see [composition](../svg-rendering.md) and
 [theme policy](../render-themes.md). The V2 thin-stroke edge ramp is still not
-ported. `Marker` and `Marker3` retain the pressure approximation; supported
+ported; the current hard-circle radius also omits the quad's additional
+half-unit before shader coverage. `Marker` and `Marker3` retain the pressure
+approximation; supported
 Marker4 settings use separate [V7](marker4-v7.md) and
 [V8](marker4-rendering-findings.md) vector stamp paths.
 
