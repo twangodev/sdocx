@@ -460,7 +460,12 @@ raw offset/scale/transparency bits, the rotatable byte, version-gated nine-patch
 fields and trailing bytes. Other image/coedit forms and background effects remain
 opaque. Supported type-7 shapes can project canonical linear/radial color
 fill and outline records into vector paint. Patterns, rectangular/other
-gradients, image fills and background effects remain unsupported.
+gradients, image fills and background effects remain unsupported. Straight,
+unrotated, simple type-8 lines also project nonrotatable linear outlines from
+their reference bounds; routing, compound/dashed strokes and arrows retain
+fallback. A synthetic native control verifies the actual Skia factory endpoints
+and consumed stops. Its paired SVG/PDF opaque interiors agree, while edge
+coverage differs; saved gradient appearance and broader line styles remain unverified.
 
 The preserved record needs to remain distinct from the paint that a native
 drawing route can consume: stop order, all stops, ARGB alpha and raw enum
@@ -486,8 +491,10 @@ zero-stop records retain unsupported raw paint and parser warnings.
 
 Only the first ten stops feed drawing. A singleton becomes uniform paint
 without consuming its position. Multiple consumed positions must be finite,
-in `[0,1]` and nondecreasing; copied endpoint colors and derived 16.16 offsets
-retain duplicates and order. Stops beyond ten remain preserved and do not
+in `[0,1]`. Nondecreasing stops retain duplicates and order through endpoint
+extension and 16.16 quantization. Descending stops project only when their last
+increasing span covers the full range and overwrites earlier cache entries;
+partial overlaps remain rejected. Stops beyond ten remain preserved and do not
 affect admission. Rejected paint emits a diagnostic for its fill/outline role
 rather than substituting a solid color. Geometry and paint diagnostics describe
 separate omissions. Source records remain unchanged by rendering.

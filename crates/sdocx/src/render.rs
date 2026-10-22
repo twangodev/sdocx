@@ -1758,15 +1758,7 @@ fn render_line(
     } else {
         return Err(GeometryDiagnosticKind::MissingLinePath);
     };
-    let outline = project_shape_paint(
-        svg,
-        &line.style.paint,
-        line.style.paint_source.as_ref(),
-        None,
-        PaintRole::Outline,
-        theme,
-    )
-    .unwrap_or_else(|kind| {
+    let outline = project_line_paint(svg, line, theme).unwrap_or_else(|kind| {
         svg.report_paint_issue(PaintDiagnostic {
             source_offset,
             object_uuid: line.metadata.uuid.clone(),
@@ -1860,6 +1852,33 @@ fn render_shape_paint(
             (Paint::None, 0.0)
         },
     )
+}
+
+fn project_line_paint(
+    svg: &mut Scene,
+    line: &crate::NativeLine,
+    theme: RenderTheme,
+) -> Result<(Paint, f64), PaintDiagnosticKind> {
+    match &line.style.paint {
+        crate::ShapePaint::Gradient => {
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_ref()
+            else {
+                return Err(PaintDiagnosticKind::MissingPaintSource);
+            };
+            Ok((
+                gradient::Plan::for_line(line, source)?.paint(svg, theme),
+                1.0,
+            ))
+        }
+        paint => project_shape_paint(
+            svg,
+            paint,
+            line.style.paint_source.as_ref(),
+            None,
+            PaintRole::Outline,
+            theme,
+        ),
+    }
 }
 
 fn project_shape_paint(
@@ -6991,6 +7010,70 @@ mod tests {
                 ..DocumentMetadata::default()
             },
         }
+    }
+
+    #[test]
+    fn public_svg_projects_type8_gradient_and_keeps_rejected_line_body() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 640;
+        page.height = 640;
+        page.objects = vec![
+            crate::PageElement::Line(super::gradient::tests::hf02_line_with_gradient()).into(),
+        ];
+        let rendered = render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+        assert!(rendered.paint_diagnostics.is_empty());
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let gradients = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("linearGradient"))
+            .collect::<Vec<_>>();
+        assert_eq!(gradients.len(), 1);
+        assert_eq!(
+            gradients[0]
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .count(),
+            2
+        );
+        let body = xml
+            .descendants()
+            .find(|node| node.has_tag_name("line"))
+            .expect("saved type-8 body is retained");
+        let expected_stroke = format!("url(#{})", gradients[0].attribute("id").unwrap());
+        assert_eq!(
+            body.ancestors().find_map(|node| node.attribute("stroke")),
+            Some(expected_stroke.as_str())
+        );
+
+        let mut rejected_line = super::gradient::tests::hf02_line_with_gradient();
+        rejected_line.metadata.rotation_degrees = Some(1.0);
+        let mut page = page_with_uncolored_stroke();
+        page.width = 640;
+        page.height = 640;
+        page.objects = vec![crate::PageElement::Line(rejected_line).into()];
+        let rendered = render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+        assert_eq!(
+            rendered.paint_diagnostics,
+            [crate::PaintDiagnostic {
+                source_offset: None,
+                object_uuid: "type8-gradient".into(),
+                role: crate::PaintRole::Outline,
+                kind: crate::PaintDiagnosticKind::UnsupportedGradientFrame,
+            }]
+        );
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let body = xml
+            .descendants()
+            .find(|node| node.has_tag_name("line"))
+            .expect("rejected paint retains the line body");
+        assert_eq!(
+            body.ancestors().find_map(|node| node.attribute("stroke")),
+            Some("none")
+        );
+        assert!(
+            !xml.descendants()
+                .any(|node| node.has_tag_name("linearGradient"))
+        );
     }
 
     fn empty_bullet_body(kind: u32) -> RichTextBox {

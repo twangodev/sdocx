@@ -6,7 +6,7 @@ use super::vector::{
     Transform,
 };
 use super::{PaintDiagnosticKind, PaintRole, RenderTheme};
-use crate::{BoundingBox, Color, ColorPaintSource, NativeShape};
+use crate::{BoundingBox, Color, ColorPaintSource, NativeLine, NativeShape};
 
 /// The exact f64 rotation applied to procedural geometry by the SVG renderer.
 #[derive(Clone, Copy, Debug)]
@@ -42,6 +42,61 @@ pub(super) struct Plan {
 }
 
 impl Plan {
+    /// The V21 native scene capture passed the HF02 line's `reference_bbox` to
+    /// the linear helper and verified its endpoints at Skia's factory. This is
+    /// a synthetic-paint frame witness,
+    /// not proof of saved archive paint or pixels; keep admission to straight,
+    /// unrotated, unadorned lines until broader line cases have paired evidence.
+    pub fn for_line(
+        line: &NativeLine,
+        source: &ColorPaintSource,
+    ) -> Result<Self, PaintDiagnosticKind> {
+        if source.outline_color_type != Some(1) || !source.trailing_data.is_empty() {
+            return Err(PaintDiagnosticKind::UnsupportedPaint);
+        }
+        if source.gradient_type != 0 || source.gradient_rotatable() {
+            return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
+        }
+        let rect = bounds(line.reference_bbox);
+        let width = rect[2] - rect[0];
+        let height = rect[3] - rect[1];
+        // Conservative eligibility limits: the native frame witness covers a
+        // type-0, simple stroke; parser-marked routing/settings and compound,
+        // dashed or arrowed variants have no paired gradient evidence.
+        if line.line_type != 0
+            || line.routing != 0
+            || line.raw_setting != 0
+            || line
+                .metadata
+                .rotation_degrees
+                .is_some_and(|angle| angle != 0.0)
+            || line.style.compound != 0
+            || line.style.dash != 0
+            || line.style.cap > 2
+            || line.style.join > 2
+            || line.style.begin_arrow != [0; 2]
+            || line.style.end_arrow != [0; 2]
+            || !line.style.width.is_finite()
+            || line.style.width <= 0.0
+            || rect.iter().any(|value| !value.is_finite())
+            || !width.is_finite()
+            || !height.is_finite()
+            || width <= 0.0
+            || height <= 0.0
+        {
+            return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
+        }
+        let points = linear_points(rect, source.linear_angle);
+        if points.iter().flatten().any(|value| !value.is_finite()) || points[0] == points[1] {
+            return Err(PaintDiagnosticKind::UnrepresentableGradient);
+        }
+        Ok(Self {
+            geometry: Geometry::Linear(points),
+            stops: project_stops(source)?,
+            element_rotation: None,
+        })
+    }
+
     pub fn for_shape(
         shape: &NativeShape,
         source: &ColorPaintSource,
@@ -347,4 +402,4 @@ fn rotate_point(point: [f32; 2], center: [f32; 2], mut rotation: f32, rotatable:
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

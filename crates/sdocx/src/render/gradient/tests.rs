@@ -1,6 +1,8 @@
 use super::super::vector::{Rectangle, Styled, Svg};
 use super::*;
-use crate::{GradientStopSource, PaintFloat32};
+use crate::{
+    GradientStopSource, NativeLine, PaintFloat32, ShapePaint, ShapePaintSource, ShapeStyle,
+};
 
 const RECT: [f32; 4] = [10.25, 20.5, 310.25, 70.5];
 
@@ -22,6 +24,158 @@ fn source(positions: &[f32]) -> ColorPaintSource {
             .collect(),
         trailing_data: Vec::new(),
     }
+}
+
+fn line(reference_bbox: BoundingBox) -> NativeLine {
+    let other_bbox = BoundingBox {
+        x_min: reference_bbox.x_min - 6.44654846,
+        y_min: reference_bbox.y_min - 6.44656372,
+        x_max: reference_bbox.x_max + 6.44654846,
+        y_max: reference_bbox.y_max + 6.44656372,
+    };
+    NativeLine {
+        metadata: crate::ObjectMetadata {
+            format_version: 5500,
+            uuid: "type8-gradient".into(),
+            modified_time_raw: 0,
+            bbox: other_bbox,
+            replay_timestamp_raw: 0,
+            resize_mode_raw: 0,
+            rotatable: false,
+            selectable: false,
+            movable: false,
+            visible: true,
+            replayable: false,
+            out_of_canvas_enabled: false,
+            template: false,
+            flip_enabled: false,
+            float_drawn_rect: false,
+            locked: false,
+            removable: true,
+            rotation_degrees: None,
+            property_mask: vec![],
+            field_mask: vec![],
+            fixed_trailing_data: vec![],
+            flexible_trailing_data: vec![],
+        },
+        base_source: None,
+        line_type: 0,
+        routing: 0,
+        control_points: vec![],
+        begin: [reference_bbox.x_min, reference_bbox.y_max],
+        end: [reference_bbox.x_max, reference_bbox.y_min],
+        geometry_bbox: other_bbox,
+        reference_bbox,
+        raw_setting: 0,
+        pen_name_id: None,
+        legacy_pen_source: None,
+        pen_settings_id: None,
+        path_data: vec![],
+        style: ShapeStyle {
+            width: f32::from_bits(0x4111_de6a),
+            ..ShapeStyle::default()
+        },
+    }
+}
+
+fn line_source() -> ColorPaintSource {
+    let mut source = source(&[0.0, 1.0]);
+    source.outline_color_type = Some(1);
+    source.property_flags = 0;
+    source
+}
+
+pub(in crate::render) fn hf02_line_with_gradient() -> NativeLine {
+    let mut line = line(BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    });
+    line.style.paint = ShapePaint::Gradient;
+    line.style.paint_source = Some(ShapePaintSource::Color(line_source()));
+    line
+}
+
+#[test]
+fn line_linear_gradient_uses_native_reference_bbox_not_other_saved_bounds() {
+    // V21's actual Skia CreateLinear arguments pin these endpoint words and
+    // the HF02 reference RectF. Its paint is synthetic, so this locks frame
+    // selection rather than saved-archive appearance or native pixel parity.
+    let frame = BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    };
+    let line = line(frame);
+    let plan = Plan::for_line(&line, &line_source()).unwrap();
+    let Geometry::Linear(points) = plan.geometry else {
+        panic!("type-8 outline must use linear geometry");
+    };
+    assert_eq!(
+        points.map(|point| point.map(f32::to_bits)),
+        [[0x42c34a24, 0x43fbb093], [0x435e8b75, 0x43fbb093]]
+    );
+    assert_eq!(plan.stops.len(), 2);
+}
+
+#[test]
+fn line_linear_gradient_is_independent_of_endpoint_direction() {
+    let frame = BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    };
+    let mut line = line(frame);
+    let source = line_source();
+    let Geometry::Linear(forward) = Plan::for_line(&line, &source).unwrap().geometry else {
+        unreachable!();
+    };
+    std::mem::swap(&mut line.begin, &mut line.end);
+    let Geometry::Linear(reversed) = Plan::for_line(&line, &source).unwrap().geometry else {
+        unreachable!();
+    };
+    assert_eq!(
+        forward.map(|point| point.map(f32::to_bits)),
+        reversed.map(|point| point.map(f32::to_bits))
+    );
+}
+
+#[test]
+fn line_gradient_keeps_unproven_frames_and_styles_on_fallback() {
+    let frame = BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    };
+    let source = line_source();
+    let mut line = line(frame);
+    line.metadata.rotation_degrees = Some(1.0);
+    assert!(matches!(
+        Plan::for_line(&line, &source),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    line.metadata.rotation_degrees = None;
+    let mut rotatable = source.clone();
+    rotatable.property_flags = 1;
+    assert!(matches!(
+        Plan::for_line(&line, &rotatable),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    line.style.end_arrow = [1, 1];
+    assert!(matches!(
+        Plan::for_line(&line, &source),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    line.style.end_arrow = [0; 2];
+    line.reference_bbox.x_max = line.reference_bbox.x_min;
+    assert!(matches!(
+        Plan::for_line(&line, &source),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
 }
 
 #[test]
