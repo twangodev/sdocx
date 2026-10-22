@@ -176,6 +176,26 @@ impl PartialEq for FountainV17RainbowRenderProfile {
 }
 impl Eq for FountainV17RainbowRenderProfile {}
 
+/// Explicit uniform output scale for the Fountain V17 output-profile route.
+/// The caller must apply this same scale, plus translation, from page units to
+/// output pixels. The renderer never infers a scale from page or viewport size.
+/// This option affects only strokes admitted by an explicit
+/// [`FountainV17RainbowRenderProfile`]; other Fountain paths ignore it.
+/// Nonfinite, nonpositive, or unrepresentable derived values use generic
+/// whole-stroke fallback before SVG/PDF markers are registered.
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FountainV17OutputScaleProfile {
+    /// Uniform output pixels per page unit.
+    pub pixels_per_page_unit: f32,
+}
+impl PartialEq for FountainV17OutputScaleProfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.pixels_per_page_unit.to_bits() == other.pixels_per_page_unit.to_bits()
+    }
+}
+impl Eq for FountainV17OutputScaleProfile {}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -197,6 +217,10 @@ pub struct RenderOptions {
     /// `None` retains the existing Fountain paint path.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v17_rainbow_profile: Option<FountainV17RainbowRenderProfile>,
+    /// Optional output-scale-aware coverage for the explicit Fountain V17
+    /// rainbow route. `None` preserves canonical page-unit geometry.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -679,6 +703,7 @@ impl DocumentTextCache {
             options.chinesebrush_profile,
             options.chinesebrush_fwidth_output_profile,
             options.fountain_v17_rainbow_profile.as_ref(),
+            options.fountain_v17_output_scale_profile,
             options.pencil3_profile,
             slice,
             observer,
@@ -1112,6 +1137,7 @@ fn render_page_contents_svg(
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
+    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1173,6 +1199,7 @@ fn render_page_contents_svg(
         chinesebrush_profile,
         chinesebrush_fwidth_output_profile,
         fountain_v17_rainbow_profile,
+        fountain_v17_output_scale_profile,
         pencil3_profile,
         slice,
     };
@@ -1210,6 +1237,7 @@ struct CompositionContext<'a> {
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
+    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 }
@@ -1276,6 +1304,7 @@ fn render_object(
                 context.chinesebrush_profile,
                 context.chinesebrush_fwidth_output_profile,
                 context.fountain_v17_rainbow_profile,
+                context.fountain_v17_output_scale_profile,
                 context.pencil3_profile,
                 context.slice,
             );
@@ -3438,6 +3467,7 @@ fn render_stroke(
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
+    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 ) {
@@ -3454,6 +3484,8 @@ fn render_stroke(
                 && rendering.properties.rainbow_effect
         })
         && let Some(profile) = fountain_v17_rainbow_profile
+        && fountain_v17_output_scale_profile
+            .is_none_or(|profile| valid_fountain_v17_output_scale(profile.pixels_per_page_unit))
     {
         let paint = crate::ink::prepare_stroke_for_context_with_fountain_v17_rainbow(
             stroke,
@@ -3461,14 +3493,19 @@ fn render_stroke(
             &profile.palette_argb,
             profile.period,
             profile.initial_offset,
+            fountain_v17_output_scale_profile.map(|profile| profile.pixels_per_page_unit),
         );
         if paint.fountain_v17_rgb.is_some() {
             if let Some(index) = replay_index {
                 svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
-                    render_prepared_stroke(svg, &paint, true, slice);
+                    render_prepared_stroke_with_fallback(svg, &paint, true, slice, || {
+                        Some(prepare_context_stroke_with_theme(stroke, theme))
+                    });
                 });
             } else {
-                render_prepared_stroke(svg, &paint, false, slice);
+                render_prepared_stroke_with_fallback(svg, &paint, false, slice, || {
+                    Some(prepare_context_stroke_with_theme(stroke, theme))
+                });
             }
             return;
         }
@@ -3572,15 +3609,11 @@ fn render_stroke(
         }
     }
     let mut paint = if native_allowed {
-        crate::ink::prepare_stroke_for_context(
-            stroke,
-            false,
-            crate::ink::InkRenderContext::CanonicalPage,
-        )
+        prepare_context_stroke_with_theme(stroke, theme)
     } else {
         crate::prepare_stroke(stroke, false)
     };
-    if paint.coverage_mesh.is_none() {
+    if !native_allowed && paint.coverage_mesh.is_none() {
         let native_fountain_default_color = paint.profile == Some("FountainPen")
             && paint.support == crate::ink::InkSupport::Reconstructed
             && stroke.color.is_none()
@@ -3604,6 +3637,42 @@ fn render_stroke(
     } else {
         render_prepared_stroke(svg, &paint, false, slice);
     }
+}
+
+fn prepare_context_stroke_with_theme<'a>(
+    stroke: &'a Stroke,
+    theme: RenderTheme,
+) -> crate::PreparedStroke<'a> {
+    let mut paint = crate::ink::prepare_stroke_for_context(
+        stroke,
+        false,
+        crate::ink::InkRenderContext::CanonicalPage,
+    );
+    if paint.coverage_mesh.is_none() {
+        let native_fountain_default_color = paint.profile == Some("FountainPen")
+            && paint.support == crate::ink::InkSupport::Reconstructed
+            && stroke.color.is_none()
+            && stroke
+                .rendering
+                .as_ref()
+                .and_then(|rendering| rendering.style.color_argb)
+                .is_none();
+        let color = if native_fountain_default_color {
+            Some(Color { r: 0, g: 0, b: 0 })
+        } else {
+            stroke_source_color(stroke)
+        };
+        paint.color = theme.foreground(color);
+    }
+    paint
+}
+
+fn valid_fountain_v17_output_scale(scale: f32) -> bool {
+    if !scale.is_finite() || scale <= 0.0 {
+        return false;
+    }
+    let inverse = 1.0_f32 / scale;
+    inverse.is_finite() && inverse > 0.0
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -3680,6 +3749,7 @@ fn empty_saved_stroke_paint(stroke: &Stroke, theme: RenderTheme) -> crate::Prepa
         ordered_disk_replay: None,
         inkpen2_v9: None,
         fountain_v17_rgb: None,
+        fountain_v17_output_scale: None,
         dot_directions: None,
         rect_stamp: None,
         coverage_mesh: None,
@@ -4187,11 +4257,25 @@ fn render_prepared_stroke(
     replay: bool,
     slice: Option<PageSlice>,
 ) {
+    render_prepared_stroke_with_fallback(svg, paint, replay, slice, || None);
+}
+
+fn render_prepared_stroke_with_fallback<'a>(
+    svg: &mut Scene,
+    paint: &crate::PreparedStroke<'a>,
+    replay: bool,
+    slice: Option<PageSlice>,
+    fallback: impl FnOnce() -> Option<crate::PreparedStroke<'a>>,
+) {
     let color = &paint.color;
     if oblique::render(svg, paint, replay) {
         return;
     }
     if fountain::render(svg, paint, replay, slice) {
+        return;
+    }
+    if let Some(fallback) = fallback() {
+        render_prepared_stroke(svg, &fallback, replay, slice);
         return;
     }
     let mut invalid_ordered_replay = false;
@@ -4453,7 +4537,7 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile,
+        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, FountainV17OutputScaleProfile,
         FountainV17RainbowRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
         RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
         prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
@@ -9049,13 +9133,13 @@ mod tests {
         stroke.rendering.as_mut().unwrap().properties.rainbow_effect = true;
         let mut page = page_with_uncolored_stroke();
         page.objects = vec![stroke.into()];
-        let document = document(page);
+        let fountain_document = document(page);
 
-        let generic = render_document_svg(&document, &RenderOptions::default())
+        let generic = render_document_svg(&fountain_document, &RenderOptions::default())
             .remove(0)
             .svg;
         let invalid = render_document_svg(
-            &document,
+            &fountain_document,
             &RenderOptions {
                 fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
                     palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
@@ -9072,6 +9156,129 @@ mod tests {
             "invalid explicit values use whole-stroke fallback"
         );
 
+        let output_scale_one = render_document_svg(
+            &fountain_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: 1.0,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        let unscaled_explicit = render_document_svg(
+            &fountain_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(output_scale_one, unscaled_explicit);
+
+        let invalid_output_scale = render_document_svg(
+            &fountain_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: f32::NAN,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(invalid_output_scale, generic);
+        let mut wide_stroke = fountain_color_stroke("18;0;100;");
+        wide_stroke.pen_width = 20.0;
+        wide_stroke.rendering.as_mut().unwrap().style.pen_size = Some(20.0);
+        wide_stroke
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        let wide_prepared = crate::ink::prepare_stroke_for_context_with_fountain_v17_rainbow(
+            &wide_stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+            &[0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+            3,
+            0.125,
+            None,
+        );
+        assert!(
+            wide_prepared
+                .dot_radii
+                .as_ref()
+                .unwrap()
+                .iter()
+                .any(|radius| *radius > 1.0)
+        );
+        let mut wide_page = page_with_uncolored_stroke();
+        wide_page.objects = vec![wide_stroke.into()];
+        let wide_document = document(wide_page);
+        let wide_generic = render_document_svg(&wide_document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let overflowing_derived_scale = render_document_svg(
+            &wide_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: f32::MAX,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(overflowing_derived_scale, wide_generic);
+
+        let mut ordinary = fountain_color_stroke("18;0;100;");
+        ordinary
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = false;
+        let mut ordinary_page = page_with_uncolored_stroke();
+        ordinary_page.objects = vec![ordinary.into()];
+        let ordinary_document = document(ordinary_page);
+        let ordinary_default = render_document_svg(&ordinary_document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let ordinary_scaled = render_document_svg(
+            &ordinary_document,
+            &RenderOptions {
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: 4.0,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(ordinary_scaled, ordinary_default);
+
         let options = RenderOptions {
             fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
                 palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
@@ -9080,7 +9287,9 @@ mod tests {
             }),
             ..RenderOptions::default()
         };
-        let actual = render_document_svg(&document, &options).remove(0).svg;
+        let actual = render_document_svg(&fountain_document, &options)
+            .remove(0)
+            .svg;
         let xml = roxmltree::Document::parse(&actual).unwrap();
         let colors = xml
             .descendants()
@@ -9096,8 +9305,8 @@ mod tests {
                 .any(|node| node.has_tag_name("radialGradient"))
         );
 
-        let layout = layout_document(&document);
-        let replay = super::render_layout_page_replay_svg(&document, &layout, 0, &options)
+        let layout = layout_document(&fountain_document);
+        let replay = super::render_layout_page_replay_svg(&fountain_document, &layout, 0, &options)
             .unwrap()
             .svg;
         let replay_xml = roxmltree::Document::parse(&replay).unwrap();
@@ -9110,9 +9319,12 @@ mod tests {
 
         #[cfg(feature = "pdf")]
         {
-            let bytes =
-                crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
-                    .unwrap();
+            let bytes = crate::render_document_pdf(
+                &fountain_document,
+                &options,
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
             let pdf = lopdf::Document::load_mem(&bytes).unwrap();
             assert_eq!(pdf.get_pages().len(), 1);
             let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
@@ -9172,8 +9384,13 @@ mod tests {
             .as_object_mut()
             .unwrap()
             .remove("fountain_v17_rainbow_profile");
+        legacy
+            .as_object_mut()
+            .unwrap()
+            .remove("fountain_v17_output_scale_profile");
         let restored: RenderOptions = serde_json::from_value(legacy).unwrap();
         assert!(restored.fountain_v17_rainbow_profile.is_none());
+        assert!(restored.fountain_v17_output_scale_profile.is_none());
         let profile = FountainV17RainbowRenderProfile {
             palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
             period: 3,
@@ -9182,6 +9399,12 @@ mod tests {
         let restored: FountainV17RainbowRenderProfile =
             serde_json::from_value(serde_json::to_value(&profile).unwrap()).unwrap();
         assert_eq!(restored, profile);
+        let output_scale = FountainV17OutputScaleProfile {
+            pixels_per_page_unit: 2.0,
+        };
+        let restored: FountainV17OutputScaleProfile =
+            serde_json::from_value(serde_json::to_value(output_scale).unwrap()).unwrap();
+        assert_eq!(restored, output_scale);
     }
 
     #[cfg(feature = "serde")]

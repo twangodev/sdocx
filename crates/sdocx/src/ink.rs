@@ -251,8 +251,9 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
     palette_argb: &[u32],
     period: i32,
     offset: f32,
+    output_scale: Option<f32>,
 ) -> PreparedStroke<'a> {
-    prepare_stroke_inner(
+    let mut prepared = prepare_stroke_inner(
         stroke,
         false,
         Some(context),
@@ -261,7 +262,11 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
             period,
             offset,
         }),
-    )
+    );
+    if prepared.fountain_v17_rgb.is_some() {
+        prepared.fountain_v17_output_scale = output_scale;
+    }
+    prepared
 }
 
 /// Reconstruct the typed Oblique V4 geometry for an explicit saved/runtime
@@ -355,6 +360,9 @@ pub struct PreparedStroke<'a> {
     /// Per-stamp Fountain V17 RGB from an explicit output profile.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub(crate) fountain_v17_rgb: Option<Vec<[f32; 3]>>,
+    /// Explicit output scale for the admitted Fountain V17 route only.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub(crate) fountain_v17_output_scale: Option<f32>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_directions: Option<Vec<crate::Point>>,
@@ -571,6 +579,7 @@ fn prepare_stroke_inner<'a>(
         ordered_disk_replay,
         inkpen2_v9: None,
         fountain_v17_rgb,
+        fountain_v17_output_scale: None,
         dot_directions,
         rect_stamp,
         coverage_mesh,

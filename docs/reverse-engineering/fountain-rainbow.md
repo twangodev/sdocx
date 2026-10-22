@@ -2,7 +2,8 @@
 
 The experiment scripts cited here are archived at Git revision `40de721`.
 The SDK exposes an opt-in `FountainV17RainbowRenderProfile` for saved AS18
-variable-width stylus strokes at canonical scale. Callers supply the palette,
+variable-width stylus strokes at canonical scale, or a declared uniform scale
+with `FountainV17OutputScaleProfile`. Callers supply the palette,
 period and initial offset; these are not inferred from archive metadata.
 The default remains generic fallback for rainbow strokes. See
 [native geometry checks](../../conformance/README.md#native-geometry-checks)
@@ -170,11 +171,15 @@ lookup/reuse, and live V17-to-tip handoff
 remain outside this fixture's evidence.
 
 The Rust implementation checks 48 output-stamp RGB triples against a captured
-native right-angle redraw, including terminal color reuse. Canonical SVG keeps
-its fractional-RGB gradients unchanged. Retained PDF uses ordered circle paths
-for the explicit profile's full-coverage branch (native radius at least 0.5),
-with fractional RGB and saved alpha applied once. Thin or over-budget strokes
-keep the gradient transport. Five matched RTV6/Mesa controls cover the 48-stamp
+native right-angle redraw, including terminal color reuse. Without an output-scale
+profile, canonical SVG keeps its fractional-RGB gradients unchanged. An explicit
+profile adjusts the antialias fringe to the declared pixels per page unit.
+Paired public SDK SVG exports match native support at scales 1, 2 and 4, with
+RGB MAE 3.68, 2.19 and 1.07; PDF core radii remain fixed in page units.
+Retained PDF uses ordered circle paths for the explicit profile's full-coverage
+branch (native device-space radius at least 0.5 pixels), with fractional RGB
+and saved alpha applied once. Partial-coverage or over-budget strokes keep
+the gradient transport. Five matched RTV6/Mesa controls cover the 48-stamp
 frame, three fractional translations and ARGB128 alpha: PDF support IoU is
 0.983–1.000 and native-support RGB MAE is 2.9–5.2 levels in the two pinned
 readers, versus 31–37 for the matched opaque radial-shading controls.

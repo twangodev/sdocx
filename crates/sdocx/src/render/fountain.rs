@@ -47,6 +47,8 @@ struct V16Plan {
     stamps: Vec<V16Stamp>,
     y_bounds: Option<(f64, f64)>,
     #[cfg(feature = "pdf")]
+    inverse_scale: f32,
+    #[cfg(feature = "pdf")]
     bounds: Option<crate::BoundingBox>,
 }
 
@@ -294,6 +296,18 @@ impl V16Plan {
             return None;
         }
         let color = parse_rgb(&paint.color)?;
+        let inverse_scale = if let Some(scale) = paint.fountain_v17_output_scale {
+            if !scale.is_finite() || scale <= 0.0 {
+                return None;
+            }
+            let inverse = 1.0_f32 / scale;
+            if !inverse.is_finite() || inverse <= 0.0 {
+                return None;
+            }
+            inverse
+        } else {
+            1.0_f32
+        };
         let stamp_rgb = paint.fountain_v17_rgb.as_deref();
         if stamp_rgb.is_some_and(|colors| {
             colors.len() != paint.points.len()
@@ -328,15 +342,17 @@ impl V16Plan {
             if !radius.is_finite() || radius <= 0. {
                 return None;
             }
-            let rx = radius / 1.0_f32;
-            let ry = radius / 1.0_f32;
+            let rx = radius / inverse_scale;
+            let ry = radius / inverse_scale;
             let minimum = rx.min(ry);
             let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
             let alpha = 1.0 / factor;
-            let extent_x = rx * factor.max(1.0) + 0.5;
-            let extent_y = ry * factor.max(1.0) + 0.5;
-            let maximum = extent_x.max(extent_y);
+            let extent_device_x = rx * factor.max(1.0) + 0.5;
+            let extent_device_y = ry * factor.max(1.0) + 0.5;
+            let maximum = extent_device_x.max(extent_device_y);
             let inner = 0.5 * (maximum - 1.0) / maximum;
+            let extent_x = extent_device_x * inverse_scale;
+            let extent_y = extent_device_y * inverse_scale;
             let x = point.x as f32;
             let y = point.y as f32;
             if !x.is_finite()
@@ -344,6 +360,12 @@ impl V16Plan {
                 || !extent_x.is_finite()
                 || !extent_y.is_finite()
                 || !inner.is_finite()
+                || !alpha.is_finite()
+                || !(0.0..=1.0).contains(&alpha)
+                || extent_x <= 0.0
+                || extent_y <= 0.0
+                || !maximum.is_finite()
+                || maximum < 1.0
             {
                 return None;
             }
@@ -397,6 +419,8 @@ impl V16Plan {
             stamps,
             y_bounds,
             #[cfg(feature = "pdf")]
+            inverse_scale,
+            #[cfg(feature = "pdf")]
             bounds: field_bounds,
         })
     }
@@ -413,11 +437,14 @@ impl V16Plan {
                     return None;
                 }
                 let coverage = f32::from_bits(stamp.gradient_key.alpha);
-                if coverage != 1.0 || stamp.extent_x < 1.0 {
+                if coverage != 1.0 || stamp.extent_x < self.inverse_scale {
                     return None;
                 }
                 let [red, green, blue] = stamp.gradient_key.rgb?;
-                let radius = stamp.extent_x - 0.5;
+                let radius = stamp.extent_x - 0.5 * self.inverse_scale;
+                if !radius.is_finite() || radius < 0.0 {
+                    return None;
+                }
                 Some([
                     stamp.x,
                     stamp.y,
@@ -581,6 +608,15 @@ mod tests {
     }
 
     fn v16_scene(stamps: &[(f64, f64, f64)], opacity: f64, replay: bool) -> String {
+        v16_scene_with_output_scale(stamps, opacity, replay, None)
+    }
+
+    fn v16_scene_with_output_scale(
+        stamps: &[(f64, f64, f64)],
+        opacity: f64,
+        replay: bool,
+        output_scale: Option<f32>,
+    ) -> String {
         let reference: serde_json::Value =
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap();
@@ -603,9 +639,108 @@ mod tests {
         });
         paint.color = "#1a1a1a".into();
         paint.opacity = opacity;
+        paint.fountain_v17_output_scale = output_scale;
         let mut svg = Scene::new(Svg::new().width(64).height(64));
         assert!(render(&mut svg, &paint, replay, None));
         svg.finish()
+    }
+
+    #[test]
+    fn explicit_output_scale_uses_native_f32_device_geometry_and_keeps_pdf_radius() {
+        let make_plan = |scale, radius| {
+            let reference: serde_json::Value =
+                serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                    .unwrap();
+            let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+            let mut paint = crate::prepare_stroke(&stroke, false);
+            paint.profile = Some("FountainPen");
+            paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }]);
+            paint.dot_radii = Some(vec![radius]);
+            paint.dot_directions = None;
+            paint.bounds = Some(BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 64.0,
+                y_max: 64.0,
+            });
+            paint.fountain_v17_rgb = Some(vec![[0.2, 0.4, 0.6]]);
+            paint.fountain_v17_output_scale = scale;
+            V16Plan::prepare(&paint).unwrap()
+        };
+        for (scale, inverse_expected, extent_expected, inner_expected) in [
+            (1.0_f32, 1.0_f32, 2.5_f32, 0.3_f32),
+            (2.0_f32, 0.5_f32, 2.25_f32, 0.388_888_9_f32),
+            (4.0_f32, 0.25_f32, 2.125_f32, 0.441_176_47_f32),
+        ] {
+            let plan = make_plan(Some(scale), 2.0);
+            assert_eq!((1.0_f32 / scale).to_bits(), inverse_expected.to_bits());
+            let stamp = plan.stamps[0];
+            assert_eq!(stamp.extent_x.to_bits(), extent_expected.to_bits());
+            assert_eq!(stamp.extent_y.to_bits(), extent_expected.to_bits());
+            assert_eq!(
+                stamp.gradient_key.inner,
+                inner_expected.to_bits(),
+                "device-space inner stop at {scale} px/page-unit"
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let record = plan.radial_circle_records().unwrap()[0];
+                assert_eq!(record[2].to_bits(), 2.0_f32.to_bits());
+                assert_eq!(record[3].to_bits(), 2.0_f32.to_bits());
+            }
+        }
+        let canonical = make_plan(None, 2.0);
+        let explicit_one = make_plan(Some(1.0), 2.0);
+        assert_eq!(
+            canonical.stamps[0].x.to_bits(),
+            explicit_one.stamps[0].x.to_bits()
+        );
+        assert_eq!(
+            canonical.stamps[0].extent_x.to_bits(),
+            explicit_one.stamps[0].extent_x.to_bits()
+        );
+        assert_eq!(
+            canonical.stamps[0].gradient_key,
+            explicit_one.stamps[0].gradient_key
+        );
+        assert_eq!(
+            v16_scene_with_output_scale(&[(32.25, 31.75, 2.0)], 1.0, false, None),
+            v16_scene_with_output_scale(&[(32.25, 31.75, 2.0)], 1.0, false, Some(1.0))
+        );
+        let thin_high_zoom = make_plan(Some(4.0), 0.25);
+        let thin_record = thin_high_zoom.radial_circle_records().unwrap()[0];
+        assert_eq!(thin_record[2].to_bits(), 0.25_f32.to_bits());
+        assert_eq!(thin_record[3].to_bits(), 0.25_f32.to_bits());
+    }
+
+    #[test]
+    fn invalid_output_scale_or_derived_geometry_rejects_the_whole_plan() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let mut paint = crate::prepare_stroke(&stroke, false);
+        paint.profile = Some("FountainPen");
+        paint.points = Cow::Owned(vec![Point { x: 32.0, y: 32.0 }]);
+        paint.dot_radii = Some(vec![2.0]);
+        paint.dot_directions = None;
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 64.0,
+            y_max: 64.0,
+        });
+        paint.fountain_v17_rgb = Some(vec![[0.2, 0.4, 0.6]]);
+        for scale in [f32::NAN, f32::INFINITY, 0.0, -1.0, f32::from_bits(1)] {
+            paint.fountain_v17_output_scale = Some(scale);
+            assert!(V16Plan::prepare(&paint).is_none(), "accepted scale {scale}");
+        }
+        paint.fountain_v17_output_scale = Some(f32::MAX);
+        paint.dot_radii = Some(vec![f64::from(f32::MAX)]);
+        assert!(
+            V16Plan::prepare(&paint).is_none(),
+            "accepted overflowed extents"
+        );
     }
 
     #[cfg(feature = "pdf")]
@@ -1242,6 +1377,7 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
+                None,
                 None,
                 None,
                 None,
