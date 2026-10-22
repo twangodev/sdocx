@@ -363,6 +363,178 @@ fn first_ten_and_singleton_ignore_only_unconsumed_positions() {
 }
 
 #[test]
+fn outline_copy_sorts_all_stops_before_applying_the_native_ten_stop_cap() {
+    let many = source(&[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]);
+    let original = many.clone();
+    let normalized = normalize_outline_stops(&many).unwrap();
+    assert_eq!(
+        normalized
+            .iter()
+            .map(|stop| stop.position.value())
+            .collect::<Vec<_>>(),
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
+    );
+    assert_eq!(normalized[0].argb, many.stops[10].argb);
+    assert_eq!(many, original);
+
+    let mut capped_positions = vec![0.0; 10];
+    capped_positions.push(1.0);
+    let mut capped = source(&capped_positions);
+    for stop in &mut capped.stops[..10] {
+        stop.argb = 0xff12_3456;
+    }
+    capped.stops[10].argb = 0xff65_4321;
+    assert_eq!(
+        project_outline_stops(&capped).unwrap(),
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff12_3456,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff12_3456,
+            },
+        ]
+    );
+}
+
+#[test]
+fn outline_copy_rejects_only_conflicting_ties_that_reach_the_consumed_prefix() {
+    let crossing = source(&[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.0, 0.0]);
+    assert!(matches!(
+        normalize_outline_stops(&crossing),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+
+    let beyond = source(&[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, 0.0]);
+    assert!(normalize_outline_stops(&beyond).is_ok());
+
+    let mut identical = source(&[0.0, 0.0, 1.0]);
+    identical.stops[1].argb = identical.stops[0].argb;
+    let normalized = normalize_outline_stops(&identical).unwrap();
+    assert_eq!(normalized.len(), 3);
+    assert_eq!(normalized[1].argb, normalized[2].argb);
+
+    let mut signed_zero = source(&[-0.0, 0.0, 1.0]);
+    signed_zero.stops[1].argb = signed_zero.stops[0].argb;
+    let normalized = normalize_outline_stops(&signed_zero).unwrap();
+    assert_eq!(normalized.len(), 3);
+    assert_eq!(
+        normalized[1].position.value().to_bits(),
+        (-0.0_f32).to_bits()
+    );
+    assert_eq!(normalized[2].position.value().to_bits(), 0.0_f32.to_bits());
+    signed_zero.stops[1].argb ^= 1;
+    assert!(matches!(
+        normalize_outline_stops(&signed_zero),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+}
+
+#[test]
+fn outline_copy_validates_every_wire_stop_and_preserves_singleton_behavior() {
+    let mut invalid_tail = source(&[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, f32::NAN]);
+    assert!(matches!(
+        normalize_outline_stops(&invalid_tail),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+    invalid_tail.stops.truncate(1);
+    invalid_tail.stops[0].position = PaintFloat32::from_bits(f32::NAN.to_bits());
+    assert_eq!(
+        normalize_outline_stops(&invalid_tail).unwrap(),
+        invalid_tail.stops
+    );
+
+    let too_many = source(&vec![0.5; 256]);
+    assert!(matches!(
+        normalize_outline_stops(&too_many),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+    assert!(matches!(
+        normalize_outline_stops(&source(&[])),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+}
+
+#[test]
+fn ascending_line_source_projects_the_native_descending_copy_as_red() {
+    let mut ascending = line_source();
+    ascending.stops[0].argb = 0xffff_0000;
+    ascending.stops[0].position = PaintFloat32::from_bits(0.0_f32.to_bits());
+    ascending.stops[1].argb = 0xff00_00ff;
+    ascending.stops[1].position = PaintFloat32::from_bits(1.0_f32.to_bits());
+    let original = ascending.clone();
+    let projected = project_outline_stops(&ascending).unwrap();
+    assert_eq!(
+        projected,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000
+            },
+        ]
+    );
+    assert_eq!(ascending, original);
+
+    let mut line = line(BoundingBox {
+        x_min: 97.64480590820312,
+        y_min: 434.66650390625,
+        x_max: 222.5447540283203,
+        y_max: 572.0924682617188,
+    });
+    line.style.paint = ShapePaint::Gradient;
+    line.style.paint_source = Some(ShapePaintSource::Color(ascending.clone()));
+    assert_eq!(Plan::for_line(&line, &ascending).unwrap().stops, projected);
+}
+
+#[test]
+fn shape_outline_uses_the_shared_descending_copy_but_fill_keeps_wire_order() {
+    let shape = shape();
+    let mut fill = source(&[0.0, 1.0]);
+    fill.stops[0].argb = 0xffff_0000;
+    fill.stops[1].argb = 0xff00_00ff;
+    let fill_plan = Plan::for_shape(&shape, &fill, PaintRole::Fill, None).unwrap();
+    assert_eq!(
+        fill_plan.stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff00_00ff,
+            },
+        ]
+    );
+
+    let mut outline = fill.clone();
+    outline.outline_color_type = Some(1);
+    outline.property_flags = 0;
+    let original = outline.clone();
+    let outline_plan = Plan::for_shape(&shape, &outline, PaintRole::Outline, None).unwrap();
+    assert_eq!(
+        outline_plan.stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
+    assert_eq!(outline, original);
+}
+
+#[test]
 fn descending_stops_project_only_when_last_positive_span_covers_full_range() {
     // V13 native synthetic-effect capture used blue@1 followed by red@0.
     // Endpoint extension yields blue@0, blue@1, red@0, red@1. The V13

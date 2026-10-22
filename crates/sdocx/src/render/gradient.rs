@@ -92,7 +92,7 @@ impl Plan {
         }
         Ok(Self {
             geometry: Geometry::Linear(points),
-            stops: project_stops(source)?,
+            stops: project_outline_stops(source)?,
             element_rotation: None,
         })
     }
@@ -142,7 +142,10 @@ impl Plan {
         {
             return Err(PaintDiagnosticKind::UnrepresentableGradient);
         }
-        let stops = project_stops(source)?;
+        let stops = match role {
+            PaintRole::Fill => project_stops(source)?,
+            PaintRole::Outline => project_outline_stops(source)?,
+        };
         let rotate = |point| {
             rotate_point(
                 point,
@@ -311,6 +314,79 @@ fn project_stops(source: &ColorPaintSource) -> Result<Vec<ProjectedStop>, PaintD
         return Err(PaintDiagnosticKind::InvalidGradient);
     }
     Ok(stops)
+}
+
+/// Drawing's type-6 line-color copy path stores outline stops in descending
+/// position order before its ten-stop consumer runs. Type-7 shape outlines use
+/// that same copy path; fills have different semantics and remain source-order.
+fn project_outline_stops(
+    source: &ColorPaintSource,
+) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
+    let stops = normalize_outline_stops(source)?;
+    let mut normalized = source.clone();
+    normalized.stops = stops;
+    project_stops(&normalized)
+}
+
+fn normalize_outline_stops(
+    source: &ColorPaintSource,
+) -> Result<Vec<crate::GradientStopSource>, PaintDiagnosticKind> {
+    if source.stops.len() > usize::from(u8::MAX) {
+        return Err(PaintDiagnosticKind::InvalidGradient);
+    }
+    if source.stops.is_empty() {
+        return Err(PaintDiagnosticKind::InvalidGradient);
+    }
+    if source.stops.len() == 1 {
+        // The native singleton factory duplicates its color and ignores its
+        // position; retain the existing behavior for this proven special case.
+        return Ok(source.stops.clone());
+    }
+
+    for stop in &source.stops {
+        let position = stop.position.value();
+        if !position.is_finite() || !(0.0..=1.0).contains(&position) {
+            return Err(PaintDiagnosticKind::InvalidGradient);
+        }
+    }
+
+    let mut order = (0..source.stops.len()).collect::<Vec<_>>();
+    order.sort_by(|left, right| {
+        source.stops[*right]
+            .position
+            .value()
+            .partial_cmp(&source.stops[*left].position.value())
+            .expect("all line stop positions were validated as finite")
+    });
+
+    // Equal-position ordering is not pinned. If differently colored tied
+    // stops could enter the native ten-stop prefix, fail closed rather than
+    // invent a tie-break. Identical colors and ties wholly beyond the prefix
+    // retain their original multiplicity/order.
+    let consumed = order.len().min(10);
+    let mut start = 0;
+    while start < consumed {
+        let position = source.stops[order[start]].position.value();
+        let mut end = start + 1;
+        while end < order.len() && source.stops[order[end]].position.value() == position {
+            end += 1;
+        }
+        if end > start + 1 {
+            let color = source.stops[order[start]].argb;
+            if order[start..end]
+                .iter()
+                .any(|index| source.stops[*index].argb != color)
+            {
+                return Err(PaintDiagnosticKind::InvalidGradient);
+            }
+        }
+        start = end;
+    }
+
+    Ok(order
+        .into_iter()
+        .map(|index| source.stops[index].clone())
+        .collect())
 }
 
 const ROTATION_GATE: f32 = f32::from_bits(0x34000000);

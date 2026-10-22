@@ -489,9 +489,14 @@ Opaque/noncanonical records and trailing bytes remain unsupported. The parser
 marks canonical nonempty linear/radial records as `ShapePaint::Gradient`;
 zero-stop records retain unsupported raw paint and parser warnings.
 
-Only the first ten stops feed drawing. A singleton becomes uniform paint
-without consuming its position. Multiple consumed positions must be finite,
-in `[0,1]`. Nondecreasing stops retain duplicates and order through endpoint
+Outline loading copies every saved stop through `AppendGradientColor`, which
+sorts the full list by descending position; Drawing copies it again before
+taking ten stops. This applies to shape and line outlines. Rust derives that
+consumed order without modifying the source. Conflicting equal-position colors
+that could enter the prefix remain diagnosed because native tie order is unproven.
+Multiple outline positions must all be finite and in `[0,1]`; fill projection
+validates its first ten source-order stops. A singleton becomes uniform paint
+without consuming its position. Nondecreasing stops retain duplicates through endpoint
 extension and 16.16 quantization. Descending stops project only when their last
 increasing span covers the full range and overwrites earlier cache entries;
 partial overlaps remain rejected. Stops beyond ten remain preserved and do not
