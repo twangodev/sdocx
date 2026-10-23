@@ -404,8 +404,15 @@ alpha error of 7.868% → 3.777% in resvg 0.47 and 8.124% → 4.117% in Chromium
 94.993% → 93.027%, respectively; summed alpha is 2.978% / 3.383% below the
 native reference. Sampling differences and cache freshness remain unresolved.
 The full-page SVG grows from 11.6 MB to 33.1 MB and PDF from 42.3 MB to
-67.6 MB; both PDFs contain zero image objects. This checks vector transport,
-not a paired native PDF appearance match. Default output is unchanged.
+67.6 MB; both PDFs contain zero image objects. Transparent cropped PDFs
+rendered by MuPDF at 1× have worse alpha error against the same cache:
+9.943% for canonical paint versus 24.515% for the profile. On a 103-stamp
+control, PDF-versus-SVG error drops from 10.592% at 1× to 1.41% after an
+8× diagnostic render is area-averaged down. This points mainly to small-mark
+sampling and nested-mask rasterization; it does not justify a global width or
+opacity adjustment. A vector formulation with fewer mask layers is under
+investigation. No paired native PDF appearance match is established.
+Default output is unchanged.
 
 ### PDF appearance check
 
