@@ -205,12 +205,23 @@ active-pixel RGB MAE is 5.61/6.54 at 0°/30°; MuPDF is 5.50/7.02 after
 accounting for its realized page-background color. Antialiasing, gradient-cache
 sampling and PDF color conversion remain visible residuals, not pixel parity.
 
-For linear stops, the bounded line projection admits a descending pair when
-both colors are opaque. It models the native cache's endpoint extension,
-skipped reversed middle interval, and final low-stop span overwrite at the
-Q16.16 cache index. Other stop counts retain the existing projection, and
-partial-alpha descending pairs retain its fail-closed behavior. The pair
-witness does not establish device-pixel parity for those cases.
+For linear stops, the bounded line projection admits descending two-stop
+pairs with any stop alpha. The four `.75`/`.5` native controls in
+`/tmp/sdocx-type8-linear-alpha-v1` vary alpha/RGB and retain the same 128/128
+cache split (independent review receipt SHA-256
+`f29d5061bf2435499b17b16239afe7a9bb720ee86278388bdd31301c47046d43`). Their
+loop's span boundaries depend on Q16.16 positions, not alpha; the projection
+models endpoint extension, the skipped reversed interval and final low-stop
+overwrite. Bucket zero follows the pinned loop derivation but was not directly
+captured for linear paint. On the 30° public SDK frames composited over the
+exact `#fcfcfc` page background, source-aligned RGB MAE over the active union
+is 5.23, 2.67, 1.98 and 2.06 for half-red/opaque-blue, half-red/quarter-blue,
+zero-red/quarter-blue and nonprimary-half/quarter-blue. MuPDF 1.28.2 gives
+6.04, 3.16, 2.29 and 2.53 over the same active union after compositing native
+pixels onto its verified realized page background; each PDF contains linear
+shadings and no image XObjects. Reader sampling and color conversion remain
+visible residuals. These controls do not establish arbitrary cache colors or
+device-pixel parity. Other stop counts retain the existing projection.
 
 ### Radial geometry
 

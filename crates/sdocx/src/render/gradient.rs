@@ -368,17 +368,14 @@ fn project_outline_stops(
 /// Project a bounded descending two-stop linear line gradient. The native
 /// cache endpoint-extends the first/last stops, skips the nonpositive middle
 /// span, then lets the final constant-color span overwrite from the low
-/// position's Q16.16 cache bucket. Partial-alpha and longer descending lists
-/// retain the existing projection because this overwrite proof applies to an
-/// opaque pair (the sampled cache stores premultiplied N32 colors).
+/// position's Q16.16 cache bucket. Stop alpha changes cached colors, not the
+/// index/span arithmetic.
 fn project_linear_line_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
     let stops = normalize_outline_stops(source)?;
     if let [high, low] = stops.as_slice()
         && high.position.value() > low.position.value()
-        && high.argb >> 24 == 0xff
-        && low.argb >> 24 == 0xff
     {
         let cache_index = gradient_cache_index(low.position.value());
         if cache_index == 0 {

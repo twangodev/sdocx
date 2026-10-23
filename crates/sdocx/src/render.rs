@@ -7340,6 +7340,147 @@ mod tests {
     }
 
     #[test]
+    fn public_sdk_linear_line_gradient_partial_alpha_controls_are_vector_only() {
+        // Native linear alpha controls use the same descending .75/.5 stops
+        // as the projection test. Optional files are consumed by the offline
+        // source-grid comparator; this test never launches the native oracle.
+        let cases = [
+            ("half-red-opaque-blue", 0x80ff_0000, 0xff00_00ff),
+            ("half-red-quarter-blue", 0x80ff_0000, 0x4000_00ff),
+            ("zero-red-quarter-blue", 0x00ff_0000, 0x4000_00ff),
+            ("nonprimary-half-quarter", 0x8059_21cd, 0x4000_00ff),
+        ];
+        let artifact_dir =
+            std::env::var_os("SDOCX_LINEAR_ALPHA_ARTIFACT_DIR").map(std::path::PathBuf::from);
+        if let Some(directory) = &artifact_dir {
+            std::fs::create_dir_all(directory).unwrap();
+        }
+
+        for (name, low_argb, high_argb) in cases {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            line.metadata.rotation_degrees = Some(30.0);
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("gradient fixture has a color paint source");
+            };
+            source.property_flags = 1;
+            source.stops = vec![
+                crate::GradientStopSource {
+                    argb: low_argb,
+                    position: crate::PaintFloat32::from_bits(0x3f00_0000), // .5
+                },
+                crate::GradientStopSource {
+                    argb: high_argb,
+                    position: crate::PaintFloat32::from_bits(0x3f40_0000), // .75
+                },
+            ];
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let document = document(page);
+            let rendered = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            assert!(rendered.paint_diagnostics.is_empty(), "{name}");
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert!(
+                !xml.descendants().any(|node| node.has_tag_name("image")),
+                "linear alpha control remains vector-only: {name}"
+            );
+            let gradient = xml
+                .descendants()
+                .find(|node| node.has_tag_name("linearGradient"))
+                .expect("public export contains the linear line paint");
+            let stops = gradient
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .collect::<Vec<_>>();
+            assert_eq!(stops.len(), 4, "{name}");
+            assert_eq!(stops[0].attribute("offset"), Some("0"), "{name}");
+            assert_eq!(stops[1].attribute("offset"), Some("0.5"), "{name}");
+            assert_eq!(stops[2].attribute("offset"), Some("0.5"), "{name}");
+            assert_eq!(stops[3].attribute("offset"), Some("1"), "{name}");
+            for (node, argb) in stops.iter().zip([high_argb, high_argb, low_argb, low_argb]) {
+                let expected_color = format!(
+                    "#{:02x}{:02x}{:02x}",
+                    (argb >> 16) as u8,
+                    (argb >> 8) as u8,
+                    argb as u8
+                );
+                assert_eq!(node.attribute("stop-color"), Some(expected_color.as_str()));
+                let opacity = node
+                    .attribute("stop-opacity")
+                    .unwrap_or("1")
+                    .parse::<f64>()
+                    .unwrap();
+                assert!((opacity - f64::from((argb >> 24) as u8) / 255.0).abs() < 1e-12);
+            }
+
+            #[cfg(feature = "pdf")]
+            let pdf_bytes = crate::render_document_pdf(
+                &document,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            #[cfg(feature = "pdf")]
+            {
+                let pdf = lopdf::Document::load_mem(&pdf_bytes).unwrap();
+                let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+                let mut linear_shadings = 0;
+                let mut images = 0;
+                for dictionary in dictionaries {
+                    images += usize::from(
+                        dictionary
+                            .get(b"Subtype")
+                            .and_then(lopdf::Object::as_name)
+                            .ok()
+                            == Some(b"Image".as_slice()),
+                    );
+                    linear_shadings += usize::from(
+                        dictionary
+                            .get(b"ShadingType")
+                            .and_then(lopdf::Object::as_i64)
+                            .ok()
+                            == Some(2),
+                    );
+                }
+                assert_eq!(
+                    images, 0,
+                    "linear alpha control remains vector-only: {name}"
+                );
+                assert!(linear_shadings > 0, "PDF retains linear shading: {name}");
+                if let Some(directory) = &artifact_dir {
+                    let stats = serde_json::json!({
+                        "schema": "sdocx.type8-linear-alpha-pdf-stats.v1",
+                        "linear_shading_objects": linear_shadings,
+                        "image_xobjects": images,
+                    });
+                    std::fs::write(
+                        directory.join(format!("{name}.pdf.stats.json")),
+                        serde_json::to_vec(&stats).unwrap(),
+                    )
+                    .unwrap();
+                }
+            }
+
+            if let Some(directory) = &artifact_dir {
+                std::fs::write(directory.join(format!("{name}.svg")), &rendered.svg).unwrap();
+                let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+                let mut pixmap =
+                    resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                std::fs::write(directory.join(format!("{name}.rgba")), pixmap.data()).unwrap();
+                #[cfg(feature = "pdf")]
+                std::fs::write(directory.join(format!("{name}.pdf")), pdf_bytes).unwrap();
+            }
+        }
+    }
+
+    #[test]
     fn public_radial_line_step_keeps_partial_zero_and_nonprimary_stops_vector_only() {
         let cases = [
             // V35: red alpha 128, blue alpha 255.

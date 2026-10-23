@@ -434,12 +434,62 @@ fn linear_line_opaque_descending_pair_uses_native_cache_bucket_projection() {
         }
     }
 
+    // Partial alpha is admitted for the proven two-stop span rule; longer
+    // descending lists still use the preexisting conservative projection.
     let mut partial = captured_linear_rotation_source();
-    partial.stops[0].argb = 0x80ff_0000;
+    partial.stops.push(GradientStopSource {
+        argb: 0x8000_ff00,
+        position: PaintFloat32::from_bits(0x3e80_0000), // .25
+    });
     assert!(matches!(
         Plan::for_line(&test_line(), &partial),
         Err(PaintDiagnosticKind::InvalidGradient)
     ));
+}
+
+#[test]
+fn linear_line_partial_alpha_descending_pair_uses_native_cache_bucket_projection() {
+    // Four native controls at .75/.5 vary stop alpha and RGB while preserving
+    // the same cache split. Their raw cache words are premultiplied; SVG stops
+    // retain these source ARGB values and carry alpha as stop opacity.
+    for (high_argb, low_argb) in [
+        (0xff00_00ff, 0x80ff_0000),
+        (0x4000_00ff, 0x80ff_0000),
+        (0x4000_00ff, 0x00ff_0000),
+        (0x4000_00ff, 0x8059_21cd),
+    ] {
+        let mut source = captured_linear_rotation_source();
+        source.stops[0] = GradientStopSource {
+            argb: high_argb,
+            position: PaintFloat32::from_bits(0x3f40_0000), // .75
+        };
+        source.stops[1] = GradientStopSource {
+            argb: low_argb,
+            position: PaintFloat32::from_bits(0x3f00_0000), // .5
+        };
+        let projected = Plan::for_line(&test_line(), &source).unwrap().stops;
+        assert_eq!(
+            projected,
+            [
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: high_argb
+                },
+                ProjectedStop {
+                    offset: 0.5,
+                    argb: high_argb
+                },
+                ProjectedStop {
+                    offset: 0.5,
+                    argb: low_argb
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low_argb
+                },
+            ]
+        );
+    }
 }
 
 #[test]
