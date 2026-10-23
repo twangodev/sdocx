@@ -247,12 +247,23 @@ fn is_gray_source_node(node: &Node) -> bool {
                 group.blend_mode(),
                 BlendMode::Normal | BlendMode::Lighten | BlendMode::Multiply
             ) && group.clip_path().is_none()
-                && group.mask().is_none()
+                // A vector mask is a scalar coverage operation: applying it
+                // to this already-gray source keeps the filtered SourceGraphic
+                // gray. The PDF mask renderer lowers its paths and gradients
+                // through the same vector path as ordinary source content.
+                // Keep this admission narrow by requiring the mask tree itself
+                // to be gray/vector-only and recursively rejecting filters.
+                && group.mask().is_none_or(is_vector_gray_mask)
                 && group.filters().is_empty()
                 && group.children().iter().all(is_gray_source_node)
         }
         Node::Image(_) | Node::Text(_) => false,
     }
+}
+
+fn is_vector_gray_mask(mask: &usvg::Mask) -> bool {
+    mask.mask().is_none_or(is_vector_gray_mask)
+        && mask.root().children().iter().all(is_gray_source_node)
 }
 
 fn is_gray_paint(paint: &Paint) -> bool {
@@ -376,6 +387,58 @@ mod tests {
                 .any(|w| w == b"/ShadingType")
         );
         assert!(bytes.windows(b"/Lighten".len()).any(|w| w == b"/Lighten"));
+    }
+
+    #[test]
+    fn lowers_scaled_v14_radial_coverage_mask_without_rasterizing() {
+        let svg = FILTER_SVG
+            .replace(
+                "</defs>",
+                r#"<radialGradient id="edge"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></radialGradient>
+                <mask id="edge-mask" mask-type="luminance" x="-0.1" y="-0.1" width="1.2" height="1.2"><rect width="1" height="1" fill="url(#edge)"/></mask></defs>"#,
+            )
+            .replace(
+                r#"<circle r="1" fill="url(#g0)"/>"#,
+                r#"<g mask="url(#edge-mask)" opacity="0.72"><circle r="1" fill="url(#g0)"/></g>"#,
+            );
+        let tree = tree(&svg);
+        let ink = ink_group(&tree);
+        let mut document = Document::new();
+        let mut page = document.start_page_with(PageSettings::new(
+            krilla::geom::Size::from_wh(64.0, 64.0).unwrap(),
+        ));
+        let mut surface = page.surface();
+        let mut fonts = tree.fontdb().clone();
+        let mut process_context =
+            ProcessContext::new(Arc::make_mut(&mut fonts), SvgSettings::default());
+
+        assert!(
+            try_render(ink, &mut surface, &mut process_context),
+            "the generated V14 scalar radial mask remains in the supported vector subset"
+        );
+        assert!(process_context.error.is_none());
+        surface.finish();
+        page.finish();
+        let bytes = document.finish().unwrap();
+        let pdf = PdfDocument::load_mem(&bytes).unwrap();
+        let image_xobjects = pdf
+            .objects
+            .values()
+            .filter_map(|object| match object {
+                Object::Dictionary(dict) => Some(dict),
+                Object::Stream(stream) => Some(&stream.dict),
+                _ => None,
+            })
+            .filter(|dict| {
+                dict.get(b"Subtype")
+                    .and_then(Object::as_name)
+                    .is_ok_and(|name| name == b"Image")
+            })
+            .count();
+        assert_eq!(image_xobjects, 0, "V14 mask/filter lowering stays vector-only");
+        for token in [b"/Luminosity".as_slice(), b"/ShadingType", b"/Lighten"] {
+            assert!(bytes.windows(token.len()).any(|window| window == token));
+        }
     }
 
     #[test]
