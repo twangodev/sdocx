@@ -306,6 +306,17 @@ their page backgrounds (MuPDF 1.28.2, 96 dpi; comparison receipt SHA-256
 This proves the controlled crop/alpha cases, not saved-object placement,
 border/hint appearance, fill-record transforms or device parity.
 
+A partial-source control exposes an unresolved byte-rounding difference:
+premultiplied source `(16,64,112,127)` with paint alpha 128 produces native
+`(8,32,56,63)`, while the SVG/resvg layer produces `(8,32,56,64)`.
+The SDK PNG-decode control at paint alpha 255 matches the captured buffer
+exactly; the native PNG-loading path has not been exercised here. Compared
+with compositing that captured layer over each measured background, SVG and
+MuPDF differ by up to one and two RGB levels respectively.
+The ignored Rust regression `native_partial_source_alpha_keeps_skia_byte_rounding`
+retains the native expectation; the comparison receipt has SHA-256
+`8d0a0c83bf6f0c61361eddeb97baaea181b30a06942904a55ee21a99d76ed748`.
+
 ## Crop takes precedence over nine-patch
 
 For a nonzero paint alpha and a successfully created source canvas bitmap,

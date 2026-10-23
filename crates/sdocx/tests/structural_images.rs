@@ -1785,16 +1785,68 @@ fn type3_transparency_remains_vector_image_alpha_in_pdf() {
 #[cfg(all(feature = "render", feature = "pdf"))]
 #[test]
 fn type3_transparency_sdk_artifact_triplet_matches_captured_draw_geometry() {
-    const SOURCE: [u8; 4] = [32, 128, 224, 255];
-    let media = uniform_rgba_png(512, 256, SOURCE);
+    check_image_alpha_controls(false);
+}
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+#[test]
+#[ignore = "native Skia partial-source alpha is 63; resvg rounds to 64 (image-effects-findings.md)"]
+fn native_partial_source_alpha_keeps_skia_byte_rounding() {
+    check_image_alpha_controls(true);
+}
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+fn check_image_alpha_controls(include_native_rounding_edge: bool) {
     let artifact_dir =
         std::env::var_os("SDOCX_IMAGE_TRANSPARENCY_ARTIFACT_DIR").map(std::path::PathBuf::from);
-
-    for (label, transparency, expected_alpha) in [
-        ("opaque", 0.0_f32, 255_u8),
-        ("half", 0.5_f32, 127_u8),
-        ("transparent", 1.0_f32, 0_u8),
-    ] {
+    // The two partial-source cases correspond to the V14 native capture:
+    // straight PNG RGBA [32,128,224,127] must decode to premul [16,64,112,127]
+    // before any group-alpha difference is attributed. Native evidence receipt:
+    // /tmp/sdocx-drawimage-transparency-v1/source-alpha-v14-offline-validation.json
+    // SHA-256 eb102facd4db6f9f884cbc2cb92fc8e9c99cf49a04f8e7836394457aec1802bb.
+    let cases = [
+        (
+            "opaque",
+            [32, 128, 224, 255],
+            0.0_f32,
+            255_u8,
+            [32, 128, 224, 255],
+        ),
+        (
+            "half",
+            [32, 128, 224, 255],
+            0.5_f32,
+            127_u8,
+            [16, 64, 112, 127],
+        ),
+        (
+            "transparent",
+            [32, 128, 224, 255],
+            1.0_f32,
+            0_u8,
+            [0, 0, 0, 0],
+        ),
+        (
+            "partial-source-opaque",
+            [32, 128, 224, 127],
+            0.0_f32,
+            255_u8,
+            [16, 64, 112, 127],
+        ),
+        (
+            "partial-source-native-groupalpha",
+            [32, 128, 224, 127],
+            f32::from_bits(0x3efe_feff),
+            128_u8,
+            [8, 32, 56, 63],
+        ),
+    ];
+    let mut captures = Vec::with_capacity(cases.len());
+    for (label, source_rgba, transparency, expected_alpha, expected_native_rgba) in cases {
+        if !include_native_rounding_edge && label == "partial-source-native-groupalpha" {
+            continue;
+        }
+        let media = uniform_rgba_png(512, 256, source_rgba);
         let payload = image_with_transparency(7, transparency);
         let mut document = sdocx::parse_bytes_detailed(&archive(
             &one_page(vec![object(3, &payload, &[])]),
@@ -1827,41 +1879,54 @@ fn type3_transparency_sdk_artifact_triplet_matches_captured_draw_geometry() {
             x_max: 48.0,
             y_max: 32.0,
         };
+        // Keep the normal SDK page background in the public artifacts. A
+        // separately derived layer SVG below removes only that exact paper
+        // rectangle for comparison with the native transparent target.
         document.pages[0].background_color = Some(sdocx::Color {
             r: 252,
             g: 252,
             b: 252,
         });
+        let actual_transparency_bits = image.fill_effect_transparency.to_bits();
         document.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
 
         let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
-        assert_eq!((rendered.width, rendered.height), (48, 32));
         let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
         let svg_image = xml.descendants().find(|node| node.has_tag_name("image"));
-        if expected_alpha == 0 {
-            assert!(svg_image.is_none());
+        let root = xml.root_element();
+        let full_page_rects: Vec<_> = root
+            .children()
+            .filter(|node| node.is_element() && node.has_tag_name("rect"))
+            .filter(|node| {
+                ["x", "y", "width", "height"]
+                    .into_iter()
+                    .zip([0.0_f64, 0.0, 48.0, 32.0])
+                    .all(|(attribute, expected)| {
+                        node.attribute(attribute)
+                            .and_then(|value| value.parse::<f64>().ok())
+                            == Some(expected)
+                    })
+            })
+            .collect();
+        let layer_svg = if full_page_rects.len() == 1 {
+            let range = full_page_rects[0].range();
+            let mut layer = String::with_capacity(rendered.svg.len());
+            layer.push_str(&rendered.svg[..range.start]);
+            layer.push_str(&rendered.svg[range.end..]);
+            Some(layer)
         } else {
-            let svg_image = svg_image.unwrap();
-            let viewport = svg_image.parent().unwrap();
-            assert!(viewport.has_tag_name("svg"));
-            let view_box: svgtypes::ViewBox =
-                viewport.attribute("viewBox").unwrap().parse().unwrap();
-            assert_eq!(
-                [view_box.x, view_box.y, view_box.w, view_box.h],
-                [8.0, 8.0, 32.0, 16.0]
-            );
-            let opacity = svg_image
-                .ancestors()
-                .find_map(|node| node.attribute("opacity"));
-            if expected_alpha == 255 {
-                assert!(opacity.is_none());
-            } else {
-                let value: f64 = opacity.unwrap().parse().unwrap();
-                assert!((value - f64::from(expected_alpha) / 255.0).abs() < 0.000_001);
-            }
-        }
-
-        let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+            None
+        };
+        let public_tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+        let mut public_pixels =
+            resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+        resvg::render(
+            &public_tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut public_pixels.as_mut(),
+        );
+        let raster_svg = layer_svg.as_deref().unwrap_or(&rendered.svg);
+        let tree = resvg::usvg::Tree::from_str(raster_svg, &Default::default()).unwrap();
         let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
         resvg::render(
             &tree,
@@ -1871,18 +1936,123 @@ fn type3_transparency_sdk_artifact_triplet_matches_captured_draw_geometry() {
         if let Some(directory) = &artifact_dir {
             std::fs::create_dir_all(directory).unwrap();
             std::fs::write(directory.join(format!("{label}.svg")), &rendered.svg).unwrap();
+            if let Some(layer_svg) = &layer_svg {
+                std::fs::write(directory.join(format!("{label}.layer.svg")), layer_svg).unwrap();
+            }
             let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
             let pdf = sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap();
             std::fs::write(directory.join(format!("{label}.pdf")), pdf).unwrap();
+            std::fs::write(
+                directory.join(format!("{label}.layer.premul.rgba")),
+                pixels.data(),
+            )
+            .unwrap();
             let mut png = Vec::new();
             {
                 let mut encoder = png::Encoder::new(&mut png, rendered.width, rendered.height);
                 encoder.set_color(png::ColorType::Rgba);
                 encoder.set_depth(png::BitDepth::Eight);
                 let mut writer = encoder.write_header().unwrap();
-                writer.write_image_data(pixels.data()).unwrap();
+                writer.write_image_data(public_pixels.data()).unwrap();
             }
             std::fs::write(directory.join(format!("{label}.rgba.png")), png).unwrap();
+        }
+
+        let expected_inside = expected_native_rgba;
+        let (image_present, image_view_box, opacity) = if let Some(image) = svg_image {
+            let viewport = image.parent().unwrap();
+            let view_box = viewport
+                .attribute("viewBox")
+                .and_then(|value| value.parse::<svgtypes::ViewBox>().ok())
+                .map(|value| [value.x, value.y, value.w, value.h]);
+            let opacity = image
+                .ancestors()
+                .find_map(|node| node.attribute("opacity"))
+                .map(str::to_owned);
+            (true, view_box, opacity)
+        } else {
+            (false, None, None)
+        };
+        // Accumulate all case readbacks before any native-pixel or geometry
+        // assertion, so a control mismatch cannot hide the edge-case result.
+        captures.push((
+            label,
+            transparency,
+            expected_alpha,
+            expected_inside,
+            actual_transparency_bits,
+            (rendered.width, rendered.height),
+            pixels.data().to_vec(),
+            image_present,
+            image_view_box,
+            opacity,
+            full_page_rects.len(),
+        ));
+    }
+
+    for (
+        label,
+        transparency,
+        expected_alpha,
+        expected_inside,
+        actual_transparency_bits,
+        dimensions,
+        pixels,
+        has_image,
+        view_box,
+        opacity,
+        paper_rect_count,
+    ) in captures
+    {
+        assert_eq!(
+            actual_transparency_bits,
+            transparency.to_bits(),
+            "{label}: decoded transparency"
+        );
+        assert_eq!(dimensions, (48, 32), "{label}: target dimensions");
+        assert_eq!(
+            paper_rect_count, 1,
+            "{label}: remove only exact full-page paper rectangle"
+        );
+        if expected_alpha == 0 {
+            assert!(!has_image, "{label}: fully transparent image is omitted");
+        } else {
+            assert!(has_image, "{label}: visible image element is retained");
+            assert_eq!(
+                view_box,
+                Some([8.0, 8.0, 32.0, 16.0]),
+                "{label}: cropped image viewport"
+            );
+            if expected_alpha == 255 {
+                assert!(
+                    opacity.is_none(),
+                    "{label}: opaque image has no group opacity"
+                );
+            } else {
+                let value: f64 = opacity
+                    .as_deref()
+                    .expect("translucent image has group opacity")
+                    .parse()
+                    .unwrap();
+                assert!((value - f64::from(expected_alpha) / 255.0).abs() < 0.000_001);
+            }
+        }
+        assert_eq!(
+            pixels.len(),
+            48 * 32 * 4,
+            "{label}: complete page layer readback"
+        );
+        for y in 0..32 {
+            for x in 0..48 {
+                let offset = ((y * 48 + x) * 4) as usize;
+                let actual: [u8; 4] = pixels[offset..offset + 4].try_into().unwrap();
+                let expected = if (8..40).contains(&x) && (8..24).contains(&y) && has_image {
+                    expected_inside
+                } else {
+                    [0, 0, 0, 0]
+                };
+                assert_eq!(actual, expected, "{label}: premultiplied RGBA at ({x},{y})");
+            }
         }
     }
 }
