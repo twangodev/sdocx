@@ -85,6 +85,22 @@ fn line_source() -> ColorPaintSource {
     source
 }
 
+fn captured_linear_rotation_source() -> ColorPaintSource {
+    let mut source = line_source();
+    source.property_flags = 1;
+    source.stops = vec![
+        GradientStopSource {
+            argb: 0xffff_0000,
+            position: PaintFloat32::from_bits(0x3f00_0000),
+        },
+        GradientStopSource {
+            argb: 0xff00_00ff,
+            position: PaintFloat32::from_bits(0x3f40_0000),
+        },
+    ];
+    source
+}
+
 fn test_line() -> NativeLine {
     line(BoundingBox {
         x_min: f64::from(RECT[0]),
@@ -219,9 +235,19 @@ fn rotatable_linear_line_flag_matches_pinned_native_zero_rotation_frame() {
     );
     assert_eq!(rotatable_plan.stops, control_plan.stops);
 
-    // The helper's angle is zero in this witness. Metadata rotation remains a
-    // separate hard gate for both flag values.
-    for (rotation, accepted) in [(None, true), (Some(0.0), true), (Some(1.0), false)] {
+    // The helper's effect angle is zero. Object metadata rotation is separate
+    // and is admitted for a rotatable type-0 line, including sub- and full turns.
+    for (rotation, accepted) in [
+        (None, true),
+        (Some(0.0), true),
+        (Some(1.0), true),
+        (Some(29.0), true),
+        (Some(90.0), true),
+        (Some(360.0), true),
+        (Some(-30.0), true),
+        (Some(f64::MAX), false),
+        (Some(f64::NAN), false),
+    ] {
         let mut candidate = line(frame);
         candidate.metadata.rotation_degrees = rotation;
         let result = Plan::for_line(&candidate, &rotatable);
@@ -230,7 +256,7 @@ fn rotatable_linear_line_flag_matches_pinned_native_zero_rotation_frame() {
         } else {
             assert!(matches!(
                 result,
-                Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+                Err(PaintDiagnosticKind::UnrepresentableGradient)
             ));
         }
     }
@@ -245,6 +271,175 @@ fn rotatable_linear_line_flag_matches_pinned_native_zero_rotation_frame() {
             Err(PaintDiagnosticKind::UnsupportedGradientFrame)
         ));
     }
+}
+
+#[test]
+fn linear_line_rotation_pair_matches_native_factory_and_step_paint() {
+    // Native pair receipt SHA-256:
+    // a9badc002cc9c9ae51f84f27642df5478097201d04520b244236f5951295cdf4
+    // The 0/30-degree captures share the exact effect and line bounds. Their
+    // native factory points are respectively
+    // [42c34a24,43fbb093,435e8b75,43fbb093] and
+    // [42d405e6,43ec13c6,43562d94,4405a6b0].
+    let frame = BoundingBox {
+        x_min: f64::from(f32::from_bits(0x42c3_4a24)),
+        y_min: f64::from(f32::from_bits(0x43d9_5550)),
+        x_max: f64::from(f32::from_bits(0x435e_8b75)),
+        y_max: f64::from(f32::from_bits(0x440f_05eb)),
+    };
+    let source = captured_linear_rotation_source();
+    let control = Plan::for_line(&line(frame), &source).unwrap();
+    let mut rotated_line = line(frame);
+    rotated_line.metadata.rotation_degrees = Some(30.0);
+    let rotated = Plan::for_line(&rotated_line, &source).unwrap();
+    let Geometry::Linear(control_points) = control.geometry else {
+        panic!("zero-degree native control must be linear");
+    };
+    let Geometry::Linear(rotated_points) = rotated.geometry else {
+        panic!("30-degree native candidate must be linear");
+    };
+    assert_eq!(
+        control_points.map(|point| point.map(f32::to_bits)),
+        [[0x42c3_4a24, 0x43fb_b093], [0x435e_8b75, 0x43fb_b093]]
+    );
+    assert_eq!(
+        rotated_points.map(|point| point.map(f32::to_bits)),
+        [[0x42d4_05e6, 0x43ec_13c6], [0x4356_2d94, 0x4405_a6b0]]
+    );
+    let expected_stops = vec![
+        ProjectedStop {
+            offset: 0.0,
+            argb: 0xff00_00ff,
+        },
+        ProjectedStop {
+            offset: 0.5,
+            argb: 0xff00_00ff,
+        },
+        ProjectedStop {
+            offset: 0.5,
+            argb: 0xffff_0000,
+        },
+        ProjectedStop {
+            offset: 1.0,
+            argb: 0xffff_0000,
+        },
+    ];
+    assert_eq!(control.stops, expected_stops);
+    assert_eq!(rotated.stops, expected_stops);
+
+    // The exact 30-degree point words are a paired runtime pin. Source math
+    // admits other finite f32 angles on this rotatable type-0 line route.
+    for angle in [29.0, 90.0, 360.0, -30.0] {
+        let mut candidate = line(frame);
+        candidate.metadata.rotation_degrees = Some(angle);
+        assert!(
+            Plan::for_line(&candidate, &source).is_ok(),
+            "{angle} degrees"
+        );
+    }
+    let points_at = |angle| {
+        let mut candidate = line(frame);
+        candidate.metadata.rotation_degrees = Some(angle);
+        let Geometry::Linear(points) = Plan::for_line(&candidate, &source).unwrap().geometry else {
+            panic!("rotated type-0 line remains linear");
+        };
+        points.map(|point| point.map(f32::to_bits))
+    };
+    assert_eq!(points_at(-30.0), points_at(330.0));
+    let mut nonrotatable = source.clone();
+    nonrotatable.property_flags = 0;
+    assert!(matches!(
+        Plan::for_line(&rotated_line, &nonrotatable),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    let mut radial = source.clone();
+    radial.gradient_type = 1;
+    assert!(matches!(
+        Plan::for_line(&rotated_line, &radial),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    for effect_angle in [1, 90, 179, 180, 359] {
+        let mut other_angle = source.clone();
+        other_angle.linear_angle = effect_angle;
+        let plan = Plan::for_line(&rotated_line, &other_angle).unwrap();
+        let Geometry::Linear(points) = plan.geometry else {
+            panic!("type-0 effect angle {effect_angle} remains linear");
+        };
+        assert!(
+            points
+                .iter()
+                .flatten()
+                .all(|coordinate| coordinate.is_finite())
+        );
+        assert_ne!(points[0], points[1]);
+    }
+}
+
+#[test]
+fn linear_line_opaque_descending_pair_uses_native_cache_bucket_projection() {
+    // Keep each wire pair descending: the low-position color is red and the
+    // high-position color is blue. The .75 high stop in the appearance pair
+    // would sort ahead of near-one low stops and reverse their roles.
+    let high_position = 1.0_f32;
+    let cases = [
+        (f32::from_bits((1.0_f32 / 256.0).to_bits() - 1), 0),
+        (1.0_f32 / 256.0, 1),
+        (0.5, 128),
+        (f32::from_bits((129.0_f32 / 256.0).to_bits() - 1), 128),
+        (129.0_f32 / 256.0, 129),
+        (f32::from_bits(1.0_f32.to_bits() - 1), 255),
+    ];
+    for (low_position, expected_bucket) in cases {
+        let mut source = captured_linear_rotation_source();
+        source.stops[0].position = PaintFloat32::from_bits(low_position.to_bits());
+        source.stops[1].position = PaintFloat32::from_bits(high_position.to_bits());
+        let projected = Plan::for_line(&test_line(), &source).unwrap().stops;
+        if expected_bucket == 0 {
+            assert_eq!(
+                projected,
+                [
+                    ProjectedStop {
+                        offset: 0.0,
+                        argb: 0xffff_0000
+                    },
+                    ProjectedStop {
+                        offset: 1.0,
+                        argb: 0xffff_0000
+                    },
+                ]
+            );
+        } else {
+            let boundary = f64::from(expected_bucket) / 256.0;
+            assert_eq!(
+                projected,
+                [
+                    ProjectedStop {
+                        offset: 0.0,
+                        argb: 0xff00_00ff
+                    },
+                    ProjectedStop {
+                        offset: boundary,
+                        argb: 0xff00_00ff
+                    },
+                    ProjectedStop {
+                        offset: boundary,
+                        argb: 0xffff_0000
+                    },
+                    ProjectedStop {
+                        offset: 1.0,
+                        argb: 0xffff_0000
+                    },
+                ]
+            );
+        }
+    }
+
+    let mut partial = captured_linear_rotation_source();
+    partial.stops[0].argb = 0x80ff_0000;
+    assert!(matches!(
+        Plan::for_line(&test_line(), &partial),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
 }
 
 #[test]
@@ -774,7 +969,7 @@ fn radial_line_cache_step_uses_native_q16_cache_quantization() {
         (1.0, 255),
     ];
     for (position, expected_index) in cases {
-        assert_eq!(radial_cache_index(position), expected_index);
+        assert_eq!(gradient_cache_index(position), expected_index);
     }
 
     let mut radial = radial_line_source();
@@ -931,7 +1126,7 @@ fn radial_line_step_preserves_partial_zero_alpha_and_nonprimary_argb() {
 }
 
 #[test]
-fn radial_cache_step_does_not_extend_to_shape_outlines_or_linear_lines() {
+fn radial_cache_step_does_not_extend_to_shape_outlines() {
     let mut source = radial_line_source();
     source.stops[0] = GradientStopSource {
         argb: 0xffff_0000,
@@ -947,10 +1142,27 @@ fn radial_cache_step_does_not_extend_to_shape_outlines_or_linear_lines() {
     ));
 
     source.gradient_type = 0;
-    assert!(matches!(
-        Plan::for_line(&test_line(), &source),
-        Err(PaintDiagnosticKind::InvalidGradient)
-    ));
+    assert_eq!(
+        Plan::for_line(&test_line(), &source).unwrap().stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff00_00ff,
+            },
+            ProjectedStop {
+                offset: 0.5,
+                argb: 0xff00_00ff,
+            },
+            ProjectedStop {
+                offset: 0.5,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
 }
 
 #[test]

@@ -50,8 +50,10 @@ impl Plan {
     /// radial V2 result
     /// `a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d`).
     /// These are synthetic-paint frame witnesses, not proof of saved archive
-    /// paint or device pixels. Keep metadata rotation and other line-style
-    /// gates unchanged until broader line cases have paired evidence.
+    /// paint or device pixels. The native source contract rotates linear
+    /// endpoints when the outline rotatable flag is set; paired captures
+    /// verify the route at 0/30 degrees. Source math defines the finite f32
+    /// rotation path; radial metadata rotations remain on the fallback path.
     pub fn for_line(
         line: &NativeLine,
         source: &ColorPaintSource,
@@ -65,16 +67,24 @@ impl Plan {
         let rect = bounds(line.reference_bbox);
         let width = rect[2] - rect[0];
         let height = rect[3] - rect[1];
+        let object_rotation = line
+            .metadata
+            .rotation_degrees
+            .map(|angle| angle as f32)
+            .unwrap_or(0.0);
+        if !object_rotation.is_finite() {
+            return Err(PaintDiagnosticKind::UnrepresentableGradient);
+        }
+        let rotated_linear = object_rotation != 0.0 && source.gradient_type == 0;
+        if object_rotation != 0.0 && (!rotated_linear || !source.gradient_rotatable()) {
+            return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
+        }
         // Conservative eligibility limits: the native frame witness covers a
         // type-0, simple stroke; parser-marked routing/settings and compound,
         // dashed or arrowed variants have no paired gradient evidence.
         if line.line_type != 0
             || line.routing != 0
             || line.raw_setting != 0
-            || line
-                .metadata
-                .rotation_degrees
-                .is_some_and(|angle| angle != 0.0)
             || line.style.compound != 0
             || line.style.dash != 0
             || line.style.cap > 2
@@ -92,7 +102,11 @@ impl Plan {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
         let geometry = if source.gradient_type == 0 {
-            let points = linear_points(rect, source.linear_angle);
+            let mut points = linear_points(rect, source.linear_angle);
+            if rotated_linear {
+                let center = [rect[0] + width * 0.5, rect[1] + height * 0.5];
+                points = points.map(|point| rotate_point(point, center, object_rotation, true));
+            }
             if points.iter().flatten().any(|value| !value.is_finite()) || points[0] == points[1] {
                 return Err(PaintDiagnosticKind::UnrepresentableGradient);
             }
@@ -113,7 +127,7 @@ impl Plan {
         let stops = if source.gradient_type == 1 {
             project_radial_line_stops(source)?
         } else {
-            project_outline_stops(source)?
+            project_linear_line_stops(source)?
         };
         Ok(Self {
             geometry,
@@ -351,6 +365,57 @@ fn project_outline_stops(
     project_normalized_outline_stops(source, stops)
 }
 
+/// Project a bounded descending two-stop linear line gradient. The native
+/// cache endpoint-extends the first/last stops, skips the nonpositive middle
+/// span, then lets the final constant-color span overwrite from the low
+/// position's Q16.16 cache bucket. Partial-alpha and longer descending lists
+/// retain the existing projection because this overwrite proof applies to an
+/// opaque pair (the sampled cache stores premultiplied N32 colors).
+fn project_linear_line_stops(
+    source: &ColorPaintSource,
+) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
+    let stops = normalize_outline_stops(source)?;
+    if let [high, low] = stops.as_slice()
+        && high.position.value() > low.position.value()
+        && high.argb >> 24 == 0xff
+        && low.argb >> 24 == 0xff
+    {
+        let cache_index = gradient_cache_index(low.position.value());
+        if cache_index == 0 {
+            return Ok(vec![
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: low.argb,
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low.argb,
+                },
+            ]);
+        }
+        let boundary = f64::from(cache_index) / 256.0;
+        return Ok(vec![
+            ProjectedStop {
+                offset: 0.0,
+                argb: high.argb,
+            },
+            ProjectedStop {
+                offset: boundary,
+                argb: high.argb,
+            },
+            ProjectedStop {
+                offset: boundary,
+                argb: low.argb,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: low.argb,
+            },
+        ]);
+    }
+    project_normalized_outline_stops(source, stops)
+}
+
 fn project_normalized_outline_stops(
     source: &ColorPaintSource,
     stops: Vec<crate::GradientStopSource>,
@@ -388,7 +453,7 @@ fn project_radial_line_stops(
         return project_normalized_outline_stops(source, stops);
     }
 
-    let cache_index = radial_cache_index(low_position);
+    let cache_index = gradient_cache_index(low_position);
     if cache_index == 0 {
         return Ok(vec![
             ProjectedStop {
@@ -429,7 +494,7 @@ fn project_radial_line_stops(
 /// `[0, 1]`. Skia first converts to Q16.16, then removes the integer component
 /// and shifts by eight. The subtraction makes the endpoint `1.0` map to the
 /// last cache entry (`255`) instead of an out-of-range index (`256`).
-fn radial_cache_index(position: f32) -> u32 {
+fn gradient_cache_index(position: f32) -> u32 {
     let fixed = (f64::from(position) * 65536.0).trunc() as u32;
     ((fixed - (fixed >> 16)) >> 8).min(255)
 }

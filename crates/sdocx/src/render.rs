@@ -7208,6 +7208,138 @@ mod tests {
     }
 
     #[test]
+    fn public_sdk_linear_line_gradient_rotation_pair_matches_native_factory_points() {
+        // Native pair receipt SHA-256:
+        // a9badc002cc9c9ae51f84f27642df5478097201d04520b244236f5951295cdf4
+        // Native RGBA: alpha is byte-identical across both 640x640 frames;
+        // 149 covered pixels change RGB. This isolates gradient appearance,
+        // while the SDK's line-body endpoints must remain unchanged.
+        let render_pair = |rotation| {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            line.metadata.rotation_degrees = rotation;
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("gradient fixture has a color paint source");
+            };
+            source.property_flags = 1;
+            source.stops = vec![
+                crate::GradientStopSource {
+                    argb: 0xffff_0000,
+                    position: crate::PaintFloat32::from_bits(0x3f00_0000),
+                },
+                crate::GradientStopSource {
+                    argb: 0xff00_00ff,
+                    position: crate::PaintFloat32::from_bits(0x3f40_0000),
+                },
+            ];
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let document = document(page);
+            let rendered = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            (rendered, document)
+        };
+        let (control, control_document) = render_pair(None);
+        let (rotated, rotated_document) = render_pair(Some(30.0));
+        for page in [&control, &rotated] {
+            assert!(page.paint_diagnostics.is_empty());
+        }
+        let control_xml = roxmltree::Document::parse(&control.svg).unwrap();
+        let rotated_xml = roxmltree::Document::parse(&rotated.svg).unwrap();
+        let gradient_points = |xml: &roxmltree::Document<'_>| {
+            let gradient = xml
+                .descendants()
+                .find(|node| node.has_tag_name("linearGradient"))
+                .expect("public export contains the linear line paint");
+            ["x1", "y1", "x2", "y2"].map(|name| {
+                gradient
+                    .attribute(name)
+                    .expect("gradient endpoint attribute")
+                    .parse::<f32>()
+                    .unwrap()
+                    .to_bits()
+            })
+        };
+        assert_eq!(
+            gradient_points(&control_xml),
+            [0x42c3_4a24, 0x43fb_b093, 0x435e_8b75, 0x43fb_b093]
+        );
+        assert_eq!(
+            gradient_points(&rotated_xml),
+            [0x42d4_05e6, 0x43ec_13c6, 0x4356_2d94, 0x4405_a6b0]
+        );
+        let body_line = |xml: &roxmltree::Document<'_>| {
+            let node = xml
+                .descendants()
+                .find(|node| node.has_tag_name("line"))
+                .expect("saved line body remains vector geometry");
+            ["x1", "y1", "x2", "y2"].map(|name| node.attribute(name).unwrap().to_owned())
+        };
+        assert_eq!(body_line(&control_xml), body_line(&rotated_xml));
+        for xml in [&control_xml, &rotated_xml] {
+            let gradient = xml
+                .descendants()
+                .find(|node| node.has_tag_name("linearGradient"))
+                .unwrap();
+            let stops = gradient
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .map(|stop| {
+                    (
+                        stop.attribute("offset").unwrap(),
+                        stop.attribute("stop-color").unwrap(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                stops,
+                [
+                    ("0", "#0000ff"),
+                    ("0.5", "#0000ff"),
+                    ("0.5", "#ff0000"),
+                    ("1", "#ff0000")
+                ]
+            );
+        }
+
+        // Optional public-SDK artifact path for the ignored source-aligned
+        // native comparison runner. Normal unit tests remain filesystem-free.
+        if let Some(directory) = std::env::var_os("SDOCX_LINEAR_ROTATION_ARTIFACT_DIR") {
+            let directory = std::path::PathBuf::from(directory);
+            std::fs::create_dir_all(&directory).unwrap();
+            for (name, rendered, document) in [
+                ("rotation-0", &control, &control_document),
+                ("rotation-30", &rotated, &rotated_document),
+            ] {
+                std::fs::write(directory.join(format!("{name}.svg")), &rendered.svg).unwrap();
+                let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+                let mut pixmap =
+                    resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                std::fs::write(directory.join(format!("{name}.rgba")), pixmap.data()).unwrap();
+                #[cfg(feature = "pdf")]
+                std::fs::write(
+                    directory.join(format!("{name}.pdf")),
+                    crate::render_document_pdf(
+                        document,
+                        &RenderOptions::default(),
+                        &crate::PdfOptions::default(),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+                #[cfg(not(feature = "pdf"))]
+                let _ = document;
+            }
+        }
+    }
+
+    #[test]
     fn public_radial_line_step_keeps_partial_zero_and_nonprimary_stops_vector_only() {
         let cases = [
             // V35: red alpha 128, blue alpha 255.

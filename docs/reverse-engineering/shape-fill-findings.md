@@ -172,6 +172,46 @@ and `f32` center additions
 (`0x9da00–0x9da40`, `0x9db30–0x9dbdc`). This threshold test is literal;
 it does not use the rotation's absolute value.
 
+### Type-8 linear line rotation witness
+
+Native pair receipt `/tmp/sdocx-type8-linear-gradient-interior-pair-native-v1/pair.json`
+has SHA-256 `a9badc002cc9c9ae51f84f27642df5478097201d04520b244236f5951295cdf4`.
+Both captures use the same HF02 `reference_bbox`, type-0 line gradient, flag 1,
+effect angle 0 and opaque red@`.5` / blue@`.75` stops. The actual factory
+receives blue@`.75` then red@`.5`; its endpoints are
+`[42c34a24,43fbb093,435e8b75,43fbb093]` at 0 degrees and
+`[42d405e6,43ec13c6,43562d94,4405a6b0]` at 30 degrees. The helper's actual
+`CreateLinear` X0 result matches the shader passed in X1 to the exact
+`SkPaint::setShader` callsite, whose X0 receiver is the helper implementation's
+paint at `+0x2b0`.
+
+The 640×640 native RGBA hashes are
+`3949215c75235a827a3e5e06f8841323249efd1938a9db2b56ab4827ebfa2137` (0°)
+and `c7c0791bc60da01e34d2cd40ab4f37abf607279e547990378a4b92d6e46fd9e8`
+(30°). Alpha is identical at all 409,600 pixels; 149 covered pixels change
+RGB. Coverage stays at 2,175 pixels with bbox `(94,431)-(226,575)`. Opaque
+red/blue counts change from `605/599` to `589/583`. This is a paired
+synthetic-paint line-rendering witness, not saved-gradient or Samsung-device
+pixel parity. The drawing source rotates linear factory endpoints for a
+rotatable type-0 line at every finite f32 metadata angle, using the helper's
+negative-angle adjustment, strict small-angle threshold, `sincos` and fused
+operations described above. The paired 30-degree capture pins one runtime
+point result; it does not independently validate all trigonometric values.
+Radial metadata rotation remains unsupported by this projection.
+
+The paired public SDK exports retain one linear PDF shading and no images.
+Against native frames composited on the SDK background, source-aligned SVG
+active-pixel RGB MAE is 5.61/6.54 at 0°/30°; MuPDF is 5.50/7.02 after
+accounting for its realized page-background color. Antialiasing, gradient-cache
+sampling and PDF color conversion remain visible residuals, not pixel parity.
+
+For linear stops, the bounded line projection admits a descending pair when
+both colors are opaque. It models the native cache's endpoint extension,
+skipped reversed middle interval, and final low-stop span overwrite at the
+Q16.16 cache index. Other stop counts retain the existing projection, and
+partial-alpha descending pairs retain its fail-closed behavior. The pair
+witness does not establish device-pixel parity for those cases.
+
 ### Radial geometry
 
 The radial branch calls its helper with the rectangle height first and width
