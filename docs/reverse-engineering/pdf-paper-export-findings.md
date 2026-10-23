@@ -613,6 +613,13 @@ PDF output. This verifies native page import in the host harness, not ink export
 or final appearance (receipt SHA-256
 `26da043153a62af7d44f2b2d19a7fdf9aecce0991147a550d2f37833f0c2e075`).
 
+A separate loader control executes all 47 PenCommon and 56 FountainPen init
+entries, resolves `createPenInst` at FountainPen `0x621ec`, and executes the
+PenCommon `BLR x0` at `0x4df78`. Its returned 184-byte object has the source-pinned
+primary vptr `0xd0988`. The loader uses a harness-owned module token; this proves
+the bounded factory route, not full `createPen`, Android loader behavior or PDF export
+(receipt SHA-256 `0eb7c7b2afef8eae206d237485b3da5d8ac7beae9c8e5aeceeb934b01121d33b`).
+
 Those archive probes supply `ConstructLoad` fixed-axis size 1812 and exporter
 default height 1527. The app's common portrait PDF open paths instead supply
 fixed-axis size 1080 (`DocumentFileUtil.Document`, `TaskMakePdf`). Native
