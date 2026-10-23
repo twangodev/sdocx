@@ -351,19 +351,15 @@ fn project_normalized_outline_stops(
     project_stops(&normalized)
 }
 
-/// Project the narrowly recovered type-8 radial overlap case. With two
-/// consumed opaque stops in descending order, Skia endpoint-extends the first
-/// color to zero and the last color to one. The first increasing span fills
-/// through the high stop; the later increasing span starts at the low stop and
-/// overwrites the overlap. Its 256-entry cache therefore becomes a hard color
-/// step at the low stop's quantized cache index.
-///
-/// Native pins: `libSPenSkia.so` SHA-256
-/// `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d`;
-/// V25 framebuffer receipt `pixel-threshold-audit.json` records the `.5`
-/// boundary control. This only covers radial type-8 line paint with two
-/// opaque stops; fills, shape outlines, linear paint, partial alpha and more
-/// stops retain their existing paths.
+/// Project the recovered two-stop type-8 radial line cache step. Skia keeps
+/// the descending stop order, endpoint-extends the first color to zero and the
+/// last color to one, then writes increasing cache spans in order. The later
+/// span overwrites the overlap, leaving a step at the low stop's quantized
+/// cache index. Native V25-V26 and V34-V38 controls cover opaque, partial-alpha, zero-alpha
+/// and nonprimary RGB stop colors on the same line geometry. They do not prove
+/// arbitrary source or device pixel parity. Keep fills, shape outlines, linear
+/// paint and gradients with more than two consumed stops on their existing
+/// paths.
 fn project_radial_line_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
@@ -377,8 +373,7 @@ fn project_radial_line_stops(
     };
     let high_position = high.position.value();
     let low_position = low.position.value();
-    let opaque = high.argb >> 24 == 0xff && low.argb >> 24 == 0xff;
-    if high_position <= low_position || !opaque || high.argb == low.argb {
+    if high_position <= low_position || high.argb == low.argb {
         return project_normalized_outline_stops(source, stops);
     }
 

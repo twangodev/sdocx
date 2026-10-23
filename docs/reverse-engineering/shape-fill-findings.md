@@ -257,6 +257,20 @@ premultiplied RGBA pixels. The vector-only PDF retains radial shading, with
 36 low-alpha coverage extras and one opaque color-class difference at the
 step in MuPDF; that remaining seam difference is unresolved.
 
+Four further controls kept the same HF02 line and radial cache boundary while
+varying stop alpha and RGB: half-alpha red with opaque blue, two partial-alpha
+stops, zero-alpha red with partial-alpha blue, and nonprimary partial-alpha
+RGB. Their public SDK SVG exports matched
+the captured premultiplied source grids exactly for V35–V37; V38 matched alpha
+everywhere and all RGB channels within one level (20,732/20,838 exact RGBA
+pixels). The PDF stayed vector-only (two radial shadings, two piecewise color
+functions, no image XObjects per export), but MuPDF's RGB-over-white renders
+had 19,997, 20,054, 20,529 and 20,044 exact pixels out of 20,838 respectively.
+The largest residual occurs at `(98,39)`, on the cache-step seam; an opaque
+white PDF page does not expose alpha for direct comparison. These are
+synthetic paint controls, not saved
+gradient records or device-pixel parity.
+
 Drawing passes shader flags 0. The static cache branch interpolates RGB
 and alpha separately before eventual output premultiplication
 (`0x2674dc`, `0x26753c`). Stop alpha is the saved ARGB high byte; no extra

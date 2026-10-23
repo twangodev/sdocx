@@ -641,22 +641,55 @@ fn radial_line_cache_step_uses_native_q16_cache_quantization() {
 }
 
 #[test]
-fn radial_line_step_admission_is_limited_to_opaque_distinct_two_stop_paint() {
+fn radial_line_step_preserves_partial_zero_alpha_and_nonprimary_argb() {
+    // These four synthetic native controls use the same two descending cache
+    // stops. V35/V36 cover partial alpha, V37 retains hidden RGB at alpha zero,
+    // and V38 changes the partial-alpha stop to nonprimary RGB.
+    let cases = [
+        (0x80ff_0000, 0xff00_00ff),
+        (0x80ff_0000, 0x4000_00ff),
+        (0x00ff_0000, 0x4000_00ff),
+        (0x8059_21cd, 0x4000_00ff),
+    ];
+    for (low_argb, high_argb) in cases {
+        let mut radial = radial_line_source();
+        radial.stops[0] = GradientStopSource {
+            argb: low_argb,
+            position: PaintFloat32::from_bits(0x3f00_c49c),
+        };
+        radial.stops[1] = GradientStopSource {
+            argb: high_argb,
+            position: PaintFloat32::from_bits(0x3f40_4189),
+        };
+        let original = radial.clone();
+        let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+        assert_eq!(radial, original, "projection must not mutate source stops");
+        assert_eq!(
+            projected,
+            [
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: high_argb,
+                },
+                ProjectedStop {
+                    offset: 0.5,
+                    argb: high_argb,
+                },
+                ProjectedStop {
+                    offset: 0.5,
+                    argb: low_argb,
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low_argb,
+                },
+            ]
+        );
+    }
+
     let mut radial = radial_line_source();
     radial.stops[0].position = PaintFloat32::from_bits(0.5_f32.to_bits());
     radial.stops[1].position = PaintFloat32::from_bits(0.75_f32.to_bits());
-    radial.stops[0].argb = 0xffff_0000;
-    radial.stops[1].argb = 0xff00_00ff;
-    assert_eq!(
-        Plan::for_line(&test_line(), &radial).unwrap().stops.len(),
-        4
-    );
-
-    radial.stops[0].argb &= 0x00ff_ffff;
-    assert!(matches!(
-        Plan::for_line(&test_line(), &radial),
-        Err(PaintDiagnosticKind::InvalidGradient)
-    ));
     radial.stops[0].argb = 0xffff_0000;
     radial.stops[1].argb = radial.stops[0].argb;
     assert!(matches!(

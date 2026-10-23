@@ -7207,6 +7207,122 @@ mod tests {
         );
     }
 
+    #[test]
+    fn public_radial_line_step_keeps_partial_zero_and_nonprimary_stops_vector_only() {
+        let cases = [
+            // V35: red alpha 128, blue alpha 255.
+            (0x80ff_0000, 0xff00_00ff),
+            // V36: red alpha 128, blue alpha 64.
+            (0x80ff_0000, 0x4000_00ff),
+            // V37: serialized red RGB remains but alpha is zero.
+            (0x00ff_0000, 0x4000_00ff),
+            // V38: partial-alpha low stop carries nonprimary RGB.
+            (0x8059_21cd, 0x4000_00ff),
+        ];
+        for (low_argb, high_argb) in cases {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("fixture has a color gradient source");
+            };
+            source.gradient_type = 1;
+            source.position =
+                [0.25_f32, 0.75_f32].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+            source.stops[0] = crate::GradientStopSource {
+                argb: low_argb,
+                position: crate::PaintFloat32::from_bits(0x3f00_c49c),
+            };
+            source.stops[1] = crate::GradientStopSource {
+                argb: high_argb,
+                position: crate::PaintFloat32::from_bits(0x3f40_4189),
+            };
+
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let rendered =
+                render_document_svg(&document(page.clone()), &RenderOptions::default()).remove(0);
+            assert!(rendered.paint_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert!(
+                !xml.descendants().any(|node| node.has_tag_name("image")),
+                "type-8 radial step remains vector-only"
+            );
+            let gradients = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("radialGradient"))
+                .collect::<Vec<_>>();
+            assert_eq!(gradients.len(), 1);
+            let stops = gradients[0]
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .collect::<Vec<_>>();
+            assert_eq!(stops.len(), 4);
+            let expected = [
+                (0.0, high_argb),
+                (0.5, high_argb),
+                (0.5, low_argb),
+                (1.0, low_argb),
+            ];
+            for (node, (offset, argb)) in stops.iter().zip(expected) {
+                let actual_offset = node.attribute("offset").unwrap().parse::<f64>().unwrap();
+                assert!((actual_offset - offset).abs() < 1e-12);
+                assert_eq!(
+                    node.attribute("stop-color"),
+                    Some(
+                        format!(
+                            "#{:02x}{:02x}{:02x}",
+                            (argb >> 16) as u8,
+                            (argb >> 8) as u8,
+                            argb as u8
+                        )
+                        .as_str()
+                    )
+                );
+                let actual_opacity = node
+                    .attribute("stop-opacity")
+                    .unwrap_or("1")
+                    .parse::<f64>()
+                    .unwrap();
+                let expected_opacity = f64::from((argb >> 24) as u8) / 255.0;
+                assert!((actual_opacity - expected_opacity).abs() < 1e-12);
+            }
+
+            #[cfg(feature = "pdf")]
+            {
+                let bytes = crate::render_document_pdf(
+                    &document(page),
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+                let mut radial_shadings = 0;
+                let mut images = 0;
+                for dictionary in dictionaries {
+                    images += usize::from(
+                        dictionary
+                            .get(b"Subtype")
+                            .and_then(lopdf::Object::as_name)
+                            .ok()
+                            == Some(b"Image".as_slice()),
+                    );
+                    radial_shadings += usize::from(
+                        dictionary
+                            .get(b"ShadingType")
+                            .and_then(lopdf::Object::as_i64)
+                            .ok()
+                            == Some(3),
+                    );
+                }
+                assert_eq!(images, 0, "radial stop controls stay vector-only in PDF");
+                assert!(radial_shadings > 0, "PDF retains radial shading paint");
+            }
+        }
+    }
+
     fn empty_bullet_body(kind: u32) -> RichTextBox {
         RichTextBox {
             text_area_type: None,
