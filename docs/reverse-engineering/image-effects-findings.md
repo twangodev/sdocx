@@ -65,11 +65,13 @@ outside 0–1.
 
 Type-3 field 17 writes four `f64` coordinates, but its native storage is
 an integer `Rect`. Model's writer converts the stored signed integers to
-doubles at `0x3a4740`–`0x3a4768`. The reader converts those doubles toward
-zero to 64-bit integers, keeps their low 32 bits, and only then applies
-`Rect::Scale` for non-unit magnification, at `0x3a4bf8`–`0x3a4c2c`.
-For finite coordinates in the representable range, a fractional wire value
-therefore does not remain fractional in native original-placement storage.
+doubles at `0x3a4740`–`0x3a4768`. The reader converts to signed 64-bit integers
+toward zero, keeps their low 32 bits, then applies `Rect::Scale` for non-unit
+magnification (`0x3a4bf8`–`0x3a4c2c`). V42 confirms fractional coordinates
+truncate at unity; V45 captures i32 boundary wrap, low-word wrap, and final
+rectangle values matching the source conversion sequence for finite i64
+overflow. Rust field-17 parsing now matches these captured outputs. Generic bounding boxes and in-memory
+`PlacedImage::original_bbox` remain floating point.
 The Java `SpenObjectImage` API also exposes `originalRect` as `Rect`, whereas
 displayed/drawn bounds use `RectF`.
 

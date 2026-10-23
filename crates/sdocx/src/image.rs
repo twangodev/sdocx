@@ -221,7 +221,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
                 fields.read_u32("border nine-patch width")?;
             }
             17 => {
-                image.original_bbox = Some(read_bbox(&mut fields)?);
+                image.original_bbox = Some(read_original_bbox(&mut fields)?);
             }
             18 => image.original_media_id = read_media_id(&mut fields)?,
             19 => {
@@ -361,6 +361,21 @@ fn read_rect(reader: &mut Reader<'_>) -> Result<[i32; 4]> {
     ])
 }
 
+/// Read field 17's integer-backed Rect representation from its f64 wire form.
+/// Native converts to signed i64 toward zero, then keeps the low 32 bits.
+fn read_original_bbox(reader: &mut Reader<'_>) -> Result<BoundingBox> {
+    let mut bounds = read_bbox(reader)?;
+    for value in [
+        &mut bounds.x_min,
+        &mut bounds.y_min,
+        &mut bounds.x_max,
+        &mut bounds.y_max,
+    ] {
+        *value = ((*value as i64) as i32) as f64;
+    }
+    Ok(bounds)
+}
+
 fn finite_f32(reader: &mut Reader<'_>, field: &'static str) -> Result<f32> {
     let value = reader.read_f32(field)?;
     if !value.is_finite() {
@@ -372,4 +387,19 @@ fn finite_f32(reader: &mut Reader<'_>, field: &'static str) -> Result<f32> {
 fn skip_sized(reader: &mut Reader<'_>, field: &'static str) -> Result<()> {
     let size = reader.read_u32(field)? as usize;
     reader.skip(size, field)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_original_bbox;
+    use crate::binary::Reader;
+
+    #[test]
+    fn original_bbox_rejects_nonfinite_coordinates() {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let values = [0.0, value, 1.0, 1.0];
+            let bytes: Vec<_> = values.into_iter().flat_map(f64::to_le_bytes).collect();
+            assert!(read_original_bbox(&mut Reader::new(&bytes, "original rectangle")).is_err());
+        }
+    }
 }

@@ -547,7 +547,22 @@ fn cropped_embedded_images_keep_original_placement_and_clip_the_render() {
             .object_spans[0],
     );
     assert_eq!(image.crop_rect, Some([10, 20, 110, 100]));
-    assert_eq!(image.original_bbox.unwrap().x_min, -20.0);
+    assert_eq!(
+        image.original_bbox,
+        Some(sdocx::BoundingBox {
+            x_min: -20.0,
+            y_min: 0.0,
+            x_max: 180.0,
+            y_max: 160.0,
+        })
+    );
+    assert!(
+        !parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnsupportedImageFeature })
+    );
     #[cfg(feature = "render")]
     {
         let svg =
@@ -567,6 +582,154 @@ fn cropped_embedded_images_keep_original_placement_and_clip_the_render() {
             [-10.0, 20.0, 100.0, 80.0]
         );
         assert_svg_rotation(viewport.parent().unwrap(), 30.0, [40.0, 60.0]);
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn parsed_fractional_original_rect_uses_integer_bounds_at_the_visible_clip_edge() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-quadrants.png");
+    let mut tail: Vec<_> = [0_i32, 0, 4, 3]
+        .into_iter()
+        .flat_map(i32::to_le_bytes)
+        .collect();
+    tail.extend(
+        [-2.75_f64, -1.75, 7.75, 8.75]
+            .into_iter()
+            .flat_map(f64::to_le_bytes),
+    );
+    let mut payload = image_with_fill(
+        2,
+        &fill(7),
+        0,
+        &[],
+        &frame(3, (1 << 1) | (1 << 17), &[], &tail),
+    );
+    for (index, value) in [0.0_f64, 0.0, 8.0, 8.0].into_iter().enumerate() {
+        payload[36 + index * 8..44 + index * 8].copy_from_slice(&value.to_le_bytes());
+    }
+    payload[base().len() - 4..base().len()].copy_from_slice(&0.0_f32.to_le_bytes());
+    let pages = one_page(vec![object(3, &payload, &[])]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &pages,
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let image = placed(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(image.crop_rect, Some([0, 0, 4, 3]));
+    assert_eq!(
+        image.original_bbox,
+        Some(sdocx::BoundingBox {
+            x_min: -2.0,
+            y_min: -1.0,
+            x_max: 7.0,
+            y_max: 8.0,
+        })
+    );
+
+    let rendered = sdocx::render_page_svg(&parsed.document, 0, &Default::default()).unwrap();
+    let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+    let node = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert_eq!(svg_rectangle(node), [-2.0, -1.0, 9.0, 9.0]);
+    let viewport = node.parent().unwrap();
+    assert_eq!(viewport.attribute("overflow"), Some("hidden"));
+    let view_box: svgtypes::ViewBox = viewport.attribute("viewBox").unwrap().parse().unwrap();
+    assert_eq!(
+        [view_box.x, view_box.y, view_box.w, view_box.h],
+        [0.0, 0.0, 8.0, 8.0]
+    );
+
+    let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+    let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixels.as_mut(),
+    );
+    let background = [252, 252, 252, 255];
+    let edge = pixels.pixel(7, 1).unwrap();
+    assert_eq!(
+        [edge.red(), edge.green(), edge.blue(), edge.alpha()],
+        background
+    );
+    let interior = pixels.pixel(0, 1).unwrap();
+    assert_ne!(
+        [
+            interior.red(),
+            interior.green(),
+            interior.blue(),
+            interior.alpha()
+        ],
+        background
+    );
+}
+
+#[test]
+fn parsed_image_original_rect_matches_native_integer_conversion_controls() {
+    for (values, expected) in [
+        ([-2.75, -1.75, 7.75, 8.75], [-2.0, -1.0, 7.0, 8.0]),
+        (
+            [
+                2_147_483_647.75,
+                -2_147_483_648.75,
+                2_147_483_648.75,
+                -2_147_483_649.75,
+            ],
+            [
+                2_147_483_647.0,
+                -2_147_483_648.0,
+                -2_147_483_648.0,
+                2_147_483_647.0,
+            ],
+        ),
+        (
+            [
+                4_294_967_303.75,
+                -4_294_967_299.25,
+                8_589_934_592.5,
+                -8_589_934_592.5,
+            ],
+            [7.0, -3.0, 0.0, 0.0],
+        ),
+        ([1e100, -1e100, 1e300, -1e300], [-1.0, 0.0, -1.0, 0.0]),
+    ] {
+        let mut tail: Vec<_> = [1_i32, 2, 3, 4]
+            .into_iter()
+            .flat_map(i32::to_le_bytes)
+            .collect();
+        tail.extend(values.into_iter().flat_map(f64::to_le_bytes));
+        let payload = image_with_fill(
+            2,
+            &fill(7),
+            0,
+            &[],
+            &frame(3, (1 << 1) | (1 << 17), &[], &tail),
+        );
+        let parsed = parse_native_image(&payload);
+        let span = &parsed.note.as_ref().unwrap().body.object_spans[0];
+        let image = embedded_image(span);
+        assert_eq!(image.crop_rect, Some([1, 2, 3, 4]));
+        assert_eq!(
+            image.original_bbox,
+            Some(sdocx::BoundingBox {
+                x_min: expected[0],
+                y_min: expected[1],
+                x_max: expected[2],
+                y_max: expected[3],
+            })
+        );
+        assert!(
+            !parsed
+                .report
+                .diagnostics
+                .iter()
+                .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnsupportedImageFeature })
+        );
+        assert_eq!(span.object_data, payload);
     }
 }
 
