@@ -264,7 +264,7 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
         }),
     );
     if prepared.fountain_v17_rgb.is_some() {
-        prepared.fountain_v17_output_scale = output_scale;
+        prepared.fountain_output_scale = output_scale;
     }
     prepared
 }
@@ -360,9 +360,9 @@ pub struct PreparedStroke<'a> {
     /// Per-stamp Fountain V17 RGB from an explicit output profile.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub(crate) fountain_v17_rgb: Option<Vec<[f32; 3]>>,
-    /// Explicit output scale for the admitted Fountain V17 route only.
+    /// Explicit output scale for an admitted Fountain V14/V17 vector route.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub(crate) fountain_v17_output_scale: Option<f32>,
+    pub(crate) fountain_output_scale: Option<f32>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_directions: Option<Vec<crate::Point>>,
@@ -579,7 +579,7 @@ fn prepare_stroke_inner<'a>(
         ordered_disk_replay,
         inkpen2_v9: None,
         fountain_v17_rgb,
-        fountain_v17_output_scale: None,
+        fountain_output_scale: None,
         dot_directions,
         rect_stamp,
         coverage_mesh,

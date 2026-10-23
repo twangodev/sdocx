@@ -819,6 +819,13 @@ impl RadialGradient {
                 .set("gradientUnits", "userSpaceOnUse"),
         ))
     }
+    pub fn object_bounding_box(id: &Definition<Gradient>) -> Self {
+        Self(Node::new(
+            svg_element::RadialGradient::new()
+                .set("id", id.id())
+                .set("gradientUnits", "objectBoundingBox"),
+        ))
+    }
 }
 macro_rules! gradient_transforms {
     ($($name:ident),*) => { $(impl $name {
@@ -848,6 +855,15 @@ impl SvgMask {
             svg_element::Mask::new()
                 .set("id", id.id())
                 .set("maskUnits", "userSpaceOnUse")
+                .set("style", "mask-type:luminance"),
+        ))
+    }
+    pub fn luminance_object_bounding_box(id: &Definition<Mask>) -> Self {
+        Self(Node::new(
+            svg_element::Mask::new()
+                .set("id", id.id())
+                .set("maskUnits", "objectBoundingBox")
+                .set("maskContentUnits", "objectBoundingBox")
                 .set("style", "mask-type:luminance"),
         ))
     }

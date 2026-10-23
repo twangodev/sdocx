@@ -196,6 +196,27 @@ impl PartialEq for FountainV17OutputScaleProfile {
 }
 impl Eq for FountainV17OutputScaleProfile {}
 
+/// Explicit uniform output scale for V14 Fountain edge coverage.
+///
+/// The caller must apply this same scale, plus translation, from page units to
+/// output pixels. The renderer does not infer scale from the page or viewport.
+/// `None`, nonfinite, nonpositive, or unrepresentable scales preserve the
+/// existing canonical V14 vector paint. The scaled route is bounded and falls
+/// back to that same canonical paint when its derived native geometry exceeds
+/// its supported limits.
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FountainV14OutputScaleProfile {
+    /// Uniform output pixels per page unit.
+    pub pixels_per_page_unit: f32,
+}
+impl PartialEq for FountainV14OutputScaleProfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.pixels_per_page_unit.to_bits() == other.pixels_per_page_unit.to_bits()
+    }
+}
+impl Eq for FountainV14OutputScaleProfile {}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -221,6 +242,10 @@ pub struct RenderOptions {
     /// rainbow route. `None` preserves canonical page-unit geometry.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
+    /// Optional scale-aware edge coverage for the saved Fountain V14 path.
+    /// Invalid or absent profiles preserve the existing V14 vector output.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -704,6 +729,7 @@ impl DocumentTextCache {
             options.chinesebrush_fwidth_output_profile,
             options.fountain_v17_rainbow_profile.as_ref(),
             options.fountain_v17_output_scale_profile,
+            options.fountain_v14_output_scale_profile,
             options.pencil3_profile,
             slice,
             observer,
@@ -1138,6 +1164,7 @@ fn render_page_contents_svg(
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
+    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1200,6 +1227,7 @@ fn render_page_contents_svg(
         chinesebrush_fwidth_output_profile,
         fountain_v17_rainbow_profile,
         fountain_v17_output_scale_profile,
+        fountain_v14_output_scale_profile,
         pencil3_profile,
         slice,
     };
@@ -1238,6 +1266,7 @@ struct CompositionContext<'a> {
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
+    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 }
@@ -1305,6 +1334,7 @@ fn render_object(
                 context.chinesebrush_fwidth_output_profile,
                 context.fountain_v17_rainbow_profile,
                 context.fountain_v17_output_scale_profile,
+                context.fountain_v14_output_scale_profile,
                 context.pencil3_profile,
                 context.slice,
             );
@@ -3513,6 +3543,7 @@ fn render_stroke(
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
+    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     slice: Option<PageSlice>,
 ) {
@@ -3658,6 +3689,14 @@ fn render_stroke(
     } else {
         crate::prepare_stroke(stroke, false)
     };
+    if native_allowed
+        && paint.profile == Some("FountainPen")
+        && paint.dot_directions.is_some()
+        && let Some(profile) = fountain_v14_output_scale_profile
+        && valid_fountain_v14_output_scale(profile.pixels_per_page_unit)
+    {
+        paint.fountain_output_scale = Some(profile.pixels_per_page_unit);
+    }
     if !native_allowed && paint.coverage_mesh.is_none() {
         let native_fountain_default_color = paint.profile == Some("FountainPen")
             && paint.support == crate::ink::InkSupport::Reconstructed
@@ -3718,6 +3757,14 @@ fn valid_fountain_v17_output_scale(scale: f32) -> bool {
     }
     let inverse = 1.0_f32 / scale;
     inverse.is_finite() && inverse > 0.0
+}
+
+fn valid_fountain_v14_output_scale(scale: f32) -> bool {
+    if !scale.is_finite() || scale <= 0.0 || scale > 1_000_000.0 {
+        return false;
+    }
+    let inverse = 1.0_f32 / scale;
+    inverse.is_finite() && inverse > 0.0 && inverse <= 1_000_000.0
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -3794,7 +3841,7 @@ fn empty_saved_stroke_paint(stroke: &Stroke, theme: RenderTheme) -> crate::Prepa
         ordered_disk_replay: None,
         inkpen2_v9: None,
         fountain_v17_rgb: None,
-        fountain_v17_output_scale: None,
+        fountain_output_scale: None,
         dot_directions: None,
         rect_stamp: None,
         coverage_mesh: None,
@@ -4582,11 +4629,11 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, FountainV17OutputScaleProfile,
-        FountainV17RainbowRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
-        RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
-        prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
-        render_layout_page_svg, sanitize_hyperlink_target,
+        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, FountainV14OutputScaleProfile,
+        FountainV17OutputScaleProfile, FountainV17RainbowRenderProfile, InkPen2RenderProfile,
+        RenderColorMode, RenderOptions, RenderTheme, is_dark_background, normalized_stroke_width,
+        prepare_inkpen2_v9, prepare_stroke_for_page_with_theme, render_document_svg,
+        render_layout_page_replay_svg, render_layout_page_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -9769,6 +9816,58 @@ mod tests {
         rendering.style.initial_tolerance = (advanced_setting == "14;").then_some(0.0);
         stroke.pen_width = 2.5;
         stroke
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn public_fountain_v14_scale_profile_keeps_svg_and_pdf_vector_output() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 64;
+        page.height = 64;
+        page.objects = vec![fountain_color_stroke("14;").into()];
+        let document = document(page);
+        let canonical = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let options = RenderOptions {
+            fountain_v14_output_scale_profile: Some(FountainV14OutputScaleProfile {
+                pixels_per_page_unit: 2.0,
+            }),
+            ..RenderOptions::default()
+        };
+        let scaled = render_document_svg(&document, &options).remove(0).svg;
+        assert_ne!(scaled, canonical);
+        assert!(scaled.contains("<mask"));
+        assert!(scaled.contains("radialGradient"));
+        assert!(!scaled.contains("<image"));
+        let invalid = RenderOptions {
+            fountain_v14_output_scale_profile: Some(FountainV14OutputScaleProfile {
+                pixels_per_page_unit: f32::NAN,
+            }),
+            ..RenderOptions::default()
+        };
+        assert_eq!(
+            render_document_svg(&document, &invalid).remove(0).svg,
+            canonical
+        );
+        #[cfg(feature = "pdf")]
+        {
+            let bytes =
+                crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
+                    .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let images = pdf
+                .objects
+                .values()
+                .filter_map(pdf_object_dictionary)
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
+                })
+                .count();
+            assert_eq!(images, 0, "the V14 scale profile remains vector PDF paint");
+        }
     }
 
     #[cfg(feature = "serde")]

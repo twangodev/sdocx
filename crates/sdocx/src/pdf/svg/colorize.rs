@@ -435,7 +435,10 @@ mod tests {
                     .is_ok_and(|name| name == b"Image")
             })
             .count();
-        assert_eq!(image_xobjects, 0, "V14 mask/filter lowering stays vector-only");
+        assert_eq!(
+            image_xobjects, 0,
+            "V14 mask/filter lowering stays vector-only"
+        );
         for token in [b"/Luminosity".as_slice(), b"/ShadingType", b"/Lighten"] {
             assert!(bytes.windows(token.len()).any(|window| window == token));
         }

@@ -387,6 +387,26 @@ are diagnostic renders only; production remains vector output. Only one
 of the 56,713 native V14 stamps is an exact repeated center/radius/direction
 within its stroke, so duplicate removal cannot explain the whole-page gap.
 
+### Explicit V14 output scale
+
+`FountainV14OutputScaleProfile` adds the native half-pixel fringe and
+minimum-width alpha at a caller-declared uniform output scale. Each stamp's
+radial mask and width alpha are first painted onto an opaque scalar field;
+maximum blending then combines those fields before the existing colorizer.
+Rust tests check all 180 archived AddPoint records and
+[compact shader tiles](../../conformance/fountain-v14-fringe-atlas.json),
+compare rendered alpha with the canonical route at 1×/2×/4×, and verify
+that duplicate stamps do not accumulate alpha.
+
+A fresh decode of the same saved handwriting cache gives normalized absolute
+alpha error of 7.868% → 3.777% in resvg 0.47 and 8.124% → 4.117% in Chromium
+153 at 1×. Thresholded ink overlap decreases from 94.526% → 93.601% and
+94.993% → 93.027%, respectively; summed alpha is 2.978% / 3.383% below the
+native reference. Sampling differences and cache freshness remain unresolved.
+The full-page SVG grows from 11.6 MB to 33.1 MB and PDF from 42.3 MB to
+67.6 MB; both PDFs contain zero image objects. This checks vector transport,
+not a paired native PDF appearance match. Default output is unchanged.
+
 ### PDF appearance check
 
 A fresh production export of `handwritten.sdocx` is 42,045,542 bytes,

@@ -1,7 +1,7 @@
 //! Fountain V14/V16 coverage using only SVG vector primitives.
 use super::vector::{
     Blend, Circle, ColorMatrix, ColorValue, Definitions, Filter, Gradient, Group, LinearGradient,
-    Paint, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter, Transform,
+    Mask, Paint, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter, SvgMask, Transform,
 };
 use crate::PreparedStroke;
 use std::collections::HashMap;
@@ -33,6 +33,7 @@ struct V14Plan {
     region: (f64, f64, f64, f64),
     stamps: Vec<V14Stamp>,
     y_bounds: Option<(f64, f64)>,
+    output_scale: Option<f32>,
 }
 
 #[derive(Clone, Copy)]
@@ -40,6 +41,8 @@ struct V14Stamp {
     point: crate::Point,
     dx: f64,
     dy: f64,
+    width_alpha: f32,
+    radial_inner: Option<f32>,
 }
 
 struct V16Plan {
@@ -87,6 +90,16 @@ impl PaintPlan {
 
 impl V14Plan {
     fn prepare(paint: &PreparedStroke<'_>, collect_bounds: bool) -> Option<Self> {
+        if let Some(scale) = paint.fountain_output_scale
+            && valid_v14_scale(scale)
+            && let Some(plan) = Self::prepare_scaled(paint, collect_bounds, scale)
+        {
+            return Some(plan);
+        }
+        Self::prepare_canonical(paint, collect_bounds)
+    }
+
+    fn prepare_canonical(paint: &PreparedStroke<'_>, collect_bounds: bool) -> Option<Self> {
         let (Some(directions), Some(radii), Some(bounds)) =
             (&paint.dot_directions, &paint.dot_radii, paint.bounds)
         else {
@@ -115,6 +128,8 @@ impl V14Plan {
                 point: *point,
                 dx,
                 dy,
+                width_alpha: 1.0,
+                radial_inner: None,
             });
             // Full-page output does not need serialized-transform culling bounds.
             if !collect_bounds {
@@ -152,6 +167,108 @@ impl V14Plan {
             region,
             stamps,
             y_bounds,
+            output_scale: None,
+        })
+    }
+
+    fn prepare_scaled(
+        paint: &PreparedStroke<'_>,
+        collect_bounds: bool,
+        output_scale: f32,
+    ) -> Option<Self> {
+        const MAX_STAMPS: usize = 8_192;
+        let (Some(directions), Some(radii), Some(bounds)) =
+            (&paint.dot_directions, &paint.dot_radii, paint.bounds)
+        else {
+            return None;
+        };
+        let count = paint.points.len();
+        if count == 0
+            || count > MAX_STAMPS
+            || radii.len() != count
+            || directions.len() != count
+            || !paint.opacity.is_finite()
+            || !(0.0..=1.0).contains(&paint.opacity)
+        {
+            return None;
+        }
+        let color = parse_rgb(&paint.color)?;
+        let inverse_scale = 1.0_f32 / output_scale;
+        if !inverse_scale.is_finite() || inverse_scale <= 0.0 {
+            return None;
+        }
+        let padding = 1.0_f64.max(f64::from(inverse_scale));
+        let region = (
+            bounds.x_min - padding,
+            bounds.y_min - padding,
+            bounds.x_max - bounds.x_min + padding * 2.0,
+            bounds.y_max - bounds.y_min + padding * 2.0,
+        );
+        let mut stamps = Vec::with_capacity(count);
+        let mut y_bounds: Option<(f64, f64)> = None;
+        let mut bounds_known = region.0.is_finite()
+            && region.1.is_finite()
+            && region.2.is_finite()
+            && region.3.is_finite()
+            && region.2 > 0.0
+            && region.3 > 0.0;
+        for ((point, radius), direction) in paint.points.iter().zip(radii).zip(directions) {
+            let [
+                x,
+                y,
+                extent_x,
+                extent_y,
+                direction_x,
+                direction_y,
+                _transparency,
+                radial_inner,
+                width_alpha,
+            ] = v14_native_addpoint_record(*point, *radius, *direction, output_scale)?;
+            let dx = direction_x * extent_x;
+            let dy = direction_y * extent_y;
+            if !dx.is_finite() || !dy.is_finite() {
+                return None;
+            }
+            let point = crate::Point {
+                x: f64::from(x),
+                y: f64::from(y),
+            };
+            stamps.push(V14Stamp {
+                point,
+                dx: f64::from(dx),
+                dy: f64::from(dy),
+                width_alpha,
+                radial_inner: Some(radial_inner),
+            });
+
+            if !collect_bounds {
+                continue;
+            }
+            let (Some(ty), Some(a), Some(b)) = (
+                f32_number(f64::from(y)),
+                f32_number(f64::from(dx)),
+                f32_number(f64::from(dy)),
+            ) else {
+                bounds_known = false;
+                continue;
+            };
+            let extent = next_up(a.hypot(b));
+            let low = next_down(next_down(ty) - extent);
+            let high = next_up(next_up(ty) + extent);
+            y_bounds = Some(match y_bounds {
+                Some((min_y, max_y)) => (min_y.min(f64::from(low)), max_y.max(f64::from(high))),
+                None => (f64::from(low), f64::from(high)),
+            });
+        }
+        if !bounds_known {
+            y_bounds = None;
+        }
+        Some(Self {
+            color,
+            region,
+            stamps,
+            y_bounds,
+            output_scale: Some(output_scale),
         })
     }
 
@@ -190,14 +307,51 @@ impl V14Plan {
             0.,
             0.,
         ]);
-        svg.scope(
-            Definitions::new().add(ramp).add(
-                SvgFilter::new(&filter)
-                    .region(x, y, width, height)
-                    .add(matrix),
-            ),
-            |_| {},
+        let mut definitions = Definitions::new().add(ramp).add(
+            SvgFilter::new(&filter)
+                .region(x, y, width, height)
+                .add(matrix),
         );
+        let mut radial_masks = HashMap::<u32, super::vector::Definition<Mask>>::new();
+        if self.output_scale.is_some() {
+            for stamp in &self.stamps {
+                let Some(inner) = stamp.radial_inner else {
+                    continue;
+                };
+                let key = inner.to_bits();
+                if radial_masks.contains_key(&key) {
+                    continue;
+                }
+                let radial = svg.definition::<Gradient>();
+                let mask = svg.definition::<Mask>();
+                let stop = (f64::from(inner) * 2.0).clamp(0.0, 1.0);
+                let mut radial_gradient = RadialGradient::object_bounding_box(&radial)
+                    .cx(0.5)
+                    .cy(0.5)
+                    .r(0.5)
+                    .add(Stop::new(0.0, ColorValue::WHITE));
+                if stop > 0.0 {
+                    radial_gradient = radial_gradient.add(Stop::new(stop, ColorValue::WHITE));
+                }
+                radial_gradient = radial_gradient.add(Stop::new(1.0, ColorValue::BLACK));
+                let mask_definition = SvgMask::luminance_object_bounding_box(&mask)
+                    .x(-0.1)
+                    .y(-0.1)
+                    .width(1.2)
+                    .height(1.2)
+                    .add(
+                        super::vector::Rectangle::new()
+                            .x(0.0)
+                            .y(0.0)
+                            .width(1.0)
+                            .height(1.0)
+                            .fill(Paint::Gradient(radial)),
+                    );
+                definitions = definitions.add(radial_gradient).add(mask_definition);
+                radial_masks.insert(key, mask);
+            }
+        }
+        svg.scope(definitions, |_| {});
         svg.scope(
             Group::new().filtered(&filter).opacity(paint.opacity),
             |svg| {
@@ -211,33 +365,144 @@ impl V14Plan {
                             .fill(Paint::BLACK),
                     );
                     for (index, stamp) in self.stamps.iter().enumerate() {
-                        svg.push(
-                            Group::new()
-                                .blend(Blend::Lighten)
-                                .replay_part(replay.then_some(ReplayPart(index + 1)))
-                                .add(
-                                    Circle::new()
-                                        .r(1)
-                                        .fill(Paint::Gradient(gradient))
-                                        .transformed(Transform::matrix(
-                                            [
-                                                stamp.dx,
-                                                stamp.dy,
-                                                -stamp.dy,
-                                                stamp.dx,
-                                                stamp.point.x,
-                                                stamp.point.y,
-                                            ],
-                                            7,
-                                            4,
-                                        )),
-                                ),
+                        let transform = Transform::matrix(
+                            [
+                                stamp.dx,
+                                stamp.dy,
+                                -stamp.dy,
+                                stamp.dx,
+                                stamp.point.x,
+                                stamp.point.y,
+                            ],
+                            7,
+                            4,
                         );
+                        let mut circle = Circle::new().r(1).fill(Paint::Gradient(gradient));
+                        if let Some(inner) = stamp.radial_inner {
+                            let mask = radial_masks
+                                .get(&inner.to_bits())
+                                .expect("scaled V14 stamp has a radial mask");
+                            circle = circle.masked(mask);
+                        }
+                        if self.output_scale.is_some() {
+                            // Preserve GL_MAX after applying the per-stamp
+                            // radial and width coverage. A transparent
+                            // semitransparent source under SVG Lighten still
+                            // source-over accumulates alpha at overlaps. Put
+                            // each stamp on a bounded opaque-black local layer
+                            // first, then lighten-composite that scalar field
+                            // into the stroke's opaque-black accumulation.
+                            let stamp_field = Group::new()
+                                .isolated()
+                                .transformed(transform)
+                                .add(
+                                    super::vector::Rectangle::new()
+                                        .x(-1.1)
+                                        .y(-1.1)
+                                        .width(2.2)
+                                        .height(2.2)
+                                        .fill(Paint::BLACK),
+                                )
+                                .add(
+                                    Group::new()
+                                        .opacity(f64::from(stamp.width_alpha))
+                                        .add(circle),
+                                );
+                            svg.push(
+                                Group::new()
+                                    .blend(Blend::Lighten)
+                                    .replay_part(replay.then_some(ReplayPart(index + 1)))
+                                    .add(stamp_field),
+                            );
+                        } else {
+                            svg.push(
+                                Group::new()
+                                    .blend(Blend::Lighten)
+                                    .replay_part(replay.then_some(ReplayPart(index + 1)))
+                                    .add(circle.transformed(transform)),
+                            );
+                        }
                     }
                 });
             },
         );
     }
+}
+
+/// The nine-f32 RTV4::AddPoint record, in native field order. Keep arithmetic
+/// in f32 and in the same sequence as the captured native constructor.
+fn v14_native_addpoint_record(
+    point: crate::Point,
+    radius: f64,
+    direction: crate::Point,
+    output_scale: f32,
+) -> Option<[f32; 9]> {
+    let (x, y, radius, direction_x, direction_y) = (
+        point.x as f32,
+        point.y as f32,
+        radius as f32,
+        direction.x as f32,
+        direction.y as f32,
+    );
+    if !output_scale.is_finite()
+        || output_scale <= 0.0
+        || !x.is_finite()
+        || !y.is_finite()
+        || !radius.is_finite()
+        || radius <= 0.0
+        || !direction_x.is_finite()
+        || !direction_y.is_finite()
+    {
+        return None;
+    }
+    let inverse_scale = 1.0_f32 / output_scale;
+    if !inverse_scale.is_finite() || inverse_scale <= 0.0 {
+        return None;
+    }
+    let rx = radius / inverse_scale;
+    let ry = radius / inverse_scale;
+    let minimum = rx.min(ry);
+    if !minimum.is_finite() || minimum <= 0.0 {
+        return None;
+    }
+    let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
+    let width_alpha = 1.0 / factor;
+    let extent_device_x = rx * factor.max(1.0) + 0.5;
+    let extent_device_y = ry * factor.max(1.0) + 0.5;
+    let maximum = extent_device_x.max(extent_device_y);
+    let radial_inner = 0.5 * (maximum - 1.0) / maximum;
+    let extent_x = extent_device_x * inverse_scale;
+    let extent_y = extent_device_y * inverse_scale;
+    if !width_alpha.is_finite()
+        || !(0.0..=1.0).contains(&width_alpha)
+        || !extent_x.is_finite()
+        || !extent_y.is_finite()
+        || extent_x <= 0.0
+        || extent_y <= 0.0
+        || !radial_inner.is_finite()
+        || !(0.0..0.5).contains(&radial_inner)
+    {
+        return None;
+    }
+    Some([
+        x,
+        y,
+        extent_x,
+        extent_y,
+        direction_x,
+        direction_y,
+        1.0,
+        radial_inner,
+        width_alpha,
+    ])
+}
+
+fn valid_v14_scale(scale: f32) -> bool {
+    if !scale.is_finite() || scale <= 0.0 || scale > 1_000_000.0 {
+        return false;
+    }
+    let inverse = 1.0_f32 / scale;
+    inverse.is_finite() && inverse > 0.0 && inverse <= 1_000_000.0
 }
 
 fn svg_number(value: f64, places: usize) -> Option<f64> {
@@ -296,7 +561,7 @@ impl V16Plan {
             return None;
         }
         let color = parse_rgb(&paint.color)?;
-        let inverse_scale = if let Some(scale) = paint.fountain_v17_output_scale {
+        let inverse_scale = if let Some(scale) = paint.fountain_output_scale {
             if !scale.is_finite() || scale <= 0.0 {
                 return None;
             }
@@ -607,6 +872,102 @@ mod tests {
         pixmap
     }
 
+    #[derive(Default, Debug)]
+    struct V14AlphaComparison {
+        pixels: usize,
+        union_pixels: usize,
+        native_support: usize,
+        rendered_support: usize,
+        support_xor: usize,
+        absolute_error_sum: u64,
+        max_absolute_error: u8,
+    }
+
+    impl V14AlphaComparison {
+        fn add_tile(&mut self, native: &[u8], rendered: &[u8]) {
+            assert_eq!(native.len(), 64 * 64);
+            assert_eq!(rendered.len(), native.len());
+            self.pixels += native.len();
+            for (&native, &rendered) in native.iter().zip(rendered) {
+                let native_covered = native != 0;
+                let rendered_covered = rendered != 0;
+                self.native_support += native_covered as usize;
+                self.rendered_support += rendered_covered as usize;
+                self.support_xor += (native_covered != rendered_covered) as usize;
+                self.union_pixels += (native_covered || rendered_covered) as usize;
+                let error = native.abs_diff(rendered);
+                self.absolute_error_sum += u64::from(error);
+                self.max_absolute_error = self.max_absolute_error.max(error);
+            }
+        }
+
+        fn mae_over_union(&self) -> f64 {
+            self.absolute_error_sum as f64 / self.union_pixels.max(1) as f64
+        }
+    }
+
+    fn v14_raster_tile(
+        fixture_stroke: &Stroke,
+        point: Point,
+        radius: f64,
+        direction: Point,
+        output_scale: Option<f32>,
+        raster_scale: f32,
+    ) -> Vec<u8> {
+        v14_raster_stamps(
+            fixture_stroke,
+            &[(point, radius, direction)],
+            output_scale,
+            raster_scale,
+        )
+    }
+
+    fn v14_raster_stamps(
+        fixture_stroke: &Stroke,
+        stamps: &[(Point, f64, Point)],
+        output_scale: Option<f32>,
+        raster_scale: f32,
+    ) -> Vec<u8> {
+        let mut paint = crate::prepare_stroke(fixture_stroke, false);
+        paint.profile = Some("FountainPen");
+        paint.points = Cow::Owned(stamps.iter().map(|stamp| stamp.0).collect());
+        paint.dot_radii = Some(stamps.iter().map(|stamp| stamp.1).collect());
+        paint.dot_directions = Some(stamps.iter().map(|stamp| stamp.2).collect());
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 64.0,
+            y_max: 64.0,
+        });
+        paint.color = "#000000".into();
+        paint.opacity = 1.0;
+        paint.fountain_output_scale = output_scale;
+        let mut svg = Scene::new(Svg::new().width(64).height(64));
+        assert!(render(&mut svg, &paint, false, None));
+        let tree = resvg::usvg::Tree::from_str(&svg.finish(), &resvg::usvg::Options::default())
+            .expect("V14 scaled SVG parses for raster comparison");
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(64, 64).expect("64x64 target");
+        // The capture projects around (32, 32), then flips glReadPixels rows
+        // into top-to-bottom PNG order. Those two Y reversals cancel, so both
+        // SVG axes scale positively around the same anchor in atlas space.
+        let transform = resvg::tiny_skia::Transform::from_row(
+            raster_scale,
+            0.0,
+            0.0,
+            raster_scale,
+            32.0 - 32.0 * raster_scale,
+            32.0 - 32.0 * raster_scale,
+        );
+        resvg::render(&tree, transform, &mut pixmap.as_mut());
+        pixmap
+            .data()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|pixel| pixel[3])
+            .collect()
+    }
+
     fn v16_scene(stamps: &[(f64, f64, f64)], opacity: f64, replay: bool) -> String {
         v16_scene_with_output_scale(stamps, opacity, replay, None)
     }
@@ -639,7 +1000,7 @@ mod tests {
         });
         paint.color = "#1a1a1a".into();
         paint.opacity = opacity;
-        paint.fountain_v17_output_scale = output_scale;
+        paint.fountain_output_scale = output_scale;
         let mut svg = Scene::new(Svg::new().width(64).height(64));
         assert!(render(&mut svg, &paint, replay, None));
         svg.finish()
@@ -664,7 +1025,7 @@ mod tests {
                 y_max: 64.0,
             });
             paint.fountain_v17_rgb = Some(vec![[0.2, 0.4, 0.6]]);
-            paint.fountain_v17_output_scale = scale;
+            paint.fountain_output_scale = scale;
             V16Plan::prepare(&paint).unwrap()
         };
         for (scale, inverse_expected, extent_expected, inner_expected) in [
@@ -732,15 +1093,408 @@ mod tests {
         });
         paint.fountain_v17_rgb = Some(vec![[0.2, 0.4, 0.6]]);
         for scale in [f32::NAN, f32::INFINITY, 0.0, -1.0, f32::from_bits(1)] {
-            paint.fountain_v17_output_scale = Some(scale);
+            paint.fountain_output_scale = Some(scale);
             assert!(V16Plan::prepare(&paint).is_none(), "accepted scale {scale}");
         }
-        paint.fountain_v17_output_scale = Some(f32::MAX);
+        paint.fountain_output_scale = Some(f32::MAX);
         paint.dot_radii = Some(vec![f64::from(f32::MAX)]);
         assert!(
             V16Plan::prepare(&paint).is_none(),
             "accepted overflowed extents"
         );
+    }
+
+    #[test]
+    fn v14_scaled_addpoint_records_match_the_archived_native_atlas() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-fringe-atlas.json"
+        ))
+        .unwrap();
+        let radii: Vec<f64> = fixture["input"]["radii_document_units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap())
+            .collect();
+        let directions: Vec<Point> = fixture["input"]["directions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: pair[0].as_f64().unwrap(),
+                y: pair[1].as_f64().unwrap(),
+            })
+            .collect();
+        let positions: Vec<Point> = fixture["input"]["subpixel_positions_document_units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: pair[0].as_f64().unwrap(),
+                y: pair[1].as_f64().unwrap(),
+            })
+            .collect();
+        let runs = fixture["runs"].as_array().unwrap();
+        assert_eq!(runs.len(), 180);
+        let decoder = png::Decoder::new(std::io::Cursor::new(include_bytes!(
+            "../../../../conformance/fountain-v14-fringe-atlas.png"
+        )));
+        let mut reader = decoder.read_info().unwrap();
+        assert_eq!((reader.info().width, reader.info().height), (11_520, 64));
+        assert_eq!(reader.info().color_type, png::ColorType::Grayscale);
+        assert_eq!(reader.info().bit_depth, png::BitDepth::Eight);
+        let mut atlas = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut atlas).unwrap();
+        atlas.truncate(info.buffer_size());
+        use sha2::Digest;
+        for run in runs {
+            let case_index = run[0].as_u64().unwrap() as usize;
+            let scale = run[1].as_f64().unwrap() as f32;
+            let radius = radii[case_index / 12];
+            let direction = directions[(case_index % 12) / 4];
+            let point = positions[case_index % 4];
+            let record = v14_native_addpoint_record(point, radius, direction, scale).unwrap();
+            let expected: Vec<u32> = run[2]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|word| {
+                    let bytes = word.as_str().unwrap().as_bytes();
+                    assert_eq!(bytes.len(), 8);
+                    let mut little_endian = [0; 4];
+                    for (byte, pair) in little_endian.iter_mut().zip(bytes.as_chunks::<2>().0) {
+                        *byte = u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap();
+                    }
+                    u32::from_le_bytes(little_endian)
+                })
+                .collect();
+            assert_eq!(expected.len(), record.len());
+            for (slot, (actual, expected)) in record.iter().zip(expected).enumerate() {
+                assert_eq!(actual.to_bits(), expected, "case {case_index}, slot {slot}");
+            }
+            let atlas_x = run[5].as_u64().unwrap() as usize;
+            let mut native_alpha = Vec::with_capacity(64 * 64);
+            for row in 0..64 {
+                let start = row * 11_520 + atlas_x;
+                native_alpha.extend_from_slice(&atlas[start..start + 64]);
+            }
+            assert_eq!(
+                format!("{:x}", sha2::Sha256::digest(&native_alpha)),
+                run[4].as_str().unwrap(),
+                "alpha tile hash for native case {case_index}"
+            );
+            assert!(
+                run[6].as_u64().unwrap() <= 1,
+                "shader error for case {case_index}"
+            );
+        }
+    }
+
+    #[test]
+    fn v14_scaled_svg_raster_metrics_against_archived_native_atlas() {
+        use std::io::Cursor;
+
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-fringe-atlas.json"
+        ))
+        .unwrap();
+        let source: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(source["stroke"].clone()).unwrap();
+        let radii: Vec<f64> = fixture["input"]["radii_document_units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap())
+            .collect();
+        let directions: Vec<Point> = fixture["input"]["directions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: pair[0].as_f64().unwrap(),
+                y: pair[1].as_f64().unwrap(),
+            })
+            .collect();
+        let positions: Vec<Point> = fixture["input"]["subpixel_positions_document_units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|pair| Point {
+                x: pair[0].as_f64().unwrap(),
+                y: pair[1].as_f64().unwrap(),
+            })
+            .collect();
+        let decoder = png::Decoder::new(Cursor::new(include_bytes!(
+            "../../../../conformance/fountain-v14-fringe-atlas.png"
+        )));
+        let mut reader = decoder.read_info().unwrap();
+        assert_eq!((reader.info().width, reader.info().height), (11_520, 64));
+        assert_eq!(reader.info().color_type, png::ColorType::Grayscale);
+        let mut atlas = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut atlas).unwrap();
+        atlas.truncate(info.buffer_size());
+
+        let scales = [1.0_f32, 2.0, 4.0];
+        let mut metrics: [V14AlphaComparison; 3] =
+            std::array::from_fn(|_| V14AlphaComparison::default());
+        let mut canonical_metrics: [V14AlphaComparison; 3] =
+            std::array::from_fn(|_| V14AlphaComparison::default());
+        let detailed_diagnostics = std::env::var_os("SDOCX_V14_ALPHA_DIAGNOSTICS").is_some();
+        let runs = fixture["runs"].as_array().unwrap();
+        assert_eq!(runs.len(), 180);
+        for run in runs {
+            let case_index = run[0].as_u64().unwrap() as usize;
+            let scale = run[1].as_f64().unwrap() as f32;
+            let scale_index = match scale as u32 {
+                1 => 0,
+                2 => 1,
+                4 => 2,
+                other => panic!("unexpected archived scale {other}"),
+            };
+            let point = positions[case_index % positions.len()];
+            let radius = radii[case_index / 12];
+            let direction = directions[(case_index % 12) / 4];
+            let rendered = v14_raster_tile(&stroke, point, radius, direction, Some(scale), scale);
+            let canonical = v14_raster_tile(&stroke, point, radius, direction, None, scale);
+            let atlas_x = run[5].as_u64().unwrap() as usize;
+            let mut native = Vec::with_capacity(64 * 64);
+            for row in 0..64 {
+                let start = row * 11_520 + atlas_x;
+                native.extend_from_slice(&atlas[start..start + 64]);
+            }
+            if detailed_diagnostics {
+                let mut native_bounds = [64_usize, 64, 0, 0];
+                let mut rendered_bounds = [64_usize, 64, 0, 0];
+                let mut native_support = 0;
+                let mut rendered_support = 0;
+                let mut support_xor = 0;
+                let mut union = 0;
+                let mut error_sum = 0_u64;
+                let mut maximum = (0_u8, 0_usize, 0_usize, 0_u8, 0_u8);
+                for y in 0..64 {
+                    for x in 0..64 {
+                        let offset = y * 64 + x;
+                        let expected = native[offset];
+                        let actual = rendered[offset];
+                        if expected != 0 {
+                            native_support += 1;
+                            native_bounds[0] = native_bounds[0].min(x);
+                            native_bounds[1] = native_bounds[1].min(y);
+                            native_bounds[2] = native_bounds[2].max(x);
+                            native_bounds[3] = native_bounds[3].max(y);
+                        }
+                        if actual != 0 {
+                            rendered_support += 1;
+                            rendered_bounds[0] = rendered_bounds[0].min(x);
+                            rendered_bounds[1] = rendered_bounds[1].min(y);
+                            rendered_bounds[2] = rendered_bounds[2].max(x);
+                            rendered_bounds[3] = rendered_bounds[3].max(y);
+                        }
+                        support_xor += ((expected != 0) != (actual != 0)) as usize;
+                        union += (expected != 0 || actual != 0) as usize;
+                        let error = expected.abs_diff(actual);
+                        error_sum += u64::from(error);
+                        if error > maximum.0 {
+                            maximum = (error, x, y, expected, actual);
+                        }
+                    }
+                }
+                eprintln!(
+                    "V14 tile case={case_index} scale={scale} radius={radius} direction=({:.4},{:.4}) point=({:.3},{:.3}) native_support={native_support} rendered_support={rendered_support} support_xor={support_xor} mae_union={:.4} native_bbox={native_bounds:?} rendered_bbox={rendered_bounds:?} max_error=(x={},y={},native={},rendered={},delta={}) center=({}, {})",
+                    direction.x,
+                    direction.y,
+                    point.x,
+                    point.y,
+                    error_sum as f64 / union.max(1) as f64,
+                    maximum.1,
+                    maximum.2,
+                    maximum.3,
+                    maximum.4,
+                    maximum.0,
+                    native[32 * 64 + 32],
+                    rendered[32 * 64 + 32],
+                );
+            }
+            metrics[scale_index].add_tile(&native, &rendered);
+            canonical_metrics[scale_index].add_tile(&native, &canonical);
+        }
+
+        // Record measurable rendered coverage against the captured native
+        // support. The atlas's native scalar-vs-shader error is at most one
+        // byte, but this test intentionally does not turn that into an
+        // unmeasured resvg-vs-GLES acceptance threshold.
+        for ((scale, result), canonical) in scales.into_iter().zip(&metrics).zip(&canonical_metrics)
+        {
+            assert_eq!(result.pixels, 60 * 64 * 64);
+            assert!(result.native_support > 0);
+            assert!(result.rendered_support > 0);
+            assert!(
+                result.mae_over_union() < canonical.mae_over_union(),
+                "scale-aware V14 did not improve over canonical at scale {scale}: scaled={result:?}, canonical={canonical:?}"
+            );
+            eprintln!(
+                "V14 atlas scale={scale}: scaled(native_support={}, rendered_support={}, support_xor={}, union={}, alpha_mae_over_union={:.4}, max_abs_error={}); canonical(native_support={}, rendered_support={}, support_xor={}, union={}, alpha_mae_over_union={:.4}, max_abs_error={})",
+                result.native_support,
+                result.rendered_support,
+                result.support_xor,
+                result.union_pixels,
+                result.mae_over_union(),
+                result.max_absolute_error,
+                canonical.native_support,
+                canonical.rendered_support,
+                canonical.support_xor,
+                canonical.union_pixels,
+                canonical.mae_over_union(),
+                canonical.max_absolute_error,
+            );
+        }
+    }
+
+    #[test]
+    fn v14_scaled_overlaps_preserve_duplicate_alpha_and_match_max_composition_model() {
+        use std::io::Cursor;
+
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-fringe-atlas.json"
+        ))
+        .unwrap();
+        let source: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(source["stroke"].clone()).unwrap();
+        let radii: Vec<f64> = fixture["input"]["radii_document_units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap())
+            .collect();
+        let direction = Point { x: 1.0, y: 0.0 };
+        let center = Point { x: 32.0, y: 32.0 };
+        let scale = 2.0_f32;
+        let decoder = png::Decoder::new(Cursor::new(include_bytes!(
+            "../../../../conformance/fountain-v14-fringe-atlas.png"
+        )));
+        let mut reader = decoder.read_info().unwrap();
+        let mut atlas = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut atlas).unwrap();
+        atlas.truncate(info.buffer_size());
+        let native_tile = |case_index: usize| {
+            let run = fixture["runs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|run| {
+                    run[0].as_u64() == Some(case_index as u64)
+                        && run[1].as_f64() == Some(f64::from(scale))
+                })
+                .expect("pinned atlas has requested case and scale");
+            let atlas_x = run[5].as_u64().unwrap() as usize;
+            let mut tile = Vec::with_capacity(64 * 64);
+            for row in 0..64 {
+                let start = row * 11_520 + atlas_x;
+                tile.extend_from_slice(&atlas[start..start + 64]);
+            }
+            tile
+        };
+
+        // Repeated V14 records use the renderer's production Lighten/filter
+        // path. They must not accumulate alpha as source-over would.
+        let thin = (center, radii[0], direction);
+        let once = v14_raster_stamps(&stroke, &[thin], Some(scale), scale);
+        let twice = v14_raster_stamps(&stroke, &[thin, thin], Some(scale), scale);
+        assert_eq!(twice, once, "identical native stamps must not build alpha");
+
+        // These two archived native tiles are centered and direction-aligned,
+        // but use different radii. Their per-pixel native GL_MAX result is the
+        // expected coverage for their overlapping native stamps.
+        let native_thin = native_tile(0);
+        let native_wide = native_tile(48);
+        let native_max = native_thin
+            .iter()
+            .zip(&native_wide)
+            .map(|(&a, &b)| a.max(b))
+            .collect::<Vec<_>>();
+        let wide = (center, radii[4], direction);
+        let rendered_thin = v14_raster_stamps(&stroke, &[thin], Some(scale), scale);
+        let rendered_wide = v14_raster_stamps(&stroke, &[wide], Some(scale), scale);
+        let rendered_pair = v14_raster_stamps(&stroke, &[thin, wide], Some(scale), scale);
+        let rendered_max = rendered_thin
+            .iter()
+            .zip(&rendered_wide)
+            .map(|(&a, &b)| a.max(b))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            rendered_pair, rendered_max,
+            "overlapping SVG stamps should retain per-pixel Lighten/MAX alpha"
+        );
+        let mut native_comparison = V14AlphaComparison::default();
+        native_comparison.add_tile(&native_max, &rendered_pair);
+        eprintln!(
+            "V14 overlap scale={scale}: native_max_support={} rendered_support={} support_xor={} union={} alpha_mae_over_union={:.4} max_abs_error={}",
+            native_comparison.native_support,
+            native_comparison.rendered_support,
+            native_comparison.support_xor,
+            native_comparison.union_pixels,
+            native_comparison.mae_over_union(),
+            native_comparison.max_absolute_error,
+        );
+    }
+
+    #[test]
+    fn v14_scaled_route_is_vector_only_and_invalid_scale_keeps_canonical_svg() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let mut paint = crate::prepare_stroke(&stroke, false);
+        paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }]);
+        paint.dot_radii = Some(vec![0.1]);
+        paint.dot_directions = Some(vec![Point { x: 1., y: 0. }]);
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 64.,
+            y_max: 64.,
+        });
+        let render_svg = |paint: &PreparedStroke<'_>| {
+            let mut svg = Scene::new(Svg::new().width(64).height(64));
+            assert!(render(&mut svg, paint, false, None));
+            svg.finish()
+        };
+        let canonical = render_svg(&paint);
+        for invalid in [f32::NAN, 0.0, -1.0, 1_000_001.0] {
+            paint.fountain_output_scale = Some(invalid);
+            assert_eq!(render_svg(&paint), canonical);
+        }
+        paint.fountain_output_scale = Some(4.0);
+        let scaled = render_svg(&paint);
+        assert!(scaled.contains("<mask"));
+        assert!(scaled.contains("radialGradient"));
+        let width_alpha = v14_native_addpoint_record(
+            Point { x: 32.25, y: 31.75 },
+            0.1,
+            Point { x: 1.0, y: 0.0 },
+            4.0,
+        )
+        .unwrap()[8];
+        let serialized_opacities = scaled
+            .match_indices("opacity=\"")
+            .filter_map(|(start, _)| {
+                scaled[start + 9..]
+                    .split('\"')
+                    .next()
+                    .and_then(|value| value.parse::<f32>().ok())
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            serialized_opacities
+                .iter()
+                .any(|value| (*value - width_alpha).abs() < 1e-6)
+        );
+        assert!(!scaled.contains("<image"));
+        assert!(resvg::usvg::Tree::from_str(&scaled, &resvg::usvg::Options::default()).is_ok());
     }
 
     #[cfg(feature = "pdf")]
@@ -1377,6 +2131,7 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
+                None,
                 None,
                 None,
                 None,
