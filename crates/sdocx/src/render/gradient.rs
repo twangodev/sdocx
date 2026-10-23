@@ -42,11 +42,14 @@ pub(super) struct Plan {
 }
 
 impl Plan {
-    /// V21 (linear) and V23/V24 (radial) native captures passed the HF02 line's
-    /// `reference_bbox` to Drawing and verified geometry at Skia's factories.
-    /// These are synthetic-paint frame witnesses,
-    /// not proof of saved archive paint or pixels; keep admission to straight,
-    /// unrotated, unadorned lines until broader line cases have paired evidence.
+    /// Native captures passed the HF02 line's `reference_bbox` to Drawing and
+    /// verified geometry at Skia's factories. Rotatable radial flag 1 at zero
+    /// effect angle also matches the nonrotatable control's helper/factory
+    /// geometry and RGBA frame (native V2 result
+    /// `a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d`).
+    /// These are synthetic-paint frame witnesses, not proof of saved archive
+    /// paint or device pixels. Keep metadata rotation and other line-style
+    /// gates unchanged until broader line cases have paired evidence.
     pub fn for_line(
         line: &NativeLine,
         source: &ColorPaintSource,
@@ -54,7 +57,10 @@ impl Plan {
         if source.outline_color_type != Some(1) || !source.trailing_data.is_empty() {
             return Err(PaintDiagnosticKind::UnsupportedPaint);
         }
-        if !matches!(source.gradient_type, 0 | 1) || source.gradient_rotatable() {
+        if !matches!(source.gradient_type, 0 | 1)
+            || (source.gradient_type == 0 && source.gradient_rotatable())
+            || (source.gradient_type == 1 && source.property_flags > 1)
+        {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
         let rect = bounds(line.reference_bbox);
@@ -93,8 +99,12 @@ impl Plan {
             }
             Geometry::Linear(points)
         } else {
-            let (center, radius) =
-                radial_points(rect, source.position.map(|value| value.value()), 0.0, false);
+            let (center, radius) = radial_points(
+                rect,
+                source.position.map(|value| value.value()),
+                0.0,
+                source.gradient_rotatable(),
+            );
             if center.iter().any(|value| !value.is_finite()) || !radius.is_finite() || radius <= 0.0
             {
                 return Err(PaintDiagnosticKind::UnrepresentableGradient);

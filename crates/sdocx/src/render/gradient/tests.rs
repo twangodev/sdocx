@@ -101,6 +101,22 @@ fn radial_line_source() -> ColorPaintSource {
     source
 }
 
+fn captured_rotatable_radial_line_source() -> ColorPaintSource {
+    let mut source = radial_line_source();
+    source.property_flags = 1;
+    source.stops = vec![
+        GradientStopSource {
+            argb: 0xffff_0000,
+            position: PaintFloat32::from_bits(0),
+        },
+        GradientStopSource {
+            argb: 0xff00_00ff,
+            position: PaintFloat32::from_bits(1.0_f32.to_bits()),
+        },
+    ];
+    source
+}
+
 pub(in crate::render) fn hf02_line_with_gradient() -> NativeLine {
     let mut line = line(BoundingBox {
         x_min: 97.64480590820312,
@@ -186,6 +202,89 @@ fn line_radial_geometry_matches_centered_and_off_center_native_factory_words() {
         assert_eq!(radius.to_bits(), radius_word);
         assert_eq!(plan.stops.len(), 2);
     }
+}
+
+#[test]
+fn rotatable_radial_line_flag_matches_pinned_native_zero_angle_geometry_and_stops() {
+    // Native V2 capture result SHA-256:
+    // a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d
+    // Its exact effect bytes set outline property flag 1, type 1, angle 0,
+    // position (.25,.75), red@0 and blue@1. Actual helper/factory geometry
+    // and the flag-0 V24 RGBA frame are pinned by that capture.
+    let frame = BoundingBox {
+        x_min: f64::from(f32::from_bits(0x42c3_4a24)),
+        y_min: f64::from(f32::from_bits(0x43d9_5550)),
+        x_max: f64::from(f32::from_bits(0x435e_8b75)),
+        y_max: f64::from(f32::from_bits(0x440f_05eb)),
+    };
+    let mut control = captured_rotatable_radial_line_source();
+    control.property_flags = 0;
+    let mut rotatable = captured_rotatable_radial_line_source();
+
+    let control_plan = Plan::for_line(&line(frame), &control).unwrap();
+    let rotatable_plan = Plan::for_line(&line(frame), &rotatable).unwrap();
+    let Geometry::Radial {
+        center: control_center,
+        radius: control_radius,
+    } = control_plan.geometry
+    else {
+        panic!("flag-0 control must use radial geometry");
+    };
+    let Geometry::Radial { center, radius } = rotatable_plan.geometry else {
+        panic!("rotatable type-1 outline must use radial geometry");
+    };
+    assert_eq!(center.map(f32::to_bits), [0x4300_deab, 0x4406_6f1a]);
+    assert_eq!(radius.to_bits(), 0x4339_b42b);
+    assert_eq!(center.map(f32::to_bits), control_center.map(f32::to_bits));
+    assert_eq!(radius.to_bits(), control_radius.to_bits());
+    assert_eq!(rotatable_plan.stops, control_plan.stops);
+    assert_eq!(
+        rotatable_plan.stops,
+        vec![
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
+
+    // The existing metadata-rotation gate remains active; a rotatable effect
+    // does not authorize a rotated line frame.
+    for (rotation, accepted) in [(None, true), (Some(0.0), true), (Some(1.0), false)] {
+        let mut line = line(frame);
+        line.metadata.rotation_degrees = rotation;
+        let result = Plan::for_line(&line, &rotatable);
+        if accepted {
+            assert!(result.is_ok(), "rotation {rotation:?} should be admitted");
+        } else {
+            assert!(matches!(
+                result,
+                Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+            ));
+        }
+    }
+
+    // Only canonical flag 1 was observed; preserve other raw outline bytes
+    // without treating them as a native boolean contract.
+    for flags in [2, 0x80, 0xff] {
+        let mut unknown = rotatable.clone();
+        unknown.property_flags = flags;
+        assert!(matches!(
+            Plan::for_line(&line(frame), &unknown),
+            Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+        ));
+    }
+
+    // Do not broaden the linear route from this radial-only native witness.
+    rotatable.gradient_type = 0;
+    assert!(matches!(
+        Plan::for_line(&line(frame), &rotatable),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
 }
 
 #[test]
