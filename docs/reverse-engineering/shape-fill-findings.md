@@ -257,6 +257,17 @@ premultiplied RGBA pixels. The vector-only PDF retains radial shading, with
 36 low-alpha coverage extras and one opaque color-class difference at the
 step in MuPDF; that remaining seam difference is unresolved.
 
+A separate cache-index-zero control used low stop position `.003` and high
+stop position `.751`. In the opaque-red V41 and partial-alpha nonprimary V42
+controls, all 1,024 cache texels equaled the low stop's premultiplied RGBA.
+On the corresponding 138×151 source grids, the public SDK SVG matched V41
+exactly; V42 matched alpha/support exactly and RGB within one level. The
+PDFs stayed vector-only; MuPDF matched 20,344/20,838 and 18,912/20,838 RGB
+pixels over white. Both native attempts retained result, cache, source-upload
+and framebuffer artifacts but failed during final progress metadata (V41
+metadata lookup, V42 checkpoint-size limit). These are synthetic paint
+controls on parsed HF02 geometry, not saved-gradient or device-pixel parity.
+
 Four further controls kept the same HF02 line and radial cache boundary while
 varying stop alpha and RGB: half-alpha red with opaque blue, two partial-alpha
 stops, zero-alpha red with partial-alpha blue, and nonprimary partial-alpha

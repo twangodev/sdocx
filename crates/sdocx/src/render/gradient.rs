@@ -351,15 +351,17 @@ fn project_normalized_outline_stops(
     project_stops(&normalized)
 }
 
-/// Project the recovered two-stop type-8 radial line cache step. Skia keeps
-/// the descending stop order, endpoint-extends the first color to zero and the
-/// last color to one, then writes increasing cache spans in order. The later
-/// span overwrites the overlap, leaving a step at the low stop's quantized
-/// cache index. Native V25-V26 and V34-V38 controls cover opaque, partial-alpha, zero-alpha
-/// and nonprimary RGB stop colors on the same line geometry. They do not prove
-/// arbitrary source or device pixel parity. Keep fills, shape outlines, linear
-/// paint and gradients with more than two consumed stops on their existing
-/// paths.
+/// Project the recovered two-stop type-8 radial line cache. Skia keeps the
+/// descending stop order, endpoint-extends the first color to zero and the
+/// last color to one, then writes increasing cache spans in order. For cache
+/// indices 1..255, the later span overwrites at its quantized index. The V41
+/// and V42 actual 256x4 N32 cache reads show that index 0 yields the
+/// low-position stop throughout the table for an opaque stop and for a
+/// nonprimary partial-alpha stop. Native V25-V26 and V34-V38 controls cover
+/// nonzero indices with opaque, partial-alpha, zero-alpha and nonprimary RGB.
+/// These controls do not prove arbitrary source or device pixel parity. Keep
+/// fills, shape outlines, linear paint and gradients with more than two
+/// consumed stops on their existing paths.
 fn project_radial_line_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
@@ -378,6 +380,18 @@ fn project_radial_line_stops(
     }
 
     let cache_index = radial_cache_index(low_position);
+    if cache_index == 0 {
+        return Ok(vec![
+            ProjectedStop {
+                offset: 0.0,
+                argb: low.argb,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: low.argb,
+            },
+        ]);
+    }
     if !(1..256).contains(&cache_index) {
         return project_normalized_outline_stops(source, stops);
     }

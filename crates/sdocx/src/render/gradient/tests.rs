@@ -634,10 +634,51 @@ fn radial_line_cache_step_uses_native_q16_cache_quantization() {
     assert_eq!(projected[2].offset, f64::from(at_boundary));
 
     radial.stops[0].position = PaintFloat32::from_bits(below_first_boundary.to_bits());
-    assert!(matches!(
-        Plan::for_line(&test_line(), &radial),
-        Err(PaintDiagnosticKind::InvalidGradient)
-    ));
+    let original = radial.clone();
+    let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+    assert_eq!(
+        radial, original,
+        "bucket-zero projection must not mutate source"
+    );
+    assert_eq!(
+        projected,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000
+            },
+        ]
+    );
+
+    // The first nonzero bucket remains a step at exactly 1/256, distinct from
+    // the V41-observed constant bucket-zero cache.
+    radial.stops[0].position = PaintFloat32::from_bits((1.0_f32 / 256.0).to_bits());
+    let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+    assert_eq!(
+        projected,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff00_00ff
+            },
+            ProjectedStop {
+                offset: 1.0 / 256.0,
+                argb: 0xff00_00ff
+            },
+            ProjectedStop {
+                offset: 1.0 / 256.0,
+                argb: 0xffff_0000
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000
+            },
+        ]
+    );
 }
 
 #[test]

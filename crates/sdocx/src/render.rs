@@ -7323,6 +7323,101 @@ mod tests {
         }
     }
 
+    #[test]
+    fn public_radial_line_cache_bucket_zero_projects_low_stop_as_constant_vector_paint() {
+        // The V41/V42 captures retain the full native 256x4 cache and its
+        // matching GL_RGBA source upload; capture pins are recorded in the
+        // type-8 radial cache section of shape-fill-findings.md.
+        for (low_argb, high_argb) in [
+            (0xffff_0000, 0xff00_00ff), // V41 opaque control
+            (0x8059_21cd, 0x4000_00ff), // V42 partial-alpha, nonprimary control
+            (0x00ab_cdef, 0x4000_00ff), // transparent low-stop serialization control
+        ] {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("fixture has a color gradient source");
+            };
+            source.gradient_type = 1;
+            source.position =
+                [0.5_f32; 2].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+            source.stops[0] = crate::GradientStopSource {
+                argb: low_argb,
+                position: crate::PaintFloat32::from_bits(0x3b44_9ba6),
+            };
+            source.stops[1] = crate::GradientStopSource {
+                argb: high_argb,
+                position: crate::PaintFloat32::from_bits(0x3f40_4189),
+            };
+            let original_source = line.style.paint_source.clone();
+
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let doc = document(page);
+            let rendered = render_document_svg(&doc, &RenderOptions::default()).remove(0);
+            assert!(rendered.paint_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            let gradients = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("radialGradient"))
+                .collect::<Vec<_>>();
+            assert_eq!(gradients.len(), 1);
+            let stops = gradients[0]
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .collect::<Vec<_>>();
+            assert_eq!(stops.len(), 2);
+            let expected_color = format!(
+                "#{:02x}{:02x}{:02x}",
+                (low_argb >> 16) as u8,
+                (low_argb >> 8) as u8,
+                low_argb as u8
+            );
+            let expected_opacity = f64::from((low_argb >> 24) as u8) / 255.0;
+            for (stop, offset) in stops.iter().zip(["0", "1"]) {
+                assert_eq!(stop.attribute("offset"), Some(offset));
+                assert_eq!(stop.attribute("stop-color"), Some(expected_color.as_str()));
+                let actual_opacity = stop.attribute("stop-opacity").unwrap_or("1");
+                assert!((actual_opacity.parse::<f64>().unwrap() - expected_opacity).abs() < 1e-12);
+            }
+            assert!(!xml.descendants().any(|node| node.has_tag_name("image")));
+            let crate::PageElement::Line(rendered_line) = doc.pages[0].elements().next().unwrap()
+            else {
+                unreachable!("test document retains its line source")
+            };
+            assert_eq!(rendered_line.style.paint_source, original_source);
+
+            #[cfg(feature = "pdf")]
+            {
+                let bytes = crate::render_document_pdf(
+                    &doc,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+                let mut images = 0;
+                for dictionary in dictionaries {
+                    images += usize::from(
+                        dictionary
+                            .get(b"Subtype")
+                            .and_then(lopdf::Object::as_name)
+                            .ok()
+                            == Some(b"Image".as_slice()),
+                    );
+                }
+                assert_eq!(images, 0, "bucket-zero paint remains vector-only in PDF");
+                assert!(
+                    pdf.get_pages().contains_key(&1),
+                    "bucket-zero PDF retains its vector page"
+                );
+            }
+        }
+    }
+
     fn empty_bullet_body(kind: u32) -> RichTextBox {
         RichTextBox {
             text_area_type: None,
