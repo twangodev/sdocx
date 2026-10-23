@@ -309,9 +309,17 @@ border/hint appearance, fill-record transforms or device parity.
 A partial-source control exposes an unresolved byte-rounding difference:
 premultiplied source `(16,64,112,127)` with paint alpha 128 produces native
 `(8,32,56,63)`, while the SVG/resvg layer produces `(8,32,56,64)`.
-The SDK PNG-decode control at paint alpha 255 matches the captured buffer
-exactly; the native PNG-loading path has not been exercised here. Compared
-with compositing that captured layer over each measured background, SVG and
+Native Base/Skia now decodes the exact SDK PNG and premultiplies it to
+`(16,64,112,127)` before `DrawImage`; the paint-255 readback matches the SDK
+layer byte-for-byte (raw SHA-256
+`276ec9b61956a8b8926c81423c4d6a96a8f75a6577e99c8c5c06a01eb661f361`).
+The paint-128 run selects `S32_alpha_D32_filter_DX` with stored scale 129
+and produces `(8,32,56,63)` (raw SHA-256
+`095b215c2d507595d55932e13b6bb2fce7d26835a11e2cbc4928f912657eb821`).
+The pinned `chooseProcs` producer stores `paint_alpha + 1`; this sampler filters
+premultiplied channels before multiplying by that scale and shifting right 8.
+These are host CPU controls, not PDF or device parity. Compared
+with compositing the earlier captured layer over each measured background, SVG and
 MuPDF differ by up to one and two RGB levels respectively.
 The ignored Rust regression `native_partial_source_alpha_keeps_skia_byte_rounding`
 retains the native expectation; the comparison receipt has SHA-256
