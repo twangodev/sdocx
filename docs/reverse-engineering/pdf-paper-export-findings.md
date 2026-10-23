@@ -605,6 +605,14 @@ final PDF placement or native device pixels. A separate
 [archive-backed query comparison](object-selection-findings.md) verifies
 ordinary stroke admission and order for this sample.
 
+An archive-backed SingleX export capture also opened this WNote's actual
+cached PDF: `FPDF_LoadDocument` returned a non-null handle, `importPages`
+returned zero (success), and its caller continued. The run then stopped at
+`PenManagerST::loadlibrary` requesting `libSPenFountainPen.so`, before completed
+PDF output. This verifies native page import in the host harness, not ink export
+or final appearance (receipt SHA-256
+`26da043153a62af7d44f2b2d19a7fdf9aecce0991147a550d2f37833f0c2e075`).
+
 Those archive probes supply `ConstructLoad` fixed-axis size 1812 and exporter
 default height 1527. The app's common portrait PDF open paths instead supply
 fixed-axis size 1080 (`DocumentFileUtil.Document`, `TaskMakePdf`). Native

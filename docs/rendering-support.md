@@ -662,6 +662,8 @@ also executes native PNG decoding and image placement for a synthetic rectangle.
 A [Composer branch capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-composer-export.json) verifies
 the imported-paper DrawPDF skip and two manual-background extent controls;
 its AddPages bridge does not join native PDF serialization.
+A later archive-backed SingleX capture loads and imports the quiz's actual
+cached PDF, then stops at FountainPen loading before completed output.
 A [SingleX segmentation capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pdf-paper-single-segments.json)
 uses retained quiz dimensions with explicit host text/object queries; full
 export and final page appearance remain unverified.
