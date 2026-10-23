@@ -176,6 +176,78 @@ fn line_linear_gradient_is_independent_of_endpoint_direction() {
 }
 
 #[test]
+fn rotatable_linear_line_flag_matches_pinned_native_zero_rotation_frame() {
+    // V22 native result SHA-256:
+    // d30162b9379963344b37a58b18df6628dfdb0625737dd2d409d5c3f0f305ffd7
+    // ApplyBinary changed only property byte 1 from V21's 0 to 1. The native
+    // helper bool changed 0->1 while object rotation stayed +0; Skia received
+    // the same four point words and the complete 1,638,400-byte frame matched.
+    let frame = BoundingBox {
+        x_min: f64::from(f32::from_bits(0x42c3_4a24)),
+        y_min: f64::from(f32::from_bits(0x43d9_5550)),
+        x_max: f64::from(f32::from_bits(0x435e_8b75)),
+        y_max: f64::from(f32::from_bits(0x440f_05eb)),
+    };
+    let mut control = line_source();
+    control.position = [0.5_f32; 2].map(|value| PaintFloat32::from_bits(value.to_bits()));
+    control.stops = vec![
+        GradientStopSource {
+            argb: 0xffff_0000,
+            position: PaintFloat32::from_bits(0),
+        },
+        GradientStopSource {
+            argb: 0xff00_00ff,
+            position: PaintFloat32::from_bits(1.0_f32.to_bits()),
+        },
+    ];
+    let mut rotatable = control.clone();
+    rotatable.property_flags = 1;
+
+    let control_plan = Plan::for_line(&line(frame), &control).unwrap();
+    let rotatable_plan = Plan::for_line(&line(frame), &rotatable).unwrap();
+    let Geometry::Linear(control_points) = control_plan.geometry else {
+        panic!("flag-0 control must use linear geometry");
+    };
+    let Geometry::Linear(points) = rotatable_plan.geometry else {
+        panic!("rotatable type-0 outline must use linear geometry");
+    };
+    let expected = [[0x42c3_4a24, 0x43fb_b093], [0x435e_8b75, 0x43fb_b093]];
+    assert_eq!(points.map(|point| point.map(f32::to_bits)), expected);
+    assert_eq!(
+        points.map(|point| point.map(f32::to_bits)),
+        control_points.map(|point| point.map(f32::to_bits))
+    );
+    assert_eq!(rotatable_plan.stops, control_plan.stops);
+
+    // The helper's angle is zero in this witness. Metadata rotation remains a
+    // separate hard gate for both flag values.
+    for (rotation, accepted) in [(None, true), (Some(0.0), true), (Some(1.0), false)] {
+        let mut candidate = line(frame);
+        candidate.metadata.rotation_degrees = rotation;
+        let result = Plan::for_line(&candidate, &rotatable);
+        if accepted {
+            assert!(result.is_ok(), "rotation {rotation:?} should be admitted");
+        } else {
+            assert!(matches!(
+                result,
+                Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+            ));
+        }
+    }
+
+    // Native evidence covers exactly property byte 1; retain fallback for
+    // higher/other outline property bits on linear as well as radial routes.
+    for flags in [2, 0x80, 0xff] {
+        let mut unknown = rotatable.clone();
+        unknown.property_flags = flags;
+        assert!(matches!(
+            Plan::for_line(&line(frame), &unknown),
+            Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+        ));
+    }
+}
+
+#[test]
 fn line_radial_geometry_matches_centered_and_off_center_native_factory_words() {
     // V23 and V24 each enter the real Skia CreateRadial factory on HF02's
     // unchanged reference bbox. V23 uses the centered half-diagonal branch;
@@ -219,7 +291,7 @@ fn rotatable_radial_line_flag_matches_pinned_native_zero_angle_geometry_and_stop
     };
     let mut control = captured_rotatable_radial_line_source();
     control.property_flags = 0;
-    let mut rotatable = captured_rotatable_radial_line_source();
+    let rotatable = captured_rotatable_radial_line_source();
 
     let control_plan = Plan::for_line(&line(frame), &control).unwrap();
     let rotatable_plan = Plan::for_line(&line(frame), &rotatable).unwrap();
@@ -278,13 +350,6 @@ fn rotatable_radial_line_flag_matches_pinned_native_zero_angle_geometry_and_stop
             Err(PaintDiagnosticKind::UnsupportedGradientFrame)
         ));
     }
-
-    // Do not broaden the linear route from this radial-only native witness.
-    rotatable.gradient_type = 0;
-    assert!(matches!(
-        Plan::for_line(&line(frame), &rotatable),
-        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
-    ));
 }
 
 #[test]
@@ -324,10 +389,10 @@ fn line_gradient_keeps_unproven_frames_and_styles_on_fallback() {
         Err(PaintDiagnosticKind::UnsupportedGradientFrame)
     ));
     line.metadata.rotation_degrees = None;
-    let mut rotatable = source.clone();
-    rotatable.property_flags = 1;
+    let mut unknown_flags = source.clone();
+    unknown_flags.property_flags = 2;
     assert!(matches!(
-        Plan::for_line(&line, &rotatable),
+        Plan::for_line(&line, &unknown_flags),
         Err(PaintDiagnosticKind::UnsupportedGradientFrame)
     ));
     line.style.end_arrow = [1, 1];

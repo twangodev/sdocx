@@ -514,17 +514,19 @@ fields and trailing bytes. Other image/coedit forms and background effects remai
 opaque. Supported type-7 shapes can project canonical linear/radial color
 fill and outline records into vector paint. Patterns, rectangular/other
 gradients, image fills and background effects remain unsupported. Straight,
-unrotated, simple type-8 lines project nonrotatable linear/radial outlines;
-the radial route also admits outline rotatable flag 1 when helper rotation
-and line metadata rotation are zero. The V2 evidence effect has angle 0; the
-radial path does not use the saved effect-angle field as an admission gate. Native V2 result
-`a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d` applies
-that synthetic effect through `ApplyBinary`, observes helper flag 1 and zero
-rotation, and matches V24's helper RectF, radial factory center/radius, and all
-1,638,400 RGBA bytes. This remains an HF02 synthetic-paint control, not evidence
-of a saved gradient or Samsung device pixels. Routing, compound/dashed strokes
-and arrows retain fallback. Paired SVG/PDF opaque interiors agree, while edge
-coverage differs; saved gradient appearance and broader line styles remain unverified.
+unrotated, simple type-8 lines project linear/radial outlines with property
+byte 0 or 1; other nonzero bytes remain unsupported. Native V2/V22 controls use
+synthetic effects with effect angle 0 and line metadata rotation 0. V2 observes
+the rotatable helper flag and matches V24's radial helper RectF, factory
+center/radius and all 1,638,400 RGBA bytes. V22 observes object rotation +0 and
+the linear helper flag changing 0→1, then matches V21's linear factory points
+and all 1,638,400 RGBA bytes. The Drawing caller only rotates linear helper
+endpoints when the helper flag is true and object rotation exceeds its
+positive threshold, so the flag is a no-op in this captured zero-rotation
+case. These are HF02 synthetic-paint controls, not evidence of saved gradients
+or Samsung device pixels. Routing, compound/dashed strokes and arrows retain
+fallback. Paired SVG/PDF opaque interiors agree, while edge coverage differs;
+saved gradient appearance and broader line styles remain unverified.
 
 The preserved record needs to remain distinct from the paint that a native
 drawing route can consume: stop order, all stops, ARGB alpha and raw enum

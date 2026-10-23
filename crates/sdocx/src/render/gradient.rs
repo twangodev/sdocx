@@ -43,9 +43,11 @@ pub(super) struct Plan {
 
 impl Plan {
     /// Native captures passed the HF02 line's `reference_bbox` to Drawing and
-    /// verified geometry at Skia's factories. Rotatable radial flag 1 at zero
-    /// effect angle also matches the nonrotatable control's helper/factory
-    /// geometry and RGBA frame (native V2 result
+    /// verified geometry at Skia's factories. For type 0 and type 1, rotatable
+    /// flag 1 with zero effect angle and zero object rotation matches the
+    /// nonrotatable control's helper/factory geometry and RGBA frame (linear
+    /// V22 result `d30162b9379963344b37a58b18df6628dfdb0625737dd2d409d5c3f0f305ffd7`,
+    /// radial V2 result
     /// `a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d`).
     /// These are synthetic-paint frame witnesses, not proof of saved archive
     /// paint or device pixels. Keep metadata rotation and other line-style
@@ -57,10 +59,7 @@ impl Plan {
         if source.outline_color_type != Some(1) || !source.trailing_data.is_empty() {
             return Err(PaintDiagnosticKind::UnsupportedPaint);
         }
-        if !matches!(source.gradient_type, 0 | 1)
-            || (source.gradient_type == 0 && source.gradient_rotatable())
-            || (source.gradient_type == 1 && source.property_flags > 1)
-        {
+        if !matches!(source.gradient_type, 0 | 1) || source.property_flags > 1 {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
         let rect = bounds(line.reference_bbox);
