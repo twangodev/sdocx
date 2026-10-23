@@ -7341,14 +7341,59 @@ mod tests {
 
     #[test]
     fn public_sdk_linear_line_gradient_partial_alpha_controls_are_vector_only() {
-        // Native linear alpha controls use the same descending .75/.5 stops
-        // as the projection test. Optional files are consumed by the offline
-        // source-grid comparator; this test never launches the native oracle.
+        // Native alpha controls include the original descending .75/.5 pair
+        // plus low-stop cache buckets 0 and 51. Optional files feed the
+        // offline source-grid comparator; this test never launches the oracle.
         let cases = [
-            ("half-red-opaque-blue", 0x80ff_0000, 0xff00_00ff),
-            ("half-red-quarter-blue", 0x80ff_0000, 0x4000_00ff),
-            ("zero-red-quarter-blue", 0x00ff_0000, 0x4000_00ff),
-            ("nonprimary-half-quarter", 0x8059_21cd, 0x4000_00ff),
+            (
+                "half-red-opaque-blue",
+                0x80ff_0000,
+                0xff00_00ff,
+                0x3f00_0000,
+                128,
+            ),
+            (
+                "half-red-quarter-blue",
+                0x80ff_0000,
+                0x4000_00ff,
+                0x3f00_0000,
+                128,
+            ),
+            (
+                "zero-red-quarter-blue",
+                0x00ff_0000,
+                0x4000_00ff,
+                0x3f00_0000,
+                128,
+            ),
+            (
+                "nonprimary-half-quarter",
+                0x8059_21cd,
+                0x4000_00ff,
+                0x3f00_0000,
+                128,
+            ),
+            (
+                "low-zero-high-quarter",
+                0x8059_21cd,
+                0x4000_00ff,
+                0x0000_0000,
+                0,
+            ),
+            (
+                "low-sub-bucket-high-quarter",
+                0x8059_21cd,
+                0x4000_00ff,
+                0x3b00_0000,
+                0,
+            ),
+            (
+                "low-offgrid-high-quarter",
+                0x8059_21cd,
+                0x4000_00ff,
+                0x3e4c_cccd,
+                51,
+            ),
         ];
         let artifact_dir =
             std::env::var_os("SDOCX_LINEAR_ALPHA_ARTIFACT_DIR").map(std::path::PathBuf::from);
@@ -7356,7 +7401,7 @@ mod tests {
             std::fs::create_dir_all(directory).unwrap();
         }
 
-        for (name, low_argb, high_argb) in cases {
+        for (name, low_argb, high_argb, low_position_bits, expected_bucket) in cases {
             let mut line = super::gradient::tests::hf02_line_with_gradient();
             line.metadata.rotation_degrees = Some(30.0);
             let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
@@ -7367,7 +7412,7 @@ mod tests {
             source.stops = vec![
                 crate::GradientStopSource {
                     argb: low_argb,
-                    position: crate::PaintFloat32::from_bits(0x3f00_0000), // .5
+                    position: crate::PaintFloat32::from_bits(low_position_bits),
                 },
                 crate::GradientStopSource {
                     argb: high_argb,
@@ -7394,12 +7439,21 @@ mod tests {
                 .children()
                 .filter(|node| node.has_tag_name("stop"))
                 .collect::<Vec<_>>();
-            assert_eq!(stops.len(), 4, "{name}");
-            assert_eq!(stops[0].attribute("offset"), Some("0"), "{name}");
-            assert_eq!(stops[1].attribute("offset"), Some("0.5"), "{name}");
-            assert_eq!(stops[2].attribute("offset"), Some("0.5"), "{name}");
-            assert_eq!(stops[3].attribute("offset"), Some("1"), "{name}");
-            for (node, argb) in stops.iter().zip([high_argb, high_argb, low_argb, low_argb]) {
+            let expected = if expected_bucket == 0 {
+                vec![(0.0, low_argb), (1.0, low_argb)]
+            } else {
+                let boundary = f64::from(expected_bucket) / 256.0;
+                vec![
+                    (0.0, high_argb),
+                    (boundary, high_argb),
+                    (boundary, low_argb),
+                    (1.0, low_argb),
+                ]
+            };
+            assert_eq!(stops.len(), expected.len(), "{name}");
+            for (node, (offset, argb)) in stops.iter().zip(expected) {
+                let actual_offset = node.attribute("offset").unwrap().parse::<f64>().unwrap();
+                assert!((actual_offset - offset).abs() < 1e-12, "{name}");
                 let expected_color = format!(
                     "#{:02x}{:02x}{:02x}",
                     (argb >> 16) as u8,

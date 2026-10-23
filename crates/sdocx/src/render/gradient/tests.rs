@@ -493,6 +493,64 @@ fn linear_line_partial_alpha_descending_pair_uses_native_cache_bucket_projection
 }
 
 #[test]
+fn linear_line_partial_alpha_cache_bucket_zero_and_offgrid_are_projected() {
+    // Native boundary captures use partial-alpha nonprimary low color at
+    // positions 0, 1/512 and f32(.2), with quarter-alpha blue at .75.
+    for (low_position_bits, expected_bucket) in
+        [(0x0000_0000, 0), (0x3b00_0000, 0), (0x3e4c_cccd, 51)]
+    {
+        let mut source = captured_linear_rotation_source();
+        source.stops[0] = GradientStopSource {
+            argb: 0x4000_00ff,
+            position: PaintFloat32::from_bits(0x3f40_0000), // .75
+        };
+        source.stops[1] = GradientStopSource {
+            argb: 0x8059_21cd,
+            position: PaintFloat32::from_bits(low_position_bits),
+        };
+        let projected = Plan::for_line(&test_line(), &source).unwrap().stops;
+        if expected_bucket == 0 {
+            assert_eq!(
+                projected,
+                [
+                    ProjectedStop {
+                        offset: 0.0,
+                        argb: 0x8059_21cd,
+                    },
+                    ProjectedStop {
+                        offset: 1.0,
+                        argb: 0x8059_21cd,
+                    },
+                ]
+            );
+        } else {
+            let boundary = f64::from(expected_bucket) / 256.0;
+            assert_eq!(
+                projected,
+                [
+                    ProjectedStop {
+                        offset: 0.0,
+                        argb: 0x4000_00ff,
+                    },
+                    ProjectedStop {
+                        offset: boundary,
+                        argb: 0x4000_00ff,
+                    },
+                    ProjectedStop {
+                        offset: boundary,
+                        argb: 0x8059_21cd,
+                    },
+                    ProjectedStop {
+                        offset: 1.0,
+                        argb: 0x8059_21cd,
+                    },
+                ]
+            );
+        }
+    }
+}
+
+#[test]
 fn line_radial_geometry_matches_centered_and_off_center_native_factory_words() {
     // V23 and V24 each enter the real Skia CreateRadial factory on HF02's
     // unchanged reference bbox. V23 uses the centered half-diagonal branch;

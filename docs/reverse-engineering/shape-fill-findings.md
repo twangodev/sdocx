@@ -212,8 +212,13 @@ cache split (independent review receipt SHA-256
 `f29d5061bf2435499b17b16239afe7a9bb720ee86278388bdd31301c47046d43`). Their
 loop's span boundaries depend on Q16.16 positions, not alpha; the projection
 models endpoint extension, the skipped reversed interval and final low-stop
-overwrite. Bucket zero follows the pinned loop derivation but was not directly
-captured for linear paint. On the 30° public SDK frames composited over the
+overwrite. Three further native controls at low positions 0, 1/512 and
+`f32(0.2)` confirm flat low-color caches for bucket zero and a split at
+bucket 51 for the off-grid position (cache-summary SHA-256
+`c20e8d9a92c1eaaac492e8302f1de7b38e8023eb8c5d5cd493d2793025003dba`).
+Their paired SVG exports have active-union RGB MAE 2.28 over the same page
+background; these are synthetic paint controls on parsed HF02 geometry.
+On the original four 30° public SDK frames composited over the
 exact `#fcfcfc` page background, source-aligned RGB MAE over the active union
 is 5.23, 2.67, 1.98 and 2.06 for half-red/opaque-blue, half-red/quarter-blue,
 zero-red/quarter-blue and nonprimary-half/quarter-blue. MuPDF 1.28.2 gives
