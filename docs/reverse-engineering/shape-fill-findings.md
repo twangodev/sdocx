@@ -197,7 +197,24 @@ rotatable type-0 line at every finite f32 metadata angle, using the helper's
 negative-angle adjustment, strict small-angle threshold, `sincos` and fused
 operations described above. The paired 30-degree capture pins one runtime
 point result; it does not independently validate all trigonometric values.
-Radial metadata rotation remains unsupported by this projection.
+
+Type-8 radial line outlines now project finite f32-representable metadata
+rotation when the canonical rotatable flag is 1. The native V4 pair receipt
+`/tmp/sdocx-type8-radial-rotation-v4/pair.json` (SHA-256
+`5fef3cbe04ec9f9d6576aeaa6225719bc55f21909680b9c9b3cbac6ef3f77247`)
+uses position `(.25,.75)` and red@`.5`/blue@`.75`: the factory center moves
+from `[4300deab,44066f1a]` to `[42e7bff5,44016151]`, while radius
+`4339b42b` and all four 256×4 cache rows remain fixed. Native frames change
+54 RGB pixels with identical alpha. The paired public SDK test asserts that
+line-body geometry stays unchanged and that each PDF retains one radial
+shading with no image XObjects. Background-aligned native/SDK comparisons in
+`/tmp/sdocx-type8-radial-rotation-v4/native-sdk-paired-v1.json` (SHA-256
+`f69644edcac20dda8dee1ca8afe0317242e9a6d1d88d38076b534c3d340a6a24`)
+report SVG active-union RGB MAE `5.58958/5.58866` at 0°/30°; MuPDF 1.28.2
+reports `5.32276/5.36966` after verifying its page-corner background
+`[251,252,251]`. Both comparisons use 2,175 active pixels. Antialiasing and
+renderer residuals remain; this is synthetic-paint vector transport, not
+saved-gradient or device-pixel parity.
 
 The paired public SDK exports retain one linear PDF shading and no images.
 Against native frames composited on the SDK background, source-aligned SVG

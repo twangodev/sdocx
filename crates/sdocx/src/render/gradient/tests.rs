@@ -354,9 +354,10 @@ fn linear_line_rotation_pair_matches_native_factory_and_step_paint() {
     ));
     let mut radial = source.clone();
     radial.gradient_type = 1;
+    radial.position = [0.25_f32, 0.75].map(|value| PaintFloat32::from_bits(value.to_bits()));
     assert!(matches!(
-        Plan::for_line(&rotated_line, &radial),
-        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+        Plan::for_line(&rotated_line, &radial).unwrap().geometry,
+        Geometry::Radial { .. }
     ));
     for effect_angle in [1, 90, 179, 180, 359] {
         let mut other_angle = source.clone();
@@ -627,22 +628,6 @@ fn rotatable_radial_line_flag_matches_pinned_native_zero_angle_geometry_and_stop
         ]
     );
 
-    // The existing metadata-rotation gate remains active; a rotatable effect
-    // does not authorize a rotated line frame.
-    for (rotation, accepted) in [(None, true), (Some(0.0), true), (Some(1.0), false)] {
-        let mut line = line(frame);
-        line.metadata.rotation_degrees = rotation;
-        let result = Plan::for_line(&line, &rotatable);
-        if accepted {
-            assert!(result.is_ok(), "rotation {rotation:?} should be admitted");
-        } else {
-            assert!(matches!(
-                result,
-                Err(PaintDiagnosticKind::UnsupportedGradientFrame)
-            ));
-        }
-    }
-
     // Only canonical flag 1 was observed; preserve other raw outline bytes
     // without treating them as a native boolean contract.
     for flags in [2, 0x80, 0xff] {
@@ -651,6 +636,84 @@ fn rotatable_radial_line_flag_matches_pinned_native_zero_angle_geometry_and_stop
         assert!(matches!(
             Plan::for_line(&line(frame), &unknown),
             Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+        ));
+    }
+}
+
+#[test]
+fn rotatable_radial_line_metadata_rotation_matches_native_0_30_pair() {
+    // Native V4 pair receipt SHA-256:
+    // 5fef3cbe04ec9f9d6576aeaa6225719bc55f21909680b9c9b3cbac6ef3f77247
+    // Paired results retain native CreateRadial centers/radius and cache32.
+    let frame = BoundingBox {
+        x_min: f64::from(f32::from_bits(0x42c3_4a24)),
+        y_min: f64::from(f32::from_bits(0x43d9_5550)),
+        x_max: f64::from(f32::from_bits(0x435e_8b75)),
+        y_max: f64::from(f32::from_bits(0x440f_05eb)),
+    };
+    let mut source = captured_rotatable_radial_line_source();
+    source.stops = vec![
+        GradientStopSource {
+            argb: 0xffff_0000,
+            position: PaintFloat32::from_bits(0x3f00_0000),
+        },
+        GradientStopSource {
+            argb: 0xff00_00ff,
+            position: PaintFloat32::from_bits(0x3f40_0000),
+        },
+    ];
+    let plan_at = |rotation| {
+        let mut candidate = line(frame);
+        candidate.metadata.rotation_degrees = rotation;
+        Plan::for_line(&candidate, &source).unwrap()
+    };
+    let control = plan_at(None);
+    let rotated = plan_at(Some(30.0));
+    let Geometry::Radial {
+        center: zero_center,
+        radius: zero_radius,
+    } = control.geometry
+    else {
+        panic!("zero-degree native control must use radial geometry");
+    };
+    let Geometry::Radial { center, radius } = rotated.geometry else {
+        panic!("30-degree native capture must use radial geometry");
+    };
+    assert_eq!(zero_center.map(f32::to_bits), [0x4300_deab, 0x4406_6f1a]);
+    assert_eq!(center.map(f32::to_bits), [0x42e7_bff5, 0x4401_6151]);
+    assert_eq!(zero_radius.to_bits(), 0x4339_b42b);
+    assert_eq!(radius.to_bits(), zero_radius.to_bits());
+
+    let center_at = |rotation| {
+        let Geometry::Radial { center, radius } = plan_at(Some(rotation)).geometry else {
+            panic!("rotated line remains radial");
+        };
+        (center.map(f32::to_bits), radius.to_bits())
+    };
+    assert_eq!(center_at(-30.0), center_at(330.0));
+    assert_eq!(center_at(-400.0), center_at(0.0));
+
+    let mut nonrotatable = source.clone();
+    nonrotatable.property_flags = 0;
+    let mut rotated_line = line(frame);
+    rotated_line.metadata.rotation_degrees = Some(30.0);
+    assert!(matches!(
+        Plan::for_line(&rotated_line, &nonrotatable),
+        Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+    ));
+    for flags in [2, 0x80, 0xff] {
+        let mut unsupported = source.clone();
+        unsupported.property_flags = flags;
+        assert!(matches!(
+            Plan::for_line(&rotated_line, &unsupported),
+            Err(PaintDiagnosticKind::UnsupportedGradientFrame)
+        ));
+    }
+    for angle in [f64::MAX, f64::INFINITY, f64::NAN] {
+        rotated_line.metadata.rotation_degrees = Some(angle);
+        assert!(matches!(
+            Plan::for_line(&rotated_line, &source),
+            Err(PaintDiagnosticKind::UnrepresentableGradient)
         ));
     }
 }

@@ -7242,6 +7242,8 @@ mod tests {
         };
         let (control, control_document) = render_pair(None);
         let (rotated, rotated_document) = render_pair(Some(30.0));
+        #[cfg(not(feature = "pdf"))]
+        let _ = (&control_document, &rotated_document);
         for page in [&control, &rotated] {
             assert!(page.paint_diagnostics.is_empty());
         }
@@ -7335,6 +7337,243 @@ mod tests {
                 .unwrap();
                 #[cfg(not(feature = "pdf"))]
                 let _ = document;
+            }
+        }
+    }
+
+    #[test]
+    fn public_sdk_radial_line_gradient_rotation_pair_matches_native_factory_centers() {
+        // Native V4 pair receipt SHA-256:
+        // 5fef3cbe04ec9f9d6576aeaa6225719bc55f21909680b9c9b3cbac6ef3f77247
+        // Native geometry: centers [4300deab,44066f1a] ->
+        // [42e7bff5,44016151], with the same radius 4339b42b.
+        // Native RGB changed in 54 pixels while alpha stayed identical across
+        // the full 640x640 frames. These paired metrics are not an SDK/native
+        // pixel-parity measure; the SDK raster is retained separately below.
+        let render_pair = |rotation| {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            line.metadata.rotation_degrees = rotation;
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("gradient fixture has a color paint source");
+            };
+            source.gradient_type = 1;
+            source.property_flags = 1;
+            source.position =
+                [0.25_f32, 0.75].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+            source.stops = vec![
+                crate::GradientStopSource {
+                    argb: 0xffff_0000,
+                    position: crate::PaintFloat32::from_bits(0x3f00_0000),
+                },
+                crate::GradientStopSource {
+                    argb: 0xff00_00ff,
+                    position: crate::PaintFloat32::from_bits(0x3f40_0000),
+                },
+            ];
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let document = document(page);
+            let rendered = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            (rendered, document)
+        };
+        let (control, control_document) = render_pair(None);
+        let (rotated, rotated_document) = render_pair(Some(30.0));
+        for page in [&control, &rotated] {
+            assert!(page.paint_diagnostics.is_empty());
+        }
+        let control_xml = roxmltree::Document::parse(&control.svg).unwrap();
+        let rotated_xml = roxmltree::Document::parse(&rotated.svg).unwrap();
+        let radial_geometry = |xml: &roxmltree::Document<'_>| {
+            let radial = xml
+                .descendants()
+                .find(|node| node.has_tag_name("radialGradient"))
+                .expect("public export contains radial line paint");
+            assert!(
+                !xml.descendants().any(|node| node.has_tag_name("image")),
+                "radial gradient remains vector-only in SVG"
+            );
+            ["cx", "cy", "r"].map(|name| {
+                radial
+                    .attribute(name)
+                    .expect("radial gradient geometry attribute")
+                    .parse::<f32>()
+                    .unwrap()
+                    .to_bits()
+            })
+        };
+        assert_eq!(
+            radial_geometry(&control_xml),
+            [0x4300_deab, 0x4406_6f1a, 0x4339_b42b]
+        );
+        assert_eq!(
+            radial_geometry(&rotated_xml),
+            [0x42e7_bff5, 0x4401_6151, 0x4339_b42b]
+        );
+        let body_line = |xml: &roxmltree::Document<'_>| {
+            let node = xml
+                .descendants()
+                .find(|node| node.has_tag_name("line"))
+                .expect("saved line body remains vector geometry");
+            ["x1", "y1", "x2", "y2"].map(|name| node.attribute(name).unwrap().to_owned())
+        };
+        assert_eq!(body_line(&control_xml), body_line(&rotated_xml));
+        for xml in [&control_xml, &rotated_xml] {
+            let radial = xml
+                .descendants()
+                .find(|node| node.has_tag_name("radialGradient"))
+                .unwrap();
+            let stops = radial
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .map(|stop| {
+                    (
+                        stop.attribute("offset").unwrap(),
+                        stop.attribute("stop-color").unwrap(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                stops,
+                [
+                    ("0", "#0000ff"),
+                    ("0.5", "#0000ff"),
+                    ("0.5", "#ff0000"),
+                    ("1", "#ff0000")
+                ]
+            );
+        }
+
+        let rasterize = |page: &super::RenderedPage| {
+            let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(page.width, page.height).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap.data().to_vec()
+        };
+        let control_rgba = rasterize(&control);
+        let rotated_rgba = rasterize(&rotated);
+        assert_eq!(control_rgba.len(), 640 * 640 * 4);
+        assert_eq!(rotated_rgba.len(), control_rgba.len());
+        let mut rgb_changed_pixels = 0;
+        let mut alpha_changed_pixels = 0;
+        let mut active_union = 0;
+        let mut rgb_delta_sum = 0_u64;
+        const SDK_PAGE_BACKGROUND: [u8; 4] = [252, 252, 252, 255];
+        for (before, after) in control_rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(rotated_rgba.as_chunks::<4>().0)
+        {
+            if before[3] != after[3] {
+                alpha_changed_pixels += 1;
+            }
+            let before_is_page_background = *before == SDK_PAGE_BACKGROUND;
+            let after_is_page_background = *after == SDK_PAGE_BACKGROUND;
+            if !before_is_page_background || !after_is_page_background {
+                active_union += 1;
+                let changed = (0..3).any(|channel| before[channel] != after[channel]);
+                rgb_changed_pixels += usize::from(changed);
+                rgb_delta_sum += (0..3)
+                    .map(|channel| u64::from(before[channel].abs_diff(after[channel])))
+                    .sum::<u64>();
+            }
+        }
+        assert!(
+            rgb_changed_pixels > 0,
+            "rotation changes visible radial RGB"
+        );
+        assert_eq!(
+            alpha_changed_pixels, 0,
+            "opaque paint keeps the stroke mask fixed"
+        );
+        let sdk_rgb_mae = rgb_delta_sum as f64 / (active_union * 3) as f64;
+
+        #[cfg(feature = "pdf")]
+        let mut pdf_stats = Vec::new();
+        #[cfg(feature = "pdf")]
+        for document in [&control_document, &rotated_document] {
+            let bytes = crate::render_document_pdf(
+                document,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+            let mut radial_shadings = 0;
+            let mut images = 0;
+            for dictionary in dictionaries {
+                images += usize::from(
+                    dictionary
+                        .get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .ok()
+                        == Some(b"Image".as_slice()),
+                );
+                radial_shadings += usize::from(
+                    dictionary
+                        .get(b"ShadingType")
+                        .and_then(lopdf::Object::as_i64)
+                        .ok()
+                        == Some(3),
+                );
+            }
+            assert_eq!(images, 0, "radial gradient remains vector-only in PDF");
+            assert!(radial_shadings > 0, "PDF retains radial shading");
+            pdf_stats.push((bytes, radial_shadings, images));
+        }
+
+        if let Some(directory) = std::env::var_os("SDOCX_RADIAL_ROTATION_ARTIFACT_DIR") {
+            let directory = std::path::PathBuf::from(directory);
+            std::fs::create_dir_all(&directory).unwrap();
+            for (name, rendered, rgba) in [
+                ("rotation-0", &control, &control_rgba),
+                ("rotation-30", &rotated, &rotated_rgba),
+            ] {
+                std::fs::write(directory.join(format!("{name}.svg")), &rendered.svg).unwrap();
+                std::fs::write(directory.join(format!("{name}.rgba")), rgba).unwrap();
+            }
+            std::fs::write(
+                directory.join("pair-metrics.json"),
+                serde_json::to_vec(&serde_json::json!({
+                    "schema": "sdocx.type8-radial-rotation-sdk-pair-metrics.v1",
+                    "rgb_changed_pixels": rgb_changed_pixels,
+                    "alpha_changed_pixels": alpha_changed_pixels,
+                    "sdk_non_background_union_pixels": active_union,
+                    "sdk_vs_sdk_rgb_mae_non_background_union": sdk_rgb_mae,
+                    "excluded_page_background_rgba": SDK_PAGE_BACKGROUND,
+                    "native_comparison_included": false,
+                }))
+                .unwrap(),
+            )
+            .unwrap();
+            #[cfg(feature = "pdf")]
+            for ((name, document), (bytes, radial_shadings, images)) in [
+                ("rotation-0", &control_document),
+                ("rotation-30", &rotated_document),
+            ]
+            .into_iter()
+            .zip(pdf_stats)
+            {
+                let _ = document;
+                std::fs::write(directory.join(format!("{name}.pdf")), bytes).unwrap();
+                std::fs::write(
+                    directory.join(format!("{name}.pdf.stats.json")),
+                    serde_json::to_vec(&serde_json::json!({
+                        "schema": "sdocx.type8-radial-rotation-pdf-stats.v1",
+                        "radial_shading_objects": radial_shadings,
+                        "image_xobjects": images,
+                    }))
+                    .unwrap(),
+                )
+                .unwrap();
             }
         }
     }

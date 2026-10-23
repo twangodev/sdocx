@@ -51,9 +51,10 @@ impl Plan {
     /// `a715e5e069e797908213b0133fe4654e9472ab7dada40529770d40809d91910d`).
     /// These are synthetic-paint frame witnesses, not proof of saved archive
     /// paint or device pixels. The native source contract rotates linear
-    /// endpoints when the outline rotatable flag is set; paired captures
-    /// verify the route at 0/30 degrees. Source math defines the finite f32
-    /// rotation path; radial metadata rotations remain on the fallback path.
+    /// endpoints and off-center radial centers when the outline rotatable flag
+    /// is set. Paired captures verify both routes at 0/30 degrees. Source math
+    /// defines the finite f32 rotation path; this projection keeps line-body
+    /// geometry unchanged.
     pub fn for_line(
         line: &NativeLine,
         source: &ColorPaintSource,
@@ -76,7 +77,7 @@ impl Plan {
             return Err(PaintDiagnosticKind::UnrepresentableGradient);
         }
         let rotated_linear = object_rotation != 0.0 && source.gradient_type == 0;
-        if object_rotation != 0.0 && (!rotated_linear || !source.gradient_rotatable()) {
+        if object_rotation != 0.0 && !source.gradient_rotatable() {
             return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
         }
         // Conservative eligibility limits: the native frame witness covers a
@@ -115,7 +116,7 @@ impl Plan {
             let (center, radius) = radial_points(
                 rect,
                 source.position.map(|value| value.value()),
-                0.0,
+                object_rotation,
                 source.gradient_rotatable(),
             );
             if center.iter().any(|value| !value.is_finite()) || !radius.is_finite() || radius <= 0.0
