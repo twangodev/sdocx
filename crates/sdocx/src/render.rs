@@ -7054,6 +7054,10 @@ mod tests {
         radial_source.gradient_type = 1;
         radial_source.position =
             [0.25_f32, 0.75_f32].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+        radial_source.stops[0].argb = 0xffff_0000;
+        radial_source.stops[0].position = crate::PaintFloat32::from_bits(0.5_f32.to_bits());
+        radial_source.stops[1].argb = 0xff00_00ff;
+        radial_source.stops[1].position = crate::PaintFloat32::from_bits(0.75_f32.to_bits());
         let mut page = page_with_uncolored_stroke();
         page.width = 640;
         page.height = 640;
@@ -7081,17 +7085,72 @@ mod tests {
                 "{attribute}: {actual} != {expected}"
             );
         }
-        assert_eq!(
-            radial_gradients[0]
-                .children()
-                .filter(|node| node.has_tag_name("stop"))
-                .count(),
-            2
-        );
+        let radial_stops = radial_gradients[0]
+            .children()
+            .filter(|node| node.has_tag_name("stop"))
+            .collect::<Vec<_>>();
+        assert_eq!(radial_stops.len(), 4);
+        assert_eq!(radial_stops[0].attribute("offset"), Some("0"));
+        assert_eq!(radial_stops[0].attribute("stop-color"), Some("#0000ff"));
+        assert_eq!(radial_stops[1].attribute("offset"), Some("0.5"));
+        assert_eq!(radial_stops[1].attribute("stop-color"), Some("#0000ff"));
+        assert_eq!(radial_stops[2].attribute("offset"), Some("0.5"));
+        assert_eq!(radial_stops[2].attribute("stop-color"), Some("#ff0000"));
+        assert_eq!(radial_stops[3].attribute("offset"), Some("1"));
+        assert_eq!(radial_stops[3].attribute("stop-color"), Some("#ff0000"));
         assert!(
             !xml.descendants()
                 .any(|node| node.has_tag_name("linearGradient"))
         );
+
+        #[cfg(feature = "pdf")]
+        {
+            let mut pdf_line = super::gradient::tests::hf02_line_with_gradient();
+            let Some(crate::ShapePaintSource::Color(pdf_source)) =
+                pdf_line.style.paint_source.as_mut()
+            else {
+                unreachable!("fixture has a color gradient source");
+            };
+            pdf_source.gradient_type = 1;
+            pdf_source.position =
+                [0.25_f32, 0.75_f32].map(|value| crate::PaintFloat32::from_bits(value.to_bits()));
+            pdf_source.stops[0].argb = 0xffff_0000;
+            pdf_source.stops[0].position = crate::PaintFloat32::from_bits(0.5_f32.to_bits());
+            pdf_source.stops[1].argb = 0xff00_00ff;
+            pdf_source.stops[1].position = crate::PaintFloat32::from_bits(0.75_f32.to_bits());
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(pdf_line).into()];
+            let bytes = crate::render_document_pdf(
+                &document(page),
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+            let mut radial_shadings = 0;
+            let mut images = 0;
+            for dictionary in dictionaries {
+                images += usize::from(
+                    dictionary
+                        .get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .ok()
+                        == Some(b"Image".as_slice()),
+                );
+                radial_shadings += usize::from(
+                    dictionary
+                        .get(b"ShadingType")
+                        .and_then(lopdf::Object::as_i64)
+                        .ok()
+                        == Some(3),
+                );
+            }
+            assert_eq!(images, 0, "radial step paint must stay vector-only");
+            assert!(radial_shadings > 0, "PDF retains radial shading paint");
+        }
 
         let mut invalid_radial = super::gradient::tests::hf02_line_with_gradient();
         let Some(crate::ShapePaintSource::Color(invalid_source)) =

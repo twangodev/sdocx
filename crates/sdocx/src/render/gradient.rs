@@ -101,9 +101,14 @@ impl Plan {
             }
             Geometry::Radial { center, radius }
         };
+        let stops = if source.gradient_type == 1 {
+            project_radial_line_stops(source)?
+        } else {
+            project_outline_stops(source)?
+        };
         Ok(Self {
             geometry,
-            stops: project_outline_stops(source)?,
+            stops,
             element_rotation: None,
         })
     }
@@ -334,9 +339,81 @@ fn project_outline_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
     let stops = normalize_outline_stops(source)?;
+    project_normalized_outline_stops(source, stops)
+}
+
+fn project_normalized_outline_stops(
+    source: &ColorPaintSource,
+    stops: Vec<crate::GradientStopSource>,
+) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
     let mut normalized = source.clone();
     normalized.stops = stops;
     project_stops(&normalized)
+}
+
+/// Project the narrowly recovered type-8 radial overlap case. With two
+/// consumed opaque stops in descending order, Skia endpoint-extends the first
+/// color to zero and the last color to one. The first increasing span fills
+/// through the high stop; the later increasing span starts at the low stop and
+/// overwrites the overlap. Its 256-entry cache therefore becomes a hard color
+/// step at the low stop's quantized cache index.
+///
+/// Native pins: `libSPenSkia.so` SHA-256
+/// `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d`;
+/// V25 framebuffer receipt `pixel-threshold-audit.json` records the `.5`
+/// boundary control. This only covers radial type-8 line paint with two
+/// opaque stops; fills, shape outlines, linear paint, partial alpha and more
+/// stops retain their existing paths.
+fn project_radial_line_stops(
+    source: &ColorPaintSource,
+) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
+    let stops = normalize_outline_stops(source)?;
+    if stops.len() != 2 {
+        return project_normalized_outline_stops(source, stops);
+    }
+
+    let [high, low] = stops.as_slice() else {
+        unreachable!("the stop count was checked")
+    };
+    let high_position = high.position.value();
+    let low_position = low.position.value();
+    let opaque = high.argb >> 24 == 0xff && low.argb >> 24 == 0xff;
+    if high_position <= low_position || !opaque || high.argb == low.argb {
+        return project_normalized_outline_stops(source, stops);
+    }
+
+    let cache_index = radial_cache_index(low_position);
+    if !(1..256).contains(&cache_index) {
+        return project_normalized_outline_stops(source, stops);
+    }
+    let boundary = f64::from(cache_index) / 256.0;
+    Ok(vec![
+        ProjectedStop {
+            offset: 0.0,
+            argb: high.argb,
+        },
+        ProjectedStop {
+            offset: boundary,
+            argb: high.argb,
+        },
+        ProjectedStop {
+            offset: boundary,
+            argb: low.argb,
+        },
+        ProjectedStop {
+            offset: 1.0,
+            argb: low.argb,
+        },
+    ])
+}
+
+/// Return the 256-entry Skia gradient-cache index for a finite position in
+/// `[0, 1]`. Skia first converts to Q16.16, then removes the integer component
+/// and shifts by eight. The subtraction makes the endpoint `1.0` map to the
+/// last cache entry (`255`) instead of an out-of-range index (`256`).
+fn radial_cache_index(position: f32) -> u32 {
+    let fixed = (f64::from(position) * 65536.0).trunc() as u32;
+    ((fixed - (fixed >> 16)) >> 8).min(255)
 }
 
 fn normalize_outline_stops(

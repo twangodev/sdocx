@@ -242,13 +242,20 @@ These controls used inherited synthetic GL synchronization callbacks alongside
 actual Mesa draw calls. A later capture forwarded the actual `glFenceSync`
 to Mesa and retained a byte-identical frame plus the active textured-quad
 shaders, vertex data and source upload. Only fence creation was observed;
-wait/delete behavior was not exercised. The retained upload bytes contain no
-mixed red/blue values, but sampler setters and pixel-unpack state were not
-recorded, so the source layout and filtering mechanism remain unverified.
+wait/delete behavior was not exercised. A further capture recorded linear
+minification/magnification, clamp-to-edge sampling and tightly packed RGBA
+uploads with no pixel-unpack buffer. The source has no mixed red/blue texels;
+bilinear sampling of the recorded texture predicts every final quad pixel
+within one channel level. No GL errors or synthetic fallbacks were recorded.
 Paired vector SVG/PDF hard-step controls match interior color classification,
 but miss narrow native color blending at the boundary (maximum channel error
-56). Actual GPU transition behavior remains unresolved; the cache rule alone
-does not justify admitting this partial-overlap projection.
+56). This final-presentation difference must be distinguished from the native
+source-grid color rule when validating a vector projection. These controls
+do not establish saved-paint or Samsung device appearance parity.
+On the recorded 138×151 source grid, the SDK SVG matches all 20,838
+premultiplied RGBA pixels. The vector-only PDF retains radial shading, with
+36 low-alpha coverage extras and one opaque color-class difference at the
+step in MuPDF; that remaining seam difference is unresolved.
 
 Drawing passes shader flags 0. The static cache branch interpolates RGB
 and alpha separately before eventual output premultiplication

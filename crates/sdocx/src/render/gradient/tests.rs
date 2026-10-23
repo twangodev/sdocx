@@ -85,6 +85,22 @@ fn line_source() -> ColorPaintSource {
     source
 }
 
+fn test_line() -> NativeLine {
+    line(BoundingBox {
+        x_min: f64::from(RECT[0]),
+        y_min: f64::from(RECT[1]),
+        x_max: f64::from(RECT[2]),
+        y_max: f64::from(RECT[3]),
+    })
+}
+
+fn radial_line_source() -> ColorPaintSource {
+    let mut source = line_source();
+    source.gradient_type = 1;
+    source.position = [0.25_f32, 0.75_f32].map(|value| PaintFloat32::from_bits(value.to_bits()));
+    source
+}
+
 pub(in crate::render) fn hf02_line_with_gradient() -> NativeLine {
     let mut line = line(BoundingBox {
         x_min: 97.64480590820312,
@@ -180,8 +196,7 @@ fn line_radial_geometry_rejects_nonfinite_active_position_before_paint_allocatio
         x_max: 222.5447540283203,
         y_max: 572.0924682617188,
     };
-    let mut radial = line_source();
-    radial.gradient_type = 1;
+    let mut radial = radial_line_source();
     radial.position[0] = PaintFloat32::from_bits(f32::NAN.to_bits());
     assert!(matches!(
         Plan::for_line(&line(frame), &radial),
@@ -541,6 +556,163 @@ fn ascending_line_source_projects_the_native_descending_copy_as_red() {
     line.style.paint = ShapePaint::Gradient;
     line.style.paint_source = Some(ShapePaintSource::Color(ascending.clone()));
     assert_eq!(Plan::for_line(&line, &ascending).unwrap().stops, projected);
+}
+
+#[test]
+fn radial_line_projects_the_opaque_descending_cache_step_without_mutating_source() {
+    let mut radial = radial_line_source();
+    radial.stops[0] = GradientStopSource {
+        argb: 0xffff_0000,
+        position: PaintFloat32::from_bits(0.5_f32.to_bits()),
+    };
+    radial.stops[1] = GradientStopSource {
+        argb: 0xff00_00ff,
+        position: PaintFloat32::from_bits(0.75_f32.to_bits()),
+    };
+    let original = radial.clone();
+
+    let plan = Plan::for_line(&test_line(), &radial).unwrap();
+    assert_eq!(radial, original);
+    assert_eq!(
+        plan.stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff00_00ff,
+            },
+            ProjectedStop {
+                offset: 0.5,
+                argb: 0xff00_00ff,
+            },
+            ProjectedStop {
+                offset: 0.5,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
+}
+
+#[test]
+fn radial_line_cache_step_uses_native_q16_cache_quantization() {
+    let below_first_boundary = f32::from_bits((1.0_f32 / 256.0).to_bits() - 1);
+    let just_below = f32::from_bits((129.0_f32 / 256.0).to_bits() - 1);
+    let at_boundary = 129.0_f32 / 256.0;
+    let cases = [
+        (1.0_f32 / 256.0, 1),
+        (below_first_boundary, 0),
+        (0.5, 128),
+        (just_below, 128),
+        (at_boundary, 129),
+        (1.0, 255),
+    ];
+    for (position, expected_index) in cases {
+        assert_eq!(radial_cache_index(position), expected_index);
+    }
+
+    let mut radial = radial_line_source();
+    radial.stops[0] = GradientStopSource {
+        argb: 0xffff_0000,
+        position: PaintFloat32::from_bits(just_below.to_bits()),
+    };
+    radial.stops[1] = GradientStopSource {
+        argb: 0xff00_00ff,
+        position: PaintFloat32::from_bits(0.75_f32.to_bits()),
+    };
+    let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+    assert_eq!(projected[1].offset, 0.5);
+    assert_eq!(projected[2].offset, 0.5);
+    assert_eq!(projected[1].argb, 0xff00_00ff);
+    assert_eq!(projected[2].argb, 0xffff_0000);
+
+    radial.stops[0].position = PaintFloat32::from_bits(at_boundary.to_bits());
+    let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+    assert_eq!(projected[1].offset, f64::from(at_boundary));
+    assert_eq!(projected[2].offset, f64::from(at_boundary));
+
+    radial.stops[0].position = PaintFloat32::from_bits(below_first_boundary.to_bits());
+    assert!(matches!(
+        Plan::for_line(&test_line(), &radial),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+}
+
+#[test]
+fn radial_line_step_admission_is_limited_to_opaque_distinct_two_stop_paint() {
+    let mut radial = radial_line_source();
+    radial.stops[0].position = PaintFloat32::from_bits(0.5_f32.to_bits());
+    radial.stops[1].position = PaintFloat32::from_bits(0.75_f32.to_bits());
+    radial.stops[0].argb = 0xffff_0000;
+    radial.stops[1].argb = 0xff00_00ff;
+    assert_eq!(
+        Plan::for_line(&test_line(), &radial).unwrap().stops.len(),
+        4
+    );
+
+    radial.stops[0].argb &= 0x00ff_ffff;
+    assert!(matches!(
+        Plan::for_line(&test_line(), &radial),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+    radial.stops[0].argb = 0xffff_0000;
+    radial.stops[1].argb = radial.stops[0].argb;
+    assert!(matches!(
+        Plan::for_line(&test_line(), &radial),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+    radial.stops[1].argb = 0xff00_00ff;
+    radial.stops.push(GradientStopSource {
+        argb: 0xff12_3456,
+        position: PaintFloat32::from_bits(0.9_f32.to_bits()),
+    });
+    assert!(matches!(
+        Plan::for_line(&test_line(), &radial),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+
+    // Preserve the existing full-span descending overwrite behavior.
+    radial.stops.truncate(2);
+    radial.stops[0].position = PaintFloat32::from_bits(0.0_f32.to_bits());
+    radial.stops[1].position = PaintFloat32::from_bits(1.0_f32.to_bits());
+    assert_eq!(
+        Plan::for_line(&test_line(), &radial).unwrap().stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xffff_0000,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xffff_0000,
+            },
+        ]
+    );
+}
+
+#[test]
+fn radial_cache_step_does_not_extend_to_shape_outlines_or_linear_lines() {
+    let mut source = radial_line_source();
+    source.stops[0] = GradientStopSource {
+        argb: 0xffff_0000,
+        position: PaintFloat32::from_bits(0.5_f32.to_bits()),
+    };
+    source.stops[1] = GradientStopSource {
+        argb: 0xff00_00ff,
+        position: PaintFloat32::from_bits(0.75_f32.to_bits()),
+    };
+    assert!(matches!(
+        Plan::for_shape(&shape(), &source, PaintRole::Outline, None),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+
+    source.gradient_type = 0;
+    assert!(matches!(
+        Plan::for_line(&test_line(), &source),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
 }
 
 #[test]
