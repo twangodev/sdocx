@@ -239,8 +239,12 @@ inclusive index spans: for an interior position `p`, the lower bucket is
 giving a step at `.5`. These synthetic paints on HF02 line geometry establish
 this cache behavior, not continuous interpolation or saved/device pixel parity.
 These controls used inherited synthetic GL synchronization callbacks alongside
-actual Mesa draw calls. A later guarded capture stopped at `glFenceSync`;
-real synchronization forwarding remains to be verified.
+actual Mesa draw calls. A later capture forwarded the actual `glFenceSync`
+to Mesa and retained a byte-identical frame plus the active textured-quad
+shaders, vertex data and source upload. Only fence creation was observed;
+wait/delete behavior was not exercised. The retained upload bytes contain no
+mixed red/blue values, but sampler setters and pixel-unpack state were not
+recorded, so the source layout and filtering mechanism remain unverified.
 Paired vector SVG/PDF hard-step controls match interior color classification,
 but miss narrow native color blending at the boundary (maximum channel error
 56). Actual GPU transition behavior remains unresolved; the cache rule alone
