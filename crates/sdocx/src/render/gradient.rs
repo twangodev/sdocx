@@ -424,14 +424,18 @@ fn project_normalized_outline_stops(
 }
 
 /// Project the recovered type-8 radial line cache for two stops and strict
-/// descending three-to-ten-stop gradients. Skia keeps descending stop order,
-/// endpoint-extends the first color to zero and the last color to one, then
+/// descending gradients of three or more stops. Drawing consumes at most the
+/// first ten attached stops, so longer sorted vectors use that same prefix.
+/// Skia keeps descending stop order, endpoint-extends the first color to zero
+/// and the last color to one, then
 /// writes increasing cache spans in order. The adjacent spans between
 /// descending stops are nonpositive and skipped; the final low-color span
 /// overwrites from the low stop's quantized bucket. Native N3, N4 and N10
 /// caches confirm only endpoint colors survive, including when an interior
-/// ARGB changes. Keep fills, shape outlines, linear paint, ties and counts
-/// outside this captured range on their existing paths.
+/// ARGB changes. N11 cache/frame/texture captures also confirm the tenth
+/// consumed stop supplies the low endpoint when an eleventh stop is present.
+/// Keep fills, shape outlines, linear paint, ties and invalid positions on
+/// their existing paths.
 fn project_radial_line_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
@@ -439,9 +443,10 @@ fn project_radial_line_stops(
     let strict_descending = stops
         .windows(2)
         .all(|pair| pair[0].position.value() > pair[1].position.value());
-    if (3..=10).contains(&source.stops.len()) && strict_descending {
+    if source.stops.len() >= 3 && strict_descending {
+        let consumed = stops.len().min(10);
         let high = &stops[0];
-        let low = stops.last().expect("nonempty normalized stops");
+        let low = &stops[consumed - 1];
         let cache_index = gradient_cache_index(low.position.value());
         if cache_index == 0 || high.argb == low.argb {
             return Ok(vec![
@@ -474,9 +479,6 @@ fn project_radial_line_stops(
                 argb: low.argb,
             },
         ]);
-    }
-    if source.stops.len() > 10 && strict_descending {
-        return Err(PaintDiagnosticKind::InvalidGradient);
     }
     if stops.len() != 2 {
         return project_normalized_outline_stops(source, stops);

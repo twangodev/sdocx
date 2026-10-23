@@ -349,9 +349,9 @@ changing middle RGB and alpha (`ff00ff00` to `80ff00ff`; receipt SHA-256
 the actual 256×4 caches and native frames byte-identical within each pair.
 The source-ordered descending pass skips the two nonpositive middle spans;
 the final span leaves only the high endpoint through bucket 50 and low
-endpoint from bucket 51. The SDK projection covers three to ten distinct
-stops in radial type-8 line gradients; ties, source-count truncation above ten,
-saved styles and device appearance parity remain unproven. Separate native
+endpoint from bucket 51. The SDK projection covers distinct stops in radial
+type-8 line gradients, consuming the first ten after native-order normalization;
+ties, saved styles and device appearance parity remain unproven. Separate native
 three-stop controls with a zero low-stop bucket and equal red endpoints both
 produced the same constant-red cache and frame (pair receipt SHA-256
 `43d38efbda7fdfc70406775794864d4cb298d46556529fe41272358798939695`).
@@ -369,6 +369,18 @@ native readback before a histogram progress checkpoint exceeded 16 KiB; their
 failed statuses are preserved. Paired vector exports match 20,836/20,838 SVG
 source-grid pixels; final-frame active-union RGB MAE remains 5.90/5.79
 (SVG/PDF), with a maximum channel error of 215.
+
+An N11 pair retained all eleven source stops and their descending attached
+copy, while the native radial factory consumed only the first ten. Changing
+attached index 10 left the cache, upload and frame byte-identical. The consumed
+low stop `.18` supplies green from bucket 46; the omitted `.1` red stop has no
+effect. Both runs failed at the 16 KiB progress limit after retaining those
+artifacts. Offline checks preserve those failures; the variant lacks the
+control's final readback summary, and neither ran the final route validator.
+The SDK's N11 SVG, raster and vector PDF exactly match its ten-stop
+consumed-prefix baseline. SVG source-grid pixels match 20,837/20,838; final-frame
+active-union RGB MAE remains 5.80/5.98 (SVG/PDF), so this is not pixel parity
+(comparison SHA-256 `27e1182c6c6c570044557b12019621e9bf4a6c3a9e22d2fe6b55b9b0a68a9620`).
 
 Four further controls kept the same HF02 line and radial cache boundary while
 varying stop alpha and RGB: half-alpha red with opaque blue, two partial-alpha

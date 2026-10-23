@@ -7936,9 +7936,12 @@ mod tests {
 
     #[test]
     fn public_sdk_radial_nstop_pairs_match_endpoint_projection() {
-        // Native N3, N4 and N10 pair receipts record identical caches/frames
-        // after changing interior ARGB. These synthetic source-grid cases do
-        // not claim saved-gradient or device parity.
+        // Native N3, N4 and N10 pairs record identical caches/frames after
+        // changing consumed interior ARGB. The native N11 pair changes only
+        // unconsumed index 10 and retains identical cache/frame/texture bytes.
+        // This SDK export also compares both N11 inputs with their consumed-
+        // prefix N10 baseline. These source-grid cases do not claim a saved
+        // gradient or device fixture.
         let n4 = vec![
             (0xffff_0000, 0x3dcc_cccd),
             (0xff00_ff00, 0x3e99_999a),
@@ -7965,6 +7968,22 @@ mod tests {
         ];
         let mut n10_variant = n10.clone();
         n10_variant[5].0 = 0x80ff_00ff;
+        let n11 = vec![
+            (0xffff_0000, 0x3dcc_cccd),
+            (0xff00_ff00, 0x3e38_51ec),
+            (0xffff_ff00, 0x3e85_1eb8),
+            (0xffff_8000, 0x3eae_147b),
+            (0xffff_ffff, 0x3ed7_0a3d),
+            (0xff00_ffff, 0x3f00_0000),
+            (0xffff_00ff, 0x3f14_7ae1),
+            (0xff80_8080, 0x3f28_f5c3),
+            (0xff00_8080, 0x3f3d_70a4),
+            (0xff80_40c0, 0x3f51_eb85),
+            (0xff00_00ff, 0x3f66_6666),
+        ];
+        let mut n11_unused_index10_variant = n11.clone();
+        n11_unused_index10_variant[0].0 = 0xff00_ff00;
+        let n11_consumed_prefix_baseline = n11[1..].to_vec();
         let cases = [
             (
                 "v2-green",
@@ -8010,6 +8029,19 @@ mod tests {
             ("n4-interior-change", "n4", n4_variant, 25.0 / 256.0),
             ("n10-control", "n10", n10, 25.0 / 256.0),
             ("n10-interior-change", "n10", n10_variant, 25.0 / 256.0),
+            ("n11-control", "n11", n11, 46.0 / 256.0),
+            (
+                "n11-index10-color-change",
+                "n11",
+                n11_unused_index10_variant,
+                46.0 / 256.0,
+            ),
+            (
+                "n11-consumed-prefix-baseline",
+                "n11-prefix",
+                n11_consumed_prefix_baseline,
+                46.0 / 256.0,
+            ),
         ];
         let artifact_dir =
             std::env::var_os("SDOCX_RADIAL_NSTOP_ARTIFACT_DIR").map(std::path::PathBuf::from);
@@ -8034,7 +8066,7 @@ mod tests {
                     position: crate::PaintFloat32::from_bits(position),
                 })
                 .collect();
-            let low_argb = source.stops[0].argb;
+            let low_argb = source.stops[source.stops.len().saturating_sub(10)].argb;
             let high_argb = source.stops.last().unwrap().argb;
             let mut page = page_with_uncolored_stroke();
             page.width = 640;
@@ -8148,7 +8180,7 @@ mod tests {
             }
             outputs.push((pair, rendered.svg, rgba));
         }
-        for pair in ["n3", "n3-opaque", "n4", "n10"] {
+        for pair in ["n3", "n3-opaque", "n4", "n10", "n11"] {
             let paired = outputs
                 .iter()
                 .filter(|(name, _, _)| *name == pair)
@@ -8156,6 +8188,25 @@ mod tests {
             assert_eq!(paired.len(), 2, "{pair} has a native paired control");
             assert_eq!(paired[0].1, paired[1].1, "{pair} SVG is endpoint-only");
             assert_eq!(paired[0].2, paired[1].2, "{pair} raster is endpoint-only");
+        }
+        let n11_outputs = outputs
+            .iter()
+            .filter(|(pair, _, _)| *pair == "n11")
+            .collect::<Vec<_>>();
+        let n11_prefix = outputs
+            .iter()
+            .find(|(pair, _, _)| *pair == "n11-prefix")
+            .expect("N11 case has the same-first-ten N10 baseline");
+        assert_eq!(n11_outputs.len(), 2);
+        for output in n11_outputs {
+            assert_eq!(
+                output.1, n11_prefix.1,
+                "N11 export equals the consumed-prefix SVG"
+            );
+            assert_eq!(
+                output.2, n11_prefix.2,
+                "N11 raster equals the consumed-prefix baseline"
+            );
         }
     }
 

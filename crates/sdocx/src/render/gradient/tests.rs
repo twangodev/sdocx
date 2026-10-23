@@ -1294,7 +1294,7 @@ fn radial_line_three_stop_cache_matches_native_endpoint_goldens() {
 }
 
 #[test]
-fn radial_line_three_to_ten_stop_native_pairs_project_only_endpoint_spans() {
+fn radial_line_three_or_more_stop_native_pairs_project_only_endpoint_spans() {
     // N4 and N10 native receipts each captured a 256x4 cache. In little-endian
     // cache words, buckets 0..24 are 0xffff0000 (RGBA blue), and 25..255 are
     // 0xff0000ff (RGBA red). Interior ARGB changes left each cache/frame exact.
@@ -1376,7 +1376,7 @@ fn radial_line_three_to_ten_stop_native_pairs_project_only_endpoint_spans() {
         );
     }
 
-    for count in 3..=10 {
+    for count in 3..=11 {
         let mut source = radial_line_source();
         source.stops = (0..count)
             .map(|index| GradientStopSource {
@@ -1390,15 +1390,83 @@ fn radial_line_three_to_ten_stop_native_pairs_project_only_endpoint_spans() {
         );
     }
 
-    let mut eleven = radial_line_source();
-    eleven.stops = (0..11)
-        .map(|index| GradientStopSource {
-            argb: index as u32,
-            position: PaintFloat32::from_bits((1.0 - index as f32 / 16.0).to_bits()),
-        })
-        .collect();
+    let n11 = [
+        (0xffff_0000, 0x3dcc_cccd),
+        (0xff00_ff00, 0x3e38_51ec),
+        (0xffff_ff00, 0x3e85_1eb8),
+        (0xffff_8000, 0x3eae_147b),
+        (0xffff_ffff, 0x3ed7_0a3d),
+        (0xff00_ffff, 0x3f00_0000),
+        (0xffff_00ff, 0x3f14_7ae1),
+        (0xff80_8080, 0x3f28_f5c3),
+        (0xff00_8080, 0x3f3d_70a4),
+        (0xff80_40c0, 0x3f51_eb85),
+        (0xff00_00ff, 0x3f66_6666),
+    ];
+    let make_source = |stops: &[(u32, u32)]| {
+        let mut source = radial_line_source();
+        source.stops = stops
+            .iter()
+            .map(|&(argb, position)| GradientStopSource {
+                argb,
+                position: PaintFloat32::from_bits(position),
+            })
+            .collect();
+        source
+    };
+    let control = make_source(&n11);
+    let projected = Plan::for_line(&test_line(), &control).unwrap().stops;
+    let consumed_prefix = make_source(&n11[1..]);
+    assert_eq!(
+        Plan::for_line(&test_line(), &consumed_prefix)
+            .unwrap()
+            .stops,
+        projected
+    );
+    assert_eq!(gradient_cache_index(f32::from_bits(n11[1].1)), 46);
+    assert_eq!(
+        projected,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff00_00ff
+            },
+            ProjectedStop {
+                offset: 46.0 / 256.0,
+                argb: 0xff00_00ff
+            },
+            ProjectedStop {
+                offset: 46.0 / 256.0,
+                argb: 0xff00_ff00
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff00_ff00
+            },
+        ]
+    );
+    let mut index10_variant = n11;
+    index10_variant[0].0 = 0xff00_ff00;
+    assert_eq!(
+        Plan::for_line(&test_line(), &make_source(&index10_variant))
+            .unwrap()
+            .stops,
+        projected,
+        "changing attached native stop index 10 does not change the ten-stop factory prefix"
+    );
+
+    for invalid_position in [f32::NAN, -0.1, 1.1] {
+        let mut invalid_unconsumed = make_source(&n11);
+        invalid_unconsumed.stops[0].position = PaintFloat32::from_bits(invalid_position.to_bits());
+        assert!(matches!(
+            Plan::for_line(&test_line(), &invalid_unconsumed),
+            Err(PaintDiagnosticKind::InvalidGradient)
+        ));
+    }
+    let mut crossing_tie = make_source(&n11);
+    crossing_tie.stops[0].position = crossing_tie.stops[1].position;
     assert!(matches!(
-        Plan::for_line(&test_line(), &eleven),
+        Plan::for_line(&test_line(), &crossing_tie),
         Err(PaintDiagnosticKind::InvalidGradient)
     ));
 }
