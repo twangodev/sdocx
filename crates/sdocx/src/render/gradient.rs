@@ -423,21 +423,57 @@ fn project_normalized_outline_stops(
     project_stops(&normalized)
 }
 
-/// Project the recovered two-stop type-8 radial line cache. Skia keeps the
-/// descending stop order, endpoint-extends the first color to zero and the
-/// last color to one, then writes increasing cache spans in order. For cache
-/// indices 1..255, the later span overwrites at its quantized index. The V41
-/// and V42 actual 256x4 N32 cache reads show that index 0 yields the
-/// low-position stop throughout the table for an opaque stop and for a
-/// nonprimary partial-alpha stop. Native V25-V26 and V34-V38 controls cover
-/// nonzero indices with opaque, partial-alpha, zero-alpha and nonprimary RGB.
-/// These controls do not prove arbitrary source or device pixel parity. Keep
-/// fills, shape outlines, linear paint and gradients with more than two
-/// consumed stops on their existing paths.
+/// Project the recovered type-8 radial line cache for two stops and the
+/// source-backed three-stop overwrite case. Skia keeps descending stop order,
+/// endpoint-extends the first color to zero and the last color to one, then
+/// writes increasing cache spans in order. With three distinct descending
+/// positions, the middle adjacent spans are nonpositive and skipped; the
+/// final low-color span overwrites from the low stop's quantized bucket. The
+/// captured three-stop cache rows confirm only the endpoint colors survive,
+/// including when the middle ARGB changes from opaque green to opaque or
+/// partial-alpha magenta. Keep fills, shape outlines, linear paint and other
+/// stop counts on their existing paths.
 fn project_radial_line_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
     let stops = normalize_outline_stops(source)?;
+    if let [high, middle, low] = stops.as_slice()
+        && high.position.value() > middle.position.value()
+        && middle.position.value() > low.position.value()
+    {
+        let cache_index = gradient_cache_index(low.position.value());
+        if cache_index == 0 || high.argb == low.argb {
+            return Ok(vec![
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: low.argb,
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low.argb,
+                },
+            ]);
+        }
+        let boundary = f64::from(cache_index) / 256.0;
+        return Ok(vec![
+            ProjectedStop {
+                offset: 0.0,
+                argb: high.argb,
+            },
+            ProjectedStop {
+                offset: boundary,
+                argb: high.argb,
+            },
+            ProjectedStop {
+                offset: boundary,
+                argb: low.argb,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: low.argb,
+            },
+        ]);
+    }
     if stops.len() != 2 {
         return project_normalized_outline_stops(source, stops);
     }

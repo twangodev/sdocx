@@ -341,6 +341,26 @@ and framebuffer artifacts but failed during final progress metadata (V41
 metadata lookup, V42 checkpoint-size limit). These are synthetic paint
 controls on parsed HF02 geometry, not saved-gradient or device-pixel parity.
 
+Two three-stop radial-line pairs used ascending positions `.2`, `.6` and `.9`.
+Changing only the middle RGB (V2; pair receipt SHA-256
+`c626bbe0b9278995052755cb9b11184872bb4190a5055073c1c69995ac123fef`), then
+changing middle RGB and alpha (`ff00ff00` to `80ff00ff`; receipt SHA-256
+`452d75a5ec41fbdf85ffcda990b707c9c8e52c17e728106fe81bb92430c10c4f`), left
+the actual 256×4 caches and native frames byte-identical within each pair.
+The source-ordered descending pass skips the two nonpositive middle spans;
+the final span leaves only the high endpoint through bucket 50 and low
+endpoint from bucket 51. The SDK projection is bounded to exactly three
+distinct stops in radial type-8 line gradients; it does not establish other
+stop counts, ties, saved styles or device appearance parity. Separate native
+three-stop controls with a zero low-stop bucket and equal red endpoints both
+produced the same constant-red cache and frame (pair receipt SHA-256
+`43d38efbda7fdfc70406775794864d4cb298d46556529fe41272358798939695`).
+Paired SDK SVG/PDF exports also ignore middle ARGB and retain vector shading.
+Their final-frame RGB errors remain: over the active pixel union, mean absolute
+channel error is 10.62/11.73 for the transparent-endpoint pair and 5.87/5.78 for
+the opaque pair (SVG/PDF; maximum channel error 211). Cache behavior is recovered;
+final presentation sampling and coverage still need work.
+
 Four further controls kept the same HF02 line and radial cache boundary while
 varying stop alpha and RGB: half-alpha red with opaque blue, two partial-alpha
 stops, zero-alpha red with partial-alpha blue, and nonprimary partial-alpha

@@ -1212,6 +1212,120 @@ fn radial_line_cache_step_uses_native_q16_cache_quantization() {
 }
 
 #[test]
+fn radial_line_three_stop_cache_matches_native_endpoint_goldens() {
+    // Native N3 V2: SHA-256 c626bbe0b9278995052755cb9b11184872bb4190a5055073c1c69995ac123fef.
+    // Native opaque N3: SHA-256 452d75a5ec41fbdf85ffcda990b707c9c8e52c17e728106fe81bb92430c10c4f.
+    // Both actual 256x4 caches contain only the high endpoint through bucket
+    // 50 and low endpoint from bucket 51; changing middle ARGB leaves bytes
+    // unchanged in both controls. Native factory words are recorded in the
+    // corresponding pair receipts under /tmp/sdocx-type8-radial-three-stop-*.
+    let cases = [
+        // V2's low endpoint is transparent cyan (ARGB 0000ffff), not blue.
+        (0xff00_0000, 0xff00_ff00, 0x0000_ffff),
+        (0xff00_0000, 0xffff_00ff, 0x0000_ffff),
+        // Opaque pair changes the middle from opaque green to partial-alpha
+        // magenta while retaining opaque red/blue endpoints.
+        (0xff00_00ff, 0xff00_ff00, 0xffff_0000),
+        (0xff00_00ff, 0x80ff_00ff, 0xffff_0000),
+    ];
+    for (high_argb, middle_argb, low_argb) in cases {
+        let mut radial = radial_line_source();
+        radial.stops = [
+            (low_argb, 0x3e4c_cccd),
+            (middle_argb, 0x3f19_999a),
+            (high_argb, 0x3f66_6666),
+        ]
+        .map(|(argb, position)| GradientStopSource {
+            argb,
+            position: PaintFloat32::from_bits(position),
+        })
+        .to_vec();
+
+        let projected = Plan::for_line(&test_line(), &radial).unwrap().stops;
+        assert_eq!(
+            projected,
+            [
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: high_argb,
+                },
+                ProjectedStop {
+                    offset: 51.0 / 256.0,
+                    argb: high_argb,
+                },
+                ProjectedStop {
+                    offset: 51.0 / 256.0,
+                    argb: low_argb,
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low_argb,
+                },
+            ]
+        );
+    }
+
+    let mut equal_endpoints = radial_line_source();
+    equal_endpoints.stops = [
+        (0xff12_3456, 0x3e4c_cccd),
+        (0xffff_00ff, 0x3f19_999a),
+        (0xff12_3456, 0x3f66_6666),
+    ]
+    .map(|(argb, position)| GradientStopSource {
+        argb,
+        position: PaintFloat32::from_bits(position),
+    })
+    .to_vec();
+    assert_eq!(
+        Plan::for_line(&test_line(), &equal_endpoints)
+            .unwrap()
+            .stops,
+        [
+            ProjectedStop {
+                offset: 0.0,
+                argb: 0xff12_3456,
+            },
+            ProjectedStop {
+                offset: 1.0,
+                argb: 0xff12_3456,
+            },
+        ]
+    );
+}
+
+#[test]
+fn radial_line_three_stop_constant_edges_match_native_captures() {
+    // Native pair SHA-256 43d38efbda7fdfc70406775794864d4cb298d46556529fe41272358798939695:
+    // both actual 256x4 caches are constant RGBA red and frames are identical.
+    for (low_position, high_argb) in [(0x0000_0000, 0xff00_00ff), (0x3e4c_cccd, 0xffff_0000)] {
+        let mut radial = radial_line_source();
+        radial.stops = [
+            (0xffff_0000, low_position),
+            (0xff00_ff00, 0x3f19_999a),
+            (high_argb, 0x3f66_6666),
+        ]
+        .map(|(argb, position)| GradientStopSource {
+            argb,
+            position: PaintFloat32::from_bits(position),
+        })
+        .to_vec();
+        assert_eq!(
+            Plan::for_line(&test_line(), &radial).unwrap().stops,
+            [
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: 0xffff_0000
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: 0xffff_0000
+                },
+            ]
+        );
+    }
+}
+
+#[test]
 fn radial_line_step_preserves_partial_zero_alpha_and_nonprimary_argb() {
     // These four synthetic native controls use the same two descending cache
     // stops. V35/V36 cover partial alpha, V37 retains hidden RGB at alpha zero,
@@ -1271,6 +1385,10 @@ fn radial_line_step_preserves_partial_zero_alpha_and_nonprimary_argb() {
     radial.stops.push(GradientStopSource {
         argb: 0xff12_3456,
         position: PaintFloat32::from_bits(0.9_f32.to_bits()),
+    });
+    radial.stops.push(GradientStopSource {
+        argb: 0xff65_4321,
+        position: PaintFloat32::from_bits(0.95_f32.to_bits()),
     });
     assert!(matches!(
         Plan::for_line(&test_line(), &radial),

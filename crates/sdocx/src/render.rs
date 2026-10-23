@@ -7890,6 +7890,166 @@ mod tests {
     }
 
     #[test]
+    fn public_sdk_radial_three_stop_pairs_match_endpoint_projection() {
+        // Native V2 and opaque-pair receipts record identical 256x4 caches
+        // and frames after changing only the middle ARGB. This is synthetic
+        // source-grid/cache evidence, not saved-gradient or device parity.
+        let cases = [
+            ("v2-green", 0x0000_ffff, 0xff00_ff00, 0xff00_0000),
+            ("v2-magenta", 0x0000_ffff, 0xffff_00ff, 0xff00_0000),
+            ("opaque-green", 0xffff_0000, 0xff00_ff00, 0xff00_00ff),
+            ("opaque-half-magenta", 0xffff_0000, 0x80ff_00ff, 0xff00_00ff),
+        ];
+        let artifact_dir =
+            std::env::var_os("SDOCX_RADIAL_THREE_STOP_ARTIFACT_DIR").map(std::path::PathBuf::from);
+        if let Some(directory) = &artifact_dir {
+            std::fs::create_dir_all(directory).unwrap();
+        }
+
+        let mut outputs = Vec::new();
+        for (name, low_argb, middle_argb, high_argb) in cases {
+            let mut line = super::gradient::tests::hf02_line_with_gradient();
+            let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
+            else {
+                unreachable!("fixture has a color gradient source");
+            };
+            source.gradient_type = 1;
+            source.property_flags = 0;
+            source.position = [crate::PaintFloat32::from_bits(0x3f00_0000); 2];
+            source.stops = [
+                (low_argb, 0x3e4c_cccd),
+                (middle_argb, 0x3f19_999a),
+                (high_argb, 0x3f66_6666),
+            ]
+            .map(|(argb, position)| crate::GradientStopSource {
+                argb,
+                position: crate::PaintFloat32::from_bits(position),
+            })
+            .to_vec();
+            let mut page = page_with_uncolored_stroke();
+            page.width = 640;
+            page.height = 640;
+            page.objects = vec![crate::PageElement::Line(line).into()];
+            let document = document(page);
+            let rendered = render_document_svg(&document, &RenderOptions::default()).remove(0);
+            assert!(
+                rendered.paint_diagnostics.is_empty(),
+                "{name}: {:?}",
+                rendered.paint_diagnostics
+            );
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert!(
+                !xml.descendants().any(|node| node.has_tag_name("image")),
+                "radial three-stop projection remains vector-only"
+            );
+            let gradient = xml
+                .descendants()
+                .find(|node| node.has_tag_name("radialGradient"))
+                .expect("public export contains radial line paint");
+            let stops = gradient
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .collect::<Vec<_>>();
+            assert_eq!(stops.len(), 4, "middle stop is skipped by the cache spans");
+            for (node, (offset, argb)) in stops.iter().zip([
+                (0.0, high_argb),
+                (51.0 / 256.0, high_argb),
+                (51.0 / 256.0, low_argb),
+                (1.0, low_argb),
+            ]) {
+                assert!(
+                    (node.attribute("offset").unwrap().parse::<f64>().unwrap() - offset).abs()
+                        < 1e-12
+                );
+                let color = format!(
+                    "#{:02x}{:02x}{:02x}",
+                    (argb >> 16) as u8,
+                    (argb >> 8) as u8,
+                    argb as u8
+                );
+                assert_eq!(node.attribute("stop-color"), Some(color.as_str()));
+                let opacity = node
+                    .attribute("stop-opacity")
+                    .unwrap_or("1")
+                    .parse::<f64>()
+                    .unwrap();
+                assert!((opacity - f64::from((argb >> 24) as u8) / 255.0).abs() < 1e-12);
+            }
+
+            let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+            let mut pixmap =
+                resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            let rgba = pixmap.data().to_vec();
+
+            #[cfg(feature = "pdf")]
+            let pdf_bytes = crate::render_document_pdf(
+                &document,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default(),
+            )
+            .unwrap();
+            #[cfg(feature = "pdf")]
+            {
+                let pdf = lopdf::Document::load_mem(&pdf_bytes).unwrap();
+                let dictionaries = pdf.objects.values().filter_map(pdf_object_dictionary);
+                let mut radial_shadings = 0;
+                let mut images = 0;
+                for dictionary in dictionaries {
+                    images += usize::from(
+                        dictionary
+                            .get(b"Subtype")
+                            .and_then(lopdf::Object::as_name)
+                            .ok()
+                            == Some(b"Image".as_slice()),
+                    );
+                    radial_shadings += usize::from(
+                        dictionary
+                            .get(b"ShadingType")
+                            .and_then(lopdf::Object::as_i64)
+                            .ok()
+                            == Some(3),
+                    );
+                }
+                assert_eq!(images, 0, "radial three-stop paint stays vector-only");
+                assert!(radial_shadings > 0, "PDF retains radial shading");
+                if let Some(directory) = &artifact_dir {
+                    std::fs::write(directory.join(format!("{name}.pdf")), &pdf_bytes).unwrap();
+                    std::fs::write(
+                        directory.join(format!("{name}.pdf.stats.json")),
+                        serde_json::to_vec(&serde_json::json!({
+                            "schema": "sdocx.type8-radial-three-stop-pdf-stats.v1",
+                            "radial_shading_objects": radial_shadings,
+                            "image_xobjects": images,
+                        }))
+                        .unwrap(),
+                    )
+                    .unwrap();
+                }
+            }
+
+            if let Some(directory) = &artifact_dir {
+                std::fs::write(directory.join(format!("{name}.svg")), &rendered.svg).unwrap();
+                std::fs::write(directory.join(format!("{name}.rgba")), &rgba).unwrap();
+            }
+            outputs.push((rendered.svg, rgba));
+        }
+
+        assert_eq!(
+            outputs[0], outputs[1],
+            "V2 middle RGB does not affect export"
+        );
+        assert_eq!(
+            outputs[2], outputs[3],
+            "opaque-pair middle ARGB does not affect export"
+        );
+    }
+
+    #[test]
     fn public_radial_line_cache_bucket_zero_projects_low_stop_as_constant_vector_paint() {
         // The V41/V42 captures retain the full native 256x4 cache and its
         // matching GL_RGBA source upload; capture pins are recorded in the
