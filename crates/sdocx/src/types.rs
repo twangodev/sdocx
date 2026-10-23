@@ -194,6 +194,9 @@ pub struct PlacedImage {
     pub media_id: Option<u32>,
     /// Resolved index into `DocumentMetadata::media_assets`, if available and unambiguous.
     pub media_index: Option<usize>,
+    /// Native image fill-effect transparency (0 is opaque, 1 is transparent).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub fill_effect_transparency: f32,
     pub crop_rect: Option<[i32; 4]>,
     pub original_bbox: Option<BoundingBox>,
     /// Optional border asset ID, distinct from the main image.

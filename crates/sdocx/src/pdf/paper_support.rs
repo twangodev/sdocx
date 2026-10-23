@@ -3855,6 +3855,7 @@ mod tests {
                         original_bbox: None,
                         border_media_id: None,
                         original_media_id: None,
+                        fill_effect_transparency: 0.0,
                     },
                 ))),
                 text_index_utf16: 112,

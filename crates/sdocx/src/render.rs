@@ -1424,7 +1424,8 @@ fn render_element(
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
         PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
-        PageElement::FormulaImage(image) => render_placed_image(svg, image, media_assets),
+        // Native fill-effect transparency is defined only for type-3 images.
+        PageElement::FormulaImage(image) => render_placed_image_body(svg, image, media_assets),
         PageElement::TextBox(text_box) => render_text_box(
             svg,
             text_box,
@@ -2006,6 +2007,31 @@ fn image_drawn_bbox(image: &PlacedImage) -> BoundingBox {
 }
 
 fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
+    let alpha = placed_image_alpha(image.fill_effect_transparency);
+    if alpha == 0 {
+        return;
+    }
+    if alpha < 255 {
+        svg.scope(Group::new().opacity(f64::from(alpha) / 255.0), |svg| {
+            render_placed_image_body(svg, image, media_assets);
+        });
+    } else {
+        render_placed_image_body(svg, image, media_assets);
+    }
+}
+
+// The native Drawing path computes 255 - transparency * 255 as one f32 fused
+// operation, converts toward zero, then clamps to a byte. Nonpositive values
+// bypass the setter and retain the opaque paint alpha.
+fn placed_image_alpha(transparency: f32) -> u8 {
+    if transparency.is_nan() || transparency <= 0.0 {
+        return 255;
+    }
+    let scaled = (-transparency).mul_add(255.0, 255.0);
+    (scaled as i32).clamp(0, 255) as u8
+}
+
+fn render_placed_image_body(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
     let original = image.crop_rect.and_then(|crop| {
         image.original_bbox.or_else(|| {
             let asset = media_assets.get(image.media_index?)?;
@@ -4567,6 +4593,25 @@ mod tests {
         RichTextParagraph, RichTextParagraphType, RichTextSection, RichTextSpan, RichTextSpanType,
         Stroke, StrokeProperties, StrokeRendering, StrokeStyle, layout_document,
     };
+
+    #[test]
+    fn placed_image_alpha_matches_native_fused_quantization_and_clamp() {
+        use super::placed_image_alpha;
+
+        for (transparency, expected) in [
+            (-0.25, 255),
+            (0.0, 255),
+            (0.5, 127),
+            (1.0, 0),
+            (1.25, 0),
+            (f32::MAX, 0),
+            (f32::NAN, 255),
+            // Fused native arithmetic gives 238; (1 - t) * 255 gives 237.
+            (f32::from_bits(0x3d88_888c), 238),
+        ] {
+            assert_eq!(placed_image_alpha(transparency), expected);
+        }
+    }
     #[cfg(feature = "pdf")]
     use crate::{
         MediaAsset, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType,
@@ -11052,6 +11097,7 @@ mod tests {
                     original_bbox: None,
                     border_media_id: None,
                     original_media_id: None,
+                    fill_effect_transparency: 0.0,
                 }))),
                 text_index_utf16: anchor as i32,
                 layout_option: ObjectSpanLayoutOption::Block,
@@ -11283,6 +11329,7 @@ mod tests {
                     original_bbox: None,
                     border_media_id: None,
                     original_media_id: None,
+                    fill_effect_transparency: 0.0,
                 }))),
                 text_index_utf16: anchor,
                 layout_option: ObjectSpanLayoutOption::Block,
@@ -11500,6 +11547,7 @@ mod tests {
                 original_bbox: None,
                 border_media_id: None,
                 original_media_id: None,
+                fill_effect_transparency: 0.0,
             }))),
             text_index_utf16: 112,
             layout_option: ObjectSpanLayoutOption::Block,

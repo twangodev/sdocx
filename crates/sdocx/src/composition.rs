@@ -185,6 +185,7 @@ mod tests {
                 original_bbox: None,
                 border_media_id: None,
                 original_media_id: None,
+                fill_effect_transparency: 0.0,
             })),
         );
         let formula_image = object(
@@ -198,6 +199,7 @@ mod tests {
                 original_bbox: None,
                 border_media_id: None,
                 original_media_id: None,
+                fill_effect_transparency: 0.0,
             })),
         );
         let text = object(

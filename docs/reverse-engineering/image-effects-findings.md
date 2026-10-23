@@ -295,6 +295,17 @@ at `0x85460`–`0x85468`. `drawBorder` and `drawHintText` are then called at
 not suppress these later operations. This ordering does not establish the
 opacity of the surrounding object list or page compositing pass.
 
+Three synthetic native controls now cover transparency `0`, `.5`, and `1`.
+With a uniform 512×256 source, crop `[73,50,405,222]`, and destination
+`[8,8,40,24]`, the 48×32 readbacks contain respectively 512 pixels at
+RGBA `(32,128,224,255)`, 512 at `(16,64,112,127)`, and no image pixels.
+The SDK parses type-3 tail field 7 and applies the quantized alpha only to
+image content. Paired SVG and PDF renders match these captures exactly over
+their page backgrounds (MuPDF 1.28.2, 96 dpi; comparison receipt SHA-256
+`f7e2734643ed8a09f8e09d409362e80ba8aa10e77bc3a7ce4ac27e2cf4717994`).
+This proves the controlled crop/alpha cases, not saved-object placement,
+border/hint appearance, fill-record transforms or device parity.
+
 ## Crop takes precedence over nine-patch
 
 For a nonzero paint alpha and a successfully created source canvas bitmap,

@@ -173,8 +173,10 @@ This follows the source-rectangle/full-destination mapping in Drawing
 reproducing the native intermediate bitmap or its filtering. The conservative
 crop-only feature warning remains; out-of-bounds/unreadable crops and
 border/original media IDs remain incomplete.
-Fill transforms, tiling, transparency, active nine-patch, custom shape paths and several
-inherited properties remain incomplete. Alternative fill encodings and unknown
+Type-3 fill-effect transparency is rendered with native byte-alpha quantization;
+see the [paired controls](image-effects-findings.md#fill-transparency-is-fractional-and-applies-before-borders-and-hint-text).
+Fill-record transforms, tiling and transparency, active nine-patch, custom shape
+paths and several inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,
 audio and video assets are not raster image render inputs.
 

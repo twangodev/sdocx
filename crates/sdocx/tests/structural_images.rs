@@ -74,6 +74,30 @@ fn image(id: i32) -> Vec<u8> {
     image_with_fill(2, &fill(id), 0, &[], &frame(3, 0, &[], &[]))
 }
 
+fn image_with_transparency(id: i32, transparency: f32) -> Vec<u8> {
+    image_with_fill(
+        2,
+        &fill(id),
+        0,
+        &[],
+        &frame(3, 1 << 7, &[], &transparency.to_le_bytes()),
+    )
+}
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+fn uniform_rgba_png(width: u32, height: u32, rgba: [u8; 4]) -> Vec<u8> {
+    let pixels = rgba.repeat((width * height) as usize);
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, width, height);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().unwrap();
+        writer.write_image_data(&pixels).unwrap();
+    }
+    bytes
+}
+
 fn rectangle_path(points: [[f64; 2]; 4]) -> Vec<u8> {
     let mut bytes = 5_u32.to_le_bytes().to_vec();
     for (index, point) in points.into_iter().enumerate() {
@@ -1550,4 +1574,315 @@ fn matching_shape_rotation_is_not_mistaken_for_a_corner_radius() {
             .iter()
             .any(|d| d.code == DiagnosticCode::UnsupportedImageFeature)
     );
+}
+
+#[test]
+fn type3_field7_transparency_is_parsed_without_hiding_unknown_fields() {
+    for value in [0.0_f32, 0.5, 1.0, -0.25, 1.25] {
+        let parsed = parse_native_image(&image_with_transparency(7, value));
+        let image = embedded_image(&parsed.note.as_ref().unwrap().body.object_spans[0]);
+        assert_eq!(image.fill_effect_transparency.to_bits(), value.to_bits());
+        assert!(
+            !parsed
+                .report
+                .diagnostics
+                .iter()
+                .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnsupportedImageFeature })
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    {
+        let legacy: PlacedImage = serde_json::from_value(serde_json::json!({
+            "bbox": {"x_min": 0.0, "y_min": 0.0, "x_max": 10.0, "y_max": 10.0}
+        }))
+        .unwrap();
+        assert_eq!(legacy.fill_effect_transparency, 0.0);
+    }
+
+    for value in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        let malformed = archive(
+            &one_page(vec![object(3, &image_with_transparency(7, value), &[])]),
+            None,
+            &[],
+        );
+        assert!(sdocx::parse_bytes_detailed(&malformed).is_err());
+    }
+
+    let unknown = parse_native_image(&image_with_fill(
+        2,
+        &fill(7),
+        0,
+        &[],
+        &frame(3, 1 << 8, &[], &[]),
+    ));
+    assert!(
+        unknown
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnsupportedImageFeature })
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn parsed_type3_transparency_wraps_only_the_cropped_image_in_svg() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-quadrants.png");
+    let mut tail: Vec<_> = [0_i32, 0, 2, 2]
+        .into_iter()
+        .flat_map(i32::to_le_bytes)
+        .collect();
+    tail.extend(0.5_f32.to_le_bytes());
+    tail.extend(
+        [0.0_f64, 0.0, 4.0, 3.0]
+            .into_iter()
+            .flat_map(f64::to_le_bytes),
+    );
+    let payload = image_with_fill(
+        2,
+        &fill(7),
+        0,
+        &[],
+        &frame(3, (1 << 1) | (1 << 7) | (1 << 17), &[], &tail),
+    );
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let svg = sdocx::render_page_svg(&parsed.document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let image = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert!(image.parent().unwrap().has_tag_name("svg"));
+    let opacity = image
+        .ancestors()
+        .find(|node| node.attribute("opacity").is_some())
+        .unwrap();
+    let emitted: f64 = opacity.attribute("opacity").unwrap().parse().unwrap();
+    assert!((emitted - 127.0 / 255.0).abs() < 0.000_001);
+    assert_eq!(svg_rectangle(image), [0.0, 0.0, 4.0, 3.0]);
+
+    let mut opaque_tail: Vec<_> = [0_i32, 0, 2, 2]
+        .into_iter()
+        .flat_map(i32::to_le_bytes)
+        .collect();
+    opaque_tail.extend(
+        [0.0_f64, 0.0, 4.0, 3.0]
+            .into_iter()
+            .flat_map(f64::to_le_bytes),
+    );
+    let opaque_payload = image_with_fill(
+        2,
+        &fill(7),
+        0,
+        &[],
+        &frame(3, (1 << 1) | (1 << 17), &[], &opaque_tail),
+    );
+    let opaque = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &opaque_payload, &[])]),
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let opaque_svg = sdocx::render_page_svg(&opaque.document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let opaque_xml = roxmltree::Document::parse(&opaque_svg).unwrap();
+    let opaque_image = opaque_xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert!(
+        !opaque_image
+            .ancestors()
+            .any(|node| node.attribute("opacity").is_some())
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn fully_transparent_type3_image_skips_its_image_element() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-quadrants.png");
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &image_with_transparency(7, 1.0), &[])]),
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let svg = sdocx::render_page_svg(&parsed.document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    assert!(!svg.contains("<image "));
+
+    // The native getter returns zero for Formula/type 11. A public model's
+    // type-3-only setting must not alter formula image pixels.
+    let mut formula = parsed.document.clone();
+    let image = placed(formula.pages[0].elements().next().unwrap()).clone();
+    formula.pages[0].objects = vec![PageElement::FormulaImage(image).into()];
+    let svg = sdocx::render_page_svg(&formula, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let image = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert!(
+        !image
+            .ancestors()
+            .any(|node| node.attribute("opacity").is_some())
+    );
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn type3_transparency_remains_vector_image_alpha_in_pdf() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-quadrants.png");
+    let payload = image_with_transparency(7, 0.5);
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+    let bytes =
+        sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let images: Vec<_> = pdf
+        .objects
+        .values()
+        .filter_map(|object| {
+            let stream = object.as_stream().ok()?;
+            (stream.dict.get(b"Subtype").ok()?.as_name().ok()? == b"Image").then_some(&stream.dict)
+        })
+        .collect();
+    assert_eq!(
+        images.len(),
+        1,
+        "retain the source image without rasterizing the page"
+    );
+    assert_eq!(images[0].get(b"Width").unwrap().as_i64().unwrap(), 4);
+    assert_eq!(images[0].get(b"Height").unwrap().as_i64().unwrap(), 3);
+    assert!(pdf.objects.values().any(|object| {
+        object.as_dict().is_ok_and(|dictionary| {
+            dictionary.get(b"ca").is_ok_and(|value| {
+                value
+                    .as_float()
+                    .is_ok_and(|alpha| (alpha - 127.0 / 255.0).abs() < 0.0001)
+            })
+        })
+    }));
+}
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+#[test]
+fn type3_transparency_sdk_artifact_triplet_matches_captured_draw_geometry() {
+    const SOURCE: [u8; 4] = [32, 128, 224, 255];
+    let media = uniform_rgba_png(512, 256, SOURCE);
+    let artifact_dir =
+        std::env::var_os("SDOCX_IMAGE_TRANSPARENCY_ARTIFACT_DIR").map(std::path::PathBuf::from);
+
+    for (label, transparency, expected_alpha) in [
+        ("opaque", 0.0_f32, 255_u8),
+        ("half", 0.5_f32, 127_u8),
+        ("transparent", 1.0_f32, 0_u8),
+    ] {
+        let payload = image_with_transparency(7, transparency);
+        let mut document = sdocx::parse_bytes_detailed(&archive(
+            &one_page(vec![object(3, &payload, &[])]),
+            Some(&[(7, "source.png")]),
+            &[("source.png", &media)],
+        ))
+        .unwrap()
+        .document;
+        let mut image = placed(document.pages[0].elements().next().unwrap()).clone();
+        assert_eq!(
+            image.fill_effect_transparency.to_bits(),
+            transparency.to_bits()
+        );
+        image.bbox = sdocx::BoundingBox {
+            x_min: 8.0,
+            y_min: 8.0,
+            x_max: 40.0,
+            y_max: 24.0,
+        };
+        image.crop_rect = Some([73, 50, 405, 222]);
+        // The native direct-draw control has orientation zero; the parser
+        // fixture's unrelated stored rotation must not enter this comparison.
+        image.rotation_degrees = Some(0.0);
+        image.original_bbox = None;
+        document.pages[0].width = 48;
+        document.pages[0].height = 32;
+        document.pages[0].content_bbox = sdocx::BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 48.0,
+            y_max: 32.0,
+        };
+        document.pages[0].background_color = Some(sdocx::Color {
+            r: 252,
+            g: 252,
+            b: 252,
+        });
+        document.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
+
+        let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+        assert_eq!((rendered.width, rendered.height), (48, 32));
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let svg_image = xml.descendants().find(|node| node.has_tag_name("image"));
+        if expected_alpha == 0 {
+            assert!(svg_image.is_none());
+        } else {
+            let svg_image = svg_image.unwrap();
+            let viewport = svg_image.parent().unwrap();
+            assert!(viewport.has_tag_name("svg"));
+            let view_box: svgtypes::ViewBox =
+                viewport.attribute("viewBox").unwrap().parse().unwrap();
+            assert_eq!(
+                [view_box.x, view_box.y, view_box.w, view_box.h],
+                [8.0, 8.0, 32.0, 16.0]
+            );
+            let opacity = svg_image
+                .ancestors()
+                .find_map(|node| node.attribute("opacity"));
+            if expected_alpha == 255 {
+                assert!(opacity.is_none());
+            } else {
+                let value: f64 = opacity.unwrap().parse().unwrap();
+                assert!((value - f64::from(expected_alpha) / 255.0).abs() < 0.000_001);
+            }
+        }
+
+        let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixels.as_mut(),
+        );
+        if let Some(directory) = &artifact_dir {
+            std::fs::create_dir_all(directory).unwrap();
+            std::fs::write(directory.join(format!("{label}.svg")), &rendered.svg).unwrap();
+            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+            let pdf = sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap();
+            std::fs::write(directory.join(format!("{label}.pdf")), pdf).unwrap();
+            let mut png = Vec::new();
+            {
+                let mut encoder = png::Encoder::new(&mut png, rendered.width, rendered.height);
+                encoder.set_color(png::ColorType::Rgba);
+                encoder.set_depth(png::BitDepth::Eight);
+                let mut writer = encoder.write_header().unwrap();
+                writer.write_image_data(pixels.data()).unwrap();
+            }
+            std::fs::write(directory.join(format!("{label}.rgba.png")), png).unwrap();
+        }
+    }
 }

@@ -187,6 +187,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         rotation_degrees: base.rotation_degrees,
         media_id,
         media_index: None,
+        fill_effect_transparency: 0.0,
         crop_rect: None,
         original_bbox: None,
         border_media_id: None,
@@ -208,6 +209,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             5 => {
                 fields.read_u16("border type")?;
             }
+            7 => image.fill_effect_transparency = finite_f32(&mut fields, "image transparency")?,
             9 => image.border_media_id = read_media_id(&mut fields)?,
             10 => {
                 read_rect(&mut fields)?;
@@ -231,7 +233,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             _ => break,
         }
     }
-    if tail.fields.has_other_bits((1 << 1) | (1 << 17))
+    if tail.fields.has_other_bits((1 << 1) | (1 << 7) | (1 << 17))
         || (image.crop_rect.is_some() && image.original_bbox.is_none())
         || tail.properties.has_other_bits(0)
         || !tail.fixed.is_empty()

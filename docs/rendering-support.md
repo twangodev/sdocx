@@ -26,7 +26,7 @@ that the object has semantic content or a renderer.
 | 0 | None | Stored/common metadata | No dedicated renderer |
 | 1 | Stroke | Sample channels, properties and pen resources | Page vectors; supported reconstructions or generic approximation |
 | 2 | TextBox | Rich text, styles, paragraphs and object spans | Page text and supported embedded content |
-| 3 | Image | Geometry, media references and supported crop fields | Page and text-flow images; effects are partial |
+| 3 | Image | Geometry, media references, supported crop fields and fill-effect transparency | Page and text-flow images with quantized fill alpha; other effects are partial |
 | 4 | Container | Common metadata and ordered children | Nested page objects; supported parent visibility and root selection |
 | 7 | Shape | Geometry, styles, saved paths, controls and embedded text | Supported page templates/paths, solid paint and bounded linear/radial fill/outline gradients; partial styling |
 | 8 | Line | Geometry, styles, controls and saved paths | Straight lines and supported paths; bounded linear/radial outlines, including descending two-stop linear gradients with partial alpha and radial three-stop endpoint projection; partial styling/routing |
