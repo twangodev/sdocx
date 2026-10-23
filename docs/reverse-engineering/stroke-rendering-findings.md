@@ -318,7 +318,7 @@ reference ink pixels; gray background dots or other objects overlapping these
 regions are included. Reproduce it with:
 
 ```sh
-uv run --project conformance --locked python conformance/ink_visual.py \
+cargo run -p sdocx-conformance --bin ink -- \
   /tmp/ink-geometry.json /path/to/reference_page0.png /path/to/sdk.png
 ```
 

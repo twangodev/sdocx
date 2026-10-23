@@ -1035,6 +1035,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdocx-conformance"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "lopdf",
+ "png",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "sdocx-wasm"
 version = "1.1.0"
 dependencies = [

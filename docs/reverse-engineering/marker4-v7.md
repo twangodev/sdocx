@@ -77,7 +77,7 @@ same cropped page contains zero image XObjects.
 With decoded native and Chromium candidate images at the same scale:
 
 ```sh
-uv run --project conformance --locked python conformance/ink_visual.py \
+cargo run -p sdocx-conformance --bin ink -- \
   geometry.json native-top.png candidate-highlighters.png \
   --profile Marker4 --settings '7;' --region 120 1740 710 1920 --chroma-threshold 35
 ```

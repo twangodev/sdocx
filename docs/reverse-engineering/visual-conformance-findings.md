@@ -18,7 +18,7 @@ standalone shape/line or image-placement visual coverage. The current
 text-flow image and Marker4 reference pairs; those do not change the scope of
 the historical measurements below.
 
-The reusable runner is [`conformance/visual.py`](../../conformance/visual.py).
+The reusable runner is [Rust visual tool](../../conformance/src/bin/visual.rs).
 It produces per-page PNGs, an interactive HTML report, CLI diagnostics and
 JSON measurements with executable, source-file and font hashes. See the
 [runner instructions](../../conformance/README.md#visual-comparison).
