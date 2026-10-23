@@ -349,9 +349,9 @@ changing middle RGB and alpha (`ff00ff00` to `80ff00ff`; receipt SHA-256
 the actual 256×4 caches and native frames byte-identical within each pair.
 The source-ordered descending pass skips the two nonpositive middle spans;
 the final span leaves only the high endpoint through bucket 50 and low
-endpoint from bucket 51. The SDK projection is bounded to exactly three
-distinct stops in radial type-8 line gradients; it does not establish other
-stop counts, ties, saved styles or device appearance parity. Separate native
+endpoint from bucket 51. The SDK projection covers three to ten distinct
+stops in radial type-8 line gradients; ties, source-count truncation above ten,
+saved styles and device appearance parity remain unproven. Separate native
 three-stop controls with a zero low-stop bucket and equal red endpoints both
 produced the same constant-red cache and frame (pair receipt SHA-256
 `43d38efbda7fdfc70406775794864d4cb298d46556529fe41272358798939695`).
@@ -360,6 +360,15 @@ Their final-frame RGB errors remain: over the active pixel union, mean absolute
 channel error is 10.62/11.73 for the transparent-endpoint pair and 5.87/5.78 for
 the opaque pair (SVG/PDF; maximum channel error 211). Cache behavior is recovered;
 final presentation sampling and coverage still need work.
+
+N4 and N10 controls also retained identical caches, source uploads and frames
+after changing one interior ARGB, including across the two counts (offline
+receipt SHA-256 `d64451d8b581cb3caea09957e481cb85bf82e8be85b4d9be67ca2010e06d8cda`).
+Their low stop `.1` overwrites from bucket 25. Both N10 runs completed the
+native readback before a histogram progress checkpoint exceeded 16 KiB; their
+failed statuses are preserved. Paired vector exports match 20,836/20,838 SVG
+source-grid pixels; final-frame active-union RGB MAE remains 5.90/5.79
+(SVG/PDF), with a maximum channel error of 215.
 
 Four further controls kept the same HF02 line and radial cache boundary while
 varying stop alpha and RGB: half-alpha red with opaque blue, two partial-alpha

@@ -7935,24 +7935,90 @@ mod tests {
     }
 
     #[test]
-    fn public_sdk_radial_three_stop_pairs_match_endpoint_projection() {
-        // Native V2 and opaque-pair receipts record identical 256x4 caches
-        // and frames after changing only the middle ARGB. This is synthetic
-        // source-grid/cache evidence, not saved-gradient or device parity.
+    fn public_sdk_radial_nstop_pairs_match_endpoint_projection() {
+        // Native N3, N4 and N10 pair receipts record identical caches/frames
+        // after changing interior ARGB. These synthetic source-grid cases do
+        // not claim saved-gradient or device parity.
+        let n4 = vec![
+            (0xffff_0000, 0x3dcc_cccd),
+            (0xff00_ff00, 0x3e99_999a),
+            (0xffff_ff00, 0x3f33_3333),
+            (0xff00_00ff, 0x3f66_6666),
+        ];
+        let n4_variant = vec![
+            (0xffff_0000, 0x3dcc_cccd),
+            (0x80ff_00ff, 0x3e99_999a),
+            (0xffff_ff00, 0x3f33_3333),
+            (0xff00_00ff, 0x3f66_6666),
+        ];
+        let n10 = vec![
+            (0xffff_0000, 0x3dcc_cccd),
+            (0xff00_ff00, 0x3e38_51ec),
+            (0xffff_ff00, 0x3e8a_3d71),
+            (0xffff_8000, 0x3eb8_51ec),
+            (0xffff_ffff, 0x3ee6_6666),
+            (0xff00_ffff, 0x3f0a_3d71),
+            (0xffff_00ff, 0x3f21_47ae),
+            (0xff80_8080, 0x3f38_51ec),
+            (0xff00_8080, 0x3f4f_5c29),
+            (0xff00_00ff, 0x3f66_6666),
+        ];
+        let mut n10_variant = n10.clone();
+        n10_variant[5].0 = 0x80ff_00ff;
         let cases = [
-            ("v2-green", 0x0000_ffff, 0xff00_ff00, 0xff00_0000),
-            ("v2-magenta", 0x0000_ffff, 0xffff_00ff, 0xff00_0000),
-            ("opaque-green", 0xffff_0000, 0xff00_ff00, 0xff00_00ff),
-            ("opaque-half-magenta", 0xffff_0000, 0x80ff_00ff, 0xff00_00ff),
+            (
+                "v2-green",
+                "n3",
+                vec![
+                    (0x0000_ffff, 0x3e4c_cccd),
+                    (0xff00_ff00, 0x3f19_999a),
+                    (0xff00_0000, 0x3f66_6666),
+                ],
+                51.0 / 256.0,
+            ),
+            (
+                "v2-magenta",
+                "n3",
+                vec![
+                    (0x0000_ffff, 0x3e4c_cccd),
+                    (0xffff_00ff, 0x3f19_999a),
+                    (0xff00_0000, 0x3f66_6666),
+                ],
+                51.0 / 256.0,
+            ),
+            (
+                "opaque-green",
+                "n3-opaque",
+                vec![
+                    (0xffff_0000, 0x3e4c_cccd),
+                    (0xff00_ff00, 0x3f19_999a),
+                    (0xff00_00ff, 0x3f66_6666),
+                ],
+                51.0 / 256.0,
+            ),
+            (
+                "opaque-half-magenta",
+                "n3-opaque",
+                vec![
+                    (0xffff_0000, 0x3e4c_cccd),
+                    (0x80ff_00ff, 0x3f19_999a),
+                    (0xff00_00ff, 0x3f66_6666),
+                ],
+                51.0 / 256.0,
+            ),
+            ("n4-control", "n4", n4, 25.0 / 256.0),
+            ("n4-interior-change", "n4", n4_variant, 25.0 / 256.0),
+            ("n10-control", "n10", n10, 25.0 / 256.0),
+            ("n10-interior-change", "n10", n10_variant, 25.0 / 256.0),
         ];
         let artifact_dir =
-            std::env::var_os("SDOCX_RADIAL_THREE_STOP_ARTIFACT_DIR").map(std::path::PathBuf::from);
+            std::env::var_os("SDOCX_RADIAL_NSTOP_ARTIFACT_DIR").map(std::path::PathBuf::from);
         if let Some(directory) = &artifact_dir {
             std::fs::create_dir_all(directory).unwrap();
         }
 
         let mut outputs = Vec::new();
-        for (name, low_argb, middle_argb, high_argb) in cases {
+        for (name, pair, stops_input, boundary) in cases {
             let mut line = super::gradient::tests::hf02_line_with_gradient();
             let Some(crate::ShapePaintSource::Color(source)) = line.style.paint_source.as_mut()
             else {
@@ -7961,16 +8027,15 @@ mod tests {
             source.gradient_type = 1;
             source.property_flags = 0;
             source.position = [crate::PaintFloat32::from_bits(0x3f00_0000); 2];
-            source.stops = [
-                (low_argb, 0x3e4c_cccd),
-                (middle_argb, 0x3f19_999a),
-                (high_argb, 0x3f66_6666),
-            ]
-            .map(|(argb, position)| crate::GradientStopSource {
-                argb,
-                position: crate::PaintFloat32::from_bits(position),
-            })
-            .to_vec();
+            source.stops = stops_input
+                .iter()
+                .map(|&(argb, position)| crate::GradientStopSource {
+                    argb,
+                    position: crate::PaintFloat32::from_bits(position),
+                })
+                .collect();
+            let low_argb = source.stops[0].argb;
+            let high_argb = source.stops.last().unwrap().argb;
             let mut page = page_with_uncolored_stroke();
             page.width = 640;
             page.height = 640;
@@ -7985,7 +8050,7 @@ mod tests {
             let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
             assert!(
                 !xml.descendants().any(|node| node.has_tag_name("image")),
-                "radial three-stop projection remains vector-only"
+                "radial n-stop projection remains vector-only"
             );
             let gradient = xml
                 .descendants()
@@ -7995,11 +8060,11 @@ mod tests {
                 .children()
                 .filter(|node| node.has_tag_name("stop"))
                 .collect::<Vec<_>>();
-            assert_eq!(stops.len(), 4, "middle stop is skipped by the cache spans");
+            assert_eq!(stops.len(), 4, "interior stops are skipped by cache spans");
             for (node, (offset, argb)) in stops.iter().zip([
                 (0.0, high_argb),
-                (51.0 / 256.0, high_argb),
-                (51.0 / 256.0, low_argb),
+                (boundary, high_argb),
+                (boundary, low_argb),
                 (1.0, low_argb),
             ]) {
                 assert!(
@@ -8060,14 +8125,14 @@ mod tests {
                             == Some(3),
                     );
                 }
-                assert_eq!(images, 0, "radial three-stop paint stays vector-only");
+                assert_eq!(images, 0, "radial n-stop paint stays vector-only");
                 assert!(radial_shadings > 0, "PDF retains radial shading");
                 if let Some(directory) = &artifact_dir {
                     std::fs::write(directory.join(format!("{name}.pdf")), &pdf_bytes).unwrap();
                     std::fs::write(
                         directory.join(format!("{name}.pdf.stats.json")),
                         serde_json::to_vec(&serde_json::json!({
-                            "schema": "sdocx.type8-radial-three-stop-pdf-stats.v1",
+                            "schema": "sdocx.type8-radial-nstop-pdf-stats.v1",
                             "radial_shading_objects": radial_shadings,
                             "image_xobjects": images,
                         }))
@@ -8081,17 +8146,17 @@ mod tests {
                 std::fs::write(directory.join(format!("{name}.svg")), &rendered.svg).unwrap();
                 std::fs::write(directory.join(format!("{name}.rgba")), &rgba).unwrap();
             }
-            outputs.push((rendered.svg, rgba));
+            outputs.push((pair, rendered.svg, rgba));
         }
-
-        assert_eq!(
-            outputs[0], outputs[1],
-            "V2 middle RGB does not affect export"
-        );
-        assert_eq!(
-            outputs[2], outputs[3],
-            "opaque-pair middle ARGB does not affect export"
-        );
+        for pair in ["n3", "n3-opaque", "n4", "n10"] {
+            let paired = outputs
+                .iter()
+                .filter(|(name, _, _)| *name == pair)
+                .collect::<Vec<_>>();
+            assert_eq!(paired.len(), 2, "{pair} has a native paired control");
+            assert_eq!(paired[0].1, paired[1].1, "{pair} SVG is endpoint-only");
+            assert_eq!(paired[0].2, paired[1].2, "{pair} raster is endpoint-only");
+        }
     }
 
     #[test]

@@ -1294,6 +1294,116 @@ fn radial_line_three_stop_cache_matches_native_endpoint_goldens() {
 }
 
 #[test]
+fn radial_line_three_to_ten_stop_native_pairs_project_only_endpoint_spans() {
+    // N4 and N10 native receipts each captured a 256x4 cache. In little-endian
+    // cache words, buckets 0..24 are 0xffff0000 (RGBA blue), and 25..255 are
+    // 0xff0000ff (RGBA red). Interior ARGB changes left each cache/frame exact.
+    assert_eq!(u32::from_le_bytes([0, 0, 255, 255]), 0xffff_0000);
+    assert_eq!(u32::from_le_bytes([255, 0, 0, 255]), 0xff00_00ff);
+    let n4 = [
+        (0xffff_0000, 0x3dcc_cccd),
+        (0xff00_ff00, 0x3e99_999a),
+        (0xffff_ff00, 0x3f33_3333),
+        (0xff00_00ff, 0x3f66_6666),
+    ];
+    let n10 = [
+        (0xffff_0000, 0x3dcc_cccd),
+        (0xff00_ff00, 0x3e38_51ec),
+        (0xffff_ff00, 0x3e8a_3d71),
+        (0xffff_8000, 0x3eb8_51ec),
+        (0xffff_ffff, 0x3ee6_6666),
+        (0xff00_ffff, 0x3f0a_3d71),
+        (0xffff_00ff, 0x3f21_47ae),
+        (0xff80_8080, 0x3f38_51ec),
+        (0xff00_8080, 0x3f4f_5c29),
+        (0xff00_00ff, 0x3f66_6666),
+    ];
+
+    for (mut controls, changed_index, changed_argb) in [
+        (n4.to_vec(), 1, 0x80ff_00ff),
+        (n10.to_vec(), 5, 0x80ff_00ff),
+    ] {
+        let original_controls = controls.clone();
+        let make_source = |stops: &[(u32, u32)]| {
+            let mut source = radial_line_source();
+            source.stops = stops
+                .iter()
+                .map(|&(argb, position)| GradientStopSource {
+                    argb,
+                    position: PaintFloat32::from_bits(position),
+                })
+                .collect();
+            source
+        };
+        let control = make_source(&controls);
+        let projected = Plan::for_line(&test_line(), &control).unwrap().stops;
+        let high = controls.last().unwrap().0;
+        let low = controls[0].0;
+        assert_eq!(gradient_cache_index(f32::from_bits(controls[0].1)), 25);
+        assert_eq!(
+            projected,
+            [
+                ProjectedStop {
+                    offset: 0.0,
+                    argb: high
+                },
+                ProjectedStop {
+                    offset: 25.0 / 256.0,
+                    argb: high,
+                },
+                ProjectedStop {
+                    offset: 25.0 / 256.0,
+                    argb: low,
+                },
+                ProjectedStop {
+                    offset: 1.0,
+                    argb: low
+                },
+            ]
+        );
+
+        controls[changed_index].0 = changed_argb;
+        let changed = make_source(&controls);
+        assert_eq!(
+            Plan::for_line(&test_line(), &changed).unwrap().stops,
+            projected,
+            "interior ARGB does not change the captured endpoint projection"
+        );
+        assert_eq!(controls[0].0, original_controls[0].0);
+        assert_eq!(
+            controls.last().unwrap().0,
+            original_controls.last().unwrap().0
+        );
+    }
+
+    for count in 3..=10 {
+        let mut source = radial_line_source();
+        source.stops = (0..count)
+            .map(|index| GradientStopSource {
+                argb: index as u32,
+                position: PaintFloat32::from_bits((1.0 - index as f32 / 16.0).to_bits()),
+            })
+            .collect();
+        assert!(
+            Plan::for_line(&test_line(), &source).is_ok(),
+            "count={count}"
+        );
+    }
+
+    let mut eleven = radial_line_source();
+    eleven.stops = (0..11)
+        .map(|index| GradientStopSource {
+            argb: index as u32,
+            position: PaintFloat32::from_bits((1.0 - index as f32 / 16.0).to_bits()),
+        })
+        .collect();
+    assert!(matches!(
+        Plan::for_line(&test_line(), &eleven),
+        Err(PaintDiagnosticKind::InvalidGradient)
+    ));
+}
+
+#[test]
 fn radial_line_three_stop_constant_edges_match_native_captures() {
     // Native pair SHA-256 43d38efbda7fdfc70406775794864d4cb298d46556529fe41272358798939695:
     // both actual 256x4 caches are constant RGBA red and frames are identical.
@@ -1390,10 +1500,8 @@ fn radial_line_step_preserves_partial_zero_alpha_and_nonprimary_argb() {
         argb: 0xff65_4321,
         position: PaintFloat32::from_bits(0.95_f32.to_bits()),
     });
-    assert!(matches!(
-        Plan::for_line(&test_line(), &radial),
-        Err(PaintDiagnosticKind::InvalidGradient)
-    ));
+    // The native N4 witness now admits this formerly unsupported stop count.
+    assert!(Plan::for_line(&test_line(), &radial).is_ok());
 
     // Preserve the existing full-span descending overwrite behavior.
     radial.stops.truncate(2);
