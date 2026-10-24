@@ -270,6 +270,92 @@ mod tests {
     }
 
     #[test]
+    fn q12_native_reducer_restore_pressure_matches_emitted_words_exactly() {
+        use sha2::{Digest, Sha256};
+
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/q12-native-reducer-restore-v10.json"
+        ))
+        .unwrap();
+        let source_text = include_str!("../../../conformance/object-stroke-channels-native.json");
+        let source: serde_json::Value = serde_json::from_str(source_text).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(source_text)),
+            fixture["source_fixture"]["sha256"].as_str().unwrap()
+        );
+        let count = fixture["point_count"].as_u64().unwrap() as usize;
+        assert_eq!(count, 204);
+        let pressure_wire = bytes(fixture["emitted_pressure"]["bytes_hex"].as_str().unwrap());
+        assert_eq!(pressure_wire.len(), 4 + 2 * (count - 1));
+        let expected = bytes(
+            fixture["native_restore_pressure"]["f32_bytes_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        assert_eq!(expected.len(), count * 4);
+        let mut reader = Reader::new(&pressure_wire, "native re-encoded Q12 pressure");
+        let decoded = float_channel(&mut reader, count, true).unwrap();
+        let decoded_bytes: Vec<u8> = decoded
+            .iter()
+            .flat_map(|value| (*value as f32).to_le_bytes())
+            .collect();
+        assert_eq!(
+            decoded_bytes, expected,
+            "exact native Restore pressure bits"
+        );
+
+        let original = native_floats(
+            source["channels"]["pressures"]["data_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        assert_eq!(original.len(), count);
+        assert_eq!(&pressure_wire[..4], &expected[..4]);
+        assert_eq!(
+            original[0], decoded[0],
+            "native preserves the pressure seed"
+        );
+        assert_eq!(
+            original
+                .iter()
+                .zip(&decoded)
+                .filter(|(a, b)| a != b)
+                .count(),
+            198
+        );
+        assert!(
+            original
+                .iter()
+                .zip(&decoded)
+                .all(|(a, b)| (a - b).abs() <= 1.0 / 4096.0)
+        );
+
+        // Native reduction changes an encoded delta even for restored input.
+        // Read the original wire word, rather than infer it from getter floats.
+        let payload = bytes(source["source"]["payload_hex"].as_str().unwrap());
+        let mut frames = Reader::new(&payload, "source native stroke");
+        ObjectMetadata::read(&mut frames).unwrap();
+        let frame = Frame::read(&mut frames).unwrap();
+        let channels = StrokeChannels::read(&frame, &ParseLimits::default()).unwrap();
+        assert_eq!(usize::from(channels.point_count), count);
+        assert!(channels.compressed && channels.stylus);
+        let index = fixture["emitted_pressure"]["delta_word_index"]
+            .as_u64()
+            .unwrap() as usize;
+        let word_offset = 4 + 2 * index;
+        let source_pressure_offset = 16 + 4 * (count - 1);
+        assert_eq!(
+            &channels.data
+                [source_pressure_offset + word_offset..source_pressure_offset + word_offset + 2],
+            &0x51_u16.to_le_bytes()
+        );
+        assert_eq!(
+            &pressure_wire[word_offset..word_offset + 2],
+            &0x50_u16.to_le_bytes()
+        );
+    }
+
+    #[test]
     fn compressed_coordinates_match_native_float_steps_on_both_axes() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/object-stroke-channels-native.json"

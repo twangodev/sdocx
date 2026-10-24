@@ -352,6 +352,17 @@ does not impose a minimum of two or append a point to the array count.
 The separate [channel encoding trace](stroke-rendering-findings.md)
 describes the compressed representation.
 
+A bounded direct Model reducer/restore capture on the retained 204-point
+fixture is recorded in
+[`q12-native-reducer-restore-v10.json`](../../conformance/q12-native-reducer-restore-v10.json).
+The pressure seed is preserved, but 198 restored pressure samples differ from
+the source getter values by at most one Q3.12 unit; source delta `0x51` at
+delta slot 5 is emitted as `0x50`. The Rust channel decoder reproduces the
+native restored pressure bits from those emitted words. Points, timestamps,
+tilts and orientations remain unchanged in this direct Model replay, so the
+result demonstrates quantized channel roundtrip behavior rather than byte
+preservation. It does not exercise the outer SaveAsFile path.
+
 ## Marker2 bypasses the optional coordinate replacement
 
 After appending the current sample, the recorder asks the ordinary drawable
