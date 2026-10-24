@@ -318,6 +318,9 @@ A filter-free quantized level-set MAX-mask experiment also improves the reflecte
 resvg baseline, but loses faint support and increases Chromium/Firefox error
 across the same six controls. Ordinary antialiasing adds excess support; the
 crisp-edge variant also regresses browser output. Neither warrants admission.
+The Rust mask oracle matches every native R8 red-channel byte in those six
+captures at 1×/2×/4×; this isolates that experiment's loss to SVG rasterization
+and compositing rather than its analytic MAX field.
 Enhanced active-gradient admission remains off: transform-aware integration,
 fractional consumer zoom, PDF appearance and real-document evidence remain open.
 Audit artifacts stay in ignored `tmp/vector-parity-plan/`.

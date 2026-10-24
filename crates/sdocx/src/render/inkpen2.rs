@@ -14,6 +14,8 @@ mod tests {
     const FIXTURE: &str = include_str!("../../../../conformance/inkpen2-paint-native.json");
     const JOINED_SCALE_FIXTURE: &str =
         include_str!("../../../../conformance/inkpen2-joined-scale-native.json");
+    const NATIVE_MAX_MASK_FIXTURE: &str =
+        include_str!("../../../../conformance/inkpen2-max-mask-native.json");
 
     #[derive(Deserialize)]
     struct Fixture {
@@ -155,6 +157,42 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct NativeMaxMaskFixture {
+        schema: String,
+        scope: String,
+        producer: NativeMaxMaskProducer,
+        planes_by_scale: BTreeMap<String, NativeMaxMaskPlane>,
+        captures: Vec<NativeMaxMaskCapture>,
+    }
+
+    #[derive(Deserialize)]
+    struct NativeMaxMaskProducer {
+        byte_count: usize,
+        record_count: usize,
+        #[serde(rename = "native_AddPoint_vector_bytes_hex")]
+        native_addpoint_vector_bytes_hex: String,
+        sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct NativeMaxMaskPlane {
+        width: usize,
+        height: usize,
+        internal_format: u32,
+        rgba_sha256: String,
+        red_zlib_base64: String,
+    }
+
+    #[derive(Deserialize)]
+    struct NativeMaxMaskCapture {
+        id: String,
+        capture_sha256: String,
+        stage0_rgba_sha256: String,
+        stage0_red_sha256: String,
+        scale: usize,
+    }
+
+    #[derive(Deserialize)]
     struct JoinedMatrixCall {
         program: u32,
         count: usize,
@@ -229,6 +267,10 @@ mod tests {
         let bytes = decode_hex(&case.producer.native_addpoint_vector_bytes_hex);
         assert_eq!(bytes.len(), case.producer.byte_count);
         assert_eq!(bytes.len() % (9 * 4), 0);
+        vector_records(&bytes)
+    }
+
+    fn vector_records(bytes: &[u8]) -> Vec<[f32; 9]> {
         bytes
             .as_chunks::<{ 9 * 4 }>()
             .0
@@ -782,5 +824,98 @@ mod tests {
                 assert!(max_error <= 1, "{name} maximum RGBA error {max_error}");
             }
         }
+    }
+
+    #[test]
+    fn native_max_mask_matches_six_captured_r8_readbacks() {
+        use sha2::{Digest, Sha256};
+
+        let fixture: NativeMaxMaskFixture = serde_json::from_str(NATIVE_MAX_MASK_FIXTURE).unwrap();
+        assert_eq!(fixture.schema, "sdocx-inkpen2-native-max-mask-v1");
+        assert_eq!(
+            fixture.scope,
+            "Bounded emulated pinned-native producer/draw with host Mesa readback; not device or document appearance parity."
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(NATIVE_MAX_MASK_FIXTURE.as_bytes())),
+            "7ddc9d510e33f84774aa82aa61a8441b86641fc5c74f98a642397d091f9db162"
+        );
+        assert_eq!(fixture.producer.byte_count, 900);
+        assert_eq!(fixture.producer.record_count, 25);
+        let producer_bytes = decode_hex(&fixture.producer.native_addpoint_vector_bytes_hex);
+        assert_eq!(producer_bytes.len(), fixture.producer.byte_count);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&producer_bytes)),
+            fixture.producer.sha256
+        );
+        assert_eq!(
+            fixture.producer.sha256,
+            "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+        );
+        let records = vector_records(&producer_bytes);
+        assert_eq!(records.len(), fixture.producer.record_count);
+
+        assert_eq!(fixture.captures.len(), 6);
+        let mut seen_cases = std::collections::BTreeSet::new();
+        for capture in &fixture.captures {
+            assert_eq!(capture.capture_sha256.len(), 64);
+            assert!(
+                capture
+                    .capture_sha256
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit())
+            );
+            assert!([1, 2, 4].contains(&capture.scale));
+            let alpha = capture
+                .id
+                .strip_prefix(&format!("scale{}_aa1_alpha", capture.scale))
+                .unwrap();
+            assert!(matches!(alpha, "128" | "255"), "{}", capture.id);
+            assert!(seen_cases.insert(capture.id.as_str()), "duplicate capture");
+            let key = capture.scale.to_string();
+            let plane = fixture.planes_by_scale.get(&key).unwrap();
+            assert_eq!((plane.width, plane.height), (128, 96));
+            assert_eq!(plane.internal_format, 33321, "GL_R8 source mask");
+            let red = decode_base64_zlib(&plane.red_zlib_base64);
+            assert_eq!(red.len(), plane.width * plane.height);
+            let mut rgba = Vec::with_capacity(red.len() * 4);
+            for &value in &red {
+                rgba.extend_from_slice(&[value, 0, 0, 255]);
+            }
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&rgba)),
+                capture.stage0_rgba_sha256,
+                "{} RGBA channel contract/hash",
+                capture.id
+            );
+            assert_eq!(capture.stage0_rgba_sha256, plane.rgba_sha256);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&red)),
+                capture.stage0_red_sha256,
+                "{} R plane hash",
+                capture.id
+            );
+
+            let mut modeled = vec![0u8; red.len()];
+            for y in 0..plane.height {
+                for x in 0..plane.width {
+                    let pixel_center = [
+                        (x as f32 + 0.5) / capture.scale as f32,
+                        (y as f32 + 0.5) / capture.scale as f32,
+                    ];
+                    let max_alpha = records
+                        .iter()
+                        .filter_map(|record| fragment_alpha(record, pixel_center))
+                        .fold(0.0f32, f32::max);
+                    modeled[y * plane.width + x] = quantize_unorm8(max_alpha);
+                }
+            }
+            assert_eq!(modeled, red, "{} native stage-0 M bytes", capture.id);
+        }
+        assert_eq!(fixture.planes_by_scale.len(), 3);
+        assert!(fixture.planes_by_scale.contains_key("1"));
+        assert!(fixture.planes_by_scale.contains_key("2"));
+        assert!(fixture.planes_by_scale.contains_key("4"));
+        assert_eq!(seen_cases.len(), 6);
     }
 }

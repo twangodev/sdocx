@@ -1,0 +1,83 @@
+{
+  "schema": "sdocx-inkpen2-native-max-mask-v1",
+  "scope": "Bounded emulated pinned-native producer/draw with host Mesa readback; not device or document appearance parity.",
+  "producer": {
+    "byte_count": 900,
+    "record_count": 25,
+    "native_AddPoint_vector_bytes_hex": "f4fb7f3f00000000175d1440175d14409191913e0000803fcccccc3e000000009a99193f678ce33f0000000074d1154074d115400aa4923e0000803fcccc4c3f00000000d0cc4c3e86c6314000000000d1451740d14517403bb1933e0000803fcdcc4c3f00000000cdcc4c3ef4ff7f40000000002eba18402eba18404bb9943e0000803fcccccc3e000000009a99193fb0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803f00000000000000000000803f60e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803fcccccc3e000000009a99193f105bde40fea9503eefca1a40efca1a40bd27963e0000803fcccc4c3f00000000d0cc4c3ec0cefd40a87ab93e21191b4021191b401a5d963e0000803fcdcc4c3f00000000cdcc4c3e37a10e41d2e7103f53671b4053671b404192963e0000803fcccccc3e000000009a99193f105b1e41fea9503f85b51b4085b51b4033c7963e0000803f00000000000000000000803fe7142e41e8018e3fb7031c40b7031c40f0fb963e0000803fcccccc3e000000009a99193fbfce3d41a87ab93fe9511c40e9511c407830973e0000803fcccc4c3f00000000d0cc4c3e9a884d415474e63f1da01c401da01c40cd64973e0000803fcdcc4c3f00000000cdcc4c3e72425d417cdf06401da01c401da01c40cd64973e0000803fcccccc3e000000009a99193f49fc6c41e39e17401da01c401da01c40cd64973e0000803f00000000000000000000803f21b67c41607825401da01c401da01c40cd64973e0000803fcccccc3e000000009a99193ffc378641f26b30401da01c401da01c40cd64973e0000803fcccc4c3f00000000d0cc4c3ee8148e419a7938401da01c401da01c40cd64973e0000803fcdcc4c3f00000000cdcc4c3ed4f1954157a13d401da01c401da01c40cd64973e0000803fcccccc3e000000009a99193fc0ce9d4129e33f401da01c401da01c40cd64973e0000803f00000000000000000000803fe63aa741000040401da01c401da01c40cd64973e0000803f00000000000000000000803fbdb9af41000040401da01c401da01c40cd64973e0000803f00000000000000000000803f8171b641000040401da01c401da01c40cd64973e0000803f00000000000000000000803fc760bf41000040401da01c401da01c40cd64973e0000803f00000000000000000000803f0000c041000040401da01c401da01c40cd64973e0000803f00000000000000000000803f",
+    "sha256": "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+  },
+  "planes_by_scale": {
+    "1": {
+      "width": 128,
+      "height": 96,
+      "internal_format": 33321,
+      "rgba_sha256": "786c933a3ba01aaf8ac774694ce6de7f8c753b21c2efa1f3f137f5c80180fb45",
+      "red_zlib_base64": "eNrt0LENglAARVEKCgdgHh3A0tYtYAIHooFYuYLGioKEhAQrEijt9GuJld2nOWeBd/NCWHjVxS5Lorrcm2s7LSOe86Mfh+4QsyLb5tU7/OiSyNLjedX9r83+VN6GKf7/AAAAAAAAAAAAAAD88wF9FE8J"
+    },
+    "2": {
+      "width": 128,
+      "height": 96,
+      "internal_format": 33321,
+      "rgba_sha256": "acaf2bb9f6ec6a80c09d4862e543cd3e554a6c514708f8af8d692ac100e3058d",
+      "red_zlib_base64": "eNrt1DFLQlEYxvGGqCVFMWiIkAiJsjKNFKKCmhwSAmcJpEGcGtoChwYhNWkQXORGFOKNbqg0lW5BIARBQ8Mt8CMINlqntqbuJbjHlv/vCzwPL885Qvyi+1LO7IQnnQNyCSPP96X8Xnx7c3V+aco/t7gQmPb7XNbm68JE5+2peafWT6vq9VX9oqpltyzNT+ZyxaPSsaJcqs1bvS1M9TRrC9jtY7YJh9vtnV3fiCXTSkP/MCmQdcmbw7BnbTeltQwLaD65kxxcjmbO25//lv/NEUykbh7f+3//HyMrkYOT2sNrtyd3f0acoXB8/7BQrJzVFEnvz9zQ6PiMJyDr/wEAAAAAAAAAAAAAAAAAAAD+4gs11TwI"
+    },
+    "4": {
+      "width": 128,
+      "height": 96,
+      "internal_format": 33321,
+      "rgba_sha256": "d363293b3333b580284aa49b81922519f53282a0467395f45d08cfca2e5a22c2",
+      "red_zlib_base64": "eNr7/59U8PLY/g0zqwtT/E30lPgZKAX/yQD/3lzatmFhV3FugreNmaaYABed7QeCb+/vHt68Zm5rTWl6YICnjb6BprS0tAiPkBAXC5+QADuPkCCXoBAvM5+QEDdN7AeCX59f39y3e8vi/gkdlfn5GZHR0cHeQYGeTn5B/q5AhkdAkI+Db1Cgl7UaPic8+U8J+Pn70/1z549vXb9+2dRZsyZ2TZrYUd87qb+5a+KE9gmTuut6gAIVCU7yuO3fcO7J+/cvvnx9/fbX74/3v/7//5UMZ3x49/7pxVu3Lpy8eOHYnjOXzh0EMo6ev3hq9+lLF45vmVkRqIbT/srJyzZsWLV129oNu/dsXrr94MHtR86eOXL9wb1HX//9ISdIfgDxXyj7O4h4f2F1QyDOEHAIzygoyCktyy+qrinJrGxsrGzt7e2YsWD+su379px/8OLpf8rBrdUVTrjSAKuUpoGBrpmZgbG1jZmOlZOTlbufr3dUQnxmRV3t5EUr1h2/fu8lpQ64MDNBjbjsyMTEwMHHyyetqKBjae8YmpxZ0jVj3saTN+9/o8T+91sqrMkoG1glVDQtfSLjyntmzd937dlr8h1wvMOLm8wCil9Kydo/OqNl5vItV9//IzcCJgYKUVBICkrre8Zk1M/ZtP/sh4GwHwh45TTcE0saZmw7e/veP3qGP5ITVM0cE2smzF5+9M6rt/RIf5iAS8MhKKage/6qtacevP3wj/r5jyBgFpY190/MLu1fvG7DkZtPn7+lsPwhBwgradsEp+YVdM5etnzz8UuXLz3/9OkFsLD+TUb5SyZgFFfTN/ONTcso75w0efrKTZvX7Dt+fO+JC+ePklj/UAIE5NU1rL2CgqOzi4sLGjra6zuB1S6J9S/FgFtYRE7H2NjY0cPDwSswwIPE9gfVABMHByO3oCAnie2vUTAKRsEoGAWjYBSMglEwCkbBKBgFo2AUjIJRMApGwSgYBaNgFIyCUTAKRsEoGAWjYBSMglEwCkbBKBiqAACgp+7v"
+    }
+  },
+  "captures": [
+    {
+      "id": "scale1_aa1_alpha128",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale1_aa1_alpha128.json",
+      "capture_sha256": "bf0a36dad5ae7dfbed8bf087cfe5b7dfcecb990c6e76dba3b94b2a43d324b76c",
+      "stage0_rgba_sha256": "786c933a3ba01aaf8ac774694ce6de7f8c753b21c2efa1f3f137f5c80180fb45",
+      "stage0_red_sha256": "7ff59dcffdd336788dc8d593cc53b7322b696b53ba40f0ab5d675289c0ed384d",
+      "scale": 1
+    },
+    {
+      "id": "scale1_aa1_alpha255",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale1_aa1_alpha255.json",
+      "capture_sha256": "647bd42f946a100dc134d480b842854cbe421d30d076f1c52985f8c50c763033",
+      "stage0_rgba_sha256": "786c933a3ba01aaf8ac774694ce6de7f8c753b21c2efa1f3f137f5c80180fb45",
+      "stage0_red_sha256": "7ff59dcffdd336788dc8d593cc53b7322b696b53ba40f0ab5d675289c0ed384d",
+      "scale": 1
+    },
+    {
+      "id": "scale2_aa1_alpha128",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale2_aa1_alpha128.json",
+      "capture_sha256": "170de3b525509980ead2f38885dad9a95db72c924fe0dcfead35b1511affc1ae",
+      "stage0_rgba_sha256": "acaf2bb9f6ec6a80c09d4862e543cd3e554a6c514708f8af8d692ac100e3058d",
+      "stage0_red_sha256": "dcaf44f051076e15fea37f9570e80d7d2f4cf4caeb25c4d6c92de7d8817f71b1",
+      "scale": 2
+    },
+    {
+      "id": "scale2_aa1_alpha255",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale2_aa1_alpha255.json",
+      "capture_sha256": "9244a7742051c5f947e887f3a62a5c62c0cefa0ffebe619a65cd5061cccc9490",
+      "stage0_rgba_sha256": "acaf2bb9f6ec6a80c09d4862e543cd3e554a6c514708f8af8d692ac100e3058d",
+      "stage0_red_sha256": "dcaf44f051076e15fea37f9570e80d7d2f4cf4caeb25c4d6c92de7d8817f71b1",
+      "scale": 2
+    },
+    {
+      "id": "scale4_aa1_alpha128",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale4_aa1_alpha128.json",
+      "capture_sha256": "4544b4d049b97c6d493ef2826d721ef22feee748333836f5c82303294ef28a80",
+      "stage0_rgba_sha256": "d363293b3333b580284aa49b81922519f53282a0467395f45d08cfca2e5a22c2",
+      "stage0_red_sha256": "9f5d52cb075dfed666e1ca1f0c32bfff2d52c4688045e90fc877ff7aed8906e6",
+      "scale": 4
+    },
+    {
+      "id": "scale4_aa1_alpha255",
+      "capture_path": "tmp/vector-parity-plan/inkpen2-rainbow-paint/captures/scale4_aa1_alpha255.json",
+      "capture_sha256": "786d5c79084416fc11983982103e4302865ecf7812fdf7be0339cba76037a141",
+      "stage0_rgba_sha256": "d363293b3333b580284aa49b81922519f53282a0467395f45d08cfca2e5a22c2",
+      "stage0_red_sha256": "9f5d52cb075dfed666e1ca1f0c32bfff2d52c4688045e90fc877ff7aed8906e6",
+      "scale": 4
+    }
+  ]
+}
