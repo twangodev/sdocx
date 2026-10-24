@@ -9,7 +9,9 @@ fn decode_hex(value: &str) -> Vec<u8> {
     assert_eq!(value.len() % 2, 0, "hex data has odd length");
     value
         .as_bytes()
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|pair| {
             let pair = std::str::from_utf8(pair).unwrap();
             u8::from_str_radix(pair, 16).unwrap()
@@ -20,7 +22,9 @@ fn decode_hex(value: &str) -> Vec<u8> {
 fn captured_radial_records(bytes: &[u8], scale: f32) -> Vec<PdfRadialRecord> {
     assert_eq!(bytes.len(), 25 * 9 * 4, "unexpected captured VBO size");
     let records = bytes
-        .chunks_exact(9 * 4)
+        .as_chunks::<36>()
+        .0
+        .iter()
         .map(|record| {
             let mut values = [0.0_f32; 9];
             for (index, value) in values.iter_mut().enumerate() {
@@ -405,7 +409,7 @@ fn write_inkpen2_quantization_pdf_pairs() {
             stages[0]["rgba_sha256"].as_str()
         );
         let mut native_m = Vec::with_capacity(128 * 96);
-        for pixel in native_stage_rgba.chunks_exact(4) {
+        for pixel in native_stage_rgba.as_chunks::<4>().0 {
             assert_eq!(&pixel[1..], &[0, 0, 255], "R8 M readback expansion");
             native_m.push(pixel[0]);
         }

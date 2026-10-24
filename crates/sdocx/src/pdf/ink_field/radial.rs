@@ -742,7 +742,7 @@ mod tests {
 
         let mut tie_code = String::from("{ pop ");
         append_rgba8_half_up(&mut tie_code);
-        tie_code.push_str("}");
+        tie_code.push('}');
         let (ties, stack) = run_calculator(tie_code.as_bytes(), 0.5 / 255.0, 0.0);
         assert_eq!(ties, vec![1.0 / 255.0]);
         assert!(stack <= 4);
