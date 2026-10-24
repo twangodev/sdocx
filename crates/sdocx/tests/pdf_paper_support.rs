@@ -3,12 +3,20 @@
 #[path = "support/mod.rs"]
 mod support;
 
-use lopdf::{Dictionary, Document as PdfDocument, Object, Stream, content::Content, dictionary};
+use lopdf::{
+    Dictionary, Document as PdfDocument, Object, ObjectId, Stream, content::Content, dictionary,
+};
 use sdocx::{
     ArchiveResource, ArchiveResourceContent, BoundingBox, Document, ObjectSpanLayoutConstraint,
-    ObjectSpanLayoutOption, PageElement, PdfError, PdfOptions, RichTextBox, RichTextObjectSpan,
-    RichTextParagraph, RichTextParagraphType, RichTextSpan, RichTextSpanType, SpanIntervalType,
-    fonts::FontBook, parse_media_manifest_bytes, render_layout_pages_pdf_detailed_with_fonts,
+    ObjectSpanLayoutOption, PageElement, PdfError, PdfOptions, PdfPaperRectangle, RichTextBox,
+    RichTextObjectSpan, RichTextParagraph, RichTextParagraphType, RichTextSpan, RichTextSpanType,
+    SpanIntervalType, fonts::FontBook, parse_media_manifest_bytes,
+    render_layout_pages_pdf_detailed_with_fonts,
+};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::{BTreeMap, HashSet},
+    env, fs,
 };
 
 const NOTE_WIDTH: u32 = 1812;
@@ -331,6 +339,187 @@ fn page_box(pdf: &PdfDocument, page_number: u32) -> [f64; 4] {
         .collect::<Vec<_>>()
         .try_into()
         .unwrap()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PdfStreamBytes {
+    encoded: Vec<u8>,
+    decoded: Vec<u8>,
+}
+
+fn page_content_streams(
+    pdf: &PdfDocument,
+    page_id: ObjectId,
+) -> Result<Vec<PdfStreamBytes>, String> {
+    fn append(
+        pdf: &PdfDocument,
+        object: &Object,
+        out: &mut Vec<PdfStreamBytes>,
+        depth: usize,
+    ) -> Result<(), String> {
+        if depth > 64 {
+            return Err("PDF Contents nesting exceeds 64".into());
+        }
+        match object {
+            Object::Reference(id) => append(
+                pdf,
+                pdf.get_object(*id).map_err(|error| error.to_string())?,
+                out,
+                depth + 1,
+            ),
+            Object::Array(items) => {
+                for item in items {
+                    append(pdf, item, out, depth + 1)?;
+                }
+                Ok(())
+            }
+            Object::Stream(stream) => {
+                out.push(PdfStreamBytes {
+                    encoded: stream.content.clone(),
+                    decoded: stream
+                        .decompressed_content()
+                        .map_err(|error| error.to_string())?,
+                });
+                Ok(())
+            }
+            other => Err(format!("unsupported PDF Contents object: {other:?}")),
+        }
+    }
+
+    let page = pdf
+        .get_dictionary(page_id)
+        .map_err(|error| error.to_string())?;
+    let contents = page.get(b"Contents").map_err(|error| error.to_string())?;
+    let mut out = Vec::new();
+    append(pdf, contents, &mut out, 0)?;
+    Ok(out)
+}
+
+type PdfResourceSignatures = BTreeMap<Vec<u8>, BTreeMap<Vec<u8>, String>>;
+
+fn pdf_resource_signatures(
+    pdf: &PdfDocument,
+    page_id: ObjectId,
+) -> Result<PdfResourceSignatures, String> {
+    fn dereference<'a>(pdf: &'a PdfDocument, mut object: &'a Object) -> Result<&'a Object, String> {
+        let mut seen = HashSet::new();
+        loop {
+            match object {
+                Object::Reference(id) => {
+                    if !seen.insert(*id) {
+                        return Err("cyclic PDF resource reference".into());
+                    }
+                    object = pdf.get_object(*id).map_err(|error| error.to_string())?;
+                }
+                _ => return Ok(object),
+            }
+        }
+    }
+
+    fn inherited_resource(pdf: &PdfDocument, page_id: ObjectId) -> Result<Option<&Object>, String> {
+        let mut current_id = page_id;
+        let mut seen = HashSet::new();
+        loop {
+            if !seen.insert(current_id) {
+                return Err("cyclic PDF page Parent chain".into());
+            }
+            let page = pdf
+                .get_dictionary(current_id)
+                .map_err(|error| error.to_string())?;
+            if let Ok(resources) = page.get(b"Resources") {
+                return Ok(Some(resources));
+            }
+            let Ok(parent) = page.get(b"Parent") else {
+                return Ok(None);
+            };
+            current_id = parent.as_reference().map_err(|error| error.to_string())?;
+        }
+    }
+
+    fn signature(
+        pdf: &PdfDocument,
+        object: &Object,
+        active: &mut HashSet<ObjectId>,
+    ) -> Result<String, String> {
+        match object {
+            Object::Reference(id) => {
+                if !active.insert(*id) {
+                    return Ok("cycle".into());
+                }
+                let result = signature(
+                    pdf,
+                    pdf.get_object(*id).map_err(|error| error.to_string())?,
+                    active,
+                );
+                active.remove(id);
+                result
+            }
+            Object::Null => Ok("null".into()),
+            Object::Boolean(value) => Ok(format!("bool:{value}")),
+            Object::Integer(value) => Ok(format!("int:{value}")),
+            Object::Real(value) => Ok(format!("real:{:08x}", value.to_bits())),
+            Object::Name(value) => Ok(format!("name:{value:?}")),
+            Object::String(value, format) => Ok(format!("string:{format:?}:{value:?}")),
+            Object::Array(items) => Ok(format!(
+                "array:[{}]",
+                items
+                    .iter()
+                    .map(|item| signature(pdf, item, active))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .join(",")
+            )),
+            Object::Dictionary(dict) => {
+                let mut entries = dict.iter().collect::<Vec<_>>();
+                entries.sort_by(|left, right| left.0.cmp(right.0));
+                let mut values = Vec::with_capacity(entries.len());
+                for (key, value) in entries {
+                    values.push(format!("{key:?}={}", signature(pdf, value, active)?));
+                }
+                Ok(format!("dict:{{{}}}", values.join(",")))
+            }
+            Object::Stream(stream) => {
+                let mut dictionary = stream.dict.clone();
+                dictionary.remove(b"Length");
+                let dictionary = signature(pdf, &Object::Dictionary(dictionary), active)?;
+                let encoded_hash = Sha256::digest(&stream.content);
+                // Preserve encoded bytes and the complete filter dictionary;
+                // some real image filters are intentionally not decodable here.
+                Ok(format!("stream:{dictionary}:encoded={encoded_hash:x}"))
+            }
+        }
+    }
+
+    let Some(resource_object) = inherited_resource(pdf, page_id)? else {
+        return Ok(BTreeMap::new());
+    };
+    let resources = dereference(pdf, resource_object)?
+        .as_dict()
+        .map_err(|error| error.to_string())?;
+    let mut out = BTreeMap::new();
+    for (category, category_object) in resources.iter() {
+        let mut entries = BTreeMap::new();
+        match dereference(pdf, category_object)? {
+            Object::Dictionary(category_dict) => {
+                for (name, value) in category_dict.iter() {
+                    entries.insert(name.clone(), signature(pdf, value, &mut HashSet::new())?);
+                }
+            }
+            // ProcSet and other non-dictionary resource values are compared as
+            // whole values using the empty key, which cannot be a valid name.
+            _ => {
+                entries.insert(
+                    Vec::new(),
+                    signature(pdf, category_object, &mut HashSet::new())?,
+                );
+            }
+        }
+        out.insert(category.clone(), entries);
+    }
+    Ok(out)
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 fn page_references_image_size(
@@ -1105,6 +1294,294 @@ fn public_pdf_paper_uses_native_crop_and_quarter_turn_placement() {
                     "rotation={rotation} dpi={dpi}: actual={actual} expected={expected}"
                 );
             }
+        }
+    }
+}
+
+#[test]
+#[ignore = "opt-in real-corpus structural transport check; set both SDOCX_REAL_*_SDOCX paths"]
+fn production_real_pdf_paper_transport_preserves_source_graph() {
+    struct CorpusCase {
+        label: &'static str,
+        env_var: &'static str,
+        archive_sha256: &'static str,
+        resource_name: &'static str,
+        source_pdf_sha256: &'static str,
+        source_page_count: usize,
+        output_page_count: usize,
+        fixed_axis_size: Option<u32>,
+    }
+
+    let cases = [
+        CorpusCase {
+            label: "quiz",
+            env_var: "SDOCX_REAL_QUIZ_SDOCX",
+            archive_sha256: "38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a",
+            resource_name: "media/0@pdf_1692322553368.pdf",
+            source_pdf_sha256: "f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279",
+            source_page_count: 1,
+            output_page_count: 7,
+            fixed_axis_size: Some(1080),
+        },
+        CorpusCase {
+            label: "cs61bl_su22",
+            env_var: "SDOCX_REAL_CS61BL_SDOCX",
+            archive_sha256: "fa2d3ba44023871c6a53436e810772f7b4f45b190dd28e05c172886b8f7e40a0",
+            resource_name: "media/0@pdf_1691716745867.pdf",
+            source_pdf_sha256: "1cd5ae14ddbcccc29ab7e0e8842aa2777d3c1d5c35463fcc7e6d0e7469afb689",
+            source_page_count: 20,
+            output_page_count: 20,
+            fixed_axis_size: None,
+        },
+    ];
+
+    for case in cases {
+        let path = env::var_os(case.env_var).unwrap_or_else(|| {
+            panic!(
+                "explicit real-corpus run requires {} to name the retained {}.sdocx archive",
+                case.env_var, case.label
+            )
+        });
+        let archive_bytes = fs::read(&path).unwrap_or_else(|error| {
+            panic!("{}: cannot read archive {:?}: {error}", case.label, path)
+        });
+        assert_eq!(
+            sha256_hex(&archive_bytes),
+            case.archive_sha256,
+            "{} archive identity changed: {:?}",
+            case.label,
+            path
+        );
+        let document = sdocx::parse_bytes(&archive_bytes)
+            .unwrap_or_else(|error| panic!("{} archive parse failed: {error}", case.label));
+        assert_eq!(document.pages.len(), 1, "{} stored page count", case.label);
+        let records = document.pages[0]
+            .background
+            .pdf_paper
+            .as_deref()
+            .unwrap_or_else(|| panic!("{} has no retained PDF-paper records", case.label));
+        assert_eq!(
+            records.len(),
+            case.source_page_count,
+            "{} records",
+            case.label
+        );
+        for (index, record) in records.iter().enumerate() {
+            assert_eq!(
+                record.media_id, 0,
+                "{} record {index} media binding",
+                case.label
+            );
+            assert_eq!(
+                record.page_index, index as i32,
+                "{} record {index} source-page mapping",
+                case.label
+            );
+        }
+        if case.label == "quiz" {
+            assert_eq!(
+                records[0].rectangle,
+                PdfPaperRectangle::Integer([0, 0, 1812, 1485]),
+                "quiz source placement record"
+            );
+        } else {
+            let mut expected_top = 0_i32;
+            for (index, record) in records.iter().enumerate() {
+                let PdfPaperRectangle::Integer([left, top, right, bottom]) = record.rectangle
+                else {
+                    panic!("cs61bl_su22 record {index} is not an integer rectangle");
+                };
+                assert_eq!(left, 0, "cs61bl_su22 record {index} left");
+                assert_eq!(top, expected_top, "cs61bl_su22 record {index} top/order");
+                assert_eq!(right, 1080, "cs61bl_su22 record {index} width");
+                assert!(
+                    matches!(bottom - top, 1397 | 1398),
+                    "cs61bl_su22 record {index} height: {}",
+                    bottom - top
+                );
+                expected_top = bottom;
+            }
+            assert_eq!(expected_top, 27_952, "cs61bl_su22 final placement edge");
+        }
+
+        let resolved = document
+            .metadata
+            .resolve_archive_resource(0)
+            .unwrap_or_else(|error| {
+                panic!("{} PDF binding resolution failed: {error}", case.label)
+            });
+        assert!(
+            !resolved.inferred,
+            "{} PDF binding must be authoritative",
+            case.label
+        );
+        assert_eq!(
+            resolved.resource.name, case.resource_name,
+            "{} PDF resource name",
+            case.label
+        );
+        assert_eq!(
+            sha256_hex(resolved.data),
+            case.source_pdf_sha256,
+            "{} embedded source PDF identity",
+            case.label
+        );
+        let source = PdfDocument::load_mem(resolved.data)
+            .unwrap_or_else(|error| panic!("{} source PDF parse failed: {error}", case.label));
+        let source_pages = source.get_pages();
+        assert_eq!(
+            source_pages.len(),
+            case.source_page_count,
+            "{} PDF page count",
+            case.label
+        );
+
+        // This is the public production route: it performs PDF-paper planning,
+        // scene export and source-page assembly. Checks below are structural;
+        // they make no pixel or Samsung-placement parity claim.
+        let layout = sdocx::layout_document(&document);
+        if case.label == "quiz" {
+            let default_profile = render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &layout,
+                &[0],
+                &Default::default(),
+                &PdfOptions::default(),
+                &FontBook::default(),
+            );
+            assert!(
+                matches!(
+                    &default_profile,
+                    Err(PdfError::UnsupportedPdfPaper {
+                        output_page_index: 0,
+                        source_page_index: 0,
+                        record_count: 1,
+                    })
+                ),
+                "quiz stored 1812-wide default profile must retain its exact bounded admission error; got {default_profile:?}"
+            );
+        }
+        let mut options = PdfOptions::default();
+        options.dpi = 96.0;
+        options.pdf_paper_fixed_axis_size = case.fixed_axis_size;
+        let output = render_layout_pages_pdf_detailed_with_fonts(
+            &document,
+            &layout,
+            &[0],
+            &Default::default(),
+            &options,
+            &FontBook::default(),
+        )
+        .unwrap_or_else(|error| panic!("{} production PDF export failed: {error}", case.label));
+        let output_pdf = PdfDocument::load_mem(&output.bytes).unwrap_or_else(|error| {
+            panic!("{} production output parse failed: {error}", case.label)
+        });
+        let output_pages = output_pdf.get_pages();
+        assert_eq!(
+            output_pages.len(),
+            case.output_page_count,
+            "{} output page count for {} source pages",
+            case.label,
+            case.source_page_count
+        );
+        assert_eq!(layout.pages.len(), 1, "{} visible layout pages", case.label);
+        let output_page_structures = output_pages
+            .iter()
+            .map(|(number, id)| {
+                (
+                    *number,
+                    page_content_streams(&output_pdf, *id).unwrap_or_else(|error| {
+                        panic!("{} output page {number} Contents: {error}", case.label)
+                    }),
+                    pdf_resource_signatures(&output_pdf, *id).unwrap_or_else(|error| {
+                        panic!("{} output page {number} resources: {error}", case.label)
+                    }),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let mut previous_output_page = 0_u32;
+        for source_index in 0..case.source_page_count {
+            let source_number = u32::try_from(source_index + 1).unwrap();
+            let source_id = source_pages[&source_number];
+            let source_streams = page_content_streams(&source, source_id).unwrap_or_else(|error| {
+                panic!(
+                    "{} source page {source_index} Contents: {error}",
+                    case.label
+                )
+            });
+            assert!(
+                !source_streams.is_empty(),
+                "{} source page {source_index} has no content streams",
+                case.label
+            );
+            let source_resources =
+                pdf_resource_signatures(&source, source_id).unwrap_or_else(|error| {
+                    panic!(
+                        "{} source page {source_index} resources: {error}",
+                        case.label
+                    )
+                });
+
+            let mut matches = Vec::new();
+            let mut candidate_diagnostics = Vec::new();
+            for (output_number, output_streams, output_resources) in &output_page_structures {
+                let decoded_content_is_preserved =
+                    output_streams.windows(source_streams.len()).any(|window| {
+                        window
+                            .iter()
+                            .zip(&source_streams)
+                            .all(|(actual, expected)| actual.decoded == expected.decoded)
+                    });
+                if !decoded_content_is_preserved {
+                    continue;
+                }
+                let encoded_content_is_preserved = output_streams
+                    .windows(source_streams.len())
+                    .any(|window| window == source_streams);
+                let resource_difference =
+                    source_resources
+                        .iter()
+                        .find_map(|(category, source_entries)| {
+                            match output_resources.get(category) {
+                                None => Some(format!("missing category {category:?}")),
+                                Some(output_entries) => {
+                                    source_entries.iter().find_map(|(name, expected)| {
+                                        (output_entries.get(name) != Some(expected)).then(|| {
+                                            format!("category {category:?}, resource {name:?}")
+                                        })
+                                    })
+                                }
+                            }
+                        });
+                candidate_diagnostics.push(format!(
+                    "output_page={output_number}, exact_encoded_streams={encoded_content_is_preserved}, first_resource_difference={:?}",
+                    resource_difference
+                ));
+                if encoded_content_is_preserved && resource_difference.is_none() {
+                    matches.push((*output_number, *output_pages.get(output_number).unwrap()));
+                }
+            }
+            assert_eq!(
+                matches.len(),
+                1,
+                "{} source page {source_index} should map to exactly one output page with its exact ordered content streams and source resource graph; matches={:?}, decoded-content candidates={candidate_diagnostics:?}",
+                case.label,
+                matches.iter().map(|(number, _)| number).collect::<Vec<_>>()
+            );
+            let (output_number, _) = matches[0];
+            assert!(
+                output_number > previous_output_page,
+                "{} source page {source_index} mapped out of order: output page {output_number} follows {previous_output_page}",
+                case.label
+            );
+            previous_output_page = output_number;
+            assert_eq!(
+                page_box(&output_pdf, output_number),
+                page_box(&source, source_number),
+                "{} source page {source_index} MediaBox changed",
+                case.label
+            );
         }
     }
 }
