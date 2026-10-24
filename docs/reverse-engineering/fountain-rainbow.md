@@ -122,6 +122,13 @@ at `0x7bba4`, including its drawLine, endPen, drawPoint, SmPath, tolerance
 and width-smoothing calls. V17 here names the native drawable class; it
 must not be interpreted as a file's advanced-settings version number.
 
+The pinned standard `GetStrokeDrawableGL` factory at `0x61a8c` clamps settings
+to 1–18; its table at `0xdb8f0` maps AS18 to GLV16 and has no row selecting
+GLV17, despite a GLV17 constructor case. Drawing forwards saved rainbow
+distance, offset and palette through `GetRainbowable` into FountainPen state;
+that ownership does not establish GLV17 selection. The Rust GLV17 profile is
+an explicit experimental host choice, not automatic saved-AS18 admission.
+
 The fixture reproduces the outer saved redraw's two-pass orchestration
 from `0x7b8d0..0x7b9ec`: reset width smoothing, execute a fill pass,
 complete the smoothing array, switch to replay, reset tolerance and the

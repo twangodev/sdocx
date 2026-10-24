@@ -156,10 +156,11 @@ impl PartialEq for ChineseBrushFwidthOutputProfile {
 }
 impl Eq for ChineseBrushFwidthOutputProfile {}
 
-/// Explicit host-supplied palette and phase for the saved Fountain V17
-/// rainbow path. These values are never inferred from archive-global state.
-/// The profile currently admits saved AS18 stylus variable-width output in
-/// canonical page units; unsupported metadata or invalid values use generic paint.
+/// Experimental host-selected reconstruction of native Fountain GLV17 rainbow paint.
+/// It accepts bounded AS18 stylus variable-width inputs with an explicit palette
+/// and phase. The pinned standard native factory selects GLV16 for AS18; these
+/// class-level GLV17 controls do not establish that saved-style selection.
+/// Unsupported metadata or invalid values use generic paint.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FountainV17RainbowRenderProfile {
@@ -234,7 +235,7 @@ pub struct RenderOptions {
     /// Invalid explicit values fall back to generic rendering for the whole stroke.
     #[cfg_attr(feature = "serde", serde(default))]
     pub chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
-    /// Explicit host palette and phase for supported Fountain V17 strokes.
+    /// Experimental host palette and phase for the direct Fountain GLV17 route.
     /// `None` retains the existing Fountain paint path.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v17_rainbow_profile: Option<FountainV17RainbowRenderProfile>,
