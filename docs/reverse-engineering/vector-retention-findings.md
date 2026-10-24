@@ -19,7 +19,8 @@ contracts are linked to their separate findings.
 | `libSPenWidget.so` | `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9` |
 
 Native opaque-record, hierarchy, custom-object, resource, clipboard and legacy
-content-conversion findings are static traces. Only the bounded unknown own-frame writer/reader was executed; no
+content-conversion findings are static traces. Runtime evidence includes the
+bounded unknown own-frame writer/reader and the save artifact below; no
 complete native archive round trip or Samsung appearance comparison is claimed.
 
 | Representation | What it retains | What it does not establish |
@@ -168,6 +169,15 @@ These source-only traces establish no executed native round trip or universal
 recovery. Caller-owned original archive/page bytes and the browser source
 carrier remain distinct from native current-cache or editable serialization;
 the parsed Rust model does not acquire their complete resource namespace.
+
+A bounded ARM64 save of a loaded Quiz note produced a complete 3,336,541-byte ZIP
+with 13 CRC-valid members after native sync, close and rename. Its SHA-256 is
+`1f16a027df8f767ecb7387edeb290905e06b44248b4fb78b5fc4f8d200742ffb`;
+the rewritten page is 5,914,878 bytes and `note.note` is 6,016 bytes.
+The retained Rust CLI 1.0.1 parsed it with all note, 3,228 object, layer, page
+and manifest integrity checks matching. Current-HEAD parsing and appearance
+remain unverified. Save then stopped at an
+unmodeled `_back` existence probe; normal native return and reload remain unproved.
 
 ### Native directory and file publication
 
