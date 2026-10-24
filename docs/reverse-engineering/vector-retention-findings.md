@@ -174,9 +174,9 @@ A bounded ARM64 save of a loaded Quiz note produced a complete 3,336,541-byte ZI
 with 13 CRC-valid members after native sync, close and rename. Its SHA-256 is
 `1f16a027df8f767ecb7387edeb290905e06b44248b4fb78b5fc4f8d200742ffb`;
 the rewritten page is 5,914,878 bytes and `note.note` is 6,016 bytes.
-The retained Rust CLI 1.0.1 parsed it with all note, 3,228 object, layer, page
-and manifest integrity checks matching. Current-HEAD parsing and appearance
-remain unverified. Save then stopped at an
+Parser-only Rust validation at `f56d03d` matched all note, 3,228 object, layer,
+page and manifest integrity checks and decoded 431,933 points. Appearance
+remains unverified. Save then stopped at an
 unmodeled `_back` existence probe; normal native return and reload remain unproved.
 
 ### Native directory and file publication
