@@ -613,6 +613,15 @@ PDF output. This verifies native page import in the host harness, not ink export
 or final appearance (receipt SHA-256
 `26da043153a62af7d44f2b2d19a7fdf9aecce0991147a550d2f37833f0c2e075`).
 
+A published mutation archive (SHA-256
+`1f16a027df8f767ecb7387edeb290905e06b44248b4fb78b5fc4f8d200742ffb`)
+also completes a fresh-cache native `ConstructLoad` at explicit fixed axis 1812.
+Public getters report 3,228 objects and retain object
+`e2c775ce-3ece-11ee-b26c-efb5498813c4` at 30° rotation. No export or draw runs in
+this reload control; it proves loadable published bytes and the mutation, not
+normal `SaveAsFile` completion or PDF appearance (observation SHA-256
+`50e927ae1152204902e3578adac2624b9471927cc5c50bf6978794735eec12da`).
+
 A separate loader control executes all 47 PenCommon and 56 FountainPen init
 entries, resolves `createPenInst` at FountainPen `0x621ec`, and executes the
 PenCommon `BLR x0` at `0x4df78`. Its returned 184-byte object has the source-pinned
