@@ -33,6 +33,28 @@ pub(crate) fn compile(
     saved_alpha: f32,
     coverage: PdfRadialCoverage,
 ) -> Result<PdfRadialProgram, String> {
+    compile_with_quantization(records, bounds, saved_alpha, coverage, false)
+}
+
+/// Experimental per-draw RGBA8 model for tests and paired-reader artifacts.
+/// Production compilation remains on the continuous recurrence above.
+#[cfg(test)]
+pub(super) fn compile_per_draw_rgba8_for_test(
+    records: &[PdfRadialRecord],
+    bounds: [f64; 4],
+    saved_alpha: f32,
+    coverage: PdfRadialCoverage,
+) -> Result<PdfRadialProgram, String> {
+    compile_with_quantization(records, bounds, saved_alpha, coverage, true)
+}
+
+fn compile_with_quantization(
+    records: &[PdfRadialRecord],
+    bounds: [f64; 4],
+    saved_alpha: f32,
+    coverage: PdfRadialCoverage,
+    per_draw_rgba8: bool,
+) -> Result<PdfRadialProgram, String> {
     if records.is_empty() || records.len() > MAX_RECORDS {
         return Err("radial ink record count is outside the supported range".into());
     }
@@ -98,9 +120,9 @@ pub(crate) fn compile(
     }
 
     let alpha = f64::from(saved_alpha);
-    let rgb_code = compile_rgb(&normalized, alpha);
+    let rgb_code = compile_rgb(&normalized, alpha, per_draw_rgba8);
     let mask_code = match coverage {
-        PdfRadialCoverage::DirectSourceOver => compile_q(&normalized, alpha),
+        PdfRadialCoverage::DirectSourceOver => compile_q(&normalized, alpha, per_draw_rgba8),
         PdfRadialCoverage::EnhancedMax => compile_max(&normalized),
     };
     if rgb_code.len().saturating_add(mask_code.len()) > MAX_CALCULATOR_BYTES {
@@ -182,19 +204,23 @@ fn compile_max(records: &[[f64; 9]]) -> Vec<u8> {
     code.into_bytes()
 }
 
-fn compile_q(records: &[[f64; 9]], alpha: f64) -> Vec<u8> {
+fn compile_q(records: &[[f64; 9]], alpha: f64, per_draw_rgba8: bool) -> Vec<u8> {
     let mut code = String::from("{ 0 ");
     for record in records {
         code.push_str(&coverage_expression(record, 2));
         code.push_str(&format!(" {} mul ", pdf_number(alpha)));
         // x y old_q a -> x y old_q + a * (1-old_q), then discard old state.
-        code.push_str("1 index 1 exch sub 1 index mul 2 index add 3 1 roll pop pop ");
+        code.push_str("1 index 1 exch sub 1 index mul 2 index add ");
+        if per_draw_rgba8 {
+            append_rgba8_half_up(&mut code);
+        }
+        code.push_str("3 1 roll pop pop ");
     }
     code.push_str("exch pop exch pop }");
     code.into_bytes()
 }
 
-fn compile_rgb(records: &[[f64; 9]], alpha: f64) -> Vec<u8> {
+fn compile_rgb(records: &[[f64; 9]], alpha: f64, per_draw_rgba8: bool) -> Vec<u8> {
     // Constant stack independent of stamp count: x y P_R P_G P_B q.
     let mut code = String::from("{ 0 0 0 0 ");
     for record in records {
@@ -208,13 +234,27 @@ fn compile_rgb(records: &[[f64; 9]], alpha: f64) -> Vec<u8> {
                 channel + 1,
                 source_channel,
             ));
+            if per_draw_rgba8 {
+                append_rgba8_half_up(&mut code);
+            }
         }
-        code.push_str("4 index 4 index 1 exch sub mul 4 index add 9 4 roll pop pop pop pop pop ");
+        code.push_str("4 index 4 index 1 exch sub mul 4 index add ");
+        if per_draw_rgba8 {
+            append_rgba8_half_up(&mut code);
+        }
+        code.push_str("9 4 roll pop pop pop pop pop ");
     }
     code.push_str(
         "dup 0 gt { 3 index 1 index div 3 index 2 index div 3 index 3 index div 9 3 roll pop pop pop pop pop pop } { pop pop pop pop pop pop 0 0 0 } ifelse }",
     );
     code.into_bytes()
+}
+
+/// Append the clamped half-up UNORM8 approximation used by the
+/// experimental PDF recurrence. Native captures establish per-draw RGBA8
+/// stores, but do not establish the device's exact half-way tie rule.
+fn append_rgba8_half_up(code: &mut String) {
+    code.push_str("dup 0 lt { pop 0 } if dup 1 gt { pop 1 } if 255 mul 0.5 add floor 255 div ");
 }
 
 /// Independent CPU definition for generated-program comparisons.
@@ -247,6 +287,51 @@ fn evaluate(
             premultiplied[channel] = f64::from(color) * a + premultiplied[channel] * (1.0 - a);
         }
         q = a + q * (1.0 - a);
+    }
+    let mut result = [0.0; 4];
+    if q > 0.0 {
+        for channel in 0..3 {
+            result[channel] = premultiplied[channel] / q;
+        }
+    }
+    result[3] = match mode {
+        PdfRadialCoverage::DirectSourceOver => q,
+        PdfRadialCoverage::EnhancedMax => max_coverage * f64::from(saved_alpha),
+    };
+    result
+}
+
+#[cfg(test)]
+fn evaluate_per_draw_rgba8(
+    records: &[PdfRadialRecord],
+    saved_alpha: f32,
+    mode: PdfRadialCoverage,
+    x: f64,
+    y: f64,
+) -> [f64; 4] {
+    let quantize = |value: f64| ((value.clamp(0.0, 1.0) * 255.0 + 0.5).floor()) / 255.0;
+    let mut premultiplied = [0.0; 3];
+    let mut q = 0.0;
+    let mut max_coverage: f64 = 0.0;
+    for record in records {
+        let [cx, cy, rx, ry, edge, coverage, red, green, blue] = *record;
+        let distance = (((x - f64::from(cx)) / (2.0 * f64::from(rx))).powi(2)
+            + ((y - f64::from(cy)) / (2.0 * f64::from(ry))).powi(2))
+        .sqrt();
+        let c = if distance <= f64::from(edge) {
+            f64::from(coverage)
+        } else if distance >= 0.5 {
+            0.0
+        } else {
+            f64::from(coverage) * (0.5 - distance) / (0.5 - f64::from(edge))
+        };
+        let a = c * f64::from(saved_alpha);
+        max_coverage = max_coverage.max(c);
+        for (channel, color) in [red, green, blue].into_iter().enumerate() {
+            premultiplied[channel] =
+                quantize(f64::from(color) * a + premultiplied[channel] * (1.0 - a));
+        }
+        q = quantize(a + q * (1.0 - a));
     }
     let mut result = [0.0; 4];
     if q > 0.0 {
@@ -355,13 +440,18 @@ mod tests {
                         let value = number!().sqrt();
                         stack.push(PsToken::Number(value));
                     }
-                    "gt" | "ge" | "le" => {
+                    "floor" => {
+                        let value = number!().floor();
+                        stack.push(PsToken::Number(value));
+                    }
+                    "gt" | "ge" | "le" | "lt" => {
                         let right = number!();
                         let left = number!();
                         let value = match word.as_str() {
                             "gt" => left > right,
                             "ge" => left >= right,
                             "le" => left <= right,
+                            "lt" => left < right,
                             _ => unreachable!(),
                         };
                         stack.push(PsToken::Word(if value { "true" } else { "false" }.into()));
@@ -605,5 +695,102 @@ mod tests {
         let (_, mask_stack) = run_calculator(&program.mask, 0.5, 0.5);
         assert!(rgb_stack <= 20, "RGB stack grew to {rgb_stack}");
         assert!(mask_stack <= 8, "mask stack grew to {mask_stack}");
+    }
+
+    #[test]
+    fn per_draw_rgba8_type4_matches_independent_half_up_recurrence() {
+        let records = [
+            [0.31, 0.2, 0.04, 0.05, 0.07, 0.9, 1.0, 0.0, 0.0],
+            [0.34, 0.23, 0.05, 0.04, 0.02, 0.6, 0.0, 0.0, 1.0],
+        ];
+        let alpha = 128.0 / 255.0;
+        let pdf_x = 0.33;
+        let source_y = 0.22;
+        let pdf_y = 1.0 - source_y;
+
+        for order in [records, [records[1], records[0]]] {
+            for mode in [
+                PdfRadialCoverage::DirectSourceOver,
+                PdfRadialCoverage::EnhancedMax,
+            ] {
+                let baseline = compile(&order, bounds(), alpha, mode).unwrap();
+                let candidate =
+                    compile_per_draw_rgba8_for_test(&order, bounds(), alpha, mode).unwrap();
+                let (rgb, rgb_stack) = run_calculator(&candidate.rgb, pdf_x, pdf_y);
+                let (mask, mask_stack) = run_calculator(&candidate.mask, pdf_x, pdf_y);
+                let expected = evaluate_per_draw_rgba8(&order, alpha, mode, pdf_x, source_y);
+                for (actual, expected) in rgb.iter().zip(expected) {
+                    assert!(
+                        (actual - expected).abs() < 1e-12,
+                        "{actual} != {expected}, mode={mode:?}, order={order:?}"
+                    );
+                }
+                let expected_mask = match mode {
+                    PdfRadialCoverage::DirectSourceOver => expected[3],
+                    PdfRadialCoverage::EnhancedMax => expected[3] / f64::from(alpha),
+                };
+                assert!((mask[0] - expected_mask).abs() < 1e-12);
+                assert!(rgb_stack <= 20, "RGB stack grew to {rgb_stack}");
+                assert!(mask_stack <= 8, "mask stack grew to {mask_stack}");
+                if mode == PdfRadialCoverage::EnhancedMax {
+                    assert_eq!(candidate.mask, baseline.mask);
+                } else {
+                    assert_ne!(candidate.mask, baseline.mask);
+                }
+            }
+        }
+
+        let mut tie_code = String::from("{ pop ");
+        append_rgba8_half_up(&mut tie_code);
+        tie_code.push_str("}");
+        let (ties, stack) = run_calculator(tie_code.as_bytes(), 0.5 / 255.0, 0.0);
+        assert_eq!(ties, vec![1.0 / 255.0]);
+        assert!(stack <= 4);
+        // A ties-to-even implementation would map this midpoint to zero.
+        assert_ne!(ties[0], 0.0);
+        let (ties, _) = run_calculator(tie_code.as_bytes(), 1.5 / 255.0, 0.0);
+        assert_eq!(ties, vec![2.0 / 255.0]);
+        let (ties, _) = run_calculator(tie_code.as_bytes(), 2.5 / 255.0, 0.0);
+        assert_eq!(ties, vec![3.0 / 255.0]);
+        // Ties-to-even would return 2/255 here; native tie behavior is not
+        // established by the captures, so the experiment is labeled half-up.
+        assert_ne!(ties[0], 2.0 / 255.0);
+    }
+
+    #[test]
+    fn per_draw_rgba8_zero_q_and_caps_remain_bounded() {
+        let zero = [[0.5, 0.5, 0.1, 0.1, 0.0, 0.0, 0.8, 0.3, 0.1]];
+        let program = compile_per_draw_rgba8_for_test(
+            &zero,
+            bounds(),
+            128.0 / 255.0,
+            PdfRadialCoverage::DirectSourceOver,
+        )
+        .unwrap();
+        let (rgb, rgb_stack) = run_calculator(&program.rgb, 0.9, 0.9);
+        let (mask, mask_stack) = run_calculator(&program.mask, 0.9, 0.9);
+        assert_eq!(rgb, vec![0.0; 3]);
+        assert_eq!(mask, vec![0.0]);
+        assert!(rgb_stack <= 20);
+        assert!(mask_stack <= 8);
+
+        let records = vec![overlapping()[0]; MAX_RECORDS];
+        let bounded = compile_per_draw_rgba8_for_test(
+            &records,
+            bounds(),
+            1.0,
+            PdfRadialCoverage::DirectSourceOver,
+        )
+        .unwrap();
+        assert!(bounded.rgb.len() + bounded.mask.len() <= MAX_CALCULATOR_BYTES);
+        assert!(
+            compile_per_draw_rgba8_for_test(
+                &vec![overlapping()[0]; MAX_RECORDS + 1],
+                bounds(),
+                1.0,
+                PdfRadialCoverage::DirectSourceOver,
+            )
+            .is_err()
+        );
     }
 }

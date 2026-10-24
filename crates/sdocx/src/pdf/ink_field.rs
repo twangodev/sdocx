@@ -1176,6 +1176,15 @@ fn field_form_with_limits(
     field: &PdfInkField<'_>,
     limits: ContourLimits,
 ) -> Result<Object, String> {
+    field_form_with_policy(document, field, limits, false)
+}
+
+fn field_form_with_policy(
+    document: &mut Document,
+    field: &PdfInkField<'_>,
+    limits: ContourLimits,
+    per_draw_rgba8: bool,
+) -> Result<Object, String> {
     match &field.payload {
         PdfInkPayload::Mesh { mesh, color } => {
             mesh_field_form_with_limits(document, mesh, *color, field.bounds, limits)
@@ -1184,7 +1193,14 @@ fn field_form_with_limits(
             records,
             saved_alpha,
             coverage,
-        } => radial_field_form(document, records, *saved_alpha, *coverage, field.bounds),
+        } => radial_field_form(
+            document,
+            records,
+            *saved_alpha,
+            *coverage,
+            field.bounds,
+            per_draw_rgba8,
+        ),
         PdfInkPayload::RadialCircles {
             records,
             saved_alpha,
@@ -1319,16 +1335,33 @@ fn radial_field_form(
     saved_alpha: f32,
     coverage: PdfRadialCoverage,
     bounds: BoundingBox,
+    per_draw_rgba8: bool,
 ) -> Result<Object, String> {
     // Compile and validate both programs before adding any objects. If this
     // field is not representable, the caller discards the in-memory PDF and
     // keeps the original serialized bytes unchanged.
-    let program = radial::compile(
-        records,
-        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
-        saved_alpha,
-        coverage,
-    )?;
+    let program = if per_draw_rgba8 {
+        #[cfg(test)]
+        {
+            radial::compile_per_draw_rgba8_for_test(
+                records,
+                [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+                saved_alpha,
+                coverage,
+            )?
+        }
+        #[cfg(not(test))]
+        {
+            return Err("per-draw RGBA8 Type 4 policy is test-only".into());
+        }
+    } else {
+        radial::compile(
+            records,
+            [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+            saved_alpha,
+            coverage,
+        )?
+    };
     let function_domain = Object::Array(vec![0.into(), 1.into(), 0.into(), 1.into()]);
     let rgb_function = document.add_object(Stream::new(
         Dictionary::from_iter([
@@ -1430,6 +1463,22 @@ fn radial_field_form(
 
 /// Replace exact registered marker Image XObjects with native field Forms.
 pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Result<Vec<u8>, String> {
+    replace_markers_with_policy(bytes, fields, false)
+}
+
+#[cfg(test)]
+fn replace_markers_per_draw_rgba8_for_test(
+    bytes: &[u8],
+    fields: &[PdfInkField<'_>],
+) -> Result<Vec<u8>, String> {
+    replace_markers_with_policy(bytes, fields, true)
+}
+
+fn replace_markers_with_policy(
+    bytes: &[u8],
+    fields: &[PdfInkField<'_>],
+    per_draw_rgba8: bool,
+) -> Result<Vec<u8>, String> {
     if fields.is_empty() {
         return Ok(bytes.to_vec());
     }
@@ -1474,7 +1523,12 @@ pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Resul
                 matches.len()
             ));
         }
-        let form = field_form(&mut document, field)?;
+        let form = field_form_with_policy(
+            &mut document,
+            field,
+            ContourLimits::default(),
+            per_draw_rgba8,
+        )?;
         document.objects.insert(matches[0], form);
     }
     for object in document.objects.values_mut() {
@@ -1518,21 +1572,47 @@ mod tests {
     }
 
     fn marker_pdf(marker_id: u64, include_unrelated_image: bool) -> Vec<u8> {
-        let mut document = PdfDocument::new();
-        let mut page =
-            document.start_page_with(PageSettings::new(Size::from_wh(20.0, 20.0).unwrap()));
-        let mut surface = page.surface();
-        emit_marker(
-            &mut surface,
+        marker_pdf_with_bounds(
             marker_id,
+            include_unrelated_image,
             BoundingBox {
                 x_min: 1.0,
                 y_min: 1.0,
                 x_max: 5.0,
                 y_max: 5.0,
             },
+            20.0,
+            20.0,
+            1.0,
         )
-        .unwrap();
+    }
+
+    fn marker_pdf_with_bounds(
+        marker_id: u64,
+        include_unrelated_image: bool,
+        bounds: BoundingBox,
+        page_width: f32,
+        page_height: f32,
+        opacity: f32,
+    ) -> Vec<u8> {
+        use krilla::num::NormalizedF32;
+
+        let mut document = PdfDocument::new();
+        let mut page = document.start_page_with(PageSettings::new(
+            Size::from_wh(page_width, page_height).unwrap(),
+        ));
+        let mut surface = page.surface();
+        if opacity < 1.0 {
+            // Production enhanced-AA markers inherit saved alpha from their
+            // outer SVG group; the replacement Form receives it once here.
+            surface.push_opacity(NormalizedF32::new(opacity).unwrap());
+            surface.push_isolated();
+        }
+        emit_marker(&mut surface, marker_id, bounds).unwrap();
+        if opacity < 1.0 {
+            surface.pop();
+            surface.pop();
+        }
         if include_unrelated_image {
             surface.draw_image(
                 Image::from_rgba8(vec![255, 0, 0, 255], 1, 1),
@@ -1589,6 +1669,291 @@ mod tests {
         let mut bytes = Vec::new();
         document.save_to(&mut bytes).unwrap();
         bytes
+    }
+
+    fn sha256_hex(bytes: &[u8]) -> String {
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    fn decode_hex(value: &str) -> Vec<u8> {
+        assert_eq!(value.len() % 2, 0, "hex data has odd length");
+        value
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let pair = std::str::from_utf8(pair).unwrap();
+                u8::from_str_radix(pair, 16).unwrap()
+            })
+            .collect()
+    }
+
+    fn captured_radial_records(bytes: &[u8], scale: f32) -> Vec<PdfRadialRecord> {
+        assert_eq!(bytes.len(), 25 * 9 * 4, "unexpected captured VBO size");
+        let records = bytes
+            .chunks_exact(9 * 4)
+            .map(|record| {
+                let mut values = [0.0_f32; 9];
+                for (index, value) in values.iter_mut().enumerate() {
+                    let start = index * 4;
+                    *value = f32::from_le_bytes(record[start..start + 4].try_into().unwrap());
+                }
+                values[0] *= scale;
+                values[1] *= scale;
+                values[2] *= scale;
+                values[3] *= scale;
+                values
+            })
+            .collect::<Vec<_>>();
+        assert!(records.iter().flatten().all(|value| value.is_finite()));
+        records
+    }
+
+    fn radial_bounds(records: &[PdfRadialRecord]) -> BoundingBox {
+        let (x_min, y_min, x_max, y_max) = records.iter().fold(
+            (
+                f64::INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NEG_INFINITY,
+            ),
+            |(x_min, y_min, x_max, y_max), record| {
+                let cx = f64::from(record[0]);
+                let cy = f64::from(record[1]);
+                let rx = f64::from(record[2]);
+                let ry = f64::from(record[3]);
+                (
+                    x_min.min(cx - rx),
+                    y_min.min(cy - ry),
+                    x_max.max(cx + rx),
+                    y_max.max(cy + ry),
+                )
+            },
+        );
+        BoundingBox {
+            x_min: x_min - 0.001,
+            y_min: y_min - 0.001,
+            x_max: x_max + 0.001,
+            y_max: y_max + 0.001,
+        }
+    }
+
+    fn gl_up_records_to_svg_down(
+        records: &[PdfRadialRecord],
+        page_height: f32,
+    ) -> Vec<PdfRadialRecord> {
+        records
+            .iter()
+            .map(|record| {
+                let mut converted = *record;
+                converted[1] = page_height - record[1];
+                converted
+            })
+            .collect()
+    }
+
+    #[test]
+    fn captured_gl_y_conversion_uses_full_page_height() {
+        let records = [
+            [12.0, 7.0, 2.0, 3.0, 0.1, 1.0, 0.2, 0.4, 0.6],
+            [18.0, 13.0, 1.0, 2.0, 0.1, 1.0, 0.6, 0.4, 0.2],
+        ];
+        let local_bounds = radial_bounds(&records);
+        assert_ne!(local_bounds.y_min + local_bounds.y_max, 96.0);
+        let converted = gl_up_records_to_svg_down(&records, 96.0);
+        assert_eq!(converted[0][1], 89.0);
+        assert_eq!(converted[1][1], 83.0);
+        assert_ne!(
+            converted[0][1],
+            (local_bounds.y_min + local_bounds.y_max) as f32 - 7.0
+        );
+        let converted_bounds = radial_bounds(&converted);
+        assert!(converted_bounds.y_min > 80.0 && converted_bounds.y_max < 96.0);
+    }
+
+    fn write_new_file(path: &std::path::Path, bytes: &[u8]) {
+        use std::{fs::OpenOptions, io::Write};
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        file.write_all(bytes).unwrap();
+    }
+
+    /// Opt-in artifact writer consumed by the paired MuPDF/PDFium reader
+    /// harness. It routes both programs through the production marker/Form
+    /// plumbing and differs only in the test-only radial compiler policy.
+    #[test]
+    #[ignore = "writes paired experiment PDFs when SDOCX_INKPEN2_QUANT_ARTIFACT_DIR is set"]
+    fn write_inkpen2_quantization_pdf_pairs() {
+        use serde_json::{Value, json};
+        use std::path::PathBuf;
+
+        let output_dir = std::env::var_os("SDOCX_INKPEN2_QUANT_ARTIFACT_DIR")
+            .expect("set SDOCX_INKPEN2_QUANT_ARTIFACT_DIR to an output directory");
+        let output_dir = PathBuf::from(output_dir);
+        std::fs::create_dir_all(&output_dir).unwrap();
+        assert!(
+            std::fs::read_dir(&output_dir).unwrap().next().is_none(),
+            "artifact output directory must be empty; use a fresh path"
+        );
+        let capture_dir = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../..")
+                    .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
+            });
+        let cases = [
+            ("scale1_aa1_alpha128", 1.0_f32, 128_u8),
+            ("scale1_aa1_alpha255", 1.0, 255),
+            ("scale2_aa1_alpha128", 2.0, 128),
+            ("scale2_aa1_alpha255", 2.0, 255),
+            ("scale4_aa1_alpha128", 4.0, 128),
+            ("scale4_aa1_alpha255", 4.0, 255),
+        ];
+        let mut manifest_cases = Vec::new();
+        for (case_id, scale, alpha_byte) in cases {
+            let capture_path = capture_dir.join(format!("{case_id}.json"));
+            let capture_bytes = std::fs::read(&capture_path)
+                .unwrap_or_else(|error| panic!("{}: {error}", capture_path.display()));
+            let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
+            let producer = &capture["joined_native_paint"]["producer"];
+            let vbo = decode_hex(
+                producer["native_AddPoint_vector_bytes_hex"]
+                    .as_str()
+                    .expect("captured VBO bytes"),
+            );
+            let vbo_sha256 = sha256_hex(&vbo);
+            assert_eq!(vbo.len(), 25 * 9 * 4);
+            assert_eq!(
+                vbo_sha256,
+                "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+            );
+            assert_eq!(producer["sha256"].as_str(), Some(vbo_sha256.as_str()));
+            assert_eq!(
+                capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
+                u64::from(alpha_byte)
+            );
+            let target = &capture["joined_native_paint"]["paint"]["readback"]["attachment"]["texture_level0"];
+            assert_eq!(target["width"].as_u64(), Some(128));
+            assert_eq!(target["height"].as_u64(), Some(96));
+            assert_eq!(target["internal_format"].as_u64(), Some(32856));
+            let stages = capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
+                .as_array()
+                .expect("native M/C/final readbacks");
+            assert_eq!(stages.len(), 3);
+            let expected_formats = [33321_u64, 32856, 32856];
+            let mut stage_textures = std::collections::HashSet::new();
+            let mut stage_hashes = Vec::new();
+            for (stage, expected_format) in stages.iter().zip(expected_formats) {
+                let texture = stage["attachment_texture"]
+                    .as_u64()
+                    .expect("stage attachment texture id");
+                assert!(stage_textures.insert(texture));
+                assert_eq!(stage["texture_level0"]["width"].as_u64(), Some(128));
+                assert_eq!(stage["texture_level0"]["height"].as_u64(), Some(96));
+                assert_eq!(
+                    stage["texture_level0"]["internal_format"].as_u64(),
+                    Some(expected_format)
+                );
+                stage_hashes.push(
+                    stage["rgba_sha256"]
+                        .as_str()
+                        .expect("stage readback hash")
+                        .to_owned(),
+                );
+            }
+            assert_eq!(stage_textures.len(), 3);
+
+            let gl_records = captured_radial_records(&vbo, scale);
+            // Captures are GL-up. The production radial compiler consumes
+            // page y-down source records; reflect against the full captured
+            // target, then compute the marker bounds in that coordinate space.
+            let records = gl_up_records_to_svg_down(&gl_records, 96.0);
+            let bounds = radial_bounds(&records);
+            let saved_alpha = f32::from(alpha_byte) / 255.0;
+            let marker_id = 0x4950_5141_0000_0001;
+            let baseline_field = PdfInkField::radial(
+                marker_id,
+                &records,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+                bounds,
+            );
+            let candidate_field = PdfInkField::radial(
+                marker_id,
+                &records,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+                bounds,
+            );
+            let bounds_array = [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max];
+            let baseline_program = radial::compile(
+                &records,
+                bounds_array,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+            )
+            .unwrap();
+            let candidate_program = radial::compile_per_draw_rgba8_for_test(
+                &records,
+                bounds_array,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+            )
+            .unwrap();
+            assert_eq!(baseline_program.mask, candidate_program.mask);
+
+            let source_pdf =
+                marker_pdf_with_bounds(marker_id, false, bounds, 128.0, 96.0, saved_alpha);
+            let baseline = replace_markers(&source_pdf, &[baseline_field]).unwrap();
+            let candidate =
+                replace_markers_per_draw_rgba8_for_test(&source_pdf, &[candidate_field]).unwrap();
+            let baseline_name = format!("{case_id}.baseline.pdf");
+            let candidate_name = format!("{case_id}.quantized.pdf");
+            write_new_file(&output_dir.join(&baseline_name), &baseline);
+            write_new_file(&output_dir.join(&candidate_name), &candidate);
+            manifest_cases.push(json!({
+                "case_id": case_id,
+                "scale": scale,
+                "alpha": alpha_byte,
+                "coverage": "EnhancedMax",
+                "outer_opacity": saved_alpha,
+                "source_y_conversion": "captured GL-up centers reflected about full 96px page height before marker bounds and compiler PDF flip",
+                "native_capture_sha256": sha256_hex(&capture_bytes),
+                "native_vbo_sha256": vbo_sha256,
+                "native_stage_sha256": stage_hashes,
+                "bounds": [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+                "page": [128, 96],
+                "pdfs": {
+                    "baseline": {"path": baseline_name, "sha256": sha256_hex(&baseline)},
+                    "quantized": {"path": candidate_name, "sha256": sha256_hex(&candidate)},
+                },
+                "program_sha256": {
+                    "baseline": {
+                        "rgb": sha256_hex(&baseline_program.rgb),
+                        "mask": sha256_hex(&baseline_program.mask),
+                    },
+                    "quantized": {
+                        "rgb": sha256_hex(&candidate_program.rgb),
+                        "mask": sha256_hex(&candidate_program.mask),
+                    },
+                }
+            }));
+        }
+        let manifest = json!({
+            "schema": "sdocx-inkpen2-radial-rgb-quant-pair-v1",
+            "policy": "test-only half-up per-draw RGBA8 RGB recurrence; production remains continuous",
+            "radial_source_sha256": sha256_hex(include_bytes!("ink_field/radial.rs")),
+            "cases": manifest_cases,
+        });
+        write_new_file(
+            &output_dir.join("manifest.json"),
+            &serde_json::to_vec_pretty(&manifest).unwrap(),
+        );
     }
 
     #[test]
