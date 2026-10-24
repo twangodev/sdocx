@@ -4968,9 +4968,403 @@ mod tests {
                     .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))))
         );
         if let Some((dir, name)) = artifact {
-            std::fs::write(dir.join(format!("{name}.pdf")), &pdf).unwrap();
-            std::fs::write(dir.join(format!("{name}.svg")), &svg).unwrap();
+            write_new_artifact(&dir.join(format!("{name}.pdf")), &pdf);
+            write_new_artifact(&dir.join(format!("{name}.svg")), svg.as_bytes());
         }
+    }
+
+    #[cfg(feature = "pdf")]
+    fn inkpen2_bounds(records: &[[f32; 9]]) -> BoundingBox {
+        records.iter().fold(
+            BoundingBox {
+                x_min: f64::INFINITY,
+                y_min: f64::INFINITY,
+                x_max: f64::NEG_INFINITY,
+                y_max: f64::NEG_INFINITY,
+            },
+            |mut bounds, record| {
+                let [cx, cy, rx, ry] = [record[0], record[1], record[2], record[3]];
+                bounds.x_min = bounds.x_min.min(f64::from(cx) - f64::from(rx));
+                bounds.y_min = bounds.y_min.min(f64::from(cy) - f64::from(ry));
+                bounds.x_max = bounds.x_max.max(f64::from(cx) + f64::from(rx));
+                bounds.y_max = bounds.y_max.max(f64::from(cy) + f64::from(ry));
+                bounds
+            },
+        )
+    }
+
+    #[cfg(feature = "pdf")]
+    fn inkpen2_reflected_chart(
+        source: &crate::PreparedInkPen2V9,
+        page_height: f32,
+    ) -> crate::PreparedInkPen2V9 {
+        let mut reflected = source.clone();
+        for record in &mut reflected.records {
+            record[1] = page_height - record[1];
+        }
+        reflected.bounds = inkpen2_bounds(&reflected.records);
+        reflected
+    }
+
+    #[cfg(feature = "pdf")]
+    fn sha256_hex(bytes: &[u8]) -> String {
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    #[cfg(feature = "pdf")]
+    fn decode_hex(value: &str) -> Vec<u8> {
+        assert_eq!(value.len() % 2, 0, "capture hex has odd length");
+        value
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect()
+    }
+
+    #[cfg(feature = "pdf")]
+    fn captured_inkpen2_records(bytes: &[u8]) -> Vec<[f32; 9]> {
+        assert_eq!(
+            bytes.len(),
+            25 * 9 * 4,
+            "unexpected captured native VBO size"
+        );
+        bytes
+            .as_chunks::<36>()
+            .0
+            .iter()
+            .map(|record| {
+                std::array::from_fn(|index| {
+                    let start = index * 4;
+                    f32::from_le_bytes(record[start..start + 4].try_into().unwrap())
+                })
+            })
+            .collect()
+    }
+
+    #[cfg(feature = "pdf")]
+    fn record_bytes(records: &[[f32; 9]]) -> Vec<u8> {
+        records
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect()
+    }
+
+    #[cfg(feature = "pdf")]
+    fn write_new_artifact(path: &std::path::Path, bytes: &[u8]) {
+        use std::{fs::OpenOptions, io::Write};
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        file.write_all(bytes).unwrap();
+    }
+
+    #[cfg(feature = "pdf")]
+    fn transformed_point(matrix: [f64; 6], point: [f64; 2]) -> [f64; 2] {
+        let [a, b, c, d, e, f] = matrix;
+        [
+            a * point[0] + c * point[1] + e,
+            b * point[0] + d * point[1] + f,
+        ]
+    }
+
+    #[cfg(feature = "pdf")]
+    fn inkpen2_chart_geometry_max_delta(
+        source: &[[f32; 9]],
+        reflected: &[[f32; 9]],
+        baseline_matrix: [f64; 6],
+        reflected_matrix: [f64; 6],
+    ) -> f64 {
+        assert_eq!(source.len(), reflected.len());
+        source
+            .iter()
+            .zip(reflected)
+            .flat_map(|(before, after)| {
+                let mut deltas = Vec::with_capacity(6);
+                for y_sign in [-1.0, 0.0, 1.0] {
+                    let before_point = [
+                        f64::from(before[0]),
+                        f64::from(before[1]) + y_sign * f64::from(before[3]),
+                    ];
+                    let after_point = [
+                        f64::from(after[0]),
+                        f64::from(after[1]) - y_sign * f64::from(after[3]),
+                    ];
+                    let before_page = transformed_point(baseline_matrix, before_point);
+                    let after_page = transformed_point(reflected_matrix, after_point);
+                    deltas.extend([
+                        (before_page[0] - after_page[0]).abs(),
+                        (before_page[1] - after_page[1]).abs(),
+                    ]);
+                }
+                deltas
+            })
+            .fold(0.0_f64, f64::max)
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_y_chart_conjugation_preserves_translated_asymmetric_geometry() {
+        let records = vec![
+            [12.375, 19.25, 2.125, 3.75, 0.125, 0.8, 1.0, 0.0, 0.0],
+            [20.625, 31.875, 1.5, 2.25, 0.25, 0.6, 0.0, 0.0, 1.0],
+        ];
+        let baseline = crate::PreparedInkPen2V9 {
+            per_stamp_rgb: true,
+            enhanced_antialias: true,
+            records,
+            sample_ends: vec![0, 2],
+            color: Color { r: 1, g: 2, b: 3 },
+            opacity: 128.0 / 255.0,
+            bounds: inkpen2_bounds(&[
+                [12.375, 19.25, 2.125, 3.75, 0.125, 0.8, 1.0, 0.0, 0.0],
+                [20.625, 31.875, 1.5, 2.25, 0.25, 0.6, 0.0, 0.0, 1.0],
+            ]),
+        };
+        let page_height = 96.0_f32;
+        let reflected = inkpen2_reflected_chart(&baseline, page_height);
+        let scale = 2.0_f64;
+        let baseline_matrix = [scale, 0.0, 0.0, -scale, 7.25, 91.5];
+        let reflected_matrix = [
+            scale,
+            0.0,
+            0.0,
+            scale,
+            7.25,
+            91.5 - scale * f64::from(page_height),
+        ];
+
+        assert_eq!(reflected.records.len(), baseline.records.len());
+        assert_eq!(reflected.sample_ends, baseline.sample_ends);
+        assert_eq!(reflected.color, baseline.color);
+        assert_eq!(reflected.opacity, baseline.opacity);
+        assert_eq!(reflected.per_stamp_rgb, baseline.per_stamp_rgb);
+        assert_eq!(reflected.enhanced_antialias, baseline.enhanced_antialias);
+        for (source, reflected) in baseline.records.iter().zip(&reflected.records) {
+            assert_eq!(reflected[0], source[0]);
+            assert_eq!(reflected[1], page_height - source[1]);
+            assert_eq!(&reflected[2..], &source[2..]);
+            for y_sign in [-1.0, 1.0] {
+                let source_edge = [
+                    f64::from(source[0]),
+                    f64::from(source[1]) + y_sign * f64::from(source[3]),
+                ];
+                let reflected_edge = [
+                    f64::from(reflected[0]),
+                    f64::from(reflected[1]) - y_sign * f64::from(reflected[3]),
+                ];
+                let before = transformed_point(baseline_matrix, source_edge);
+                let after = transformed_point(reflected_matrix, reflected_edge);
+                assert!((before[0] - after[0]).abs() < 1e-12);
+                assert!((before[1] - after[1]).abs() < 1e-12);
+            }
+        }
+
+        assert_eq!(baseline.bounds.x_min, reflected.bounds.x_min);
+        assert_eq!(baseline.bounds.x_max, reflected.bounds.x_max);
+        for source_x in [baseline.bounds.x_min, baseline.bounds.x_max] {
+            for source_y in [baseline.bounds.y_min, baseline.bounds.y_max] {
+                let reflected_y = f64::from(page_height) - source_y;
+                let before = transformed_point(baseline_matrix, [source_x, source_y]);
+                let after = transformed_point(reflected_matrix, [source_x, reflected_y]);
+                assert!((before[0] - after[0]).abs() < 1e-12);
+                assert!((before[1] - after[1]).abs() < 1e-12);
+            }
+        }
+        assert!(baseline_matrix[3] < 0.0);
+        assert!(reflected_matrix[3] > 0.0);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    #[ignore = "writes baseline and reflected-chart SVG/PDF pairs from the six captured native frames"]
+    fn write_inkpen2_reflection_chart_artifact_pairs() {
+        use serde_json::{Value, json};
+        use std::path::PathBuf;
+
+        let output_dir = std::env::var_os("SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR")
+            .expect("set SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR to a fresh output directory");
+        let output_dir = PathBuf::from(output_dir);
+        std::fs::create_dir_all(&output_dir).unwrap();
+        assert!(
+            std::fs::read_dir(&output_dir).unwrap().next().is_none(),
+            "artifact output directory must be empty"
+        );
+        let capture_dir = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../..")
+                    .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
+            });
+        let cases = [
+            ("scale1_aa1_alpha128", 1.0_f32, 128_u8),
+            ("scale1_aa1_alpha255", 1.0, 255),
+            ("scale2_aa1_alpha128", 2.0, 128),
+            ("scale2_aa1_alpha255", 2.0, 255),
+            ("scale4_aa1_alpha128", 4.0, 128),
+            ("scale4_aa1_alpha255", 4.0, 255),
+        ];
+        let options =
+            crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
+        let mut manifest_cases = Vec::new();
+        for (case_id, scale, alpha) in cases {
+            let capture_path = capture_dir.join(format!("{case_id}.json"));
+            let capture_bytes = std::fs::read(&capture_path)
+                .unwrap_or_else(|error| panic!("{}: {error}", capture_path.display()));
+            let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
+            let producer = &capture["joined_native_paint"]["producer"];
+            let vbo = decode_hex(
+                producer["native_AddPoint_vector_bytes_hex"]
+                    .as_str()
+                    .expect("native AddPoint VBO bytes"),
+            );
+            assert_eq!(vbo.len(), 25 * 9 * 4);
+            let vbo_sha256 = sha256_hex(&vbo);
+            assert_eq!(
+                vbo_sha256,
+                "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
+            );
+            assert_eq!(producer["sha256"].as_str(), Some(vbo_sha256.as_str()));
+            let stages = capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
+                .as_array()
+                .expect("native mask, color and final frame captures");
+            assert_eq!(stages.len(), 3);
+            let native_stage_sha256 = stages
+                .iter()
+                .map(|stage| stage["rgba_sha256"].as_str().unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(
+                capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
+                u64::from(alpha)
+            );
+            let source_records = captured_inkpen2_records(&vbo);
+            let baseline_bounds = inkpen2_bounds(&source_records);
+            let baseline = crate::PreparedInkPen2V9 {
+                per_stamp_rgb: true,
+                enhanced_antialias: true,
+                records: source_records,
+                sample_ends: vec![0, 25],
+                color: Color {
+                    r: 51,
+                    g: 102,
+                    b: 153,
+                },
+                opacity: f64::from(f32::from(alpha) / 255.0),
+                bounds: baseline_bounds,
+            };
+            let reflected = inkpen2_reflected_chart(&baseline, 96.0);
+            let baseline_matrix = [f64::from(scale), 0.0, 0.0, -f64::from(scale), 0.0, 96.0];
+            let reflected_matrix = [
+                f64::from(scale),
+                0.0,
+                0.0,
+                f64::from(scale),
+                0.0,
+                96.0 - 96.0 * f64::from(scale),
+            ];
+            let physical_geometry_max_delta = inkpen2_chart_geometry_max_delta(
+                &baseline.records,
+                &reflected.records,
+                baseline_matrix,
+                reflected_matrix,
+            );
+            assert!(
+                physical_geometry_max_delta <= 1e-4,
+                "{case_id}: chart reflection moved geometry by {physical_geometry_max_delta} page points"
+            );
+            let baseline_name = format!("{case_id}.baseline-reflected");
+            let reflected_name = format!("{case_id}.positive-y-chart");
+            assert_inkpen2_pdf_export(
+                &baseline,
+                baseline_matrix,
+                &options,
+                Some((&output_dir, &baseline_name)),
+            );
+            assert_inkpen2_pdf_export(
+                &reflected,
+                reflected_matrix,
+                &options,
+                Some((&output_dir, &reflected_name)),
+            );
+            let baseline_svg =
+                std::fs::read(output_dir.join(format!("{baseline_name}.svg"))).unwrap();
+            let candidate_svg =
+                std::fs::read(output_dir.join(format!("{reflected_name}.svg"))).unwrap();
+            let baseline_pdf =
+                std::fs::read(output_dir.join(format!("{baseline_name}.pdf"))).unwrap();
+            let candidate_pdf =
+                std::fs::read(output_dir.join(format!("{reflected_name}.pdf"))).unwrap();
+            manifest_cases.push(json!({
+                "case_id": case_id,
+                "scale": scale,
+                "alpha": alpha,
+                "source_profile": capture["profile"],
+                "native_input_fields": {
+                    "pen_name": capture["input"]["pen_name"],
+                    "stroke_type": capture["input"]["stroke_type"],
+                    "tool_type": capture["input"]["tool_type"],
+                    "curve_enabled": capture["input"]["curve_enabled"],
+                    "advanced_setting": capture["input"]["advanced_setting"],
+                    "color_argb_u32": capture["input"]["color_argb_u32"],
+                    "points_f32_bits": capture["input"]["points_f32_bits"],
+                    "pressure_f32_bits": capture["input"]["pressure_f32_bits"],
+                    "timestamps_i32": capture["input"]["timestamps_i32"]
+                },
+                "native_scope": capture["joined_native_paint"]["boundaries"],
+                "native_draw_matrix": capture["joined_native_paint"]["paint"]["readback"]["draw_matrix_f32_row_major"],
+                "native_final_rgba_sha256": capture["joined_native_paint"]["paint"]["readback"]["sha256"],
+                "native_capture_sha256": sha256_hex(&capture_bytes),
+                "native_vbo_sha256": vbo_sha256,
+                "native_stage_sha256": native_stage_sha256,
+                "source_vbo_unchanged": true,
+                "records_sha256": {
+                    "baseline": sha256_hex(&record_bytes(&baseline.records)),
+                    "positive_y_chart": sha256_hex(&record_bytes(&reflected.records)),
+                },
+                "page": [128, 96],
+                "physical_transform_pair": {
+                    "baseline_reflected": baseline_matrix,
+                    "positive_y_chart": reflected_matrix,
+                    "coordinate_relation": "candidate cy = 96 - source cy; candidate page y = scale * candidate cy + 96 * (1 - scale) = 96 - scale * source cy"
+                },
+                "physical_geometry_max_delta_page_points": physical_geometry_max_delta,
+                "physical_geometry_max_delta_bound_page_points": 0.0001,
+                "bounds": {
+                    "baseline": [baseline.bounds.x_min, baseline.bounds.y_min, baseline.bounds.x_max, baseline.bounds.y_max],
+                    "positive_y_chart": [reflected.bounds.x_min, reflected.bounds.y_min, reflected.bounds.x_max, reflected.bounds.y_max]
+                },
+                "artifacts": {
+                    "baseline_svg": {"path": format!("{baseline_name}.svg"), "sha256": sha256_hex(&baseline_svg)},
+                    "positive_y_chart_svg": {"path": format!("{reflected_name}.svg"), "sha256": sha256_hex(&candidate_svg)},
+                    "baseline_pdf": {"path": format!("{baseline_name}.pdf"), "sha256": sha256_hex(&baseline_pdf)},
+                    "positive_y_chart_pdf": {"path": format!("{reflected_name}.pdf"), "sha256": sha256_hex(&candidate_pdf)}
+                }
+            }));
+        }
+        let manifest = json!({
+            "schema": "sdocx-inkpen2-reflection-chart-pairs-v1",
+            "purpose": "test-only comparison of the same physical field under a reflected baseline CTM and conjugated positive-Y record chart",
+            "admission_changed": false,
+            "native_vbo_or_phase_changed": false,
+            "svg_phase_fit": false,
+            "reader_comparison": "compare complete 128x96 premultiplied RGBA from emitted SVG/PDF artifacts against the same captured native frame; reverse native GL rows once; no phase fitting",
+            "writer": {
+                "test_filter": "render::tests::write_inkpen2_reflection_chart_artifact_pairs",
+                "environment": "SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR",
+                "capture_override": "SDOCX_INKPEN2_CAPTURE_DIR",
+                "source_sha256": sha256_hex(include_bytes!("render.rs"))
+            },
+            "cases": manifest_cases
+        });
+        let manifest_bytes = serde_json::to_vec_pretty(&manifest).unwrap();
+        write_new_artifact(&output_dir.join("manifest.json"), &manifest_bytes);
     }
 
     #[cfg(feature = "pdf")]

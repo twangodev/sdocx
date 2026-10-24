@@ -307,10 +307,16 @@ enhanced 25-record exports, Chromium/Firefox support-union RGBA MAE is
 The reflected page transform fails in resvg 0.45.1; an independent 0.47.0
 library replay reproduces the 14-versus-93-pixel support failure. Its offset
 scaling discards reflection signs. A positive-Y diagnostic restores support
-but is not a valid output correction. Fractional consumer zoom also increases
-browser error. Enhanced active-gradient admission therefore remains off; consumer
-transforms, native-referenced PDF appearance and real-document evidence remain
-open. Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
+but changing only the transform is not a valid correction. A later test-only
+Rust pair reflects the records and rebuilds all atlas/marker/sidecar geometry,
+then conjugates the scene transform to preserve page placement. Across the six
+native host controls, resvg 0.45.1 support IoU becomes 1 at all three scales;
+full-frame premultiplied RGBA MAE drops from 0.44–13.15 to 0.005–0.044 byte.
+Chromium/Firefox changes stay below 0.002 byte; PDF residuals remain. This
+validates the bounded chart change, not production integration or device parity.
+Enhanced active-gradient admission remains off: transform-aware integration,
+fractional consumer zoom, PDF appearance and real-document evidence remain open.
+Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
 The public active-gradient route is limited to explicit AA-off profiles with
 minimum screen dimension 1080, type 1, positive distance, nonnegative offset,
 2–256 palette entries, at most 512 records and unit coverage in every record.

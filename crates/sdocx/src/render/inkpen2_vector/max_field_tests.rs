@@ -110,6 +110,58 @@ fn planner_preserves_fractional_phases_and_packs_disjoint_backplates() {
 }
 
 #[test]
+fn reflected_translated_chart_rebuilds_complete_atlas_resources() {
+    let source = ink(
+        vec![
+            [12.375, 19.25, 2.125, 3.75, 0.125, 0.8, 1.0, 0.0, 0.0],
+            [20.625, 31.875, 1.5, 2.25, 0.25, 0.6, 0.0, 0.0, 1.0],
+            [28.125, 25.5, 2.75, 1.875, 0.2, 0.7, 0.0, 1.0, 0.0],
+        ],
+        BoundingBox {
+            x_min: 10.25,
+            y_min: 15.5,
+            x_max: 31.0,
+            y_max: 34.25,
+        },
+    );
+    let page_height = 96.0_f32;
+    let mut reflected = source.clone();
+    for record in &mut reflected.records {
+        record[1] = page_height - record[1];
+    }
+    reflected.bounds = BoundingBox {
+        x_min: source.bounds.x_min,
+        y_min: f64::from(page_height) - source.bounds.y_max,
+        x_max: source.bounds.x_max,
+        y_max: f64::from(page_height) - source.bounds.y_min,
+    };
+
+    let atlas = MaxAtlas::new(&reflected).expect("reflected field remains in staged range");
+    assert_eq!(atlas.cells.len(), reflected.records.len());
+    for (record, cell) in reflected.records.iter().zip(&atlas.cells) {
+        for (axis, source_center) in record.iter().take(2).enumerate() {
+            let reconstructed = cell.center[axis] + cell.offset[axis];
+            assert!((reconstructed - f64::from(*source_center)).abs() < 1e-12);
+            assert_eq!(
+                cell.center[axis].rem_euclid(1.0),
+                f64::from(*source_center).fract()
+            );
+            assert_eq!(cell.offset[axis].fract(), 0.0);
+        }
+        let ellipse = Region {
+            x: f64::from(record[0]) - f64::from(record[2]),
+            y: f64::from(record[1]) - f64::from(record[3]),
+            width: f64::from(record[2]) * 2.0,
+            height: f64::from(record[3]) * 2.0,
+        };
+        assert!(region_contains(cell.crop, ellipse));
+        assert!(region_contains(atlas.filter, cell.backplate));
+    }
+    assert_ne!(source.bounds.y_min + source.bounds.y_max, 96.0);
+    assert!(reflected.bounds.y_min > 0.0 && reflected.bounds.y_max < 96.0);
+}
+
+#[test]
 fn atlas_mask_crops_distant_asymmetric_stamps_without_phantom_cells() {
     let ink = ink(
         vec![
