@@ -314,6 +314,10 @@ native host controls, resvg 0.45.1 support IoU becomes 1 at all three scales;
 full-frame premultiplied RGBA MAE drops from 0.44–13.15 to 0.005–0.044 byte.
 Chromium/Firefox changes stay below 0.002 byte; PDF residuals remain. This
 validates the bounded chart change, not production integration or device parity.
+A filter-free quantized level-set MAX-mask experiment also improves the reflected
+resvg baseline, but loses faint support and increases Chromium/Firefox error
+across the same six controls. Ordinary antialiasing adds excess support; the
+crisp-edge variant also regresses browser output. Neither warrants admission.
 Enhanced active-gradient admission remains off: transform-aware integration,
 fractional consumer zoom, PDF appearance and real-document evidence remain open.
 Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
