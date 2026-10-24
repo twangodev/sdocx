@@ -242,7 +242,17 @@ pub(crate) fn prepare_stroke_for_context<'a>(
     dark_mode: bool,
     context: InkRenderContext,
 ) -> PreparedStroke<'a> {
-    prepare_stroke_inner(stroke, dark_mode, Some(context), None)
+    prepare_stroke_inner(stroke, dark_mode, Some(context), None, false)
+}
+
+/// Prepare the native GLV16 Fountain geometry when Drawing has forwarded a
+/// rainbow flag that GLV16 ignores. This narrow page-render path does not
+/// enable per-stamp rainbow colors and leaves the context-free API unchanged.
+pub(crate) fn prepare_stroke_for_context_with_fountain_v16_rainbow_ignored<'a>(
+    stroke: &'a Stroke,
+    context: InkRenderContext,
+) -> PreparedStroke<'a> {
+    prepare_stroke_inner(stroke, false, Some(context), None, true)
 }
 
 pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
@@ -262,6 +272,7 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
             period,
             offset,
         }),
+        false,
     );
     if prepared.fountain_v17_rgb.is_some() {
         prepared.fountain_output_scale = output_scale;
@@ -411,7 +422,7 @@ pub struct PreparedInkPen2V9 {
 /// Prepare a verified native geometry profile when its saved inputs match.
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
-    prepare_stroke_inner(stroke, dark_mode, None, None)
+    prepare_stroke_inner(stroke, dark_mode, None, None, false)
 }
 
 fn prepare_stroke_inner<'a>(
@@ -419,6 +430,7 @@ fn prepare_stroke_inner<'a>(
     dark_mode: bool,
     context: Option<InkRenderContext>,
     fountain_v17_rainbow: Option<fountain::V17Rainbow<'_>>,
+    fountain_v16_ignore_rainbow_flag: bool,
 ) -> PreparedStroke<'a> {
     let mut paint = stroke_paint(stroke, dark_mode);
     let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
@@ -426,6 +438,7 @@ fn prepare_stroke_inner<'a>(
     let marker3 = context.and_then(|_| marker3::prepare_for_page(stroke));
     let mut fountain = match fountain_v17_rainbow {
         Some(profile) => fountain::prepare_v17_rainbow(stroke, profile),
+        None if fountain_v16_ignore_rainbow_flag => fountain::prepare_v16_rainbow_ignored(stroke),
         None => fountain::prepare(stroke),
     };
     if fountain.is_some()

@@ -1,0 +1,171 @@
+{
+  "schema": "sdocx-fountain-as18-glv16-rainbow-ignored-rtv5-arguments-v1",
+  "source": "conformance/fountain-persisted-drawing-native.json cases[0] HF02 frame and source getter arrays",
+  "native_receipt_sha256": "3ecfec3cd4503ffcada68ad9dbbb223896424992af16d31a0105358b4d3ee7d7",
+  "scope": "Drawing selected GLV16; shared rainbow state was enabled with distance 37, offset f32 2.75, and three colors. Captured S0-S3 host callback arguments only; RTV5 method body and GPU are outside this receipt.",
+  "source_profile": {
+    "advanced_settings": "18;0;100;",
+    "tool_type_raw": 2,
+    "variable_width": true,
+    "stylus_channels": true,
+    "rainbow_effect": true,
+    "pen_size_f32_bits": "1006be40",
+    "initial_tolerance_f32_bits": "00000000"
+  },
+  "effective_shared_state": {
+    "rainbow_enabled": 1,
+    "rainbow_distance": 37,
+    "rainbow_offset_f32_bits": "00003040",
+    "gradient_colors_argb": [
+      4294901760,
+      4278255360,
+      4278190335
+    ]
+  },
+  "native_addpoint_s0_s3_f32_bits": [
+    [
+      "d46b6644",
+      "1093b344",
+      "6b5d7d3f",
+      "0000803f"
+    ],
+    [
+      "d1526644",
+      "6a7cb344",
+      "6b5d7d3f",
+      "0000803f"
+    ],
+    [
+      "d1366644",
+      "f48eb344",
+      "86fd8e3f",
+      "0000803f"
+    ],
+    [
+      "fe2e6644",
+      "8eb2b344",
+      "dfd8903f",
+      "0000803f"
+    ],
+    [
+      "932f6644",
+      "76c5b344",
+      "7465923f",
+      "0000803f"
+    ],
+    [
+      "733a6644",
+      "69dfb344",
+      "c48d933f",
+      "0000803f"
+    ],
+    [
+      "224c6644",
+      "90f8b344",
+      "d953943f",
+      "0000803f"
+    ],
+    [
+      "85656644",
+      "ce0eb444",
+      "0fe2943f",
+      "0000803f"
+    ],
+    [
+      "7e806644",
+      "a224b444",
+      "e554953f",
+      "0000803f"
+    ],
+    [
+      "02a06644",
+      "be3bb444",
+      "92ce943f",
+      "0000803f"
+    ],
+    [
+      "e5c36644",
+      "134cb444",
+      "29f38f3f",
+      "0000803f"
+    ],
+    [
+      "34f16644",
+      "615bb444",
+      "c8b58d3f",
+      "0000803f"
+    ],
+    [
+      "901f6744",
+      "9461b444",
+      "7e5a843f",
+      "0000803f"
+    ],
+    [
+      "205e6744",
+      "3a64b444",
+      "ba80833f",
+      "0000803f"
+    ],
+    [
+      "62836744",
+      "c057b444",
+      "4a2a823f",
+      "0000803f"
+    ],
+    [
+      "979c6744",
+      "1841b444",
+      "e032813f",
+      "0000803f"
+    ],
+    [
+      "e7af6744",
+      "c026b444",
+      "40d2803f",
+      "0000803f"
+    ],
+    [
+      "c7b86744",
+      "f60db444",
+      "1e80803f",
+      "0000803f"
+    ],
+    [
+      "65bb6744",
+      "03f5b344",
+      "eefd7f3f",
+      "0000803f"
+    ],
+    [
+      "aebd6744",
+      "b7d7b344",
+      "0e997f3f",
+      "0000803f"
+    ],
+    [
+      "d4bd6744",
+      "5cbfb344",
+      "4f437f3f",
+      "0000803f"
+    ],
+    [
+      "d4bd6744",
+      "1ea5b344",
+      "79bc7e3f",
+      "0000803f"
+    ],
+    [
+      "efbb6744",
+      "588eb344",
+      "79bc7e3f",
+      "0000803f"
+    ],
+    [
+      "d4b96744",
+      "107fb344",
+      "79bc7e3f",
+      "0000803f"
+    ]
+  ]
+}

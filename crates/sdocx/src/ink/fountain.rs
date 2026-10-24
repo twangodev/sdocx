@@ -337,11 +337,32 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     prepare_with_rainbow(s, None)
 }
 
+pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
+    let rendering = s.rendering.as_ref()?;
+    if rendering.advanced_settings.as_deref() != Some("18;0;100;")
+        || rendering.tool_type_raw != 2
+        || rendering.properties.fixed_width
+        || !rendering.properties.stylus_channels
+        || !rendering.properties.rainbow_effect
+    {
+        return None;
+    }
+    prepare_with_rainbow_mode(s, None, true)
+}
+
 pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option<Dots> {
     prepare_with_rainbow(s, Some(profile))
 }
 
 fn prepare_with_rainbow(s: &Stroke, profile: Option<V17Rainbow<'_>>) -> Option<Dots> {
+    prepare_with_rainbow_mode(s, profile, false)
+}
+
+fn prepare_with_rainbow_mode(
+    s: &Stroke,
+    profile: Option<V17Rainbow<'_>>,
+    ignore_glv16_rainbow_flag: bool,
+) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
     // Both saved drawable versions consume ObjectStroke's saved style size.
@@ -390,7 +411,7 @@ fn prepare_with_rainbow(s: &Stroke, profile: Option<V17Rainbow<'_>>) -> Option<D
         || !fixed_width_supported
         || r.properties.eraser
         || r.properties.straighten
-        || (r.properties.rainbow_effect && rainbow.is_none())
+        || (r.properties.rainbow_effect && rainbow.is_none() && !ignore_glv16_rainbow_flag)
         || (rainbow.is_some()
             && (r.properties.fixed_opacity
                 || r.properties.alpha_lock
@@ -757,6 +778,88 @@ mod tests {
                 "persisted radius {index}"
             );
             assert_eq!(little_endian_f32(&words[5]), 1.0);
+        }
+    }
+
+    #[test]
+    fn as18_glv16_ignores_forwarded_rainbow_flag_and_matches_native_addpoint_arguments() {
+        let drawing: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-persisted-drawing-native.json"
+        ))
+        .unwrap();
+        let saved: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-saved-color-native.json"
+        ))
+        .unwrap();
+        let frame = saved["real_serialized_frames"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["id"] == "real_v14_handwritten_flat1445")
+            .unwrap();
+        let payload_hex = format!(
+            "{}{}",
+            drawing["provenance"]["object_payload"]["prefix_hex"]
+                .as_str()
+                .unwrap(),
+            frame["frame_hex"].as_str().unwrap()
+        );
+        let payload: Vec<u8> = payload_hex
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let mut stroke =
+            crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+        let native = &drawing["cases"][0];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some(native["native_pen_name"].as_str().unwrap().into());
+        rendering.advanced_settings = Some("18;0;100;".into());
+        rendering.tool_type_raw = 2;
+        rendering.properties.fixed_width = false;
+        rendering.properties.stylus_channels = true;
+        rendering.properties.rainbow_effect = false;
+        rendering.style.color_type_raw = Some(1);
+        rendering.style.rainbow_distance = Some(37);
+        rendering.style.rainbow_offset = Some(2.75);
+        rendering.style.gradient_colors_argb = Some(vec![0xffff_0000, 0xff00_ff00, 0xff00_00ff]);
+
+        let plain = prepare(&stroke).expect("AS18 GLV16 plain control");
+        stroke.rendering.as_mut().unwrap().properties.rainbow_effect = true;
+        let ignored =
+            prepare_v16_rainbow_ignored(&stroke).expect("bounded AS18 GLV16 rainbow-flag control");
+        assert_eq!(ignored.points, plain.points);
+        assert_eq!(ignored.radii, plain.radii);
+        assert_eq!(ignored.sample_ends, plain.sample_ends);
+        assert!(ignored.rgb.is_none());
+
+        let golden: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-as18-glv16-rainbow-ignored-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            golden["native_addpoint_s0_s3_f32_bits"]
+                .as_array()
+                .unwrap()
+                .len(),
+            24
+        );
+        assert_eq!(ignored.points.len(), 24);
+        assert_eq!(ignored.radii.len(), 24);
+        for (index, (point, radius)) in ignored.points.iter().zip(&ignored.radii).enumerate() {
+            let expected = golden["native_addpoint_s0_s3_f32_bits"][index]
+                .as_array()
+                .unwrap();
+            for (actual, word_index) in [(point.x, 0), (point.y, 1), (*radius, 2)] {
+                assert_eq!(
+                    (actual as f32).to_bits(),
+                    little_endian_u32(&expected[word_index]),
+                    "native GLV16 AddPoint argument {index}:{word_index}"
+                );
+            }
+            assert_eq!(little_endian_f32(&expected[3]), 1.0);
         }
     }
 

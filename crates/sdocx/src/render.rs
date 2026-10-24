@@ -3619,6 +3619,37 @@ fn render_stroke(
         }
     }
     if native_allowed
+        && fountain_v17_rainbow_profile.is_none()
+        && stroke.rendering.as_ref().is_some_and(|rendering| {
+            rendering.pen_name.as_deref()
+                == Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
+                && rendering.advanced_settings.as_deref() == Some("18;0;100;")
+                && rendering.tool_type_raw == 2
+                && !rendering.properties.fixed_width
+                && rendering.properties.stylus_channels
+                && rendering.properties.rainbow_effect
+        })
+    {
+        let paint = prepare_fountain_v16_rainbow_ignored_with_theme(stroke, theme);
+        if paint.support == crate::ink::InkSupport::Reconstructed
+            && paint.dot_radii.is_some()
+            && paint.fountain_v17_rgb.is_none()
+        {
+            if let Some(index) = replay_index {
+                svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
+                    render_prepared_stroke_with_fallback(svg, &paint, true, slice, || {
+                        Some(prepare_context_stroke_with_theme(stroke, theme))
+                    });
+                });
+            } else {
+                render_prepared_stroke_with_fallback(svg, &paint, false, slice, || {
+                    Some(prepare_context_stroke_with_theme(stroke, theme))
+                });
+            }
+            return;
+        }
+    }
+    if native_allowed
         && let Some(profile) = chinesebrush_profile
         && (chinesebrush_fwidth_output_profile.is_none_or(|output| {
             output.pixels_per_page_unit.is_finite() && output.pixels_per_page_unit > 0.0
@@ -3764,6 +3795,27 @@ fn prepare_context_stroke_with_theme<'a>(
         false,
         crate::ink::InkRenderContext::CanonicalPage,
     );
+    apply_context_stroke_theme(stroke, theme, &mut paint);
+    paint
+}
+
+fn prepare_fountain_v16_rainbow_ignored_with_theme<'a>(
+    stroke: &'a Stroke,
+    theme: RenderTheme,
+) -> crate::PreparedStroke<'a> {
+    let mut paint = crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
+        stroke,
+        crate::ink::InkRenderContext::CanonicalPage,
+    );
+    apply_context_stroke_theme(stroke, theme, &mut paint);
+    paint
+}
+
+fn apply_context_stroke_theme(
+    stroke: &Stroke,
+    theme: RenderTheme,
+    paint: &mut crate::PreparedStroke<'_>,
+) {
     if paint.coverage_mesh.is_none() {
         let native_fountain_default_color = paint.profile == Some("FountainPen")
             && paint.support == crate::ink::InkSupport::Reconstructed
@@ -3780,7 +3832,6 @@ fn prepare_context_stroke_with_theme<'a>(
         };
         paint.color = theme.foreground(color);
     }
-    paint
 }
 
 fn valid_fountain_v17_output_scale(scale: f32) -> bool {
@@ -10972,9 +11023,31 @@ mod tests {
         page.objects = vec![stroke.into()];
         let fountain_document = document(page);
 
-        let generic = render_document_svg(&fountain_document, &RenderOptions::default())
+        let plain_glv16 = render_document_svg(&fountain_document, &RenderOptions::default())
             .remove(0)
             .svg;
+        assert!(plain_glv16.contains("radialGradient"));
+        let mut unsupported_fallback_stroke = fountain_color_stroke("17;0;100;");
+        unsupported_fallback_stroke
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        let mut unsupported_page = page_with_uncolored_stroke();
+        unsupported_page.objects = vec![unsupported_fallback_stroke.into()];
+        let generic_fallback =
+            render_document_svg(&document(unsupported_page), &RenderOptions::default())
+                .remove(0)
+                .svg;
+        assert!(
+            roxmltree::Document::parse(&generic_fallback)
+                .unwrap()
+                .descendants()
+                .any(|node| node.has_tag_name(("http://www.w3.org/2000/svg", "line")))
+        );
+        assert!(!generic_fallback.contains("radialGradient"));
+
         let invalid = render_document_svg(
             &fountain_document,
             &RenderOptions {
@@ -10989,9 +11062,10 @@ mod tests {
         .remove(0)
         .svg;
         assert_eq!(
-            invalid, generic,
+            invalid, generic_fallback,
             "invalid explicit values use whole-stroke fallback"
         );
+        assert_ne!(invalid, plain_glv16);
 
         let output_scale_one = render_document_svg(
             &fountain_document,
@@ -11040,7 +11114,7 @@ mod tests {
         )
         .remove(0)
         .svg;
-        assert_eq!(invalid_output_scale, generic);
+        assert_eq!(invalid_output_scale, generic_fallback);
         let mut wide_stroke = fountain_color_stroke("18;0;100;");
         wide_stroke.pen_width = 20.0;
         wide_stroke.rendering.as_mut().unwrap().style.pen_size = Some(20.0);
@@ -11069,9 +11143,19 @@ mod tests {
         let mut wide_page = page_with_uncolored_stroke();
         wide_page.objects = vec![wide_stroke.into()];
         let wide_document = document(wide_page);
-        let wide_generic = render_document_svg(&wide_document, &RenderOptions::default())
-            .remove(0)
-            .svg;
+        let wide_generic = render_document_svg(
+            &wide_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: f32::NAN,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
         let overflowing_derived_scale = render_document_svg(
             &wide_document,
             &RenderOptions {
@@ -11098,11 +11182,124 @@ mod tests {
             .properties
             .rainbow_effect = false;
         let mut ordinary_page = page_with_uncolored_stroke();
-        ordinary_page.objects = vec![ordinary.into()];
+        ordinary_page.objects = vec![ordinary.clone().into()];
         let ordinary_document = document(ordinary_page);
         let ordinary_default = render_document_svg(&ordinary_document, &RenderOptions::default())
             .remove(0)
             .svg;
+        let mut rainbow_flag_control = ordinary.clone();
+        rainbow_flag_control
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        let mut rainbow_flag_page = page_with_uncolored_stroke();
+        rainbow_flag_page.objects = vec![rainbow_flag_control.into()];
+        let rainbow_flag_default =
+            render_document_svg(&document(rainbow_flag_page), &RenderOptions::default())
+                .remove(0)
+                .svg;
+        assert_eq!(rainbow_flag_default, ordinary_default);
+        let stop_colors = |svg: &str| {
+            roxmltree::Document::parse(svg)
+                .unwrap()
+                .descendants()
+                .filter(|node| node.has_tag_name("stop"))
+                .filter_map(|node| node.attribute("stop-color").map(str::to_owned))
+                .collect::<std::collections::BTreeSet<_>>()
+        };
+        for (mode, expected) in [
+            (RenderColorMode::Light, "#000000"),
+            (RenderColorMode::Dark, "#ffffff"),
+        ] {
+            let themed = render_document_svg(
+                &document({
+                    let mut page = page_with_uncolored_stroke();
+                    page.objects = vec![ordinary.clone().into()];
+                    page
+                }),
+                &RenderOptions {
+                    color_mode: mode,
+                    ..RenderOptions::default()
+                },
+            )
+            .remove(0)
+            .svg;
+            let mut themed_rainbow = ordinary.clone();
+            themed_rainbow
+                .rendering
+                .as_mut()
+                .unwrap()
+                .properties
+                .rainbow_effect = true;
+            let mut themed_page = page_with_uncolored_stroke();
+            themed_page.objects = vec![themed_rainbow.into()];
+            let rainbow_svg = render_document_svg(
+                &document(themed_page),
+                &RenderOptions {
+                    color_mode: mode,
+                    ..RenderOptions::default()
+                },
+            )
+            .remove(0)
+            .svg;
+            assert_eq!(
+                stop_colors(&rainbow_svg),
+                stop_colors(&themed),
+                "rainbow-flag GLV16 theme {mode:?}"
+            );
+            assert_eq!(
+                stop_colors(&rainbow_svg),
+                [expected.to_owned()]
+                    .into_iter()
+                    .collect::<std::collections::BTreeSet<_>>()
+            );
+        }
+
+        let replay_layout = layout_document(&fountain_document);
+        let replay = super::render_layout_page_replay_svg(
+            &fountain_document,
+            &replay_layout,
+            0,
+            &RenderOptions::default(),
+        )
+        .unwrap()
+        .svg;
+        let replay_xml = roxmltree::Document::parse(&replay).unwrap();
+        assert!(
+            replay_xml
+                .descendants()
+                .any(|node| node.attribute("data-replay-stroke") == Some("0"))
+        );
+        assert!(
+            replay_xml
+                .descendants()
+                .any(|node| node.attribute("data-replay-part").is_some())
+        );
+        assert!(replay.contains("radialGradient"));
+
+        #[cfg(feature = "pdf")]
+        {
+            let request = [
+                super::PageSceneRequest::sliced(&replay_layout.pages[0], 80, 10, false).unwrap(),
+            ];
+            let mut cache = super::DocumentTextCache::default();
+            let mut progress = |_: crate::Progress| {};
+            let sliced = cache
+                .render_layout_page_scene_requests(
+                    &fountain_document,
+                    &request,
+                    &RenderOptions::default(),
+                    &crate::render::fonts::FontBook::default(),
+                    &mut progress,
+                )
+                .remove(0)
+                .page
+                .svg;
+            assert!(!sliced.contains("radialGradient"));
+            assert!(!sliced.contains("<polyline"));
+        }
         let ordinary_scaled = render_document_svg(
             &ordinary_document,
             &RenderOptions {
