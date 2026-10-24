@@ -316,6 +316,9 @@ direct same-color overlap accumulates while the alternate branch preserves
 its MAX result. The [joined capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen2-joined-paint-native.json)
 passes one Drawing-selected V9 receiver's unchanged 900-byte stream through
 native upload and RGBA paint, with an explicit host canvas/context bridge.
+The [R8 mask oracle](../conformance/inkpen2-max-mask-native.json) checks every
+mask byte at 1×/2×/4× in six bounded host captures; SVG rasterization and PDF
+appearance remain separate validation gaps.
 Native global-AA configuration reaches the per-pen setting and queued RT flag.
 The solid-color enhanced route uses opaque grayscale fields before MAX blending;
 Rust regressions check exact duplicate invariance and pointwise MAX at subpixel
