@@ -1943,6 +1943,114 @@ mod tests {
         output
     }
 
+    fn native_mask_form_ids(document: &Document) -> (ObjectId, ObjectId) {
+        let images: Vec<_> = document
+            .objects
+            .iter()
+            .filter_map(|(id, object)| {
+                let stream = object.as_stream().ok()?;
+                (stream.dict.get(b"Subtype").ok()?.as_name().ok()? == b"Image"
+                    && stream.dict.get(b"Width").ok()?.as_i64().ok()? == 128
+                    && stream.dict.get(b"Height").ok()?.as_i64().ok()? == 96)
+                    .then_some(*id)
+            })
+            .collect();
+        assert_eq!(images.len(), 1, "one native M image expected");
+        let image_id = images[0];
+        let masks: Vec<_> = document
+            .objects
+            .iter()
+            .filter_map(|(id, object)| {
+                let stream = object.as_stream().ok()?;
+                if stream.dict.get(b"Subtype").ok()?.as_name().ok()? != b"Form" {
+                    return None;
+                }
+                let resources = stream.dict.get(b"Resources").ok()?.as_dict().ok()?;
+                let xobjects = resources.get(b"XObject").ok()?.as_dict().ok()?;
+                (xobjects.get(b"M").ok()?.as_reference().ok()? == image_id).then_some(*id)
+            })
+            .collect();
+        assert_eq!(masks.len(), 1, "one mask Form must own the native M image");
+        let mask_id = masks[0];
+        let outers: Vec<_> = document
+            .objects
+            .iter()
+            .filter_map(|(id, object)| {
+                let stream = object.as_stream().ok()?;
+                if stream.dict.get(b"Subtype").ok()?.as_name().ok()? != b"Form" {
+                    return None;
+                }
+                let resources = stream.dict.get(b"Resources").ok()?.as_dict().ok()?;
+                let states = resources.get(b"ExtGState").ok()?.as_dict().ok()?;
+                states
+                    .iter()
+                    .any(|(_, state_ref)| {
+                        let Ok(state_id) = state_ref.as_reference() else {
+                            return false;
+                        };
+                        let Ok(state) = document.get_object(state_id).and_then(Object::as_dict)
+                        else {
+                            return false;
+                        };
+                        let Ok(soft_mask) = state.get(b"SMask").and_then(Object::as_dict) else {
+                            return false;
+                        };
+                        soft_mask.get(b"G").and_then(Object::as_reference).ok() == Some(mask_id)
+                    })
+                    .then_some(*id)
+            })
+            .collect();
+        assert_eq!(
+            outers.len(),
+            1,
+            "one outer Form must reference the M mask Form"
+        );
+        (mask_id, outers[0])
+    }
+
+    fn expand_native_mask_bboxes_for_test(
+        bytes: &[u8],
+        bounds: BoundingBox,
+        expand_mask: bool,
+        expand_outer: bool,
+    ) -> Vec<u8> {
+        assert!(expand_mask || expand_outer);
+        let mut document = Document::load_mem(bytes).unwrap();
+        let (mask_id, outer_id) = native_mask_form_ids(&document);
+        let dx = 1.0 / (bounds.x_max - bounds.x_min);
+        let dy = 1.0 / (bounds.y_max - bounds.y_min);
+        for (object_id, expand) in [(mask_id, expand_mask), (outer_id, expand_outer)] {
+            if !expand {
+                continue;
+            }
+            let stream = document
+                .get_object_mut(object_id)
+                .unwrap()
+                .as_stream_mut()
+                .unwrap();
+            let bbox = stream
+                .dict
+                .get_mut(b"BBox")
+                .unwrap()
+                .as_array_mut()
+                .unwrap();
+            assert_eq!(bbox.len(), 4);
+            assert_eq!(bbox[0].as_float().unwrap(), 0.0);
+            assert_eq!(bbox[1].as_float().unwrap(), 0.0);
+            assert_eq!(bbox[2].as_float().unwrap(), 1.0);
+            assert_eq!(bbox[3].as_float().unwrap(), 1.0);
+            *bbox = vec![
+                Object::Real(-dx as f32),
+                Object::Real(-dy as f32),
+                Object::Real((1.0 + dx) as f32),
+                Object::Real((1.0 + dy) as f32),
+            ];
+        }
+        let mut output = Vec::new();
+        document.save_to(&mut output).unwrap();
+        output
+    }
+
     /// Opt-in artifact writer consumed by the paired MuPDF/PDFium reader
     /// harness. It routes the paired programs through production marker/Form
     /// plumbing and emits separate mask-only diagnostic controls.
@@ -2124,7 +2232,63 @@ mod tests {
             let opaque_mask_name = format!("{case_id}.opaque-mask.pdf");
             write_new_file(&output_dir.join(&native_mask_name), &native_mask_pdf);
             write_new_file(&output_dir.join(&opaque_mask_name), &opaque_mask_pdf);
-            manifest_cases.push(json!({
+            let mut bbox_controls = Vec::new();
+            if scale >= 2.0 {
+                let dx = 1.0 / (bounds.x_max - bounds.x_min);
+                let dy = 1.0 / (bounds.y_max - bounds.y_min);
+                for (suffix, expanded_form, expand_mask, expand_outer) in [
+                    ("mask-bbox-plus1", "mask", true, false),
+                    ("outer-bbox-plus1", "outer", false, true),
+                    ("both-bbox-plus1", "both", true, true),
+                ] {
+                    let diagnostic_pdf = expand_native_mask_bboxes_for_test(
+                        &native_mask_pdf,
+                        bounds,
+                        expand_mask,
+                        expand_outer,
+                    );
+                    let name = format!("{case_id}.{suffix}.pdf");
+                    write_new_file(&output_dir.join(&name), &diagnostic_pdf);
+                    let expected_bbox = |expand: bool| {
+                        if expand {
+                            [
+                                -dx as f32 as f64,
+                                -dy as f32 as f64,
+                                (1.0 + dx) as f32 as f64,
+                                (1.0 + dy) as f32 as f64,
+                            ]
+                        } else {
+                            [0.0, 0.0, 1.0, 1.0]
+                        }
+                    };
+                    bbox_controls.push(json!({
+                        "expanded_form": expanded_form,
+                        "expansion_sides": "outward on all four sides",
+                        "path": name,
+                        "sha256": sha256_hex(&diagnostic_pdf),
+                        "baseline_native_m_image_pdf": {
+                            "path": native_mask_name.clone(),
+                            "sha256": sha256_hex(&native_mask_pdf)
+                        },
+                        "mask_form_graph_path": "outer Form /Resources /ExtGState /GS -> state /SMask /G; mask Form /Resources /XObject /M -> Image",
+                        "outer_form_graph_path": "marker-replaced radial Form /Resources /ExtGState /GS; its state /SMask /G references the selected mask Form",
+                        "mask_bbox_before": [0, 0, 1, 1],
+                        "mask_bbox_after": expected_bbox(expand_mask),
+                        "outer_form_bbox_before": [0, 0, 1, 1],
+                        "outer_form_bbox_after": expected_bbox(expand_outer),
+                        "device_pixel_expansion": 1,
+                        "mask_bbox_delta_form_units": if expand_mask { [dx, dy] } else { [0.0, 0.0] },
+                        "outer_form_bbox_delta_form_units": if expand_outer { [dx, dy] } else { [0.0, 0.0] },
+                        "image_unit_to_mask_form_unit_ctm": native_mask_image_to_field_matrix(bounds).unwrap(),
+                        "raw_mask_sha256": raw_mask_sha256,
+                        "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
+                        "outer_opacity": saved_alpha,
+                        "page": [128, 96],
+                        "image_count": 1
+                    }));
+                }
+            }
+            let mut case_manifest = json!({
                 "case_id": case_id,
                 "scale": scale,
                 "alpha": alpha_byte,
@@ -2178,7 +2342,11 @@ mod tests {
                         "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
                     }
                 }
-            }));
+            });
+            if !bbox_controls.is_empty() {
+                case_manifest["bbox_controls"] = json!(bbox_controls);
+            }
+            manifest_cases.push(case_manifest);
         }
         let manifest = json!({
             "schema": "sdocx-inkpen2-radial-rgb-quant-pair-v1",
