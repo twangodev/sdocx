@@ -2186,3 +2186,9 @@ mod tests {
         }
     }
 }
+
+// This opt-in artifact writer consumes a completed source-producer/Mesa pair.
+// It is isolated from normal tests and only writes when explicitly requested.
+#[cfg(all(test, feature = "serde", feature = "pdf"))]
+#[path = "fountain_v17_capture_artifacts.rs"]
+mod capture_artifacts;

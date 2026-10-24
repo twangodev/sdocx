@@ -576,3 +576,7 @@ interfaces record calls without Android effects. Thus the complete
 no-new-event route is exercised for these states; incoming prediction
 processing, other latency/timestamp branches, pending-event-batch drawing,
 optional recording and actual displayed pixels remain unverified here.
+
+### V17 partial-alpha capture and retained PDF
+
+The bounded host-Mesa V17 capture joins all 117 native Update records exactly; the Rust SVG raster matches the native 130-pixel support in both directions, while MuPDF and PDFium render only 65 of those changed pixels. The SDK retained-PDF path lowers the per-stamp radial gradients through radial shadings and a luminosity soft mask, and a bounded Type 4 DirectSourceOver candidate using the same records also kept half the support while increasing error. This confirms the partial-alpha PDF gap for these captures; the Type 4 candidate did not justify a production change or a pixel-parity claim.
