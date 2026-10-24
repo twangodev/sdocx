@@ -283,6 +283,18 @@ SVG page coordinates. Full-frame premultiplied RGBA MAE changes are small and mi
 not justify enabling quantization: continuous production output and gradient admission
 remain unchanged. The Rust opt-in writer and calculator controls retain the experiment;
 PDF shading/soft-mask coverage sampling remains the larger unresolved residual.
+For PDFium 126, the source-defined integer shading grid predicts all 12,288
+opaque-alpha pixels exactly at each of the three scales, using the emitted PDF
+records and transform without fitting a phase. This explains that reader's
+coverage difference from the native GL pixel-center grid; it does not establish
+cross-reader or device parity. The partial-alpha opaque-mask control reaches
+127 rather than 128: PDFium's decimal parser reads `/ca 0.5019608` below 128/255,
+then group-opacity conversion truncates its product with 255. Source revision
+`7b7c83fba6d0af8d8847ee606569c35880512995` and hashed comparison receipts are
+retained in the ignored integer-grid audit; production geometry and opacity stay unchanged.
+Applying `floor(mask_gray8 * 127 / 255)` predicts every partial-alpha pixel at
+all three scales too; this resolves that output-rounding residual, not the
+mask-sampling difference against native R8.
 Two-/three-stamp scratch controls match the analytic reference within 1–2 bytes
 in PDFium. Across the twelve 25-record exports, direct MuPDF evaluation of the
 emitted mask functions matches the analytic field within 0.005 alpha byte;
