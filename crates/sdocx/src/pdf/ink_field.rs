@@ -2051,6 +2051,23 @@ mod tests {
         output
     }
 
+    fn replace_native_mask_outer_shading_with_fill_for_test(bytes: &[u8]) -> Vec<u8> {
+        let mut document = Document::load_mem(bytes).unwrap();
+        let (_, outer_id) = native_mask_form_ids(&document);
+        let stream = document
+            .get_object_mut(outer_id)
+            .unwrap()
+            .as_stream_mut()
+            .unwrap();
+        stream.decompress().unwrap();
+        assert_eq!(stream.content, b"/GS gs\n/C sh");
+        stream.set_content(b"/GS gs\n0 0 0 rg\n0 0 1 1 re f".to_vec());
+        stream.compress().unwrap();
+        let mut output = Vec::new();
+        document.save_to(&mut output).unwrap();
+        output
+    }
+
     /// Opt-in artifact writer consumed by the paired MuPDF/PDFium reader
     /// harness. It routes the paired programs through production marker/Form
     /// plumbing and emits separate mask-only diagnostic controls.
@@ -2288,6 +2305,33 @@ mod tests {
                     }));
                 }
             }
+            let solid_outer_fill = if scale >= 2.0 {
+                let solid_pdf =
+                    replace_native_mask_outer_shading_with_fill_for_test(&native_mask_pdf);
+                let name = format!("{case_id}.solid-outer-fill.pdf");
+                write_new_file(&output_dir.join(&name), &solid_pdf);
+                Some(json!({
+                    "path": name,
+                    "sha256": sha256_hex(&solid_pdf),
+                    "baseline_native_m_image_pdf": {
+                        "path": native_mask_name.clone(),
+                        "sha256": sha256_hex(&native_mask_pdf)
+                    },
+                    "outer_content_before": "/GS gs\n/C sh",
+                    "outer_content_before_sha256": sha256_hex(b"/GS gs\n/C sh"),
+                    "outer_content_after": "/GS gs\n0 0 0 rg\n0 0 1 1 re f",
+                    "outer_content_after_sha256": sha256_hex(b"/GS gs\n0 0 0 rg\n0 0 1 1 re f"),
+                    "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
+                    "raw_mask_sha256": raw_mask_sha256,
+                    "outer_opacity": saved_alpha,
+                    "page": [128, 96],
+                    "image_count": 1,
+                    "alpha_diagnostic_only": true,
+                    "rgb_comparable": false
+                }))
+            } else {
+                None
+            };
             let mut case_manifest = json!({
                 "case_id": case_id,
                 "scale": scale,
@@ -2345,6 +2389,9 @@ mod tests {
             });
             if !bbox_controls.is_empty() {
                 case_manifest["bbox_controls"] = json!(bbox_controls);
+            }
+            if let Some(solid_outer_fill) = solid_outer_fill {
+                case_manifest["solid_outer_fill"] = solid_outer_fill;
             }
             manifest_cases.push(case_manifest);
         }
