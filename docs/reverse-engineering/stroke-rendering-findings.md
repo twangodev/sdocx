@@ -136,6 +136,20 @@ A generic midpoint spline alone is not a full reproduction. This trace
 establishes width interpolation, not the upstream pressure-to-width law.
 There is also an explicit no-curve branch; this algorithm is not universal.
 
+A bounded host-Mesa paint capture joins one synthetic Drawing-selected
+11-stamp stream (132 bytes) through native RT Update/Draw and host VBO upload,
+with explicit factory/GLES adapters. Its 27 cases vary
+projected diameter (1–3 pixels), phase (0, 0.25, 0.5 pixels), and native
+`SetPenData` ARGB alpha (0, 128, 255). Red and alpha planes are byte-identical
+across alpha controls, matching the fragment shader's use of `inputColor.xyz`
+and derivative-smoothed coverage. The same vector is explicitly materialized
+at RT+88; natural queue transfer, archive loading and device pixels are outside
+this capture. Rust's circle SVG primitives and their vector-PDF conversion
+cover more nonzero pixels than the native reference in all nine opaque controls.
+Source-derived fringes reduce amplitude error but retain support/PDF tradeoffs.
+Matrix receipt SHA-256:
+`cc5379bc06dabd33f46e25fe9da4a5fea87f11c53812b3339c6ab9658847fde8`.
+
 ### Marker2 and shared smoothing helpers
 
 In `libSPenMarker2.so`, V2 saved-event redraw calls `drawLine` at `0x22a24`
