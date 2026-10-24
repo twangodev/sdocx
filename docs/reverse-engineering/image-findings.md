@@ -165,9 +165,15 @@ serialized first/last selection would not reproduce the native route above.
 ## Rendering limits
 
 Crop rectangles with an original-image placement are rendered by clipping the
-original placement to the displayed bounds. Without that placement, the renderer
-now maps an admitted in-bounds source-pixel crop onto the displayed bounds using
-the encoded image dimensions, preserving the source bytes and vector clip/rotation.
+original placement to the displayed bounds. For an in-bounds integer crop with
+no original placement or nonzero rotation, metadata-free RGBA8 PNGs use an exact
+row copy and embed the cropped pixels at the existing displayed bounds. The
+V33 nonuniform-alpha upscale capture confirms native crop-edge clamping; the
+paired PDF crop reduced MuPDF alpha error from 1,006 to 137 (maximum 31 to 1),
+while PDFium remained at 203. This improves that crop-edge case but leaves
+sampler and alpha-rounding differences; it does not establish full parity.
+Other inputs use the geometry path, which maps an admitted in-bounds
+source-pixel crop onto the displayed bounds using encoded image dimensions.
 This follows the source-rectangle/full-destination mapping in Drawing
 `getResizedImageBitmap` (`0x86478`) and `drawImageBitmap` (`0x84b20`), without
 reproducing the native intermediate bitmap or its filtering. The conservative

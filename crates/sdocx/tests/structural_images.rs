@@ -98,6 +98,260 @@ fn uniform_rgba_png(width: u32, height: u32, rgba: [u8; 4]) -> Vec<u8> {
     bytes
 }
 
+#[cfg(feature = "render")]
+fn cropped_type3_document(
+    source: &[u8],
+    crop: [i32; 4],
+    bbox: sdocx::BoundingBox,
+    page_size: (u32, u32),
+) -> sdocx::Document {
+    let mut document = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(
+            3,
+            &image_with_transparency(7, f32::from_bits(0x3efe_feff)),
+            &[],
+        )]),
+        Some(&[(7, "native-alpha.png")]),
+        &[("native-alpha.png", source)],
+    ))
+    .unwrap()
+    .document;
+    let mut image = placed(document.pages[0].elements().next().unwrap()).clone();
+    image.bbox = bbox;
+    image.crop_rect = Some(crop);
+    image.original_bbox = None;
+    image.rotation_degrees = None;
+    document.pages[0].width = page_size.0;
+    document.pages[0].height = page_size.1;
+    document.pages[0].content_bbox = sdocx::BoundingBox {
+        x_min: 0.0,
+        y_min: 0.0,
+        x_max: f64::from(page_size.0),
+        y_max: f64::from(page_size.1),
+    };
+    document.pages[0].background_color = None;
+    document.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
+    document
+}
+
+#[cfg(feature = "render")]
+fn decode_rgba8_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
+    let mut reader = png::Decoder::new(Cursor::new(bytes)).read_info().unwrap();
+    assert_eq!(reader.info().color_type, png::ColorType::Rgba);
+    assert_eq!(reader.info().bit_depth, png::BitDepth::Eight);
+    let mut decoded = vec![0; reader.output_buffer_size().unwrap()];
+    let frame = reader.next_frame(&mut decoded).unwrap();
+    decoded.truncate(frame.buffer_size());
+    (frame.width, frame.height, decoded)
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn type3_crop_embeds_exact_native_png_pixels_at_existing_svg_bounds() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-native-alpha-4x4.png");
+    let document = cropped_type3_document(
+        SOURCE,
+        [1, 1, 3, 3],
+        sdocx::BoundingBox {
+            x_min: 10.0,
+            y_min: 20.0,
+            x_max: 50.0,
+            y_max: 50.0,
+        },
+        (64, 64),
+    );
+    let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+    let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+    let image = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .expect("cropped type-3 image remains an SVG image");
+    assert_eq!(image.attribute("x"), Some("10"));
+    assert_eq!(image.attribute("y"), Some("20"));
+    assert_eq!(image.attribute("width"), Some("40"));
+    assert_eq!(image.attribute("height"), Some("30"));
+    let opacity: f64 = image
+        .ancestors()
+        .find_map(|node| node.attribute("opacity"))
+        .expect("native fill-effect alpha remains an SVG group opacity")
+        .parse()
+        .unwrap();
+    assert!((opacity - 128.0 / 255.0).abs() < 0.000_001);
+
+    use base64::Engine as _;
+    let href = image.attribute("href").expect("embedded crop PNG");
+    let encoded = href.strip_prefix("data:image/png;base64,").unwrap();
+    let cropped_png = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .unwrap();
+    let (source_width, source_height, source_pixels) = decode_rgba8_png(SOURCE);
+    let (crop_width, crop_height, crop_pixels) = decode_rgba8_png(&cropped_png);
+    assert_eq!((source_width, source_height), (4, 4));
+    assert_eq!((crop_width, crop_height), (2, 2));
+    let mut expected = Vec::new();
+    for y in 1..3_usize {
+        expected.extend_from_slice(&source_pixels[(y * 4 + 1) * 4..(y * 4 + 3) * 4]);
+    }
+    assert_eq!(
+        crop_pixels, expected,
+        "crop keeps exact straight RGBA samples"
+    );
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn type3_png_crop_remains_a_pdf_image_with_a_cropped_soft_mask() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-native-alpha-4x4.png");
+    let document = cropped_type3_document(
+        SOURCE,
+        [1, 1, 3, 3],
+        sdocx::BoundingBox {
+            x_min: 10.0,
+            y_min: 20.0,
+            x_max: 50.0,
+            y_max: 50.0,
+        },
+        (64, 64),
+    );
+    let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+    let bytes = sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let images: Vec<_> = pdf
+        .objects
+        .iter()
+        .filter_map(|(id, object)| {
+            let stream = object.as_stream().ok()?;
+            (stream.dict.get(b"Subtype").ok()?.as_name().ok()? == b"Image")
+                .then_some((*id, &stream.dict))
+        })
+        .collect();
+    assert_eq!(
+        images.len(),
+        2,
+        "cropped color image and alpha soft mask stay embedded images"
+    );
+    let (mask_id, mask) = images
+        .iter()
+        .find(|(_, dict)| {
+            dict.get(b"ColorSpace")
+                .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"DeviceGray"))
+        })
+        .expect("cropped alpha soft-mask image");
+    let (color_id, color) = images
+        .iter()
+        .find(|(_, dict)| dict.get(b"SMask").is_ok())
+        .expect("cropped color image with soft-mask reference");
+    assert_ne!(color_id, mask_id);
+    assert_eq!(color.get(b"Width").unwrap().as_i64().unwrap(), 2);
+    assert_eq!(color.get(b"Height").unwrap().as_i64().unwrap(), 2);
+    assert_eq!(mask.get(b"Width").unwrap().as_i64().unwrap(), 2);
+    assert_eq!(mask.get(b"Height").unwrap().as_i64().unwrap(), 2);
+    assert_eq!(
+        color.get(b"SMask").unwrap().as_reference().unwrap(),
+        *mask_id
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn native_upscale_crop_edges_reduce_alpha_error_versus_legacy_full_image_clip() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-native-upscale-context-32x16.png");
+    // Captured native raw.json SHA-256:
+    // dc03743e509e5552616247011f24468c52056ad74cec10fb0c5867623361c106.
+    // The compact 6 KiB target is SHA-256:
+    // 7e80428f42a832f4a195f00d5696a9f6e00329febc450551edd0f1bbf6f30426.
+    // It covers source crop [73,50,89,58] and destination [8,8,40,24].
+    const NATIVE_TARGET: &[u8] =
+        include_bytes!("assets/native-image-alpha-upscale-target-48x32.rgba");
+    assert_eq!(SOURCE.len(), 2059);
+    assert_eq!(NATIVE_TARGET.len(), 48 * 32 * 4);
+
+    let document = cropped_type3_document(
+        SOURCE,
+        [8, 4, 24, 12],
+        sdocx::BoundingBox {
+            x_min: 8.0,
+            y_min: 8.0,
+            x_max: 40.0,
+            y_max: 24.0,
+        },
+        (48, 32),
+    );
+    let cropped_svg = sdocx::render_page_svg(&document, 0, &Default::default())
+        .unwrap()
+        .svg;
+
+    // Supplying the previously emitted full-source placement forces the
+    // legacy image-plus-viewport path while preserving the same source, crop,
+    // destination, and alpha.
+    let mut legacy = document.clone();
+    let mut image = placed(legacy.pages[0].elements().next().unwrap()).clone();
+    image.original_bbox = Some(sdocx::BoundingBox {
+        x_min: -8.0,
+        y_min: 0.0,
+        x_max: 56.0,
+        y_max: 32.0,
+    });
+    legacy.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
+    let legacy_svg = sdocx::render_page_svg(&legacy, 0, &Default::default())
+        .unwrap()
+        .svg;
+
+    fn rgba_from_svg(svg: &str) -> Vec<u8> {
+        let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(48, 32).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        pixmap.data().to_vec()
+    }
+    fn alpha_error(actual: &[u8], expected: &[u8]) -> u64 {
+        actual
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(expected.as_chunks::<4>().0)
+            .map(|(actual, expected)| u64::from(actual[3].abs_diff(expected[3])))
+            .sum()
+    }
+
+    fn without_full_page_paper(svg: &str) -> String {
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let mut paper = xml
+            .root_element()
+            .children()
+            .filter(|node| node.is_element() && node.has_tag_name("rect"))
+            .filter(|node| {
+                ["x", "y", "width", "height"]
+                    .into_iter()
+                    .zip([0.0_f64, 0.0, 48.0, 32.0])
+                    .all(|(attribute, expected)| {
+                        node.attribute(attribute)
+                            .and_then(|value| value.parse::<f64>().ok())
+                            == Some(expected)
+                    })
+            });
+        let rect = paper.next().expect("exact full-page paper rectangle");
+        assert!(paper.next().is_none(), "only one full-page paper rectangle");
+        let range = rect.range();
+        let mut layer = String::with_capacity(svg.len());
+        layer.push_str(&svg[..range.start]);
+        layer.push_str(&svg[range.end..]);
+        layer
+    }
+
+    let cropped = rgba_from_svg(&without_full_page_paper(&cropped_svg));
+    let legacy = rgba_from_svg(&without_full_page_paper(&legacy_svg));
+    let cropped_error = alpha_error(&cropped, NATIVE_TARGET);
+    let legacy_error = alpha_error(&legacy, NATIVE_TARGET);
+    assert!(
+        cropped_error * 4 < legacy_error * 3,
+        "exact source crop should improve whole-image alpha error: cropped={cropped_error}, legacy={legacy_error}"
+    );
+}
+
 fn rectangle_path(points: [[f64; 2]; 4]) -> Vec<u8> {
     let mut bytes = 5_u32.to_le_bytes().to_vec();
     for (index, point) in points.into_iter().enumerate() {
@@ -1459,8 +1713,21 @@ fn pixel_crop_without_original_placement_selects_the_source_region() {
     let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
     let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
     let node = xml.descendants().find(|n| n.has_tag_name("image")).unwrap();
-    assert_eq!(svg_rectangle(node), [-10.0, -40.0, 80.0, 90.0]);
-    assert_eq!(node.parent().unwrap().attribute("overflow"), Some("hidden"));
+    assert_eq!(svg_rectangle(node), [10.0, 20.0, 40.0, 30.0]);
+    assert_eq!(node.parent().unwrap().attribute("overflow"), None);
+    use base64::Engine as _;
+    let href = node.attribute("href").expect("embedded source crop");
+    let cropped_png = base64::engine::general_purpose::STANDARD
+        .decode(href.strip_prefix("data:image/png;base64,").unwrap())
+        .unwrap();
+    let (crop_width, crop_height, cropped_pixels) = decode_rgba8_png(&cropped_png);
+    assert_eq!((crop_width, crop_height), (2, 1));
+    let (source_width, _, source_pixels) = decode_rgba8_png(SOURCE);
+    let crop_start = (2 * source_width as usize + 1) * 4;
+    assert_eq!(
+        cropped_pixels,
+        source_pixels[crop_start..crop_start + 2 * 4]
+    );
     let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
     let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
     resvg::render(
@@ -1960,11 +2227,15 @@ fn check_image_alpha_controls(include_native_rounding_edge: bool) {
 
         let expected_inside = expected_native_rgba;
         let (image_present, image_view_box, opacity) = if let Some(image) = svg_image {
-            let viewport = image.parent().unwrap();
-            let view_box = viewport
-                .attribute("viewBox")
-                .and_then(|value| value.parse::<svgtypes::ViewBox>().ok())
-                .map(|value| [value.x, value.y, value.w, value.h]);
+            let image_bounds = ["x", "y", "width", "height"].map(|attribute| {
+                image
+                    .attribute(attribute)
+                    .and_then(|value| value.parse::<f64>().ok())
+            });
+            let view_box = image_bounds
+                .into_iter()
+                .collect::<Option<Vec<_>>>()
+                .and_then(|values| <[f64; 4]>::try_from(values).ok());
             let opacity = image
                 .ancestors()
                 .find_map(|node| node.attribute("opacity"))

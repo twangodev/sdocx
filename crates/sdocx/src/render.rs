@@ -1998,12 +1998,22 @@ fn render_image(
     let Some(asset) = media_index.and_then(|index| media_assets.get(index)) else {
         return;
     };
+    render_image_data(svg, bbox, rotation, &asset.data, &asset.mime_type);
+}
+
+fn render_image_data(
+    svg: &mut Scene,
+    bbox: BoundingBox,
+    rotation: Option<f64>,
+    data: &[u8],
+    mime_type: &str,
+) {
     let width = bbox.x_max - bbox.x_min;
     let height = bbox.y_max - bbox.y_min;
     if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
         return;
     }
-    let mut image = Image::embedded(&asset.data, &asset.mime_type)
+    let mut image = Image::embedded(data, mime_type)
         .x(bbox.x_min)
         .y(bbox.y_min)
         .width(width)
@@ -2043,10 +2053,10 @@ fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[Med
     }
     if alpha < 255 {
         svg.scope(Group::new().opacity(f64::from(alpha) / 255.0), |svg| {
-            render_placed_image_body(svg, image, media_assets);
+            render_placed_image_content(svg, image, media_assets);
         });
     } else {
-        render_placed_image_body(svg, image, media_assets);
+        render_placed_image_content(svg, image, media_assets);
     }
 }
 
@@ -2059,6 +2069,27 @@ fn placed_image_alpha(transparency: f32) -> u8 {
     }
     let scaled = (-transparency).mul_add(255.0, 255.0);
     (scaled as i32).clamp(0, 255) as u8
+}
+
+fn render_placed_image_content(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
+    if image.original_bbox.is_none()
+        && image
+            .rotation_degrees
+            .is_none_or(|rotation| rotation.is_finite() && rotation == 0.0)
+        && let (Some(crop), Some(asset)) = (
+            image.crop_rect,
+            image.media_index.and_then(|index| media_assets.get(index)),
+        )
+        && asset.mime_type == "image/png"
+        && let Some(cropped_png) = image_crop::crop_rgba8_png(&asset.data, crop)
+    {
+        // Keep this an SVG image at the original placement bounds. Only the
+        // source pixels are cropped, so PDF export retains its image XObject.
+        render_image_data(svg, image.bbox, None, &cropped_png, "image/png");
+        return;
+    }
+
+    render_placed_image_body(svg, image, media_assets);
 }
 
 fn render_placed_image_body(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
