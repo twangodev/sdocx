@@ -477,6 +477,14 @@ geometry, color-space conversion or an end-to-end Android frame. The real
 queued clear dispatch and the real copy shader are verified components;
 their complete Android framebuffer integration is unverified.
 
+An archive-backed Standard exporter probe also reaches the native plain-bitmap
+draw: six source-owned uniform uploads, texture/sampler activation, and
+`DrawArrays(GL_TRIANGLES, 0, 6)` from one 120-byte VBO (XYZ plus UV, stride 20).
+The native target completes Deactivate and the outer bitmap call returns.
+This uses explicit host EGL/GLES adapters; complete PDF output and Android
+pixel parity remain unverified. Capture result SHA-256:
+`75d290fa3413a5d31958fcb02d539ae17da2fab35c4348fddddd6d55d9772786`.
+
 ### Presenter dirty-region reconstruction
 
 `conformance/fountain_presenter_rect.py` executes the complete Engine
