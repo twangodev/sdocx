@@ -1176,7 +1176,7 @@ fn field_form_with_limits(
     field: &PdfInkField<'_>,
     limits: ContourLimits,
 ) -> Result<Object, String> {
-    field_form_with_policy(document, field, limits, false)
+    field_form_with_policy(document, field, limits, false, &RadialMaskOverride::Type4)
 }
 
 fn field_form_with_policy(
@@ -1184,6 +1184,7 @@ fn field_form_with_policy(
     field: &PdfInkField<'_>,
     limits: ContourLimits,
     per_draw_rgba8: bool,
+    mask_override: &RadialMaskOverride,
 ) -> Result<Object, String> {
     match &field.payload {
         PdfInkPayload::Mesh { mesh, color } => {
@@ -1200,6 +1201,7 @@ fn field_form_with_policy(
             *coverage,
             field.bounds,
             per_draw_rgba8,
+            mask_override,
         ),
         PdfInkPayload::RadialCircles {
             records,
@@ -1336,6 +1338,7 @@ fn radial_field_form(
     coverage: PdfRadialCoverage,
     bounds: BoundingBox,
     per_draw_rgba8: bool,
+    mask_override: &RadialMaskOverride,
 ) -> Result<Object, String> {
     // Compile and validate both programs before adding any objects. If this
     // field is not representable, the caller discards the in-memory PDF and
@@ -1387,26 +1390,59 @@ fn radial_field_form(
         (b"Domain".to_vec(), function_domain.clone()),
         (b"Function".to_vec(), Object::Reference(rgb_function)),
     ]));
-    let mask_function = document.add_object(Stream::new(
-        Dictionary::from_iter([
-            (b"FunctionType".to_vec(), Object::Integer(4)),
-            (b"Domain".to_vec(), function_domain.clone()),
-            (b"Range".to_vec(), Object::Array(vec![0.into(), 1.into()])),
-        ]),
-        program.mask,
-    ));
-    let mask_shading = document.add_object(Dictionary::from_iter([
-        (b"ShadingType".to_vec(), Object::Integer(1)),
-        (b"ColorSpace".to_vec(), Object::Name(b"DeviceGray".to_vec())),
-        (b"Domain".to_vec(), function_domain),
-        (b"Function".to_vec(), Object::Reference(mask_function)),
-    ]));
-
-    let mut mask_resources = Dictionary::new();
-    mask_resources.set(
-        "Shading",
-        Dictionary::from_iter([(b"M".to_vec(), Object::Reference(mask_shading))]),
-    );
+    let (mask_resources, mask_content) = match mask_override {
+        RadialMaskOverride::Type4 => {
+            type4_mask_resources(document, function_domain.clone(), program.mask)
+        }
+        #[cfg(test)]
+        RadialMaskOverride::Opaque => {
+            type4_mask_resources(document, function_domain.clone(), b"{ 1 }".to_vec())
+        }
+        #[cfg(test)]
+        RadialMaskOverride::NativeGrayImage(samples) => {
+            if samples.len() != 128 * 96 {
+                return Err(format!(
+                    "native M diagnostic image has {} samples, expected {}",
+                    samples.len(),
+                    128 * 96
+                ));
+            }
+            let image = document.add_object(Stream::new(
+                Dictionary::from_iter([
+                    (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+                    (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
+                    (b"Width".to_vec(), Object::Integer(128)),
+                    (b"Height".to_vec(), Object::Integer(96)),
+                    (b"ColorSpace".to_vec(), Object::Name(b"DeviceGray".to_vec())),
+                    (b"BitsPerComponent".to_vec(), Object::Integer(8)),
+                    (b"Interpolate".to_vec(), Object::Boolean(false)),
+                ]),
+                samples.to_vec(),
+            ));
+            let mut image_resources = Dictionary::new();
+            image_resources.set(
+                "XObject",
+                Dictionary::from_iter([(b"M".to_vec(), Object::Reference(image))]),
+            );
+            // The image covers the full 128x96 source page. Map it into the
+            // radial marker's normalized local square and let the Form BBox
+            // clip away pixels outside the field bounds. The source records
+            // are y-down while PDF image samples are top-down, so this affine
+            // maps page y-down into the compiler's flipped local y axis.
+            let matrix = native_mask_image_to_field_matrix(bounds)?;
+            (
+                image_resources,
+                format!(
+                    "{} 0 0 {} {} {} cm /M Do",
+                    pdf_content_number(matrix[0]),
+                    pdf_content_number(matrix[3]),
+                    pdf_content_number(matrix[4]),
+                    pdf_content_number(matrix[5]),
+                )
+                .into_bytes(),
+            )
+        }
+    };
     let mask_group = Dictionary::from_iter([
         (b"S".to_vec(), Object::Name(b"Transparency".to_vec())),
         (b"CS".to_vec(), Object::Name(b"DeviceGray".to_vec())),
@@ -1425,7 +1461,7 @@ fn radial_field_form(
             (b"Resources".to_vec(), Object::Dictionary(mask_resources)),
             (b"Group".to_vec(), Object::Dictionary(mask_group)),
         ]),
-        b"/M sh".to_vec(),
+        mask_content,
     ));
 
     let soft_mask = Dictionary::from_iter([
@@ -1463,7 +1499,67 @@ fn radial_field_form(
 
 /// Replace exact registered marker Image XObjects with native field Forms.
 pub(crate) fn replace_markers(bytes: &[u8], fields: &[PdfInkField<'_>]) -> Result<Vec<u8>, String> {
-    replace_markers_with_policy(bytes, fields, false)
+    replace_markers_with_policy(bytes, fields, false, &RadialMaskOverride::Type4)
+}
+
+fn type4_mask_resources(
+    document: &mut Document,
+    function_domain: Object,
+    program: Vec<u8>,
+) -> (Dictionary, Vec<u8>) {
+    let mask_function = document.add_object(Stream::new(
+        Dictionary::from_iter([
+            (b"FunctionType".to_vec(), Object::Integer(4)),
+            (b"Domain".to_vec(), function_domain.clone()),
+            (b"Range".to_vec(), Object::Array(vec![0.into(), 1.into()])),
+        ]),
+        program,
+    ));
+    let mask_shading = document.add_object(Dictionary::from_iter([
+        (b"ShadingType".to_vec(), Object::Integer(1)),
+        (b"ColorSpace".to_vec(), Object::Name(b"DeviceGray".to_vec())),
+        (b"Domain".to_vec(), function_domain),
+        (b"Function".to_vec(), Object::Reference(mask_function)),
+    ]));
+    let mut resources = Dictionary::new();
+    resources.set(
+        "Shading",
+        Dictionary::from_iter([(b"M".to_vec(), Object::Reference(mask_shading))]),
+    );
+    (resources, b"/M sh".to_vec())
+}
+
+#[cfg(test)]
+fn pdf_content_number(value: f64) -> String {
+    let mut formatted = format!("{value:.9}");
+    while formatted.contains('.') && formatted.ends_with('0') {
+        formatted.pop();
+    }
+    if formatted.ends_with('.') {
+        formatted.pop();
+    }
+    if formatted == "-0" {
+        "0".to_owned()
+    } else {
+        formatted
+    }
+}
+
+#[cfg(test)]
+fn native_mask_image_to_field_matrix(bounds: BoundingBox) -> Result<[f64; 6], String> {
+    let width = bounds.x_max - bounds.x_min;
+    let height = bounds.y_max - bounds.y_min;
+    if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
+        return Err("native M diagnostic image has invalid field bounds".into());
+    }
+    Ok([
+        128.0 / width,
+        0.0,
+        0.0,
+        96.0 / height,
+        -bounds.x_min / width,
+        (bounds.y_max - 96.0) / height,
+    ])
 }
 
 #[cfg(test)]
@@ -1471,13 +1567,36 @@ fn replace_markers_per_draw_rgba8_for_test(
     bytes: &[u8],
     fields: &[PdfInkField<'_>],
 ) -> Result<Vec<u8>, String> {
-    replace_markers_with_policy(bytes, fields, true)
+    replace_markers_with_policy(bytes, fields, true, &RadialMaskOverride::Type4)
+}
+
+#[cfg(test)]
+fn replace_markers_with_mask_for_test(
+    bytes: &[u8],
+    fields: &[PdfInkField<'_>],
+    mask_override: RadialMaskOverride,
+) -> Result<Vec<u8>, String> {
+    replace_markers_with_policy(bytes, fields, false, &mask_override)
+}
+
+#[cfg(test)]
+enum RadialMaskOverride {
+    Type4,
+    NativeGrayImage(Vec<u8>),
+    Opaque,
+}
+
+#[cfg(not(test))]
+#[derive(Clone, Copy)]
+enum RadialMaskOverride {
+    Type4,
 }
 
 fn replace_markers_with_policy(
     bytes: &[u8],
     fields: &[PdfInkField<'_>],
     per_draw_rgba8: bool,
+    mask_override: &RadialMaskOverride,
 ) -> Result<Vec<u8>, String> {
     if fields.is_empty() {
         return Ok(bytes.to_vec());
@@ -1528,6 +1647,7 @@ fn replace_markers_with_policy(
             field,
             ContourLimits::default(),
             per_draw_rgba8,
+            mask_override,
         )?;
         document.objects.insert(matches[0], form);
     }
@@ -1771,6 +1891,37 @@ mod tests {
         assert!(converted_bounds.y_min > 80.0 && converted_bounds.y_max < 96.0);
     }
 
+    #[test]
+    fn native_mask_page_to_field_matrix_handles_translated_asymmetric_bounds() {
+        let bounds = BoundingBox {
+            x_min: 11.125,
+            y_min: 68.25,
+            x_max: 24.875,
+            y_max: 83.75,
+        };
+        let [a, b, c, d, e, f] = native_mask_image_to_field_matrix(bounds).unwrap();
+        assert_ne!(e, 0.0);
+        assert_ne!(f, 0.0);
+        for (page_x, page_y_down) in [(13.5, 70.25), (18.75, 76.5), (22.25, 81.125)] {
+            // PDF image coordinates have their origin at the lower left;
+            // captured source records use page y-down coordinates.
+            let image_x = page_x / 128.0;
+            let image_y = 1.0 - page_y_down / 96.0;
+            let mapped_x = a * image_x + c * image_y + e;
+            let mapped_y = b * image_x + d * image_y + f;
+            let source_x = (page_x - bounds.x_min) / (bounds.x_max - bounds.x_min);
+            let source_y = 1.0 - (page_y_down - bounds.y_min) / (bounds.y_max - bounds.y_min);
+            assert!((mapped_x - source_x).abs() < 1e-12);
+            assert!((mapped_y - source_y).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn native_mask_pdf_rows_reverse_captured_gl_rows_once() {
+        let gl_bottom_up = [1, 2, 3, 4, 5, 6];
+        assert_eq!(reverse_r8_rows(&gl_bottom_up, 3, 2), [4, 5, 6, 1, 2, 3]);
+    }
+
     fn write_new_file(path: &std::path::Path, bytes: &[u8]) {
         use std::{fs::OpenOptions, io::Write};
 
@@ -1782,9 +1933,19 @@ mod tests {
         file.write_all(bytes).unwrap();
     }
 
+    fn reverse_r8_rows(samples: &[u8], width: usize, height: usize) -> Vec<u8> {
+        assert_eq!(samples.len(), width * height);
+        let mut output = Vec::with_capacity(samples.len());
+        for row in (0..height).rev() {
+            let start = row * width;
+            output.extend_from_slice(&samples[start..start + width]);
+        }
+        output
+    }
+
     /// Opt-in artifact writer consumed by the paired MuPDF/PDFium reader
-    /// harness. It routes both programs through the production marker/Form
-    /// plumbing and differs only in the test-only radial compiler policy.
+    /// harness. It routes the paired programs through production marker/Form
+    /// plumbing and emits separate mask-only diagnostic controls.
     #[test]
     #[ignore = "writes paired experiment PDFs when SDOCX_INKPEN2_QUANT_ARTIFACT_DIR is set"]
     fn write_inkpen2_quantization_pdf_pairs() {
@@ -1845,6 +2006,25 @@ mod tests {
                 .as_array()
                 .expect("native M/C/final readbacks");
             assert_eq!(stages.len(), 3);
+            let native_stage_rgba = decode_hex(
+                stages[0]["rgba_bytes_hex"]
+                    .as_str()
+                    .expect("native R8 stage readback bytes"),
+            );
+            assert_eq!(native_stage_rgba.len(), 128 * 96 * 4);
+            let stage_rgba_hash = sha256_hex(&native_stage_rgba);
+            assert_eq!(
+                Some(stage_rgba_hash.as_str()),
+                stages[0]["rgba_sha256"].as_str()
+            );
+            let mut native_m = Vec::with_capacity(128 * 96);
+            for pixel in native_stage_rgba.chunks_exact(4) {
+                assert_eq!(&pixel[1..], &[0, 0, 255], "R8 M readback expansion");
+                native_m.push(pixel[0]);
+            }
+            let native_m_sha256 = sha256_hex(&native_m);
+            let pdf_mask = reverse_r8_rows(&native_m, 128, 96);
+            let raw_mask_sha256 = sha256_hex(&pdf_mask);
             let expected_formats = [33321_u64, 32856, 32856];
             let mut stage_textures = std::collections::HashSet::new();
             let mut stage_hashes = Vec::new();
@@ -1916,6 +2096,34 @@ mod tests {
             let candidate_name = format!("{case_id}.quantized.pdf");
             write_new_file(&output_dir.join(&baseline_name), &baseline);
             write_new_file(&output_dir.join(&candidate_name), &candidate);
+            let native_mask_pdf = replace_markers_with_mask_for_test(
+                &source_pdf,
+                &[PdfInkField::radial(
+                    marker_id,
+                    &records,
+                    saved_alpha,
+                    PdfRadialCoverage::EnhancedMax,
+                    bounds,
+                )],
+                RadialMaskOverride::NativeGrayImage(pdf_mask),
+            )
+            .unwrap();
+            let opaque_mask_pdf = replace_markers_with_mask_for_test(
+                &source_pdf,
+                &[PdfInkField::radial(
+                    marker_id,
+                    &records,
+                    saved_alpha,
+                    PdfRadialCoverage::EnhancedMax,
+                    bounds,
+                )],
+                RadialMaskOverride::Opaque,
+            )
+            .unwrap();
+            let native_mask_name = format!("{case_id}.native-m-image.pdf");
+            let opaque_mask_name = format!("{case_id}.opaque-mask.pdf");
+            write_new_file(&output_dir.join(&native_mask_name), &native_mask_pdf);
+            write_new_file(&output_dir.join(&opaque_mask_name), &opaque_mask_pdf);
             manifest_cases.push(json!({
                 "case_id": case_id,
                 "scale": scale,
@@ -1941,12 +2149,41 @@ mod tests {
                         "rgb": sha256_hex(&candidate_program.rgb),
                         "mask": sha256_hex(&candidate_program.mask),
                     },
+                },
+                "mask_controls": {
+                    "native_m_image": {
+                        "path": native_mask_name,
+                        "sha256": sha256_hex(&native_mask_pdf),
+                        "native_m_sha256": native_m_sha256,
+                        "raw_mask_sha256": raw_mask_sha256,
+                        "raw_mask_orientation": "PDF top-down rows; captured GL bottom-up R8 rows reversed once",
+                        "width": 128,
+                        "height": 96,
+                        "bits_per_component": 8,
+                        "colorspace": "DeviceGray",
+                        "interpolate": false,
+                        "image_count": 1,
+                        "page": [128, 96],
+                        "outer_opacity": saved_alpha,
+                        "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
+                        "image_unit_to_mask_form_unit_ctm": native_mask_image_to_field_matrix(bounds).unwrap(),
+                    },
+                    "opaque_mask": {
+                        "path": opaque_mask_name,
+                        "sha256": sha256_hex(&opaque_mask_pdf),
+                        "mask_program_sha256": sha256_hex(b"{ 1 }"),
+                        "image_count": 0,
+                        "page": [128, 96],
+                        "outer_opacity": saved_alpha,
+                        "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
+                    }
                 }
             }));
         }
         let manifest = json!({
             "schema": "sdocx-inkpen2-radial-rgb-quant-pair-v1",
             "policy": "test-only half-up per-draw RGBA8 RGB recurrence; production remains continuous",
+            "mask_diagnostics": "optional native DeviceGray image and opaque luminosity-mask controls; diagnostic only",
             "radial_source_sha256": sha256_hex(include_bytes!("ink_field/radial.rs")),
             "cases": manifest_cases,
         });
