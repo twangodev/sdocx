@@ -1858,6 +1858,15 @@ mod tests {
         }
     }
 
+    fn expand_source_bounds_by_page_points(bounds: BoundingBox, padding: f64) -> BoundingBox {
+        BoundingBox {
+            x_min: bounds.x_min - padding,
+            y_min: bounds.y_min - padding,
+            x_max: bounds.x_max + padding,
+            y_max: bounds.y_max + padding,
+        }
+    }
+
     fn gl_up_records_to_svg_down(
         records: &[PdfRadialRecord],
         page_height: f32,
@@ -1914,6 +1923,44 @@ mod tests {
             assert!((mapped_x - source_x).abs() < 1e-12);
             assert!((mapped_y - source_y).abs() < 1e-12);
         }
+    }
+
+    #[test]
+    fn expanded_source_bounds_preserve_page_geometry_after_inverse_mapping() {
+        let bounds = BoundingBox {
+            x_min: 13.125,
+            y_min: 61.75,
+            x_max: 32.875,
+            y_max: 82.25,
+        };
+        let expanded = expand_source_bounds_by_page_points(bounds, 1.0);
+        let record = [20.375_f32, 73.125, 2.625, 3.375, 0.125, 0.8, 0.2, 0.4, 0.6];
+        let normalize = |bounds: BoundingBox| {
+            let width = bounds.x_max - bounds.x_min;
+            let height = bounds.y_max - bounds.y_min;
+            [
+                (f64::from(record[0]) - bounds.x_min) / width,
+                1.0 - (f64::from(record[1]) - bounds.y_min) / height,
+                f64::from(record[2]) / width,
+                f64::from(record[3]) / height,
+            ]
+        };
+        let inverse = |bounds: BoundingBox, normalized: [f64; 4]| {
+            let width = bounds.x_max - bounds.x_min;
+            let height = bounds.y_max - bounds.y_min;
+            [
+                bounds.x_min + normalized[0] * width,
+                bounds.y_min + (1.0 - normalized[1]) * height,
+                normalized[2] * width,
+                normalized[3] * height,
+            ]
+        };
+        let old_page_geometry = inverse(bounds, normalize(bounds));
+        let expanded_page_geometry = inverse(expanded, normalize(expanded));
+        for (old, expanded) in old_page_geometry.into_iter().zip(expanded_page_geometry) {
+            assert!((old - expanded).abs() < 1e-12);
+        }
+        assert_ne!(normalize(bounds), normalize(expanded));
     }
 
     #[test]
@@ -2217,10 +2264,42 @@ mod tests {
             let baseline = replace_markers(&source_pdf, &[baseline_field]).unwrap();
             let candidate =
                 replace_markers_per_draw_rgba8_for_test(&source_pdf, &[candidate_field]).unwrap();
+            let expanded_bounds = expand_source_bounds_by_page_points(bounds, 1.0);
+            let expanded_bounds_array = [
+                expanded_bounds.x_min,
+                expanded_bounds.y_min,
+                expanded_bounds.x_max,
+                expanded_bounds.y_max,
+            ];
+            let expanded_program = radial::compile(
+                &records,
+                expanded_bounds_array,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+            )
+            .unwrap();
+            let expanded_source_pdf =
+                marker_pdf_with_bounds(marker_id, false, expanded_bounds, 128.0, 96.0, saved_alpha);
+            let expanded_vector_pdf = replace_markers(
+                &expanded_source_pdf,
+                &[PdfInkField::radial(
+                    marker_id,
+                    &records,
+                    saved_alpha,
+                    PdfRadialCoverage::EnhancedMax,
+                    expanded_bounds,
+                )],
+            )
+            .unwrap();
             let baseline_name = format!("{case_id}.baseline.pdf");
             let candidate_name = format!("{case_id}.quantized.pdf");
             write_new_file(&output_dir.join(&baseline_name), &baseline);
             write_new_file(&output_dir.join(&candidate_name), &candidate);
+            let expanded_bounds_name = format!("{case_id}.expanded-source-bounds.pdf");
+            write_new_file(
+                &output_dir.join(&expanded_bounds_name),
+                &expanded_vector_pdf,
+            );
             let native_mask_pdf = replace_markers_with_mask_for_test(
                 &source_pdf,
                 &[PdfInkField::radial(
@@ -2386,6 +2465,45 @@ mod tests {
                         "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
                     }
                 }
+            });
+            case_manifest["expanded_source_bounds"] = json!({
+                "path": expanded_bounds_name,
+                "sha256": sha256_hex(&expanded_vector_pdf),
+                "baseline_vector_pdf": {
+                    "path": baseline_name,
+                    "sha256": sha256_hex(&baseline)
+                },
+                "original_bounds_source_y_down": [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
+                "expanded_bounds_source_y_down": [
+                    expanded_bounds.x_min,
+                    expanded_bounds.y_min,
+                    expanded_bounds.x_max,
+                    expanded_bounds.y_max
+                ],
+                "expansion_source_y_down_page_points": [1, 1],
+                "page_points_per_output_pixel": 1,
+                "unchanged_records_sha256": vbo_sha256,
+                "marker_page_rect_source_y_down_points": [
+                    expanded_bounds.x_min,
+                    expanded_bounds.y_min,
+                    expanded_bounds.x_max - expanded_bounds.x_min,
+                    expanded_bounds.y_max - expanded_bounds.y_min
+                ],
+                "marker_source_transform_xy": [1, 0, 0, 1, expanded_bounds.x_min, expanded_bounds.y_min],
+                "form_bbox": [0, 0, 1, 1],
+                "outer_opacity": saved_alpha,
+                "page": [128, 96],
+                "image_count": 0,
+                "program_sha256": {
+                    "rgb": sha256_hex(&expanded_program.rgb),
+                    "mask": sha256_hex(&expanded_program.mask)
+                },
+                "baseline_program_sha256": {
+                    "rgb": sha256_hex(&baseline_program.rgb),
+                    "mask": sha256_hex(&baseline_program.mask)
+                },
+                "page_geometry_invariant": "same centers/radii in page coordinates; normalized under expanded bounds then mapped by the matching expanded marker rectangle",
+                "reader_scope": "compare all 128x96 premultiplied RGBA samples; no phase fit"
             });
             if !bbox_controls.is_empty() {
                 case_manifest["bbox_controls"] = json!(bbox_controls);
