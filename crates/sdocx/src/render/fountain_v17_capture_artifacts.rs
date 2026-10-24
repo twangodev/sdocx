@@ -7,8 +7,14 @@ use super::super::vector::{ColorValue, Rectangle, Styled, Svg, ViewBox};
 use super::{Group, Paint, Scene, Transform, V16Plan, render};
 use crate::{Point, Stroke};
 use base64::Engine as _;
+use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
-use std::{fs, fs::OpenOptions, io::Write, path::PathBuf};
+use std::{
+    fs,
+    fs::OpenOptions,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
 const WIDTH: u32 = 128;
 const HEIGHT: u32 = 96;
@@ -118,12 +124,21 @@ fn decoded_native_records(case: &serde_json::Value) -> Vec<[f32; 10]> {
                 .expect("packed native Update bytes"),
         )
         .expect("native Update base64");
-    assert_eq!(
-        raw.len(),
-        case["native_source_result"]["mesh_bytes"].as_u64().unwrap() as usize
-    );
+    native_records_from_bytes(
+        &raw,
+        case["native_source_result"]["mesh_bytes"].as_u64().unwrap() as usize,
+        case["native_update_records_sha256"].as_str().unwrap(),
+    )
+}
+
+fn native_records_from_bytes(
+    raw: &[u8],
+    expected_bytes: usize,
+    expected_sha256: &str,
+) -> Vec<[f32; 10]> {
+    assert_eq!(raw.len(), expected_bytes);
     assert_eq!(raw.len() % RECORD_BYTES, 0);
-    assert_eq!(sha256(&raw), case["native_update_records_sha256"]);
+    assert_eq!(sha256(raw), expected_sha256);
     raw.as_chunks::<RECORD_BYTES>()
         .0
         .iter()
@@ -133,6 +148,16 @@ fn decoded_native_records(case: &serde_json::Value) -> Vec<[f32; 10]> {
             })
         })
         .collect()
+}
+
+fn decoded_zlib_base64(value: &str) -> Vec<u8> {
+    let compressed = base64::engine::general_purpose::STANDARD
+        .decode(value)
+        .expect("zlib base64");
+    let mut decoder = ZlibDecoder::new(compressed.as_slice());
+    let mut bytes = Vec::new();
+    decoder.read_to_end(&mut bytes).expect("zlib stream");
+    bytes
 }
 
 fn assert_mesa_source_records(records: &[[f32; 10]], mesa_case: &serde_json::Value) {
@@ -372,6 +397,163 @@ fn frame_metrics(native: &[u8], rust: &[u8]) -> serde_json::Value {
     })
 }
 
+fn vector_pdf(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize) {
+    let bytes =
+        crate::pdf::render_native_scene_pdf_for_test(retained, &crate::PdfOptions::default())
+            .expect("SDK retained-scene PDF writer exports Fountain SVG");
+    let pdf = lopdf::Document::load_mem(&bytes).expect("exported PDF parses");
+    assert_eq!(pdf.get_pages().len(), 1);
+    let mut image_count = 0;
+    let mut shading_count = 0;
+    for object in pdf.objects.values() {
+        if let Ok(stream) = object.as_stream() {
+            image_count += usize::from(
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .ok()
+                    == Some(b"Image".as_slice()),
+            );
+        }
+        if let Ok(dict) = object.as_dict() {
+            shading_count += usize::from(
+                dict.get(b"ShadingType")
+                    .and_then(lopdf::Object::as_i64)
+                    .ok()
+                    == Some(3),
+            );
+        }
+    }
+    assert_eq!(
+        image_count, 0,
+        "captured partial-coverage output remains vector"
+    );
+    assert!(shading_count > 0, "PDF retains radial vector shadings");
+    (bytes, image_count, shading_count)
+}
+
+#[test]
+fn captured_fountain_v17_partial_alpha_matches_mesa_goldens() {
+    const FIXTURE: &str =
+        include_str!("../../../../conformance/fountain-v17-partial-alpha-native-mesa.json");
+
+    assert_eq!(
+        sha256(FIXTURE.as_bytes()),
+        "6a0b7d502388d762ad5f27772ed9591cb255f760a3d859fe39509e2483700bfe"
+    );
+    let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+    assert_eq!(
+        fixture["schema"],
+        "sdocx-fountain-v17-partial-alpha-native-mesa-v1"
+    );
+    let provenance = &fixture["provenance"];
+    assert_eq!(
+        provenance["producer_receipt_sha256"],
+        PRODUCER_RECEIPT_SHA256
+    );
+    assert_eq!(
+        provenance["mesa_receipt_sha256"],
+        MESA_SOURCE_RECEIPT_SHA256
+    );
+    assert_eq!(provenance["producer_script_sha256"], PRODUCER_SHA256);
+    assert_eq!(
+        provenance["fragment_shader_sha256"],
+        "db4dcc936a046b8479afaab3824f8b1cbe80a92bb465120ba7c6f1f05acd3215"
+    );
+    assert_eq!(
+        provenance["producer_native_library_sha256"]["FountainPen"],
+        "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+    );
+    assert_eq!(
+        provenance["mesa_native_library_sha256"]["Renderer"],
+        "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+    );
+    assert_eq!(
+        fixture["frame"]["size_px"],
+        serde_json::json!([WIDTH, HEIGHT])
+    );
+    assert_eq!(
+        fixture["frame"]["inverse_scale_xy"],
+        serde_json::json!([1.0, 1.0])
+    );
+    assert_eq!(fixture["frame"]["enhanced_aa"], false);
+    assert_eq!(
+        fixture["frame"]["background_rgba8"],
+        serde_json::json!([10, 20, 31, 102])
+    );
+    assert_eq!(fixture["cases"].as_array().unwrap().len(), 2);
+
+    for (case, expected_name) in fixture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(["forward", "reverse"])
+    {
+        assert_eq!(case["name"], expected_name);
+        assert_eq!(case["native_record_count"], 117);
+        assert_eq!(case["native_record_bytes"], 117 * RECORD_BYTES);
+        assert_eq!(
+            case["native_records_sha256"], case["mesa_source_update_records_sha256"],
+            "producer and Mesa consumer record streams"
+        );
+        let source = &case["source"];
+        assert_eq!(source["points"].as_array().unwrap().len(), 20);
+        assert_eq!(source["pressures"].as_array().unwrap().len(), 20);
+        assert_eq!(source["timestamps"].as_array().unwrap().len(), 20);
+
+        let native_record_bytes =
+            decoded_zlib_base64(case["native_records_zlib_base64"].as_str().unwrap());
+        let native = native_records_from_bytes(
+            &native_record_bytes,
+            case["native_record_bytes"].as_u64().unwrap() as usize,
+            case["native_records_sha256"].as_str().unwrap(),
+        );
+        assert_eq!(native.len(), 117);
+        let stroke = source_stroke(source);
+        let (prepared, _) = compare_prepared_to_native(&stroke, source, &native);
+        let retained = transformed_scene(&prepared);
+        let rust_frame = raster_svg(&retained.page.svg);
+
+        let native_raw = decoded_zlib_base64(case["mesa_frame_zlib_base64"].as_str().unwrap());
+        assert_eq!(native_raw.len(), (WIDTH * HEIGHT * 4) as usize);
+        assert_eq!(sha256(&native_raw), case["mesa_frame_sha256"]);
+        let native_top_down = reverse_native_rows(&native_raw);
+        let metrics = frame_metrics(&native_top_down, &rust_frame);
+        assert_eq!(metrics["native_changed_pixels_vs_background"], 130);
+        assert_eq!(metrics["rust_changed_pixels_vs_background"], 130);
+        for (pixel, (native, rendered)) in native_top_down
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(rust_frame.as_chunks::<4>().0)
+            .enumerate()
+        {
+            assert_eq!(
+                *native != [10, 20, 31, 102],
+                *rendered != [10, 20, 31, 102],
+                "{expected_name} changed support at pixel {pixel}"
+            );
+        }
+        assert_eq!(
+            metrics["native_bbox_topdown_xyxy"],
+            serde_json::json!([41, 0, 42, 64])
+        );
+        assert_eq!(&native_top_down[..4], &[10, 20, 31, 102]);
+        assert_eq!(&rust_frame[..4], &[10, 20, 31, 102]);
+        assert!(
+            metrics["max_absolute_channel_error"].as_u64().unwrap() <= 8,
+            "{} full-frame RGBA max error: {}",
+            expected_name,
+            metrics["max_absolute_channel_error"]
+        );
+
+        let (_, image_count, shading_count) = vector_pdf(&retained);
+        assert_eq!(image_count, 0);
+        assert!(shading_count > 0);
+    }
+}
+
 #[test]
 #[ignore = "writes paired captured Fountain V17 SVG/PDF artifacts when capture/output directories are set"]
 fn write_fountain_v17_capture_svg_pdf_pairs() {
@@ -497,38 +679,7 @@ fn write_fountain_v17_capture_svg_pdf_pairs() {
         );
         assert_eq!(&raster[..4], &[10, 20, 31, 102], "Rust SVG clear color");
 
-        let pdf_bytes =
-            crate::pdf::render_native_scene_pdf_for_test(&retained, &crate::PdfOptions::default())
-                .expect("SDK retained-scene PDF writer exports Fountain SVG");
-        let pdf = lopdf::Document::load_mem(&pdf_bytes).expect("exported PDF parses");
-        assert_eq!(pdf.get_pages().len(), 1);
-        let mut image_count = 0;
-        let mut shading_count = 0;
-        for object in pdf.objects.values() {
-            if let Ok(stream) = object.as_stream() {
-                image_count += usize::from(
-                    stream
-                        .dict
-                        .get(b"Subtype")
-                        .and_then(lopdf::Object::as_name)
-                        .ok()
-                        == Some(b"Image".as_slice()),
-                );
-            }
-            if let Ok(dict) = object.as_dict() {
-                shading_count += usize::from(
-                    dict.get(b"ShadingType")
-                        .and_then(lopdf::Object::as_i64)
-                        .ok()
-                        == Some(3),
-                );
-            }
-        }
-        assert_eq!(
-            image_count, 0,
-            "captured partial-coverage output remains vector"
-        );
-        assert!(shading_count > 0, "PDF retains radial vector shadings");
+        let (pdf_bytes, image_count, shading_count) = vector_pdf(&retained);
 
         let prefix = format!("{index}-{name}");
         let svg_path = output_dir.join(format!("{prefix}.svg"));
