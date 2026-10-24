@@ -397,6 +397,75 @@ fn page_content_streams(
 
 type PdfResourceSignatures = BTreeMap<Vec<u8>, BTreeMap<Vec<u8>, String>>;
 
+fn pdf_object_signature(
+    pdf: &PdfDocument,
+    object: &Object,
+    active: &mut HashSet<ObjectId>,
+) -> Result<String, String> {
+    match object {
+        Object::Reference(id) => {
+            if !active.insert(*id) {
+                return Ok("cycle".into());
+            }
+            let result = pdf_object_signature(
+                pdf,
+                pdf.get_object(*id).map_err(|error| error.to_string())?,
+                active,
+            );
+            active.remove(id);
+            result
+        }
+        Object::Null => Ok("null".into()),
+        Object::Boolean(value) => Ok(format!("bool:{value}")),
+        Object::Integer(value) => Ok(format!("int:{value}")),
+        Object::Real(value) => Ok(format!("real:{:08x}", value.to_bits())),
+        Object::Name(value) => Ok(format!("name:{value:?}")),
+        Object::String(value, format) => Ok(format!("string:{format:?}:{value:?}")),
+        Object::Array(items) => Ok(format!(
+            "array:[{}]",
+            items
+                .iter()
+                .map(|item| pdf_object_signature(pdf, item, active))
+                .collect::<Result<Vec<_>, _>>()?
+                .join(",")
+        )),
+        Object::Dictionary(dict) => {
+            let mut entries = dict.iter().collect::<Vec<_>>();
+            entries.sort_by(|left, right| left.0.cmp(right.0));
+            let mut values = Vec::with_capacity(entries.len());
+            for (key, value) in entries {
+                values.push(format!(
+                    "{key:?}={}",
+                    pdf_object_signature(pdf, value, active)?
+                ));
+            }
+            Ok(format!("dict:{{{}}}", values.join(",")))
+        }
+        Object::Stream(stream) => {
+            let mut dictionary = stream.dict.clone();
+            dictionary.remove(b"Length");
+            let dictionary = pdf_object_signature(pdf, &Object::Dictionary(dictionary), active)?;
+            let encoded_hash = Sha256::digest(&stream.content);
+            // Preserve encoded bytes and the complete filter dictionary;
+            // some real image filters are intentionally not decodable here.
+            Ok(format!("stream:{dictionary}:encoded={encoded_hash:x}"))
+        }
+    }
+}
+
+fn pdf_page_group_signature(
+    pdf: &PdfDocument,
+    page_id: ObjectId,
+) -> Result<Option<String>, String> {
+    let page = pdf
+        .get_dictionary(page_id)
+        .map_err(|error| error.to_string())?;
+    page.get(b"Group")
+        .ok()
+        .map(|group| pdf_object_signature(pdf, group, &mut HashSet::new()))
+        .transpose()
+}
+
 fn pdf_resource_signatures(
     pdf: &PdfDocument,
     page_id: ObjectId,
@@ -436,59 +505,6 @@ fn pdf_resource_signatures(
         }
     }
 
-    fn signature(
-        pdf: &PdfDocument,
-        object: &Object,
-        active: &mut HashSet<ObjectId>,
-    ) -> Result<String, String> {
-        match object {
-            Object::Reference(id) => {
-                if !active.insert(*id) {
-                    return Ok("cycle".into());
-                }
-                let result = signature(
-                    pdf,
-                    pdf.get_object(*id).map_err(|error| error.to_string())?,
-                    active,
-                );
-                active.remove(id);
-                result
-            }
-            Object::Null => Ok("null".into()),
-            Object::Boolean(value) => Ok(format!("bool:{value}")),
-            Object::Integer(value) => Ok(format!("int:{value}")),
-            Object::Real(value) => Ok(format!("real:{:08x}", value.to_bits())),
-            Object::Name(value) => Ok(format!("name:{value:?}")),
-            Object::String(value, format) => Ok(format!("string:{format:?}:{value:?}")),
-            Object::Array(items) => Ok(format!(
-                "array:[{}]",
-                items
-                    .iter()
-                    .map(|item| signature(pdf, item, active))
-                    .collect::<Result<Vec<_>, _>>()?
-                    .join(",")
-            )),
-            Object::Dictionary(dict) => {
-                let mut entries = dict.iter().collect::<Vec<_>>();
-                entries.sort_by(|left, right| left.0.cmp(right.0));
-                let mut values = Vec::with_capacity(entries.len());
-                for (key, value) in entries {
-                    values.push(format!("{key:?}={}", signature(pdf, value, active)?));
-                }
-                Ok(format!("dict:{{{}}}", values.join(",")))
-            }
-            Object::Stream(stream) => {
-                let mut dictionary = stream.dict.clone();
-                dictionary.remove(b"Length");
-                let dictionary = signature(pdf, &Object::Dictionary(dictionary), active)?;
-                let encoded_hash = Sha256::digest(&stream.content);
-                // Preserve encoded bytes and the complete filter dictionary;
-                // some real image filters are intentionally not decodable here.
-                Ok(format!("stream:{dictionary}:encoded={encoded_hash:x}"))
-            }
-        }
-    }
-
     let Some(resource_object) = inherited_resource(pdf, page_id)? else {
         return Ok(BTreeMap::new());
     };
@@ -501,7 +517,10 @@ fn pdf_resource_signatures(
         match dereference(pdf, category_object)? {
             Object::Dictionary(category_dict) => {
                 for (name, value) in category_dict.iter() {
-                    entries.insert(name.clone(), signature(pdf, value, &mut HashSet::new())?);
+                    entries.insert(
+                        name.clone(),
+                        pdf_object_signature(pdf, value, &mut HashSet::new())?,
+                    );
                 }
             }
             // ProcSet and other non-dictionary resource values are compared as
@@ -509,7 +528,7 @@ fn pdf_resource_signatures(
             _ => {
                 entries.insert(
                     Vec::new(),
-                    signature(pdf, category_object, &mut HashSet::new())?,
+                    pdf_object_signature(pdf, category_object, &mut HashSet::new())?,
                 );
             }
         }
@@ -1309,6 +1328,7 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
         source_pdf_sha256: &'static str,
         source_page_count: usize,
         output_page_count: usize,
+        grouped_source_page_count: usize,
         fixed_axis_size: Option<u32>,
     }
 
@@ -1321,6 +1341,7 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
             source_pdf_sha256: "f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279",
             source_page_count: 1,
             output_page_count: 7,
+            grouped_source_page_count: 0,
             fixed_axis_size: Some(1080),
         },
         CorpusCase {
@@ -1331,6 +1352,7 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
             source_pdf_sha256: "1cd5ae14ddbcccc29ab7e0e8842aa2777d3c1d5c35463fcc7e6d0e7469afb689",
             source_page_count: 20,
             output_page_count: 20,
+            grouped_source_page_count: 10,
             fixed_axis_size: None,
         },
     ];
@@ -1501,6 +1523,7 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
             .collect::<Vec<_>>();
 
         let mut previous_output_page = 0_u32;
+        let mut grouped_source_page_count = 0_usize;
         for source_index in 0..case.source_page_count {
             let source_number = u32::try_from(source_index + 1).unwrap();
             let source_id = source_pages[&source_number];
@@ -1582,6 +1605,26 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
                 "{} source page {source_index} MediaBox changed",
                 case.label
             );
+            let source_group =
+                pdf_page_group_signature(&source, source_id).unwrap_or_else(|error| {
+                    panic!("{} source page {source_index} Group: {error}", case.label)
+                });
+            let output_id = output_pages[&output_number];
+            let output_group =
+                pdf_page_group_signature(&output_pdf, output_id).unwrap_or_else(|error| {
+                    panic!("{} output page {output_number} Group: {error}", case.label)
+                });
+            assert_eq!(
+                output_group, source_group,
+                "{} source page {source_index} page-level Group changed",
+                case.label
+            );
+            grouped_source_page_count += usize::from(source_group.is_some());
         }
+        assert_eq!(
+            grouped_source_page_count, case.grouped_source_page_count,
+            "{} source grouped-page count in pinned corpus",
+            case.label
+        );
     }
 }
