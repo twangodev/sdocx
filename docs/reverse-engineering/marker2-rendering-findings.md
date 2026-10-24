@@ -147,6 +147,15 @@ one byte level. Typed composite color uniforms and output alpha confirm that
 partial ARGB alpha is applied after MAX coverage; all three alpha-128 red
 planes remain identical to their opaque canonical controls.
 
+A later 12-case host-Mesa RTV2 matrix preserves the 22-sample saved-redraw
+vector at widths 1–3, two fractional caller-matrix phases and ARGB alpha
+255/128. The finite 2×2 model matches every red mask plane and composite
+alpha byte for byte, with packed alpha applied after MAX. Continuous-derivative
+vector shells can reduce intensity error but lose support overlap in resvg and
+MuPDF, so they are not used by the Rust renderer. These captures explicitly
+bridge the cleared RT+88 render vector; they do not establish native ownership
+transfer, archive or Samsung-device parity.
+
 ## Shared point generation
 
 Disassembly comparison establishes the same operations and control flow for
