@@ -388,11 +388,13 @@ they are separate from Rust decoding or retaining the original encoded bytes.
 
 Native Restore narrows the first widened coordinate pair with `FCVTN`
 (`0x2ed438`), then accumulates coordinate and float-channel deltas in f32
-(`0x2ed614`, `0x2ed624`, `0x2ed684`, `0x2ed694`). Rust retains the wire seed and
-accumulates deltas in f64. One fractional third X is `150.2874984741211` in Rust
-and `150.28750610351562` in native PointF. All 126 captured Rust samples and all
-captured float channels agree with native words after narrowing; this finite
-agreement does not establish general equivalence of f64 and repeated f32 sums.
+(`0x2ed614`, `0x2ed624`, `0x2ed684`, `0x2ed694`). The historical SDK replay below
+retained the wire seed and accumulated deltas in f64: one fractional third X
+was `150.2874984741211`, versus `150.28750610351562` in native PointF. Its 126
+captured samples and float channels agreed with native words after narrowing;
+that finite agreement does not establish general equivalence of f64 and repeated
+f32 sums. The current Rust decoder narrows compressed coordinate seeds and
+accumulates coordinate and float-channel deltas in f32, matching native precision.
 
 Supplied timestamps `[2147483646,-2147483648,-2147483647]` restore as those native
 signed 32-bit words; Rust's i64 delta accumulation yields
