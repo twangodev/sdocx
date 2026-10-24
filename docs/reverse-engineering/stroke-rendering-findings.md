@@ -150,6 +150,16 @@ Source-derived fringes reduce amplitude error but retain support/PDF tradeoffs.
 Matrix receipt SHA-256:
 `cc5379bc06dabd33f46e25fe9da4a5fea87f11c53812b3339c6ab9658847fde8`.
 
+A second matrix holds that stream and opaque paint fixed across 56 cases:
+projected diameters 0.5, 1, 2, 3, 4, 8 and 16 pixels, four XY phases, and
+0°/45° rotations. All 112 red/alpha planes pass integrity and stream-join
+checks with zero GL errors. An offline aligned 2×2 derivative model differs
+by at most three alpha and two red byte values; continuous analytic derivatives are less
+accurate. Unchanged source circles overpaint native support in both resvg and
+MuPDF. These remain component comparisons, not full Rust exports or device
+parity. Matrix receipt SHA-256:
+`ff7d825dded274cd851547185293b3be4e6b8184ec51601c4f6599587cc6d6fe`.
+
 ### Marker2 and shared smoothing helpers
 
 In `libSPenMarker2.so`, V2 saved-event redraw calls `drawLine` at `0x22a24`
