@@ -275,6 +275,14 @@ is 512 records and 1 MiB of calculator code; enhanced active-gradient admission 
 Rust tests execute the generated programs against the source-over/normalization
 law and check retained vector export of the native 900-byte stream at three
 scales and zero/partial/opaque alpha. This does not establish pixel parity.
+A test-only per-draw RGBA8 color recurrence was compared through the same marker/Form
+path against all six enhanced native gradient frames in MuPDF and PDFium. The paired
+PDFs preserve caller-owned saved alpha and map the captured GL-up coordinates into
+SVG page coordinates. Full-frame premultiplied RGBA MAE changes are small and mixed
+(absolute changes below 0.002 byte); alpha is identical between each pair. This does
+not justify enabling quantization: continuous production output and gradient admission
+remain unchanged. The Rust opt-in writer and calculator controls retain the experiment;
+PDF shading/soft-mask coverage sampling remains the larger unresolved residual.
 Two-/three-stamp scratch controls match the analytic reference within 1–2 bytes
 in PDFium. Across the twelve 25-record exports, direct MuPDF evaluation of the
 emitted mask functions matches the analytic field within 0.005 alpha byte;
