@@ -705,22 +705,19 @@ impl V16Plan {
                 if coverage != 1.0 || stamp.extent_x < self.inverse_scale {
                     return None;
                 }
-                let [red, green, blue] = stamp.gradient_key.rgb?;
+                let [red, green, blue] = match stamp.gradient_key.rgb {
+                    Some(rgb) => rgb.map(f32::from_bits),
+                    None => [
+                        f32::from(self.color.r) / 255.0,
+                        f32::from(self.color.g) / 255.0,
+                        f32::from(self.color.b) / 255.0,
+                    ],
+                };
                 let radius = stamp.extent_x - 0.5 * self.inverse_scale;
                 if !radius.is_finite() || radius < 0.0 {
                     return None;
                 }
-                Some([
-                    stamp.x,
-                    stamp.y,
-                    radius,
-                    radius,
-                    0.0,
-                    1.0,
-                    f32::from_bits(red),
-                    f32::from_bits(green),
-                    f32::from_bits(blue),
-                ])
+                Some([stamp.x, stamp.y, radius, radius, 0.0, 1.0, red, green, blue])
             })
             .collect()
     }
@@ -728,7 +725,9 @@ impl V16Plan {
     fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
         #[cfg(feature = "pdf")]
         let native_ink_id = if svg.retains_text() {
-            self.radial_circle_records()
+            (paint.fountain_v17_rgb.is_some() || paint.opacity == 1.0)
+                .then(|| self.radial_circle_records())
+                .flatten()
                 .zip(self.bounds)
                 .and_then(|(records, bounds)| {
                     svg.native_ink()
@@ -2066,6 +2065,70 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn v16_opaque_uniform_stamps_admit_native_circles_without_rgb_sidecar() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let make_paint = |opacity| {
+            let mut paint = crate::prepare_stroke(&stroke, false);
+            paint.profile = Some("FountainPen");
+            paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }]);
+            paint.dot_radii = Some(vec![1.5]);
+            paint.dot_directions = None;
+            paint.bounds = Some(BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 64.0,
+                y_max: 64.0,
+            });
+            paint.color = "#336699".into();
+            paint.opacity = opacity;
+            paint.fountain_v17_rgb = None;
+            paint
+        };
+        let render_retained = |paint: &PreparedStroke<'_>| {
+            let mut scene = Scene::new(Svg::new().width(64).height(64));
+            scene.retain_text();
+            assert!(render(&mut scene, paint, false, None));
+            let ink = scene.take_native_ink();
+            let svg = scene.finish();
+            (svg, ink)
+        };
+
+        let (svg, ink) = render_retained(&make_paint(1.0));
+        let entries = ink.iter().collect::<Vec<_>>();
+        assert_eq!(entries.len(), 1);
+        let crate::render::native_ink::NativeInkPayload::RadialCircles {
+            records,
+            saved_alpha,
+        } = &entries[0].1.payload
+        else {
+            panic!("expected ordinary V16 native radial-circle payload");
+        };
+        assert_eq!(
+            &records[0][6..9],
+            &[
+                0x33 as f32 / 255.0,
+                0x66 as f32 / 255.0,
+                0x99 as f32 / 255.0,
+            ]
+        );
+        assert_eq!(*saved_alpha, 1.0);
+        assert!(
+            svg.contains("fill=\""),
+            "ordinary V16 SVG geometry remains emitted"
+        );
+
+        let (_, partial_alpha_ink) = render_retained(&make_paint(0.5));
+        assert!(
+            partial_alpha_ink.is_empty(),
+            "partial saved ARGB alpha remains on the existing PDF shading path"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn v17_rainbow_pdf_uses_bounded_circles_and_falls_back_atomically() {
         let render_one = |radius: f64, retained: bool, count: usize| {
             let reference: serde_json::Value =
@@ -2306,3 +2369,10 @@ mod tests {
 #[cfg(all(test, feature = "serde", feature = "pdf"))]
 #[path = "fountain_v17_capture_artifacts.rs"]
 mod capture_artifacts;
+
+// Source-only writer for the actual persisted HF02 AS18 / GLV16 capture. The
+// writer is ignored and opt-in; it consumes retained V14 capture receipts and
+// does not change production rendering or execute native code.
+#[cfg(all(test, feature = "serde", feature = "pdf"))]
+#[path = "fountain_v16_as18_capture_artifacts.rs"]
+mod as18_v16_capture_artifacts;
