@@ -2073,7 +2073,9 @@ fn placed_image_alpha(transparency: f32) -> u8 {
 }
 
 fn render_placed_image_content(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
-    if image.original_bbox.is_none()
+    let simple_original_crop = image.original_bbox.is_none()
+        || (image.border_media_id.is_none() && image.original_media_id.is_none());
+    if simple_original_crop
         && image
             .rotation_degrees
             .is_none_or(|rotation| rotation.is_finite() && rotation == 0.0)
@@ -2082,10 +2084,10 @@ fn render_placed_image_content(svg: &mut Scene, image: &PlacedImage, media_asset
             image.media_index.and_then(|index| media_assets.get(index)),
         )
         && asset.mime_type == "image/png"
-        && let Some(cropped_png) = image_crop::crop_rgba8_png(&asset.data, crop)
+        && let Some(cropped_png) = image_crop::crop_rgb8_or_rgba8_png(&asset.data, crop)
     {
-        // Keep this an SVG image at the original placement bounds. Only the
-        // source pixels are cropped, so PDF export retains its image XObject.
+        // Keep this an SVG image at the displayed bounds. Only exact source
+        // pixels are copied, so PDF export retains its image XObject.
         render_image_data(svg, image.bbox, None, &cropped_png, "image/png");
         return;
     }
@@ -4747,6 +4749,132 @@ mod tests {
         MediaAsset, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType,
         PageObjectContent, PlacedImage, RichTextObjectContent, RichTextObjectSpan,
     };
+
+    #[cfg(feature = "pdf")]
+    fn test_rgb_png() -> Vec<u8> {
+        let pixels = [
+            11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43, // y=0
+            51, 52, 53, 61, 62, 63, 71, 72, 73, 81, 82, 83, // y=1
+            91, 92, 93, 101, 102, 103, 111, 112, 113, 121, 122, 123, // y=2
+        ];
+        let mut bytes = Vec::new();
+        let mut encoder = png::Encoder::new(&mut bytes, 4, 3);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder
+            .write_header()
+            .unwrap()
+            .write_image_data(&pixels)
+            .unwrap();
+        bytes
+    }
+
+    #[cfg(feature = "pdf")]
+    fn test_gamma_rgb_png() -> Vec<u8> {
+        let pixels = [11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43];
+        let mut bytes = Vec::new();
+        let mut encoder = png::Encoder::new(&mut bytes, 4, 1);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.set_source_gamma(png::ScaledFloat::new(0.45455));
+        encoder
+            .write_header()
+            .unwrap()
+            .write_image_data(&pixels)
+            .unwrap();
+        bytes
+    }
+
+    #[cfg(feature = "pdf")]
+    fn render_test_placed_image(image: PlacedImage, data: Vec<u8>) -> String {
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![PageElement::PlacedImage(image).into()];
+        let mut document = document(page);
+        document.metadata.media_assets = vec![MediaAsset {
+            name: "crop.png".to_owned(),
+            archive_id: Some(0),
+            mime_type: "image/png".to_owned(),
+            data,
+        }];
+        render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg
+    }
+
+    #[cfg(feature = "pdf")]
+    fn simple_original_crop(rotation_degrees: Option<f64>) -> PlacedImage {
+        PlacedImage {
+            bbox: BoundingBox {
+                x_min: 20.0,
+                y_min: 30.0,
+                x_max: 70.0,
+                y_max: 50.0,
+            },
+            rotation_degrees,
+            media_id: Some(0),
+            media_index: Some(0),
+            fill_effect_transparency: 0.0,
+            crop_rect: Some([1, 1, 3, 2]),
+            original_bbox: Some(BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 4.0,
+                y_max: 3.0,
+            }),
+            border_media_id: None,
+            original_media_id: None,
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn original_bbox_rgb_and_rgba_crops_use_display_bounds() {
+        for source in [
+            test_rgb_png(),
+            include_bytes!("../tests/assets/crop-quadrants.png").to_vec(),
+        ] {
+            let svg = render_test_placed_image(simple_original_crop(Some(0.0)), source);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let images = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .collect::<Vec<_>>();
+            assert_eq!(images.len(), 1);
+            let image = images[0];
+            for (attribute, expected) in
+                [("x", 20.0), ("y", 30.0), ("width", 50.0), ("height", 20.0)]
+            {
+                let actual = image.attribute(attribute).unwrap().parse::<f64>().unwrap();
+                assert_eq!(actual, expected, "attribute {attribute}");
+            }
+            assert!(
+                image
+                    .attribute("href")
+                    .is_some_and(|href| href.starts_with("data:image/png;base64,"))
+            );
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn rotated_or_unsupported_original_crops_keep_the_full_source_path() {
+        let mut extra_media = simple_original_crop(None);
+        extra_media.border_media_id = Some(7);
+        for (image, source) in [
+            (simple_original_crop(Some(15.0)), test_rgb_png()),
+            (extra_media, test_rgb_png()),
+            (simple_original_crop(None), test_gamma_rgb_png()),
+        ] {
+            let svg = render_test_placed_image(image, source);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let image = xml
+                .descendants()
+                .find(|node| node.has_tag_name("image"))
+                .unwrap();
+            assert_eq!(image.attribute("width"), Some("4"));
+            assert_eq!(image.attribute("height"), Some("3"));
+        }
+    }
 
     #[cfg(all(feature = "pdf", feature = "serde"))]
     #[test]

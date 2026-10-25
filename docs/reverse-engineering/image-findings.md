@@ -164,20 +164,30 @@ serialized first/last selection would not reproduce the native route above.
 
 ## Rendering limits
 
-Crop rectangles with an original-image placement are rendered by clipping the
-original placement to the displayed bounds. For an in-bounds integer crop with
-no original placement or nonzero rotation, metadata-free RGBA8 PNGs use an exact
-row copy and embed the cropped pixels at the existing displayed bounds. The
-V33 nonuniform-alpha upscale capture confirms native crop-edge clamping; the
-paired PDF crop reduced MuPDF alpha error from 1,006 to 137 (maximum 31 to 1),
-while PDFium remained at 203. This improves that crop-edge case but leaves
-sampler and alpha-rounding differences; it does not establish full parity.
-Other inputs use the geometry path, which maps an admitted in-bounds
-source-pixel crop onto the displayed bounds using encoded image dimensions.
-This follows the source-rectangle/full-destination mapping in Drawing
-`getResizedImageBitmap` (`0x86478`) and `drawImageBitmap` (`0x84b20`), without
-reproducing the native intermediate bitmap or its filtering. The conservative
-crop-only feature warning remains; out-of-bounds/unreadable crops and
+For an in-bounds integer crop at zero rotation, RGB8/RGBA8 PNGs can use an
+exact row copy placed at the displayed bounds, including simple images that
+store an original-placement rectangle. Valid `sBIT` and `sRGB` chunks are
+preserved; other metadata, companion media and rotated crops retain the
+existing geometry fallback.
+
+The PDF route is distinct from screen Drawing: `ObjectImagePDFWriter::WriteObject`
+(`0x37a4cc`) calls `getCropBitmap` (`0x37a728`) to draw the selected source rect
+into a crop-sized bitmap before writing it at the displayed bounds. That path
+does not use OriginalRect as its placement. In real fixture 03, the reference
+PDF embeds a 332×172 crop. Matching that source geometry reduces page-3 changed
+pixels from 0.0822% to 0.0118% and crop-interior RGB MAE from 3.33 to 1.92 bytes;
+the other two pages remain byte-identical when rasterized. The native crop RGB
+is not a direct source copy, so its canvas filtering/color conversion remains
+unreconstructed.
+
+The V33 nonuniform-alpha upscale capture confirms native crop-edge clamping;
+its paired PDF crop reduced MuPDF alpha error from 1,006 to 137 (maximum 31 to
+1), while PDFium remained at 203. These bounded cases do not establish full
+sampler or alpha-rounding parity. Unsupported inputs retain the geometry path:
+crop-only placement uses encoded image dimensions, while stored original
+placement is clipped to the displayed bounds. Screen Drawing's separate
+`getResizedImageBitmap` (`0x86478`) / `drawImageBitmap` (`0x84b20`) cache path and
+its filtering are not reproduced. Out-of-bounds/unreadable crops and
 border/original media IDs remain incomplete.
 Type-3 fill-effect transparency is rendered with native byte-alpha quantization;
 see the [paired controls](image-effects-findings.md#fill-transparency-is-fractional-and-applies-before-borders-and-hint-text).
