@@ -5,7 +5,8 @@
 //! Geometry reuses the production SmPath `Quad`; the 2,688-byte fixture is
 //! the six-f32-lane RTV1 stream from frozen baseline/pressure/size/far captures.
 //! Records are native AddStartPoint/AddPoint/AddEndPoint input tuples.
-//! RTV1 mesh expansion and painted output remain unverified by these tests.
+//! Expanded RTV1 triangle meshes are checked separately against four native captures.
+//! GPU Update/Draw and painted output remain unverified by these tests.
 //! This module does not enable a production Montblanc renderer.
 use super::path::{P, Quad};
 use sha2::{Digest, Sha256};
@@ -292,6 +293,145 @@ mod tests {
                         case.name
                     );
                 }
+            }
+        }
+    }
+
+    // Expanded source vertices, independent of the saved-path sampler above.
+    // Actual native Add* bodies executed; final vectors are packed x,y,u,v,scalar.
+    type Vertex = [f32; 5];
+
+    /// AddStartPoint and AddEndPoint use the same four transformed cap corners.
+    /// Keep each f32 operation separate and in the order visible in both DSO bodies.
+    fn cap_vertices(input: [f32; 6]) -> [Vertex; 6] {
+        let [x, y, z, dx, dy, scalar] = input;
+        let h = z + 0.5_f32;
+        let dx_minus_dy = dx - dy;
+        let dy_plus_dx = dy + dx;
+        let x_a = x + h * dx_minus_dy;
+        let y_a = y + h * dy_plus_dx;
+        let x_b = x + h * dy_plus_dx;
+        let y_b = y - h * dx_minus_dy;
+        let x_c = x - h * dy_plus_dx;
+        let y_c = y + h * dx_minus_dy;
+        let x_d = x - h * dx_minus_dy;
+        let y_d = y - h * dy_plus_dx;
+        [
+            [x_a, y_a, 0.0, 0.0, scalar],
+            [x_b, y_b, 1.0, 0.0, scalar],
+            [x_c, y_c, 0.0, 1.0, scalar],
+            [x_c, y_c, 0.0, 1.0, scalar],
+            [x_d, y_d, 1.0, 1.0, scalar],
+            [x_b, y_b, 1.0, 0.0, scalar],
+        ]
+    }
+
+    /// One AddPoint contributes exactly six vertices to the main vector.
+    /// These equations and triangle/UV order follow the sequential fmul/fadd/fsub
+    /// instructions in DSO RVA 0x20990..0x21a1c; no fused multiply-add is used.
+    fn point_vertices(input: [f32; 6]) -> [Vertex; 6] {
+        let [x, y, z, dx, dy, scalar] = input;
+
+        let z_dx_minus_dy = z * (dx - dy);
+        let half_dy = dy * 0.5_f32;
+        let a_x = (x + z_dx_minus_dy) - half_dy;
+
+        let z_dy_plus_dx = z * (dy + dx);
+        let negative_half_dx = dx * -0.5_f32;
+        let a_y = (y + z_dy_plus_dx) - negative_half_dx;
+
+        let b_x = (x + z_dy_plus_dx) + half_dy;
+        let z_dy_minus_dx = z * (dy - dx);
+        let b_y = negative_half_dx + (y + z_dy_minus_dx);
+
+        let c_x = (x - z_dy_plus_dx) - half_dy;
+        let half_dx = dx * 0.5_f32;
+        let c_y = (y + z_dx_minus_dy) + half_dx;
+
+        let d_x = (x - z_dx_minus_dy) + half_dy;
+        let z_dx_plus_dy = z * (dx + dy);
+        let d_y = (y - z_dx_plus_dy) - half_dx;
+
+        [
+            [a_x, a_y, 0.0, 1.0, scalar],
+            [b_x, b_y, 1.0, 1.0, scalar],
+            [c_x, c_y, 0.0, 0.0, scalar],
+            [c_x, c_y, 0.0, 0.0, scalar],
+            [d_x, d_y, 1.0, 0.0, scalar],
+            [b_x, b_y, 1.0, 1.0, scalar],
+        ]
+    }
+
+    #[test]
+    fn saved_routes_match_native_expanded_triangle_meshes() {
+        // Root-native mesh capture V2; DSO SHA pinned at the module header.
+        // Capture SHA-256s (baseline, pressure, size, far endpoint):
+        // 7273ca60078c8fdd675d0beb874d9912b4ba08036425a234e544f49a77914e6c
+        // 932996cae976178e9088e367f195b8a1ee8543ad45a525d2a148e9cc37dbe807
+        // deb75a3941ca003a0af008107b8728755ccd1f554824d4a0ca43828a6688a9a7
+        // b72a974e9760b1527e989b4b0d50a5337d4770306bcdd07aa7e5724220679034
+        // Arrays are vector fields +200 (main), +208 (start), +216 (end).
+        let expected_hashes = [
+            [
+                "b04896eb84c4f3b3861a5757040fffbaa3c479320f690f702add573443c64ea3",
+                "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "9cfc4a174ce55974c2d8411793f88854517cf0a02c861e3649c7dd6330bf701f",
+            ],
+            [
+                "f2a4d0ff16d3da795d8d5e382d77e7a56574a7717e400d28d2ebf314160b20d7",
+                "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "9cfc4a174ce55974c2d8411793f88854517cf0a02c861e3649c7dd6330bf701f",
+            ],
+            [
+                "d336c65a1c62e3896e0707035cbf35bf709dcd789049bfe5fabc760689583830",
+                "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "20efc2c58578e8acf26e6e3a3e29cef3ea1b4423b5bbc8d27d9d89ed529e93c4",
+            ],
+            [
+                "9fb904c77913eeabd72bd4dbaa2c05991eb6283a8838532eb46ee3d7a836ae83",
+                "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "8328d840b6331fc319181d3cb68c9d45a77204dffb0eec1bef0d3294e9b806cf",
+            ],
+        ];
+        for (case, expected) in CASES.iter().zip(expected_hashes) {
+            let records = sample(Input {
+                points: case.points,
+                pressure: case.pressure,
+                pen_size: case.size,
+            })
+            .unwrap();
+            let mut meshes: [Vec<Vertex>; 3] = std::array::from_fn(|_| Vec::new());
+            for record in records {
+                let (index, vertices) = match record.call {
+                    RtCall::Start => (1, cap_vertices(record.lanes)),
+                    RtCall::Point => (0, point_vertices(record.lanes)),
+                    RtCall::End => (2, cap_vertices(record.lanes)),
+                };
+                meshes[index].extend(vertices);
+            }
+            for (index, (mesh, expected_hash)) in meshes.iter().zip(expected).enumerate() {
+                let expected_count = if index == 0 {
+                    (case.records - 2) * 6
+                } else {
+                    6
+                };
+                assert_eq!(
+                    mesh.len(),
+                    expected_count,
+                    "{} mesh {index} count",
+                    case.name
+                );
+                let bytes: Vec<_> = mesh
+                    .iter()
+                    .flatten()
+                    .flat_map(|v| v.to_le_bytes())
+                    .collect();
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&bytes)),
+                    expected_hash,
+                    "{} mesh {index} bytes",
+                    case.name
+                );
             }
         }
     }
