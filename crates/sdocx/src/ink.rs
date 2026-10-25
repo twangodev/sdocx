@@ -11,6 +11,8 @@ pub(crate) mod chinesebrush_glv123;
 mod colored_pencil;
 #[cfg(test)]
 mod crayon2;
+#[cfg(test)]
+mod montblanc;
 #[cfg(all(test, feature = "serde"))]
 mod pencil2;
 #[cfg(all(test, feature = "serde"))]
