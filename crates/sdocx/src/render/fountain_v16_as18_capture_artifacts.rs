@@ -510,15 +510,6 @@ fn compare_plan_to_native(plan: &V16Plan, diagnostic: &serde_json::Value) {
     compare_plan_to_native_records(plan, diagnostic, &native);
 }
 
-fn compare_plan_to_native_with_sha(
-    plan: &V16Plan,
-    diagnostic: &serde_json::Value,
-    expected_sha256: &str,
-) {
-    let native = native_upload_records_with_sha(diagnostic, expected_sha256);
-    compare_plan_to_native_records(plan, diagnostic, &native);
-}
-
 fn compare_plan_to_native_records(
     plan: &V16Plan,
     diagnostic: &serde_json::Value,
@@ -681,6 +672,109 @@ fn retained_scene_with_default_ink(
         ink,
         text_error,
     }
+}
+
+fn retained_scene_with_direct_type4_ink(
+    prepared: &crate::PreparedStroke<'_>,
+    svg_transform: [f64; 6],
+    records: &[[f32; 9]],
+    bounds: crate::BoundingBox,
+    saved_alpha: f32,
+) -> crate::render::RenderedScene {
+    let mut scene = Scene::new(
+        Svg::new()
+            .width(WIDTH)
+            .height(HEIGHT)
+            .view_box(ViewBox::new(
+                0.0,
+                0.0,
+                f64::from(WIDTH),
+                f64::from(HEIGHT),
+                1,
+            )),
+    );
+    scene.retain_text();
+    let id = scene
+        .native_ink()
+        .register_radial(records, bounds, saved_alpha, false)
+        .expect("source-joined thin records pass existing Type 4 validation");
+    scene.scope(
+        Group::new()
+            .native_ink_id(id)
+            .transformed(Transform::matrix_unrounded(svg_transform)),
+        |svg| assert!(render(svg, prepared, false, None)),
+    );
+    let text = scene.take_native_text();
+    let ink = scene.take_native_ink();
+    let text_error = scene.take_native_text_error();
+    assert!(
+        text_error.is_none(),
+        "Type 4 experiment text state: {text_error:?}"
+    );
+    assert_eq!(ink.len(), 1, "exactly one experimental Type 4 field");
+    crate::render::RenderedScene {
+        page: crate::RenderedPage::new(0, WIDTH, HEIGHT, scene.finish()),
+        text,
+        ink,
+        text_error,
+    }
+}
+
+fn type4_function_programs(pdf_bytes: &[u8]) -> Vec<Vec<u8>> {
+    let pdf = lopdf::Document::load_mem(pdf_bytes).expect("Type 4 experiment PDF parses");
+    pdf.objects
+        .values()
+        .filter_map(|object| object.as_stream().ok())
+        .filter(|stream| {
+            stream
+                .dict
+                .get(b"FunctionType")
+                .ok()
+                .and_then(|value| value.as_i64().ok())
+                == Some(4)
+        })
+        .map(|stream| {
+            stream
+                .decompressed_content()
+                .expect("decompress Type 4 program")
+        })
+        .collect()
+}
+
+fn type4_vector_pdf_summary(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize) {
+    let bytes =
+        crate::pdf::render_native_scene_pdf_for_test(retained, &crate::PdfOptions::default())
+            .expect("experimental DirectSourceOver scene exports to PDF");
+    let pdf = lopdf::Document::load_mem(&bytes).expect("Type 4 experiment PDF parses");
+    assert_eq!(pdf.get_pages().len(), 1);
+    let mut images = 0;
+    let mut type1_shadings = 0;
+    for object in pdf.objects.values() {
+        if let Ok(stream) = object.as_stream() {
+            images += usize::from(
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .ok()
+                    == Some(b"Image".as_slice()),
+            );
+        }
+        if let Ok(dict) = object.as_dict() {
+            type1_shadings += usize::from(
+                dict.get(b"ShadingType")
+                    .and_then(lopdf::Object::as_i64)
+                    .ok()
+                    == Some(1),
+            );
+        }
+    }
+    assert_eq!(images, 0, "Type 4 candidate remains vector");
+    assert!(
+        type1_shadings > 0,
+        "Type 4 mask/RGB use FunctionType 4 shadings"
+    );
+    (bytes, images, type1_shadings)
 }
 
 fn public_svg_with_default_ink(
@@ -1443,6 +1537,36 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
     let pair_bytes = fs::read(&pair_path).expect("complete V8 pair receipt");
     assert_eq!(sha256(&pair_bytes), PAIR_SHA256);
     let pair: serde_json::Value = serde_json::from_slice(&pair_bytes).unwrap();
+    const BLEND_JOIN_SHA256: &str =
+        "44d68f251a6d06b5126e89e5702a7128ce3ebfe30e7cb3292639a6812d60b2e8";
+    let blend_join_path = repo.join(
+        "tmp/vector-parity-plan/fountain-as18-v16-thin-native-quad-blend-joins-v1/native-quad-blend-joins.json",
+    );
+    let blend_join_bytes = fs::read(&blend_join_path).expect("pinned native blend/source join");
+    assert_eq!(sha256(&blend_join_bytes), BLEND_JOIN_SHA256);
+    let blend_join: serde_json::Value = serde_json::from_slice(&blend_join_bytes).unwrap();
+    assert_eq!(
+        blend_join["schema"],
+        "sdocx-fountain-v16-thin-native-quad-blend-join-v1"
+    );
+    assert_eq!(
+        blend_join["status"],
+        "offline_source_and_retained_trace_join_complete"
+    );
+    assert_eq!(
+        blend_join["source_pins"]["v8_pair_receipt_sha256"],
+        PAIR_SHA256
+    );
+    assert_eq!(
+        blend_join["source_pins"]["fountainpen_dso_sha256"],
+        FOUNTAIN_PEN_DSO_SHA256
+    );
+    let blend_cases = blend_join["cases"]
+        .as_array()
+        .expect("two source-over cases");
+    assert_eq!(blend_cases.len(), 2);
+    assert_eq!(blend_cases[0]["case"], "alpha128");
+    assert_eq!(blend_cases[1]["case"], "alpha255");
     assert_eq!(
         pair["schema"],
         "sdocx-fountain-saved-renderer-experiment-v1"
@@ -1658,9 +1782,20 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         assert_eq!(uniform["program_is_live"], true);
         assert_eq!(uniform["program_link_status"], 1);
         let expected_alpha = f32::from(alpha_byte) / 255.0;
+        assert_eq!(uniform["values"][0].as_f64().unwrap() as f32, 0.0);
+        assert_eq!(uniform["values"][1].as_f64().unwrap() as f32, 0.0);
+        assert_eq!(uniform["values"][2].as_f64().unwrap() as f32, 0.0);
         assert_eq!(
             uniform["values"][3].as_f64().unwrap() as f32,
             expected_alpha
+        );
+        let native_draw = &case["renderer_gl_draw_events"][0];
+        assert_eq!(uniform["egl_context"], native_draw["egl_context"]);
+        assert_eq!(uniform["program_create_generation"], 1);
+        assert_eq!(uniform["program_link_generation"], 1);
+        assert_eq!(
+            uniform["matched_draw_sequences"],
+            serde_json::json!([native_draw["program_lifecycle_sequence"]])
         );
 
         let stroke = source_stroke_argb_width(&pair, false, argb, 1.0);
@@ -1704,7 +1839,74 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
                 "native_upload_checkpoint": case["native_upload_checkpoint"]
             }}
         });
-        compare_plan_to_native_with_sha(&plan, &case_diagnostic, NATIVE_UPLOAD_SHA256);
+        let native_upload = native_upload_records_with_sha(&case_diagnostic, NATIVE_UPLOAD_SHA256);
+        compare_plan_to_native_records(&plan, &case_diagnostic, &native_upload);
+
+        // This separate Type 4 experiment follows the captured source-over
+        // draw contract. Upload lane 4 is native transparency (1.0 here),
+        // lane 6 is alphaByWidth, and program-6 inputColor alpha is applied
+        // separately once by the DirectSourceOver compiler.
+        let blend = &blend_cases[if name == "alpha128" { 0 } else { 1 }];
+        assert_eq!(blend["program"], 6);
+        assert_eq!(blend["program_generation"][1], 6);
+        assert_eq!(blend["program_generation"][2], 1);
+        assert_eq!(blend["program_generation"][3], 1);
+        assert_eq!(blend["addpoint_count"], 76);
+        assert_eq!(blend["draw_values"], serde_json::json!([5, 0, 4, 76]));
+        assert_eq!(blend["instance_upload_bytes"], 2128);
+        assert_eq!(blend["instance_upload_sha256"], NATIVE_UPLOAD_SHA256);
+        assert_eq!(blend["source_over"]["blend_enabled"], true);
+        assert_eq!(
+            blend["source_over"]["equation_separate"],
+            serde_json::json!([32774, 32774])
+        );
+        assert_eq!(
+            blend["source_over"]["function_separate"],
+            serde_json::json!([1, 771, 1, 771])
+        );
+        assert_eq!(
+            blend["source_over"]["no_blend_state_change_until_draw"],
+            true
+        );
+        assert_eq!(
+            blend["native_owner_vector_join"]["all_rt_owners_match"],
+            true
+        );
+        assert_eq!(
+            blend["native_owner_vector_join"]["all_setbuffer_owners_match"],
+            true
+        );
+        assert_eq!(
+            blend["native_owner_vector_join"]["upload_vector_matches_send_and_task"],
+            true
+        );
+        assert_eq!(
+            blend["input_color_rgba"][3].as_f64().unwrap() as f32,
+            expected_alpha
+        );
+        assert_eq!(blend["input_color_rgba"][0].as_f64(), Some(0.0));
+        assert_eq!(blend["input_color_rgba"][1].as_f64(), Some(0.0));
+        assert_eq!(blend["input_color_rgba"][2].as_f64(), Some(0.0));
+
+        let mut type4_records = Vec::with_capacity(native_upload.len());
+        for (index, lanes) in native_upload.iter().enumerate() {
+            let [cx, cy, rx, ry, transparency, inner, width_alpha] = lanes.map(f32::from_bits);
+            let observed_s3 = f32::from_bits(decode_little_endian_word(
+                case["native_rtv5_s3_f32_bits"][index].as_str().unwrap(),
+            ));
+            assert_eq!(
+                observed_s3.to_bits(),
+                transparency.to_bits(),
+                "native S3/lane4 {index}"
+            );
+            assert_eq!(transparency.to_bits(), 1.0_f32.to_bits());
+            assert!(cx.is_finite() && cy.is_finite());
+            assert!(rx.is_finite() && ry.is_finite() && rx > 0.0 && ry > 0.0);
+            assert!(inner.is_finite() && (0.0..0.5).contains(&inner));
+            assert!(width_alpha.is_finite() && (0.0..=1.0).contains(&width_alpha));
+            let coverage = transparency * width_alpha;
+            type4_records.push([cx, cy, rx, ry, inner, coverage, 0.0, 0.0, 0.0]);
+        }
 
         let native = native_frame(name, frame_sha);
         native_frames.push(native.clone());
@@ -1757,6 +1959,64 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
             vector_pdf_summary(&production);
         assert!(circle_sidecar_form_signatures(&production_pdf, plan.stamps.len()).is_empty());
 
+        let mut type4_bounds = crate::BoundingBox {
+            x_min: f64::INFINITY,
+            y_min: f64::INFINITY,
+            x_max: f64::NEG_INFINITY,
+            y_max: f64::NEG_INFINITY,
+        };
+        for record in &type4_records {
+            type4_bounds.x_min = type4_bounds
+                .x_min
+                .min(f64::from(record[0]) - f64::from(record[2]));
+            type4_bounds.y_min = type4_bounds
+                .y_min
+                .min(f64::from(record[1]) - f64::from(record[3]));
+            type4_bounds.x_max = type4_bounds
+                .x_max
+                .max(f64::from(record[0]) + f64::from(record[2]));
+            type4_bounds.y_max = type4_bounds
+                .y_max
+                .max(f64::from(record[1]) + f64::from(record[3]));
+        }
+        let type4_scene = retained_scene_with_direct_type4_ink(
+            &prepared,
+            svg_transform,
+            &type4_records,
+            type4_bounds,
+            expected_alpha,
+        );
+        let type4_entry = type4_scene.ink.iter().next().expect("Type 4 payload");
+        assert_eq!(type4_scene.ink.len(), 1);
+        assert_eq!(type4_entry.1.opacity, 1.0);
+        assert_eq!(type4_entry.1.bounds, type4_bounds);
+        match &type4_entry.1.payload {
+            crate::render::native_ink::NativeInkPayload::Radial {
+                records,
+                saved_alpha,
+                enhanced_antialias,
+            } => {
+                assert_eq!(records, &type4_records);
+                assert_eq!(saved_alpha.to_bits(), expected_alpha.to_bits());
+                assert!(!enhanced_antialias);
+            }
+            _ => panic!("experimental field must stay the existing radial Type 4 payload"),
+        }
+        let (type4_pdf, type4_images, type4_type1_shadings) =
+            type4_vector_pdf_summary(&type4_scene);
+        assert_eq!(type4_images, 0, "experimental Type 4 output is vector-only");
+        let type4_programs = type4_function_programs(&type4_pdf);
+        assert_eq!(
+            type4_programs.len(),
+            2,
+            "existing compiler emits RGB and mask Type 4 functions"
+        );
+        assert!(type4_programs.iter().all(|program| !program.is_empty()));
+        assert!(
+            type4_type1_shadings > 0,
+            "Type 4 candidate contains vector shading objects"
+        );
+
         // Keep an explicit legacy-circle public SVG baseline and an
         // independent quad rewrite for comparison with the public route.
         let legacy_circle_svg = circle_geometry_svg(&production_svg, plan.stamps.len());
@@ -1782,6 +2042,10 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         write_new(
             output_dir.join(format!("{name}.production.pdf")),
             &production_pdf,
+        );
+        write_new(
+            output_dir.join(format!("{name}.type4-direct-source-over-experiment.pdf")),
+            &type4_pdf,
         );
         write_new(
             output_dir.join(format!("{name}.retained-pdf-source.svg")),
@@ -1815,6 +2079,25 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
             output_dir.join(format!("{name}.independent-quad.rgba")),
             &independent_quad_raster,
         );
+        let type4_record_bytes = type4_records
+            .iter()
+            .flat_map(|record| record.iter())
+            .flat_map(|value| value.to_bits().to_le_bytes())
+            .collect::<Vec<_>>();
+        let type4_experiment = serde_json::json!({
+            "pdf_path": format!("{name}.type4-direct-source-over-experiment.pdf"),
+            "source_join_receipt": "tmp/vector-parity-plan/fountain-as18-v16-thin-native-quad-blend-joins-v1/native-quad-blend-joins.json",
+            "source_join_receipt_sha256": BLEND_JOIN_SHA256,
+            "coverage_mapping": "native upload lane4 transparency * lane6 alphaByWidth; lane4 is source-joined to native RTV5 S3 and exactly 1.0 in these cases; native program-6 inputColor alpha is saved_alpha separately once",
+            "record_count": type4_records.len(),
+            "record_sha256": sha256(&type4_record_bytes),
+            "saved_alpha": expected_alpha,
+            "bounds_f64_exact_union_of_f32_records": [type4_bounds.x_min, type4_bounds.y_min, type4_bounds.x_max, type4_bounds.y_max],
+            "pdf_image_objects": type4_images,
+            "type_1_shading_objects": type4_type1_shadings,
+            "function_type_4_programs": type4_programs.len(),
+            "is_production_admission": false
+        });
         output_cases.push(serde_json::json!({
             "case": name,
             "saved_argb": format!("0x{argb:08x}"),
@@ -1831,6 +2114,7 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
             "production_pdf_circle_sidecar_admitted": false,
             "production_svg_path": format!("{name}.production.svg"),
             "production_pdf_path": format!("{name}.production.pdf"),
+            "type4_direct_source_over_experiment": type4_experiment,
             "retained_pdf_source_svg_path": format!("{name}.retained-pdf-source.svg"),
             "production_raster_path": format!("{name}.production.rgba"),
             "native_raster_path": format!("{name}.native-topdown.rgba"),
@@ -1862,6 +2146,13 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         "native_upload_sha256": NATIVE_UPLOAD_SHA256,
         "native_execution": false,
         "production_admission_modified_by_artifact_writer": false,
+        "type4_direct_source_over_experiment": {
+            "receipt_path": "tmp/vector-parity-plan/fountain-as18-v16-thin-native-quad-blend-joins-v1/native-quad-blend-joins.json",
+            "receipt_sha256": BLEND_JOIN_SHA256,
+            "coverage_formula": "native lane4 transparency * lane6 alphaByWidth; saved program-6 ARGB alpha is a separate once-only compiler input",
+            "not_production_admission": true,
+            "no_appearance_parity_claim": true
+        },
         "cases": output_cases
     });
     write_new(

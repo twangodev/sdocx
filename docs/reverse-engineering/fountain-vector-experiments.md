@@ -4,6 +4,25 @@ These are diagnostic prototypes, not production implementations. None changes
 the Rust pen geometry or adds a rendering dependency. Current behavior and
 validated native parity are described in [fountain-parity.md](fountain-parity.md).
 
+## V16 thin-stamp PDF field
+
+A controlled native size-1 fork of the archived 204-point AS18 source produces
+76 stamps with partial width coverage. The ignored Rust capture-artifact test
+compares their exact native upload with a separate Type 4 source-over PDF:
+outer radii use the quad extents, coverage is native transparency × width alpha,
+and saved ARGB alpha is applied separately once. At fixed 96 DPI, affected-pixel
+alpha MAE in bytes worsens in both readers:
+
+| Saved alpha | MuPDF: current → Type 4 | PDFium: current → Type 4 |
+| --- | --- | --- |
+| 128 | 20.95 → 25.05 | 21.62 → 26.46 |
+| 255 | 37.77 → 46.42 | 39.37 → 49.14 |
+
+The experiment remains outside production. Matching the continuous field does
+not establish matching PDF sampling or placement; that distinction still needs
+pixel-center function evaluation. This control does not establish archive-native
+thin widths, device appearance, or document parity.
+
 ## Firefox blend workarounds
 
 Two vector-only workarounds were measured against the native cache's first
