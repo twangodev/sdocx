@@ -725,7 +725,8 @@ impl V16Plan {
         // RTV5's static quad spans [-1, 1] and supplies radial coordinates
         // [0, 1]. The existing SVG gradient uses the same unit radial domain.
         paint.fountain_v17_rgb.is_none()
-            && paint.opacity == 1.0
+            && paint.opacity.is_finite()
+            && (0.0..=1.0).contains(&paint.opacity)
             && self.inverse_scale == 1.0
             && self
                 .stamps
@@ -737,15 +738,19 @@ impl V16Plan {
         let native_quad_geometry = self.native_quad_geometry(paint);
         #[cfg(feature = "pdf")]
         let native_ink_id = if svg.retains_text() {
-            (paint.fountain_v17_rgb.is_some() || paint.opacity == 1.0)
-                .then(|| self.radial_circle_records())
-                .flatten()
-                .zip(self.bounds)
-                .and_then(|(records, bounds)| {
-                    svg.native_ink()
-                        .register_radial_circles(&records, bounds, paint.opacity as f32)
-                        .ok()
-                })
+            (paint.fountain_v17_rgb.is_some()
+                || paint.opacity == 1.0
+                || (self.inverse_scale == 1.0
+                    && paint.opacity.is_finite()
+                    && (0.0..=1.0).contains(&paint.opacity)))
+            .then(|| self.radial_circle_records())
+            .flatten()
+            .zip(self.bounds)
+            .and_then(|(records, bounds)| {
+                svg.native_ink()
+                    .register_radial_circles(&records, bounds, paint.opacity as f32)
+                    .ok()
+            })
         } else {
             None
         };
@@ -2088,7 +2093,7 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
-    fn v16_opaque_uniform_stamps_admit_native_circles_without_rgb_sidecar() {
+    fn v16_uniform_stamps_admit_native_quads_and_bounded_partial_alpha_pdf() {
         let reference: serde_json::Value =
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap();
@@ -2096,8 +2101,8 @@ mod tests {
         let make_paint = |opacity, output_scale| {
             let mut paint = crate::prepare_stroke(&stroke, false);
             paint.profile = Some("FountainPen");
-            paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }]);
-            paint.dot_radii = Some(vec![1.5]);
+            paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }; 2]);
+            paint.dot_radii = Some(vec![1.5; 2]);
             paint.dot_directions = None;
             paint.bounds = Some(BoundingBox {
                 x_min: 0.0,
@@ -2155,6 +2160,7 @@ mod tests {
                 0x99 as f32 / 255.0,
             ]
         );
+        assert_eq!(records.len(), 2);
         assert_eq!(*saved_alpha, 1.0);
         assert!(
             svg.contains("fill=\""),
@@ -2226,22 +2232,118 @@ mod tests {
                 .unwrap();
             let state = pdf.objects.get(&ext_gstate).unwrap().as_dict().unwrap();
             assert_eq!(state.get(b"ca").unwrap().as_float().unwrap(), 1.0);
+            assert_eq!(
+                operators
+                    .operations
+                    .iter()
+                    .filter(|operation| operation.operator == "gs")
+                    .count(),
+                2,
+                "opaque alpha state is invoked per circle"
+            );
             circle_form = true;
         }
         assert!(circle_form, "opaque uniform V16 emits a vector circle Form");
 
-        let (partial_svg, partial_alpha_ink, _) = render_retained(&make_paint(0.5, None));
+        let (partial_svg, partial_alpha_ink, partial_text) =
+            render_retained(&make_paint(0.5, None));
         assert!(
-            partial_svg.contains("<circle"),
-            "partial opacity keeps legacy geometry"
+            partial_svg.contains("<rect"),
+            "partial-opacity canonical V16 uses the native quad"
         );
-        assert!(!partial_svg.contains("<rect"));
         assert!(
-            partial_alpha_ink.is_empty(),
-            "partial saved ARGB alpha remains on the existing PDF shading path"
+            partial_alpha_ink.iter().count() == 1,
+            "canonical partial opacity is admitted to the bounded PDF circle route"
+        );
+        let partial_entries = partial_alpha_ink.iter().collect::<Vec<_>>();
+        let crate::render::native_ink::NativeInkPayload::RadialCircles {
+            records: partial_records,
+            saved_alpha: partial_saved_alpha,
+        } = &partial_entries[0].1.payload
+        else {
+            panic!("expected ordinary V16 partial-alpha circle payload");
+        };
+        assert_eq!(partial_records.len(), 2);
+        assert_eq!(*partial_saved_alpha, 0.5);
+        assert_eq!(partial_entries[0].1.opacity, 1.0);
+
+        let partial_scene = crate::render::RenderedScene {
+            page: crate::RenderedPage::new(0, 64, 64, partial_svg),
+            text: partial_text,
+            ink: partial_alpha_ink,
+            text_error: None,
+        };
+        let partial_pdf_bytes = crate::pdf::render_native_scene_pdf_for_test(
+            &partial_scene,
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        let partial_pdf = lopdf::Document::load_mem(&partial_pdf_bytes).unwrap();
+        let mut partial_circle_form = false;
+        for object in partial_pdf.objects.values() {
+            let lopdf::Object::Stream(stream) = object else {
+                continue;
+            };
+            let subtype = stream
+                .dict
+                .get(b"Subtype")
+                .and_then(lopdf::Object::as_name)
+                .ok();
+            assert_ne!(subtype, Some(b"Image".as_slice()));
+            if subtype != Some(b"Form".as_slice()) {
+                continue;
+            }
+            let content = stream.decompressed_content().unwrap_or_default();
+            let operators = lopdf::content::Content::decode(&content).unwrap();
+            if !operators
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "c")
+            {
+                continue;
+            }
+            let gs_calls = operators
+                .operations
+                .iter()
+                .filter(|operation| operation.operator == "gs")
+                .collect::<Vec<_>>();
+            assert_eq!(gs_calls.len(), 2, "one ExtGState invocation per stamp");
+            assert!(gs_calls.iter().all(|call| {
+                call.operands.len() == 1
+                    && call.operands[0].as_name().ok() == Some(b"GS0".as_slice())
+            }));
+            let ext_gstate = stream
+                .dict
+                .get(b"Resources")
+                .unwrap()
+                .as_dict()
+                .unwrap()
+                .get(b"ExtGState")
+                .unwrap()
+                .as_dict()
+                .unwrap()
+                .get(b"GS0")
+                .unwrap()
+                .as_reference()
+                .unwrap();
+            let state = partial_pdf
+                .objects
+                .get(&ext_gstate)
+                .unwrap()
+                .as_dict()
+                .unwrap();
+            assert_eq!(state.get(b"ca").unwrap().as_float().unwrap(), 0.5);
+            let group = stream.dict.get(b"Group").unwrap().as_dict().unwrap();
+            assert!(matches!(group.get(b"I"), Ok(lopdf::Object::Boolean(true))));
+            assert!(matches!(group.get(b"K"), Ok(lopdf::Object::Boolean(false))));
+            partial_circle_form = true;
+        }
+        assert!(
+            partial_circle_form,
+            "partial-alpha ordinary V16 PDF remains vector-only"
         );
         let mut thin = make_paint(1.0, None);
-        thin.dot_radii = Some(vec![0.1]);
+        thin.dot_radii = Some(vec![0.1; 2]);
         let (thin_svg, thin_ink, _) = render_retained(&thin);
         assert!(
             thin_svg.contains("<circle"),
@@ -2252,12 +2354,24 @@ mod tests {
             thin_ink.is_empty(),
             "partial width coverage retains PDF shading"
         );
-        let (scaled_svg, _, _) = render_retained(&make_paint(1.0, Some(2.0)));
+        let (scaled_svg, scaled_opaque_ink, _) = render_retained(&make_paint(1.0, Some(2.0)));
         assert!(
             scaled_svg.contains("<circle"),
             "noncanonical scale keeps legacy geometry"
         );
         assert!(!scaled_svg.contains("<rect"));
+        assert_eq!(scaled_opaque_ink.iter().count(), 1);
+        let (_, scaled_partial_ink, _) = render_retained(&make_paint(0.5, Some(2.0)));
+        assert!(
+            scaled_partial_ink.is_empty(),
+            "partial opacity outside unit scale retains the shading fallback"
+        );
+
+        let invalid = make_paint(1.01, None);
+        let mut invalid_scene = Scene::new(Svg::new().width(64).height(64));
+        invalid_scene.retain_text();
+        assert!(!render(&mut invalid_scene, &invalid, false, None));
+        assert!(invalid_scene.take_native_ink().is_empty());
     }
 
     #[cfg(feature = "pdf")]

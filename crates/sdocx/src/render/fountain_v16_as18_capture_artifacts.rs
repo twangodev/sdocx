@@ -120,6 +120,17 @@ fn source_stroke(baseline: &serde_json::Value, rainbow: bool) -> Stroke {
     stroke
 }
 
+fn source_stroke_argb(baseline: &serde_json::Value, rainbow: bool, argb: u32) -> Stroke {
+    let mut stroke = source_stroke(baseline, rainbow);
+    stroke
+        .rendering
+        .as_mut()
+        .expect("saved rendering metadata")
+        .style
+        .color_argb = Some(argb);
+    stroke
+}
+
 fn decode_hex(value: &str) -> Vec<u8> {
     assert_eq!(value.len() % 2, 0);
     value
@@ -427,6 +438,28 @@ fn parse_svg_attributes(input: &str) -> Vec<(String, String)> {
     attributes
 }
 
+type SvgElementSignature = (usize, String, Vec<(String, String)>);
+
+fn svg_element_signature(svg: &str) -> Vec<SvgElementSignature> {
+    let document = roxmltree::Document::parse(svg).expect("artifact SVG parses");
+    document
+        .descendants()
+        .filter(|node| node.is_element())
+        .map(|node| {
+            let mut attributes = node
+                .attributes()
+                .map(|attribute| (attribute.name().to_owned(), attribute.value().to_owned()))
+                .collect::<Vec<_>>();
+            attributes.sort();
+            (
+                node.ancestors().count(),
+                node.tag_name().name().to_owned(),
+                attributes,
+            )
+        })
+        .collect()
+}
+
 fn native_upload_records(diagnostic: &serde_json::Value) -> Vec<[u32; 7]> {
     let upload = &diagnostic["state"]["current"]["native_upload_checkpoint"];
     let raw = decode_hex(
@@ -569,6 +602,42 @@ fn retained_scene(
     }
 }
 
+fn retained_scene_with_default_ink(
+    prepared: &crate::PreparedStroke<'_>,
+    svg_transform: [f64; 6],
+) -> crate::render::RenderedScene {
+    let mut scene = Scene::new(
+        Svg::new()
+            .width(WIDTH)
+            .height(HEIGHT)
+            .view_box(ViewBox::new(
+                0.0,
+                0.0,
+                f64::from(WIDTH),
+                f64::from(HEIGHT),
+                1,
+            )),
+    );
+    scene.retain_text();
+    scene.scope(
+        Group::new().transformed(Transform::matrix_unrounded(svg_transform)),
+        |svg| assert!(render(svg, prepared, false, None)),
+    );
+    let text = scene.take_native_text();
+    let ink = scene.take_native_ink();
+    let text_error = scene.take_native_text_error();
+    assert!(
+        text_error.is_none(),
+        "retained V16 scene text state: {text_error:?}"
+    );
+    crate::render::RenderedScene {
+        page: crate::RenderedPage::new(0, WIDTH, HEIGHT, scene.finish()),
+        text,
+        ink,
+        text_error,
+    }
+}
+
 fn raster_svg(svg: &str) -> Vec<u8> {
     let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default())
         .expect("captured V16 SVG parses");
@@ -650,6 +719,633 @@ fn vector_pdf(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize
     assert_eq!(images, 0, "candidate PDF remains vector");
     assert!(shadings > 0, "V16 radial coverage stays as PDF shading");
     (bytes, images, shadings)
+}
+
+fn vector_pdf_summary(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize) {
+    let bytes =
+        crate::pdf::render_native_scene_pdf_for_test(retained, &crate::PdfOptions::default())
+            .expect("retained partial-alpha V16 scene exports to PDF");
+    let pdf = lopdf::Document::load_mem(&bytes).expect("partial-alpha PDF parses");
+    assert_eq!(pdf.get_pages().len(), 1);
+    let mut images = 0;
+    let mut radial_shadings = 0;
+    for object in pdf.objects.values() {
+        if let Ok(stream) = object.as_stream() {
+            images += usize::from(
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .ok()
+                    == Some(b"Image".as_slice()),
+            );
+        }
+        if let Ok(dict) = object.as_dict() {
+            radial_shadings += usize::from(
+                dict.get(b"ShadingType")
+                    .and_then(lopdf::Object::as_i64)
+                    .ok()
+                    == Some(3),
+            );
+        }
+    }
+    assert_eq!(images, 0, "partial-alpha comparison PDF stays vector");
+    (bytes, images, radial_shadings)
+}
+
+fn circle_sidecar_form_signatures(
+    pdf_bytes: &[u8],
+    stamp_count: usize,
+) -> Vec<(String, u32, usize, usize)> {
+    let pdf = lopdf::Document::load_mem(pdf_bytes).expect("experimental circle PDF parses");
+    let mut signatures = Vec::new();
+    for object in pdf.objects.values() {
+        let Ok(stream) = object.as_stream() else {
+            continue;
+        };
+        if stream
+            .dict
+            .get(b"Subtype")
+            .and_then(lopdf::Object::as_name)
+            .ok()
+            != Some(b"Form".as_slice())
+        {
+            continue;
+        }
+        let Ok(group) = stream.dict.get(b"Group").and_then(lopdf::Object::as_dict) else {
+            continue;
+        };
+        if group.get(b"S").and_then(lopdf::Object::as_name).ok() != Some(b"Transparency".as_slice())
+            || !matches!(group.get(b"I"), Ok(lopdf::Object::Boolean(true)))
+            || !matches!(group.get(b"K"), Ok(lopdf::Object::Boolean(false)))
+        {
+            continue;
+        }
+        let resources = stream
+            .dict
+            .get(b"Resources")
+            .and_then(lopdf::Object::as_dict)
+            .expect("circle form ExtGState resources");
+        let states = resources
+            .get(b"ExtGState")
+            .and_then(lopdf::Object::as_dict)
+            .expect("circle form ExtGState table");
+        let reference = states
+            .get(b"GS0")
+            .and_then(lopdf::Object::as_reference)
+            .expect("circle form GS0 reference");
+        let state = pdf
+            .get_object(reference)
+            .and_then(lopdf::Object::as_dict)
+            .expect("circle form GS0 state");
+        let emitted_alpha = state
+            .get(b"ca")
+            .and_then(lopdf::Object::as_float)
+            .expect("circle form nonstroking alpha");
+        let content = stream
+            .decompressed_content()
+            .expect("decompress saved-alpha circle form");
+        let operations = lopdf::content::Content::decode(&content).expect("circle form operators");
+        assert_eq!(
+            operations
+                .operations
+                .iter()
+                .filter(|operation| operation.operator == "gs")
+                .count(),
+            stamp_count,
+            "saved alpha is selected once for each ordered stamp"
+        );
+        assert_eq!(
+            operations
+                .operations
+                .iter()
+                .filter(|operation| operation.operator == "c")
+                .count(),
+            stamp_count * 4,
+            "one four-segment vector circle per stamp"
+        );
+        signatures.push((
+            sha256(&content),
+            emitted_alpha.to_bits(),
+            operations
+                .operations
+                .iter()
+                .filter(|operation| operation.operator == "gs")
+                .count(),
+            operations
+                .operations
+                .iter()
+                .filter(|operation| operation.operator == "c")
+                .count(),
+        ));
+    }
+    signatures
+}
+
+fn assert_circle_sidecar_saved_alpha(pdf_bytes: &[u8], alpha: f32, stamp_count: usize) {
+    let signatures = circle_sidecar_form_signatures(pdf_bytes, stamp_count);
+    assert_eq!(signatures.len(), 1, "one saved-alpha circle form");
+    assert_eq!(signatures[0].1, alpha.to_bits());
+}
+
+fn alpha_native_upload_records(case: &serde_json::Value) -> Vec<[u32; 7]> {
+    let upload = &case["native_upload_checkpoint"];
+    assert_eq!(upload["hit"], true);
+    assert_eq!(upload["vector_sha256"], NATIVE_VECTOR_SHA256);
+    assert_eq!(upload["vector_bytes"].as_u64(), Some(2128));
+    let raw = decode_hex(
+        upload["vector_hex"]
+            .as_str()
+            .expect("V5 native upload bytes"),
+    );
+    assert_eq!(sha256(&raw), NATIVE_VECTOR_SHA256);
+    assert_eq!(raw.len(), 76 * 7 * 4);
+    raw.as_chunks::<28>()
+        .0
+        .iter()
+        .map(|record| {
+            std::array::from_fn(|lane| {
+                u32::from_le_bytes(record[lane * 4..lane * 4 + 4].try_into().unwrap())
+            })
+        })
+        .collect()
+}
+
+fn compare_alpha_plan_to_native(plan: &V16Plan, case: &serde_json::Value) {
+    let native = alpha_native_upload_records(case);
+    let arguments = case["rtv_addpoint_entries"]
+        .as_array()
+        .expect("V5 captured RTV5 AddPoint inputs");
+    assert_eq!(plan.stamps.len(), 76);
+    assert_eq!(native.len(), plan.stamps.len());
+    assert_eq!(arguments.len(), plan.stamps.len());
+    for (index, ((stamp, record), args)) in
+        plan.stamps.iter().zip(&native).zip(arguments).enumerate()
+    {
+        let actual = [
+            stamp.x.to_bits(),
+            stamp.y.to_bits(),
+            stamp.extent_x.to_bits(),
+            stamp.extent_y.to_bits(),
+            1.0_f32.to_bits(),
+            stamp.gradient_key.inner,
+            stamp.gradient_key.alpha,
+        ];
+        assert_eq!(
+            actual, *record,
+            "alpha V16Plan/native upload record {index}"
+        );
+        let abi = &args["native_addpoint_abi_arguments"];
+        assert_eq!(abi["float_argument_f32_bits"], "0000803f");
+        assert_eq!(
+            stamp.x.to_bits(),
+            decode_little_endian_word(abi["vector3_argument_f32_bits"][0].as_str().unwrap()),
+            "alpha AddPoint x {index}"
+        );
+        assert_eq!(
+            stamp.y.to_bits(),
+            decode_little_endian_word(abi["vector3_argument_f32_bits"][1].as_str().unwrap()),
+            "alpha AddPoint y {index}"
+        );
+    }
+}
+
+fn captured_alpha_frame(repo: &Path, receipt: &serde_json::Value, case_name: &str) -> Vec<u8> {
+    let artifact = receipt["pixel_artifacts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|artifact| artifact["key"] == case_name)
+        .expect("V5 per-case native frame artifact");
+    let path = Path::new(artifact["path"].as_str().unwrap());
+    let path = if path.is_absolute() {
+        path.to_owned()
+    } else {
+        repo.join(path)
+    };
+    let compressed = fs::read(path).expect("pinned V5 compressed native frame");
+    assert_eq!(sha256(&compressed), artifact["compressed_sha256"]);
+    let mut decoder = ZlibDecoder::new(compressed.as_slice());
+    let mut raw = Vec::new();
+    decoder
+        .read_to_end(&mut raw)
+        .expect("decode V5 native frame");
+    assert_eq!(raw.len(), (WIDTH * HEIGHT * 4) as usize);
+    assert_eq!(raw.len() as u64, artifact["raw_bytes"].as_u64().unwrap());
+    assert_eq!(sha256(&raw), artifact["raw_sha256"]);
+    topdown_frame(&raw)
+}
+
+#[test]
+#[ignore = "writes captured alpha128/alpha255 V16 SVG/PDF comparisons when V5 capture/output directories are set"]
+fn write_as18_glv16_alpha_svg_pdf_pairs() {
+    const V5_RECEIPT_SHA256: &str =
+        "87766dcceff7cb38408db3d6bbf92a9671c14588c517f03302ac41ccc0979009";
+    const V5_PINS_SHA256: &str = "a912304fa05810ee6fe85b655ee3ee0fcd413f7a042a6cabd3d40541f82a0fb5";
+    const V5_UPLOAD_SHA256: &str =
+        "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a";
+    const SOURCE_ARRAYS_SHA256: &str =
+        "c01022129e9a3a09ee95dc5935d5e177bd507e03d6d9dbd357a5278a64ab72b4";
+
+    let capture_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_204_ALPHA_CAPTURE_DIR")
+            .expect("set SDOCX_FOUNTAIN_V16_204_ALPHA_CAPTURE_DIR to the V5 capture directory"),
+    );
+    let output_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_204_ALPHA_V2_ARTIFACT_DIR")
+            .expect("set SDOCX_FOUNTAIN_V16_204_ALPHA_V2_ARTIFACT_DIR to a fresh output directory"),
+    );
+    fs::create_dir(&output_dir).expect("alpha artifact output directory must be new");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repository root");
+    let receipt_path = capture_dir.join("as18-v16-204-alpha-mesa-pair.json");
+    let receipt_bytes = fs::read(&receipt_path).expect("V5 paired alpha capture receipt");
+    assert_eq!(sha256(&receipt_bytes), V5_RECEIPT_SHA256);
+    assert_eq!(
+        sha256(&fs::read(capture_dir.join("candidate-pins.json")).expect("V5 source pins")),
+        V5_PINS_SHA256
+    );
+    let receipt: serde_json::Value = serde_json::from_slice(&receipt_bytes).unwrap();
+    assert_eq!(
+        receipt["schema"],
+        "sdocx-fountain-saved-renderer-experiment-v1"
+    );
+    assert_eq!(
+        receipt["source_input"]["payload_sha256"],
+        SOURCE_ARRAYS_SHA256
+    );
+    assert_eq!(receipt["source_input"]["frame_sha256"], SOURCE_FRAME_SHA256);
+    assert_eq!(receipt["source_input"]["point_count"], 204);
+    assert_eq!(receipt["profile"], serde_json::json!([WIDTH, HEIGHT]));
+    assert_eq!(receipt["pixel_artifacts"].as_array().unwrap().len(), 2);
+    let cases = receipt["cases"].as_array().expect("V5 alpha pair cases");
+    assert_eq!(cases.len(), 2);
+    assert_eq!(cases[0]["case"], "alpha128");
+    assert_eq!(cases[1]["case"], "alpha255");
+    assert_eq!(cases[0]["source_payload_sha256"], SOURCE_ARRAYS_SHA256);
+    assert_eq!(cases[1]["source_payload_sha256"], SOURCE_ARRAYS_SHA256);
+    assert_eq!(cases[0]["source_arrays"], cases[1]["source_arrays"]);
+    assert_eq!(cases[0]["source_point_count"], 204);
+    assert_eq!(cases[1]["source_point_count"], 204);
+    assert_eq!(cases[0]["selected_drawable_class"], "GLV16");
+    assert_eq!(cases[1]["selected_drawable_class"], "GLV16");
+    assert_eq!(cases[0]["rainbow_enabled_control"], 0);
+    assert_eq!(cases[1]["rainbow_enabled_control"], 0);
+    assert_eq!(
+        cases[0]["rtv_addpoint_entries"].as_array().unwrap().len(),
+        76
+    );
+    assert_eq!(
+        cases[1]["rtv_addpoint_entries"].as_array().unwrap().len(),
+        76
+    );
+
+    // Decode the same captured arrays through the existing production source
+    // adapter. Only saved ARGB alpha differs between the two prepared strokes.
+    let source_receipt = serde_json::json!({
+        "cases": [{"source_arrays": cases[0]["source_arrays"].clone()}]
+    });
+    let matrix_for_case = |case: &serde_json::Value| {
+        let event = case["renderer_gl_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|event| event["call"] == "glUniformMatrix4fv" && event["location"] == 0)
+            .expect("V5 native f32 projection uniform");
+        assert_eq!(event["program"], 6);
+        let values = event["values"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap() as f32)
+            .collect::<Vec<_>>();
+        assert_eq!(values.len(), 16);
+        values
+    };
+    let matrix_values = matrix_for_case(&cases[0]);
+    let matrix_words = matrix_values
+        .iter()
+        .map(|value| value.to_bits())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matrix_words,
+        matrix_for_case(&cases[1])
+            .iter()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>()
+    );
+    let matrix_values = matrix_values
+        .iter()
+        .map(|value| f64::from(*value))
+        .collect::<Vec<_>>();
+    let viewport = cases[0]["renderer_draw_context"]["viewport_at_readback"]
+        .as_array()
+        .expect("V5 readback viewport")
+        .iter()
+        .map(|value| value.as_u64().unwrap() as u32)
+        .collect::<Vec<_>>();
+    assert_eq!(viewport, [0, 0, WIDTH, HEIGHT]);
+    assert_eq!(
+        cases[1]["renderer_draw_context"]["viewport_at_readback"],
+        cases[0]["renderer_draw_context"]["viewport_at_readback"]
+    );
+    let svg_transform = svg_matrix_from_native(&matrix_values, &viewport);
+
+    let mut manifest_cases = Vec::new();
+    for (case, name, argb, alpha_byte) in [
+        (&cases[0], "alpha128", 0x8000_0000_u32, 128_u8),
+        (&cases[1], "alpha255", 0xff00_0000_u32, 255_u8),
+    ] {
+        assert_eq!(case["saved_color_argb_control"], format!("0x{argb:08x}"));
+        assert_eq!(case["object_color_set_get_argb"], format!("0x{argb:08x}"));
+        assert_eq!(
+            case["effective_selected_pen_state_after_drawing"]["color_argb"],
+            serde_json::json!(argb)
+        );
+        let stroke = source_stroke_argb(&source_receipt, false, argb);
+        let prepared = crate::ink::prepare_stroke_for_context(
+            &stroke,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert!(
+            prepared.fountain_v17_rgb.is_none(),
+            "no V17 metadata is synthesized"
+        );
+        let expected_alpha = f32::from(alpha_byte) / 255.0;
+        assert_eq!(
+            (prepared.opacity as f32).to_bits(),
+            expected_alpha.to_bits(),
+            "saved ARGB alpha reaches production V16 opacity"
+        );
+        let plan = V16Plan::prepare(&prepared).expect("production V16Plan for alpha control");
+        assert_eq!(plan.stamps.len(), 76);
+        assert!(
+            plan.stamps
+                .iter()
+                .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0)
+        );
+        compare_alpha_plan_to_native(&plan, case);
+
+        let color_uniforms = case["drawable_color_uniforms"]
+            .as_array()
+            .expect("V5 draw-associated inputColor uniforms");
+        let matching_uniforms = color_uniforms
+            .iter()
+            .filter(|event| {
+                event["call"] == "glUniform4fv" && event["program"] == 6 && event["location"] == 1
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            matching_uniforms.len(),
+            1,
+            "one joined program-6 inputColor write per case"
+        );
+        let color = matching_uniforms[0];
+        let native_alpha = color["values"][3].as_f64().unwrap() as f32;
+        assert_eq!(native_alpha.to_bits(), expected_alpha.to_bits());
+        assert_eq!(
+            color["values"],
+            serde_json::json!([0.0, 0.0, 0.0, f64::from(expected_alpha)])
+        );
+        assert_eq!(color["observed_current_program"], 6);
+        assert_eq!(color["program_is_live"], true);
+        assert_eq!(color["program_link_status"], 1);
+        assert!(
+            !color["matched_draw_sequences"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            case["renderer_draw_context"]["draw_program_ids"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|program| program.as_u64() == Some(6))
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_sha256"],
+            V5_UPLOAD_SHA256
+        );
+        let native = captured_alpha_frame(&repo, &receipt, name);
+
+        let production = retained_scene_with_default_ink(&prepared, svg_transform);
+        let production_svg = production.page.svg.clone();
+        let production_rgba = raster_svg(&production_svg);
+        let production_plan_records = plan.radial_circle_records();
+        let default_sidecar_policy = prepared.fountain_v17_rgb.is_some()
+            || prepared.opacity == 1.0
+            || (prepared.opacity.is_finite()
+                && (0.0..=1.0).contains(&prepared.opacity)
+                && plan.inverse_scale == 1.0);
+        let default_sidecar_allowed = production_plan_records.is_some() && default_sidecar_policy;
+        assert_eq!(
+            production.ink.len(),
+            usize::from(default_sidecar_allowed),
+            "production scene retains only the actual default sidecar admission"
+        );
+        assert!(
+            plan.native_quad_geometry(&prepared),
+            "the captured unit-scale full-coverage cases use production native-quad geometry"
+        );
+        if let Some(records) = &production_plan_records
+            && default_sidecar_allowed
+        {
+            let entries = production.ink.iter().collect::<Vec<_>>();
+            assert_eq!(entries.len(), 1);
+            match &entries[0].1.payload {
+                crate::render::NativeInkPayload::RadialCircles {
+                    records: registered,
+                    saved_alpha,
+                } => {
+                    assert_eq!(registered, records);
+                    assert_eq!(saved_alpha.to_bits(), expected_alpha.to_bits());
+                }
+                _ => panic!("production admitted an unexpected native ink payload"),
+            }
+        }
+        let (production_pdf, production_images, production_shadings) =
+            vector_pdf_summary(&production);
+        let native_alpha = f32::from(alpha_byte) / 255.0;
+        if default_sidecar_allowed {
+            assert_circle_sidecar_saved_alpha(&production_pdf, native_alpha, plan.stamps.len());
+        } else {
+            assert!(
+                circle_sidecar_form_signatures(&production_pdf, plan.stamps.len()).is_empty(),
+                "production PDF has no unregistered circle sidecar"
+            );
+        }
+
+        // The legacy path is reconstructed independently from the same
+        // production plan, but its PDF deliberately drops native ink so it
+        // preserves the pre-sidecar SVG-gradient circle baseline.
+        let legacy_circle = retained_scene(&prepared, svg_transform, false, true);
+        assert!(legacy_circle.ink.is_empty());
+        let legacy_circle_svg = legacy_circle.page.svg.clone();
+        assert_eq!(
+            legacy_circle_svg.matches("<circle").count(),
+            plan.stamps.len()
+        );
+        assert_eq!(legacy_circle_svg.matches("<rect").count(), 0);
+        let legacy_circle_rgba = raster_svg(&legacy_circle_svg);
+        let (legacy_circle_pdf, legacy_pdf_images, legacy_pdf_shadings) =
+            vector_pdf_summary(&legacy_circle);
+        assert!(circle_sidecar_form_signatures(&legacy_circle_pdf, plan.stamps.len()).is_empty());
+        let independent_quad_svg = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len());
+        assert_eq!(
+            svg_element_signature(&independent_quad_svg),
+            svg_element_signature(&production_svg),
+            "production quad matches the independent rewrite of the legacy circle SVG"
+        );
+        let independent_quad_rgba = raster_svg(&independent_quad_svg);
+        assert_eq!(
+            independent_quad_rgba, production_rgba,
+            "independent quad and actual production quad rasterize identically"
+        );
+        let production_circle_signature =
+            circle_sidecar_form_signatures(&production_pdf, plan.stamps.len());
+        if default_sidecar_allowed {
+            assert_eq!(production_circle_signature.len(), 1);
+        }
+
+        write_new(
+            output_dir.join(format!("{name}.production.svg")),
+            production_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.production.pdf")),
+            &production_pdf,
+        );
+        write_new(
+            output_dir.join(format!("{name}.production.rgba")),
+            &production_rgba,
+        );
+        write_new(
+            output_dir.join(format!("{name}.native-topdown.rgba")),
+            &native,
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.svg")),
+            legacy_circle_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.pdf")),
+            &legacy_circle_pdf,
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.rgba")),
+            &legacy_circle_rgba,
+        );
+
+        let mut quad_experiment = None;
+        let mut partial_circle_pdf = None;
+        if alpha_byte == 128 {
+            assert!(
+                default_sidecar_allowed,
+                "unit-scale partial alpha gets actual default circle sidecar"
+            );
+            let circle_pdf = production_pdf.clone();
+            let circle_signature = circle_sidecar_form_signatures(&circle_pdf, plan.stamps.len());
+            assert_eq!(circle_signature, production_circle_signature);
+            assert_circle_sidecar_saved_alpha(&circle_pdf, expected_alpha, plan.stamps.len());
+            write_new(
+                output_dir.join("alpha128.quad-experiment.svg"),
+                independent_quad_svg.as_bytes(),
+            );
+            write_new(
+                output_dir.join("alpha128.quad-experiment.rgba"),
+                &independent_quad_rgba,
+            );
+            write_new(
+                output_dir.join("alpha128.partial-circle-sidecar-confirmation.pdf"),
+                &circle_pdf,
+            );
+            quad_experiment = Some(serde_json::json!({
+                "svg_path": "alpha128.quad-experiment.svg",
+                "rgba_path": "alpha128.quad-experiment.rgba",
+                "geometry": "independent source-pinned [-1,1]^2 rectangle per partial-alpha stamp; existing radial gradient, transform, order, and opacity preserved",
+                "stamp_count": plan.stamps.len(),
+                "rgba_sha256": sha256(&independent_quad_rgba),
+                "against_production_quad_rgba": rgba_difference(&production_rgba, &independent_quad_rgba),
+                "parsed_svg_matches_production": true,
+                "pixel_equality_required": false,
+            }));
+            partial_circle_pdf = Some(serde_json::json!({
+                "path": "alpha128.partial-circle-sidecar-confirmation.pdf",
+                "origin": "byte-identical confirmation copy of the actual production PDF, whose default V16Plan/native ink admission uses the existing radial_circle_records and saved alpha",
+                "saved_alpha_applied_once_per_stamp": expected_alpha,
+                "stamp_count": plan.stamps.len(),
+                "vector_forms": circle_signature.len(),
+                "form_signature_matches_production": circle_signature == production_circle_signature,
+                "pdf_image_objects": production_images,
+                "pdf_sha256": sha256(&circle_pdf),
+                "production_output": true,
+            }));
+        }
+        manifest_cases.push(serde_json::json!({
+            "case": name,
+            "saved_argb": format!("0x{argb:08x}"),
+            "native_uniform_alpha": native_alpha,
+            "native_inputColor_program": color["program"],
+            "native_inputColor_location": color["location"],
+            "native_inputColor_matched_draw_sequences": color["matched_draw_sequences"],
+            "source_payload_sha256": SOURCE_ARRAYS_SHA256,
+            "source_point_count": 204,
+            "native_upload_sha256": V5_UPLOAD_SHA256,
+            "plan_stamp_count": plan.stamps.len(),
+            "native_default_circle_sidecar_admitted": default_sidecar_allowed,
+            "production_uses_native_quad_geometry": plan.native_quad_geometry(&prepared),
+            "production_svg_path": format!("{name}.production.svg"),
+            "production_pdf_path": format!("{name}.production.pdf"),
+            "production_rgba_path": format!("{name}.production.rgba"),
+            "native_rgba_path": format!("{name}.native-topdown.rgba"),
+            "legacy_circle_svg_path": format!("{name}.legacy-circle.svg"),
+            "legacy_circle_pdf_path": format!("{name}.legacy-circle.pdf"),
+            "legacy_circle_rgba_path": format!("{name}.legacy-circle.rgba"),
+            "production_svg_sha256": sha256(production_svg.as_bytes()),
+            "production_pdf_sha256": sha256(&production_pdf),
+            "production_rgba_sha256": sha256(&production_rgba),
+            "native_rgba_sha256_topdown": sha256(&native),
+            "production_vs_native_rgba": rgba_difference(&production_rgba, &native),
+            "production_vs_legacy_circle_rgba": rgba_difference(&production_rgba, &legacy_circle_rgba),
+            "legacy_circle_svg_sha256": sha256(legacy_circle_svg.as_bytes()),
+            "legacy_circle_pdf_sha256": sha256(&legacy_circle_pdf),
+            "legacy_circle_rgba_sha256": sha256(&legacy_circle_rgba),
+            "production_pdf_image_objects": production_images,
+            "production_pdf_radial_shadings": production_shadings,
+            "legacy_circle_pdf_image_objects": legacy_pdf_images,
+            "legacy_circle_pdf_radial_shadings": legacy_pdf_shadings,
+            "production_circle_sidecar_form_signature": production_circle_signature,
+            "partial_alpha_quad_experiment": quad_experiment,
+            "partial_alpha_circle_sidecar_confirmation": partial_circle_pdf,
+            "native_vs_rust_pixel_equality_required": false,
+        }));
+    }
+    let manifest = serde_json::json!({
+        "schema": "sdocx.fountain.as18-glv16.alpha-pair-artifacts.v2",
+        "scope": "same pinned persisted 204-point AS18 input and native f32 matrix/upload across V5 saved-alpha 128/255 controls; rainbow stays disabled; retains explicit legacy circle SVG/PDF baselines and records actual bounded production quad SVG/PDF, the actual saved-alpha radial-circle PDF sidecar, and an independently rewritten partial-alpha quad SVG",
+        "provenance": "V5 source frame, arrays, RTV5 upload/AddPoint geometry, inputColor uniform, and two Mesa readbacks are hash-checked. This is a class-level prepared-stroke comparison, not Samsung device or PDFium/MuPDF parity.",
+        "source_payload_sha256": SOURCE_ARRAYS_SHA256,
+        "source_frame_sha256": SOURCE_FRAME_SHA256,
+        "native_upload_sha256": V5_UPLOAD_SHA256,
+        "v5_receipt_sha256": V5_RECEIPT_SHA256,
+        "v5_candidate_pins_sha256": V5_PINS_SHA256,
+        "canvas_px": [WIDTH, HEIGHT],
+        "native_gl_uniform_matrix4fv_program6_location0_f32": matrix_values,
+        "svg_transform_from_native_matrix_and_gl_read_origin": svg_transform,
+        "native_execution": false,
+        "artifact_render_executed": true,
+        "production_gate": "current bounded ordinary V16 admission: source alphaByWidth lanes remain full coverage; unit-scale ordinary strokes use the source-pinned quad SVG and radial-circle PDF sidecar with saved alpha; existing production selection was not changed by this artifact writer",
+        "predecessor_v1_artifacts_modified": false,
+        "cases": manifest_cases,
+    });
+    write_new(
+        output_dir.join("manifest.json"),
+        &serde_json::to_vec_pretty(&manifest).unwrap(),
+    );
 }
 
 fn vector_circle_pdf(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize, usize) {
