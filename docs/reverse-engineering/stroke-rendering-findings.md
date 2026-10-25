@@ -468,3 +468,19 @@ no later update to that buffer occurs before the observed draw. The unchanged
 frame and actual attribute bindings close the source-upload-to-draw join,
 without requiring a GPU buffer readback. These are host playback settings;
 exported SVG/PDF texture fidelity remains open.
+
+An intrinsic-image SVG prototype using SDK resvg 0.47 reproduces the same 184
+covered pixels for both opaque and half-alpha source colors on a transparent
+background. Alpha differs by at most 3/255; mean absolute error over coverage is
+0.315/255 and 0.712/255 respectively. Zero-alpha controls match exactly on both
+backgrounds, but colored pixels still differ, so this is not paint parity or a
+production route. Focused probes isolate two SVG transport losses: stamp-sized
+mask regions clip subpixel coverage, and nearest-filtered images still have
+antialiased outer boundaries. Full-canvas mask regions and atlas padding beyond
+one output pixel restore the sampled point/background bytes exactly (229 and 53
+at pixel `(83,186)`), while retaining the original quad and texture coordinates.
+Padding uses adjacent atlas rows and clamps at the complete atlas edges; it does
+not clamp each selected tile independently. This correction reduces the opaque
+source's maximum alpha error from 208/255 to 3/255; filter quantization and
+compositing remain unresolved. These measurements apply only to this captured
+host-Mesa scene and renderer, not arbitrary scale, PDF export or device output.
