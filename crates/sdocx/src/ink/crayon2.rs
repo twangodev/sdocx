@@ -11,7 +11,7 @@ const MAX_SOURCE_POINTS: usize = 65_536;
 const MAX_DRAWPOINT_INPUTS: usize = 65_536;
 const MAX_RNG_CALLS: usize = MAX_DRAWPOINT_INPUTS * 4;
 const MAX_RECORDS: usize = MAX_DRAWPOINT_INPUTS;
-const MAX_NATIVE_SEED: u32 = 100_000;
+const NATIVE_SEED_MODULUS: i32 = 100_000;
 const PHASE_MODULUS: f32 = 150.0;
 
 #[derive(Clone, Copy, Debug)]
@@ -36,8 +36,10 @@ pub(crate) struct NativeProfile {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum RngProfile {
-    /// Captured glibc-compatible TYPE_3 adapter; each drawPoint srand(seed)
-    /// restarts the sequence and the native seed advances after every stamp.
+    /// Captured host TYPE_3 test adapter; each drawPoint seeds from the current
+    /// native uint32 state, then advances that state with signed int32 + 1
+    /// and signed remainder by 100000. This does not promise glibc, Bionic, or
+    /// Android RNG behavior.
     CapturedHostType3,
 }
 
@@ -138,6 +140,12 @@ pub(crate) fn sample<'a, 'source>(
     {
         return Err(Error::Invalid("nonfinite or negative source channel"));
     }
+    let first_x = input.points[0].x;
+    if first_x < i32::MIN as f32 || first_x >= -(i32::MIN as f32) {
+        return Err(Error::Invalid(
+            "initial native seed coordinate is outside int32",
+        ));
+    }
     if profile.rng != RngProfile::CapturedHostType3 {
         return Err(Error::Unsupported("unobserved RNG profile"));
     }
@@ -151,9 +159,9 @@ pub(crate) fn sample<'a, 'source>(
             rand_values: Vec::new(),
             phase_updates: 0,
         },
-        seed: 0,
-        rng: Type3::seeded(0),
-        phase: Point { x: 0.0, y: 0.0 },
+        seed: Point::from(input.points[0]).x as i32 as u32,
+        rng: Type3::seeded(Point::from(input.points[0]).x as i32 as u32),
+        phase: Point::from(input.points[0]),
         phase_counter: 0,
         draw_line_counter: 0,
     };
@@ -242,11 +250,8 @@ impl Core<'_, '_> {
         if self.output.drawpoint_inputs.len() >= MAX_DRAWPOINT_INPUTS {
             return Err(Error::Limit("drawPoint input count"));
         }
-        if self.seed >= MAX_NATIVE_SEED {
-            self.seed = 0;
-        }
         self.rng = Type3::seeded(self.seed);
-        self.seed += 1;
+        self.seed = ((self.seed as i32).wrapping_add(1) % NATIVE_SEED_MODULUS) as u32;
         let extent = self.input.size + 1.5;
         let divisor = extent as i32;
         let half = extent * 0.5;
@@ -421,7 +426,10 @@ mod tests {
             .collect()
     }
     fn parse_source(f: &Value) -> (Vec<P>, Vec<f32>) {
-        let xy = f["source"]["points_f32_bits"].as_array().unwrap();
+        parse_source_channels(&f["source"])
+    }
+    fn parse_source_channels(source: &Value) -> (Vec<P>, Vec<f32>) {
+        let xy = source["points_f32_bits"].as_array().unwrap();
         let points = xy
             .as_chunks::<2>()
             .0
@@ -431,7 +439,7 @@ mod tests {
                 y: bits_f32(p[1].as_str().unwrap()),
             })
             .collect();
-        let pressure = f["source"]["pressure_f32_bits"]
+        let pressure = source["pressure_f32_bits"]
             .as_array()
             .unwrap()
             .iter()
@@ -475,6 +483,13 @@ mod tests {
             .flat_map(|p| p[2].to_le_bytes())
             .collect()
     }
+    fn drawpoint_xy_size(output: &Output) -> Vec<u8> {
+        output
+            .drawpoint_inputs
+            .iter()
+            .flat_map(|p| p[..3].iter().flat_map(|x| x.to_le_bytes()))
+            .collect()
+    }
     fn rng_bytes(output: &Output) -> Vec<u8> {
         output
             .rand_values
@@ -512,7 +527,7 @@ mod tests {
             curve_enabled: true,
             points: &points,
             pressure: &pressure,
-            size: native_f32(f["profile"]["size_f32_bits"].as_str().unwrap()),
+            size: native_f32(f["profile"]["size_f32_le_hex"].as_str().unwrap()),
         };
         let output = sample(&input, &parse_profile(&f)).expect("bounded V2 source sampler");
         assert_eq!(
@@ -535,6 +550,65 @@ mod tests {
                 "{name} SHA-256"
             );
             assert_eq!(got, expected, "{name} native stream parity");
+        }
+    }
+
+    #[test]
+    fn native_negative_and_phase_controls_match_source_derived_stream_hashes() {
+        let f = fixture();
+        let profile = parse_profile(&f);
+        for control in f["additional_native_controls"].as_array().unwrap() {
+            let id = control["control_id"].as_str().unwrap();
+            assert_eq!(control["profile"]["advanced_setting"], "2;", "{id}");
+            assert_eq!(control["profile"]["tool_type"], 2, "{id}");
+            assert_eq!(control["profile"]["stroke_type"], 0, "{id}");
+            assert_eq!(control["profile"]["curve_enabled"], true, "{id}");
+            let (points, pressure) = parse_source_channels(&control["source"]);
+            let input = SourceInput {
+                advanced_version: 2,
+                tool_type: 2,
+                stroke_type: 0,
+                curve_enabled: true,
+                points: &points,
+                pressure: &pressure,
+                size: native_f32(control["profile"]["size_f32_le_hex"].as_str().unwrap()),
+            };
+            let output = sample(&input, &profile).expect("bounded native control sampler");
+            let native = &control["native"];
+            assert_eq!(
+                output.drawpoint_inputs.len(),
+                native["drawpoint_count"],
+                "{id}"
+            );
+            assert_eq!(output.records.len(), native["record_count"], "{id}");
+            assert_eq!(output.rand_values.len(), native["rand_count"], "{id}");
+            assert_eq!(output.phase_updates, native["phase_updates"], "{id}");
+            for (name, bytes) in [
+                ("drawpoint_xy_size_f32_le", drawpoint_xy_size(&output)),
+                ("rng_u32_le", rng_bytes(&output)),
+                ("rtv1_six_f32_lanes_le", output_bytes(&output)),
+            ] {
+                let expected = &native["streams"][name];
+                assert_eq!(bytes.len(), expected["bytes"], "{id} {name} byte length");
+                assert_eq!(
+                    sha(&bytes),
+                    expected["sha256"].as_str().unwrap(),
+                    "{id} {name} SHA-256"
+                );
+            }
+            if id == "phase-advance-size16" {
+                assert_eq!(
+                    output.phase_updates, 1,
+                    "phase-advance control must cross one native phase step"
+                );
+                assert_eq!(
+                    native["phase_counter_transitions"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    1
+                );
+            }
         }
     }
 
@@ -567,6 +641,16 @@ mod tests {
         input.size = f32::MAX;
         assert!(matches!(sample(&input, &profile), Err(Error::Invalid(_))));
         input.size = 10.0;
+        let out_of_range_seed = [
+            P {
+                x: 2_147_483_648.0,
+                y: 0.0,
+            },
+            P { x: 0.0, y: 0.0 },
+        ];
+        input.points = &out_of_range_seed;
+        assert!(matches!(sample(&input, &profile), Err(Error::Invalid(_))));
+        input.points = &points;
         let short_pressure = [1.0];
         input.pressure = &short_pressure;
         assert!(matches!(sample(&input, &profile), Err(Error::Invalid(_))));
