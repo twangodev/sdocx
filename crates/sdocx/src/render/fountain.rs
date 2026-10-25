@@ -721,21 +721,24 @@ impl V16Plan {
             .collect()
     }
 
-    fn native_quad_geometry(&self, paint: &PreparedStroke<'_>) -> bool {
+    fn native_quad_geometry(&self, paint: &PreparedStroke<'_>, retained_pdf_scene: bool) -> bool {
         // RTV5's static quad spans [-1, 1] and supplies radial coordinates
         // [0, 1]. The existing SVG gradient uses the same unit radial domain.
+        // Keep partial-width circles in retained PDF scenes because PDF
+        // gradient conversion preserves their legacy circle boundary better.
         paint.fountain_v17_rgb.is_none()
             && paint.opacity.is_finite()
             && (0.0..=1.0).contains(&paint.opacity)
             && self.inverse_scale == 1.0
-            && self
-                .stamps
-                .iter()
-                .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0)
+            && (!retained_pdf_scene
+                || self
+                    .stamps
+                    .iter()
+                    .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0))
     }
 
     fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
-        let native_quad_geometry = self.native_quad_geometry(paint);
+        let native_quad_geometry = self.native_quad_geometry(paint, svg.retains_text());
         #[cfg(feature = "pdf")]
         let native_ink_id = if svg.retains_text() {
             (paint.fountain_v17_rgb.is_some()
@@ -1759,6 +1762,19 @@ mod tests {
             false,
         );
         let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("rect"))
+                .count(),
+            5,
+            "unit-scale thin and full-width stamps share the native quad"
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("circle"))
+                .count(),
+            0
+        );
         let gradients = xml
             .descendants()
             .filter(|node| node.has_tag_name("radialGradient"))
@@ -1923,6 +1939,13 @@ mod tests {
     fn v16_instances_source_over_with_argb_alpha_per_stamp() {
         let one_svg = v16_scene(&[(32.5, 32.5, 0.1)], 1., false);
         let xml = roxmltree::Document::parse(&one_svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("rect"))
+                .count(),
+            1,
+            "partial alphaByWidth uses the quad and its existing radial field"
+        );
         assert_eq!(
             xml.descendants()
                 .filter(|node| node.has_tag_name("filter"))
@@ -2344,15 +2367,55 @@ mod tests {
         );
         let mut thin = make_paint(1.0, None);
         thin.dot_radii = Some(vec![0.1; 2]);
-        let (thin_svg, thin_ink, _) = render_retained(&thin);
+        let mut public_svg_scene = Scene::new(Svg::new().width(64).height(64));
+        assert!(render(&mut public_svg_scene, &thin, false, None));
+        let public_svg = public_svg_scene.finish();
+        assert!(
+            public_svg.contains("<rect") && !public_svg.contains("<circle"),
+            "public unit-scale thin SVG uses native quad geometry"
+        );
+        let (thin_svg, thin_ink, thin_text) = render_retained(&thin);
         assert!(
             thin_svg.contains("<circle"),
-            "partial width coverage keeps legacy geometry"
+            "retained-PDF partial width coverage keeps legacy circle geometry"
         );
         assert!(!thin_svg.contains("<rect"));
         assert!(
             thin_ink.is_empty(),
-            "partial width coverage retains PDF shading"
+            "partial width coverage stays outside the full-coverage circle sidecar"
+        );
+        let thin_scene = crate::render::RenderedScene {
+            page: crate::RenderedPage::new(0, 64, 64, thin_svg),
+            text: thin_text,
+            ink: thin_ink,
+            text_error: None,
+        };
+        let thin_pdf_bytes = crate::pdf::render_native_scene_pdf_for_test(
+            &thin_scene,
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        let thin_pdf = lopdf::Document::load_mem(&thin_pdf_bytes).unwrap();
+        let mut radial_shading = false;
+        for object in thin_pdf.objects.values() {
+            let dict = match object {
+                lopdf::Object::Dictionary(dict) => dict,
+                lopdf::Object::Stream(stream) => &stream.dict,
+                _ => continue,
+            };
+            assert_ne!(
+                dict.get(b"Subtype").and_then(lopdf::Object::as_name).ok(),
+                Some(b"Image".as_slice()),
+                "thin V16 PDF remains vector-only"
+            );
+            radial_shading |= dict
+                .get(b"ShadingType")
+                .and_then(lopdf::Object::as_i64)
+                .is_ok_and(|kind| kind == 3);
+        }
+        assert!(
+            radial_shading,
+            "partial width coverage uses the retained radial-shading PDF path"
         );
         let (scaled_svg, scaled_opaque_ink, _) = render_retained(&make_paint(1.0, Some(2.0)));
         assert!(

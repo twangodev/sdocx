@@ -131,6 +131,23 @@ fn source_stroke_argb(baseline: &serde_json::Value, rainbow: bool, argb: u32) ->
     stroke
 }
 
+fn source_stroke_argb_width(
+    baseline: &serde_json::Value,
+    rainbow: bool,
+    argb: u32,
+    width: f32,
+) -> Stroke {
+    let mut stroke = source_stroke_argb(baseline, rainbow, argb);
+    stroke.pen_width = width;
+    stroke
+        .rendering
+        .as_mut()
+        .expect("saved rendering metadata")
+        .style
+        .pen_size = Some(width);
+    stroke
+}
+
 fn decode_hex(value: &str) -> Vec<u8> {
     assert_eq!(value.len() % 2, 0);
     value
@@ -461,6 +478,13 @@ fn svg_element_signature(svg: &str) -> Vec<SvgElementSignature> {
 }
 
 fn native_upload_records(diagnostic: &serde_json::Value) -> Vec<[u32; 7]> {
+    native_upload_records_with_sha(diagnostic, NATIVE_VECTOR_SHA256)
+}
+
+fn native_upload_records_with_sha(
+    diagnostic: &serde_json::Value,
+    expected_sha256: &str,
+) -> Vec<[u32; 7]> {
     let upload = &diagnostic["state"]["current"]["native_upload_checkpoint"];
     let raw = decode_hex(
         upload["vector_hex"]
@@ -468,7 +492,7 @@ fn native_upload_records(diagnostic: &serde_json::Value) -> Vec<[u32; 7]> {
             .expect("retained upload bytes"),
     );
     assert_eq!(upload["vector_bytes"].as_u64(), Some(2128));
-    assert_eq!(sha256(&raw), NATIVE_VECTOR_SHA256);
+    assert_eq!(sha256(&raw), expected_sha256);
     assert_eq!(raw.len(), 76 * 7 * 4);
     raw.as_chunks::<28>()
         .0
@@ -483,14 +507,35 @@ fn native_upload_records(diagnostic: &serde_json::Value) -> Vec<[u32; 7]> {
 
 fn compare_plan_to_native(plan: &V16Plan, diagnostic: &serde_json::Value) {
     let native = native_upload_records(diagnostic);
-    let arguments = diagnostic["state"]["current"]["rtv_addpoint_arguments"]
+    compare_plan_to_native_records(plan, diagnostic, &native);
+}
+
+fn compare_plan_to_native_with_sha(
+    plan: &V16Plan,
+    diagnostic: &serde_json::Value,
+    expected_sha256: &str,
+) {
+    let native = native_upload_records_with_sha(diagnostic, expected_sha256);
+    compare_plan_to_native_records(plan, diagnostic, &native);
+}
+
+fn compare_plan_to_native_records(
+    plan: &V16Plan,
+    diagnostic: &serde_json::Value,
+    native: &[[u32; 7]],
+) {
+    let current = &diagnostic["state"]["current"];
+    let arguments = current
+        .get("rtv_addpoint_arguments")
+        .or_else(|| current.get("rtv_addpoint_entries"))
+        .unwrap()
         .as_array()
         .expect("captured RTV5 AddPoint inputs");
     assert_eq!(plan.stamps.len(), 76);
     assert_eq!(native.len(), plan.stamps.len());
     assert_eq!(arguments.len(), plan.stamps.len());
     for (index, ((stamp, record), args)) in
-        plan.stamps.iter().zip(&native).zip(arguments).enumerate()
+        plan.stamps.iter().zip(native).zip(arguments).enumerate()
     {
         let actual = [
             stamp.x.to_bits(),
@@ -636,6 +681,29 @@ fn retained_scene_with_default_ink(
         ink,
         text_error,
     }
+}
+
+fn public_svg_with_default_ink(
+    prepared: &crate::PreparedStroke<'_>,
+    svg_transform: [f64; 6],
+) -> String {
+    let mut scene = Scene::new(
+        Svg::new()
+            .width(WIDTH)
+            .height(HEIGHT)
+            .view_box(ViewBox::new(
+                0.0,
+                0.0,
+                f64::from(WIDTH),
+                f64::from(HEIGHT),
+                1,
+            )),
+    );
+    scene.scope(
+        Group::new().transformed(Transform::matrix_unrounded(svg_transform)),
+        |svg| assert!(render(svg, prepared, false, None)),
+    );
+    scene.finish()
 }
 
 fn raster_svg(svg: &str) -> Vec<u8> {
@@ -1148,7 +1216,7 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             "production scene retains only the actual default sidecar admission"
         );
         assert!(
-            plan.native_quad_geometry(&prepared),
+            plan.native_quad_geometry(&prepared, true),
             "the captured unit-scale full-coverage cases use production native-quad geometry"
         );
         if let Some(records) = &production_plan_records
@@ -1297,7 +1365,7 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             "native_upload_sha256": V5_UPLOAD_SHA256,
             "plan_stamp_count": plan.stamps.len(),
             "native_default_circle_sidecar_admitted": default_sidecar_allowed,
-            "production_uses_native_quad_geometry": plan.native_quad_geometry(&prepared),
+            "production_uses_native_quad_geometry": plan.native_quad_geometry(&prepared, true),
             "production_svg_path": format!("{name}.production.svg"),
             "production_pdf_path": format!("{name}.production.pdf"),
             "production_rgba_path": format!("{name}.production.rgba"),
@@ -1341,6 +1409,460 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
         "production_gate": "current bounded ordinary V16 admission: source alphaByWidth lanes remain full coverage; unit-scale ordinary strokes use the source-pinned quad SVG and radial-circle PDF sidecar with saved alpha; existing production selection was not changed by this artifact writer",
         "predecessor_v1_artifacts_modified": false,
         "cases": manifest_cases,
+    });
+    write_new(
+        output_dir.join("manifest.json"),
+        &serde_json::to_vec_pretty(&manifest).unwrap(),
+    );
+}
+
+#[test]
+#[ignore = "writes thin-width AS18 GLV16 SVG/PDF artifacts from the complete pinned V8 native pair"]
+fn write_as18_glv16_thin_svg_pdf_pairs() {
+    const PAIR_SHA256: &str = "0204f19ed9d325b78dce5e050e17082e6957d76d7f64efdaf0663aa42dc7cae8";
+    const SOURCE_PAYLOAD_SHA256: &str =
+        "c01022129e9a3a09ee95dc5935d5e177bd507e03d6d9dbd357a5278a64ab72b4";
+    const SOURCE_FRAME_SHA256: &str =
+        "490fa32ab9d69416e4c48dec88b26ad14e362d7b08eb3e1b6a9ada47ce2980c2";
+    const NATIVE_UPLOAD_SHA256: &str =
+        "621623590e5818b88167e910cce8dca9b0478790dcc7d95b2e55b0e7eb606a36";
+
+    let pair_path = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_204_THIN_V8_PAIR")
+            .expect("set SDOCX_FOUNTAIN_V16_204_THIN_V8_PAIR to the pinned V8 pair JSON"),
+    );
+    let output_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_204_THIN_V8_ARTIFACT_DIR")
+            .expect("set SDOCX_FOUNTAIN_V16_204_THIN_V8_ARTIFACT_DIR to a fresh output directory"),
+    );
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repository root");
+
+    let pair_bytes = fs::read(&pair_path).expect("complete V8 pair receipt");
+    assert_eq!(sha256(&pair_bytes), PAIR_SHA256);
+    let pair: serde_json::Value = serde_json::from_slice(&pair_bytes).unwrap();
+    assert_eq!(
+        pair["schema"],
+        "sdocx-fountain-saved-renderer-experiment-v1"
+    );
+    assert_eq!(pair["source_input"]["point_count"], 204);
+    assert_eq!(
+        pair["source_input"]["payload_sha256"],
+        SOURCE_PAYLOAD_SHA256
+    );
+    assert_eq!(pair["source_input"]["frame_sha256"], SOURCE_FRAME_SHA256);
+    assert_eq!(
+        pair["source_getter_arrays"]["retention"],
+        "complete actual Model getters; no diagnostic prefix cap in complete pair receipt"
+    );
+    assert_eq!(
+        pair["source_getter_arrays"]["verified_against_pinned_natural_input"],
+        true
+    );
+    let expected_counts = [
+        ("points_f32_bits", 408usize),
+        ("pressure_f32_bits", 204),
+        ("tilt_f32_bits", 204),
+        ("orientation_f32_bits", 204),
+        ("timestamps_i32", 204),
+    ];
+    let cases = pair["cases"].as_array().expect("V8 captured cases");
+    assert_eq!(cases.len(), 2);
+    assert_eq!(cases[0]["case"], "alpha128");
+    assert_eq!(cases[1]["case"], "alpha255");
+    assert_eq!(cases[0]["source_arrays"], cases[1]["source_arrays"]);
+    for case in cases {
+        assert_eq!(case["source_point_count"], 204);
+        assert_eq!(case["source_model_get_point_count"], 204);
+        assert_eq!(case["source_payload_sha256"], SOURCE_PAYLOAD_SHA256);
+        assert_eq!(case["source_frame_sha256"], SOURCE_FRAME_SHA256);
+        let arrays = case["source_arrays"]
+            .as_object()
+            .expect("complete getter arrays");
+        for (key, count) in expected_counts {
+            assert_eq!(
+                arrays[key].as_array().expect("complete getter array").len(),
+                count,
+                "source getter array {key}"
+            );
+            assert_eq!(
+                pair["source_getter_arrays"]["expected_item_counts"][key],
+                count
+            );
+        }
+    }
+    let checks = pair["capture_diagnostics"]["pairwise_checks"]
+        .as_object()
+        .expect("V8 pairwise checks");
+    assert!(!checks.is_empty());
+    assert!(checks.values().all(|value| value == true));
+    assert_eq!(
+        pair["capture_diagnostics"]["status"],
+        "host_mesa_pair_captured_no_device_or_document_parity_claim"
+    );
+    fs::create_dir(&output_dir).expect("thin V8 artifact output directory must be new");
+
+    let native_frame = |name: &str, expected_raw_sha: &str| {
+        let artifact = pair["pixel_artifacts"]
+            .as_array()
+            .expect("retained readback artifacts")
+            .iter()
+            .find(|artifact| artifact["key"] == name)
+            .expect("case readback artifact");
+        assert_eq!(artifact["cases"], serde_json::json!([name]));
+        assert_eq!(
+            artifact["format"],
+            "zlib(RGBA8 glReadPixels rows, lower-left first)"
+        );
+        let artifact_path = Path::new(artifact["path"].as_str().unwrap());
+        let path = if artifact_path.is_absolute() {
+            artifact_path.to_owned()
+        } else {
+            repo.join(artifact_path)
+        };
+        let compressed = fs::read(path).expect("V8 retained compressed Mesa frame");
+        assert_eq!(sha256(&compressed), artifact["compressed_sha256"]);
+        let mut decoder = ZlibDecoder::new(compressed.as_slice());
+        let mut raw = Vec::new();
+        decoder.read_to_end(&mut raw).expect("decode V8 Mesa frame");
+        assert_eq!(raw.len() as u64, artifact["raw_bytes"].as_u64().unwrap());
+        assert_eq!(raw.len(), (WIDTH * HEIGHT * 4) as usize);
+        assert_eq!(sha256(&raw), expected_raw_sha);
+        topdown_frame(&raw)
+    };
+
+    let mut output_cases = Vec::new();
+    let mut native_frames = Vec::new();
+    for (case, name, argb, alpha_byte, frame_sha) in [
+        (
+            &cases[0],
+            "alpha128",
+            0x8000_0000_u32,
+            128_u8,
+            "7516b081b2a3b56faa364b0c5a4bbaa6ec550c678cd6469c0f272b492d8927ea",
+        ),
+        (
+            &cases[1],
+            "alpha255",
+            0xff00_0000_u32,
+            255_u8,
+            "59dd11d7bea8825aea4974399c0495c93b61a2e44bd81c4d1dd78ddbbb157466",
+        ),
+    ] {
+        assert_eq!(case["saved_color_argb_control"], format!("0x{argb:08x}"));
+        assert_eq!(case["object_color_set_get_argb"], format!("0x{argb:08x}"));
+        assert_eq!(
+            case["effective_selected_pen_state_after_drawing"]["color_argb"],
+            argb
+        );
+        assert_eq!(
+            case["effective_selected_pen_state_after_drawing"]["rainbow_enabled"],
+            0
+        );
+        assert_eq!(case["controlled_object_size_input_f32_bits"], "0000803f");
+        assert_eq!(case["controlled_object_size_get_f32_bits"], "0000803f");
+        assert_eq!(case["native_pen_getsize_f32_bits"], "0000803f");
+        let size_calls = case["native_pen_setsize_calls"].as_array().unwrap();
+        assert!(
+            size_calls
+                .iter()
+                .any(|call| { call["input_s0"] == "0000803f" && call["return_w0"] == 1 })
+        );
+        assert_eq!(case["selected_drawable_class"], "GLV16");
+        assert_eq!(
+            case["native_addpoint_raw_y_range"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(case["rtv_addpoint_entries"].as_array().unwrap().len(), 76);
+        assert_eq!(
+            case["native_rtv5_s3_f32_bits"].as_array().unwrap().len(),
+            76
+        );
+        assert_eq!(
+            case["native_rtv5_upload_owner_join"]["addpoint_entry_count"],
+            76
+        );
+        assert_eq!(case["native_upload_checkpoint"]["vector_bytes"], 2128);
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_sha256"],
+            NATIVE_UPLOAD_SHA256
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_hex_omitted"],
+            false
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_object"],
+            case["native_set_buffer_calls"][0]["vector_one"]["ptr"]
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["receiver"],
+            case["send_data_to_gpu_calls"][0]["receiver"]
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_hex"]
+                .as_str()
+                .unwrap()
+                .len(),
+            2128 * 2
+        );
+        assert_eq!(
+            case["native_rtv5_upload_owner_join"]["upload_vector_matches_send_and_task"],
+            true
+        );
+        assert_eq!(
+            case["native_rtv5_upload_owner_join"]["addpoint_owner_matches_renderer_receiver"],
+            true
+        );
+        assert_eq!(
+            case["native_rtv5_upload_owner_join"]["all_rt_owners_match"],
+            true
+        );
+        assert_eq!(
+            case["native_rtv5_upload_owner_join"]["all_setbuffer_owners_match"],
+            true
+        );
+        assert_eq!(case["renderer_gl_draw_events"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            case["renderer_gl_draw_events"][0]["call"],
+            "glDrawArraysInstanced"
+        );
+        assert_eq!(
+            case["renderer_gl_draw_events"][0]["values"],
+            serde_json::json!([5, 0, 4, 76])
+        );
+        assert_eq!(
+            case["renderer_gl_draw_events"][0]["observed_current_program"],
+            6
+        );
+        assert_eq!(
+            case["renderer_draw_context"]["viewport_at_readback"],
+            serde_json::json!([0, 0, WIDTH, HEIGHT])
+        );
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_sha256"],
+            NATIVE_UPLOAD_SHA256
+        );
+
+        let uniform_rows = case["drawable_color_uniforms"].as_array().unwrap();
+        assert_eq!(uniform_rows.len(), 1);
+        let uniform = &uniform_rows[0];
+        assert_eq!(uniform["program"], 6);
+        assert_eq!(uniform["location"], 1);
+        assert_eq!(uniform["observed_current_program"], 6);
+        assert_eq!(uniform["program_is_live"], true);
+        assert_eq!(uniform["program_link_status"], 1);
+        let expected_alpha = f32::from(alpha_byte) / 255.0;
+        assert_eq!(
+            uniform["values"][3].as_f64().unwrap() as f32,
+            expected_alpha
+        );
+
+        let stroke = source_stroke_argb_width(&pair, false, argb, 1.0);
+        let prepared = crate::ink::prepare_stroke_for_context(
+            &stroke,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert!(prepared.fountain_v17_rgb.is_none());
+        assert_eq!(
+            (prepared.opacity as f32).to_bits(),
+            expected_alpha.to_bits()
+        );
+        // `PreparedStroke::width` is generic display fallback width, derived
+        // from public `Stroke::pen_width` by normalized_stroke_width (/2.5,
+        // clamped to 0.4..12). Fountain V16 geometry consumes saved style
+        // `pen_size` instead; the following native-upload join checks that
+        // actual geometry rather than treating this fallback width as native.
+        assert_eq!((prepared.width as f32).to_bits(), 0.4_f32.to_bits());
+        let plan = V16Plan::prepare(&prepared).expect("thin-width V16Plan");
+        assert_eq!(plan.stamps.len(), 76);
+        assert!(plan.native_quad_geometry(&prepared, false));
+        assert!(!plan.native_quad_geometry(&prepared, true));
+        assert!(plan.radial_circle_records().is_none());
+        let plan_min = plan
+            .stamps
+            .iter()
+            .map(|stamp| f32::from_bits(stamp.gradient_key.alpha))
+            .fold(f32::INFINITY, f32::min);
+        let plan_max = plan
+            .stamps
+            .iter()
+            .map(|stamp| f32::from_bits(stamp.gradient_key.alpha))
+            .fold(f32::NEG_INFINITY, f32::max);
+        assert!(plan_min.is_finite() && plan_max.is_finite());
+        assert!(plan_min >= 0.0 && plan_max <= 1.0 && plan_min < 1.0);
+
+        let case_diagnostic = serde_json::json!({
+            "state": { "current": {
+                "rtv_addpoint_entries": case["rtv_addpoint_entries"],
+                "native_upload_checkpoint": case["native_upload_checkpoint"]
+            }}
+        });
+        compare_plan_to_native_with_sha(&plan, &case_diagnostic, NATIVE_UPLOAD_SHA256);
+
+        let native = native_frame(name, frame_sha);
+        native_frames.push(native.clone());
+        let matrix_events = case["renderer_gl_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|event| {
+                event["call"] == "glUniformMatrix4fv"
+                    && event["location"] == 0
+                    && event["program"] == 6
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(matrix_events.len(), 1);
+        let matrix_values = matrix_events[0]["values"]
+            .as_array()
+            .expect("captured program-6 native projection")
+            .iter()
+            .map(|value| value.as_f64().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(matrix_values.len(), 16);
+        assert!(matrix_values.iter().all(|value| value.is_finite()));
+        let viewport = case["renderer_draw_context"]["viewport_at_readback"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_u64().unwrap() as u32)
+            .collect::<Vec<_>>();
+        let svg_transform = svg_matrix_from_native(&matrix_values, &viewport);
+        let production_svg = public_svg_with_default_ink(&prepared, svg_transform);
+        assert_eq!(production_svg.matches("<rect").count(), plan.stamps.len());
+        assert_eq!(production_svg.matches("<circle").count(), 0);
+        let production_raster = raster_svg(&production_svg);
+
+        // The retained-PDF route keeps thin width-alpha on the legacy circle
+        // vector fallback. It must not register the full-coverage native circle
+        // sidecar, whose admission requires every per-stamp coverage to be 1.
+        let production = retained_scene_with_default_ink(&prepared, svg_transform);
+        assert!(
+            production.ink.is_empty(),
+            "thin width-alpha keeps PDF vector fallback without circle sidecar"
+        );
+        let retained_pdf_svg = production.page.svg.clone();
+        assert_eq!(
+            retained_pdf_svg.matches("<circle").count(),
+            plan.stamps.len()
+        );
+        assert_eq!(retained_pdf_svg.matches("<rect").count(), 0);
+        let (production_pdf, production_pdf_images, production_pdf_shadings) =
+            vector_pdf_summary(&production);
+        assert!(circle_sidecar_form_signatures(&production_pdf, plan.stamps.len()).is_empty());
+
+        // Keep an explicit legacy-circle public SVG baseline and an
+        // independent quad rewrite for comparison with the public route.
+        let legacy_circle_svg = circle_geometry_svg(&production_svg, plan.stamps.len());
+        assert_eq!(
+            legacy_circle_svg.matches("<circle").count(),
+            plan.stamps.len()
+        );
+        assert_eq!(legacy_circle_svg.matches("<rect").count(), 0);
+        let legacy_circle_raster = raster_svg(&legacy_circle_svg);
+        assert_eq!(raster_svg(&retained_pdf_svg), legacy_circle_raster);
+        let legacy_pdf_images = production_pdf_images;
+        let legacy_pdf_shadings = production_pdf_shadings;
+
+        // Independently convert the retained circle baseline back to the
+        // static RTV5 quad, then compare its raster with the actual renderer.
+        let independent_quad_svg = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len());
+        let independent_quad_raster = raster_svg(&independent_quad_svg);
+        assert_eq!(production_raster, independent_quad_raster);
+        write_new(
+            output_dir.join(format!("{name}.production.svg")),
+            production_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.production.pdf")),
+            &production_pdf,
+        );
+        write_new(
+            output_dir.join(format!("{name}.retained-pdf-source.svg")),
+            retained_pdf_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.production.rgba")),
+            &production_raster,
+        );
+        write_new(
+            output_dir.join(format!("{name}.native-topdown.rgba")),
+            &native,
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.svg")),
+            legacy_circle_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.pdf")),
+            &production_pdf,
+        );
+        write_new(
+            output_dir.join(format!("{name}.legacy-circle.rgba")),
+            &legacy_circle_raster,
+        );
+        write_new(
+            output_dir.join(format!("{name}.independent-quad.svg")),
+            independent_quad_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.independent-quad.rgba")),
+            &independent_quad_raster,
+        );
+        output_cases.push(serde_json::json!({
+            "case": name,
+            "saved_argb": format!("0x{argb:08x}"),
+            "explicit_native_object_and_style_size": 1.0,
+            "prepared_generic_width_fallback": 0.4,
+            "source_profile": "pinned 204-point archive input with explicit native ObjectStroke size=1.0 override; controlled thin-render fork, not archive-native thin widths",
+            "source_getter_arrays": "complete V8 native Model getters, exact expected lengths and pair equality checked",
+            "native_saved_alpha": expected_alpha,
+            "native_addpoint_count": 76,
+            "native_upload_sha256": NATIVE_UPLOAD_SHA256,
+            "native_upload_records_compared_bitwise": true,
+            "production_geometry": "current V16 unit quad for ordinary unit-scale uniform-color input, including native width-alpha variation",
+            "production_pdf_geometry": "retained PDF sink preserves the native width-alpha circle fallback",
+            "production_pdf_circle_sidecar_admitted": false,
+            "production_svg_path": format!("{name}.production.svg"),
+            "production_pdf_path": format!("{name}.production.pdf"),
+            "retained_pdf_source_svg_path": format!("{name}.retained-pdf-source.svg"),
+            "production_raster_path": format!("{name}.production.rgba"),
+            "native_raster_path": format!("{name}.native-topdown.rgba"),
+            "legacy_circle_svg_path": format!("{name}.legacy-circle.svg"),
+            "legacy_circle_pdf_path": format!("{name}.legacy-circle.pdf"),
+            "legacy_circle_pdf_same_as_retained_production_fallback": true,
+            "legacy_circle_raster_path": format!("{name}.legacy-circle.rgba"),
+            "retained_pdf_source_svg_geometry": "circles",
+            "independent_quad_svg_path": format!("{name}.independent-quad.svg"),
+            "independent_quad_raster_path": format!("{name}.independent-quad.rgba"),
+            "production_quad_matches_independent_rewrite_rgba": true,
+            "production_vs_legacy_circle_rgba": rgba_difference(&production_raster, &legacy_circle_raster),
+            "production_vs_native_rgba": rgba_difference(&production_raster, &native),
+            "production_pdf_image_objects": production_pdf_images,
+            "production_pdf_radial_shadings": production_pdf_shadings,
+            "legacy_circle_pdf_image_objects": legacy_pdf_images,
+            "legacy_circle_pdf_radial_shadings": legacy_pdf_shadings,
+            "pixel_equality_required": false
+        }));
+    }
+    assert_ne!(native_frames[0], native_frames[1]);
+    let manifest = serde_json::json!({
+        "schema": "sdocx.fountain.as18-glv16.thin-width-artifacts.v3",
+        "scope": "offline artifact emission from complete V8 native pair: public non-retained SVG uses production quad geometry; retained PDF preserves thin circle fallback without circle sidecar; explicit legacy-circle and independent-quad SVG rasters plus native frames are retained for comparison; no recovered V6 prefix or reconstructed getter tail",
+        "source_pair_path": pair_path,
+        "source_pair_sha256": PAIR_SHA256,
+        "source_payload_sha256": SOURCE_PAYLOAD_SHA256,
+        "source_frame_sha256": SOURCE_FRAME_SHA256,
+        "native_upload_sha256": NATIVE_UPLOAD_SHA256,
+        "native_execution": false,
+        "production_admission_modified_by_artifact_writer": false,
+        "cases": output_cases
     });
     write_new(
         output_dir.join("manifest.json"),
