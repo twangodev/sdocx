@@ -22,9 +22,16 @@ The experiment remains outside production. A Rust calculator audit of the emitte
 functions and serialized marker transform matches the independent field within
 1.2e-16. Pixel-center evaluation gives affected-pixel alpha MAE of 0.39/0.34 bytes
 and matches native support; fixed integer-coordinate evaluation raises error to
-26.38/48.88 bytes. This points toward reader sampling or soft-mask behavior, but
-does not justify a phase correction. This control does not establish archive-native
-thin widths, device appearance, or document parity.
+26.38/48.88 bytes. An offline MuPDF 1.28.2 source model follows its 257×257
+function grid, [integer scanlines and 16.16 interpolation](https://github.com/ArtifexSoftware/mupdf/blob/1.28.2/source/fitz/draw-mesh.c),
+then [luminosity-mask compositing](https://github.com/ArtifexSoftware/mupdf/blob/1.28.2/source/fitz/draw-paint.c).
+Without alignment or phase fitting, it matches all 567 captured ROI alpha samples
+at saved alpha 128 and 566 of 567 at alpha 255; the remaining error is one byte.
+The PDF transforms, reader configuration and source alpha preconditions are
+joined, but the original reader process's mapped library hash was not recorded.
+This supports the source-version model, not exact build identity or a production
+phase correction. These controls do not establish archive-native thin widths,
+device appearance, or document parity.
 
 ## Firefox blend workarounds
 
