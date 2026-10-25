@@ -65,7 +65,7 @@
     "vector_input": {
       "source_texture": "watercolor-pattern.png",
       "source_texture_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
-      "atlas_channels": "preserve source RGBA; per captured record lane 5 replace G with floor(G_byte * lane_f32 + 0.5); alpha is pinned opaque 255",
+      "atlas_channels": "preserve source RGBA except G: normalize G byte in F32, narrow sampler to binary16 RTZ, multiply by binary16 lane alpha under the RNE model, and quantize to UNORM8 RNE; alpha is pinned opaque 255",
       "captured_lane_f32_bits": [
         "0x3d23d70a",
         "0x3bc49ba6"

@@ -77,6 +77,16 @@ fn f32_to_f16_rne(x: f32) -> u16 {
 fn half_rne(x: f32) -> f32 {
     f16_to_f32(f32_to_f16_rne(x))
 }
+
+fn sample_unorm8_half_rtz(byte: u8) -> f32 {
+    // Captured Mesa sampler: normalize in F32, narrow toward zero, then widen.
+    let normalized = f32::from(byte) * f32::from_bits(0x3b80_8081);
+    let mut bits = f32_to_f16_rne(normalized);
+    if f16_to_f32(bits) > normalized {
+        bits -= 1;
+    }
+    f16_to_f32(bits)
+}
 fn f16_to_f32(b: u16) -> f32 {
     let s = ((b & 0x8000) as u32) << 16;
     let e = ((b >> 10) & 31) as i32;
@@ -187,7 +197,7 @@ fn mul_norm8(a: u8, b: u8) -> u8 {
 }
 fn shader_alpha(g: u8) -> u8 {
     // Within the observed G=0..13 domain, this expression and the captured
-    // half-sample/half-ALU path produce the same A8. This is a bounded LUT,
+    // half-sample/half-ALU RNE model produce the same A8. This is a bounded LUT,
     // not a general fragment-precision or high-density shader evaluator.
     let sample = (g as f32) / 255.0;
     if sample >= 0.7 {
@@ -263,7 +273,11 @@ fn atlas(alpha: f32) -> String {
     assert_eq!((image.width(), image.height()), (SIZE as u32, SIZE as u32));
     for px in image.data_mut().as_chunks_mut::<4>().0 {
         assert_eq!(px[3], 255, "atlas transform expects opaque source PNG");
-        px[1] = ((f32::from(px[1]) * alpha) + 0.5).floor() as u8;
+        // The mask fragment multiplies its lowp sample and lane alpha in half
+        // precision. F32 preapplication would incorrectly map G=250 to 2 for
+        // alpha=0.006; the source-ordered half-RNE model maps it to 1.
+        let green = half_mul(sample_unorm8_half_rtz(px[1]), half_rne(alpha));
+        px[1] = (green * 255.0).round_ties_even().clamp(0.0, 255.0) as u8;
     }
     format!(
         "data:image/png;base64,{}",
