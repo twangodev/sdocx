@@ -544,4 +544,268 @@ mod tests {
             Some((1_812, 16_777_217))
         );
     }
+
+    #[test]
+    #[ignore = "offline retained native/body geometry comparison; requires pinned artifact paths"]
+    fn retained_quiz_1080_prepared_body_geometry_diagnostic() {
+        use std::{env, fs, io::Write, path::PathBuf};
+
+        const ARCHIVE_SHA256: &str =
+            "38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a";
+        const GEOMETRY_RECEIPT_SHA256: &str =
+            "3e3042bbf9cdbd203f214c413d68b927a3c21aa60311006cf5071569f214f03a";
+        let archive_path = PathBuf::from(
+            env::var_os("SDOCX_BODY_GEOMETRY_ARCHIVE")
+                .expect("set SDOCX_BODY_GEOMETRY_ARCHIVE to the pinned quiz.sdocx"),
+        );
+        let receipt_path = PathBuf::from(
+            env::var_os("SDOCX_BODY_GEOMETRY_RECEIPT")
+                .expect("set SDOCX_BODY_GEOMETRY_RECEIPT to the pinned native geometry receipt"),
+        );
+        let output_dir = PathBuf::from(
+            env::var_os("SDOCX_BODY_GEOMETRY_OUTPUT_DIR")
+                .expect("set SDOCX_BODY_GEOMETRY_OUTPUT_DIR to a fresh output directory"),
+        );
+
+        fn sha256(bytes: &[u8]) -> String {
+            use sha2::{Digest, Sha256};
+            format!("{:x}", Sha256::digest(bytes))
+        }
+        fn rect_intersects_or_contains(query: [f32; 4], line: [f32; 4]) -> bool {
+            let contains = query[0] <= line[0]
+                && query[1] <= line[1]
+                && query[2] >= line[2]
+                && query[3] >= line[3];
+            let intersects = query[0] < query[2]
+                && query[1] < query[3]
+                && query[0] < line[2]
+                && query[2] > line[0]
+                && query[1] < line[3]
+                && query[3] > line[1];
+            contains || intersects
+        }
+
+        let archive_bytes = fs::read(&archive_path).expect("read pinned quiz archive");
+        assert_eq!(
+            sha256(&archive_bytes),
+            ARCHIVE_SHA256,
+            "archive pin mismatch"
+        );
+        let receipt_bytes = fs::read(&receipt_path).expect("read pinned native geometry receipt");
+        assert_eq!(
+            sha256(&receipt_bytes),
+            GEOMETRY_RECEIPT_SHA256,
+            "native geometry receipt pin mismatch"
+        );
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&receipt_bytes).expect("native geometry receipt JSON");
+        assert_eq!(
+            receipt["source_event_sha256"]["1080"].as_str(),
+            Some("59db2ca7194960b3a51289aca7cfb3b56e67ae86ce1600a877573da2d220486d")
+        );
+        assert_eq!(
+            receipt["source_event_sha256"]["1812"].as_str(),
+            Some("610949b314f910a710cb7a19f9e4762262a1497d090dec89049de8c25e24ff36")
+        );
+        assert_eq!(receipt["line_rect_pairs"].as_array().unwrap().len(), 116);
+
+        let document = crate::parse_bytes(&archive_bytes).expect("parse pinned quiz archive");
+        assert_eq!(document.metadata.page_mode, Some(1));
+        assert_eq!(
+            document.metadata.flow_dimensions.map(|dims| dims.0),
+            Some(1_080)
+        );
+        let layout = crate::layout_document(&document);
+        let normalized = normalize_for_fixed_axis(&document, &layout, &[0], 1_080)
+            .expect("apply the public PDF route's explicit 1080 fixed-axis normalization");
+        assert_eq!(normalized.profile.source_dimensions, [1_812, 15_372]);
+        assert_eq!(
+            normalized.profile.scale.to_bits(),
+            (1_080.0_f32 / 1_812.0_f32).to_bits()
+        );
+        assert_eq!(normalized.document.pages[0].width, 1_080);
+        assert_eq!(normalized.layout.pages[0].page.width, 1_080);
+        assert_eq!(
+            normalized
+                .document
+                .metadata
+                .flow_dimensions
+                .map(|dims| dims.0),
+            Some(1_080)
+        );
+
+        let fonts = crate::fonts::FontBook::default();
+        let options = crate::render::RenderOptions::default();
+        let mut cache = crate::render::DocumentTextCache::default();
+        let snapshot = cache
+            .continuous_body_query_snapshot(
+                &normalized.document,
+                &normalized.layout.pages[0],
+                &options,
+                &fonts,
+            )
+            .expect("1080 flow-domain body query snapshot");
+        let mut rust_lines = Vec::new();
+        for index in 0.. {
+            let Some(rect) = snapshot.line_rect(index) else {
+                break;
+            };
+            rust_lines.push(rect);
+        }
+        assert!(
+            !rust_lines.is_empty(),
+            "prepared body has no measured lines"
+        );
+
+        let native_lines = receipt["line_rect_pairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                row["1080_rect_f32"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_f64().unwrap() as f32)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(native_lines.len(), 116);
+        let paired_count = rust_lines.len().min(native_lines.len());
+        let mut paired_rows = Vec::with_capacity(paired_count);
+        let mut exact_components = [0_usize; 4];
+        let mut max_abs_delta = [0.0_f64; 4];
+        for index in 0..paired_count {
+            assert_eq!(native_lines[index].len(), 4);
+            let native = [
+                native_lines[index][0],
+                native_lines[index][1],
+                native_lines[index][2],
+                native_lines[index][3],
+            ];
+            let rust = rust_lines[index];
+            for axis in 0..4 {
+                if rust[axis].to_bits() == native[axis].to_bits() {
+                    exact_components[axis] += 1;
+                }
+                max_abs_delta[axis] = max_abs_delta[axis]
+                    .max((f64::from(rust[axis]) - f64::from(native[axis])).abs());
+            }
+            paired_rows.push(serde_json::json!({
+                "line": index,
+                "rust_prepared_rect_f32": rust,
+                "native_1080_rect_f32": native,
+                "rust_minus_native_f32": [
+                    rust[0] - native[0], rust[1] - native[1],
+                    rust[2] - native[2], rust[3] - native[3]
+                ]
+            }));
+        }
+
+        let native_queries = receipt["queries"]["1080"]["rows"].as_array().unwrap();
+        let mut query_rows = Vec::with_capacity(native_queries.len());
+        for row in native_queries {
+            let rect = row["query_rect_f32"].as_array().unwrap();
+            let query = [
+                rect[0].as_f64().unwrap() as f32,
+                rect[1].as_f64().unwrap() as f32,
+                rect[2].as_f64().unwrap() as f32,
+                rect[3].as_f64().unwrap() as f32,
+            ];
+            let observed = snapshot.query(query);
+            query_rows.push(serde_json::json!({
+                "query_rect_f32": query,
+                "native_visible": row["native_visible"],
+                "rust_prepared_visible": observed.visible,
+                "rust_line_index": observed.line_index,
+                "rust_line_count": observed.line_count,
+                "matches": observed.visible == row["native_visible"].as_bool().unwrap()
+            }));
+        }
+
+        let scale = 1_812.0_f32 / 1_080.0_f32;
+        let rust_image_line_indices = rust_lines
+            .iter()
+            .enumerate()
+            .filter_map(|(index, rect)| snapshot.query(*rect).visible.then_some(index))
+            .collect::<Vec<_>>();
+        let mapped_lines = rust_lines
+            .iter()
+            .map(|line| (*line).map(|coordinate| coordinate * scale))
+            .collect::<Vec<_>>();
+        let native_1812_queries = receipt["queries"]["1812"]["rows"].as_array().unwrap();
+        let mut projected_1812_query_rows = Vec::with_capacity(native_1812_queries.len());
+        for row in native_1812_queries {
+            let rect = row["query_rect_f32"].as_array().unwrap();
+            let query = [
+                rect[0].as_f64().unwrap() as f32,
+                rect[1].as_f64().unwrap() as f32,
+                rect[2].as_f64().unwrap() as f32,
+                rect[3].as_f64().unwrap() as f32,
+            ];
+            let predicted = rust_image_line_indices.iter().any(|&index| {
+                mapped_lines
+                    .get(index)
+                    .is_some_and(|line| rect_intersects_or_contains(query, *line))
+            });
+            projected_1812_query_rows.push(serde_json::json!({
+                "query_rect_f32": query,
+                "native_visible": row["native_visible"],
+                "rust_1080_plan_projected_visible": predicted,
+                "matches": predicted == row["native_visible"].as_bool().unwrap()
+            }));
+        }
+
+        let output = serde_json::json!({
+            "schema": "sdocx.prepared_body_native_geometry_diagnostic.v1",
+            "diagnostic_only": true,
+            "parity_claim": false,
+            "native_1080_geometry_and_queries_asserted": true,
+            "archive_sha256": sha256(&archive_bytes),
+            "native_receipt_sha256": sha256(&receipt_bytes),
+            "explicit_fixed_axis_size": 1080,
+            "source_page_dimensions": normalized.profile.source_dimensions,
+            "public_fixed_axis_scale_f32": normalized.profile.scale,
+            "public_fixed_axis_scale_bits": format!("0x{:08x}", normalized.profile.scale.to_bits()),
+            "normalized_page_dimensions": [normalized.document.pages[0].width, normalized.document.pages[0].height],
+            "flow_dimensions": normalized.document.metadata.flow_dimensions,
+            "rust_prepared_line_count": rust_lines.len(),
+            "native_retained_line_count": native_lines.len(),
+            "paired_line_count": paired_count,
+            "exact_component_counts_left_top_right_bottom": exact_components,
+            "max_abs_delta_f32_left_top_right_bottom": max_abs_delta,
+            "line_rect_pairs": paired_rows,
+            "native_1080_query_count": query_rows.len(),
+            "native_1080_query_rows": query_rows,
+            "native_1812_projected_query_count": projected_1812_query_rows.len(),
+            "native_1812_projected_query_rows": projected_1812_query_rows,
+            "rust_image_owner_line_indices": rust_image_line_indices,
+            "projection_scale_f32": scale,
+            "projection_scale_bits": format!("0x{:08x}", scale.to_bits()),
+            "projection_is_a_diagnostic_from_retained_native_axis_ratio": true,
+            "limitations": [
+                "The 116 native 1080 line rectangles and native 1080 visibility queries are asserted; this does not establish rendered-page appearance.",
+                "The 1812 query projection is an offline hypothesis from the two retained native profiles, not an implemented rendering transform or PDF appearance claim."
+            ]
+        });
+        fs::create_dir_all(&output_dir).expect("create diagnostic output directory");
+        let output_path = output_dir.join("prepared-body-geometry.json");
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&output_path)
+            .expect("diagnostic output must be fresh");
+        file.write_all(&serde_json::to_vec_pretty(&output).unwrap())
+            .unwrap();
+        file.write_all(b"\n").unwrap();
+        assert_eq!(rust_lines.len(), 116, "native 1080 prepared line count");
+        assert_eq!(exact_components, [116; 4], "native 1080 line rectangles");
+        assert!(
+            output["native_1080_query_rows"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|row| row["matches"] == true)
+        );
+    }
 }
