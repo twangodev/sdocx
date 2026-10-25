@@ -1,0 +1,728 @@
+{
+  "schema": "sdocx.airbrush-matrix-paint-oracles.v1",
+  "binary": "airbrush-matrix-native.bin",
+  "binary_format": {
+    "magic": "ABM1",
+    "version": 1,
+    "byte_order": "little-endian",
+    "header": "magic[4],version:u16,case_count:u16",
+    "case": "index:u8,changed_pixel_count:u16, rows [x:u16,y_top_down:u16,RGBA:u8x4]",
+    "reconstruction": "Initialize 256x256 with case background RGBA, replace listed pixels, SHA-256 full top-down RGBA."
+  },
+  "binary_sha256": "99c61ff47e32bb27b9df1834fa8844234946e362ab3c353af5843823836f5a73",
+  "target_px": [
+    256,
+    256
+  ],
+  "shared_native_provenance": {
+    "native_libraries": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_capture_runner_sha256": "884d0d70e9f3d260d09ccb7a52eca0e4f8e30a87cc9645a2b717abd987916cb0",
+    "helper_hashes": {
+      "airbrush-saved-caller-native.json": "a24db97a4b24b840bb915424d20e8d0c1684c5a5a74e7c2be47c4925fa894c34",
+      "airbrush_saved_caller_native.py": "c64aa5a51f85ba9abe3755e22ade255dba23f2ef5e24ad82fda4a3c4feeaf5bd",
+      "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+      "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "pattern_r8": {
+      "path": "conformance/airbrush-pattern.r8",
+      "sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "uploaded_rgba8_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873"
+    },
+    "shader_hashes": {
+      "vertex": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+    },
+    "instance_stream_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+    "quad_upload_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+    "Drawing_to_RT_source_size_f32_bits": "0x4049374c",
+    "RT_size_u32": 3,
+    "pattern_asset_source": "captured native 96x96 AirBrush R8; profile/style and source image unchanged",
+    "comparison_report_sha256": "07c3bbcd7efcfe4ff37f47e62a91006581813163da34da8053978aa86daed8b2",
+    "native_wrapper_profile": {
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+      "advanced_setting_mode": "explicit-empty",
+      "selected_drawable_version": 2,
+      "tool_type_raw": 2,
+      "motion_event_source": 0,
+      "source_origin": "synthetic saved ObjectStroke playback; source zero is derived by saved wrapper constructor, not a live MotionEvent capture"
+    },
+    "render_target_px": [
+      256,
+      256
+    ],
+    "projection_base_f32_bits": [
+      "0x3c000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x3c000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0xb8000100",
+      "0x00000000",
+      "0xbf800000",
+      "0xbf800000",
+      "0x00000000",
+      "0x3f800000"
+    ]
+  },
+  "identity_control_reuse": {
+    "case": "identity-transparent",
+    "reuses": "conformance/airbrush-paint-native.json case source-size-3p144-rt3; no duplicate frame or vector rows",
+    "capture_sha256": "d1a0b5f705289d5c3609985e2282bf3a42b71054b79580bd59128f65dbd92084",
+    "existing_paint_fixture_capture_sha256": "c3a1a6be0fcf4cbc828dda4f623fea28579361b02edc78e7c8410458dc9761a0",
+    "frame_top_down_sha256": "83e5d7d6bd6a21f7f7a315de0121798d1e766862270bb858c4a7acc7d2203682",
+    "full_rgba_exact": true
+  },
+  "controls": [
+    {
+      "id": "scale-0p5-transparent",
+      "binary_case_index": 0,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/scale-0p5-transparent.json",
+        "sha256": "69afb52e87f50ec242e0009b6d69f47bd64819b97cc9b6ff74247ca8580ee284",
+        "readback_bottom_up_sha256": "0dd3603f8855f37c93f1f5f4469e0c4d51835f913f7e0749c81b2545ede33c8d",
+        "readback_top_down_sha256": "78bfc452885809783f0b9a704404de39ddcf9dbda874615c05d6ce612c8a839b"
+      },
+      "native_frame_sha256": "78bfc452885809783f0b9a704404de39ddcf9dbda874615c05d6ce612c8a839b",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x3f000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x3b800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3b800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf800000",
+        "0xbf800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        0.5,
+        -0.0,
+        -0.0,
+        0.5,
+        0.0,
+        128.0
+      ],
+      "background_rgba8": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source_argb_u32": "0xff6cdd8f",
+      "native_argb_u32": "0x326cdd8f",
+      "shader_input_color_f32_bits": [
+        "0x3ed8d8d9",
+        "0x3f5dddde",
+        "0x3f0f8f90",
+        "0x3e48c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 5,
+      "native_rgba_exact_resvg_sha256": "78bfc452885809783f0b9a704404de39ddcf9dbda874615c05d6ce612c8a839b",
+      "native_rgba_exact": true
+    },
+    {
+      "id": "scale-2-transparent",
+      "binary_case_index": 1,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/scale-2-transparent.json",
+        "sha256": "f368de96337ae8d00c3e2d18e0059421bd7f79f8812e0436b0c1b23b1b1e0fd1",
+        "readback_bottom_up_sha256": "4a6cde2eeac729784377121e78ff4eaf76cb8476474bfe2b0ed0728385e3dca9",
+        "readback_top_down_sha256": "9d516aa0f5a0080563d150c8f353c007644948c633fd8cce8e35b7f9dede6d6d"
+      },
+      "native_frame_sha256": "9d516aa0f5a0080563d150c8f353c007644948c633fd8cce8e35b7f9dede6d6d",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x40000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x40000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x3c800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3c800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf800000",
+        "0xbf800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        2.0,
+        -0.0,
+        -0.0,
+        2.0,
+        0.0,
+        -256.0
+      ],
+      "background_rgba8": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source_argb_u32": "0xff6cdd8f",
+      "native_argb_u32": "0x326cdd8f",
+      "shader_input_color_f32_bits": [
+        "0x3ed8d8d9",
+        "0x3f5dddde",
+        "0x3f0f8f90",
+        "0x3e48c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 74,
+      "native_rgba_exact_resvg_sha256": "9d516aa0f5a0080563d150c8f353c007644948c633fd8cce8e35b7f9dede6d6d",
+      "native_rgba_exact": true
+    },
+    {
+      "id": "rotate-90-center-64-transparent",
+      "binary_case_index": 2,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/rotate-90-center-64-transparent.json",
+        "sha256": "6bdf8955c1a6c07813476f0ad1b4a629fa08f1189539989bb5a11c2c6c72ac44",
+        "readback_bottom_up_sha256": "363594a881316101e9571973e68194cd1502231139451e9a0fbafbef62593b32",
+        "readback_top_down_sha256": "906418a43ba0d61262ba68a1f553581cf90dc51afdb697ffa66acc0bfd09abd4"
+      },
+      "native_frame_sha256": "906418a43ba0d61262ba68a1f553581cf90dc51afdb697ffa66acc0bfd09abd4",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0xbf800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x42800000",
+        "0x42800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x00000000",
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0xbc000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf000000",
+        "0xbf000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        0.0,
+        -1.0,
+        1.0,
+        0.0,
+        -192.0,
+        192.0
+      ],
+      "background_rgba8": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source_argb_u32": "0xff6cdd8f",
+      "native_argb_u32": "0x326cdd8f",
+      "shader_input_color_f32_bits": [
+        "0x3ed8d8d9",
+        "0x3f5dddde",
+        "0x3f0f8f90",
+        "0x3e48c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 30,
+      "native_rgba_exact_resvg_sha256": "906418a43ba0d61262ba68a1f553581cf90dc51afdb697ffa66acc0bfd09abd4",
+      "native_rgba_exact": true
+    },
+    {
+      "id": "identity-opaque-background",
+      "binary_case_index": 3,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/identity-opaque-background.json",
+        "sha256": "4d4ed056aeafb42b595ef57fe325bf0d8ecda51498d579fa27649bf2eb862562",
+        "readback_bottom_up_sha256": "5d875586fb75c4aa1118be9bf4efb54f0d9b947ba3e86adf5bcc410f86c1b5c1",
+        "readback_top_down_sha256": "2a79b9592476cc39b1fcdd21c176e1dee0aaa27169b25b28581dbccb7a91c0c6"
+      },
+      "native_frame_sha256": "2a79b9592476cc39b1fcdd21c176e1dee0aaa27169b25b28581dbccb7a91c0c6",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf800000",
+        "0xbf800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        1.0,
+        -0.0,
+        -0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "background_rgba8": [
+        64,
+        128,
+        192,
+        255
+      ],
+      "source_argb_u32": "0xff6cdd8f",
+      "native_argb_u32": "0x326cdd8f",
+      "shader_input_color_f32_bits": [
+        "0x3ed8d8d9",
+        "0x3f5dddde",
+        "0x3f0f8f90",
+        "0x3e48c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 17,
+      "native_rgba_exact_resvg_sha256": "2a79b9592476cc39b1fcdd21c176e1dee0aaa27169b25b28581dbccb7a91c0c6",
+      "native_rgba_exact": true
+    },
+    {
+      "id": "identity-red-opaque-transparent",
+      "binary_case_index": 4,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/identity-red-opaque-transparent.json",
+        "sha256": "6b55dbd0fb14feb0af59e00cb8e8e1bfddcbea6612cb94beaa96bd7e97b91436",
+        "readback_bottom_up_sha256": "fc3947a00c47356aad2569c3026f25083971214f76d21e51587aad05ebe9e6b7",
+        "readback_top_down_sha256": "330d4b8c3c98e8cb96cf31be7780af4f2678074b82177f435fe9ebe2b3d1f6ae"
+      },
+      "native_frame_sha256": "330d4b8c3c98e8cb96cf31be7780af4f2678074b82177f435fe9ebe2b3d1f6ae",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf800000",
+        "0xbf800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        1.0,
+        -0.0,
+        -0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "background_rgba8": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source_argb_u32": "0xffc04020",
+      "native_argb_u32": "0x32c04020",
+      "shader_input_color_f32_bits": [
+        "0x3f40c0c1",
+        "0x3e808081",
+        "0x3e008081",
+        "0x3e48c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 19,
+      "native_rgba_exact_resvg_sha256": "330d4b8c3c98e8cb96cf31be7780af4f2678074b82177f435fe9ebe2b3d1f6ae",
+      "native_rgba_exact": true
+    },
+    {
+      "id": "identity-red-half-alpha-transparent",
+      "binary_case_index": 5,
+      "native_capture": {
+        "path": "/tmp/sdocx-airbrush-scale-root-v3/identity-red-half-alpha-transparent.json",
+        "sha256": "820c4d518d8518f6de4c738d7fc2db205990a7bc9b44cb18a5941e50aea9c1f0",
+        "readback_bottom_up_sha256": "1e9693a0d4825d38a6f75e6d96e473cc6531813b5edee097fe944910565c7abc",
+        "readback_top_down_sha256": "8c47882ec629bce82d5145370acbfae6b037b5d78be85ff9113122352ccbb6ae"
+      },
+      "native_frame_sha256": "8c47882ec629bce82d5145370acbfae6b037b5d78be85ff9113122352ccbb6ae",
+      "draw_matrix_source": "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch",
+      "background_source": "host-cleared actual target framebuffer before native Draw; explicit blend control, not an app/device background claim",
+      "native_matrix_f32_bits": [
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "native_projection_uniform_f32_bits": [
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x3c000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xb8000100",
+        "0x00000000",
+        "0xbf800000",
+        "0xbf800000",
+        "0x00000000",
+        "0x3f800000"
+      ],
+      "svg_matrix_conjugate_f64": [
+        1.0,
+        -0.0,
+        -0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "background_rgba8": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source_argb_u32": "0x80c04020",
+      "native_argb_u32": "0x19c04020",
+      "shader_input_color_f32_bits": [
+        "0x3f40c0c1",
+        "0x3e808081",
+        "0x3e008081",
+        "0x3dc8c8c9"
+      ],
+      "source_size_f32_bits": "0x4049374c",
+      "rt_size_u32": 3,
+      "instance_count": 26,
+      "instance_bytes_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "quad_vbo_sha256": "5fc1102853e6772d8f156843865cc5855ade30a47c18bc3c20f80dd3db90b375",
+      "texture_r8_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+      "pattern_rgba8_upload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "vertex_shader_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_shader_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+      "effective_sampling_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "blend_contract": {
+        "enabled": true,
+        "equation_separate": [
+          32774,
+          32774
+        ],
+        "factors_separate": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      "changed_from_background_pixels": 18,
+      "native_rgba_exact_resvg_sha256": "8c47882ec629bce82d5145370acbfae6b037b5d78be85ff9113122352ccbb6ae",
+      "native_rgba_exact": true
+    }
+  ],
+  "open_case": {
+    "id": "translate-32-48-transparent",
+    "capture_sha256": "730ae9dc2330fd544ec3e95c7b71bb2670e363d7911bff1f8e45d4eec21a7c86",
+    "native_frame_top_down_sha256": "64c92873494d9fe235ce9dc9d52746357540909de119205b2b9efc465ec7a94f",
+    "resvg_frame_sha256": "1facad8fe95bb51f82614d9046a1c27cbb3a072304f486e0b8688149c08ceb3e",
+    "exact_rgba": false,
+    "differing_pixels": 3,
+    "differing_bytes": 11,
+    "channel_max_abs": [
+      2,
+      3,
+      2,
+      4
+    ],
+    "support_iou": 1.0,
+    "disposition": "Explicitly excluded from exact conformance/admission; known open raster residual."
+  },
+  "scope": "Test-only native Drawing to RTV1 captures and host Mesa pixels; explicit synthetic Draw matrix/background/style controls. Not physical Samsung device/GPU output, application default matrix behavior, PDF parity, or a production renderer admission."
+}

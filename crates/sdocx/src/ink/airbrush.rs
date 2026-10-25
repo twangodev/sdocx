@@ -967,6 +967,359 @@ mod tests {
     }
 
     #[cfg(feature = "render")]
+    fn native_texture_svg_with_draw_matrix(
+        stamps: &[Stamp],
+        size: u32,
+        data_url: &str,
+        pad_px: f32,
+        draw_matrix: [f32; 16],
+        background: [u8; 4],
+    ) -> String {
+        let mut svg = native_texture_svg(stamps, size, data_url, pad_px);
+        if background[3] != 0 {
+            let at = svg.find("<defs>").unwrap();
+            svg.insert_str(
+                at,
+                &format!(
+                    "<rect width=\"256\" height=\"256\" fill=\"#{:02x}{:02x}{:02x}\" fill-opacity=\"{:.17}\"/>",
+                    background[0], background[1], background[2], background[3] as f64 / 255.0
+                ),
+            );
+        }
+        let [a, b, c, d, e, f] = native_draw_matrix_svg_conjugate(draw_matrix);
+        let first = svg.find("<g data-instance=\"0\"").unwrap();
+        // Insert the wrapper before the first stamp; close it before the root SVG.
+        let wrapper =
+            format!("<g transform=\"matrix({a:.17},{b:.17},{c:.17},{d:.17},{e:.17},{f:.17})\">");
+        svg.insert_str(first, &wrapper);
+        let end = svg.rfind("</svg>").unwrap();
+        svg.insert_str(end, "</g>");
+        svg
+    }
+
+    #[cfg(feature = "render")]
+    fn native_draw_matrix_svg_conjugate(matrix: [f32; 16]) -> [f64; 6] {
+        // T * M * T^-1 for the GL bottom-left and SVG top-left coordinate systems.
+        let (a, b, c, d, tx, ty) = (
+            matrix[0] as f64,
+            matrix[1] as f64,
+            matrix[4] as f64,
+            matrix[5] as f64,
+            matrix[12] as f64,
+            matrix[13] as f64,
+        );
+        [a, -b, -c, d, c * 256.0 + tx, 256.0 * (1.0 - d) - ty]
+    }
+
+    #[cfg(feature = "render")]
+    fn native_matrix_from_bits(value: &Value) -> [f32; 16] {
+        let words = value.as_array().unwrap();
+        assert_eq!(words.len(), 16);
+        let mut matrix = [0.0_f32; 16];
+        for (index, word) in words.iter().enumerate() {
+            matrix[index] = f32::from_bits(
+                u32::from_str_radix(word.as_str().unwrap().trim_start_matches("0x"), 16).unwrap(),
+            );
+        }
+        matrix
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    fn saved_v2_matrix_controls_match_compact_native_frames() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../../conformance/airbrush-matrix-native.json");
+        const BIN: &[u8] = include_bytes!("../../../../conformance/airbrush-matrix-native.bin");
+        const PAINT: &str = include_str!("../../../../conformance/airbrush-paint-native.json");
+        const PATTERN: &[u8] = include_bytes!("../../../../conformance/airbrush-pattern.r8");
+        const JSON_SHA256: &str =
+            "72b10ef6f67b16e023530b49227e092830f59e11593a27681e142f54fc3ff605";
+        const BIN_SHA256: &str = "99c61ff47e32bb27b9df1834fa8844234946e362ab3c353af5843823836f5a73";
+
+        assert_eq!(
+            format!("{:x}", Sha256::digest(JSON.as_bytes())),
+            JSON_SHA256
+        );
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), BIN_SHA256);
+        let meta: Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(meta["schema"], "sdocx.airbrush-matrix-paint-oracles.v1");
+        let profile = &meta["shared_native_provenance"]["native_wrapper_profile"];
+        assert_eq!(
+            profile["pen_name"],
+            "com.samsung.android.sdk.pen.pen.preload.AirBrushPen"
+        );
+        assert_eq!(profile["advanced_setting_mode"], "explicit-empty");
+        assert_eq!(profile["selected_drawable_version"], 2);
+        assert_eq!(profile["tool_type_raw"], 2);
+        assert_eq!(profile["motion_event_source"], 0);
+        assert_eq!(&BIN[..4], b"ABM1");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        let cases = meta["controls"].as_array().unwrap();
+        assert_eq!(cases.len(), 6);
+        assert_eq!(
+            u16::from_le_bytes(BIN[6..8].try_into().unwrap()) as usize,
+            cases.len()
+        );
+        assert_eq!(meta["open_case"]["id"], "translate-32-48-transparent");
+        assert_eq!(meta["open_case"]["exact_rgba"], false);
+        assert_eq!(meta["open_case"]["differing_pixels"], 3);
+        assert_eq!(meta["open_case"]["differing_bytes"], 11);
+
+        let paint: Value = serde_json::from_str(PAINT).unwrap();
+        let identity = paint["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "source-size-3p144-rt3")
+            .unwrap();
+        assert_eq!(
+            identity["native_capture_sha256"],
+            meta["identity_control_reuse"]["existing_paint_fixture_capture_sha256"]
+        );
+        assert_eq!(
+            identity["native_readback_top_down_sha256"],
+            meta["identity_control_reuse"]["frame_top_down_sha256"]
+        );
+        let source = &identity["source"];
+        assert_eq!(
+            source["source_size_f32"].as_f64().unwrap() as f32,
+            3.144_f32
+        );
+        assert_eq!(source["native_rt_size_u32"], 3);
+        assert_eq!(source["tool_type_raw"], 2);
+        assert_eq!(source["motion_event_source"], 0);
+        assert_eq!(source["counter_seed"], 0);
+        let points: Vec<P> = source["points_f32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(point)
+            .collect();
+        let size = source["source_size_f32"].as_f64().unwrap() as f32;
+        let output = saved_redraw_v2(V2Input {
+            history: &points[..points.len() - 1],
+            endpoint: *points.last().unwrap(),
+            initial_position: P { x: 0.0, y: 0.0 },
+            size,
+            tolerance: size / 20.0,
+            tool_type: 2,
+            source: 0,
+            counter_seed: 0,
+        })
+        .expect("saved V2 model accepts captured finite points");
+        let rows: Vec<u8> = output
+            .stamps
+            .iter()
+            .flat_map(|stamp| stamp.values.into_iter().flat_map(f32::to_le_bytes))
+            .collect();
+        let rows_sha = format!("{:x}", Sha256::digest(&rows));
+        assert_eq!(rows_sha, identity["native_instance_sha256"]);
+        assert_eq!(
+            rows_sha,
+            meta["shared_native_provenance"]["instance_stream_sha256"]
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(PATTERN)),
+            meta["shared_native_provenance"]["pattern_r8"]["sha256"]
+        );
+
+        let base_projection =
+            native_matrix_from_bits(&meta["shared_native_provenance"]["projection_base_f32_bits"]);
+        let mut offset = 8;
+        for (index, case) in cases.iter().enumerate() {
+            let id = case["id"].as_str().unwrap();
+            assert_eq!(usize::from(BIN[offset]), index, "{id} binary case index");
+            offset += 1;
+            let count = usize::from(read_u16_le(BIN, &mut offset));
+            assert_eq!(
+                count,
+                case["changed_from_background_pixels"].as_u64().unwrap() as usize
+            );
+            assert_eq!(case["native_rgba_exact"], true);
+            assert_eq!(
+                case["source_size_f32_bits"],
+                meta["shared_native_provenance"]["Drawing_to_RT_source_size_f32_bits"]
+            );
+            assert_eq!(
+                case["rt_size_u32"],
+                meta["shared_native_provenance"]["RT_size_u32"]
+            );
+            assert_eq!(case["instance_bytes_sha256"], rows_sha);
+            assert_eq!(
+                case["quad_vbo_sha256"],
+                meta["shared_native_provenance"]["quad_upload_sha256"]
+            );
+            assert_eq!(
+                case["texture_r8_sha256"],
+                meta["shared_native_provenance"]["pattern_r8"]["sha256"]
+            );
+            assert_eq!(
+                case["pattern_rgba8_upload_sha256"],
+                meta["shared_native_provenance"]["pattern_r8"]["uploaded_rgba8_sha256"]
+            );
+            assert_eq!(
+                case["vertex_shader_sha256"],
+                meta["shared_native_provenance"]["shader_hashes"]["vertex"]
+            );
+            assert_eq!(
+                case["fragment_shader_sha256"],
+                meta["shared_native_provenance"]["shader_hashes"]["fragment"]
+            );
+            assert!(case["native_capture"]["sha256"].as_str().unwrap().len() == 64);
+            assert_eq!(
+                case["draw_matrix_source"],
+                "explicit argument to actual native AirBrushPenStrokeDrawableRTV1::Draw(ISPSubBitmap*, Matrix4<float>&); no shader or vertex/instance buffer patch"
+            );
+            assert!(
+                case["background_source"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("host-cleared actual target framebuffer")
+            );
+            assert_eq!(case["effective_sampling_parameters"]["min_filter"], 9728);
+            assert_eq!(case["effective_sampling_parameters"]["mag_filter"], 9728);
+            assert_eq!(case["effective_sampling_parameters"]["wrap_s"], 33071);
+            assert_eq!(case["effective_sampling_parameters"]["wrap_t"], 33071);
+            assert_eq!(case["blend_contract"]["enabled"], true);
+            assert_eq!(
+                case["blend_contract"]["equation_separate"],
+                serde_json::json!([32774, 32774])
+            );
+            assert_eq!(
+                case["blend_contract"]["factors_separate"],
+                serde_json::json!([770, 771, 1, 771])
+            );
+
+            let matrix = native_matrix_from_bits(&case["native_matrix_f32_bits"]);
+            // Verify the captured native projection uniform equals its projection * DrawMatrix input.
+            let mut projected = [0.0_f32; 16];
+            for col in 0..4 {
+                for row in 0..4 {
+                    let mut value = 0.0_f64;
+                    for k in 0..4 {
+                        value += base_projection[k * 4 + row] as f64 * matrix[col * 4 + k] as f64;
+                    }
+                    projected[col * 4 + row] = value as f32;
+                }
+            }
+            for (actual, expected) in projected.iter().zip(
+                case["native_projection_uniform_f32_bits"]
+                    .as_array()
+                    .unwrap(),
+            ) {
+                assert_eq!(
+                    actual.to_bits(),
+                    u32::from_str_radix(expected.as_str().unwrap().trim_start_matches("0x"), 16)
+                        .unwrap(),
+                    "{id} projection uniform"
+                );
+            }
+            let svg_matrix = native_draw_matrix_svg_conjugate(matrix);
+            for (actual, expected) in svg_matrix
+                .iter()
+                .zip(case["svg_matrix_conjugate_f64"].as_array().unwrap())
+            {
+                assert_eq!(
+                    *actual,
+                    expected.as_f64().unwrap(),
+                    "{id} GL-to-SVG transform"
+                );
+            }
+
+            let bg: [u8; 4] = case["background_rgba8"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as u8)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            let mut expected = bg.repeat(256 * 256);
+            let mut previous = None;
+            for _ in 0..count {
+                let x = usize::from(read_u16_le(BIN, &mut offset));
+                let y = usize::from(read_u16_le(BIN, &mut offset));
+                assert!(x < 256 && y < 256);
+                let pixel = y * 256 + x;
+                assert!(previous.is_none_or(|last| last < pixel));
+                previous = Some(pixel);
+                let rgba = &BIN[offset..offset + 4];
+                offset += 4;
+                assert_ne!(rgba, bg.as_slice());
+                expected[pixel * 4..pixel * 4 + 4].copy_from_slice(rgba);
+            }
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&expected)),
+                case["native_frame_sha256"],
+                "{id} full native frame hash"
+            );
+            assert_eq!(
+                case["native_frame_sha256"],
+                case["native_rgba_exact_resvg_sha256"]
+            );
+
+            let saved_argb = u32::from_str_radix(
+                case["source_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let native_argb = u32::from_str_radix(
+                case["native_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            assert_eq!(
+                saved_get_color(saved_argb),
+                native_argb,
+                "{id} native color getter"
+            );
+            let actual_color = [
+                ((native_argb >> 16) & 255) as f32 / 255.0,
+                ((native_argb >> 8) & 255) as f32 / 255.0,
+                (native_argb & 255) as f32 / 255.0,
+                ((native_argb >> 24) & 255) as f32 / 255.0,
+            ];
+            for (actual, expected) in actual_color
+                .iter()
+                .zip(case["shader_input_color_f32_bits"].as_array().unwrap())
+            {
+                assert_eq!(
+                    actual.to_bits(),
+                    u32::from_str_radix(expected.as_str().unwrap().trim_start_matches("0x"), 16)
+                        .unwrap(),
+                    "{id} inputColor uniform"
+                );
+            }
+
+            let (data_url, pad_px) = native_prealpha_png(PATTERN, 3, saved_argb);
+            let svg = native_texture_svg_with_draw_matrix(
+                &output.stamps,
+                3,
+                &data_url,
+                pad_px,
+                matrix,
+                bg,
+            );
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            assert_eq!(pixmap.data(), expected, "{id} full RGBA");
+        }
+        assert_eq!(offset, BIN.len(), "matrix bundle has no trailing bytes");
+    }
+
+    #[cfg(feature = "render")]
     #[test]
     fn saved_v2_intrinsic_texture_paint_matches_compact_native_frames() {
         use sha2::{Digest, Sha256};
