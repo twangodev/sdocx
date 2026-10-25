@@ -381,9 +381,11 @@ unknown state stays in fallback until a batch reset. Standalone `prepare_stroke`
 also retains that approximation because it has no Drawing lifetime. Object/group
 opacity, unsupported model routes, PDF raster edges and device pixel parity
 remain open; host captures and vector-only PDFs do not establish full parity.
-AirBrush has a test-only sampler matching all stamp bits in three synthetic
-native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
-at a synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-saved-caller-native.json)
+AirBrush has test-only samplers matching all stamp bits and captured state in
+40 synthetic native V2 saved-redraw controls, including source/tool gates,
+short-path jitter, counter reset and terminal endpoints. Three legacy V1 streams
+are also retained. Native V2 reproduces V1 records and CPU pattern bytes at a
+synthetic SPTextureBitmap UpdateBitmap boundary. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-saved-caller-native.json)
 selects V1 for null settings and V2 for empty settings. The numeric model matches
 both 416-byte streams bit for bit under an explicit 1920×1080 display profile.
 Admitted source-owned tool-2 profiles preserve saved RGB or native omitted-color
