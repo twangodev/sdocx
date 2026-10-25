@@ -1,0 +1,275 @@
+{
+  "schema": "sdocx.airbrush-saved-paint-oracles.v1",
+  "binary": "airbrush-paint-native.bin",
+  "binary_sha256": "4eee6789db3c61c3d74a1acc2c96b19a9f31fc84f68c5d2306ffa58495d6fb9b",
+  "binary_format": {
+    "magic": "ABP1",
+    "version": 1,
+    "byte_order": "little-endian",
+    "header": "magic[4],version:u16,case_count:u16",
+    "case": "index:u8,vector_bytes:u16,sparse_pixel_count:u16,vector_bytes_little_endian_f32, sparse rows [x:u16,y_top_down:u16,R:u8,G:u8,B:u8,A:u8]",
+    "background": "native pre-draw target was transparent clear; fixture stores every nonzero output pixel, omitted output pixels are exact RGBA zero under this verified case contract"
+  },
+  "pattern": {
+    "path": "airbrush-pattern.r8",
+    "bytes": 9216,
+    "width": 96,
+    "height": 96,
+    "sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+    "uploaded_rgba8_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+    "provenance": "native AirBrush RT texture upload captured from Samsung Notes 4.4.45.37; NEAREST min/mag, CLAMP_TO_EDGE S/T"
+  },
+  "render_contract": {
+    "actual_native_paint_oracle": "Rust source-derived V2 geometry and intrinsic RGBA SVG are checked against four independent native host-Mesa frames.",
+    "svg_output": "resvg 0.47.0 at captured 256x256 scale; source RGB and rounded per-texel alpha, no outer opacity. No PDF or arbitrary-scale parity claim.",
+    "native_alpha_getter": "trunc(f32(f32(source_alpha_u8) * 50.0) / 255.0), clamp [3,50]",
+    "native_fragment_alpha": "Shader emits float alpha = uniformAlpha * R8/255. Rounded U8 source alpha reproduces these host-Mesa frames; this is a captured transport model, not a general GLES staging guarantee.",
+    "native_blend": "FUNC_ADD, RGB SRC_ALPHA/ONE_MINUS_SRC_ALPHA; alpha ONE/ONE_MINUS_SRC_ALPHA"
+  },
+  "provenance": {
+    "apk": "Samsung Notes 4.4.45.37",
+    "native_drawable": "AirBrushPen V2, RTV1, host Mesa synthetic capture",
+    "drawing_path": "native factory-selected Drawing SetPenData -> same RTV1 SetRectData/Update -> actual uploaded quad/instance buffer -> Draw/readback; no manual quad override",
+    "source_oracles": {
+      "size1": "/tmp/sdocx-airbrush-size1-root-v2.json",
+      "size3": "tmp/vector-parity-plan/pen-family-audit/airbrush-drawing-rt-size-root-v2/capture-ff6cdd8f.json",
+      "one_stamp": "/tmp/sdocx-airbrush-one-stamp-native-root-v4.json",
+      "partial_alpha_one_stamp": "/tmp/sdocx-airbrush-one-stamp-colour-half-root-v1.json"
+    },
+    "texture_full_rgba_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+    "native_shaders": {
+      "vertex_sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+      "fragment_sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6"
+    },
+    "synthetic_controls": "Synthetic saved ObjectStroke arrays, tool type 2. The saved GLV2 wrapper constructs MotionEvent with source zero; this is not a live-event or physical-device capture.",
+    "native_library_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "saved_source_contract": {
+      "AirBrushPen_RedrawPen_ObjectStroke_rva": "0x27240",
+      "MotionEvent_constructor_call_rva": "0x272ec",
+      "Base_constructor_rva": "0xbfd84",
+      "Base_default_constructor_rva": "0xbf418",
+      "source_zero_store_rva": "0xbf46c",
+      "GetSource_rva": "0xc0a9c",
+      "saved_source": 0,
+      "scope": "Static saved-wrapper constructor chain; synthetic native Drawing witnesses GetSource=0. External live MotionEvent sources remain separate."
+    }
+  },
+  "cases": [
+    {
+      "id": "source-size-1",
+      "native_capture_sha256": "0722e930ed09a6f84dfeb496f7462317923c6030d1cbb4c35b40798123a990d2",
+      "native_readback_bottom_up_sha256": "6b351e10e50bac1468f5d2d1bf1365e9d5dc889204312f66996eead6929b6425",
+      "native_readback_top_down_sha256": "8c062d7930b966ae7898ac57db12ec2b6b21477524c10e7ff1037a5b81884847",
+      "width": 256,
+      "height": 256,
+      "initial_clear_nonzero_pixels": 0,
+      "native_nonzero_pixels": 4,
+      "source": {
+        "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "advanced_setting_mode": "explicit-empty",
+        "selected_drawable_version": 2,
+        "tool_type_raw": 2,
+        "motion_event_source": 0,
+        "motion_event_source_evidence": "Saved ObjectStroke RedrawPen -> nine-argument MotionEvent constructor -> default inner source word zero; separate from externally supplied live events.",
+        "source_size_f32_bits": "0000803f",
+        "source_size_f32": 1.0,
+        "native_rt_size_u32": 1,
+        "saved_argb": "0xff6cdd8f",
+        "rt_argb_after_native_get_color": "0x326cdd8f",
+        "points_f32": [
+          [
+            1.0,
+            -2.0
+          ],
+          [
+            3.0,
+            1.0
+          ],
+          [
+            6.0,
+            4.0
+          ]
+        ],
+        "history_rule": "V2 receives points except final endpoint as history, then final point as EndPen endpoint",
+        "counter_seed": 0,
+        "initial_position_f32": [
+          0.0,
+          0.0
+        ],
+        "tolerance_prestate_f32": 0.05,
+        "tolerance_note": "RedrawPen overwrites drawable tolerance with source size / 20 before geometry; this is test initialization, not recovered runtime prestate"
+      },
+      "native_instance_count": 78,
+      "native_instance_bytes": 1248,
+      "native_instance_sha256": "65d08b510a81b673320219f145abf57a129bb4410b01d8cbbd45e57c06086449",
+      "binary_case_index": 0,
+      "binary_vector_bytes": 1248,
+      "binary_sparse_pixels": 4
+    },
+    {
+      "id": "source-size-3p144-rt3",
+      "native_capture_sha256": "c3a1a6be0fcf4cbc828dda4f623fea28579361b02edc78e7c8410458dc9761a0",
+      "native_readback_bottom_up_sha256": "c0a0b566e23fda9f7aef64415849abd682da9f8260dbc8ec915571546b2edbda",
+      "native_readback_top_down_sha256": "83e5d7d6bd6a21f7f7a315de0121798d1e766862270bb858c4a7acc7d2203682",
+      "width": 256,
+      "height": 256,
+      "initial_clear_nonzero_pixels": 0,
+      "native_nonzero_pixels": 19,
+      "source": {
+        "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "advanced_setting_mode": "explicit-empty",
+        "selected_drawable_version": 2,
+        "tool_type_raw": 2,
+        "motion_event_source": 0,
+        "motion_event_source_evidence": "Saved ObjectStroke RedrawPen -> nine-argument MotionEvent constructor -> default inner source word zero; separate from externally supplied live events.",
+        "source_size_f32_bits": "4c374940",
+        "source_size_f32": 3.144,
+        "native_rt_size_u32": 3,
+        "saved_argb": "0xff6cdd8f",
+        "rt_argb_after_native_get_color": "0x326cdd8f",
+        "points_f32": [
+          [
+            1.0,
+            -2.0
+          ],
+          [
+            3.0,
+            1.0
+          ],
+          [
+            6.0,
+            4.0
+          ]
+        ],
+        "history_rule": "V2 receives points except final endpoint as history, then final point as EndPen endpoint",
+        "counter_seed": 0,
+        "initial_position_f32": [
+          0.0,
+          0.0
+        ],
+        "tolerance_prestate_f32": 0.1572,
+        "tolerance_note": "RedrawPen overwrites drawable tolerance with source size / 20 before geometry; this is test initialization, not recovered runtime prestate"
+      },
+      "native_instance_count": 26,
+      "native_instance_bytes": 416,
+      "native_instance_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "binary_case_index": 1,
+      "binary_vector_bytes": 416,
+      "binary_sparse_pixels": 19
+    },
+    {
+      "id": "pixel-centered-one-stamp",
+      "native_capture_sha256": "b427dace97ee5123f0fb81fdbe8a6df50556dc72488e018787b555978e7d47e5",
+      "native_readback_bottom_up_sha256": "7cbb9782a9089d2128fca16bbf7119e401e4297363add46d54437ecc4051ded3",
+      "native_readback_top_down_sha256": "c30a2eb739bb34ea2dd033631f707aafe534fe2f105f5a50b66db2e041054e6b",
+      "width": 256,
+      "height": 256,
+      "initial_clear_nonzero_pixels": 0,
+      "native_nonzero_pixels": 1,
+      "source": {
+        "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "advanced_setting_mode": "explicit-empty",
+        "selected_drawable_version": 2,
+        "tool_type_raw": 2,
+        "motion_event_source": 0,
+        "motion_event_source_evidence": "Saved ObjectStroke RedrawPen -> nine-argument MotionEvent constructor -> default inner source word zero; separate from externally supplied live events.",
+        "source_size_f32_bits": "0000803f",
+        "source_size_f32": 1.0,
+        "native_rt_size_u32": 1,
+        "saved_argb": "0xff6cdd8f",
+        "rt_argb_after_native_get_color": "0x326cdd8f",
+        "points_f32": [
+          [
+            3.5,
+            1.5
+          ],
+          [
+            3.5,
+            1.5
+          ],
+          [
+            3.5,
+            1.5
+          ]
+        ],
+        "history_rule": "V2 receives points except final endpoint as history, then final point as EndPen endpoint",
+        "counter_seed": 0,
+        "initial_position_f32": [
+          0.0,
+          0.0
+        ],
+        "tolerance_prestate_f32": 0.05,
+        "tolerance_note": "RedrawPen overwrites drawable tolerance with source size / 20 before geometry; this is test initialization, not recovered runtime prestate"
+      },
+      "native_instance_count": 1,
+      "native_instance_bytes": 16,
+      "native_instance_sha256": "6313e36ce18eee2f9758dd6fa0ae3d20b05e7eed9852c53eb1a10bd741665812",
+      "binary_case_index": 2,
+      "binary_vector_bytes": 16,
+      "binary_sparse_pixels": 1
+    },
+    {
+      "id": "pixel-centered-one-stamp-alpha128-rgb-c04020",
+      "native_capture_sha256": "a05daa7f591e92121e234302b0b063a5113cf40ef41cf27b761c08c43efed355",
+      "native_readback_bottom_up_sha256": "00336fa2368d0c72e260944a7a25fc6bf74d9bf803468d86f6816b39ed07d8cf",
+      "native_readback_top_down_sha256": "db598136dba8641d69e37901c9028021687162c86e6013b6bd7097a67aef7c0a",
+      "width": 256,
+      "height": 256,
+      "initial_clear_nonzero_pixels": 0,
+      "native_nonzero_pixels": 1,
+      "source": {
+        "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "advanced_setting_mode": "explicit-empty",
+        "selected_drawable_version": 2,
+        "tool_type_raw": 2,
+        "motion_event_source": 0,
+        "motion_event_source_evidence": "Saved ObjectStroke RedrawPen -> nine-argument MotionEvent constructor -> default inner source word zero; separate from externally supplied live events.",
+        "source_size_f32_bits": "0000803f",
+        "source_size_f32": 1.0,
+        "native_rt_size_u32": 1,
+        "saved_argb": "0x80c04020",
+        "rt_argb_after_native_get_color": "0x19c04020",
+        "points_f32": [
+          [
+            3.5,
+            1.5
+          ],
+          [
+            3.5,
+            1.5
+          ],
+          [
+            3.5,
+            1.5
+          ]
+        ],
+        "history_rule": "V2 receives points except final endpoint as history, then final point as EndPen endpoint",
+        "counter_seed": 0,
+        "initial_position_f32": [
+          0.0,
+          0.0
+        ],
+        "tolerance_prestate_f32": 0.05,
+        "tolerance_note": "RedrawPen overwrites drawable tolerance with source size / 20 before geometry; this is test initialization, not recovered runtime prestate"
+      },
+      "native_instance_count": 1,
+      "native_instance_bytes": 16,
+      "native_instance_sha256": "6313e36ce18eee2f9758dd6fa0ae3d20b05e7eed9852c53eb1a10bd741665812",
+      "binary_case_index": 3,
+      "binary_vector_bytes": 16,
+      "binary_sparse_pixels": 1
+    }
+  ],
+  "scope": "Test-only, synthetic saved ObjectStroke vectors and native host GLES paint captures. Not Android-device pixels, Samsung app default behavior, or PDF parity."
+}

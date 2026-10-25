@@ -1,4 +1,4 @@
-//! Test-only numeric reconstruction of Samsung Notes AirBrush V1 saved redraw.
+//! Test-only reconstruction of Samsung Notes AirBrush saved redraw and paint.
 //!
 //! This module is intentionally unregistered until the profile's saved
 //! settings and rendering contract are admitted by the caller.
@@ -895,5 +895,186 @@ mod tests {
                 control["rt_setpendata_argb_u32"]
             );
         }
+    }
+    #[cfg(feature = "render")]
+    fn png_data_url_rgba(width: u32, height: u32, pixels: &[u8]) -> String {
+        use base64::Engine as _;
+        let mut encoded = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut encoded, width, height);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().unwrap();
+            writer.write_image_data(pixels).unwrap();
+        }
+        format!(
+            "data:image/png;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(encoded)
+        )
+    }
+
+    #[cfg(feature = "render")]
+    fn native_prealpha_png(pattern: &[u8], size: u32, argb: u32) -> (String, f32) {
+        assert_eq!(pattern.len(), 96 * 96);
+        let native_argb = saved_get_color(argb);
+        let rgb = [
+            ((native_argb >> 16) & 0xff) as u8,
+            ((native_argb >> 8) & 0xff) as u8,
+            (native_argb & 0xff) as u8,
+        ];
+        let style_alpha = (native_argb >> 24) as u8;
+        let half = size as f32 / 2.0;
+        let extent = half * 2.0;
+        let texel_px = extent / 96.0;
+        // Nearest image filtering still antialiases the image's outer bounds.
+        // Extend real CLAMP_TO_EDGE samples past a whole output pixel; retain
+        // the native quad separately as a crisp clip. This is a 1x oracle.
+        let pad = (1.0 / texel_px).ceil() as u32 + 1;
+        let pad_px = pad as f32 * texel_px;
+        let edge = 96 + 2 * pad;
+        let mut rgba = Vec::with_capacity((edge * edge * 4) as usize);
+        for y in 0..edge {
+            let source_y = y.saturating_sub(pad).min(95) as usize;
+            for x in 0..edge {
+                let source_x = x.saturating_sub(pad).min(95) as usize;
+                let r8 = pattern[source_y * 96 + source_x] as u16;
+                let alpha = ((r8 * style_alpha as u16 + 127) / 255) as u8;
+                rgba.extend_from_slice(&[rgb[0], rgb[1], rgb[2], alpha]);
+            }
+        }
+        (png_data_url_rgba(edge, edge, &rgba), pad_px)
+    }
+
+    #[cfg(feature = "render")]
+    fn native_texture_svg(stamps: &[Stamp], size: u32, data_url: &str, pad_px: f32) -> String {
+        use std::fmt::Write as _;
+        let half = size as f32 / 2.0;
+        let extent = half * 2.0;
+        let image_extent = extent + 2.0 * pad_px;
+        let mut svg = String::from(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\">",
+        );
+        write!(svg, "<defs><clipPath id=\"native-quad-clip\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" shape-rendering=\"crispEdges\"/></clipPath><image id=\"padded-airbrush-pattern\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" image-rendering=\"pixelated\" style=\"image-rendering: pixelated\" href=\"{}\"/></defs>",
+            -half, -half, extent, extent, -half - pad_px, -half - pad_px,
+            image_extent, image_extent, data_url).unwrap();
+        for (index, stamp) in stamps.iter().enumerate() {
+            let [x, y, sin, cos] = stamp.values;
+            write!(svg, "<g data-instance=\"{}\" transform=\"matrix({},{},{},{},{},{})\" clip-path=\"url(#native-quad-clip)\"><use href=\"#padded-airbrush-pattern\"/></g>",
+                index, cos, -sin, sin, cos, x, 256.0_f32 - y).unwrap();
+        }
+        svg.push_str("</svg>");
+        svg
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    fn saved_v2_intrinsic_texture_paint_matches_compact_native_frames() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../../conformance/airbrush-paint-native.json");
+        const BIN: &[u8] = include_bytes!("../../../../conformance/airbrush-paint-native.bin");
+        const PATTERN: &[u8] = include_bytes!("../../../../conformance/airbrush-pattern.r8");
+
+        let meta: Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(meta["schema"], "sdocx.airbrush-saved-paint-oracles.v1");
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), meta["binary_sha256"]);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(PATTERN)),
+            meta["pattern"]["sha256"]
+        );
+        assert_eq!(PATTERN.len(), 96 * 96);
+        assert_eq!(&BIN[..4], b"ABP1");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        let cases = meta["cases"].as_array().unwrap();
+        assert_eq!(
+            u16::from_le_bytes(BIN[6..8].try_into().unwrap()) as usize,
+            cases.len()
+        );
+
+        let mut offset = 8;
+        for (case_index, case) in cases.iter().enumerate() {
+            let index = usize::from(BIN[offset]);
+            offset += 1;
+            let vector_bytes = usize::from(read_u16_le(BIN, &mut offset));
+            let pixel_count = usize::from(read_u16_le(BIN, &mut offset));
+            assert_eq!(index, case_index);
+            assert_eq!(vector_bytes % 16, 0);
+            let native_rows = &BIN[offset..offset + vector_bytes];
+            offset += vector_bytes;
+            assert_eq!(
+                format!("{:x}", Sha256::digest(native_rows)),
+                case["native_instance_sha256"]
+            );
+
+            let source = &case["source"];
+            let points: Vec<P> = source["points_f32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(point)
+                .collect();
+            let history = &points[..points.len() - 1];
+            let size = source["source_size_f32"].as_f64().unwrap() as f32;
+            assert_eq!(source["motion_event_source"], 0);
+            assert_eq!(source["counter_seed"], 0);
+            let output = saved_redraw_v2(V2Input {
+                history,
+                endpoint: *points.last().unwrap(),
+                initial_position: P { x: 0.0, y: 0.0 },
+                size,
+                tolerance: size / 20.0,
+                tool_type: source["tool_type_raw"].as_i64().unwrap() as i32,
+                source: source["motion_event_source"].as_i64().unwrap() as i32,
+                counter_seed: source["counter_seed"].as_u64().unwrap() as u32,
+            })
+            .expect("saved V2 model accepts the captured finite inputs");
+            let actual_rows: Vec<u8> = output
+                .stamps
+                .iter()
+                .flat_map(|stamp| stamp.values.into_iter().flat_map(f32::to_le_bytes))
+                .collect();
+            assert_eq!(
+                actual_rows, native_rows,
+                "{} native AddPoint stream",
+                case["id"]
+            );
+            assert_eq!(output.stamps.len(), vector_bytes / 16);
+
+            let mut expected = vec![0_u8; 256 * 256 * 4];
+            for _ in 0..pixel_count {
+                let x = usize::from(read_u16_le(BIN, &mut offset));
+                let y = usize::from(read_u16_le(BIN, &mut offset));
+                let rgba = &BIN[offset..offset + 4];
+                offset += 4;
+                let dst = (y * 256 + x) * 4;
+                expected[dst..dst + 4].copy_from_slice(rgba);
+            }
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&expected)),
+                case["native_readback_top_down_sha256"]
+            );
+
+            let argb = u32::from_str_radix(
+                source["saved_argb"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let rt_size = source["native_rt_size_u32"].as_u64().unwrap() as u32;
+            assert_eq!(rt_size, size.trunc() as u32);
+            let (data_url, pad_px) = native_prealpha_png(PATTERN, rt_size, argb);
+            let svg = native_texture_svg(&output.stamps, rt_size, &data_url, pad_px);
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            assert_eq!(pixmap.data(), expected, "{} full RGBA", case["id"]);
+        }
+        assert_eq!(offset, BIN.len(), "compact paint bundle trailing bytes");
     }
 }
