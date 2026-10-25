@@ -2,11 +2,14 @@
 //!
 //! This follows the confirmed single-ObjectStroke Drawing route through native
 //! SmPath sampling and RTV1 AddPoint records. It does not produce the GL tip
-//! bitmap, texture mask, shader composition, or final pixels. It is deliberately
-//! limited to the bounded event/style/context slice described by the fixture.
+//! bitmap or production paint. A separate test reconstructs one captured paint
+//! profile through generated SVG. Both stay within their fixture's context.
 
 use super::path::{P, Quad};
 use crate::Point;
+
+#[cfg(feature = "render")]
+mod paint;
 
 const MAX_INPUT_POINTS: usize = 4096;
 const MAX_OUTPUT_DABS: usize = 65_536;

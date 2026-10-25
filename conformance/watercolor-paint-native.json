@@ -1,0 +1,116 @@
+{
+  "input_context": {
+    "advanced_setting": null,
+    "buffer_publication": "PenDrawableRT::SetBuffer then SendDataToGPU; no RTV1 fields written directly",
+    "canvas": [
+      1920,
+      1080
+    ],
+    "color_argb": "0x8044aaee",
+    "color_type": 0,
+    "curve_enabled": true,
+    "pen_size": 8.0,
+    "rt_matrix_f32": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      128,
+      128,
+      0,
+      1
+    ],
+    "rt_size": [
+      256,
+      256
+    ],
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "material": {
+    "final_blend_equation": [
+      "GL_FUNC_ADD",
+      "GL_FUNC_ADD"
+    ],
+    "final_blend_factors": [
+      "GL_SRC_ALPHA",
+      "GL_ONE_MINUS_SRC_ALPHA",
+      "GL_ONE",
+      "GL_ONE_MINUS_SRC_ALPHA"
+    ],
+    "fragment_conversion_boundary": "RNE source-row/UNORM calculations model the pinned host output class; do not generalize to a different worker thread, driver, target format, or color.",
+    "input_color_uniform_f32": [
+      0.2666666805744171,
+      0.6666666865348816,
+      0.9333333373069763,
+      0.551764726638794
+    ],
+    "mask_target_internal_format": "GL_RGBA8",
+    "max_alpha_f32": 0.8,
+    "output_target_internal_format": "GL_RGBA8",
+    "pattern_png": "watercolor-pattern.png",
+    "pattern_png_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
+    "pattern_rgba8_sha256": "5d648cecd3cbecf11e3dfe9f83d105a09ad6244ecb7ed38466e3dfc1f18bcaae",
+    "sampler_min_mag": "GL_NEAREST",
+    "sampler_wrap": "GL_CLAMP_TO_EDGE",
+    "threshold_f32": 0.7,
+    "vector_input": {
+      "source_texture": "watercolor-pattern.png",
+      "source_texture_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
+      "atlas_channels": "preserve source RGBA; per captured record lane 5 replace G with floor(G_byte * lane_f32 + 0.5); alpha is pinned opaque 255",
+      "captured_lane_f32_bits": [
+        "0x3d23d70a",
+        "0x3bc49ba6"
+      ],
+      "svg_geometry": "Rust emits both triangle clips and affine UV image maps from each sampled six-float record; no captured SVG or geometry template",
+      "blend_filter": "Rust emits the pinned two-pass additive mask + source-derived low-density A8 target-composite filters",
+      "renderer": "resvg 0.47.0 via existing dev dependency"
+    }
+  },
+  "native_frame": {
+    "height": 256,
+    "native_lower_left_sha256": "b1ff5ddc82ef8fa2b576bf1a29ceb19a1af229bb524dae2d7aa6e4ecbc3539bd",
+    "nonzero_pixels": 206,
+    "pixel_format": "RGBA8",
+    "row_order": "top-left; native lower-left readback vertically flipped",
+    "sparse_encoding": "206 sorted entries; each is u16le row-major index then 4 RGBA bytes; full-frame pixels not listed are exact zero",
+    "sparse_entries_hex": "9777010102029877000101019977000101019178010102029278010203039378010203039478010102029578010102029678010102029778010102029878010102029978000101019a78000101018e79010102028f79010102029079010102029179010203039279010203039379010203039479010203039579010102029679010102029779010102029879010102029979000101019a79000101019b79000101018d7a010203038e7a010203038f7a01020303907a01020303917a01020303927a01020303937a01020303947a01020303957a01020303967a01010202977a01010202987a01010202997a010102029a7a000101019b7a000101018c7b010203038d7b010203038e7b010203038f7b01020303907b01020303917b01020303927b01020303937b01020303947b01020303957b01020303967b01010202977b01010202987b01010202997b010102029a7b000101019b7b00010101897c010203038a7c010203038b7c010203038c7c010203038d7c010203038e7c010203038f7c01020303907c01020303917c01020303927c01020303937c01020303947c01020303957c01020303967c01020303977c01010202987c01010202997c010102029a7c000101019b7c000101017f7d01030505807d02040606817d02040606827d01030404837d01020303847d01020303857d01020303867d01020303877d01010202887d01020303897d010203038a7d010203038b7d010203038c7d010203038d7d010203038e7d010203038f7d01020303907d01030404917d01020303927d01020303937d01030404947d01020303957d01020303967d01010202977d01010202987d01010202997d010102029a7d000101017e7e020406067f7e02040606807e02050707817e02040606827e01030505837e01030404847e01030404857e01030404867e01020303877e01010202887e01020303897e010203038a7e010203038b7e010203038c7e010203038d7e010203038e7e010203038f7e01030404907e01020303917e01020303927e01020303937e01020303947e01020303957e01020303967e01010202977e01010202987e01010202997e000101019a7e000101017d7f010304047e7f020406067f7f02050707807f02050708817f02050707827f01030505837f01030404847f01030404857f01020303867f01020303877f01020303887f01020303897f010203038a7f010304048b7f010203038c7f010203038d7f010203038e7f010203038f7f01020303907f01020303917f01020303927f01020303937f010102027d80010305057e80020406067f80020406068080020507078180020406068280010305058380010304048480010304048580010304048680010203038780010203038880010203038980010203038a80010203038b80010203038c80010203038d80010203038e80010102028f80010203039080010203037e81010304047f81020406068081020406068181010305058281010304048381010304048481010304048581010203038681010203038781010203038881010203038981010203038a81010203038b81010102028c81010203038d81010102027f82010304048082010203038182010304048282010304048382010203038482010203038582010102028682010203038782010102028882010102028982010102028a82010203038b8200010101",
+    "top_left_sha256": "2531c8bee6cae876286a8929495bed7d09898530c2efbd1ef155b0fd13029928",
+    "width": 256
+  },
+  "position_rounding_profile": {
+    "daz": false,
+    "evidence_capture_sha256": "c6aa560edb9252817a885e53d014e83e2f4e39e770ba239b935c8926e8e6b39a",
+    "ftz": false,
+    "mxcsr_after_draw": "0x00001fa1",
+    "mxcsr_before_draw": "0x00001fa1",
+    "name": "captured-host-MXCSR-nearest-even",
+    "proof_receipt_path": "tmp/vector-parity-plan/mesa-precision-source-audit/watercolor-v13-mxcsr-receipt.md",
+    "proof_receipt_sha256": "e409efe91b1f4584c87890fc7f06c9812bb395a34bd63c4d5c7b05257b7c083a",
+    "rounding_control": 0,
+    "scope": "Observed immediately before host glDrawArraysInstanced and after return for this Mesa V12/V13 host capture; it is a named test profile, not a cross-platform default.",
+    "scope_note": "V13 directly observes MXCSR before and after the synchronous native host draw calls; Mesa source proves the mask VS JIT uses that caller-thread MXCSR while preserving RC. This fixture does not claim the same observed MXCSR on llvmpipe fragment worker threads."
+  },
+  "schema": "sdocx-watercolor-paint-native-v1",
+  "scope": "Single captured V1 saved-stroke source/control context + RTV1 native-mask/composite frame; full 256x256 final oracle is sparse with zero elsewhere.",
+  "source": {
+    "capture_path": "/tmp/sdocx-watercolor-v13-mxcsr-root-a.json",
+    "capture_sha256": "c6aa560edb9252817a885e53d014e83e2f4e39e770ba239b935c8926e8e6b39a",
+    "draw_class": "WaterColorBrushStrokeDrawableGLV1",
+    "drawable_redraw_rva": "0x62124",
+    "dso_sha256": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea",
+    "geometry_case_id": "advanced-setting-null",
+    "geometry_fixture_sha256": "fdedbec1695a978aca2d00256d9eea16ed60eab87bf04dd7f6ec4405b2430347",
+    "instance_count": 15,
+    "instance_stream_sha256": "54a75f68b07b8b3a4b61eff9bd4c6bc0f36113b3755d189c8e48a799dba620e6",
+    "rtv1_add_point_rva": "0x65430"
+  }
+}
