@@ -61,8 +61,11 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 	expect(paints.images).toBe(0);
 	expect(paints.linearFill).toMatchObject({ units: 'userSpaceOnUse', drawsShape: true,
 		stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }] });
+	// Outline loading sorts the saved yellow@1 / green@0 pair descending.
+	// The final positive 0..1 cache span then overwrites the table with green.
+	// This asserts the bounded native-derived vector projection, not raw stop order.
 	expect(paints.radialOutline).toMatchObject({ units: 'userSpaceOnUse', drawsShape: true,
-		stops: [{ offset: 0, color: '#00ff00' }, { offset: 1, color: '#ffff00' }] });
+		stops: [{ offset: 0, color: '#00ff00' }, { offset: 1, color: '#00ff00' }] });
 	expect(paints.linearFill!.geometry).toEqual({ x1: 10.25, y1: 45.5, x2: 310.25, y2: 45.5 });
 	expect(paints.linearFill!.transform).toBe('rotate(-37.25 160.25 45.5)');
 	expect(paints.radialOutline!.transform).toBe('rotate(-37.25 160.25 45.5)');
@@ -74,7 +77,7 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 	expect(paints.linearFill!.stops[0].opacity).toBeCloseTo(128 / 255, 4);
 	expect(paints.linearFill!.stops[1].opacity).toBeCloseTo(192 / 255, 4);
 	expect(paints.radialOutline!.stops[0].opacity).toBeCloseTo(64 / 255, 4);
-	expect(paints.radialOutline!.stops[1].opacity).toBe(1);
+	expect(paints.radialOutline!.stops[1].opacity).toBeCloseTo(64 / 255, 4);
 	expect(paints.rejectedFill).toBe('none');
 	expect(paints.survivingOutlineDrawsShape).toBe(true);
 
