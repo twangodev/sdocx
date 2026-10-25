@@ -292,10 +292,35 @@ fn native_upscale_crop_edges_reduce_alpha_error_versus_legacy_full_image_clip() 
         x_max: 56.0,
         y_max: 32.0,
     });
+    // Keep the renderer on its pre-crop fallback path now that original_bbox
+    // alone is eligible for source-pixel cropping. The current renderer does
+    // not draw border_media_id; this inert reference only selects the legacy
+    // full-image-plus-viewport geometry below.
+    image.border_media_id = Some(7);
     legacy.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
     let legacy_svg = sdocx::render_page_svg(&legacy, 0, &Default::default())
         .unwrap()
         .svg;
+
+    let cropped_xml = roxmltree::Document::parse(&cropped_svg).unwrap();
+    let cropped_image = cropped_xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert_eq!(svg_rectangle(cropped_image), [8.0, 8.0, 32.0, 16.0]);
+    let legacy_xml = roxmltree::Document::parse(&legacy_svg).unwrap();
+    let legacy_image = legacy_xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert_eq!(svg_rectangle(legacy_image), [-8.0, 0.0, 64.0, 32.0]);
+    let viewport = legacy_image.parent().unwrap();
+    assert_eq!(
+        ["x", "y", "width", "height"]
+            .map(|name| { viewport.attribute(name).unwrap().parse::<f64>().unwrap() }),
+        [8.0, 8.0, 32.0, 16.0]
+    );
+    assert_eq!(viewport.attribute("overflow"), Some("hidden"));
 
     fn rgba_from_svg(svg: &str) -> Vec<u8> {
         let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
