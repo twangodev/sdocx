@@ -18,9 +18,12 @@ alpha MAE in bytes worsens in both readers:
 | 128 | 20.95 → 25.05 | 21.62 → 26.46 |
 | 255 | 37.77 → 46.42 | 39.37 → 49.14 |
 
-The experiment remains outside production. Matching the continuous field does
-not establish matching PDF sampling or placement; that distinction still needs
-pixel-center function evaluation. This control does not establish archive-native
+The experiment remains outside production. A Rust calculator audit of the emitted
+functions and serialized marker transform matches the independent field within
+1.2e-16. Pixel-center evaluation gives affected-pixel alpha MAE of 0.39/0.34 bytes
+and matches native support; fixed integer-coordinate evaluation raises error to
+26.38/48.88 bytes. This points toward reader sampling or soft-mask behavior, but
+does not justify a phase correction. This control does not establish archive-native
 thin widths, device appearance, or document parity.
 
 ## Firefox blend workarounds

@@ -491,7 +491,7 @@ mod tests {
         }
     }
 
-    fn run_calculator(code: &[u8], x: f64, y: f64) -> (Vec<f64>, usize) {
+    pub(super) fn run_calculator(code: &[u8], x: f64, y: f64) -> (Vec<f64>, usize) {
         let source = std::str::from_utf8(code).unwrap();
         let tokens = tokenize(source);
         let [PsToken::Procedure(procedure)] = tokens.as_slice() else {
@@ -793,4 +793,68 @@ mod tests {
             .is_err()
         );
     }
+    #[test]
+    fn thin_v16_native_width_and_argb_alpha_witnesses() {
+        // AS18 size-1 control, V8 pair SHA256 0204f19e...dc7cae8;
+        // upload 62162359...606a36. These are its first three exact records.
+        // All omitted stamps lie outside these three fixed samples (minimum
+        // normalized-distance clearance 0.069). This checks field arithmetic,
+        // not PDF rasterization, the GPU tie rule, or whole-stroke parity.
+        let records = [
+            [0x4304_d2ef, 0x4353_619f, 0x3e4c_cccd],
+            [0x4304_d2ef, 0x4352_959d, 0x3eaa_aaab],
+            [0x4304_c204, 0x4351_c21f, 0x3eb6_7046],
+        ]
+        .map(|[x, y, width_alpha]| {
+            [
+                f32::from_bits(x),
+                f32::from_bits(y),
+                1.0,
+                1.0,
+                0.0,
+                f32::from_bits(width_alpha),
+                0.0,
+                0.0,
+                0.0,
+            ]
+        });
+        let bounds = [131.0, 208.0, 134.0, 213.0];
+        let samples = [
+            (132, 868, [18, 35]),
+            (132, 869, [39, 74]),
+            (133, 868, [8, 16]),
+        ];
+        // Exact affine derived from the captured f32 projection and viewport.
+        let (scale_x, scale_y) = (1.0000000521540642, 0.9999999823048711);
+        for (case, alpha) in [128_u8, 255].into_iter().enumerate() {
+            let program = compile(
+                &records,
+                bounds,
+                f32::from(alpha) / 255.0,
+                PdfRadialCoverage::DirectSourceOver,
+            )
+            .unwrap();
+            for (column, row, native_alpha) in samples {
+                let source_x = (f64::from(column) + 0.5) / scale_x;
+                let source_y = (1080.0 - f64::from(row) - 0.5) / scale_y;
+                let (mask, stack) = run_calculator(
+                    &program.mask,
+                    (source_x - bounds[0]) / (bounds[2] - bounds[0]),
+                    1.0 - (source_y - bounds[1]) / (bounds[3] - bounds[1]),
+                );
+                assert_eq!(mask.len(), 1);
+                assert!(stack <= 8);
+                assert!(
+                    (mask[0] * 255.0 - f64::from(native_alpha[case])).abs() < 1.0,
+                    "native alpha {alpha} at ({column},{row}): {} vs {}",
+                    mask[0] * 255.0,
+                    native_alpha[case],
+                );
+            }
+        }
+    }
 }
+
+#[cfg(test)]
+#[path = "radial_capture_artifacts.rs"]
+mod capture_artifacts;
