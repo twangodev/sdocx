@@ -1,0 +1,250 @@
+{
+  "cases": [
+    {
+      "id": "simplebrush_pressure_first05",
+      "input": {
+        "curve_enabled": true,
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000803e",
+          "0000403f"
+        ],
+        "tool_type": 2
+      },
+      "native_oracle": {
+        "capture_sha256": "f3fbd59dc21a76b4fa6548780d7922ad5504c2e0a8e4d4e6fdda20c5a0bff447",
+        "drawing_redraw_equal": true,
+        "phase_call_counts": {
+          "draw_object_stroke": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          },
+          "saved_redraw": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          }
+        },
+        "schema": "sdocx-simplebrush-drawing-saved-caller-native-case-v5",
+        "vector_count": 14,
+        "vector_length_bytes": 168,
+        "vector_offset_bytes": 0,
+        "vector_sha256": "498063f7e145bf52f54dfd893061c7f3dd293d35d43c0cfce7c31bb2e88e1530"
+      }
+    },
+    {
+      "id": "simplebrush_pressure_first075",
+      "input": {
+        "curve_enabled": true,
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000403f",
+          "0000803e",
+          "0000803f"
+        ],
+        "tool_type": 2
+      },
+      "native_oracle": {
+        "capture_sha256": "f5557277dfaa29f52a0266ce9fa9c24c414edff1b11b1e2604615c25c0b311fc",
+        "drawing_redraw_equal": true,
+        "phase_call_counts": {
+          "draw_object_stroke": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          },
+          "saved_redraw": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          }
+        },
+        "schema": "sdocx-simplebrush-drawing-saved-caller-native-case-v5",
+        "vector_count": 14,
+        "vector_length_bytes": 168,
+        "vector_offset_bytes": 168,
+        "vector_sha256": "d49b9e5cca72de8db2a3842d9550dda4ce378b281c9b1f3fe0a05e1535263578"
+      }
+    },
+    {
+      "id": "simplebrush_pressure_first05_size12",
+      "input": {
+        "curve_enabled": true,
+        "pen_size_f32_bits": "00004041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000803e",
+          "0000403f"
+        ],
+        "tool_type": 2
+      },
+      "native_oracle": {
+        "capture_sha256": "5d138f7f6ab40f50c3b401b8418fe0b33d11c39f0bb22169a18ba24291d735d5",
+        "drawing_redraw_equal": true,
+        "phase_call_counts": {
+          "draw_object_stroke": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          },
+          "saved_redraw": {
+            "draw_path_calls": 2,
+            "end_pen_calls": 1,
+            "length_returns": 3,
+            "position_returns": 14,
+            "repeat_returns": 3,
+            "set_value_calls": 2
+          }
+        },
+        "schema": "sdocx-simplebrush-drawing-saved-caller-native-case-v5",
+        "vector_count": 14,
+        "vector_length_bytes": 168,
+        "vector_offset_bytes": 336,
+        "vector_sha256": "57073332f2cfb20e88ad2febe5d8b0357f9f4ecf4ad8803158446f7b8ea9b723"
+      }
+    },
+    {
+      "id": "simplebrush_legacy_zero_pressure",
+      "input": {
+        "curve_enabled": true,
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000f041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000403f",
+          "0000803f"
+        ],
+        "tool_type": 2
+      },
+      "native_oracle": {
+        "capture_sha256": "cc4b22b31b49a1dda3d7f8ea00017badb186c2fc63ccd94b41880d13010bdcc2",
+        "drawing_redraw_equal": true,
+        "phase_call_counts": {
+          "draw_object_stroke": {
+            "draw_path_calls": 3,
+            "end_pen_calls": 1,
+            "length_returns": 4,
+            "position_returns": 24,
+            "repeat_returns": 4,
+            "set_value_calls": 3
+          },
+          "saved_redraw": {
+            "draw_path_calls": 3,
+            "end_pen_calls": 1,
+            "length_returns": 4,
+            "position_returns": 24,
+            "repeat_returns": 4,
+            "set_value_calls": 3
+          }
+        },
+        "schema": "sdocx-simplebrush-drawing-saved-caller-native-case-v4",
+        "vector_count": 24,
+        "vector_length_bytes": 288,
+        "vector_offset_bytes": 504,
+        "vector_sha256": "d57599ee76e93f49bb1a1e9dfaf6b184862445105d68ac5150039c5cd29670f2"
+      }
+    }
+  ],
+  "provenance": {
+    "apk_library": "Samsung Notes bundled libSPenSimpleBrush.so",
+    "binary_oracle": {
+      "format": "concatenated case vectors in JSON case order; little-endian float32 triples (x,y,radius_plus_0_5)",
+      "length_bytes": 792,
+      "path": "simplebrush-native.bin",
+      "sha256": "8795213d86ab85c48424089340a560575d4863b94d9b1346eae35cd16059c7db"
+    },
+    "input_route": "native ObjectStroke setters -> Drawing factory for literal preload Brush -> selected SimpleBrush ObjectStroke RedrawPen; independent saved-redraw vector captured and bit-equal",
+    "libSPenDrawing.so_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "libSPenModel.so_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenSimpleBrush.so_sha256": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+    "source_addresses": {
+      "CurveStyle::RedrawPen_ObjectStroke": "0x1bf6c",
+      "CurveStyle::drawLine": "0x1c194",
+      "CurveStyle::drawPath": "0x1c30c",
+      "CurveStyle::endPen": "0x1ba48",
+      "CurveStyle::setValue": "0x1c408",
+      "SimpleBrushDrawableRT::AddPoint": "0x1d804",
+      "SimpleBrushStyle::drawPoint": "0x1fc70",
+      "SimpleBrushStyle::getRepeat": "0x1fd80"
+    }
+  },
+  "schema": "sdocx-simplebrush-native-geometry-fixture-v1",
+  "scope": "Input-derived SimpleBrush geometry sampler oracle only; no shader pixels, color upload, SVG/PDF export, or device defaults."
+}
