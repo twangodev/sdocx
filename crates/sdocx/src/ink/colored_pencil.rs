@@ -61,14 +61,14 @@ struct Sampled {
 
 /// glibc 2.41 TYPE_3 `rand` sequence, including `srand(0)` normalization.
 /// This is a source-level implementation of the captured host profile.
-struct GlibcRand {
+pub(super) struct GlibcRand {
     state: [u32; 31],
     front: usize,
     rear: usize,
 }
 
 impl GlibcRand {
-    fn seeded(seed: u32) -> Self {
+    pub(super) fn seeded(seed: u32) -> Self {
         let seed = if seed == 0 { 1 } else { seed };
         let mut state = [0; 31];
         state[0] = seed;
@@ -93,7 +93,7 @@ impl GlibcRand {
         rng
     }
 
-    fn next(&mut self) -> u32 {
+    pub(super) fn next(&mut self) -> u32 {
         let sum = self.state[self.front].wrapping_add(self.state[self.rear]);
         self.state[self.front] = sum;
         let result = (sum >> 1) & 0x7fff_ffff;

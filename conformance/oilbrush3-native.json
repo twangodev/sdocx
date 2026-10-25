@@ -1,0 +1,206 @@
+{
+  "schema": "sdocx-oilbrush3-native-v1",
+  "scope": {
+    "kind": "synthetic Model ObjectStroke through cold native ObjectDrawing saved redraw",
+    "selected_pen": "com.samsung.android.sdk.pen.pen.preload.OilBrush3",
+    "selected_drawable": "OilBrush3StrokeDrawableGLV1",
+    "selected_rt_drawable": "OilBrush3StrokeDrawableRTV1",
+    "drawing_return": 1,
+    "append_signature": "SPen::OilBrush3StrokeDrawableRTV1::AddPoint(SPen::Vector2<float>, float, float)",
+    "append_contract": "15 calls append 112 bytes each: 24 local mesh floats plus x, y, continuity, angle; no full stream fixture is stored.",
+    "boundary": "This fixture covers saved AddPoint geometry only. Bitmap/texture generation, brush mask, shader sampling, blend/composition and final pixels are not captured or modeled. The random and atan2f results are pinned to the host glibc capture profile, not Android bionic parity. The atan2f boundary checks the ordered native input bits and uses captured result bits; it never calls the test machine math library."
+  },
+  "provenance": {
+    "native_dso_sha256": "b6402638f43bebdb8aa95ed33617820ef923a19dbac8475ef980204cdfc419d4",
+    "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "model_dso_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "native_capture_runner_sha256": "e977e8ec099abde9c1e3e931d5e46fc76952cbf2cfd9eb1b777c17dc7b77302d",
+    "native_capture_preflight_sha256": "362d756a791554cbebfd516e19e698edcfef6d1fff0403b2f2f290f7514d410a",
+    "baseline_native_capture_runner_sha256": "3fab5144d21a4836aa40ea2cd95979d088154c614d27282de1601c997d78be8f",
+    "baseline_native_log_sha256": "b6cf0f874cc027aa140ac4ebb7eac9032be040f61c879142a143cc40d43c8dd8",
+    "host_libm_sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    "host_libc_sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92"
+  },
+  "source_pins": {
+    "size_mapping": "OilBrush3::SetSize RVA 0x3ec5c stores input size / float 1.3; drawPoint uses the stored brush size times 0.5.",
+    "resolution": "OilBrush3StrokeDrawableGLV1::setScreenResolution RVA 0x40a1c stores min(screen resolution)/1440, dab spacing is 3 times that, minimum movement is min(screen resolution)/1440, and long-segment threshold is 50 times min(screen resolution)/1440.",
+    "saved_route": "OilBrush3StrokeDrawableGLV1::RedrawPen(ObjectStroke const*) RVA 0x41a00 constructs a MotionEvent from point, pressure, timestamp, tilt and orientation arrays; the GL history loop reads point coordinates, tool type and source. The captured Model conversion yields tool type 2 and source 0.",
+    "path": "drawLine RVA 0x413cc builds SmPath moveTo(previous midpoint), quadTo(previous raw point, midpoint(previous,current)), carries the next dab distance between paths, then uses getPosTan and atan2f at callsite RVA 0x41518.",
+    "mesh": "drawPoint RVA 0x412e4 passes x/y, half-size and tangent angle to AddPoint at RVA 0x41398. AddPoint RVA 0x42c58 appends six four-float textured quad vertices, then x/y/continuity/angle.",
+    "pressure_orientation": "The saved MotionEvent arrays are constructed natively. Pressure and orientation controls leave this captured AddPoint stream unchanged; source inspection shows the selected saved path consumes neither channel for geometry."
+  },
+  "input": {
+    "tool_type": 2,
+    "source": 0,
+    "curve_enabled": true,
+    "color_argb": "0x8044aaee",
+    "size": 8.0,
+    "points_xy": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        5.0
+      ],
+      [
+        30.0,
+        5.0
+      ]
+    ],
+    "pressures": [
+      0.1,
+      0.35,
+      0.7,
+      1.0
+    ],
+    "timestamps": [
+      0,
+      8,
+      19,
+      37
+    ],
+    "tilts": [
+      0.0,
+      0.2,
+      0.4,
+      0.6
+    ],
+    "orientations": [
+      0.0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "screen_resolution": [
+      1920,
+      1080
+    ]
+  },
+  "cases": [
+    {
+      "name": "repeat-a",
+      "capture_log_sha256": "cf587445427a7bfbe79d5cf88e6f9d093bac5cdf5d0f964c5f5e0dfd8e571180",
+      "size": 8.0,
+      "pressure_scale": 1.0,
+      "orientation_offset": 0.0,
+      "addpoint_calls": 15,
+      "stream_bytes": 1680,
+      "stream_sha256": "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+    },
+    {
+      "name": "repeat-b",
+      "capture_log_sha256": "5a68357d356c8f6bbba551efe9e65a66cafda50a875e1ae0f61c29f4193f330d",
+      "size": 8.0,
+      "pressure_scale": 1.0,
+      "orientation_offset": 0.0,
+      "addpoint_calls": 15,
+      "stream_bytes": 1680,
+      "stream_sha256": "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+    },
+    {
+      "name": "size-only",
+      "capture_log_sha256": "64c826d6b76298cd6615b34c8aaca838edbfe68a4bb9077ead0d03a1491c2588",
+      "size": 12.0,
+      "pressure_scale": 1.0,
+      "orientation_offset": 0.0,
+      "addpoint_calls": 15,
+      "stream_bytes": 1680,
+      "stream_sha256": "bf69d40c3bba10ec3b5ae17392b39847997438e2308e0e1c7282521858adce93"
+    },
+    {
+      "name": "pressure-only",
+      "capture_log_sha256": "d1dcd92e27fe12ad3b55334f9a9d69d4128cb4b4b4f27d51de27f84a1340331c",
+      "size": 8.0,
+      "pressure_scale": 0.5,
+      "orientation_offset": 0.0,
+      "addpoint_calls": 15,
+      "stream_bytes": 1680,
+      "stream_sha256": "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+    },
+    {
+      "name": "orientation-only",
+      "capture_log_sha256": "cbd38b75cad29f2e2c16cd36799438dfd4431c2dbe943d05b8a51fb15c025fdf",
+      "size": 8.0,
+      "pressure_scale": 1.0,
+      "orientation_offset": 0.125,
+      "addpoint_calls": 15,
+      "stream_bytes": 1680,
+      "stream_sha256": "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+    }
+  ],
+  "atan2f_oracle": {
+    "native_capture_cases": [
+      "repeat-a",
+      "repeat-b",
+      "size-only",
+      "pressure-only",
+      "orientation-only"
+    ],
+    "source_bit_strings": "V15 fields s0_y_bits/s1_x_bits/s0_result_bits are little-endian byte hex from struct.pack(\"<f\"); values below are canonical u32 IEEE-754 bit patterns parsed with little-endian interpretation.",
+    "callsite": "libSPenOilBrush3.so RVA 0x41518; OilBrush3StrokeDrawableGLV1::drawLine calls host atan2f(y,x).",
+    "host_profile": "/usr/lib/x86_64-linux-gnu/libm.so.6; SHA-256 6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3. This reproduces only captured host results; Android bionic parity is unverified.",
+    "calls": [
+      {
+        "s0_y_f32_bits": "0x00000000",
+        "s1_x_f32_bits": "0x3f7fffff",
+        "s0_result_f32_bits": "0x00000000"
+      },
+      {
+        "s0_y_f32_bits": "0x00000000",
+        "s1_x_f32_bits": "0x3f800000",
+        "s0_result_f32_bits": "0x00000000"
+      },
+      {
+        "s0_y_f32_bits": "0x3db124f1",
+        "s1_x_f32_bits": "0x3f7f0a62",
+        "s0_result_f32_bits": "0x3db15dae"
+      },
+      {
+        "s0_y_f32_bits": "0x3e475342",
+        "s1_x_f32_bits": "0x3f7b1a6e",
+        "s0_result_f32_bits": "0x3e489b1e"
+      },
+      {
+        "s0_y_f32_bits": "0x3e961fff",
+        "s1_x_f32_bits": "0x3f74bf82",
+        "s0_result_f32_bits": "0x3e985d27"
+      },
+      {
+        "s0_y_f32_bits": "0x3ec30d72",
+        "s1_x_f32_bits": "0x3f6cb1fa",
+        "s0_result_f32_bits": "0x3ec81bb8"
+      },
+      {
+        "s0_y_f32_bits": "0x3ede8ae3",
+        "s1_x_f32_bits": "0x3f668d95",
+        "s0_result_f32_bits": "0x3ee638f6"
+      },
+      {
+        "s0_y_f32_bits": "0x3eb4bcfa",
+        "s1_x_f32_bits": "0x3f6f84e6",
+        "s0_result_f32_bits": "0x3eb8b82e"
+      },
+      {
+        "s0_y_f32_bits": "0x3e865cfe",
+        "s1_x_f32_bits": "0x3f77070f",
+        "s0_result_f32_bits": "0x3e87f491"
+      },
+      {
+        "s0_y_f32_bits": "0x3e2365a8",
+        "s1_x_f32_bits": "0x3f7cb849",
+        "s0_result_f32_bits": "0x3e24193c"
+      },
+      {
+        "s0_y_f32_bits": "0x3d4c8f82",
+        "s1_x_f32_bits": "0x3f7fae38",
+        "s0_result_f32_bits": "0x3d4ca54d"
+      }
+    ]
+  }
+}
