@@ -1,0 +1,91 @@
+{
+  "schema": "sdocx-watercolor-dense-paint-native-v1",
+  "scope": "Controlled WaterColor RTV1 public-API repeat-32 profile. Native GL output is stored as lower-left readback; sparse final oracle is vertically normalized to the top-left SVG/resvg frame.",
+  "source": {
+    "capture_path": "/tmp/sdocx-watercolor-v15-dense-root-a.json",
+    "capture_sha256": "3f341c77baff271cd0e59c6cd5a5f1ac19296ac4bb88ddbb359ff240a27e2016",
+    "watercolor_dso_sha256": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea",
+    "base_sampler_fixture_sha256": "d9efa187ed0c324ef3ef10c14fd28c096c3139b44b968ce5309efb05af068e0b",
+    "base_geometry_fixture_sha256": "fdedbec1695a978aca2d00256d9eea16ed60eab87bf04dd7f6ec4405b2430347",
+    "base_stream_fixture_sha256": "51ddbec0fb4ec55ac93f51d50c387f2e62bdac9f3a88df853951118c78b001dd",
+    "base_pattern_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
+    "record_format": [
+      "x",
+      "y",
+      "sin_phase",
+      "cos_phase",
+      "width_like",
+      "alpha_coefficient"
+    ],
+    "record_stride_bytes": 24,
+    "source_record_count": 15,
+    "repeat_count": 32,
+    "record_count": 480,
+    "stream_bytes": 11520,
+    "stream_sha256": "483159bd8fad294ca07d62f324ee0fa84e027d88bda1a78656e537356df21e8b",
+    "phase_state": "seed 0.0; source PHASE_STEP/TAU float32 recurrence continues across all 480 public AddPoint records; sincosf is recomputed using the existing bounded host profile. Base-sampled x/y/width/alpha lanes repeat bytewise every 15 rows.",
+    "profile_scope": "Controlled native WaterColor RTV1 public-API profile. A pinned natural Drawing ObjectStroke capture supplies the original 15 AddPoint tuples and source ARGB/size provenance; selected ARGB overrides are passed only to PenDrawableRT::SetPenData, and the density profile repeats those exact tuples through public RTV1::AddPoint. Repeated-input profiles are controlled RT API tests, not Drawing-owned strokes. RTV1 Init/CreatePenCanvas/AddPoint/Update/Draw, inherited RT buffer APIs, native Graphics output bitmap/CanvasImpl path, embedded mask/composite shader, Renderer, and passive MXCSR observation execute. Mesa GLES is host output; no device parity claim.",
+    "controlled_addpoint_calls": 480,
+    "public_repeat_semantics": "the complete 15-tuple pinned natural Drawing sequence replayed in order for every repeat; no coordinate/radius/alpha edits",
+    "argb": "0x8044aaee",
+    "tool_type": 2,
+    "color_type": 0,
+    "stroke_type": 0,
+    "selected_drawable_class": "WaterColorBrushStrokeDrawableGLV1",
+    "actual_native_draw_args": [
+      5,
+      0,
+      4,
+      480
+    ]
+  },
+  "material": {
+    "pattern_png_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
+    "source_color_getter": "Reuse baseline native fixture ARGB through existing input_color() PenCommon/getColor FMA helper; do not duplicate color constants.",
+    "threshold_f32": 0.7,
+    "max_alpha_f32": 0.8,
+    "mask_format": "RGBA8",
+    "mask_full_readback_sha256": "68aa5659e761419b55ae3c64ef6f8f3c184f82fd5b4f25d8755e6d4ea79d3941",
+    "final_format": "RGBA8",
+    "final_frame_width": 256,
+    "final_frame_height": 256,
+    "final_frame_row_order": "top-left (native GL readback is vertically flipped before sparse encoding)",
+    "native_final_frame_sha256": "78c2502b89b15b3690f47166ca9ea55cf5417d0b6183753e466ef347c21613ee",
+    "native_final_support_pixels": 226,
+    "native_final_sparse": {
+      "path": "conformance/watercolor-dense-sparse.bin",
+      "offset": 0,
+      "length_bytes": 1356,
+      "sha256": "7e8d2978b698c7718d9c63cbf053ddefcef68ad02ae17cd07336694165f6db93",
+      "entry_count": 226,
+      "record_format": "u16le top-left row-major pixel index, then RGBA8; all unspecified pixels are exact transparent zero."
+    },
+    "high_branch_mask_invariant": {
+      "path": "conformance/watercolor-dense-sparse.bin",
+      "offset": 1356,
+      "length_bytes": 168,
+      "sha256": "8f3db4b101e9a118e9a920a317f9b0542bf6357f38f08a9ad76d344aa0d46f0a",
+      "entry_count": 42,
+      "record_format": "u16le top-left row-major native mask pixel index, then mask R,G bytes",
+      "threshold_g_u8_min": 179,
+      "all_red_u8": 255,
+      "assertion": "every observed native mask pixel with G>=179 has R=255; source high-branch G-only lookup is admitted only after this assertion passes.",
+      "coordinate_origin": "top-left after flipping native GL lower-left readback rows"
+    },
+    "sparse_container_bytes": 1524,
+    "sparse_container_sha256": "406061c82db6ac4aa11ad491cbbfbfc1233094dc6ba64b3aec1dc5d5f681c841",
+    "native_readback_lower_left_sha256": "da750d97782feb2756c753ea49764eba6f9bbae009e4cbcd5714a55ccd755730"
+  },
+  "render_profile": {
+    "engine": "resvg 0.47.0 existing dev dependency",
+    "frame": "256x256 RGBA8",
+    "material_quantization": "source shader equations plus captured RNE host profile; no native output pixels select LUT entries.",
+    "shader_program": "WaterColor non-eraser program 4",
+    "source_high_branch": "d=f16(mask.g-0.7001953125); d=f16(d*0.5); d=f16(d*mask.r); rgb=f16(f16(input.rgb)+d); alpha=f16(0.7998046875*f16(input.a)).",
+    "source_low_branch": "alpha=f16(f16(f16(mask.g/0.7001953125)*0.7998046875)*f16(input.a)); rgb=f16(input.rgb).",
+    "mask_blend": "per-instance RGBA8 additive GL_FUNC_ADD; SVG k1=0,k2=1,k3=1,k4=0.",
+    "final_blend": "GL_FUNC_ADD with GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA.",
+    "high_branch_rounding_boundary": "Fragment-worker MXCSR was not captured; RNE half arithmetic is a named host candidate, not universal native behavior."
+  },
+  "schema_version": 1
+}
