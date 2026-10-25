@@ -85,10 +85,12 @@ A saved `Marker2` stroke whose settings are absent or whose first settings
 token is a nonnegative integer uses the same stamp path with one radius for
 the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
-thin-edge shader is not ported. `Marker` and `Marker3` stay on the pressure
-fallback. Marker4 settings `7;` and `8;` use rounded rectangular stamps; see
-[V7 findings](marker4-v7.md) and [V8 findings](marker4-rendering-findings.md).
-Other Marker4 settings and straight-line aliases stay on the fallback.
+thin-edge shader is not ported. `Marker` stays on the pressure fallback.
+`Marker3` and `StraightMarker` use the bounded V5 page route with empty or `5;`
+settings; other settings remain generic. Marker4 and `StraightHighlighter`
+settings `7;` and `8;` use rounded rectangular stamps; see [V7 findings](marker4-v7.md)
+and [V8 findings](marker4-rendering-findings.md). Other Marker4 settings remain
+on the fallback.
 Composition selects root objects into Base, Top and Masking passes, preserving
 stored order within each pass. The shared top batch uses Darken on light paper
 and Lighten on dark paper; replay retains those SVG blend groups. See
