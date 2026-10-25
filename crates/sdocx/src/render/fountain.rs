@@ -2091,12 +2091,13 @@ mod tests {
             let mut scene = Scene::new(Svg::new().width(64).height(64));
             scene.retain_text();
             assert!(render(&mut scene, paint, false, None));
+            let text = scene.take_native_text();
             let ink = scene.take_native_ink();
             let svg = scene.finish();
-            (svg, ink)
+            (svg, ink, text)
         };
 
-        let (svg, ink) = render_retained(&make_paint(1.0));
+        let (svg, ink, text) = render_retained(&make_paint(1.0));
         let entries = ink.iter().collect::<Vec<_>>();
         assert_eq!(entries.len(), 1);
         let crate::render::native_ink::NativeInkPayload::RadialCircles {
@@ -2120,7 +2121,76 @@ mod tests {
             "ordinary V16 SVG geometry remains emitted"
         );
 
-        let (_, partial_alpha_ink) = render_retained(&make_paint(0.5));
+        let scene = crate::render::RenderedScene {
+            page: crate::RenderedPage::new(0, 64, 64, svg),
+            text,
+            ink,
+            text_error: None,
+        };
+        let bytes =
+            crate::pdf::render_native_scene_pdf_for_test(&scene, &crate::PdfOptions::default())
+                .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let mut circle_form = false;
+        for object in pdf.objects.values() {
+            let lopdf::Object::Stream(stream) = object else {
+                continue;
+            };
+            let subtype = stream
+                .dict
+                .get(b"Subtype")
+                .and_then(lopdf::Object::as_name)
+                .ok();
+            assert_ne!(subtype, Some(b"Image".as_slice()));
+            if subtype != Some(b"Form".as_slice()) {
+                continue;
+            }
+            let content = stream.decompressed_content().unwrap_or_default();
+            let operators = lopdf::content::Content::decode(&content).unwrap();
+            let Some(fill) = operators
+                .operations
+                .iter()
+                .find(|operation| operation.operator == "rg")
+            else {
+                continue;
+            };
+            if !operators
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "c")
+            {
+                continue;
+            }
+            let rgb = fill
+                .operands
+                .iter()
+                .map(|operand| f64::from(operand.as_float().unwrap()))
+                .collect::<Vec<_>>();
+            assert_eq!(rgb.len(), 3);
+            for (actual, expected) in rgb.iter().zip([51.0 / 255.0, 102.0 / 255.0, 153.0 / 255.0]) {
+                assert!((actual - expected).abs() < 1e-6, "PDF fill color {rgb:?}");
+            }
+            let ext_gstate = stream
+                .dict
+                .get(b"Resources")
+                .unwrap()
+                .as_dict()
+                .unwrap()
+                .get(b"ExtGState")
+                .unwrap()
+                .as_dict()
+                .unwrap()
+                .get(b"GS0")
+                .unwrap()
+                .as_reference()
+                .unwrap();
+            let state = pdf.objects.get(&ext_gstate).unwrap().as_dict().unwrap();
+            assert_eq!(state.get(b"ca").unwrap().as_float().unwrap(), 1.0);
+            circle_form = true;
+        }
+        assert!(circle_form, "opaque uniform V16 emits a vector circle Form");
+
+        let (_, partial_alpha_ink, _) = render_retained(&make_paint(0.5));
         assert!(
             partial_alpha_ink.is_empty(),
             "partial saved ARGB alpha remains on the existing PDF shading path"
