@@ -454,5 +454,15 @@ The projection maps one source unit to one pixel with translation `(64,64)`.
 Background sampling uses `(subbitmap dimension / 150) / background scale`;
 the captured scale was `0.75`, producing `uBgTextureScale = 2.2755556` on both
 axes. The background sampler uses unit 0 with nearest/repeat; the point atlas
-uses unit 1 with nearest/clamp. Paper sampling was disabled. These are the
-observed playback settings; exported SVG/PDF texture fidelity remains open.
+uses unit 1 with nearest/clamp. Paper sampling was disabled.
+
+Live vertex-attribute queries join attribute 0 to the actual 64-byte quad upload
+(stride 16, divisor 0); attributes 1 and 2 join the 6,432-byte instance upload
+(stride 24, divisor 1, offsets 0 and 16). The quad's `(x,y,u,v)` rows are
+`(-1,-1,0,1), (-1,1,0,0), (1,-1,1,1), (1,1,1,0)`, so the top of a stamp
+uses point-atlas row 0 within its selected tile. Its upload hashes to
+`a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4`;
+no later update to that buffer occurs before the observed draw. The unchanged
+frame and actual attribute bindings close the source-upload-to-draw join,
+without requiring a GPU buffer readback. These are host playback settings;
+exported SVG/PDF texture fidelity remains open.
