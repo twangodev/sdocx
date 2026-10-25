@@ -273,3 +273,54 @@ fn colors_and_units_reject_invalid_inputs_and_preserve_fractional_gray() {
     );
     assert_eq!(stops[1].attribute("stop-color"), Some("#ffffff"));
 }
+
+#[test]
+fn intrinsic_images_keep_nearest_samples_when_scaled() {
+    // A two-texel native-style texture must keep its exact texel colors rather
+    // than acquire interpolated colors from the SVG image renderer's default.
+    let mut png_bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut png_bytes, 2, 1);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().unwrap();
+        writer
+            .write_image_data(&[255, 0, 0, 255, 0, 0, 255, 255])
+            .unwrap();
+    }
+    for (width, expected) in [
+        (
+            6,
+            vec![[255, 0, 0, 255]; 3]
+                .into_iter()
+                .chain(vec![[0, 0, 255, 255]; 3])
+                .collect::<Vec<_>>(),
+        ),
+        (1, vec![[0, 0, 255, 255]]),
+    ] {
+        let mut scene = Scene::new(Svg::new().width(f64::from(width)).height(1.0));
+        scene.push(
+            Image::embedded(&png_bytes, "image/png")
+                .width(f64::from(width))
+                .height(1.0)
+                .stretched()
+                .pixelated(),
+        );
+        let svg = scene.finish();
+        let tree =
+            resvg::usvg::Tree::from_data(svg.as_bytes(), &resvg::usvg::Options::default()).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(width, 1).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixels.as_mut(),
+        );
+        let actual: Vec<_> = (0..width)
+            .map(|x| {
+                let p = pixels.pixel(x, 0).unwrap();
+                [p.red(), p.green(), p.blue(), p.alpha()]
+            })
+            .collect();
+        assert_eq!(actual, expected, "nearest texture at width {width}");
+    }
+}

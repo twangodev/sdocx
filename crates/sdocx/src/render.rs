@@ -11137,7 +11137,10 @@ mod tests {
                 .is_some_and(|href| href.starts_with("data:image/png;base64,"))
                 && image
                     .attribute("image-rendering")
-                    .is_some_and(|value| value == "pixelated")
+                    .is_some_and(|value| value == "optimizeSpeed")
+                && image
+                    .attribute("style")
+                    .is_some_and(|value| value.contains("image-rendering:pixelated"))
         }));
         let stamps = paint_xml
             .descendants()

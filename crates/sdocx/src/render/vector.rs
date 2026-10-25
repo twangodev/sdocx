@@ -632,7 +632,10 @@ impl Image {
         self
     }
     pub fn pixelated(mut self) -> Self {
-        self.0.attr("image-rendering", "pixelated");
+        // `pixelated` is a CSS value, not an SVG presentation-attribute value.
+        // usvg ignores it as an attribute and otherwise uses bicubic sampling.
+        self.0.attr("image-rendering", "optimizeSpeed");
+        self.0.style("image-rendering", "pixelated");
         self
     }
 }
