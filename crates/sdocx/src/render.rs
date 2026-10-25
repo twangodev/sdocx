@@ -197,13 +197,13 @@ impl PartialEq for FountainV17OutputScaleProfile {
 }
 impl Eq for FountainV17OutputScaleProfile {}
 
-/// Explicit uniform output scale for ordinary, non-rainbow saved Fountain V16.
+/// Explicit uniform output scale for saved Fountain V16, including its
+/// supported AS18 rainbow-flag-ignored route.
 /// The caller applies this same scale, plus translation, from page units to
 /// output pixels; the renderer never infers it from the viewport. `None` keeps
 /// the canonical unit-scale sampling and paint. Invalid scales preserve the
 /// existing canonical V16 output through whole-stroke fallback.
-/// The saved V16 rainbow-flag-ignored route remains canonical; an explicit V17
-/// rainbow profile retains its existing priority and behavior.
+/// An explicit V17 rainbow profile retains its existing priority and behavior.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FountainV16OutputScaleProfile {
@@ -3662,7 +3662,10 @@ fn render_stroke(
                 && rendering.properties.rainbow_effect
         })
     {
-        let paint = prepare_fountain_v16_rainbow_ignored_with_theme(stroke, theme);
+        let output_scale = fountain_v16_output_scale_profile
+            .map(|profile| profile.pixels_per_page_unit)
+            .filter(|scale| valid_fountain_v16_output_scale(*scale));
+        let paint = prepare_fountain_v16_rainbow_ignored_with_theme(stroke, theme, output_scale);
         if paint.support == crate::ink::InkSupport::Reconstructed
             && paint.dot_radii.is_some()
             && paint.fountain_v17_rgb.is_none()
@@ -3841,11 +3844,20 @@ fn prepare_context_stroke_with_theme<'a>(
 fn prepare_fountain_v16_rainbow_ignored_with_theme<'a>(
     stroke: &'a Stroke,
     theme: RenderTheme,
+    output_scale: Option<f32>,
 ) -> crate::PreparedStroke<'a> {
-    let mut paint = crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
-        stroke,
-        crate::ink::InkRenderContext::CanonicalPage,
-    );
+    let mut paint = if let Some(output_scale) = output_scale {
+        crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored_output_scale(
+            stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+            output_scale,
+        )
+    } else {
+        crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
+            stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+        )
+    };
     apply_context_stroke_theme(stroke, theme, &mut paint);
     paint
 }
@@ -10585,6 +10597,36 @@ mod tests {
             "an over-budget scale preserves canonical whole-stroke rendering"
         );
 
+        let mut rainbow_stroke = fountain_color_stroke("18;0;100;");
+        let rendering = rainbow_stroke.rendering.as_mut().unwrap();
+        rendering.properties.rainbow_effect = true;
+        rendering.properties.fixed_width = false;
+        rendering.properties.stylus_channels = true;
+        rendering.tool_type_raw = 2;
+        rendering.style.rainbow_distance = Some(37);
+        rendering.style.rainbow_offset = Some(2.75);
+        rendering.style.gradient_colors_argb = Some(vec![0xffff_0000, 0xff00_ff00, 0xff00_00ff]);
+        let mut rainbow_page = page_with_uncolored_stroke();
+        rainbow_page.width = 64;
+        rainbow_page.height = 64;
+        rainbow_page.objects = vec![rainbow_stroke.into()];
+        let rainbow_note = document(rainbow_page);
+        let rainbow_canonical = render_document_svg(&rainbow_note, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let rainbow_unit = render_document_svg(&rainbow_note, &unit).remove(0).svg;
+        assert_eq!(rainbow_unit, rainbow_canonical);
+        let rainbow_scaled = render_document_svg(&rainbow_note, &scaled).remove(0).svg;
+        assert_ne!(rainbow_scaled, rainbow_canonical);
+        assert!(!rainbow_scaled.contains("<image"));
+        assert_eq!(
+            render_document_svg(&rainbow_note, &over_budget)
+                .remove(0)
+                .svg,
+            rainbow_canonical,
+            "over-budget flag-ignored V16 keeps its canonical sampler"
+        );
+
         let mut v14_page = page_with_uncolored_stroke();
         v14_page.width = 64;
         v14_page.height = 64;
@@ -11349,6 +11391,42 @@ mod tests {
         .remove(0)
         .svg;
         assert_eq!(output_scale_one, unscaled_explicit);
+        let v17_scale_with_v16_profile = render_document_svg(
+            &fountain_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: 2.0,
+                }),
+                fountain_v16_output_scale_profile: Some(FountainV16OutputScaleProfile {
+                    pixels_per_page_unit: 0.5,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        let v17_scale_only = render_document_svg(
+            &fountain_document,
+            &RenderOptions {
+                fountain_v17_rainbow_profile: Some(FountainV17RainbowRenderProfile {
+                    palette_argb: vec![0x40e0_2010, 0x8010_20e0, 0x7f40_f010],
+                    period: 3,
+                    initial_offset: 0.125,
+                }),
+                fountain_v17_output_scale_profile: Some(FountainV17OutputScaleProfile {
+                    pixels_per_page_unit: 2.0,
+                }),
+                ..RenderOptions::default()
+            },
+        )
+        .remove(0)
+        .svg;
+        assert_eq!(v17_scale_with_v16_profile, v17_scale_only);
 
         let invalid_output_scale = render_document_svg(
             &fountain_document,

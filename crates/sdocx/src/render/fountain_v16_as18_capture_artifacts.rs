@@ -27,6 +27,10 @@ const NATIVE_FRAME_SHA256: &str =
 const SCALE_SWEEP_SHA256: &str = "c4def42b77ae1b7f480507253cf0a696575e52d28dc751295436b289b1ad3866";
 const SCALE_SWEEP_VALIDATION_SHA256: &str =
     "985bc501ca6ded8c200745d221224aa5826a7a668f363bc6aca3493fb18aa61b";
+const SCALE_SWEEP_RAINBOW_SHA256: &str =
+    "b858dec2803116a319b6eb6a11822564792b7404c9215a4d69d4c141045b180a";
+const SCALE_SWEEP_RAINBOW_VALIDATION_SHA256: &str =
+    "7701867da41cfbe31be4713a06376a00e813a0c18b7cd41cf2da59d0381534b3";
 const FOUNTAIN_PEN_DSO_SHA256: &str =
     "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec";
 const RTV5_QUAD_FILE_OFFSET: usize = 0x3e10c;
@@ -2897,7 +2901,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
 }
 
 #[test]
-#[ignore = "compares the full native q=0.5/1/2 upload against production V16 sampling when capture paths are set"]
+#[ignore = "compares rainbow-off/on V16 scale paths against pinned six-case native captures"]
 fn v16_explicit_scale_matches_native_scale_sweep() {
     let capture_path = PathBuf::from(
         std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_SWEEP")
@@ -2921,17 +2925,51 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
     );
     assert_eq!(validation["pins"]["fixture_sha256"], SCALE_SWEEP_SHA256);
 
-    let source_arrays = &capture["cases"][0]["source_arrays"];
+    let rainbow_capture_path = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_RAINBOW_SCALE_SWEEP")
+            .expect("set SDOCX_FOUNTAIN_V16_RAINBOW_SCALE_SWEEP to the pinned native capture"),
+    );
+    let rainbow_validation_path = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_RAINBOW_SCALE_VALIDATION")
+            .expect("set SDOCX_FOUNTAIN_V16_RAINBOW_SCALE_VALIDATION to its validation receipt"),
+    );
+    let rainbow_capture_bytes =
+        fs::read(&rainbow_capture_path).expect("pinned rainbow-on V16 scale capture");
+    assert_eq!(sha256(&rainbow_capture_bytes), SCALE_SWEEP_RAINBOW_SHA256);
+    let rainbow_capture: serde_json::Value =
+        serde_json::from_slice(&rainbow_capture_bytes).expect("rainbow-on capture JSON");
+    let rainbow_validation_bytes =
+        fs::read(&rainbow_validation_path).expect("rainbow-on validation receipt");
+    assert_eq!(
+        sha256(&rainbow_validation_bytes),
+        SCALE_SWEEP_RAINBOW_VALIDATION_SHA256
+    );
+    let rainbow_validation: serde_json::Value =
+        serde_json::from_slice(&rainbow_validation_bytes).expect("rainbow-on validation JSON");
+    assert_eq!(
+        rainbow_validation["status"],
+        "PASS_READ_ONLY_PAIRED_ARTIFACT_VALIDATION"
+    );
+    assert_eq!(
+        rainbow_validation["pins"]["enabled_capture_sha256"],
+        SCALE_SWEEP_RAINBOW_SHA256
+    );
+    assert_eq!(
+        rainbow_validation["pins"]["rainbow_off_control_sha256"],
+        SCALE_SWEEP_SHA256
+    );
+    assert_eq!(
+        rainbow_validation["checks"]["all_six_full_rgba_frames_hash_valid_and_byte_equal_off_controls"],
+        true
+    );
+
     assert_eq!(capture["source_input"]["point_count"].as_u64(), Some(204));
     assert_eq!(
-        source_arrays["points_f32_bits"].as_array().unwrap().len(),
-        408
+        rainbow_capture["source_input"]["point_count"].as_u64(),
+        Some(204)
     );
-    assert_eq!(
-        capture["cases"].as_array().unwrap().len(),
-        6,
-        "paired alpha controls across q=0.5/1/2"
-    );
+    assert_eq!(capture["cases"].as_array().unwrap().len(), 6);
+    assert_eq!(rainbow_capture["cases"].as_array().unwrap().len(), 6);
     let output_dir = PathBuf::from(
         std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR")
             .expect("set SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR to a fresh output directory"),
@@ -2940,187 +2978,213 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut artifact_cases = Vec::new();
     let mut compact_geometry_cases = Vec::new();
-    for case in capture["cases"].as_array().unwrap() {
-        assert_eq!(case["source_arrays"], *source_arrays);
-        assert_eq!(case["advanced_setting"], "18;0;100;");
-        assert_eq!(case["selected_drawable_class"], "GLV16");
-        assert_eq!(case["rainbow_enabled_control"].as_u64(), Some(0));
-        assert_eq!(case["controlled_object_size_get_f32_bits"], "0000803f");
-        assert_eq!(
-            case["native_upload_checkpoint"]["vector_hex_omitted"],
-            false
-        );
 
-        let scale = case["zoom_factor"].as_f64().unwrap() as f32;
-        let argb = u32::from_str_radix(
-            case["saved_color_argb_control"]
-                .as_str()
-                .unwrap()
-                .trim_start_matches("0x"),
-            16,
-        )
-        .unwrap();
-        let stroke = source_stroke_argb_width(&capture, false, argb, 1.0);
-        let scaled = crate::ink::prepare_stroke_for_context_with_fountain_v16_output_scale(
-            &stroke,
-            crate::ink::InkRenderContext::CanonicalPage,
-            scale,
-        );
-        assert_eq!(scaled.support, crate::ink::InkSupport::Reconstructed);
-        assert_eq!(scaled.fountain_output_scale, Some(scale));
-        let plan = V16Plan::prepare(&scaled).expect("production V16Plan for explicit scale");
-        let native_count = case["renderer_instance_count_u32_at_plus272"]
-            .as_u64()
-            .unwrap() as usize;
-        assert_eq!(plan.stamps.len(), native_count, "{} count", case["case"]);
-        compare_scale_sweep_plan_to_native(&plan, case);
-        let native_geometry = case["rtv_addpoint_entries"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|entry| {
-                std::array::from_fn::<_, 3, _>(|lane| {
-                    decode_little_endian_word(
-                        entry["native_addpoint_abi_arguments"]["vector3_argument_f32_bits"][lane]
-                            .as_str()
-                            .unwrap(),
-                    )
-                })
-            })
-            .collect::<Vec<_>>();
-        for ((point, radius), expected) in scaled
-            .points
-            .iter()
-            .zip(scaled.dot_radii.as_ref().unwrap())
-            .zip(&native_geometry)
-        {
+    for (capture, rainbow_flag, prefix) in [
+        (&capture, false, "rainbow-off"),
+        (&rainbow_capture, true, "rainbow-on"),
+    ] {
+        let source_arrays = &capture["cases"][0]["source_arrays"];
+        assert_eq!(capture["source_input"]["point_count"].as_u64(), Some(204));
+        for case in capture["cases"].as_array().unwrap() {
+            assert_eq!(case["source_arrays"], *source_arrays);
+            assert_eq!(case["advanced_setting"], "18;0;100;");
+            assert_eq!(case["selected_drawable_class"], "GLV16");
             assert_eq!(
-                [
-                    (point.x as f32).to_bits(),
-                    (point.y as f32).to_bits(),
-                    (*radius as f32).to_bits()
-                ],
-                *expected,
-                "native AddPoint center and radius"
+                case["rainbow_enabled_control"].as_u64(),
+                Some(u64::from(rainbow_flag))
             );
-        }
-        if case["alpha_control_case"] == "alpha128" {
-            compact_geometry_cases.push(serde_json::json!({
+            assert_eq!(case["controlled_object_size_get_f32_bits"], "0000803f");
+            assert_eq!(
+                case["native_upload_checkpoint"]["vector_hex_omitted"],
+                false
+            );
+
+            let scale = case["zoom_factor"].as_f64().unwrap() as f32;
+            let argb = u32::from_str_radix(
+                case["saved_color_argb_control"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let stroke = source_stroke_argb_width(capture, rainbow_flag, argb, 1.0);
+            let scaled = if rainbow_flag {
+                crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored_output_scale(
+                    &stroke,
+                    crate::ink::InkRenderContext::CanonicalPage,
+                    scale,
+                )
+            } else {
+                crate::ink::prepare_stroke_for_context_with_fountain_v16_output_scale(
+                    &stroke,
+                    crate::ink::InkRenderContext::CanonicalPage,
+                    scale,
+                )
+            };
+            assert_eq!(scaled.support, crate::ink::InkSupport::Reconstructed);
+            assert_eq!(scaled.fountain_output_scale, Some(scale));
+            assert!(scaled.fountain_v17_rgb.is_none());
+            let plan = V16Plan::prepare(&scaled).expect("production V16Plan for explicit scale");
+            let native_count = case["renderer_instance_count_u32_at_plus272"]
+                .as_u64()
+                .unwrap() as usize;
+            assert_eq!(plan.stamps.len(), native_count, "{} count", case["case"]);
+            compare_scale_sweep_plan_to_native(&plan, case);
+
+            let native_geometry = case["rtv_addpoint_entries"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|entry| {
+                    std::array::from_fn::<_, 3, _>(|lane| {
+                        decode_little_endian_word(
+                            entry["native_addpoint_abi_arguments"]["vector3_argument_f32_bits"]
+                                [lane]
+                                .as_str()
+                                .unwrap(),
+                        )
+                    })
+                })
+                .collect::<Vec<_>>();
+            for ((point, radius), expected) in scaled
+                .points
+                .iter()
+                .zip(scaled.dot_radii.as_ref().unwrap())
+                .zip(&native_geometry)
+            {
+                assert_eq!(
+                    [
+                        (point.x as f32).to_bits(),
+                        (point.y as f32).to_bits(),
+                        (*radius as f32).to_bits()
+                    ],
+                    *expected,
+                    "native AddPoint center and radius"
+                );
+            }
+            if !rainbow_flag && case["alpha_control_case"] == "alpha128" {
+                compact_geometry_cases.push(serde_json::json!({
+                    "q": scale,
+                    "xy_radius_f32_bits": native_geometry.iter().map(|row|
+                        row.map(|word| format!("{word:08x}"))
+                    ).collect::<Vec<_>>(),
+                }));
+            }
+
+            let transform = sweep_svg_transform(case);
+            let canonical = if rainbow_flag {
+                crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
+                    &stroke,
+                    crate::ink::InkRenderContext::CanonicalPage,
+                )
+            } else {
+                crate::ink::prepare_stroke_for_context(
+                    &stroke,
+                    false,
+                    crate::ink::InkRenderContext::CanonicalPage,
+                )
+            };
+            let canonical_svg = sweep_svg_from_plan(&canonical, transform, false);
+            let production_svg = sweep_svg_from_plan(&scaled, transform, false);
+            let quad_svg = sweep_svg_from_plan(&scaled, transform, true);
+            let name = case["case"].as_str().unwrap();
+            let artifact_prefix = format!("{prefix}-{name}");
+            for (suffix, svg) in [
+                ("canonical", &canonical_svg),
+                ("production", &production_svg),
+                ("test-native-quad", &quad_svg),
+            ] {
+                write_new(
+                    output_dir.join(format!("{artifact_prefix}.{suffix}.svg")),
+                    svg.as_bytes(),
+                );
+            }
+            let native_artifact = capture["pixel_artifacts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|artifact| artifact["key"].as_str() == Some(name))
+                .expect("matching captured native framebuffer artifact");
+            let native_path = repo.join(native_artifact["path"].as_str().unwrap());
+            let compressed = fs::read(&native_path).expect("captured native RGBA frame");
+            assert_eq!(sha256(&compressed), native_artifact["compressed_sha256"]);
+            let mut raw = Vec::new();
+            ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .expect("decode captured native RGBA");
+            assert_eq!(sha256(&raw), native_artifact["raw_sha256"]);
+            let native_topdown = topdown_frame(&raw);
+            let canonical_pixels = raster_svg(&canonical_svg);
+            let production_pixels = raster_svg(&production_svg);
+            let quad_pixels = raster_svg(&quad_svg);
+            let canonical_metrics = alpha_support_metrics(&native_topdown, &canonical_pixels);
+            let production_metrics = alpha_support_metrics(&native_topdown, &production_pixels);
+            if plan.native_quad_geometry {
+                assert_eq!(
+                    production_svg, quad_svg,
+                    "production gate admits native quads"
+                );
+            } else {
+                assert_ne!(
+                    production_svg, quad_svg,
+                    "test control forces the quad variant"
+                );
+                assert!(
+                    production_metrics["alpha_absolute_error_sum"]
+                        .as_u64()
+                        .unwrap()
+                        < canonical_metrics["alpha_absolute_error_sum"]
+                            .as_u64()
+                            .unwrap(),
+                    "explicit profile must improve native alpha error: {prefix}-{name}"
+                );
+            }
+            assert_eq!(production_metrics["support_iou"], 1.0);
+            if scale == 1.0 {
+                assert_eq!(canonical_svg, production_svg, "unit-scale SVG is unchanged");
+                assert_eq!(canonical.points, scaled.points, "q=1 sampled centers");
+                assert_eq!(canonical.dot_radii, scaled.dot_radii, "q=1 radii");
+                assert_eq!(canonical.sample_ends, scaled.sample_ends, "q=1 boundaries");
+            }
+            artifact_cases.push(serde_json::json!({
+                "case": name,
+                "capture_variant": prefix,
+                "rainbow_flag": rainbow_flag,
                 "q": scale,
-                "xy_radius_f32_bits": native_geometry.iter().map(|row|
-                    row.map(|word| format!("{word:08x}"))
-                ).collect::<Vec<_>>(),
+                "saved_argb": format!("0x{argb:08x}"),
+                "page_px": [WIDTH, HEIGHT],
+                "native_gl_projection_uniform_to_svg_transform": transform,
+                "native_frame": {
+                    "path": native_path,
+                    "compressed_sha256": native_artifact["compressed_sha256"],
+                    "raw_sha256": native_artifact["raw_sha256"],
+                    "raw_bytes": native_artifact["raw_bytes"],
+                    "format": native_artifact["format"],
+                },
+                "canonical_svg": {
+                    "path": format!("{artifact_prefix}.canonical.svg"),
+                    "sha256": sha256(canonical_svg.as_bytes()),
+                    "against_native": canonical_metrics,
+                },
+                "profile_production_svg": {
+                    "path": format!("{artifact_prefix}.production.svg"),
+                    "sha256": sha256(production_svg.as_bytes()),
+                    "uses_native_quad_by_production_gate": plan.native_quad_geometry,
+                    "against_native": production_metrics,
+                },
+                "test_native_quad_svg": {
+                    "path": format!("{artifact_prefix}.test-native-quad.svg"),
+                    "sha256": sha256(quad_svg.as_bytes()),
+                    "forced_only_in_test": true,
+                    "against_native": alpha_support_metrics(&native_topdown, &quad_pixels),
+                },
+                "record_count": plan.stamps.len(),
+                "all_seven_upload_lanes_exact": true,
             }));
         }
-
-        let transform = sweep_svg_transform(case);
-        let canonical = crate::ink::prepare_stroke_for_context(
-            &stroke,
-            false,
-            crate::ink::InkRenderContext::CanonicalPage,
-        );
-        let canonical_svg = sweep_svg_from_plan(&canonical, transform, false);
-        let production_svg = sweep_svg_from_plan(&scaled, transform, false);
-        let quad_svg = sweep_svg_from_plan(&scaled, transform, true);
-        let name = case["case"].as_str().unwrap();
-        write_new(
-            output_dir.join(format!("{name}.canonical.svg")),
-            canonical_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.production.svg")),
-            production_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.test-native-quad.svg")),
-            quad_svg.as_bytes(),
-        );
-        let native_artifact = capture["pixel_artifacts"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|artifact| artifact["key"].as_str() == Some(name))
-            .expect("matching captured native framebuffer artifact");
-        let native_path = repo.join(native_artifact["path"].as_str().unwrap());
-        let native_compressed = fs::read(&native_path).expect("captured compressed native frame");
-        assert_eq!(
-            sha256(&native_compressed),
-            native_artifact["compressed_sha256"]
-        );
-        let mut native_raw = Vec::new();
-        ZlibDecoder::new(native_compressed.as_slice())
-            .read_to_end(&mut native_raw)
-            .expect("decode pinned native RGBA");
-        assert_eq!(sha256(&native_raw), native_artifact["raw_sha256"]);
-        let native_topdown = topdown_frame(&native_raw);
-        let canonical_pixels = raster_svg(&canonical_svg);
-        let production_pixels = raster_svg(&production_svg);
-        let quad_pixels = raster_svg(&quad_svg);
-        let canonical_metrics = alpha_support_metrics(&native_topdown, &canonical_pixels);
-        let production_metrics = alpha_support_metrics(&native_topdown, &production_pixels);
-        assert_eq!(production_svg, quad_svg, "admitted SVG uses native quads");
-        assert_eq!(production_metrics["support_iou"], 1.0);
-        if scale == 1.0 {
-            assert_eq!(canonical_svg, production_svg, "unit-scale SVG is unchanged");
-        } else {
-            assert!(
-                production_metrics["alpha_absolute_error_sum"]
-                    .as_u64()
-                    .unwrap()
-                    < canonical_metrics["alpha_absolute_error_sum"]
-                        .as_u64()
-                        .unwrap(),
-                "explicit profile must improve native alpha error: {name}"
-            );
-        }
-        artifact_cases.push(serde_json::json!({
-            "case": name,
-            "q": scale,
-            "saved_argb": format!("0x{argb:08x}"),
-            "page_px": [WIDTH, HEIGHT],
-            "native_gl_projection_uniform_to_svg_transform": transform,
-            "native_frame": {
-                "path": native_path,
-                "compressed_sha256": native_artifact["compressed_sha256"],
-                "raw_sha256": native_artifact["raw_sha256"],
-                "raw_bytes": native_artifact["raw_bytes"],
-                "format": native_artifact["format"],
-            },
-            "canonical_production_svg": {
-                "path": format!("{name}.canonical.svg"),
-                "sha256": sha256(canonical_svg.as_bytes()),
-                "resvg_rgba_sha256": sha256(&canonical_pixels),
-                "against_native": canonical_metrics,
-            },
-            "profile_production_svg": {
-                "path": format!("{name}.production.svg"),
-                "sha256": sha256(production_svg.as_bytes()),
-                "uses_native_quad_by_production_gate": plan.native_quad_geometry,
-                "resvg_rgba_sha256": sha256(&production_pixels),
-                "against_native": production_metrics,
-            },
-            "test_native_quad_svg": {
-                "path": format!("{name}.test-native-quad.svg"),
-                "sha256": sha256(quad_svg.as_bytes()),
-                "native_quad_gate_forced_only_in_test": true,
-                "resvg_rgba_sha256": sha256(&quad_pixels),
-                "against_native": alpha_support_metrics(&native_topdown, &quad_pixels),
-            },
-            "record_count": plan.stamps.len(),
-            "all_seven_upload_lanes_exact": true,
-        }));
-
-        if scale == 1.0 {
-            let canonical = crate::ink::prepare_stroke_for_context(
-                &stroke,
-                false,
-                crate::ink::InkRenderContext::CanonicalPage,
-            );
-            assert_eq!(canonical.points, scaled.points, "q=1 sampled centers");
-            assert_eq!(canonical.dot_radii, scaled.dot_radii, "q=1 radii");
-            assert_eq!(canonical.sample_ends, scaled.sample_ends, "q=1 boundaries");
-        }
     }
+
     let compact_geometry = serde_json::json!({
         "schema": "sdocx.native-v16-uniform-scale-geometry.v1",
         "scope": "Native GLV16 AddPoint center/radius inputs for the controlled size-1, rainbow-off 204-point source; uniform scale only, no device or PDF parity claim.",
@@ -3135,11 +3199,13 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
     write_new(
         output_dir.join("manifest.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
-            "schema": "sdocx.fountain-v16-scale-native-svg-candidates.v1",
-            "scope": "source-generated Rust SVG candidates from exact native q=0.5/1/2 records, paired with each capture's native framebuffer; the test-only quad candidate does not change production admission",
-            "native_sweep_sha256": SCALE_SWEEP_SHA256,
-            "native_validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
-            "native_projection_transform": "captured glUniformMatrix4fv(location=0, program=6) composed from P * embedded Matrix3; exact native viewport and one readback-y flip",
+            "schema": "sdocx.fountain-v16-scale-native-svg-candidates.v2",
+            "scope": "Production and test-only V16 SVG candidates from six rainbow-off and six rainbow-flag-on native q=0.5/1/2 captures; the test quad variant does not change production admission.",
+            "rainbow_off_capture_sha256": SCALE_SWEEP_SHA256,
+            "rainbow_off_validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
+            "rainbow_on_capture_sha256": SCALE_SWEEP_RAINBOW_SHA256,
+            "rainbow_on_validation_sha256": SCALE_SWEEP_RAINBOW_VALIDATION_SHA256,
+            "native_projection_transform": "captured GLV16 projection uniform and viewport with one readback-y flip",
             "records": artifact_cases,
         }))
         .unwrap(),

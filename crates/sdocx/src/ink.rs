@@ -287,6 +287,28 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v16_rainbow_ignored<'a>(
     prepare_stroke_inner(stroke, false, Some(context), None, true, None)
 }
 
+pub(crate) fn prepare_stroke_for_context_with_fountain_v16_rainbow_ignored_output_scale<'a>(
+    stroke: &'a Stroke,
+    context: InkRenderContext,
+    output_scale: f32,
+) -> PreparedStroke<'a> {
+    let mut paint =
+        prepare_stroke_inner(stroke, false, Some(context), None, true, Some(output_scale));
+    if paint.support == InkSupport::Reconstructed
+        && paint.profile == Some("FountainPen")
+        && paint.dot_radii.is_some()
+        && paint.dot_directions.is_none()
+        && paint.fountain_v17_rgb.is_none()
+    {
+        paint.fountain_output_scale = Some(output_scale);
+        paint
+    } else {
+        // A valid profile can still exceed the bounded scaled sampler. Retain
+        // the existing GLV16 flag-ignored route in that case.
+        prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(stroke, context)
+    }
+}
+
 pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
     stroke: &'a Stroke,
     context: InkRenderContext,
@@ -472,7 +494,12 @@ fn prepare_stroke_inner<'a>(
     let marker3 = context.and_then(|_| marker3::prepare_for_page(stroke));
     let mut fountain = match fountain_v17_rainbow {
         Some(profile) => fountain::prepare_v17_rainbow(stroke, profile),
-        None if fountain_v16_ignore_rainbow_flag => fountain::prepare_v16_rainbow_ignored(stroke),
+        None if fountain_v16_ignore_rainbow_flag => match fountain_v16_output_scale {
+            Some(scale) => {
+                fountain::prepare_v16_rainbow_ignored_with_output_scale(stroke, Some(scale))
+            }
+            None => fountain::prepare_v16_rainbow_ignored(stroke),
+        },
         None => match fountain_v16_output_scale {
             Some(scale) => fountain::prepare_with_output_scale(stroke, scale),
             None => fountain::prepare(stroke),

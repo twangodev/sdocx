@@ -55,8 +55,9 @@ native geometry does not close the missing V14 fringe paint.
 
 ## Explicit V16 output scale
 
-`FountainV16OutputScaleProfile` regenerates ordinary, non-rainbow V16 samples
-for a caller-specified uniform scale. Native `GLV16::getInverseScale` (`0x77e58`)
+`FountainV16OutputScaleProfile` regenerates ordinary and rainbow-flag-ignored
+V16 samples for a caller-specified uniform scale. Native
+`GLV16::getInverseScale` (`0x77e58`)
 sets float32 spacing to `0.82 * min(inverseX, inverseY)`; `drawLine` (`0x77fd4`)
 uses it for sampling. The caller applies the same scale and translation to the
 output. Missing, invalid or over-budget profiles preserve canonical rendering.
@@ -75,8 +76,17 @@ viewport, without alignment or resizing. Affected-pixel alpha MAE in bytes is:
 MAE uses each native/render support union; profile pixel support matches native
 in all six cases, and unit-scale SVG bytes are unchanged. The compact native
 geometry fixture runs in normal Rust tests; framebuffer comparisons remain
-opt-in. The V16 rainbow-flag-ignored route remains canonical. Device zoom policy,
-archive-native thin metadata and native PDF appearance remain unverified.
+opt-in. A paired rainbow-flag-on native control uses the same six source/scale/
+alpha cases. Native uploaded records and all six full RGBA frames match the
+rainbow-off controls; the flag-ignored route emits no V17 palette colors. Its
+scale-profile SVGs are included in the ignored paired-artifact test. The capture
+is `tmp/vector-parity-plan/fountain-as18-v16-204-thin-scale-rainbow-on-candidate-v1/as18-v16-rainbow-on-scale-sweep.json`
+(SHA-256 `b858dec2803116a319b6eb6a11822564792b7404c9215a4d69d4c141045b180a`),
+with postcapture validation
+`as18-v16-rainbow-on-scale-sweep-postcapture-validation-v2.json` (SHA-256
+`7701867da41cfbe31be4713a06376a00e813a0c18b7cd41cf2da59d0381534b3`). Device
+zoom policy, archive-native thin metadata and native PDF appearance remain
+unverified.
 
 ## Validation on 2026-09-25
 

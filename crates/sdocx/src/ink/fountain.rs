@@ -401,6 +401,13 @@ pub(super) fn prepare_with_output_scale(s: &Stroke, output_scale: f32) -> Option
 }
 
 pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
+    prepare_v16_rainbow_ignored_with_output_scale(s, None)
+}
+
+pub(super) fn prepare_v16_rainbow_ignored_with_output_scale(
+    s: &Stroke,
+    output_scale: Option<f32>,
+) -> Option<Dots> {
     let rendering = s.rendering.as_ref()?;
     if rendering.advanced_settings.as_deref() != Some("18;0;100;")
         || rendering.tool_type_raw != 2
@@ -410,7 +417,7 @@ pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
     {
         return None;
     }
-    prepare_with_rainbow_mode(s, None, true, None)
+    prepare_with_rainbow_mode(s, None, true, output_scale)
 }
 
 pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option<Dots> {
@@ -1037,6 +1044,44 @@ mod tests {
         assert_eq!(ignored.radii, plain.radii);
         assert_eq!(ignored.sample_ends, plain.sample_ends);
         assert!(ignored.rgb.is_none());
+
+        let unit = prepare_v16_rainbow_ignored_with_output_scale(&stroke, Some(1.0))
+            .expect("unit-scale rainbow-flag-ignored route");
+        assert_eq!(unit.points, ignored.points);
+        assert_eq!(unit.radii, ignored.radii);
+        assert_eq!(unit.sample_ends, ignored.sample_ends);
+        assert!(unit.rgb.is_none());
+        let down = prepare_v16_rainbow_ignored_with_output_scale(&stroke, Some(0.5))
+            .expect("downscaled rainbow-flag-ignored route");
+        let up = prepare_v16_rainbow_ignored_with_output_scale(&stroke, Some(2.0))
+            .expect("upscaled rainbow-flag-ignored route");
+        assert!(down.points.len() < unit.points.len());
+        assert!(up.points.len() > unit.points.len());
+        for scaled in [&down, &unit, &up] {
+            assert!(scaled.rgb.is_none());
+            assert_eq!(
+                scaled.sample_ends.last().copied(),
+                Some(scaled.points.len())
+            );
+            assert!(scaled.sample_ends.windows(2).all(|pair| pair[0] <= pair[1]));
+        }
+        let oversized =
+            crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored_output_scale(
+                &stroke,
+                crate::ink::InkRenderContext::CanonicalPage,
+                20_000.0,
+            );
+        let canonical = crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
+            &stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert_eq!(oversized.points, canonical.points);
+        assert_eq!(
+            oversized.dot_radii.as_deref().unwrap(),
+            ignored.radii.as_slice()
+        );
+        assert_eq!(oversized.sample_ends, canonical.sample_ends);
+        assert_eq!(oversized.fountain_output_scale, None);
 
         let golden: Value = serde_json::from_str(include_str!(
             "../../../../conformance/fountain-as18-glv16-rainbow-ignored-native.json"
