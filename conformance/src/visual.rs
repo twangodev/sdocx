@@ -659,6 +659,7 @@ mod tests {
     fn asset(path: &str, hash: &str) -> serde_json::Value {
         serde_json::json!({"path":path,"sha256":hash})
     }
+    #[cfg(unix)]
     fn pdf_with_pages(path: &Path, count: usize) {
         use lopdf::{Dictionary, Document, Object};
         let mut pdf = Document::with_version("1.5");
@@ -681,6 +682,7 @@ mod tests {
         pdf.trailer.set("Root", catalog_id);
         pdf.save(path).unwrap();
     }
+    #[cfg(unix)]
     fn one_page_pdf(path: &Path) {
         pdf_with_pages(path, 1);
     }
