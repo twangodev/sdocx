@@ -1,7 +1,8 @@
 //! Fountain V14/V16 coverage using only SVG vector primitives.
 use super::vector::{
     Blend, Circle, ColorMatrix, ColorValue, Definitions, Filter, Gradient, Group, LinearGradient,
-    Mask, Paint, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter, SvgMask, Transform,
+    Mask, Paint, RadialGradient, Rectangle, ReplayPart, Scene, Stop, Styled, SvgFilter, SvgMask,
+    Transform,
 };
 use crate::PreparedStroke;
 use std::collections::HashMap;
@@ -49,7 +50,6 @@ struct V16Plan {
     color: crate::Color,
     stamps: Vec<V16Stamp>,
     y_bounds: Option<(f64, f64)>,
-    #[cfg(feature = "pdf")]
     inverse_scale: f32,
     #[cfg(feature = "pdf")]
     bounds: Option<crate::BoundingBox>,
@@ -683,7 +683,6 @@ impl V16Plan {
             color,
             stamps,
             y_bounds,
-            #[cfg(feature = "pdf")]
             inverse_scale,
             #[cfg(feature = "pdf")]
             bounds: field_bounds,
@@ -722,7 +721,20 @@ impl V16Plan {
             .collect()
     }
 
+    fn native_quad_geometry(&self, paint: &PreparedStroke<'_>) -> bool {
+        // RTV5's static quad spans [-1, 1] and supplies radial coordinates
+        // [0, 1]. The existing SVG gradient uses the same unit radial domain.
+        paint.fountain_v17_rgb.is_none()
+            && paint.opacity == 1.0
+            && self.inverse_scale == 1.0
+            && self
+                .stamps
+                .iter()
+                .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0)
+    }
+
     fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
+        let native_quad_geometry = self.native_quad_geometry(paint);
         #[cfg(feature = "pdf")]
         let native_ink_id = if svg.retains_text() {
             (paint.fountain_v17_rgb.is_some() || paint.opacity == 1.0)
@@ -799,12 +811,23 @@ impl V16Plan {
                     stamp.x as f64,
                     stamp.y as f64,
                 ]);
-                svg.push(
-                    Group::new()
-                        .replay_part(replay.then_some(ReplayPart(index + 1)))
-                        .transformed(transform)
-                        .add(Circle::new().r(1).fill(Paint::Gradient(*gradient))),
-                );
+                let stamp = Group::new()
+                    .replay_part(replay.then_some(ReplayPart(index + 1)))
+                    .transformed(transform);
+                if native_quad_geometry {
+                    svg.push(
+                        stamp.add(
+                            Rectangle::new()
+                                .x(-1)
+                                .y(-1)
+                                .width(2)
+                                .height(2)
+                                .fill(Paint::Gradient(*gradient)),
+                        ),
+                    );
+                } else {
+                    svg.push(stamp.add(Circle::new().r(1).fill(Paint::Gradient(*gradient))));
+                }
             }
         });
     }
@@ -2070,7 +2093,7 @@ mod tests {
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap();
         let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
-        let make_paint = |opacity| {
+        let make_paint = |opacity, output_scale| {
             let mut paint = crate::prepare_stroke(&stroke, false);
             paint.profile = Some("FountainPen");
             paint.points = Cow::Owned(vec![Point { x: 32.25, y: 31.75 }]);
@@ -2085,6 +2108,7 @@ mod tests {
             paint.color = "#336699".into();
             paint.opacity = opacity;
             paint.fountain_v17_rgb = None;
+            paint.fountain_output_scale = output_scale;
             paint
         };
         let render_retained = |paint: &PreparedStroke<'_>| {
@@ -2097,7 +2121,23 @@ mod tests {
             (svg, ink, text)
         };
 
-        let (svg, ink, text) = render_retained(&make_paint(1.0));
+        let (svg, ink, text) = render_retained(&make_paint(1.0, None));
+        assert!(
+            svg.contains("<rect"),
+            "opaque canonical V16 uses native quad bounds"
+        );
+        let document = roxmltree::Document::parse(&svg).unwrap();
+        let quad = document
+            .descendants()
+            .find(|node| node.has_tag_name("rect"))
+            .unwrap();
+        for (name, expected) in [("x", -1.0), ("y", -1.0), ("width", 2.0), ("height", 2.0)] {
+            assert_eq!(
+                quad.attribute(name).unwrap().parse::<f64>().unwrap(),
+                expected
+            );
+        }
+        assert!(!svg.contains("<circle"));
         let entries = ink.iter().collect::<Vec<_>>();
         assert_eq!(entries.len(), 1);
         let crate::render::native_ink::NativeInkPayload::RadialCircles {
@@ -2190,11 +2230,34 @@ mod tests {
         }
         assert!(circle_form, "opaque uniform V16 emits a vector circle Form");
 
-        let (_, partial_alpha_ink, _) = render_retained(&make_paint(0.5));
+        let (partial_svg, partial_alpha_ink, _) = render_retained(&make_paint(0.5, None));
+        assert!(
+            partial_svg.contains("<circle"),
+            "partial opacity keeps legacy geometry"
+        );
+        assert!(!partial_svg.contains("<rect"));
         assert!(
             partial_alpha_ink.is_empty(),
             "partial saved ARGB alpha remains on the existing PDF shading path"
         );
+        let mut thin = make_paint(1.0, None);
+        thin.dot_radii = Some(vec![0.1]);
+        let (thin_svg, thin_ink, _) = render_retained(&thin);
+        assert!(
+            thin_svg.contains("<circle"),
+            "partial width coverage keeps legacy geometry"
+        );
+        assert!(!thin_svg.contains("<rect"));
+        assert!(
+            thin_ink.is_empty(),
+            "partial width coverage retains PDF shading"
+        );
+        let (scaled_svg, _, _) = render_retained(&make_paint(1.0, Some(2.0)));
+        assert!(
+            scaled_svg.contains("<circle"),
+            "noncanonical scale keeps legacy geometry"
+        );
+        assert!(!scaled_svg.contains("<rect"));
     }
 
     #[cfg(feature = "pdf")]
@@ -2254,6 +2317,11 @@ mod tests {
         );
 
         let (svg, ink, text) = render_one(1.5, true, 1);
+        assert!(
+            svg.contains("<circle"),
+            "V17 per-stamp RGB keeps legacy geometry"
+        );
+        assert!(!svg.contains("<rect"));
         let entries = ink.iter().collect::<Vec<_>>();
         assert_eq!(entries.len(), 1);
         assert_eq!(
@@ -2352,6 +2420,64 @@ mod tests {
             circle_form,
             "PDF marker is replaced with the radial-circle form"
         );
+    }
+
+    #[test]
+    fn saved_v16_argb_opacity_matches_native_draw_uniform() {
+        let capture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-as18-v16-alpha-native.json"
+        ))
+        .unwrap();
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let mut stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        stroke.points = vec![
+            Point { x: 20.0, y: 20.0 },
+            Point { x: 35.0, y: 20.0 },
+            Point { x: 50.0, y: 20.0 },
+        ];
+        stroke.pressures = vec![0.7; 3];
+        stroke.timestamps = vec![0, 10, 20];
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("18;0;100;".into());
+        let cases = capture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 2);
+        for case in cases {
+            let argb = u32::from_str_radix(
+                case["saved_color_argb"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let uniform_bits = u32::from_str_radix(
+                case["input_color_uniform"]["alpha_f32_bits_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            stroke.rendering.as_mut().unwrap().style.color_argb = Some(argb);
+            let paint = crate::prepare_stroke(&stroke, false);
+            assert_eq!(paint.profile, Some("FountainPen"));
+            assert!(
+                paint.dot_radii.is_some(),
+                "native Fountain preparation must be admitted"
+            );
+            assert_eq!((paint.opacity as f32).to_bits(), uniform_bits);
+            // The native draw carries ARGB alpha in inputColor, independently
+            // of the unit S3 transparency passed to all 76 RTV5 AddPoint calls.
+            assert_eq!(case["rtv5_addpoint_count"], 76);
+            assert_eq!(
+                case["rtv5_addpoint_s3_float_arg_bits_le_all"],
+                serde_json::json!(["0000803f"])
+            );
+            if argb >> 24 == 128 {
+                assert_ne!((paint.opacity as f32).to_bits(), 1.0_f32.to_bits());
+            }
+        }
     }
 
     #[test]

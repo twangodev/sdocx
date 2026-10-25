@@ -1,0 +1,153 @@
+{
+  "capture_scope": {
+    "host": "Mesa host adapter",
+    "native_upload_lane_order": [
+      "x",
+      "y",
+      "extent_x",
+      "extent_y",
+      "transparency",
+      "inner_radius",
+      "alpha_by_width"
+    ],
+    "pairwise_checks_passed": true,
+    "rainbow_off_both": true,
+    "renderer_target": "RTV5",
+    "rgb": "black",
+    "runner_boundary": "The exact pinned actual persisted HF02 AS18 base/type1 FountainPen frame and manager table are replayed through native ObjectStroke Model apply and Drawing. Both cases explicitly keep rainbow disabled and share all source/style controls while saved ARGB changes only alpha 128 to 255. ObjectStroke and selected Pen SetColor/GetColor, selected GLV16, RTV5 S0-S3, upload, draw-associated inputColor uniform, and separate readbacks are captured. Alpha-dependent output equality is not required. A synchronous host queue adapter dispatches source-owned task callbacks; GLES/resource construction and queue scheduling are host adapters. Readback is host Mesa output, not Samsung device/PDF parity.",
+    "selected_drawable_class": "GLV16"
+  },
+  "cases": [
+    {
+      "case": "alpha128",
+      "color_type": 1,
+      "host_mesa_readback": {
+        "bbox": [
+          113,
+          204,
+          134,
+          231
+        ],
+        "height": 1080,
+        "nontransparent_pixels": 361,
+        "raw_rgba_sha256": "710c0829bf6e49ade84099c9365fdcd4f5b354c4c117051e9bd1d4e7afe80486",
+        "width": 1920
+      },
+      "input_color_uniform": {
+        "alpha_f32_bits_u32": "0x3f008081",
+        "create_generation": 1,
+        "egl_context": "0x13b76910",
+        "link_generation": 1,
+        "location": 1,
+        "program": 6,
+        "query_source_cases": [
+          "alpha128"
+        ],
+        "rgba_f32": [
+          0.0,
+          0.0,
+          0.0,
+          0.501960813999176
+        ],
+        "rgba_f32_bits_le": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "8180003f"
+        ]
+      },
+      "native_upload": {
+        "bytes": 2128,
+        "sha256": "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a"
+      },
+      "object_stroke_color_set_get_argb": "0x80000000",
+      "rainbow_enabled": false,
+      "rtv5_addpoint_count": 76,
+      "rtv5_addpoint_s3_float_arg_bits_le_all": [
+        "0000803f"
+      ],
+      "saved_color_argb": "0x80000000",
+      "selected_pen_color_argb": "0x80000000"
+    },
+    {
+      "case": "alpha255",
+      "color_type": 1,
+      "host_mesa_readback": {
+        "bbox": [
+          113,
+          204,
+          134,
+          231
+        ],
+        "height": 1080,
+        "nontransparent_pixels": 361,
+        "raw_rgba_sha256": "318568f0f140349c7662e87f19bb05ee18757d8e17178764a4157242c2742de7",
+        "width": 1920
+      },
+      "input_color_uniform": {
+        "alpha_f32_bits_u32": "0x3f800000",
+        "create_generation": 1,
+        "egl_context": "0x13b76910",
+        "link_generation": 1,
+        "location": 1,
+        "program": 6,
+        "query_source_cases": [
+          "alpha128"
+        ],
+        "rgba_f32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rgba_f32_bits_le": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ]
+      },
+      "native_upload": {
+        "bytes": 2128,
+        "sha256": "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a"
+      },
+      "object_stroke_color_set_get_argb": "0xff000000",
+      "rainbow_enabled": false,
+      "rtv5_addpoint_count": 76,
+      "rtv5_addpoint_s3_float_arg_bits_le_all": [
+        "0000803f"
+      ],
+      "saved_color_argb": "0xff000000",
+      "selected_pen_color_argb": "0xff000000"
+    }
+  ],
+  "limitations": [
+    "The Rust oracle checks opacity preparation on a checked-in control stroke with AS18 settings; it does not reconstruct or compare the captured 204-point geometry.",
+    "The native capture is a host Mesa/adapter readback, not Samsung device GPU output.",
+    "The pair changes saved ARGB alpha only; black RGB is fixed, rainbow is off, and the evidence does not validate RGB conversion, active rainbow color, or device/PDF parity.",
+    "Different native readback hashes are retained as observations only; no equality or pixel parity is claimed.",
+    "The 76 AddPoint records and 2128-byte upload are same across cases, S3 is unit, and the separate uniform alpha carries saved color alpha."
+  ],
+  "receipt": {
+    "path": "tmp/vector-parity-plan/fountain-as18-v16-204-alpha-mesa-candidate-v5/as18-v16-204-alpha-mesa-pair.json",
+    "sha256": "87766dcceff7cb38408db3d6bbf92a9671c14588c517f03302ac41ccc0979009"
+  },
+  "schema": "sdocx.fountain.as18-glv16-native-opacity-oracle.v1",
+  "shared_native_geometry": {
+    "native_upload_bytes": 2128,
+    "native_upload_sha256": "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a",
+    "rtv5_addpoint_count": 76,
+    "s3_arg_f32_bits_le_all": [
+      "0000803f"
+    ],
+    "s3_register_role": "RTV5::AddPoint(Vector3<float>, float) fourth ABI float argument"
+  },
+  "source": {
+    "archive_sha256": "dd6580a0531cf1712ef6526f1b0d51c42adaeb0d11feacca5d23ba562239da82",
+    "frame_sha256": "490fa32ab9d69416e4c48dec88b26ad14e362d7b08eb3e1b6a9ada47ce2980c2",
+    "manager_table_sha256": "f35b044485b8a91fd825ac682c734b23c565e52fbfb869fc3d4d3e89b414035e",
+    "payload_sha256": "c01022129e9a3a09ee95dc5935d5e177bd507e03d6d9dbd357a5278a64ab72b4",
+    "point_count": 204
+  },
+  "status": "native_host_mesa_capture_complete_no_device_or_document_parity_claim"
+}
