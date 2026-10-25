@@ -180,6 +180,10 @@ pub(crate) enum InkRenderContext {
     CanonicalPage,
 }
 
+pub(crate) fn fountain_v16_inverse_scale(output_scale: f32) -> Option<f32> {
+    fountain::inverse_scale(output_scale)
+}
+
 /// Saved V1 geometry admitted only for the captured null-setting profile.
 /// This internal canonical-page adapter keeps the public context-free
 /// `prepare_stroke` behavior unchanged.
@@ -242,7 +246,35 @@ pub(crate) fn prepare_stroke_for_context<'a>(
     dark_mode: bool,
     context: InkRenderContext,
 ) -> PreparedStroke<'a> {
-    prepare_stroke_inner(stroke, dark_mode, Some(context), None, false)
+    prepare_stroke_inner(stroke, dark_mode, Some(context), None, false, None)
+}
+
+/// Prepare a saved Fountain V16 stroke with the caller's explicit uniform
+/// output scale. The scale affects V16 source sampling and emitted geometry;
+/// other pen profiles retain their existing preparation behavior.
+pub(crate) fn prepare_stroke_for_context_with_fountain_v16_output_scale<'a>(
+    stroke: &'a Stroke,
+    context: InkRenderContext,
+    output_scale: f32,
+) -> PreparedStroke<'a> {
+    let mut paint = prepare_stroke_inner(
+        stroke,
+        false,
+        Some(context),
+        None,
+        false,
+        Some(output_scale),
+    );
+    if paint.support == InkSupport::Reconstructed
+        && paint.profile == Some("FountainPen")
+        && paint.dot_radii.is_some()
+        && paint.dot_directions.is_none()
+    {
+        paint.fountain_output_scale = Some(output_scale);
+    } else if paint.support != InkSupport::Reconstructed {
+        return prepare_stroke_for_context(stroke, false, context);
+    }
+    paint
 }
 
 /// Prepare the native GLV16 Fountain geometry when Drawing has forwarded a
@@ -252,7 +284,7 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v16_rainbow_ignored<'a>(
     stroke: &'a Stroke,
     context: InkRenderContext,
 ) -> PreparedStroke<'a> {
-    prepare_stroke_inner(stroke, false, Some(context), None, true)
+    prepare_stroke_inner(stroke, false, Some(context), None, true, None)
 }
 
 pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
@@ -273,6 +305,7 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v17_rainbow<'a>(
             offset,
         }),
         false,
+        None,
     );
     if prepared.fountain_v17_rgb.is_some() {
         prepared.fountain_output_scale = output_scale;
@@ -371,7 +404,7 @@ pub struct PreparedStroke<'a> {
     /// Per-stamp Fountain V17 RGB from an explicit output profile.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub(crate) fountain_v17_rgb: Option<Vec<[f32; 3]>>,
-    /// Explicit output scale for an admitted Fountain V14/V17 vector route.
+    /// Explicit output scale for an admitted Fountain V14/V16/V17 vector route.
     #[cfg_attr(feature = "serde", serde(skip))]
     pub(crate) fountain_output_scale: Option<f32>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
@@ -422,7 +455,7 @@ pub struct PreparedInkPen2V9 {
 /// Prepare a verified native geometry profile when its saved inputs match.
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
-    prepare_stroke_inner(stroke, dark_mode, None, None, false)
+    prepare_stroke_inner(stroke, dark_mode, None, None, false, None)
 }
 
 fn prepare_stroke_inner<'a>(
@@ -431,6 +464,7 @@ fn prepare_stroke_inner<'a>(
     context: Option<InkRenderContext>,
     fountain_v17_rainbow: Option<fountain::V17Rainbow<'_>>,
     fountain_v16_ignore_rainbow_flag: bool,
+    fountain_v16_output_scale: Option<f32>,
 ) -> PreparedStroke<'a> {
     let mut paint = stroke_paint(stroke, dark_mode);
     let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
@@ -439,7 +473,10 @@ fn prepare_stroke_inner<'a>(
     let mut fountain = match fountain_v17_rainbow {
         Some(profile) => fountain::prepare_v17_rainbow(stroke, profile),
         None if fountain_v16_ignore_rainbow_flag => fountain::prepare_v16_rainbow_ignored(stroke),
-        None => fountain::prepare(stroke),
+        None => match fountain_v16_output_scale {
+            Some(scale) => fountain::prepare_with_output_scale(stroke, scale),
+            None => fountain::prepare(stroke),
+        },
     };
     if fountain.is_some()
         && stroke.color.is_none()

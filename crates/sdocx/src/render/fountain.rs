@@ -51,6 +51,7 @@ struct V16Plan {
     stamps: Vec<V16Stamp>,
     y_bounds: Option<(f64, f64)>,
     inverse_scale: f32,
+    native_quad_geometry: bool,
     #[cfg(feature = "pdf")]
     bounds: Option<crate::BoundingBox>,
 }
@@ -562,14 +563,20 @@ impl V16Plan {
         }
         let color = parse_rgb(&paint.color)?;
         let inverse_scale = if let Some(scale) = paint.fountain_output_scale {
-            if !scale.is_finite() || scale <= 0.0 {
-                return None;
+            if paint.fountain_v17_rgb.is_some() {
+                // Preserve V17's existing output-profile arithmetic. The
+                // native basis-length contract is admitted only by V16.
+                if !scale.is_finite() || scale <= 0.0 {
+                    return None;
+                }
+                let inverse = 1.0_f32 / scale;
+                if !inverse.is_finite() || inverse <= 0.0 {
+                    return None;
+                }
+                inverse
+            } else {
+                crate::ink::fountain_v16_inverse_scale(scale)?
             }
-            let inverse = 1.0_f32 / scale;
-            if !inverse.is_finite() || inverse <= 0.0 {
-                return None;
-            }
-            inverse
         } else {
             1.0_f32
         };
@@ -684,6 +691,9 @@ impl V16Plan {
             stamps,
             y_bounds,
             inverse_scale,
+            native_quad_geometry: paint.fountain_v17_rgb.is_none()
+                && paint.opacity.is_finite()
+                && (0.0..=1.0).contains(&paint.opacity),
             #[cfg(feature = "pdf")]
             bounds: field_bounds,
         })
@@ -722,22 +732,23 @@ impl V16Plan {
     }
 
     fn native_quad_geometry(&self, paint: &PreparedStroke<'_>, retained_pdf_scene: bool) -> bool {
+        self.native_quad_geometry
+            && paint.fountain_v17_rgb.is_none()
+            && paint.opacity.is_finite()
+            && (0.0..=1.0).contains(&paint.opacity)
+            && (!retained_pdf_scene
+                || (self.inverse_scale == 1.0
+                    && self
+                        .stamps
+                        .iter()
+                        .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0)))
+    }
+
+    fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
         // RTV5's static quad spans [-1, 1] and supplies radial coordinates
         // [0, 1]. The existing SVG gradient uses the same unit radial domain.
         // Keep partial-width circles in retained PDF scenes because PDF
         // gradient conversion preserves their legacy circle boundary better.
-        paint.fountain_v17_rgb.is_none()
-            && paint.opacity.is_finite()
-            && (0.0..=1.0).contains(&paint.opacity)
-            && self.inverse_scale == 1.0
-            && (!retained_pdf_scene
-                || self
-                    .stamps
-                    .iter()
-                    .all(|stamp| f32::from_bits(stamp.gradient_key.alpha) == 1.0))
-    }
-
-    fn emit(self, svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) {
         let native_quad_geometry = self.native_quad_geometry(paint, svg.retains_text());
         #[cfg(feature = "pdf")]
         let native_ink_id = if svg.retains_text() {
@@ -2417,6 +2428,16 @@ mod tests {
             radial_shading,
             "partial width coverage uses the retained radial-shading PDF path"
         );
+        for scale in [0.5, 2.0] {
+            let scaled = make_paint(0.5, Some(scale));
+            let mut svg_scene = Scene::new(Svg::new().width(64).height(64));
+            assert!(render(&mut svg_scene, &scaled, false, None));
+            let svg = svg_scene.finish();
+            assert!(svg.contains("<rect") && !svg.contains("<circle"));
+            let (retained_svg, retained_ink, _) = render_retained(&scaled);
+            assert!(retained_svg.contains("<circle") && !retained_svg.contains("<rect"));
+            assert!(retained_ink.is_empty());
+        }
         let (scaled_svg, scaled_opaque_ink, _) = render_retained(&make_paint(1.0, Some(2.0)));
         assert!(
             scaled_svg.contains("<circle"),
@@ -2681,6 +2702,7 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
+                None,
                 None,
                 None,
                 None,

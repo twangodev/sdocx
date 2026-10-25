@@ -24,6 +24,9 @@ const NATIVE_VECTOR_SHA256: &str =
     "3829df249606e8a8c360780d91929ef21dda075a0c379a6c38b09f8caa9fa56a";
 const NATIVE_FRAME_SHA256: &str =
     "318568f0f140349c7662e87f19bb05ee18757d8e17178764a4157242c2742de7";
+const SCALE_SWEEP_SHA256: &str = "c4def42b77ae1b7f480507253cf0a696575e52d28dc751295436b289b1ad3866";
+const SCALE_SWEEP_VALIDATION_SHA256: &str =
+    "985bc501ca6ded8c200745d221224aa5826a7a668f363bc6aca3493fb18aa61b";
 const FOUNTAIN_PEN_DSO_SHA256: &str =
     "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec";
 const RTV5_QUAD_FILE_OFFSET: usize = 0x3e10c;
@@ -553,6 +556,73 @@ fn compare_plan_to_native_records(
     }
 }
 
+fn scale_sweep_native_records(case: &serde_json::Value) -> Vec<[u32; 7]> {
+    let upload = &case["native_upload_checkpoint"];
+    let raw = decode_hex(
+        upload["vector_hex"]
+            .as_str()
+            .expect("retained scale-sweep upload bytes"),
+    );
+    let record_count = case["rtv_addpoint_entries"]
+        .as_array()
+        .expect("native AddPoint entries")
+        .len();
+    assert_eq!(
+        upload["vector_bytes"].as_u64(),
+        Some((record_count * 28) as u64)
+    );
+    assert_eq!(raw.len(), record_count * 28);
+    assert_eq!(
+        sha256(&raw),
+        upload["vector_sha256"].as_str().expect("upload digest")
+    );
+    raw.as_chunks::<28>()
+        .0
+        .iter()
+        .map(|record| {
+            std::array::from_fn(|lane| {
+                u32::from_le_bytes(record[lane * 4..lane * 4 + 4].try_into().unwrap())
+            })
+        })
+        .collect()
+}
+
+fn compare_scale_sweep_plan_to_native(plan: &V16Plan, case: &serde_json::Value) {
+    let native = scale_sweep_native_records(case);
+    let arguments = case["rtv_addpoint_entries"]
+        .as_array()
+        .expect("captured RTV5 AddPoint inputs");
+    assert_eq!(plan.stamps.len(), native.len());
+    assert_eq!(arguments.len(), native.len());
+    for (index, (stamp, record)) in plan.stamps.iter().zip(native).enumerate() {
+        let actual = [
+            stamp.x.to_bits(),
+            stamp.y.to_bits(),
+            stamp.extent_x.to_bits(),
+            stamp.extent_y.to_bits(),
+            1.0_f32.to_bits(),
+            stamp.gradient_key.inner,
+            stamp.gradient_key.alpha,
+        ];
+        assert_eq!(
+            actual, record,
+            "scaled V16Plan/native upload record {index}"
+        );
+        let abi = &arguments[index]["native_addpoint_abi_arguments"];
+        assert_eq!(abi["float_argument_f32_bits"], "0000803f");
+        assert_eq!(
+            stamp.x.to_bits(),
+            decode_little_endian_word(abi["vector3_argument_f32_bits"][0].as_str().unwrap()),
+            "scaled AddPoint x {index}"
+        );
+        assert_eq!(
+            stamp.y.to_bits(),
+            decode_little_endian_word(abi["vector3_argument_f32_bits"][1].as_str().unwrap()),
+            "scaled AddPoint y {index}"
+        );
+    }
+}
+
 fn svg_matrix_from_native(matrix: &[f64], viewport: &[u32]) -> [f64; 6] {
     assert_eq!(matrix.len(), 16);
     assert_eq!(viewport.len(), 4);
@@ -570,6 +640,70 @@ fn svg_matrix_from_native(matrix: &[f64], viewport: &[u32]) -> [f64; 6] {
         translate_x,
         height - translate_y_gl,
     ]
+}
+
+fn sweep_svg_transform(case: &serde_json::Value) -> [f64; 6] {
+    let matrices = case["renderer_gl_calls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|call| {
+            call["call"] == "glUniformMatrix4fv"
+                && call["location"].as_u64() == Some(0)
+                && call["program"].as_u64() == Some(6)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(matrices.len(), 1, "one captured V16 projection uniform");
+    let matrix = matrices[0]["values"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| value.as_f64().unwrap())
+        .collect::<Vec<_>>();
+    let viewport = case["renderer_readback"]["viewport_at_readback"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| u32::try_from(value.as_u64().unwrap()).unwrap())
+        .collect::<Vec<_>>();
+    svg_matrix_from_native(&matrix, &viewport)
+}
+
+fn sweep_svg_from_plan(
+    prepared: &crate::PreparedStroke<'_>,
+    svg_transform: [f64; 6],
+    force_native_quad: bool,
+) -> String {
+    let mut scene = Scene::new(
+        Svg::new()
+            .width(WIDTH)
+            .height(HEIGHT)
+            .view_box(ViewBox::new(
+                0.0,
+                0.0,
+                f64::from(WIDTH),
+                f64::from(HEIGHT),
+                1,
+            )),
+    );
+    scene.scope(
+        Group::new().transformed(Transform::matrix_unrounded(svg_transform)),
+        |svg| {
+            if force_native_quad {
+                let mut plan = V16Plan::prepare(prepared).expect("production V16Plan");
+                // This is a test-only candidate control. It does not alter the
+                // production admission gate or any source-derived field values.
+                plan.native_quad_geometry = true;
+                plan.emit(svg, prepared, false);
+            } else {
+                assert!(
+                    render(svg, prepared, false, None),
+                    "production V16 SVG route"
+                );
+            }
+        },
+    );
+    scene.finish()
 }
 
 fn retained_scene(
@@ -848,6 +982,42 @@ fn topdown_frame(raw: &[u8]) -> Vec<u8> {
         result[destination..destination + row].copy_from_slice(&raw[source..source + row]);
     }
     result
+}
+
+fn alpha_support_metrics(native: &[u8], rendered: &[u8]) -> serde_json::Value {
+    assert_eq!(native.len(), rendered.len());
+    let mut union = 0usize;
+    let mut intersection = 0usize;
+    let mut native_support = 0usize;
+    let mut rendered_support = 0usize;
+    let mut absolute_error = 0u64;
+    let mut maximum_error = 0u8;
+    for (native, rendered) in native
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(rendered.as_chunks::<4>().0)
+    {
+        let (a, b) = (native[3], rendered[3]);
+        native_support += usize::from(a != 0);
+        rendered_support += usize::from(b != 0);
+        union += usize::from(a != 0 || b != 0);
+        intersection += usize::from(a != 0 && b != 0);
+        let error = a.abs_diff(b);
+        absolute_error += u64::from(error);
+        maximum_error = maximum_error.max(error);
+    }
+    assert!(union > 0, "native scale witness must contain ink");
+    serde_json::json!({
+        "native_support": native_support,
+        "rendered_support": rendered_support,
+        "union_support": union,
+        "intersection_support": intersection,
+        "support_iou": intersection as f64 / union as f64,
+        "alpha_absolute_error_sum": absolute_error,
+        "alpha_union_mae_bytes": absolute_error as f64 / union as f64,
+        "alpha_max_error_bytes": maximum_error,
+    })
 }
 
 fn vector_pdf(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize) {
@@ -2723,5 +2893,255 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
     write_new(
         output_dir.join("manifest.json"),
         &serde_json::to_vec_pretty(&manifest).unwrap(),
+    );
+}
+
+#[test]
+#[ignore = "compares the full native q=0.5/1/2 upload against production V16 sampling when capture paths are set"]
+fn v16_explicit_scale_matches_native_scale_sweep() {
+    let capture_path = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_SWEEP")
+            .expect("set SDOCX_FOUNTAIN_V16_SCALE_SWEEP to the pinned native sweep JSON"),
+    );
+    let validation_path = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_VALIDATION")
+            .expect("set SDOCX_FOUNTAIN_V16_SCALE_VALIDATION to the postcapture receipt"),
+    );
+    let capture_bytes = fs::read(&capture_path).expect("pinned native scale-sweep capture");
+    assert_eq!(sha256(&capture_bytes), SCALE_SWEEP_SHA256);
+    let capture: serde_json::Value =
+        serde_json::from_slice(&capture_bytes).expect("scale-sweep capture JSON");
+    let validation_bytes = fs::read(&validation_path).expect("scale-sweep validation receipt");
+    assert_eq!(sha256(&validation_bytes), SCALE_SWEEP_VALIDATION_SHA256);
+    let validation: serde_json::Value =
+        serde_json::from_slice(&validation_bytes).expect("scale-sweep validation JSON");
+    assert_eq!(
+        validation["status"],
+        "PASS_CAPTURED_MATRIX_COMPOSITION_AND_ORDERED_GL_JOIN"
+    );
+    assert_eq!(validation["pins"]["fixture_sha256"], SCALE_SWEEP_SHA256);
+
+    let source_arrays = &capture["cases"][0]["source_arrays"];
+    assert_eq!(capture["source_input"]["point_count"].as_u64(), Some(204));
+    assert_eq!(
+        source_arrays["points_f32_bits"].as_array().unwrap().len(),
+        408
+    );
+    assert_eq!(
+        capture["cases"].as_array().unwrap().len(),
+        6,
+        "paired alpha controls across q=0.5/1/2"
+    );
+    let output_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR")
+            .expect("set SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR to a fresh output directory"),
+    );
+    fs::create_dir(&output_dir).expect("scale artifact output directory must be new");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut artifact_cases = Vec::new();
+    let mut compact_geometry_cases = Vec::new();
+    for case in capture["cases"].as_array().unwrap() {
+        assert_eq!(case["source_arrays"], *source_arrays);
+        assert_eq!(case["advanced_setting"], "18;0;100;");
+        assert_eq!(case["selected_drawable_class"], "GLV16");
+        assert_eq!(case["rainbow_enabled_control"].as_u64(), Some(0));
+        assert_eq!(case["controlled_object_size_get_f32_bits"], "0000803f");
+        assert_eq!(
+            case["native_upload_checkpoint"]["vector_hex_omitted"],
+            false
+        );
+
+        let scale = case["zoom_factor"].as_f64().unwrap() as f32;
+        let argb = u32::from_str_radix(
+            case["saved_color_argb_control"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        let stroke = source_stroke_argb_width(&capture, false, argb, 1.0);
+        let scaled = crate::ink::prepare_stroke_for_context_with_fountain_v16_output_scale(
+            &stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+            scale,
+        );
+        assert_eq!(scaled.support, crate::ink::InkSupport::Reconstructed);
+        assert_eq!(scaled.fountain_output_scale, Some(scale));
+        let plan = V16Plan::prepare(&scaled).expect("production V16Plan for explicit scale");
+        let native_count = case["renderer_instance_count_u32_at_plus272"]
+            .as_u64()
+            .unwrap() as usize;
+        assert_eq!(plan.stamps.len(), native_count, "{} count", case["case"]);
+        compare_scale_sweep_plan_to_native(&plan, case);
+        let native_geometry = case["rtv_addpoint_entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| {
+                std::array::from_fn::<_, 3, _>(|lane| {
+                    decode_little_endian_word(
+                        entry["native_addpoint_abi_arguments"]["vector3_argument_f32_bits"][lane]
+                            .as_str()
+                            .unwrap(),
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+        for ((point, radius), expected) in scaled
+            .points
+            .iter()
+            .zip(scaled.dot_radii.as_ref().unwrap())
+            .zip(&native_geometry)
+        {
+            assert_eq!(
+                [
+                    (point.x as f32).to_bits(),
+                    (point.y as f32).to_bits(),
+                    (*radius as f32).to_bits()
+                ],
+                *expected,
+                "native AddPoint center and radius"
+            );
+        }
+        if case["alpha_control_case"] == "alpha128" {
+            compact_geometry_cases.push(serde_json::json!({
+                "q": scale,
+                "xy_radius_f32_bits": native_geometry.iter().map(|row|
+                    row.map(|word| format!("{word:08x}"))
+                ).collect::<Vec<_>>(),
+            }));
+        }
+
+        let transform = sweep_svg_transform(case);
+        let canonical = crate::ink::prepare_stroke_for_context(
+            &stroke,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        let canonical_svg = sweep_svg_from_plan(&canonical, transform, false);
+        let production_svg = sweep_svg_from_plan(&scaled, transform, false);
+        let quad_svg = sweep_svg_from_plan(&scaled, transform, true);
+        let name = case["case"].as_str().unwrap();
+        write_new(
+            output_dir.join(format!("{name}.canonical.svg")),
+            canonical_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.production.svg")),
+            production_svg.as_bytes(),
+        );
+        write_new(
+            output_dir.join(format!("{name}.test-native-quad.svg")),
+            quad_svg.as_bytes(),
+        );
+        let native_artifact = capture["pixel_artifacts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|artifact| artifact["key"].as_str() == Some(name))
+            .expect("matching captured native framebuffer artifact");
+        let native_path = repo.join(native_artifact["path"].as_str().unwrap());
+        let native_compressed = fs::read(&native_path).expect("captured compressed native frame");
+        assert_eq!(
+            sha256(&native_compressed),
+            native_artifact["compressed_sha256"]
+        );
+        let mut native_raw = Vec::new();
+        ZlibDecoder::new(native_compressed.as_slice())
+            .read_to_end(&mut native_raw)
+            .expect("decode pinned native RGBA");
+        assert_eq!(sha256(&native_raw), native_artifact["raw_sha256"]);
+        let native_topdown = topdown_frame(&native_raw);
+        let canonical_pixels = raster_svg(&canonical_svg);
+        let production_pixels = raster_svg(&production_svg);
+        let quad_pixels = raster_svg(&quad_svg);
+        let canonical_metrics = alpha_support_metrics(&native_topdown, &canonical_pixels);
+        let production_metrics = alpha_support_metrics(&native_topdown, &production_pixels);
+        assert_eq!(production_svg, quad_svg, "admitted SVG uses native quads");
+        assert_eq!(production_metrics["support_iou"], 1.0);
+        if scale == 1.0 {
+            assert_eq!(canonical_svg, production_svg, "unit-scale SVG is unchanged");
+        } else {
+            assert!(
+                production_metrics["alpha_absolute_error_sum"]
+                    .as_u64()
+                    .unwrap()
+                    < canonical_metrics["alpha_absolute_error_sum"]
+                        .as_u64()
+                        .unwrap(),
+                "explicit profile must improve native alpha error: {name}"
+            );
+        }
+        artifact_cases.push(serde_json::json!({
+            "case": name,
+            "q": scale,
+            "saved_argb": format!("0x{argb:08x}"),
+            "page_px": [WIDTH, HEIGHT],
+            "native_gl_projection_uniform_to_svg_transform": transform,
+            "native_frame": {
+                "path": native_path,
+                "compressed_sha256": native_artifact["compressed_sha256"],
+                "raw_sha256": native_artifact["raw_sha256"],
+                "raw_bytes": native_artifact["raw_bytes"],
+                "format": native_artifact["format"],
+            },
+            "canonical_production_svg": {
+                "path": format!("{name}.canonical.svg"),
+                "sha256": sha256(canonical_svg.as_bytes()),
+                "resvg_rgba_sha256": sha256(&canonical_pixels),
+                "against_native": canonical_metrics,
+            },
+            "profile_production_svg": {
+                "path": format!("{name}.production.svg"),
+                "sha256": sha256(production_svg.as_bytes()),
+                "uses_native_quad_by_production_gate": plan.native_quad_geometry,
+                "resvg_rgba_sha256": sha256(&production_pixels),
+                "against_native": production_metrics,
+            },
+            "test_native_quad_svg": {
+                "path": format!("{name}.test-native-quad.svg"),
+                "sha256": sha256(quad_svg.as_bytes()),
+                "native_quad_gate_forced_only_in_test": true,
+                "resvg_rgba_sha256": sha256(&quad_pixels),
+                "against_native": alpha_support_metrics(&native_topdown, &quad_pixels),
+            },
+            "record_count": plan.stamps.len(),
+            "all_seven_upload_lanes_exact": true,
+        }));
+
+        if scale == 1.0 {
+            let canonical = crate::ink::prepare_stroke_for_context(
+                &stroke,
+                false,
+                crate::ink::InkRenderContext::CanonicalPage,
+            );
+            assert_eq!(canonical.points, scaled.points, "q=1 sampled centers");
+            assert_eq!(canonical.dot_radii, scaled.dot_radii, "q=1 radii");
+            assert_eq!(canonical.sample_ends, scaled.sample_ends, "q=1 boundaries");
+        }
+    }
+    let compact_geometry = serde_json::json!({
+        "schema": "sdocx.native-v16-uniform-scale-geometry.v1",
+        "scope": "Native GLV16 AddPoint center/radius inputs for the controlled size-1, rainbow-off 204-point source; uniform scale only, no device or PDF parity claim.",
+        "capture_sha256": SCALE_SWEEP_SHA256,
+        "validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
+        "stroke": source_stroke_argb_width(&capture, false, 0x80000000, 1.0),
+        "cases": compact_geometry_cases,
+    });
+    let mut compact_bytes = serde_json::to_vec(&compact_geometry).unwrap();
+    compact_bytes.push(b'\n');
+    write_new(output_dir.join("native-geometry-ci.json"), &compact_bytes);
+    write_new(
+        output_dir.join("manifest.json"),
+        &serde_json::to_vec_pretty(&serde_json::json!({
+            "schema": "sdocx.fountain-v16-scale-native-svg-candidates.v1",
+            "scope": "source-generated Rust SVG candidates from exact native q=0.5/1/2 records, paired with each capture's native framebuffer; the test-only quad candidate does not change production admission",
+            "native_sweep_sha256": SCALE_SWEEP_SHA256,
+            "native_validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
+            "native_projection_transform": "captured glUniformMatrix4fv(location=0, program=6) composed from P * embedded Matrix3; exact native viewport and one readback-y flip",
+            "records": artifact_cases,
+        }))
+        .unwrap(),
     );
 }

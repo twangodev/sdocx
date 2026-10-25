@@ -6,6 +6,19 @@ use crate::{Point, Stroke};
 // FountainPen V16 getInverseScale, canonical canvas inverse scale = 1.
 const REPEAT: f32 = 0.82;
 
+/// Native GLV16's uniform inverse canvas scale: length of the X basis, then
+/// reciprocal. Keep the float32 multiply/add/sqrt/divide sequence explicit.
+pub(super) fn inverse_scale(output_scale: f32) -> Option<f32> {
+    if !output_scale.is_finite() || output_scale <= 0.0 {
+        return None;
+    }
+    let x_squared = output_scale * output_scale;
+    let squared_length = (x_squared + 0.0_f32) + 0.0_f32;
+    let length = squared_length.sqrt();
+    let inverse = 1.0_f32 / length;
+    (inverse.is_finite() && inverse > 0.0).then_some(inverse)
+}
+
 struct Tolerance {
     large: f32,
     small: f32,
@@ -189,6 +202,10 @@ impl RainbowState<'_> {
 }
 struct Pass<'a> {
     size: f32,
+    repeat: f32,
+    max_stamps: Option<usize>,
+    attempted_stamps: usize,
+    stamp_budget_exceeded: bool,
     short_move_threshold: f32,
     previous: P,
     midpoint: P,
@@ -209,6 +226,13 @@ struct Pass<'a> {
 impl Pass<'_> {
     fn dot(&mut self, p: P, r: f32, local_distance: Option<f32>) {
         self.first = false;
+        if let Some(limit) = self.max_stamps {
+            if self.attempted_stamps >= limit {
+                self.stamp_budget_exceeded = true;
+                return;
+            }
+            self.attempted_stamps += 1;
+        }
         if let Some(rainbow) = &mut self.rainbow {
             if let Some(distance) = local_distance {
                 match rainbow.color_at(distance) {
@@ -240,6 +264,9 @@ impl Pass<'_> {
         self.dots.radii.push(r.max(0.1) as f64);
     }
     fn line(&mut self, p: P, pressure: f32, tilt: f32, time: i64) {
+        if self.stamp_budget_exceeded {
+            return;
+        }
         if self.tolerance.skip(p) {
             self.tolerance.drop(p);
             return;
@@ -287,14 +314,22 @@ impl Pass<'_> {
             self.tolerance.drop(p);
             return;
         }
-        let count = ((q.length - self.residual) / REPEAT) as usize + 1;
+        if self.max_stamps.is_some()
+            && !self.sampling_budget_allows((q.length - self.residual) / self.repeat)
+        {
+            return;
+        }
+        let count = ((q.length - self.residual) / self.repeat) as usize + 1;
         let increment = (width - self.width) / count as f32;
         let mut w = self.width;
         let mut d = self.residual;
         while d <= q.length {
             w += increment;
             self.dot(q.at(d), w * 0.5, Some(d));
-            d += REPEAT;
+            if self.stamp_budget_exceeded {
+                return;
+            }
+            d += self.repeat;
         }
         if let Some(rainbow) = &mut self.rainbow {
             rainbow.advance(q.length);
@@ -306,6 +341,9 @@ impl Pass<'_> {
         self.tolerance.accept(p);
     }
     fn end(&mut self, p: P, time: i64) {
+        if self.stamp_budget_exceeded {
+            return;
+        }
         if self.first {
             let width = self.history.width(time, self.size * 0.5);
             // The native V17 single-point path still evaluates rainbow at
@@ -320,9 +358,18 @@ impl Pass<'_> {
             let q = Quad::new(self.midpoint, self.previous, p);
             let mut d = self.residual;
             if q.length > 0. {
+                if self.max_stamps.is_some()
+                    && d <= q.length
+                    && !self.sampling_budget_allows((q.length - d) / self.repeat)
+                {
+                    return;
+                }
                 while d <= q.length {
                     self.dot(q.at(d), self.width * 0.5, Some(d));
-                    d += REPEAT;
+                    if self.stamp_budget_exceeded {
+                        return;
+                    }
+                    d += self.repeat;
                 }
             }
             if let Some(rainbow) = &mut self.rainbow {
@@ -331,10 +378,26 @@ impl Pass<'_> {
             self.dot(p, self.width * 0.5, None);
         }
     }
+
+    fn sampling_budget_allows(&mut self, quotient: f32) -> bool {
+        let Some(limit) = self.max_stamps else {
+            return true;
+        };
+        let remaining = limit.saturating_sub(self.attempted_stamps);
+        if !quotient.is_finite() || quotient >= remaining as f32 {
+            self.stamp_budget_exceeded = true;
+            return false;
+        }
+        true
+    }
 }
 
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     prepare_with_rainbow(s, None)
+}
+
+pub(super) fn prepare_with_output_scale(s: &Stroke, output_scale: f32) -> Option<Dots> {
+    prepare_with_rainbow_mode(s, None, false, Some(output_scale))
 }
 
 pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
@@ -347,7 +410,7 @@ pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
     {
         return None;
     }
-    prepare_with_rainbow_mode(s, None, true)
+    prepare_with_rainbow_mode(s, None, true, None)
 }
 
 pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option<Dots> {
@@ -355,13 +418,14 @@ pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option
 }
 
 fn prepare_with_rainbow(s: &Stroke, profile: Option<V17Rainbow<'_>>) -> Option<Dots> {
-    prepare_with_rainbow_mode(s, profile, false)
+    prepare_with_rainbow_mode(s, profile, false, None)
 }
 
 fn prepare_with_rainbow_mode(
     s: &Stroke,
     profile: Option<V17Rainbow<'_>>,
     ignore_glv16_rainbow_flag: bool,
+    v16_output_scale: Option<f32>,
 ) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
@@ -462,6 +526,24 @@ fn prepare_with_rainbow_mode(
     if v14 {
         return Some(super::fountain_v14::prepare(s, size, tolerance));
     }
+    let repeat = match v16_output_scale {
+        Some(scale) => {
+            let inverse_scale = inverse_scale(scale)?;
+            if scale == 1.0 {
+                REPEAT
+            } else {
+                REPEAT * inverse_scale
+            }
+        }
+        None => REPEAT,
+    };
+    if !repeat.is_finite() || repeat <= 0.0 {
+        return None;
+    }
+    // Scaled sampling can increase the source-generated stamp count. Bound
+    // this opt-in route before it can expand a modest stroke into unbounded
+    // SVG work; the unscaled compatibility path keeps its historical budget.
+    let max_stamps: Option<usize> = v16_output_scale.map(|_| 32_000);
     let stylus = r.tool_type_raw == 2;
     let pressure_at = |i| if stylus { s.pressures[i] as f32 } else { 0.5 };
     let first = P::from(s.points[0]);
@@ -469,11 +551,16 @@ fn prepare_with_rainbow_mode(
     let mut ratios = [0.; 3];
     let mut ratio_count = 0;
     let mut output = None;
+    let mut attempted_scaled_stamps = 0;
     for _ in 0..2 {
         let store_rainbow_rgb = history.replay;
         let width = history.width(s.timestamps[0], (size * 0.5) * pressure_at(0).min(1.));
         let mut pass = Pass {
             size,
+            repeat,
+            max_stamps: max_stamps.map(|limit| limit.saturating_sub(attempted_scaled_stamps)),
+            attempted_stamps: 0,
+            stamp_budget_exceeded: false,
             short_move_threshold: if r.tool_type_raw == 1 { 50. } else { 5. },
             previous: first,
             midpoint: first,
@@ -521,6 +608,9 @@ fn prepare_with_rainbow_mode(
             let degrees = ((tilt * 180.) as f64 / std::f64::consts::PI) as f32;
             let tilt = (degrees.min(75.) - 15.).max(0.) / 60. * 3.;
             pass.line(s.points[i].into(), pressure_at(i), tilt, s.timestamps[i]);
+            if pass.stamp_budget_exceeded {
+                return None;
+            }
             pass.dots.sample_ends[i] = pass.dots.points.len();
         }
         let last = s.points.len() - 1;
@@ -530,6 +620,10 @@ fn prepare_with_rainbow_mode(
         let terminal_event_time = s.timestamps[last] - s.timestamps[0];
         pass.end(s.points[last].into(), terminal_event_time);
         pass.dots.sample_ends[last] = pass.dots.points.len();
+        if pass.stamp_budget_exceeded {
+            return None;
+        }
+        attempted_scaled_stamps += pass.attempted_stamps;
         if let Some(rainbow) = pass.rainbow {
             if rainbow.invalid {
                 return None;
@@ -672,6 +766,115 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn v16_scaled_centers_and_radii_match_native_redraw() {
+        use sha2::{Digest, Sha256};
+
+        let bytes = include_bytes!("../../tests/fixtures/fountain-v16-scale-native.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "8f5d82ff5f6dc8beadae6a22be7b57839d271bb7006b8cc8a8a0a06433297b4e"
+        );
+        let fixture: Value = serde_json::from_slice(bytes).unwrap();
+        assert_eq!(
+            fixture["capture_sha256"],
+            "c4def42b77ae1b7f480507253cf0a696575e52d28dc751295436b289b1ad3866"
+        );
+        let stroke: Stroke = serde_json::from_value(fixture["stroke"].clone()).unwrap();
+        assert_eq!(stroke.points.len(), 204);
+        for case in fixture["cases"].as_array().unwrap() {
+            let q = case["q"].as_f64().unwrap() as f32;
+            let actual = prepare_with_output_scale(&stroke, q).unwrap();
+            let expected = case["xy_radius_f32_bits"].as_array().unwrap();
+            assert_eq!(actual.points.len(), expected.len(), "native count at q={q}");
+            for ((point, radius), expected) in actual.points.iter().zip(&actual.radii).zip(expected)
+            {
+                let bits: [u32; 3] = std::array::from_fn(|lane| {
+                    u32::from_str_radix(expected[lane].as_str().unwrap(), 16).unwrap()
+                });
+                assert_eq!(
+                    [
+                        (point.x as f32).to_bits(),
+                        (point.y as f32).to_bits(),
+                        (*radius as f32).to_bits()
+                    ],
+                    bits,
+                    "native center/radius at q={q}"
+                );
+            }
+            assert_eq!(actual.sample_ends.last().copied(), Some(expected.len()));
+            assert!(actual.sample_ends.windows(2).all(|pair| pair[0] <= pair[1]));
+            if q == 1.0 {
+                let canonical = prepare(&stroke).unwrap();
+                assert_eq!(actual.points, canonical.points);
+                assert_eq!(actual.radii, canonical.radii);
+                assert_eq!(actual.sample_ends, canonical.sample_ends);
+            }
+        }
+    }
+
+    #[test]
+    fn v16_explicit_scale_changes_sampling_and_keeps_unit_scale_exact() {
+        let reference = reference();
+        let case = reference
+            .cases
+            .iter()
+            .find(|case| case.name == "right angle")
+            .expect("native-backed V16 right-angle case");
+        let mut stroke = reference.stroke.clone();
+        stroke.pen_width = case.size;
+        let style = &mut stroke.rendering.as_mut().unwrap().style;
+        style.initial_tolerance = Some(case.tolerance);
+        style.pen_size = Some(case.size);
+        for &(x, y, pressure, tilt, time) in &case.samples {
+            stroke.points.push(Point { x, y });
+            stroke.pressures.push(pressure);
+            stroke.tilts.push(tilt);
+            stroke.timestamps.push(time);
+        }
+
+        let canonical = prepare(&stroke).expect("canonical native-backed V16 geometry");
+        let unit = prepare_with_output_scale(&stroke, 1.0).expect("explicit unit profile");
+        assert_eq!(canonical.sample_ends, unit.sample_ends);
+        assert_eq!(canonical.points, unit.points);
+        assert_eq!(canonical.radii, unit.radii);
+        assert_eq!(canonical.points.len(), case.dots.len());
+
+        let down = prepare_with_output_scale(&stroke, 0.5).expect("half-scale V16 geometry");
+        let up = prepare_with_output_scale(&stroke, 2.0).expect("double-scale V16 geometry");
+        assert!(down.points.len() < unit.points.len());
+        assert!(up.points.len() > unit.points.len());
+        for dots in [&down, &unit, &up] {
+            assert_eq!(dots.sample_ends.len(), stroke.points.len());
+            assert_eq!(dots.sample_ends.last().copied(), Some(dots.points.len()));
+            assert!(dots.sample_ends.windows(2).all(|pair| pair[0] <= pair[1]));
+        }
+    }
+
+    #[test]
+    fn v16_scaled_sampling_rejects_unrepresentable_or_over_budget_scales() {
+        let reference = reference();
+        let case = reference
+            .cases
+            .iter()
+            .find(|case| case.name == "right angle")
+            .expect("native-backed V16 right-angle case");
+        let mut stroke = reference.stroke;
+        stroke.pen_width = case.size;
+        let style = &mut stroke.rendering.as_mut().unwrap().style;
+        style.initial_tolerance = Some(case.tolerance);
+        style.pen_size = Some(case.size);
+        for &(x, y, pressure, tilt, time) in &case.samples {
+            stroke.points.push(Point { x, y });
+            stroke.pressures.push(pressure);
+            stroke.tilts.push(tilt);
+            stroke.timestamps.push(time);
+        }
+        assert!(prepare_with_output_scale(&stroke, 1.0e30).is_none());
+        assert!(prepare_with_output_scale(&stroke, 1.0e-30).is_none());
+        assert!(prepare_with_output_scale(&stroke, 20_000.0).is_none());
     }
 
     #[test]

@@ -32,7 +32,7 @@ shadings and Lighten blending. The generated fountain output contains no image
 elements or bitmap strokes.
 
 The SVG/PDF consumer owns edge antialiasing. V14 retains the directional field
-without the native device-pixel fringe; V16 expresses radial coverage at
+without the native device-pixel fringe; default V16 expresses radial coverage at
 canonical unit inverse scale. Small-field PDF sampling, zoom-dependent coverage
 and native device pixels remain unverified.
 
@@ -52,6 +52,31 @@ After this correction, all 7,103 corpus V14 strokes retain identical geometry
 improve most changed controls, but minimum-width dots can still disappear at 1×;
 the omitted-size/public-width-0.8 control has mixed raster results. Matching
 native geometry does not close the missing V14 fringe paint.
+
+## Explicit V16 output scale
+
+`FountainV16OutputScaleProfile` regenerates ordinary, non-rainbow V16 samples
+for a caller-specified uniform scale. Native `GLV16::getInverseScale` (`0x77e58`)
+sets float32 spacing to `0.82 * min(inverseX, inverseY)`; `drawLine` (`0x77fd4`)
+uses it for sampling. The caller applies the same scale and translation to the
+output. Missing, invalid or over-budget profiles preserve canonical rendering.
+
+A controlled size-1 fork of the 204-point saved source matches native centers,
+radii and all seven upload lanes at these scales. Black host-Mesa controls use
+saved alpha 128 and 255; resvg comparisons use the captured projection and
+viewport, without alignment or resizing. Affected-pixel alpha MAE in bytes is:
+
+| Scale | Native/Rust stamps | Alpha 128: canonical → profile | Alpha 255: canonical → profile |
+| --- | --- | --- | --- |
+| 0.5 | 39 | 12.16 → 1.07 | 23.02 → 1.97 |
+| 1 | 76 | unchanged | unchanged |
+| 2 | 151 | 25.64 → 3.63 | 44.19 → 6.01 |
+
+MAE uses each native/render support union; profile pixel support matches native
+in all six cases, and unit-scale SVG bytes are unchanged. The compact native
+geometry fixture runs in normal Rust tests; framebuffer comparisons remain
+opt-in. The V16 rainbow-flag-ignored route remains canonical. Device zoom policy,
+archive-native thin metadata and native PDF appearance remain unverified.
 
 ## Validation on 2026-09-25
 
