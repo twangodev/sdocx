@@ -1,0 +1,702 @@
+{
+  "schema": "sdocx-colored-pencil-native-v1",
+  "provenance": {
+    "pen_library": "libSPenColoredPencil.so",
+    "pen_library_sha256": "39078a41b0687941c4e22b18df36addb1cda093303e26df844078474d3ca9504",
+    "saved_drawline_rva": "0x2ac68",
+    "saved_drawpoint_rva": "0x2aa54",
+    "addpoint_rva": "0x2bc9c",
+    "addpoint_tuple": "center_x,center_y,half_size,atlas_row,alpha; five little-endian f32 lanes",
+    "native_capture_source": "V4 frozen captures plus V5 frozen one-factor native captures; source hashes are recorded per case",
+    "native_capture_sha256": {
+      "8": "f47daaf2dc22abcb5ac768e524b87db59606dfd7e11d68a867d94f010763660a",
+      "16": "32f9444d337247def0fd0a720e9c5ae6560bf670fe7408aaf252783a3ea4ed02"
+    },
+    "random_profile": "glibc-2.41-TYPE_3-host",
+    "seed_profile": "srand(0) normalizes to seed 1; each drawPoint reseeds from the observed incrementing seed",
+    "android_rng_parity": false,
+    "math_profile": "native capture used host glibc sincos(double); Rust candidate uses the pinned libm f64 sin/cos and requires exact root verification",
+    "scope": "synthetic native ObjectStroke setter inputs selected as ColoredPencilStrokeDrawableGLV4; geometry and five-lane AddPoint stream only",
+    "seed_advance_source": {
+      "pen_library": "libSPenColoredPencil.so",
+      "drawpoint_rva": "0x2aa54",
+      "instructions": [
+        {
+          "rva": "0x2aaa0",
+          "instruction": "ldr w0, [x0, #288]",
+          "meaning": "loads the drawable seed before PenUtil::SetSrand"
+        },
+        {
+          "rva": "0x2aab4",
+          "instruction": "cmp w8, w9",
+          "meaning": "compares current seed against 10,000,000 using signed condition flags"
+        },
+        {
+          "rva": "0x2aab8",
+          "instruction": "csinc w8, wzr, w8, ge",
+          "meaning": "reset to zero when signed GE; otherwise wrapping increment"
+        },
+        {
+          "rva": "0x2aabc",
+          "instruction": "str w8, [x20, #288]",
+          "meaning": "stores updated 32-bit seed"
+        }
+      ],
+      "negative_initial_x_full_stroke_parity": "not verified; checked captures start at x=0 and do not establish the complete initial-seed path for negative x"
+    },
+    "drawline_tilt_source": {
+      "rva": "0x2ac68",
+      "instructions": [
+        {
+          "rva": "0x2adf8",
+          "instruction": "movi d4, #0"
+        },
+        {
+          "rva": "0x2ae20",
+          "instruction": "fcmp s11, s2"
+        },
+        {
+          "rva": "0x2ae38",
+          "instruction": "fcsel s1, s1, s4, hi",
+          "meaning": "selects the tilt adjustment only above the 0.65 threshold; otherwise selects the explicit zero initialized at 0x2adf8"
+        },
+        {
+          "rva": "0x2ae3c",
+          "instruction": "ldr s4, [x9]",
+          "meaning": "loads selected pen size after the low-tilt zero selection"
+        },
+        {
+          "rva": "0x2ae4c",
+          "instruction": "fmadd s3, s1, s3, s4",
+          "meaning": "tilt adjustment times 85.5 plus selected size"
+        },
+        {
+          "rva": "0x2ae70",
+          "instruction": "fmadd s13, s4, s1, s3",
+          "meaning": "selected size times 17 times adjustment plus previous result"
+        }
+      ],
+      "native_control_scope": "fixture has drawLine tilts 0.2 and 0.4; tilt values above threshold are source-derived but lack native controls"
+    },
+    "v5_capture_sha256": {
+      "negative_initial_x_minus2": "3db0edc814b33b56c86b0a3959d8c7ca3d98e97d805d7e148383435b1e073725",
+      "all_tilt_079": "0aeae67fd2f35c465610c22261c5d0cb46e8fc556f9e42cc2850e367abb81e7c",
+      "all_tilt_065": "7173811b27b9178add9f2b758910aa5839a58da778141c96e981eb4d67cda5cc"
+    },
+    "negative_seed_proof": "The captured x=-2 V5 case records SetSrand inputs 0xffff_fffe, 0xffff_ffff, 0, 1, 2 and exact path, pre-jitter, and five-lane outputs; the capture validates this tested negative seed path only.",
+    "v5_root_status_sha256": "b92359c82352243a9e81654667a1566f67eb21c9a9bd61fafea6fb804edf17f6",
+    "endpen_terminal_size_source": {
+      "pen_library": "libSPenColoredPencil.so",
+      "endpen_rva": "0x2a16c",
+      "instructions": [
+        {
+          "rva": "0x2a224",
+          "instruction": "ldr s8, [x23, #24]",
+          "meaning": "endPen loads its latched drawPoint size"
+        },
+        {
+          "rva": "0x2a23c",
+          "instruction": "fmov s0, s8"
+        },
+        {
+          "rva": "0x2a24c",
+          "instruction": "bl drawPoint"
+        }
+      ],
+      "native_v5_control": "all_tilt_079 proves endPen consumes the size left by the preceding drawLine; per-call S0 values are recorded for each case"
+    }
+  },
+  "native_stream": {
+    "file": "colored-pencil-native.bin",
+    "byte_order": "little-endian",
+    "record_stride": 20,
+    "sha256": "49293dd8e3d7bfe923f31cda8f046fe51ea536b490e90ed3e38f64b516b1f91a",
+    "length": 420
+  },
+  "cases": [
+    {
+      "id": "saved-glv4-size-8",
+      "capture_source": "scratch/colored-pencil-v4-rust-sampler-v1/captures/8-v4.json",
+      "capture_sha256": "f47daaf2dc22abcb5ac768e524b87db59606dfd7e11d68a867d94f010763660a",
+      "selected_drawable_class": "ColoredPencilStrokeDrawableGLV4",
+      "input": {
+        "size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000f041",
+            "0000a040"
+          ]
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "curve_enabled": true,
+        "tool_type": 2,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ColoredPencil",
+        "advanced_setting": "4;",
+        "color_argb": "0x8044aaee"
+      },
+      "pen_data": {
+        "size_f32_bits": "00000041",
+        "width": 1920,
+        "height": 1080,
+        "spacing_extra": 0,
+        "captured_target_offsets": {
+          "size": 0,
+          "width": 32,
+          "height": 36,
+          "spacing_extra": 40
+        }
+      },
+      "native_path_samples": [
+        {
+          "distance_f32_bits": "0ad7233f",
+          "point_f32_bits": "04c3a73e00000000",
+          "tangent_f32_bits": "0000803f00000000"
+        },
+        {
+          "distance_f32_bits": "04100d40",
+          "point_f32_bits": "06fce5402ee4f43d",
+          "tangent_f32_bits": "a77b7e3f8d9fde3d"
+        },
+        {
+          "distance_f32_bits": "924a0c41",
+          "point_f32_bits": "68de574109c1e63f",
+          "tangent_f32_bits": "b5a36b3fad19c83e"
+        }
+      ],
+      "native_pre_jitter_points_f32_bits": [
+        "0000000000000000",
+        "04c3a73e00000000",
+        "06fce5402ee4f43d",
+        "68de574109c1e63f",
+        "0000a0410000a040"
+      ],
+      "native_saved_rand_seeds_u32": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "native_stream": {
+        "phase": "saved_redraw",
+        "offset": 0,
+        "length": 80,
+        "sha256": "aef7fc5d9a90b21cebfcbf8280d997ec4771dc0eab19dd69745b1f8c89f0e47c"
+      },
+      "native_drawpoint_size_f32_bits": [
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041"
+      ]
+    },
+    {
+      "id": "saved-glv4-size-16",
+      "capture_source": "scratch/colored-pencil-v4-rust-sampler-v1/captures/16-v4.json",
+      "capture_sha256": "32f9444d337247def0fd0a720e9c5ae6560bf670fe7408aaf252783a3ea4ed02",
+      "selected_drawable_class": "ColoredPencilStrokeDrawableGLV4",
+      "input": {
+        "size_f32_bits": "00008041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000f041",
+            "0000a040"
+          ]
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "curve_enabled": true,
+        "tool_type": 2,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ColoredPencil",
+        "advanced_setting": "4;",
+        "color_argb": "0x8044aaee"
+      },
+      "pen_data": {
+        "size_f32_bits": "00008041",
+        "width": 1920,
+        "height": 1080,
+        "spacing_extra": 0,
+        "captured_target_offsets": {
+          "size": 0,
+          "width": 32,
+          "height": 36,
+          "spacing_extra": 40
+        }
+      },
+      "native_path_samples": [
+        {
+          "distance_f32_bits": "0ad7a33f",
+          "point_f32_bits": "748fa23f00000000",
+          "tangent_f32_bits": "0000803f00000000"
+        },
+        {
+          "distance_f32_bits": "02881641",
+          "point_f32_bits": "02756141693c0440",
+          "tangent_f32_bits": "990d693fc1ded33e"
+        }
+      ],
+      "native_pre_jitter_points_f32_bits": [
+        "0000000000000000",
+        "748fa23f00000000",
+        "02756141693c0440",
+        "0000a0410000a040"
+      ],
+      "native_saved_rand_seeds_u32": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "native_stream": {
+        "phase": "saved_redraw",
+        "offset": 80,
+        "length": 60,
+        "sha256": "060629f92bb1ebcbfe17d4497162e6a5585f19adacef40b90b7b223648f05733"
+      },
+      "native_drawpoint_size_f32_bits": [
+        "00008041",
+        "00008041",
+        "00008041",
+        "00008041"
+      ]
+    },
+    {
+      "id": "negative_initial_x_minus2",
+      "capture_source": "scratch/colored-pencil-v5-native-input-controls-frozen-v1/captures/negative_initial_x_minus2.log",
+      "capture_sha256": "3db0edc814b33b56c86b0a3959d8c7ca3d98e97d805d7e148383435b1e073725",
+      "selected_drawable_class": "ColoredPencilStrokeDrawableGLV4",
+      "input": {
+        "size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "000000c0",
+            "00000000"
+          ],
+          [
+            "00000041",
+            "00000000"
+          ],
+          [
+            "00009041",
+            "0000a040"
+          ],
+          [
+            "0000e041",
+            "0000a040"
+          ]
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "curve_enabled": true,
+        "tool_type": 2,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ColoredPencil",
+        "advanced_setting": "4;",
+        "color_argb": "0x8044aaee"
+      },
+      "pen_data": {
+        "size_f32_bits": "00000041",
+        "width": 1920,
+        "height": 1080,
+        "spacing_extra": 0,
+        "captured_target_offsets": {
+          "size": 0,
+          "width": 32,
+          "height": 36,
+          "spacing_extra": 40
+        }
+      },
+      "native_path_samples": [
+        {
+          "distance_f32_bits": "0ad7233f",
+          "point_f32_bits": "3f0fd6bf00000000",
+          "tangent_f32_bits": "0000803f00000000"
+        },
+        {
+          "distance_f32_bits": "04100d40",
+          "point_f32_bits": "06fca5402ee4f43d",
+          "tangent_f32_bits": "a77b7e3f8d9fde3d"
+        },
+        {
+          "distance_f32_bits": "924a0c41",
+          "point_f32_bits": "68de374109c1e63f",
+          "tangent_f32_bits": "b5a36b3fad19c83e"
+        }
+      ],
+      "native_pre_jitter_points_f32_bits": [
+        "000000c000000000",
+        "3f0fd6bf00000000",
+        "06fca5402ee4f43d",
+        "68de374109c1e63f",
+        "000090410000a040"
+      ],
+      "native_saved_rand_seeds_u32": [
+        4294967294,
+        4294967295,
+        0,
+        1,
+        2
+      ],
+      "native_stream": {
+        "phase": "saved_redraw",
+        "offset": 140,
+        "length": 100,
+        "sha256": "07fd25efcdd4814c771fb3f86eff0622c17e785e7190fa52760221418ef1bd55"
+      },
+      "case_transform": {
+        "expected_initial_seed_i32": -2,
+        "kind": "translate all point x coordinates by -2.0",
+        "other_channels": "copied unchanged from colored_pencil_pressure_ramp"
+      },
+      "native_drawpoint_size_f32_bits": [
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041"
+      ]
+    },
+    {
+      "id": "all_tilt_079",
+      "capture_source": "scratch/colored-pencil-v5-native-input-controls-frozen-v1/captures/all_tilt_079.log",
+      "capture_sha256": "0aeae67fd2f35c465610c22261c5d0cb46e8fc556f9e42cc2850e367abb81e7c",
+      "selected_drawable_class": "ColoredPencilStrokeDrawableGLV4",
+      "input": {
+        "size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000f041",
+            "0000a040"
+          ]
+        ],
+        "tilt_f32_bits": [
+          "713d4a3f",
+          "713d4a3f",
+          "713d4a3f",
+          "713d4a3f"
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "curve_enabled": true,
+        "tool_type": 2,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ColoredPencil",
+        "advanced_setting": "4;",
+        "color_argb": "0x8044aaee"
+      },
+      "pen_data": {
+        "size_f32_bits": "00000041",
+        "width": 1920,
+        "height": 1080,
+        "spacing_extra": 0,
+        "captured_target_offsets": {
+          "size": 0,
+          "width": 32,
+          "height": 36,
+          "spacing_extra": 40
+        }
+      },
+      "native_path_samples": [
+        {
+          "distance_f32_bits": "0ad7233f",
+          "point_f32_bits": "04c3a73e00000000",
+          "tangent_f32_bits": "0000803f00000000"
+        },
+        {
+          "distance_f32_bits": "04100d40",
+          "point_f32_bits": "06fce5402ee4f43d",
+          "tangent_f32_bits": "a77b7e3f8d9fde3d"
+        },
+        {
+          "distance_f32_bits": "924a0c41",
+          "point_f32_bits": "68de574109c1e63f",
+          "tangent_f32_bits": "b5a36b3fad19c83e"
+        }
+      ],
+      "native_pre_jitter_points_f32_bits": [
+        "0000000000000000",
+        "04c3a73e00000000",
+        "06fce5402ee4f43d",
+        "68de574109c1e63f",
+        "0000a0410000a040"
+      ],
+      "native_saved_rand_seeds_u32": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "native_stream": {
+        "phase": "saved_redraw",
+        "offset": 240,
+        "length": 100,
+        "sha256": "cd89afec127ad14b3377dfb88a2960523a478ab7df8966007f6aa8c2bc9ed666"
+      },
+      "case_transform": {
+        "kind": "set every tilt to 0.79",
+        "other_channels": "copied unchanged from colored_pencil_pressure_ramp"
+      },
+      "native_drawpoint_size_f32_bits": [
+        "00000041",
+        "400a1c42",
+        "400a1c42",
+        "400a1c42",
+        "400a1c42"
+      ]
+    },
+    {
+      "id": "all_tilt_065",
+      "capture_source": "scratch/colored-pencil-v5-native-input-controls-frozen-v1/captures/all_tilt_065.log",
+      "capture_sha256": "7173811b27b9178add9f2b758910aa5839a58da778141c96e981eb4d67cda5cc",
+      "selected_drawable_class": "ColoredPencilStrokeDrawableGLV4",
+      "input": {
+        "size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000f041",
+            "0000a040"
+          ]
+        ],
+        "tilt_f32_bits": [
+          "6666263f",
+          "6666263f",
+          "6666263f",
+          "6666263f"
+        ],
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "curve_enabled": true,
+        "tool_type": 2,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ColoredPencil",
+        "advanced_setting": "4;",
+        "color_argb": "0x8044aaee"
+      },
+      "pen_data": {
+        "size_f32_bits": "00000041",
+        "width": 1920,
+        "height": 1080,
+        "spacing_extra": 0,
+        "captured_target_offsets": {
+          "size": 0,
+          "width": 32,
+          "height": 36,
+          "spacing_extra": 40
+        }
+      },
+      "native_path_samples": [
+        {
+          "distance_f32_bits": "0ad7233f",
+          "point_f32_bits": "04c3a73e00000000",
+          "tangent_f32_bits": "0000803f00000000"
+        },
+        {
+          "distance_f32_bits": "04100d40",
+          "point_f32_bits": "06fce5402ee4f43d",
+          "tangent_f32_bits": "a77b7e3f8d9fde3d"
+        },
+        {
+          "distance_f32_bits": "924a0c41",
+          "point_f32_bits": "68de574109c1e63f",
+          "tangent_f32_bits": "b5a36b3fad19c83e"
+        }
+      ],
+      "native_pre_jitter_points_f32_bits": [
+        "0000000000000000",
+        "04c3a73e00000000",
+        "06fce5402ee4f43d",
+        "68de574109c1e63f",
+        "0000a0410000a040"
+      ],
+      "native_saved_rand_seeds_u32": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "native_stream": {
+        "phase": "saved_redraw",
+        "offset": 340,
+        "length": 80,
+        "sha256": "aef7fc5d9a90b21cebfcbf8280d997ec4771dc0eab19dd69745b1f8c89f0e47c"
+      },
+      "case_transform": {
+        "kind": "set every tilt to 0.65",
+        "other_channels": "copied unchanged from colored_pencil_pressure_ramp"
+      },
+      "native_drawpoint_size_f32_bits": [
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041",
+        "00000041"
+      ]
+    }
+  ],
+  "glibc_cpu_controls": {
+    "glibc_version": "2.41",
+    "libc_sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+    "android_parity": false,
+    "cases": [
+      {
+        "seed_u32": 0,
+        "first_four_rand_u31": [
+          1804289383,
+          846930886,
+          1681692777,
+          1714636915
+        ]
+      },
+      {
+        "seed_u32": 1,
+        "first_four_rand_u31": [
+          1804289383,
+          846930886,
+          1681692777,
+          1714636915
+        ]
+      },
+      {
+        "seed_u32": 10000000,
+        "first_four_rand_u31": [
+          202734752,
+          1503051508,
+          541512278,
+          860229141
+        ]
+      },
+      {
+        "seed_u32": 2147483646,
+        "first_four_rand_u31": [
+          1320593690,
+          1199968952,
+          1432693999,
+          317934276
+        ]
+      },
+      {
+        "seed_u32": 2147483647,
+        "first_four_rand_u31": [
+          1065668062,
+          2142264300,
+          1066566375,
+          1064012770
+        ]
+      },
+      {
+        "seed_u32": 2147483648,
+        "first_four_rand_u31": [
+          1336741213,
+          1210407648,
+          1447044896,
+          337392383
+        ]
+      },
+      {
+        "seed_u32": 4294967294,
+        "first_four_rand_u31": [
+          553879721,
+          313352468,
+          1857133612,
+          707683845
+        ]
+      },
+      {
+        "seed_u32": 4294967295,
+        "first_four_rand_u31": [
+          254925627,
+          1205188300,
+          366127624,
+          1401405153
+        ]
+      }
+    ]
+  }
+}

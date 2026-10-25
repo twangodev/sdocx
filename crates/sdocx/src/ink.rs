@@ -8,6 +8,8 @@ mod brushpen;
 pub(crate) mod calligraphy;
 pub(crate) mod chinesebrush_glv123;
 #[cfg(all(test, feature = "serde"))]
+mod colored_pencil;
+#[cfg(all(test, feature = "serde"))]
 mod pencil2;
 #[cfg(all(test, feature = "serde"))]
 mod simplebrush;
