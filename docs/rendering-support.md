@@ -687,7 +687,11 @@ then native adapter/libpng encoding. Two synthetic 2×2 controls preserve alpha
 and verify rounded, clamped RGB unpremultiplication, including zero alpha;
 queue scheduling and zlib remain host bridges. An archive-backed Standard probe
 also completes a [native plain-bitmap draw and deactivation](reverse-engineering/fountain-rasterization.md#presenter-copy-replaces-transparent-pixels-too)
-with host EGL/GLES adapters; complete PDF output remains unverified. The native raster-batch producer and
+with host EGL/GLES adapters. A later archive-backed Standard attempt completes
+an 1800 × 2545 native RGBA readback, including pack-state restoration and the
+native error check. That intermediate contains opaque ruled-background pixels;
+its Composer producer remains unresolved, and it is not a whole-note ink oracle.
+Complete PDF output remains unverified. The native raster-batch producer and
 Drawing-to-insertion and general saved-note/body placement remain outstanding;
 the production PDF-paper subset above does not establish those contracts.
 
