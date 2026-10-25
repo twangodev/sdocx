@@ -95,8 +95,10 @@ pub fn pressure_alpha(p: f32, s: AlphaState) -> f32 {
 }
 
 fn adjusted_tilt(mean: f32) -> f32 {
+    // Pencil2 uses the exact V14 rodata divisor at RVA 0x30140, not 0.08f.
+    const TILT_FACTOR_DIVISOR: f32 = f32::from_bits(0x3da3_d710);
     if mean > 0.75 {
-        (mean - 0.75) / 0.08
+        (mean - 0.75) / TILT_FACTOR_DIVISOR
     } else {
         0.0
     }
@@ -283,7 +285,7 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
                 point,
                 radius,
                 opacity,
-                mean_orientation,
+                [mean_orientation, tilt_factor],
                 tile,
                 input.color_argb,
             );
@@ -340,7 +342,7 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
                 path.at(distance),
                 radius,
                 opacity,
-                mean_orientation,
+                [mean_orientation, tilt_factor],
                 tile,
                 input.color_argb,
             );
@@ -358,7 +360,7 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
             terminal,
             target_radius,
             target_alpha,
-            mean_orientation,
+            [mean_orientation, tilt_factor],
             tile,
             input.color_argb,
         );
@@ -368,7 +370,7 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
             terminal,
             target_radius,
             target_alpha,
-            mean_orientation,
+            [mean_orientation, tilt_factor],
             tile,
             input.color_argb,
         );
@@ -381,10 +383,11 @@ fn emit_record(
     point: P,
     radius: f32,
     alpha: f32,
-    orientation: f32,
+    orientation_and_draw_factor: [f32; 2],
     tile: u32,
     color: u32,
 ) {
+    let [orientation, draw_factor] = orientation_and_draw_factor;
     // The source-confirmed AddPoint writer: x/y center unchanged, extents use
     // radius/inverse-scale with 0.5 padding. Capture profile's inverse scales are 1.
     let stamp_radius = radius * 0.5; // drawPoint passes half the pen-width state to RTV4.
@@ -407,7 +410,7 @@ fn emit_record(
     lanes[2] = extent_x;
     lanes[3] = extent_y;
     lanes[4] = alpha;
-    lanes[5] = 0.0; // no dash/effect in the supported native fixture profile.
+    lanes[5] = draw_factor; // V14 drawPoint adjusted mean tilt, passed as AddPoint s2.
     lanes[6] = tile as f32;
     lanes[7] = -sine;
     lanes[8] = cosine;
@@ -695,7 +698,7 @@ mod tests {
     }
 
     #[test]
-    fn three_native_v14_streams_match_all_fourteen_lanes() {
+    fn native_v14_streams_match_all_fourteen_lanes() {
         let f = fixture();
         assert_eq!(f["schema"], "sdocx-pencil2-glv14-rtv4-native-geometry-v1");
         let provenance = &f["provenance"];
@@ -721,7 +724,7 @@ mod tests {
             f["binary"]["sha256"].as_str().unwrap()
         );
         let cases = f["cases"].as_array().unwrap();
-        assert_eq!(cases.len(), 3);
+        assert_eq!(cases.len(), 6);
         for case in cases {
             compare_case(case);
         }
