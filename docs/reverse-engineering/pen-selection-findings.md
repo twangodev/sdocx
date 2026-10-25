@@ -234,8 +234,17 @@ size to 0.4. The capture declares a synthetic 1920×1080 context and a host glib
 `sincosf` bridge. It establishes neither Android math equivalence nor pixel,
 device or PDF parity. A separate unset-setting Drawing control selects GLV1; it does not establish V1 geometry. At effective size 2, five V14 one-factor controls retain identical Drawing/replay streams: pressure and orientation ramps change the records, while the tested timestamp and below-threshold tilt ramps match the neutral baseline.
 
+The test-only Rust sampler checks all 14 float lanes bit for bit in three
+84-record streams, including combined pressure/orientation and separate
+pressure controls. Its compact [native fixture](../../conformance/pencil2-v14-native.json)
+retains the input, native pressure-alpha state/returns and hashes; the packed
+record file is 14,112 bytes. Portable `libm` math matches these host captures.
+
 The native V14 path uses its own 150×150 grain and three 100×100 point masks;
-it cannot inherit Pencil3's atlas or record layout. Pencil2 remains generic in
+it cannot inherit Pencil3's atlas or record layout. Direct native texture
+methods reproduce the embedded grain and point arrays as 90,000- and
+120,000-byte uploads under synthetic GL callbacks; Init, GPU sampling and
+rendered pixels remain unverified. Pencil2 remains generic in
 production pending geometry reconstruction, texture/shader validation and
 output transport checks. Compact capture receipts and the pinned candidate are
 retained under the ignored `tmp/vector-parity-plan/pen-family-audit/` workspace.

@@ -7,6 +7,8 @@ mod airbrush;
 mod brushpen;
 pub(crate) mod calligraphy;
 pub(crate) mod chinesebrush_glv123;
+#[cfg(all(test, feature = "serde"))]
+mod pencil2;
 
 #[cfg(test)]
 pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>; 3]> {
