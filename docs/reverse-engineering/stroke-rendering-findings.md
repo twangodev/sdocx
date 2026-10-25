@@ -451,9 +451,11 @@ A passive observer of the 268-instance, 256×256 host-Mesa paint control preserv
 the original readback SHA-256
 `a19f9befa9e35ad2aef2251cd90c28d0f13b1be0041334c196b6692571b20c00`.
 The projection maps one source unit to one pixel with translation `(64,64)`.
-Background sampling uses `(subbitmap dimension / 150) / background scale`;
-the captured scale was `0.75`, producing `uBgTextureScale = 2.2755556` on both
-axes. The background sampler uses unit 0 with nearest/repeat; the point atlas
+Background sampling uses `(subbitmap dimension / 150) / background scale`.
+GLV2 derives the scale from the runtime display as
+`f32(min(screen_width, screen_height)) / 1440.0`; the divisor is the native
+binary32 literal `0x44b40000`. The observed display and Pen setter both supplied
+`1920×1080`, yielding `0.75` and `uBgTextureScale = 2.2755556` on both axes. The background sampler uses unit 0 with nearest/repeat; the point atlas
 uses unit 1 with nearest/clamp. Paper sampling was disabled.
 
 Live vertex-attribute queries join attribute 0 to the actual 64-byte quad upload
