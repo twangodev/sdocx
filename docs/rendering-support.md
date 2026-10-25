@@ -85,7 +85,7 @@ dispatch, not complete version coverage or visual parity.
 | --- | --- |
 | Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 remains generic; InkPen2 V9 requires a profile. StraightInkPen2 remains generic. |
 | Fountain | Fountain V14 and saved AS18/V16 have bounded default routes; V17 rainbow is experimental and explicit. MontblancFountainPen remains generic. |
-| Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has its own grain and point atlas, distinct from Pencil3. |
+| Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has its own grain and point atlas, distinct from Pencil3; a controlled four-point native Drawing/saved-redraw pair agrees byte for byte for empty and explicit `14;` settings, but has no pixel validation. |
 | Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; Marker and StraightMarker remain generic. Library aliases alone do not establish equivalent configured behavior. |
 | Textured brushes | Brush/SimpleBrush, BrushPen and AirBrushPen remain generic. AirBrush's native patterned, low-alpha stamps are not reproduced by its current opaque generic stroke. ChineseBrush V1–V3 requires an explicit profile; V4 is not reconstructed. |
 | Calligraphic nibs | MontblancCalligraphyPen V1 and Oblique V1/V4 have bounded default routes. Oblique V2/V3 and rejected settings remain generic. |

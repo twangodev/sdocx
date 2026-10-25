@@ -220,3 +220,22 @@ buffer through a synthetic SPTextureBitmap texture-buffer `UpdateBitmap` slot.
 Graphics vtable provenance is hash-pinned in the oracle; MotionEvent, factory
 and bitmap interfaces remain synthetic, with no texture upload, GPU pixels or
 full application parity established.
+
+## Pencil2 current renderer control
+
+A controlled four-point tool-2 native Drawing capture selects
+`Pencil2StrokeDrawableGLV14` and `Pencil2StrokeDrawableRTV4` for both a fresh
+empty advanced setting and explicit `14;`. Each emits 84 records of 14 floats
+(4,704 bytes); Drawing and saved redraw agree byte for byte, and both settings
+produce stream SHA-256
+`770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe`.
+The raw ObjectStroke size is approximately 0.228; PenCommon clamps the effective
+size to 0.4. The capture declares a synthetic 1920×1080 context and a host glibc
+`sincosf` bridge. It establishes neither Android math equivalence nor pixel,
+device or PDF parity. The unset-setting control has no successful receipt yet.
+
+The native V14 path uses its own 150×150 grain and three 100×100 point masks;
+it cannot inherit Pencil3's atlas or record layout. Pencil2 remains generic in
+production pending geometry reconstruction, texture/shader validation and
+output transport checks. Compact capture receipts and the pinned candidate are
+retained under the ignored `tmp/vector-parity-plan/pen-family-audit/` workspace.
