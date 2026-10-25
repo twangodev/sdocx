@@ -99,12 +99,14 @@ The retained SPI [headers](spi-header-findings.md) report `1812 × 3843` caches
 for `quiz` and `1080 × 2290` caches for `cs61bl_su22`. Their heights differ
 from the PDF placement heights; no cache pixels were decoded in this inventory.
 
-At the inventoried revision, the SDK consumes all field-8 records but retains
-only the first source page index in `PageTemplateSource::CustomPdf`; it discards
-the media IDs and rectangles. These stored placements are therefore not
-represented completely in the high-level model. The temporary client used the
-SDK's existing bounded `Reader` for byte inspection; no production decoder or
-new native appearance comparison was added for this observation.
+The current parser retains every field-8 media ID, source page index and
+versioned rectangle in `PageBackground::pdf_paper`; `CustomPdf { page_index }`
+is only a compatibility summary. PDF export can admit a narrow SingleX
+source-preserving import-and-overlay route, while SVG previews still omit the
+source PDF background. The retained SPI cache pixels remain undecoded in this
+inventory; they are not substituted for the PDF page. The temporary client
+used the SDK's bounded `Reader` for archive inspection; no new native
+appearance comparison was added for this observation.
 
 ## Drawing features present and absent
 
