@@ -1,0 +1,58 @@
+{
+  "schema": "brushpen-native-paint-conditional-profile-v1",
+  "profile_kind": "conditional-captured-host-mesa-v1",
+  "target_internal_format_observed_in_v7": false,
+  "blend_state_observed_in_v7": false,
+  "sampler_state_observed_in_v7": true,
+  "same_drawing_geometry_and_output_join": true,
+  "same_drawing_join": {
+    "capture_path": "tmp/vector-parity-plan/brushpen-same-drawing-queue/same-drawing-native-paint.json",
+    "capture_sha256": "fb14597bdccbe2b01583cded69d155e912358ccf00ede0f626b78fc26a4bb86e",
+    "same_native_vbo_sha256": "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92",
+    "same_after_task2_full_rgba_sha256": "f860fde550dbdaeb5968cc88fa928bc1d84a1a8e33d7d4cdf2dcbf0525396f54",
+    "blend_state_raw": {
+      "blend_enabled": true,
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "dst_alpha": 771,
+      "dst_rgb": 771,
+      "equation_alpha": 32774,
+      "equation_rgb": 32774,
+      "src_alpha": 1,
+      "src_rgb": 770
+    },
+    "join_basis": "cross-capture identity via exact VBO hash and exact full RGBA output hash; V7 itself did not record blend calls"
+  },
+  "mesa_blend_conversion": {
+    "environment_capture_sha256": "6cb969d55f11c5e4792f9a0375eae44ec2708bdb4fee6bc24ac87f5633ee05f3",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1",
+    "precision_analysis_sha256": "165177dcf3697bdb773c0e1cf8c0c8697c7b0fc1ca30d6e5355f5485e313d712",
+    "source_hashes": {
+      "lp_state_fs.c": "8c0696490eaada44b058c18c5552c4540c735508f0066c400f5e8f8b8dc503a6",
+      "lp_bld_conv.c": "f6268742b51f2b83ac6de110d9e4051d1bc4f821146a259b3178ca6c38805034",
+      "lp_bld_arit.c": "25c6cb10b8a3bf9e86f4eedbb428854862f78b3841eb49126234d0802d6a2c08",
+      "lp_bld_blend.c": "d5ba2d4afc2f9ef66ea407b4ee3542d4b373c9dcc4cf73a857a57868c79d4f6e",
+      "lp_bld_blend_aos.c": "9824bebdcab7bc5a94d74f3cb7afcbe5c191c15bf78d1247aa1fffb0af497109"
+    },
+    "condition": "This integer blend-row path is conditional on the V7 target actually using GL_RGBA8 UNORM; the V7 receipt records RGBA8 readback/target metadata but not an internal-format query."
+  },
+  "texture_source_scope": {
+    "r8_source_bundle_sha256": "7d10c1cb7ac6ab99a11eb72b91e565cf7e313d7c247da09700445151fb3a70f2",
+    "mask_r8_sha256": "8f1c09f0642bb63f9c6cfaa0bec1dcabf428aed6387f995fb64c7972bf064b20",
+    "grain_r8_sha256": "d6e0743f9343efac472d3d00ba44f4138572620b376fe6fd74d9b5ebf1aad2aa",
+    "mask_upload_source_capture_sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c",
+    "native_task2_sampler_note": "Texture/sampler object bindings and effective nearest filters were queried in V7; V7 did not capture texture upload bytes. Source bytes and native resource roles are joined from the separate Init capture and pinned source arrays, not by GL object identity across contexts."
+  },
+  "requires_native_v9_same_context_state_resource_observer": true,
+  "scope_limits": [
+    "Uses the actual 26x44 native Drawing-produced instance buffer as paint input; does not claim Rust-generated BrushPen geometry parity.",
+    "Reproduces one captured 321x228 transparent llvmpipe target, not a general BrushPen output model.",
+    "Not Android-device parity or production renderer admission.",
+    "Same-context internal target format, draw-state, and texture-upload observer must confirm the conditional joins before fixture admission."
+  ]
+}

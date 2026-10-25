@@ -1,0 +1,375 @@
+{
+  "draw": {
+    "active_program_matches_adapter_program": false,
+    "draw_args_glDrawArraysInstanced": [
+      5,
+      0,
+      4,
+      26
+    ],
+    "gl_error_after_query": 0,
+    "gl_error_before_query": 0,
+    "phase": "native PenGLRenderMsg task2",
+    "program_id": 7,
+    "sparse_pixels": {
+      "bytes": 80,
+      "coordinates_gl_bottom_left": [
+        [
+          1,
+          0,
+          [
+            68,
+            142,
+            92,
+            162
+          ]
+        ],
+        [
+          2,
+          0,
+          [
+            100,
+            206,
+            133,
+            239
+          ]
+        ],
+        [
+          1,
+          1,
+          [
+            6,
+            11,
+            7,
+            13
+          ]
+        ],
+        [
+          2,
+          1,
+          [
+            99,
+            202,
+            132,
+            235
+          ]
+        ],
+        [
+          3,
+          1,
+          [
+            94,
+            193,
+            125,
+            222
+          ]
+        ],
+        [
+          2,
+          2,
+          [
+            40,
+            85,
+            55,
+            97
+          ]
+        ],
+        [
+          3,
+          2,
+          [
+            94,
+            192,
+            124,
+            221
+          ]
+        ],
+        [
+          4,
+          2,
+          [
+            59,
+            121,
+            78,
+            140
+          ]
+        ],
+        [
+          3,
+          3,
+          [
+            42,
+            84,
+            54,
+            97
+          ]
+        ],
+        [
+          4,
+          3,
+          [
+            22,
+            45,
+            29,
+            52
+          ]
+        ]
+      ],
+      "count": 10,
+      "encoding": "10 entries, each x:u16le,y:u16le,RGBA8 (straight readback bytes)",
+      "path": "native-sparse-readback-u16xy-rgba8.bin",
+      "sha256": "7139a59eea569950d913b1a395e6d3c6e470a9156cd4226bd57a35a5c2129fb7"
+    },
+    "target": {
+      "color_attachment": {
+        "object": 4,
+        "type": 5890
+      },
+      "dimensions": [
+        321,
+        228
+      ],
+      "draw_fbo": 2,
+      "format": "RGBA8",
+      "post_draw_full_bytes": 292752,
+      "post_draw_full_sha256": "f860fde550dbdaeb5968cc88fa928bc1d84a1a8e33d7d4cdf2dcbf0525396f54",
+      "post_draw_origin": "OpenGL glReadPixels row order; x right, y from bottom-left",
+      "pre_draw_all_zero": true,
+      "pre_draw_sha256": "f0cae1c3cf0c26f5eb5d3a6a1986263254718bb7ddf89b32d58edc0e4466fb89",
+      "read_fbo": 2
+    }
+  },
+  "geometry": {
+    "bytes": 1144,
+    "other_geometry_fixture_boundary": "The tracked conformance/brushpen-saved-native.json profiles are separate geometry controls and none of their 44-byte stream hashes is this V7 stream. Do not substitute them for this paint capture.",
+    "path": "native-vbo-26x44.bin",
+    "record_count": 26,
+    "sha256": "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92",
+    "source_join": {
+      "capture_path": "tmp/vector-parity-plan/brushpen-same-drawing-queue/same-drawing-native-paint.json",
+      "rt_field": "source_to_native.rt_fields_before_task2.vectors.88",
+      "same_bytes": true,
+      "sha256": "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92"
+    },
+    "stride_bytes": 44
+  },
+  "material": {
+    "intrinsic_r8_assets": {
+      "compressed_bytes": 59007,
+      "compressed_sha256": "7d10c1cb7ac6ab99a11eb72b91e565cf7e313d7c247da09700445151fb3a70f2",
+      "compression": "zlib; decompressed concatenation is mask source then grain source",
+      "grain": {
+        "bytes": 73188,
+        "dimensions": [
+          321,
+          228
+        ],
+        "dso_symbol_rva": "0x2c0d5",
+        "offset_in_bundle": 16128,
+        "sha256": "d6e0743f9343efac472d3d00ba44f4138572620b376fe6fd74d9b5ebf1aad2aa"
+      },
+      "mask": {
+        "bytes": 16128,
+        "dso_symbol_rva": "0x281d5",
+        "layout": "7 sequential 48x48 R8 tile payloads (indices 0..6); only these initialized source tiles are included",
+        "offset_in_bundle": 0,
+        "sha256": "8f1c09f0642bb63f9c6cfaa0bec1dcabf428aed6387f995fb64c7972bf064b20"
+      },
+      "no_unwritten_atlas_cells": "Tiles 7 and 8 are omitted because native setter leaves them uninitialized. The separate upload capture recorded host allocator sentinels there; neither sentinel data nor transparent zero fill is presented as native texture content.",
+      "path": "intrinsic-mask-grain-r8.zlib",
+      "uncompressed_bytes": 89316
+    },
+    "shader_source": {
+      "dso_rva_fragment": "0x3e69a",
+      "dso_rva_vertex": "0x3e374",
+      "fragment_sha256": "4c45b50596922acd7b14e5dd56df2301b8b652e25e89bf466172558e929d44aa",
+      "note": "Pinned DSO source hashes; program 7 had detached shaders at the post-draw query (reported attached count 0), so do not describe these as a source string fetched from the active linked program at query time.",
+      "vertex_sha256": "44072299681d558389d5a7e94e2c70929b2cf1399a493df777302c30b609fc3e"
+    },
+    "source_upload_evidence": {
+      "native_factory_roles": [
+        {
+          "dimensions": [
+            144,
+            144
+          ],
+          "initialized_tile_payload_hashes_match_source": 7,
+          "native_upload": {
+            "call": "glTexSubImage2D",
+            "format": 6408,
+            "height": 144,
+            "level": 0,
+            "target": 3553,
+            "type": 5121,
+            "width": 144,
+            "xoffset": 0,
+            "yoffset": 0
+          },
+          "payload_sha256_with_host_allocator_sentinels": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+          "resource": "BrushPenStrokeDrawableRTV1::buildTextures mPatternsBitmap",
+          "uninitialized_tiles": [
+            7,
+            8
+          ]
+        },
+        {
+          "dimensions": [
+            321,
+            228
+          ],
+          "native_upload": {
+            "call": "glTexSubImage2D",
+            "format": 6408,
+            "height": 228,
+            "level": 0,
+            "target": 3553,
+            "type": 5121,
+            "width": 321,
+            "xoffset": 0,
+            "yoffset": 0
+          },
+          "payload_sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+          "resource": "BrushPenStrokeDrawableRTV1::buildTextures mGrainBitmap",
+          "whole_source_rgba_expansion_matches": true
+        }
+      ],
+      "sampler_note": "V7 directly queried bound sampler objects: both min/mag are GL_NEAREST (9728); mask S/T GL_CLAMP_TO_EDGE (33071), grain S/T GL_REPEAT (10497). This actual task2 sampler query supersedes the older static-only conditional note.",
+      "texture_capture_path": "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/brushpen-texture-native.json",
+      "texture_capture_sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c"
+    },
+    "texture_bindings_actual_task2": [
+      {
+        "effective_filter_wrap": {
+          "mag_filter": 9728,
+          "min_filter": 9728,
+          "wrap_s": 33071,
+          "wrap_t": 33071
+        },
+        "effective_parameters_source": "sampler",
+        "sampler_id": 4,
+        "sampler_parameters_observed": {
+          "mag_filter": 9728,
+          "min_filter": 9728,
+          "wrap_s": 33071,
+          "wrap_t": 33071
+        },
+        "texture_2d_id": 5,
+        "texture_parameters_observed": {
+          "mag_filter": 9729,
+          "min_filter": 9986,
+          "wrap_s": 10497,
+          "wrap_t": 10497
+        },
+        "unit": 0
+      },
+      {
+        "effective_filter_wrap": {
+          "mag_filter": 9728,
+          "min_filter": 9728,
+          "wrap_s": 10497,
+          "wrap_t": 10497
+        },
+        "effective_parameters_source": "sampler",
+        "sampler_id": 5,
+        "sampler_parameters_observed": {
+          "mag_filter": 9728,
+          "min_filter": 9728,
+          "wrap_s": 10497,
+          "wrap_t": 10497
+        },
+        "texture_2d_id": 6,
+        "texture_parameters_observed": {
+          "mag_filter": 9729,
+          "min_filter": 9986,
+          "wrap_s": 10497,
+          "wrap_t": 10497
+        },
+        "unit": 1
+      }
+    ],
+    "texture_resource_join": {
+      "resource_role": "BrushPen grain texture, by pinned V1 sampler usage and RTV1 resource construction",
+      "sampler0_texture_id": 5,
+      "sampler0_unit": 0,
+      "sampler1_texture_id": 6,
+      "sampler1_unit": 1,
+      "separate_upload_capture_boundary": "Texture payloads below are from separate native RTV1 Init/setTextures capture with same pinned DSO; that capture uses texture object id 1 and does not share GL object identity with V7 ids 5/6. V7 itself records live task2 bindings, not the source upload payload. Exact source-array-to-native-upload joins are separately verified from seven initialized tile hashes and grain RGBA upload hash."
+    },
+    "uniforms_actual_task2_gl_imports": {
+      "ProjectionMatrix": [
+        0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "grain": [
+        321.0,
+        228.0
+      ],
+      "grainOffset": [
+        1.0000005960464478,
+        -2.0000059604644775
+      ],
+      "inputColor": [
+        0.42352941632270813,
+        0.8666666746139526,
+        0.5607843399047852,
+        1.0
+      ],
+      "numTiles": [
+        3.0
+      ],
+      "sampler0": [
+        0
+      ],
+      "sampler1": [
+        1
+      ]
+    }
+  },
+  "pins": {
+    "brushpen_dso": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so",
+      "sha256": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce"
+    },
+    "native_texture_init_capture_separate_run": {
+      "path": "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/brushpen-texture-native.json",
+      "sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c"
+    },
+    "same_drawing_source_capture": {
+      "bytes": 865495,
+      "path": "tmp/vector-parity-plan/brushpen-same-drawing-queue/same-drawing-native-paint.json",
+      "sha256": "fb14597bdccbe2b01583cded69d155e912358ccf00ede0f626b78fc26a4bb86e"
+    },
+    "tracked_geometry_fixture": {
+      "note": "different synthetic geometry streams; not the bytewise source for this 26-record V7 stream",
+      "path": "conformance/brushpen-saved-native.json",
+      "sha256": "a9d801c00e90cfdb6ef7ca98d4d4a068e15233d541377e80e0b7ca214e941827"
+    },
+    "v7_capture": {
+      "bytes": 871548,
+      "path": "tmp/vector-parity-plan/brushpen-sampler-query-v7/root-passive-draw.json",
+      "sha256": "4249e41e29ed810fd0ab28ea934640415a55a0a8eb57faec5b57ebd05fef96ec"
+    }
+  },
+  "review_limits": [
+    "No V7 same-context glTexImage/glTexSubImage payload was retained; upload hashes come from the separate native Init capture, related through pinned RTV1 resource roles and static R8 source joins, not a cross-context texture-id join.",
+    "The 10-pixel sparse target is exact for this captured empty RGBA8 host target and draw; it is not a general brush output model.",
+    "Blend state is not present in this V7 passive-draw query; do not infer exact destination compositing from this fixture.",
+    "The tracked saved-native geometry conformance cases are not bytewise this capture\u2019s stream."
+  ],
+  "schema": "brushpen-native-v7-paint-fixture-v1",
+  "scope": "compact retained fixture from a native RTV1 V7 passive Draw observation; controlled host Mesa RGBA8 target; not Android-device pixel parity or production route admission"
+}

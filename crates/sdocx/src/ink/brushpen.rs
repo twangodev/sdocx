@@ -6,8 +6,11 @@
 //! radius and opacity state, and stamp sampling, then models the 11-float
 //! records written by those calls. Constructor profiles and event shapes are
 //! narrow;
-//! saved device samples, GPU resources, shader execution, and pixels are
-//! outside this module.
+//! saved device samples remain outside this module. The paint child separately
+//! checks one conditional host-Mesa frame using native VBO records as input.
+
+#[cfg(feature = "serde")]
+mod paint;
 
 use super::path::{P, Quad};
 
