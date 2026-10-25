@@ -4718,6 +4718,7 @@ fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
         chinesebrush_source_color(stroke)
             .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
             .or_else(|| crate::ink::saved_airbrush_argb(stroke).map(argb_rgb))
+            .or_else(|| saved_textured_pen_argb(stroke).map(argb_rgb))
     })
 }
 
@@ -4745,6 +4746,51 @@ fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
         return None;
     }
     Some(argb_rgb(rendering.style.color_argb.unwrap_or(0xff00_0000)))
+}
+
+/// Recover explicit source RGB for the observed ColoredPencil V4 and
+/// WaterColorBrush V1/V2 Drawing routes. Their native mask/texture paint is
+/// still outside the generic vector renderer; in particular this does not
+/// transfer ARGB alpha to whole-stroke opacity.
+fn saved_textured_pen_argb(stroke: &Stroke) -> Option<u32> {
+    const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
+    const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
+
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    if rendering.metadata.is_none()
+        || rendering.tool_type_raw != 2
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || rendering
+            .style
+            .stroke_type_raw
+            .is_some_and(|value| value != 0)
+        || rendering
+            .style
+            .color_type_raw
+            .is_some_and(|value| value != 0)
+    {
+        return None;
+    }
+
+    let observed_profile = matches!(
+        (
+            rendering.pen_name.as_deref(),
+            rendering.advanced_settings.as_deref(),
+        ),
+        (Some(COLORED_PENCIL), Some("4;")) | (Some(WATERCOLOR), None | Some(""))
+    );
+    observed_profile
+        .then_some(rendering.style.color_argb)
+        .flatten()
 }
 
 /// Resolve paint for a default light or dark canvas, without document metadata.
@@ -10824,6 +10870,151 @@ mod tests {
                 "{reason}"
             );
         }
+    }
+
+    #[test]
+    fn saved_colored_pencil_v4_and_watercolor_rgb_are_bounded_to_observed_profiles() {
+        const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
+        const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
+        let source = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let make_document = |pen_name: &str, advanced_setting: Option<&str>| {
+            let mut document = source.clone();
+            let stroke = document.pages[0].strokes_mut().next().unwrap();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some(pen_name.to_owned());
+            rendering.advanced_settings = advanced_setting.map(str::to_owned);
+            rendering.tool_type_raw = 2;
+            rendering.style.color_argb = Some(0x8044_aaee);
+            rendering.style.color_type_raw = Some(0);
+            rendering.style.stroke_type_raw = Some(0);
+            rendering.properties.replay_only = false;
+            rendering.properties.eraser = false;
+            rendering.properties.fixed_width = false;
+            rendering.properties.top_layer_pen = false;
+            rendering.properties.alpha_lock = false;
+            rendering.properties.fixed_opacity = false;
+            rendering.properties.rainbow_effect = false;
+            rendering.properties.straighten = false;
+            rendering.properties.reveal_mode = false;
+            stroke.color = None;
+            document
+        };
+
+        // Native Drawing captures reached PenDrawableRT::SetPenData with the
+        // same saved ARGB for these three selected factory routes. These SVG
+        // checks cover RGB selection only; they do not assert mask/texture
+        // paint or whole-stroke alpha parity.
+        for (pen_name, setting) in [
+            (COLORED_PENCIL, Some("4;")),
+            (WATERCOLOR, None),
+            (WATERCOLOR, Some("")),
+        ] {
+            let document = make_document(pen_name, setting);
+            let stroke = document.pages[0].strokes().next().unwrap();
+            assert_eq!(
+                super::stroke_source_color(stroke),
+                Some(Color {
+                    r: 0x44,
+                    g: 0xaa,
+                    b: 0xee,
+                })
+            );
+            assert_eq!(super::stroke_paint(stroke, false).color, "#44aaee");
+            assert_eq!(super::prepare_stroke_for_page(stroke, false).opacity, 1.0);
+            let svg = render_document_svg(&document, &RenderOptions::default())[0]
+                .svg
+                .clone();
+            assert!(
+                svg.contains(r##"stroke="#44aaee""##),
+                "{pen_name} {setting:?}"
+            );
+        }
+
+        let mut public_override = make_document(COLORED_PENCIL, Some("4;"));
+        public_override.pages[0].strokes_mut().next().unwrap().color = Some(Color {
+            r: 0x12,
+            g: 0x34,
+            b: 0x56,
+        });
+        let public_stroke = public_override.pages[0].strokes().next().unwrap();
+        assert_eq!(super::stroke_paint(public_stroke, false).color, "#123456");
+        assert!(
+            render_document_svg(&public_override, &RenderOptions::default())[0]
+                .svg
+                .contains(r##"stroke="#123456""##)
+        );
+
+        type RejectedCase = (&'static str, fn(&mut Stroke));
+        let rejected: [RejectedCase; 16] = [
+            ("unobserved ColoredPencil version", |s| {
+                s.rendering.as_mut().unwrap().advanced_settings = Some("3;".into())
+            }),
+            ("unobserved WaterColor version", |s| {
+                s.rendering.as_mut().unwrap().advanced_settings = Some("1;".into())
+            }),
+            ("tool type", |s| {
+                s.rendering.as_mut().unwrap().tool_type_raw = 1
+            }),
+            ("color type", |s| {
+                s.rendering.as_mut().unwrap().style.color_type_raw = Some(1)
+            }),
+            ("stroke type", |s| {
+                s.rendering.as_mut().unwrap().style.stroke_type_raw = Some(1)
+            }),
+            ("rainbow effect", |s| {
+                s.rendering.as_mut().unwrap().properties.rainbow_effect = true
+            }),
+            ("replay only", |s| {
+                s.rendering.as_mut().unwrap().properties.replay_only = true
+            }),
+            ("eraser", |s| {
+                s.rendering.as_mut().unwrap().properties.eraser = true
+            }),
+            ("fixed width", |s| {
+                s.rendering.as_mut().unwrap().properties.fixed_width = true
+            }),
+            ("top layer", |s| {
+                s.rendering.as_mut().unwrap().properties.top_layer_pen = true
+            }),
+            ("alpha lock", |s| {
+                s.rendering.as_mut().unwrap().properties.alpha_lock = true
+            }),
+            ("fixed opacity", |s| {
+                s.rendering.as_mut().unwrap().properties.fixed_opacity = true
+            }),
+            ("straighten", |s| {
+                s.rendering.as_mut().unwrap().properties.straighten = true
+            }),
+            ("reveal mode", |s| {
+                s.rendering.as_mut().unwrap().properties.reveal_mode = true
+            }),
+            ("metadata", |s| {
+                s.rendering.as_mut().unwrap().metadata = None
+            }),
+            ("missing saved color", |s| {
+                s.rendering.as_mut().unwrap().style.color_argb = None
+            }),
+        ];
+        for (reason, mutate) in rejected {
+            let mut unsupported = make_document(WATERCOLOR, None);
+            let stroke = unsupported.pages[0].strokes_mut().next().unwrap();
+            mutate(stroke);
+            assert_eq!(
+                super::stroke_paint(stroke, false).color,
+                "#1a1a1a",
+                "{reason}"
+            );
+        }
+
+        let unsupported = make_document(COLORED_PENCIL, Some("3;"));
+        assert!(
+            render_document_svg(&unsupported, &RenderOptions::default())[0]
+                .svg
+                .contains(r##"stroke="#1a1a1a""##)
+        );
     }
 
     #[test]
