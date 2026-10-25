@@ -1,0 +1,111 @@
+{
+  "schema": "sdocx-crayon2-v2-native-geometry-v1",
+  "provenance": {
+    "application": "Samsung Notes 4.4.45.37",
+    "crayon2_dso_sha256": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+    "base_dso_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "source_capture_sha256": "177c69e32bcd7c10efa07acb44ed6237375e8c6b40fd6e6606ed5fddacf4504e",
+    "geometry_trace_sha256": "cfe336a057345e714faa29c23d8b72da5f92d48e307fce9a080abefec8706310",
+    "capture_boundary": "Synthetic Model ObjectStroke setters, native Drawing V2 selection and RedrawPen/AddPoint; captured host TYPE_3 rand adapter; no Samsung device or GPU pixel claim."
+  },
+  "profile": {
+    "advanced_setting": "2;",
+    "tool_type": 2,
+    "stroke_type": 0,
+    "curve_enabled": true,
+    "size_f32_bits": "00002041",
+    "phase_table_rvas": {
+      "x": "0x3c278",
+      "y": "0x3c340"
+    },
+    "rng": "host TYPE_3 adapter, each Crayon2 srand seed starts at 0 and increments per stamp; not Android runtime"
+  },
+  "source": {
+    "points_f32_bits": [
+      "00000000",
+      "00000000",
+      "41200000",
+      "00000000",
+      "41a00000",
+      "40000000"
+    ],
+    "pressure_f32_bits": [
+      "3e99999a",
+      "3f19999a",
+      "3f800000"
+    ],
+    "timestamps_i32": [
+      100,
+      110,
+      120
+    ],
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000"
+    ]
+  },
+  "native": {
+    "drawpoint_count": 363,
+    "record_count": 268,
+    "rand_count": 1262,
+    "binary_file": "conformance/crayon2-v2-native.bin",
+    "binary_sha256": "f401c64b56e64b828247de3434da48d6ca0f45399e59527c86924b96bd916a36",
+    "streams": {
+      "drawpoint_xy": {
+        "offset": 0,
+        "length": 2904,
+        "sha256": "6c5eb8abb29059f1464392d4f719c865055ca65363f07ef1a677e8660af9c51e"
+      },
+      "drawpoint_pressure": {
+        "offset": 2904,
+        "length": 1452,
+        "sha256": "4e97f9289114e4fa6d102f4a2838271118a1ec6b9462ed7cdc5927ee38397bbe"
+      },
+      "rng_u32_le": {
+        "offset": 4356,
+        "length": 5048,
+        "sha256": "781243bb6a6c19075200efb814348de7b8b0937d39ddf8e36444ea7fd23ea45e"
+      },
+      "rtv1_records": {
+        "offset": 9404,
+        "length": 6432,
+        "sha256": "6a9f78b87ce3a5a6d0054dc918274780a2a3f6ec617adcf69f9ec5fb6f387416"
+      },
+      "phase_x_u32_le": {
+        "offset": 15836,
+        "length": 200,
+        "sha256": "977b802e2a9f6f5aaf83f57e61908ebaea075358bb45fdac8245263e4211d0a1"
+      },
+      "phase_y_u32_le": {
+        "offset": 16036,
+        "length": 200,
+        "sha256": "a66d5f3b2f4fcb35817211674bcad373cca77981ca059b6fdfa96ef6f99829b5"
+      }
+    },
+    "record_layout": {
+      "stride_bytes": 24,
+      "f32_lanes": 6,
+      "byte_order": "little",
+      "lanes": [
+        "jittered_x",
+        "jittered_y",
+        "radius",
+        "selector",
+        "phase_x",
+        "phase_y"
+      ]
+    },
+    "expected_sha256": {
+      "drawpoint_xy": "6c5eb8abb29059f1464392d4f719c865055ca65363f07ef1a677e8660af9c51e",
+      "drawpoint_pressure": "4e97f9289114e4fa6d102f4a2838271118a1ec6b9462ed7cdc5927ee38397bbe",
+      "rng_u32_le": "781243bb6a6c19075200efb814348de7b8b0937d39ddf8e36444ea7fd23ea45e",
+      "rtv1_records": "6a9f78b87ce3a5a6d0054dc918274780a2a3f6ec617adcf69f9ec5fb6f387416"
+    }
+  }
+}
