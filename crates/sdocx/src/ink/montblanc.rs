@@ -4,6 +4,8 @@
 //! 4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350.
 //! Geometry reuses the production SmPath `Quad`; the 2,688-byte fixture is
 //! the six-f32-lane RTV1 stream from frozen baseline/pressure/size/far captures.
+//! Records are native AddStartPoint/AddPoint/AddEndPoint input tuples.
+//! RTV1 mesh expansion and painted output remain unverified by these tests.
 //! This module does not enable a production Montblanc renderer.
 use super::path::{P, Quad};
 use sha2::{Digest, Sha256};

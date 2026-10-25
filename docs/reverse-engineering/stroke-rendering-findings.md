@@ -439,3 +439,20 @@ bands do not consistently improve support. These derivative/quantization
 controls use the overridden Y-down sweep, not the native canvas-zoom capture.
 Their receipt hashes to
 `c680c9ec6f88866287a06110f5a8cd7e8f3586a2c49128ce2340455c2e851cfe`.
+
+## Crayon2 V2 saved playback
+
+The [Rust geometry checks](../../crates/sdocx/src/ink/crayon2.rs) compare three
+synthetic Model/Drawing controls, including negative coordinates and a phase
+transition, against all six packed native lanes. They use an explicit captured
+host TYPE_3 RNG adapter; Android runtime RNG equivalence remains unverified.
+
+A passive observer of the 268-instance, 256×256 host-Mesa paint control preserved
+the original readback SHA-256
+`a19f9befa9e35ad2aef2251cd90c28d0f13b1be0041334c196b6692571b20c00`.
+The projection maps one source unit to one pixel with translation `(64,64)`.
+Background sampling uses `(subbitmap dimension / 150) / background scale`;
+the captured scale was `0.75`, producing `uBgTextureScale = 2.2755556` on both
+axes. The background sampler uses unit 0 with nearest/repeat; the point atlas
+uses unit 1 with nearest/clamp. Paper sampling was disabled. These are the
+observed playback settings; exported SVG/PDF texture fidelity remains open.
