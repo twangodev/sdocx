@@ -1,8 +1,7 @@
 {
-  "schema": "sdocx-fountain-as18-glv16-rainbow-ignored-rtv5-arguments-v1",
+  "schema": "sdocx-fountain-as18-glv16-rainbow-ignored-arguments-and-rtv5-upload-v2",
   "source": "conformance/fountain-persisted-drawing-native.json cases[0] HF02 frame and source getter arrays",
-  "native_receipt_sha256": "3ecfec3cd4503ffcada68ad9dbbb223896424992af16d31a0105358b4d3ee7d7",
-  "scope": "Drawing selected GLV16; shared rainbow state was enabled with distance 37, offset f32 2.75, and three colors. Captured S0-S3 host callback arguments only; RTV5 method body and GPU are outside this receipt.",
+  "scope": "Drawing selected GLV16; the argument receipt records rainbow enabled with distance 37, offset f32 2.75, and three colors. Its S0-S3 host callback arguments are separate evidence from native_upload, which is the first rainbow-off V11 case only. V11 upload does not include a completed draw or GPU result.",
   "source_profile": {
     "advanced_settings": "18;0;100;",
     "tool_type_raw": 2,
@@ -167,5 +166,25 @@
       "79bc7e3f",
       "0000803f"
     ]
-  ]
+  ],
+  "native_upload": {
+    "receipt_sha256": "b09b0fc57efbc3403106a25f0cac18f3f1e03cf6569ea228aee2ab0dd0a09255",
+    "vector_sha256": "dbc8fe7c9830458d463c800b4b98e291e3e8927a9962f3de3ab4ec3fd5a95c98",
+    "vector_bytes": 672,
+    "record_count": 24,
+    "lane_order": [
+      "x",
+      "y",
+      "extent_x",
+      "extent_y",
+      "transparency",
+      "inner_radius",
+      "alpha_by_width"
+    ],
+    "vector_hex": "d46b66441093b344b6aebe3fb6aebe3f0000803fe64e283e0000803fd15266446a7cb344b6aebe3fb6aebe3f0000803fe64e283e0000803fd1366644f48eb34486fdce3f86fdce3f0000803fdc62433e0000803ffe2e66448eb2b344dfd8d03fdfd8d03f0000803f7d33463e0000803f932f664476c5b3447465d23f7465d23f0000803ffa82483e0000803f733a664469dfb344c48dd33fc48dd33f0000803f44374a3e0000803f224c664490f8b344d953d43fd953d43f0000803f44584b3e0000803f85656644ce0eb4440fe2d43f0fe2d43f0000803f74264c3e0000803f7e806644a224b444e554d53fe554d53f0000803f2bcc4c3e0000803f02a06644be3bb44492ced43f92ced43f0000803f430a4c3e0000803fe5c36644134cb44429f3cf3f29f3cf3f0000803fdad8443e0000803f34f16644615bb444c8b5cd3fc8b5cd3f0000803f6c6a413e0000803f901f67449461b4447e5ac43f7e5ac43f0000803f0f3c323e0000803f205e67443a64b444ba80c33fba80c33f0000803f49c8303e0000803f62836744c057b4444a2ac23f4a2ac23f0000803f15792e3e0000803f979c67441841b444e032c13fe032c13f0000803fd6c82c3e0000803fe7af6744c026b44440d2c03f40d2c03f0000803fda1e2c3e0000803fc7b86744f60db4441e80c03f1e80c03f0000803fd78d2b3e0000803f65bb674403f5b344f7febf3ff7febf3f0000803fd4a82a3e0000803faebd6744b7d7b34487ccbf3f87ccbf3f0000803f104f2a3e0000803fd4bd67445cbfb344a8a1bf3fa8a1bf3f0000803f9f022a3e0000803fd4bd67441ea5b3443c5ebf3f3c5ebf3f0000803f228a293e0000803fefbb6744588eb3443c5ebf3f3c5ebf3f0000803f228a293e0000803fd4b96744107fb3443c5ebf3f3c5ebf3f0000803f228a293e0000803f",
+    "case": "first rainbow-off V11 case only",
+    "source_arguments_receipt_sha256": "3ecfec3cd4503ffcada68ad9dbbb223896424992af16d31a0105358b4d3ee7d7",
+    "appearance_scope": "RTV5 AddPoint vector only; no completed draw or GPU result"
+  },
+  "native_addpoint_arguments_receipt_sha256": "3ecfec3cd4503ffcada68ad9dbbb223896424992af16d31a0105358b4d3ee7d7"
 }

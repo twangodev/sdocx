@@ -1779,6 +1779,120 @@ mod tests {
     }
 
     #[test]
+    fn v16_production_plan_matches_captured_rtv5_upload_records() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-as18-glv16-rainbow-ignored-native.json"
+        ))
+        .unwrap();
+        let decode_word = |hex: &str| {
+            assert_eq!(hex.len(), 8);
+            let bytes = std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            });
+            u32::from_le_bytes(bytes)
+        };
+        let upload = &fixture["native_upload"];
+        assert_eq!(
+            upload["receipt_sha256"],
+            "b09b0fc57efbc3403106a25f0cac18f3f1e03cf6569ea228aee2ab0dd0a09255"
+        );
+        assert_eq!(
+            upload["vector_sha256"],
+            "dbc8fe7c9830458d463c800b4b98e291e3e8927a9962f3de3ab4ec3fd5a95c98"
+        );
+        assert_eq!(upload["vector_bytes"].as_u64(), Some(672));
+        assert_eq!(upload["record_count"].as_u64(), Some(24));
+        assert_eq!(
+            upload["lane_order"],
+            serde_json::json!([
+                "x",
+                "y",
+                "extent_x",
+                "extent_y",
+                "transparency",
+                "inner_radius",
+                "alpha_by_width"
+            ])
+        );
+        let vector_hex = upload["vector_hex"].as_str().unwrap();
+        assert_eq!(vector_hex.len(), 672 * 2);
+
+        let arguments = fixture["native_addpoint_s0_s3_f32_bits"]
+            .as_array()
+            .unwrap();
+        assert_eq!(arguments.len(), 24);
+        let input = arguments
+            .iter()
+            .map(|record| {
+                let words = record.as_array().unwrap();
+                assert_eq!(words.len(), 4);
+                let f32_at =
+                    |index: usize| f32::from_bits(decode_word(words[index].as_str().unwrap()));
+                (
+                    Point {
+                        x: f64::from(f32_at(0)),
+                        y: f64::from(f32_at(1)),
+                    },
+                    f64::from(f32_at(2)),
+                    f32_at(3).to_bits(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let mut paint = crate::prepare_stroke(&stroke, false);
+        paint.profile = Some("FountainPen");
+        paint.points = Cow::Owned(input.iter().map(|(point, _, _)| *point).collect());
+        paint.dot_radii = Some(input.iter().map(|(_, radius, _)| *radius).collect());
+        paint.dot_directions = None;
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 2048.,
+            y_max: 2048.,
+        });
+        paint.color = "#000000".into();
+        paint.opacity = 1.;
+        let plan = V16Plan::prepare(&paint).unwrap();
+        assert_eq!(plan.stamps.len(), 24);
+
+        for (index, stamp) in plan.stamps.iter().enumerate() {
+            let offset = index * 7 * 8;
+            let native = (0..7)
+                .map(|lane| decode_word(&vector_hex[offset + lane * 8..offset + (lane + 1) * 8]))
+                .collect::<Vec<_>>();
+            assert_eq!(stamp.x.to_bits(), native[0], "stamp {index} x");
+            assert_eq!(stamp.y.to_bits(), native[1], "stamp {index} y");
+            assert_eq!(
+                stamp.extent_x.to_bits(),
+                native[2],
+                "stamp {index} extent x"
+            );
+            assert_eq!(
+                stamp.extent_y.to_bits(),
+                native[3],
+                "stamp {index} extent y"
+            );
+            assert_eq!(native[4], input[index].2, "stamp {index} transparency");
+            // This capture has unit per-stamp transparency and opaque paint;
+            // it does not establish transport of non-unit native transparency.
+            assert_eq!(native[4], 1.0_f32.to_bits());
+            assert_eq!((paint.opacity as f32).to_bits(), native[4]);
+            assert_eq!(
+                stamp.gradient_key.inner, native[5],
+                "stamp {index} inner radius"
+            );
+            assert_eq!(
+                stamp.gradient_key.alpha, native[6],
+                "stamp {index} alpha by width"
+            );
+        }
+    }
+
+    #[test]
     fn v16_instances_source_over_with_argb_alpha_per_stamp() {
         let one_svg = v16_scene(&[(32.5, 32.5, 0.1)], 1., false);
         let xml = roxmltree::Document::parse(&one_svg).unwrap();
