@@ -11,13 +11,19 @@ const GEOMETRY: &str = include_str!("../../../../../conformance/watercolor-nativ
 const STREAM: &[u8] = include_bytes!("../../../../../conformance/watercolor-native.bin");
 const PATTERN_PNG: &[u8] = include_bytes!("../../../../../conformance/watercolor-pattern.png");
 const SIZE: usize = 256;
-const SOURCE_COLOR: [f32; 4] = [
-    f32::from_bits(0x3e888889),
-    f32::from_bits(0x3f2aaaab),
-    f32::from_bits(0x3f6eeeef),
-    f32::from_bits(0x3f0d4074),
-];
 const MAX_G: u8 = 13;
+
+// PenCommon SetPenData normalizes ARGB; WaterColor getColor applies this FMA
+// before passing alpha to the shader. This is separate from mask blending.
+fn input_color(argb: u32) -> [f32; 4] {
+    let lane = |shift: u32| ((argb >> shift) & 0xff_u32) as f32 / 255.0;
+    [
+        lane(16),
+        lane(8),
+        lane(0),
+        lane(24).mul_add(f32::from_bits(0x3f66_6666), f32::from_bits(0x3dcc_cccd)),
+    ]
+}
 
 #[derive(Clone, Copy)]
 struct Vertex {
@@ -195,7 +201,7 @@ fn mul_norm8(a: u8, b: u8) -> u8 {
     x += 128;
     (x >> 8).min(255) as u8
 }
-fn shader_alpha(g: u8) -> u8 {
+fn shader_alpha(g: u8, color: [f32; 4]) -> u8 {
     // Within the observed G=0..13 domain, this expression and the captured
     // half-sample/half-ALU RNE model produce the same A8. This is a bounded LUT,
     // not a general fragment-precision or high-density shader evaluator.
@@ -203,31 +209,31 @@ fn shader_alpha(g: u8) -> u8 {
     if sample >= 0.7 {
         panic!("unmodeled high-density branch")
     }
-    unorm(((sample / 0.7) * 0.8) * SOURCE_COLOR[3])
+    unorm(((sample / 0.7) * 0.8) * color[3])
 }
 fn resvg_mul_u8(u: u8, a: u8) -> u8 {
     let x = f32::from(u) / 255.0;
     let y = f32::from(a) / 255.0;
     (((((1.0f32 * x) * y) * 255.0) as u32).min(255)) as u8
 }
-fn encoded_unpremultiplied_rgb(g: u8, c: usize) -> u8 {
-    let a = shader_alpha(g);
-    let want = mul_norm8(unorm(SOURCE_COLOR[c]), a);
+fn encoded_unpremultiplied_rgb(g: u8, c: usize, color: [f32; 4]) -> u8 {
+    let a = shader_alpha(g, color);
+    let want = mul_norm8(unorm(color[c]), a);
     (0..=255u16)
         .map(|u| u as u8)
         .filter(|&u| resvg_mul_u8(u, a) == want)
-        .min_by_key(|&u| (u.abs_diff(unorm(SOURCE_COLOR[c])), u))
+        .min_by_key(|&u| (u.abs_diff(unorm(color[c])), u))
         .expect("source-derived resvg U8 preimage")
 }
-fn table(channel: usize) -> String {
+fn table(channel: usize, color: [f32; 4]) -> String {
     (0..=255u16)
         .map(|g| {
             let value = if g as u8 > MAX_G {
                 0
             } else if channel == 3 {
-                shader_alpha(g as u8)
+                shader_alpha(g as u8, color)
             } else {
-                encoded_unpremultiplied_rgb(g as u8, channel)
+                encoded_unpremultiplied_rgb(g as u8, channel, color)
             };
             let normalized = (f32::from(value) + 0.5) / 255.0;
             assert_eq!(
@@ -240,7 +246,7 @@ fn table(channel: usize) -> String {
         .collect::<Vec<_>>()
         .join(" ")
 }
-fn filter_program() -> String {
+fn filter_program(color: [f32; 4]) -> String {
     let mut s = String::from(
         "<filter id=\"native-final-low-density\" x=\"0\" y=\"0\" width=\"256\" height=\"256\" filterUnits=\"userSpaceOnUse\" primitiveUnits=\"userSpaceOnUse\" color-interpolation-filters=\"sRGB\">",
     );
@@ -252,14 +258,14 @@ fn filter_program() -> String {
     for (name, ch) in [("R", 0), ("G", 1), ("B", 2)] {
         s.push_str(&format!(
             "<feFunc{name} type=\"discrete\" tableValues=\"{}\"/>",
-            table(ch)
+            table(ch, color)
         ));
     }
     s.push_str("</feComponentTransfer><feComponentTransfer in=\"mask-g-opaque\" result=\"shader-alpha-unorm\">");
     for name in ["R", "G", "B"] {
         s.push_str(&format!(
             "<feFunc{name} type=\"discrete\" tableValues=\"{}\"/>",
-            table(3)
+            table(3, color)
         ));
     }
     s.push_str("</feComponentTransfer><feColorMatrix in=\"shader-alpha-unorm\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"shader-alpha-white\"/><feComposite in=\"source-color-u8\" in2=\"shader-alpha-white\" operator=\"arithmetic\" k1=\"1\" k2=\"0\" k3=\"0\" k4=\"0\" result=\"native-paint-premultiplied\"/><feColorMatrix in=\"acc-14\" type=\"matrix\" values=\"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0\" result=\"mask-red-gate-source\"/><feComponentTransfer in=\"mask-red-gate-source\" result=\"mask-red-gate\"><feFuncA type=\"discrete\" tableValues=\"0 ");
@@ -284,12 +290,12 @@ fn atlas(alpha: f32) -> String {
         STANDARD.encode(image.encode_png().expect("PNG encode"))
     )
 }
-fn make_svg(rows: &[[f32; 6]]) -> String {
+fn make_svg(rows: &[[f32; 6]], color: [f32; 4]) -> String {
     assert_eq!(rows.len(), 15);
     let mut svg = String::from(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\" color-interpolation=\"sRGB\"><defs>",
     );
-    svg.push_str(&filter_program());
+    svg.push_str(&filter_program(color));
     let mut atlases = std::collections::BTreeMap::<u32, String>::new();
     for (i, row) in rows.iter().copied().enumerate() {
         let abits = row[5].to_bits();
@@ -316,7 +322,7 @@ fn make_svg(rows: &[[f32; 6]]) -> String {
     svg.push_str("</defs><rect width=\"256\" height=\"256\" filter=\"url(#native-final-low-density)\"/></svg>");
     svg
 }
-fn inputs() -> (Vec<[f32; 6]>, Value, usize) {
+fn inputs() -> (Vec<[f32; 6]>, Value, usize, u32) {
     let fixture: Value = serde_json::from_str(PAINT).unwrap();
     let geom: Value = serde_json::from_str(GEOMETRY).unwrap();
     let c = geom["cases"]
@@ -351,17 +357,18 @@ fn inputs() -> (Vec<[f32; 6]>, Value, usize) {
     let version =
         DrawableVersion::from_observed_class(c["selected_drawable_class"].as_str().unwrap())
             .unwrap();
+    let argb = u32::from_str_radix(
+        x["color_argb"].as_str().unwrap().trim_start_matches("0x"),
+        16,
+    )
+    .unwrap();
     let rows = sample_saved_stroke(
         SavedStrokeInput {
             points: &points,
             pressures: &pressure,
             timestamps: &times,
             pen_size: x["pen_size"].as_f64().unwrap() as f32,
-            color_argb: u32::from_str_radix(
-                x["color_argb"].as_str().unwrap().trim_start_matches("0x"),
-                16,
-            )
-            .unwrap(),
+            color_argb: argb,
             color_type: x["color_type"].as_u64().unwrap() as u8,
             stroke_type: x["stroke_type"].as_u64().unwrap() as u8,
             curve_enabled: x["curve_enabled"].as_bool().unwrap(),
@@ -385,11 +392,65 @@ fn inputs() -> (Vec<[f32; 6]>, Value, usize) {
             );
         }
     }
-    (rows, fixture, offset)
+    (rows, fixture, offset, argb)
 }
 #[test]
+fn watercolor_getter_matches_all_native_alpha_controls() {
+    let fixture: Value = serde_json::from_str(PAINT).unwrap();
+    let control = &fixture["color_getter_native"];
+    assert_eq!(control["count"], 256);
+    let encoded = control["alpha_f32_le_hex"].as_str().unwrap();
+    let bytes: Vec<u8> = encoded
+        .as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| {
+            let digit = |b: u8| match b {
+                b'0'..=b'9' => b - b'0',
+                b'a'..=b'f' => b - b'a' + 10,
+                _ => panic!("invalid captured float encoding"),
+            };
+            digit(pair[0]) * 16 + digit(pair[1])
+        })
+        .collect();
+    assert_eq!(bytes.len(), 256 * 4);
+    assert_eq!(
+        sha256(&bytes),
+        control["alpha_f32_sha256"].as_str().unwrap()
+    );
+    let rgb: Vec<u32> = control["rgb_f32_bits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|lane| {
+            u32::from_str_radix(lane.as_str().unwrap().trim_start_matches("0x"), 16).unwrap()
+        })
+        .collect();
+    let source_rgb = u32::from_str_radix(
+        control["source_rgb"]
+            .as_str()
+            .unwrap()
+            .trim_start_matches("0x"),
+        16,
+    )
+    .unwrap();
+    for alpha in 0..=255_u32 {
+        let actual = input_color((alpha << 24) | source_rgb);
+        assert_eq!(
+            actual[..3].iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            rgb
+        );
+        let index = alpha as usize * 4;
+        let expected = u32::from_le_bytes(bytes[index..index + 4].try_into().unwrap());
+        assert_eq!(actual[3].to_bits(), expected, "source alpha {alpha}");
+    }
+}
+
+#[test]
 fn watercolor_v1_generated_svg_matches_native_full_frame() {
-    let (rows, fixture, offset) = inputs();
+    let (rows, fixture, offset, argb) = inputs();
+    let source_color = input_color(argb);
     let geometry: Value = serde_json::from_str(GEOMETRY).unwrap();
     assert_eq!(
         sha256(GEOMETRY.as_bytes()),
@@ -418,7 +479,7 @@ fn watercolor_v1_generated_svg_matches_native_full_frame() {
     let colors = material["input_color_uniform_f32"].as_array().unwrap();
     for i in 0..4 {
         assert_eq!(
-            SOURCE_COLOR[i].to_bits(),
+            source_color[i].to_bits(),
             (colors[i].as_f64().unwrap() as f32).to_bits()
         );
     }
@@ -428,7 +489,7 @@ fn watercolor_v1_generated_svg_matches_native_full_frame() {
         rows.len(),
         fixture["source"]["instance_count"].as_u64().unwrap() as usize
     );
-    let svg = make_svg(&rows);
+    let svg = make_svg(&rows, source_color);
     assert_eq!(svg.matches("<polygon points=").count(), 30);
     assert_eq!(svg.matches("<image ").count(), 30);
     assert!(svg.contains("feComposite in=\"acc-13\" in2=\"src-14\""));
