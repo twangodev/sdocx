@@ -74,6 +74,27 @@ Sample coordinates, pressure, timestamps and optional tilt/orientation are
 decoded and retained. A retained channel is not necessarily used by a pen's
 drawing route. The [pen registry](../crates/sdocx/src/ink.rs) identifies names and
 libraries, not a renderer for every registered pen.
+
+Coverage is incomplete. The pinned APK registry has 44 names: 10 have bounded
+default page-rendering routes, 3 require explicit profiles, 16 bundled names
+still use generic strokes, 11 refer to unbundled plugins, and 4 are editing or
+transient tools whose persistent paint is not established. These counts describe
+dispatch, not complete version coverage or visual parity.
+
+| Pen family | Current saved-page rendering and missing work |
+| --- | --- |
+| Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 remains generic; InkPen2 V9 requires a profile. StraightInkPen2 remains generic. |
+| Fountain | Fountain V14 and saved AS18/V16 have bounded default routes; V17 rainbow is experimental and explicit. MontblancFountainPen remains generic. |
+| Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has its own grain and point atlas, distinct from Pencil3. |
+| Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; Marker and StraightMarker remain generic. Library aliases alone do not establish equivalent configured behavior. |
+| Textured brushes | Brush/SimpleBrush, BrushPen and AirBrushPen remain generic. AirBrush's native patterned, low-alpha stamps are not reproduced by its current opaque generic stroke. ChineseBrush V1–V3 requires an explicit profile; V4 is not reconstructed. |
+| Calligraphic nibs | MontblancCalligraphyPen V1 and Oblique V1/V4 have bounded default routes. Oblique V2/V3 and rejected settings remain generic. |
+| Paint and effects | MagicPen V1 has a bounded default route. WaterColorBrush, OilBrush3, Smudge, Beautify and TapePen remain generic; watercolor's shared mask and tape's pattern/reveal composition are not implemented. |
+| Tools and unavailable plugins | Eraser, SelectPen/SelectPen2 and LaserPen are separate tool/lifecycle questions, not verified persistent paint. Crayon, FadedPen, Glow/Blur/Mosaic families and PatternImagePen lack their plugins in the pinned APK; their straight aliases are not effect renderers. See the [complete native registry](reverse-engineering/pen-selection-findings.md). |
+
+The SDK chooser also lists TriangleMosaicPen, which is absent from the pinned
+native registry; that entry does not establish a loadable or rendered plugin.
+
 Saved-page rendering rejects sources with fewer than two points before pen
 selection, matching native Drawing. The standalone `prepare_stroke` API retains
 its compatibility tap geometry.
