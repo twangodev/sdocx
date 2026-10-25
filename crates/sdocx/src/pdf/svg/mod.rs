@@ -358,7 +358,7 @@ struct ProcessContext<'a, 'h, 'o> {
     pub(super) fonts: Fonts<'a>,
     svg_settings: SvgSettings,
     cull_viewport: Option<usvg::Rect>,
-    cull_candidates: std::collections::HashSet<usize>,
+    cull_candidates: std::collections::HashMap<usize, usvg::Rect>,
     text_hook: Option<&'h mut TextHook<'o>>,
     ink_ids: Option<&'h std::collections::HashSet<String>>,
     ink_hook: Option<&'h mut InkHook<'o>>,
@@ -371,7 +371,7 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             fonts: Fonts::new(tree_fontdb),
             svg_settings,
             cull_viewport: None,
-            cull_candidates: std::collections::HashSet::new(),
+            cull_candidates: std::collections::HashMap::new(),
             text_hook: None,
             ink_ids: None,
             ink_hook: None,
@@ -409,20 +409,15 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
 
     fn set_cull_viewport(&mut self, root: &usvg::Group, viewport: usvg::Rect) {
         self.cull_viewport = Some(viewport);
-        collect_cull_candidates(root, &mut self.cull_candidates);
+        collect_cull_candidates(root, usvg::Transform::default(), &mut self.cull_candidates);
     }
 
     pub(super) fn should_cull_node(&self, node: &usvg::Node) -> bool {
-        if !self.cull_candidates.contains(&(node as *const _ as usize)) {
-            return false;
-        }
-        let Some(viewport) = self.cull_viewport else {
+        let Some(bbox) = self.cull_candidates.get(&(node as *const _ as usize)) else {
             return false;
         };
-
-        let bbox = match node {
-            usvg::Node::Group(group) => group.abs_layer_bounding_box().to_rect(),
-            _ => node.abs_stroke_bounding_box(),
+        let Some(viewport) = self.cull_viewport else {
+            return false;
         };
         if ![bbox.left(), bbox.top(), bbox.right(), bbox.bottom()]
             .into_iter()
@@ -467,17 +462,31 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
     }
 }
 
-fn collect_cull_candidates(group: &usvg::Group, candidates: &mut std::collections::HashSet<usize>) {
+fn collect_cull_candidates(
+    group: &usvg::Group,
+    parent_transform: usvg::Transform,
+    candidates: &mut std::collections::HashMap<usize, usvg::Rect>,
+) {
     // A filter can move pixels from an offscreen child into the viewport. The filtered group's
     // own layer bounds are a safe culling boundary, but its descendants are not.
     if !group.filters().is_empty() {
         return;
     }
 
+    let group_transform = parent_transform.pre_concat(group.transform());
     for node in group.children() {
-        candidates.insert(node as *const _ as usize);
+        let paint_bounds = match node {
+            usvg::Node::Group(child) => child
+                .layer_bounding_box()
+                .to_rect()
+                .transform(group_transform.pre_concat(child.transform())),
+            _ => node.stroke_bounding_box().transform(group_transform),
+        };
+        if let Some(paint_bounds) = paint_bounds {
+            candidates.insert(node as *const _ as usize, paint_bounds);
+        }
         if let usvg::Node::Group(child) = node {
-            collect_cull_candidates(child, candidates);
+            collect_cull_candidates(child, group_transform, candidates);
         }
     }
 }
@@ -1007,6 +1016,109 @@ mod tests {
             baseline.get_page_content(baseline_page).unwrap()
         );
         assert_eq!(candidate.objects.len(), baseline.objects.len());
+    }
+
+    #[test]
+    fn transformed_use_image_uses_paint_bounds_for_culling() {
+        use base64::Engine;
+
+        fn image_tree(transform: &str) -> Tree {
+            let png = include_bytes!("../../../tests/assets/crop-quadrants.png");
+            let href = base64::engine::general_purpose::STANDARD.encode(png);
+            Tree::from_str(
+                &format!(
+                    r##"<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><image id="pattern" x="-1.572" y="-1.572" width="3.144" height="3.144" preserveAspectRatio="none" href="data:image/png;base64,{href}"/></defs><use id="stamp" href="#pattern" opacity="0.1960784" transform="{transform}"/></svg>"##
+                ),
+                &usvg::Options::default(),
+            )
+            .unwrap()
+        }
+
+        fn image_count(pdf: &lopdf::Document) -> usize {
+            pdf.objects
+                .values()
+                .filter_map(|object| match object {
+                    lopdf::Object::Dictionary(dict) => Some(dict),
+                    lopdf::Object::Stream(stream) => Some(&stream.dict),
+                    _ => None,
+                })
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
+                })
+                .count()
+        }
+
+        let visible =
+            image_tree("matrix(-0.9961947,0.087155715,-0.087155715,-0.9961947,5.704998,252.29625)");
+        let Some(node) = visible.node_by_id("stamp") else {
+            panic!("visible use node absent");
+        };
+        let mut db = visible.fontdb().clone();
+        let mut context = ProcessContext::new(Arc::make_mut(&mut db), SvgSettings::default());
+        context.set_cull_viewport(
+            visible.root(),
+            usvg::Rect::from_xywh(0.0, 0.0, 256.0, 256.0).unwrap(),
+        );
+        assert!(!context.should_cull_node(node));
+
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(256.0, 256.0).unwrap()));
+        let mut surface = page.surface();
+        surface
+            .draw_svg(
+                &visible,
+                Size::from_wh(256.0, 256.0).unwrap(),
+                SvgSettings::default(),
+            )
+            .unwrap();
+        surface.finish();
+        page.finish();
+        let visible_pdf = lopdf::Document::load_mem(&document.finish().unwrap()).unwrap();
+        assert!(
+            image_count(&visible_pdf) > 0,
+            "visible use image was culled from PDF"
+        );
+        let visible_page = visible_pdf.get_pages()[&1];
+        let visible_content = visible_pdf.get_page_content(visible_page).unwrap();
+        assert!(
+            visible_content.windows(3).any(|bytes| bytes == b"Do ")
+                || visible_content.windows(2).any(|bytes| bytes == b"Do")
+        );
+
+        let offscreen = image_tree("translate(400 400)");
+        let Some(node) = offscreen.node_by_id("stamp") else {
+            panic!("offscreen use node absent");
+        };
+        let mut db = offscreen.fontdb().clone();
+        let mut context = ProcessContext::new(Arc::make_mut(&mut db), SvgSettings::default());
+        context.set_cull_viewport(
+            offscreen.root(),
+            usvg::Rect::from_xywh(0.0, 0.0, 256.0, 256.0).unwrap(),
+        );
+        assert!(context.should_cull_node(node));
+
+        let mut document = Document::new();
+        let mut page =
+            document.start_page_with(PageSettings::new(Size::from_wh(256.0, 256.0).unwrap()));
+        let mut surface = page.surface();
+        surface
+            .draw_svg(
+                &offscreen,
+                Size::from_wh(256.0, 256.0).unwrap(),
+                SvgSettings::default(),
+            )
+            .unwrap();
+        surface.finish();
+        page.finish();
+        let offscreen_pdf = lopdf::Document::load_mem(&document.finish().unwrap()).unwrap();
+        assert_eq!(
+            image_count(&offscreen_pdf),
+            0,
+            "offscreen use image emitted PDF resources"
+        );
     }
 
     #[test]
