@@ -568,4 +568,252 @@ mod tests {
             assert_eq!(next_seed(before), after, "counter {before:#010x}");
         }
     }
+
+    #[cfg(all(feature = "render", feature = "serde"))]
+    mod paint_conformance {
+        use super::{PenData, StrokeInput, f32_bits, sample, sha256};
+        use base64::Engine as _;
+        use serde_json::Value;
+        use std::fmt::Write as _;
+
+        const PAINT_FIXTURE: &str =
+            include_str!("../../../../conformance/colored-pencil-paint-native.json");
+        const POINT_R8: &[u8] = include_bytes!("../../../../conformance/colored-pencil-point.r8");
+        const SPARSE: &[u8] =
+            include_bytes!("../../../../conformance/colored-pencil-paint-sparse.bin");
+
+        fn half_rtz_positive(value: f32) -> f32 {
+            if value == 0.0 {
+                return 0.0;
+            }
+            let bits = value.to_bits();
+            let exponent = ((bits >> 23) & 0xff) as i32 - 127;
+            assert!((-14..=15).contains(&exponent));
+            let half = (((exponent + 15) as u32) << 10) | ((bits & 0x7f_ffff) >> 13);
+            let exponent = (half >> 10) & 0x1f;
+            let mantissa = half & 0x3ff;
+            f32::from_bits(((exponent + 112) << 23) | (mantissa << 13))
+        }
+
+        fn rgba_atlas(point_r8: &[u8], argb: u32, instance_alpha: f32) -> Vec<u8> {
+            assert_eq!(point_r8.len(), 10 * 30);
+            let rgb = [
+                ((argb >> 16) & 0xff) as u8,
+                ((argb >> 8) & 0xff) as u8,
+                (argb & 0xff) as u8,
+            ];
+            let uniform_alpha = ((argb >> 24) & 0xff) as f32 / 255.0;
+            let mut bytes = Vec::with_capacity(14 * 34 * 4);
+            for py in 0_usize..34 {
+                let source_y = py.saturating_sub(2).min(29);
+                for px in 0_usize..14 {
+                    let source_x = px.saturating_sub(2).min(9);
+                    let point = f32::from(point_r8[source_y * 10 + source_x]) / 255.0;
+                    // The captured lowp sampler narrows normalized RGBA8 to FP16 with RTZ,
+                    // then widens its red lane before the two highp F32 multiplies.
+                    let sampled = half_rtz_positive(point);
+                    let color_point = uniform_alpha * sampled;
+                    let alpha = color_point * instance_alpha;
+                    // Mesa's captured source-byte path multiplies by 255 and uses the
+                    // host's nearest-even mode. The opaque control covers exact ties.
+                    let source_alpha = (alpha * 255.0).round_ties_even().clamp(0.0, 255.0) as u8;
+                    bytes.extend_from_slice(&[rgb[0], rgb[1], rgb[2], source_alpha]);
+                }
+            }
+            bytes
+        }
+
+        fn png_data_uri(rgba: &[u8]) -> String {
+            assert_eq!(rgba.len(), 14 * 34 * 4);
+            let mut encoded = Vec::new();
+            {
+                let mut encoder = png::Encoder::new(&mut encoded, 14, 34);
+                encoder.set_color(png::ColorType::Rgba);
+                encoder.set_depth(png::BitDepth::Eight);
+                let mut writer = encoder.write_header().unwrap();
+                writer.write_image_data(rgba).unwrap();
+            }
+            format!(
+                "data:image/png;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(encoded)
+            )
+        }
+
+        fn source_svg(stream: &[u8], point_r8: &[u8], argb: u32) -> String {
+            assert_eq!(stream.len(), 4 * 20, "native four-record AddPoint stream");
+            let mut svg = String::from(
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\"><g transform=\"translate(0 256) scale(1 -1)\" color-interpolation=\"sRGB\" style=\"isolation:isolate\">",
+            );
+            for (index, record) in stream.as_chunks::<20>().0.iter().enumerate() {
+                let lane = |offset: usize| {
+                    f32::from_le_bytes(record[offset..offset + 4].try_into().unwrap())
+                };
+                let center_x = f64::from(lane(0));
+                let center_y = f64::from(lane(4));
+                let half_size = f64::from(lane(8));
+                let atlas_row = lane(12) as usize;
+                let instance_alpha = lane(16);
+                assert!(atlas_row < 3);
+                let left = center_x - half_size;
+                let bottom = center_y - half_size;
+                let width = half_size * 2.0;
+                let texel = width / 10.0;
+                let image_x = left - 2.0 * texel;
+                let image_width = 14.0 * texel;
+                let image_height = 34.0 * texel;
+                let image_high = bottom + width + (2.0 + 10.0 * atlas_row as f64) * texel;
+                let image_y = image_high - image_height;
+                let reflection = image_y + image_high;
+                let rect = |value: f64| value.to_string();
+                let uri = png_data_uri(&rgba_atlas(point_r8, argb, instance_alpha));
+                write!(
+                    svg,
+                    "<defs><clipPath id=\"cp-clip-{index}\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" shape-rendering=\"crispEdges\"/></clipPath></defs><g clip-path=\"url(#cp-clip-{index})\"><image x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\" href=\"{}\" transform=\"translate(0 {}) scale(1 -1)\"/></g>",
+                    rect(left), rect(bottom), rect(width), rect(width), rect(image_x),
+                    rect(image_y), rect(image_width), rect(image_height), uri, rect(reflection)
+                )
+                .unwrap();
+            }
+            svg.push_str("</g></svg>");
+            svg
+        }
+
+        #[test]
+        fn colored_pencil_public_argb_controls_match_native_rgba8_frames() {
+            let fixture: Value = serde_json::from_str(PAINT_FIXTURE).unwrap();
+            assert_eq!(
+                fixture["schema"],
+                "sdocx-colored-pencil-v4-paint-native-sparse-v1"
+            );
+            assert_eq!(
+                POINT_R8.len(),
+                fixture["binary"]["point_atlas"]["length"].as_u64().unwrap() as usize
+            );
+            assert_eq!(
+                sha256(POINT_R8),
+                fixture["binary"]["point_atlas"]["sha256"].as_str().unwrap()
+            );
+            let expanded_rgba: Vec<u8> = POINT_R8
+                .iter()
+                .flat_map(|value| [*value, 0, 0, 0])
+                .collect();
+            assert_eq!(
+                sha256(&expanded_rgba),
+                fixture["binary"]["point_atlas"]["native_RGBA8_expanded_sha256"]
+                    .as_str()
+                    .unwrap()
+            );
+            assert_eq!(
+                sha256(SPARSE),
+                fixture["binary"]["sha256"].as_str().unwrap()
+            );
+
+            let geometry_fixture: Value = serde_json::from_str(super::FIXTURE).unwrap();
+            let case = &geometry_fixture["cases"][0];
+            let source = &case["input"];
+            let input = StrokeInput {
+                points: source["points_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|pair| super::super::P {
+                        x: f32_bits(&pair[0]),
+                        y: f32_bits(&pair[1]),
+                    })
+                    .collect(),
+                tilts: source["tilt_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(f32_bits)
+                    .collect(),
+                orientations: source["orientation_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(f32_bits)
+                    .collect(),
+                size: f32_bits(&source["size_f32_bits"]),
+                curve_enabled: source["curve_enabled"].as_bool().unwrap(),
+                tool_type: source["tool_type"].as_i64().unwrap() as i32,
+            };
+            let pen = PenData {
+                size: f32_bits(&case["pen_data"]["size_f32_bits"]),
+                width: case["pen_data"]["width"].as_i64().unwrap() as i32,
+                height: case["pen_data"]["height"].as_i64().unwrap() as i32,
+                spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
+            };
+            let sampled = sample(&input, pen).unwrap();
+            let stream_meta = &case["native_stream"];
+            let geometry_offset = stream_meta["offset"].as_u64().unwrap() as usize;
+            let geometry_len = stream_meta["length"].as_u64().unwrap() as usize;
+            assert_eq!(
+                sampled.stream.as_slice(),
+                &super::NATIVE[geometry_offset..geometry_offset + geometry_len]
+            );
+            assert_eq!(
+                sha256(&sampled.stream),
+                fixture["provenance"]["geometry_stream_sha256"]
+                    .as_str()
+                    .unwrap()
+            );
+            assert_eq!(sampled.stream.len(), 80);
+
+            for color_case in fixture["cases"].as_array().unwrap() {
+                assert_eq!(
+                    color_case["geometry_stream_sha256"].as_str().unwrap(),
+                    sha256(&sampled.stream)
+                );
+                let argb = u32::from_str_radix(
+                    color_case["argb"]
+                        .as_str()
+                        .unwrap()
+                        .trim_start_matches("0x"),
+                    16,
+                )
+                .unwrap();
+                let svg = source_svg(&sampled.stream, POINT_R8, argb);
+                let tree =
+                    resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                let sparse_meta = &color_case["sparse_pixels"];
+                let offset = sparse_meta["offset"].as_u64().unwrap() as usize;
+                let length = sparse_meta["length"].as_u64().unwrap() as usize;
+                let sparse = &SPARSE[offset..offset + length];
+                assert_eq!(
+                    sparse.len(),
+                    sparse_meta["count"].as_u64().unwrap() as usize * 8
+                );
+                assert_eq!(sha256(sparse), sparse_meta["sha256"].as_str().unwrap());
+                let mut expected = vec![0u8; 256 * 256 * 4];
+                for pixel in sparse.as_chunks::<8>().0 {
+                    let x = u16::from_le_bytes(pixel[0..2].try_into().unwrap()) as usize;
+                    let y = u16::from_le_bytes(pixel[2..4].try_into().unwrap()) as usize;
+                    assert!(x < 256 && y < 256);
+                    let dest = (y * 256 + x) * 4;
+                    assert_eq!(
+                        &expected[dest..dest + 4],
+                        &[0; 4],
+                        "duplicate native pixel coordinate"
+                    );
+                    expected[dest..dest + 4].copy_from_slice(&pixel[4..8]);
+                }
+                assert_eq!(
+                    sha256(pixmap.data()),
+                    color_case["native_rgba8_top_down_sha256"].as_str().unwrap(),
+                    "ARGB {argb:08x}"
+                );
+                assert_eq!(
+                    pixmap.data(),
+                    expected,
+                    "full native 256x256 RGBA8 frame, ARGB {argb:08x}"
+                );
+            }
+        }
+    }
 }
