@@ -136,9 +136,11 @@ reuses a real HF02 frame with explicit AS18 and rainbow setter controls:
 Drawing selects GLV16 and forwards the enabled flag, distance 37, offset 2.75
 and three colors, but both flag controls submit the same 24 RTV5 callback
 arguments. Rust checks every retained position/radius bit. This is a controlled
-metadata mutation, not a real archived rainbow document; RTV5 body execution,
-GPU pixels and device appearance are outside this receipt. Explicit GLV17
-profiles remain separate.
+metadata mutation, not a real archived rainbow document. A separate rainbow-off
+capture executes RTV5 and retains its 24 seven-float upload records (672 bytes);
+Rust's production stamp plan matches them bit for bit. These opaque controls
+do not establish rainbow-on RTV5 execution or rendered appearance. Explicit
+GLV17 profiles remain separate.
 
 The fixture reproduces the outer saved redraw's two-pass orchestration
 from `0x7b8d0..0x7b9ec`: reset width smoothing, execute a fill pass,
