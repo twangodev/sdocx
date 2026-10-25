@@ -110,7 +110,7 @@ elements!(
     Anchor,
     EmbeddedFont
 );
-elements!(Pattern, Use);
+elements!(Use);
 macro_rules! constructors {
     ($($name:ident),*) => { $(impl $name { pub fn new() -> Self { Self(Node::new(svg_element::$name::new())) } })* };
 }
@@ -137,7 +137,6 @@ containers!(
     Text,
     Anchor
 );
-containers!(Pattern);
 macro_rules! children {
     ($($name:ident),*) => { $(impl $name {
         pub fn add(mut self, child: impl Into<Node>) -> Self { self.0.append(child.into()); self }
@@ -152,12 +151,12 @@ children!(
     RadialGradient,
     SvgFilter
 );
-children!(Pattern, SvgMask);
+children!(SvgMask);
 
 pub(super) struct Scene {
     elements: Vec<Node>,
     next_id: usize,
-    shared_definitions: std::collections::HashSet<&'static str>,
+    shared_definitions: std::collections::HashSet<String>,
     geometry_diagnostics: Vec<super::GeometryDiagnostic>,
     paint_diagnostics: Vec<super::PaintDiagnostic>,
     #[cfg(feature = "pdf")]
@@ -270,6 +269,16 @@ impl Scene {
         }
     }
     pub(super) fn claim_shared_definition(&mut self, key: &'static str) -> bool {
+        if self.shared_definitions.contains(key) {
+            false
+        } else {
+            self.shared_definitions.insert(key.to_owned())
+        }
+    }
+    pub(super) fn has_shared_definition_key(&self, key: &str) -> bool {
+        self.shared_definitions.contains(key)
+    }
+    pub(super) fn claim_shared_definition_key(&mut self, key: String) -> bool {
         self.shared_definitions.insert(key)
     }
     pub fn report_geometry_issue(&mut self, issue: super::GeometryDiagnostic) {
@@ -336,8 +345,6 @@ impl SvgNode for Inline {
 
 #[derive(Clone, Copy)]
 pub(super) enum Gradient {}
-#[derive(Clone, Copy)]
-pub(super) enum PatternId {}
 #[derive(Clone, Copy)]
 pub(super) enum Mask {}
 #[derive(Clone, Copy)]
@@ -636,20 +643,6 @@ impl Image {
         // usvg ignores it as an attribute and otherwise uses bicubic sampling.
         self.0.attr("image-rendering", "optimizeSpeed");
         self.0.style("image-rendering", "pixelated");
-        self
-    }
-}
-impl Pattern {
-    pub fn user_space(id: &Definition<PatternId>, width: f64, height: f64) -> Self {
-        let mut node = Node::new(svg_element::Pattern::new());
-        node.attr("id", id.id());
-        node.attr("patternUnits", "userSpaceOnUse");
-        node.number("width", width, f64::MIN_POSITIVE..=f64::MAX);
-        node.number("height", height, f64::MIN_POSITIVE..=f64::MAX);
-        Self(node)
-    }
-    pub fn transformed(mut self, transform: Transform) -> Self {
-        self.0.optional("patternTransform", transform.text());
         self
     }
 }

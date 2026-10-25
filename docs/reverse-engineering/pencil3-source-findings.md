@@ -193,9 +193,12 @@ SVG-to-PDF route; they establish neither device parity nor a production
 transport. The scripts and measurements remain in the ignored
 `tmp/vector-parity-plan/pencil-stamp-*` experiments.
 
-The explicit public route reuses the original brush atlas and paper as two
-intrinsic images with vector stamp geometry. Decoded SVG alpha and PDF image
-soft masks preserve source values; the two assets are shared across strokes.
+The explicit public route retains the original brush atlas and repeats/clamps
+the recovered paper texels at their intrinsic density in a bounded image.
+This avoids resvg's Bicubic SVG-pattern pass and rounded repeat periods;
+Rust checks nearest samples across fractional seams in both Y conventions.
+The materials are shared by sampler/canvas/scale context, with a 64 MiB decoded
+paper budget checked before scene mutation. Stamp geometry remains vector.
 Canonical top-down host controls use a 320×180 canvas and explicit screen
 2560×1440, yielding paper scale 1. The native matrix is supplied through the
 host GL adapter, not recovered from Samsung's natural app context.

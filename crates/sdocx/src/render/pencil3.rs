@@ -3,18 +3,22 @@
 //! The two PNGs are the original single-channel texture uploads transported as
 //! alpha. The brush is stored once as a vertically reordered 16-row atlas and
 //! every dab selects a row through a clipped SVG `<use>` viewport.
+//! Paper repeats/clamps those native texels at their intrinsic density in one
+//! bounded image, avoiding pattern resampling and internal image-edge seams.
+//! Brush geometry and replay remain vector primitives.
 
 use super::vector::{
-    ColorValue, Definitions, Group, Image, Paint, Pattern, PatternId, Rectangle, ReplayPart, Scene,
-    StrokeIndex, Styled, Svg, SvgMask, Transform, Use, ViewBox,
+    ColorValue, Definitions, Group, Image, Paint, Rectangle, ReplayPart, Scene, StrokeIndex,
+    Styled, Svg, SvgMask, Transform, Use, ViewBox,
 };
 use crate::{BoundingBox, ink::pencil_source::PreparedPencil3V3};
+use std::io::Cursor;
 
 const PAPER_PNG: &[u8] = include_bytes!("pencil3_assets/paper.png");
 const BRUSH_PNG: &[u8] = include_bytes!("pencil3_assets/brush-atlas.png");
-const PAPER_IMAGE_ID: &str = "sdocx-pencil3-paper-image";
 const BRUSH_IMAGE_ID: &str = "sdocx-pencil3-brush-atlas";
 const MAX_RECORDS: usize = 2_048;
+const MAX_PAPER_RGBA_BYTES: usize = 64 * 1024 * 1024;
 const TEXTURE_SIZE: f64 = 150.0;
 const BRUSH_ROW_SIZE: f64 = 120.0;
 const BRUSH_ROWS: usize = 16;
@@ -71,48 +75,90 @@ pub(super) fn render(
 
     let width = f64::from(context.canvas_width);
     let height = f64::from(context.canvas_height);
-    let period = TEXTURE_SIZE * f64::from(context.background_scale);
-    let paper_pattern = scene.definition::<PatternId>();
-    let instance_id = paper_pattern.id_text();
+    let background_scale = f64::from(context.background_scale);
+    let Some(padding) = paper_padding(background_scale) else {
+        return false;
+    };
+    let Some((plane_width, plane_height, plane_bytes)) =
+        paper_plane_dimensions(width, height, background_scale, padding)
+    else {
+        return false;
+    };
+    let pad_world = padding as f64 * background_scale;
+    let plane_width_world = plane_width as f64 * background_scale;
+    let plane_height_world = plane_height as f64 * background_scale;
+    // usvg geometry and transforms are binary32 even though SVG attributes
+    // are serialized as f64. Reject an unrepresentable material before any
+    // scene definitions or shared-image bookkeeping change.
+    if [pad_world, plane_width_world, plane_height_world]
+        .iter()
+        .any(|value| !value.is_finite() || *value > f64::from(f32::MAX))
+    {
+        return false;
+    }
+    let sampler_key = match context.paper_sampler {
+        Pencil3PaperSampler::Repeat => "repeat",
+        Pencil3PaperSampler::ClampToEdge => "clamp",
+    };
+    let paper_asset_key = format!(
+        "pencil3-paper-plane-{sampler_key}-{}x{}-scale{:08x}",
+        context.canvas_width,
+        context.canvas_height,
+        context.background_scale.to_bits(),
+    );
+    let paper_image_id = format!("sdocx-{paper_asset_key}-image");
+    let paper_png = if scene.has_shared_definition_key(&paper_asset_key) {
+        None
+    } else {
+        match make_paper_plane(
+            context.paper_sampler,
+            padding,
+            plane_width,
+            plane_height,
+            plane_bytes,
+        ) {
+            Some(bytes) => Some(bytes),
+            None => return false,
+        }
+    };
+    let instance_id = scene.definition::<super::vector::Mask>().id_text();
     let paper_mask_id = format!("sdocx-pencil3-paper-mask-{instance_id}");
 
     let mut definitions = Definitions::new();
-    if scene.claim_shared_definition("pencil3-intrinsic-images") {
-        definitions = definitions
-            .add(
-                Image::embedded(PAPER_PNG, "image/png")
-                    .id(PAPER_IMAGE_ID)
-                    .x(0.0)
-                    .y(0.0)
-                    .width(TEXTURE_SIZE)
-                    .height(TEXTURE_SIZE)
-                    .stretched()
-                    .pixelated(),
-            )
-            .add(
-                Image::embedded(BRUSH_PNG, "image/png")
-                    .id(BRUSH_IMAGE_ID)
-                    .x(0.0)
-                    .y(0.0)
-                    .width(BRUSH_ROW_SIZE)
-                    .height(BRUSH_ROW_SIZE * BRUSH_ROWS as f64)
-                    .stretched()
-                    .pixelated(),
-            );
-    }
-
-    let paper = make_paper_pattern(paper_pattern, width, height, period, context);
-    definitions = definitions.add(paper);
-    definitions = definitions.add(
-        SvgMask::alpha(&paper_mask_id, 0.0, 0.0, width, height).add(
-            Rectangle::new()
+    if scene.claim_shared_definition("pencil3-brush-atlas") {
+        definitions = definitions.add(
+            Image::embedded(BRUSH_PNG, "image/png")
+                .id(BRUSH_IMAGE_ID)
                 .x(0.0)
                 .y(0.0)
-                .width(width)
-                .height(height)
-                .fill(Paint::Pattern(paper_pattern)),
-        ),
-    );
+                .width(BRUSH_ROW_SIZE)
+                .height(BRUSH_ROW_SIZE * BRUSH_ROWS as f64)
+                .stretched()
+                .pixelated(),
+        );
+    }
+    if let Some(bytes) = paper_png
+        && scene.claim_shared_definition_key(paper_asset_key)
+    {
+        definitions = definitions.add(
+            Image::embedded(&bytes, "image/png")
+                .id(&paper_image_id)
+                .x(-pad_world)
+                .y(-pad_world)
+                .width(plane_width_world)
+                .height(plane_height_world)
+                .stretched()
+                .pixelated(),
+        );
+    }
+
+    let mut paper_image = Group::new().add(Use::href(&paper_image_id));
+    if !context.y_up {
+        paper_image =
+            paper_image.transformed(Transform::matrix([1.0, 0.0, 0.0, -1.0, 0.0, height], 0, 0));
+    }
+    definitions =
+        definitions.add(SvgMask::alpha(&paper_mask_id, 0.0, 0.0, width, height).add(paper_image));
 
     for (index, record) in records.iter().enumerate() {
         let [x, y, half, row, _] = *record;
@@ -191,122 +237,122 @@ fn valid_bounds(bounds: BoundingBox) -> bool {
         && bounds.y_min <= bounds.y_max
 }
 
-fn make_paper_pattern(
-    pattern_id: super::vector::Definition<PatternId>,
+fn paper_padding(background_scale: f64) -> Option<usize> {
+    if !background_scale.is_finite() || background_scale <= 0.0 {
+        return None;
+    }
+    let padding = (1.0 / background_scale).ceil() + 1.0;
+    if !padding.is_finite() || padding > usize::MAX as f64 {
+        return None;
+    }
+    Some(padding as usize)
+}
+
+fn paper_plane_dimensions(
     canvas_width: f64,
     canvas_height: f64,
-    period: f64,
-    context: Pencil3PaintContext,
-) -> Pattern {
-    let (pattern_width, pattern_height) = match context.paper_sampler {
-        Pencil3PaperSampler::Repeat => (period, period),
-        Pencil3PaperSampler::ClampToEdge => (canvas_width, canvas_height),
-    };
-    let mut pattern = Pattern::user_space(&pattern_id, pattern_width, pattern_height);
-    if !context.y_up {
-        pattern = pattern.transformed(Transform::matrix(
-            [1.0, 0.0, 0.0, -1.0, 0.0, canvas_height],
-            0,
-            0,
-        ));
+    background_scale: f64,
+    padding: usize,
+) -> Option<(usize, usize, usize)> {
+    if !canvas_width.is_finite()
+        || !canvas_height.is_finite()
+        || canvas_width <= 0.0
+        || canvas_height <= 0.0
+        || !background_scale.is_finite()
+        || background_scale <= 0.0
+    {
+        return None;
     }
+    let core_width = usize::try_from((canvas_width / background_scale).ceil() as u64).ok()?;
+    let core_height = usize::try_from((canvas_height / background_scale).ceil() as u64).ok()?;
+    let pad = padding.checked_mul(2)?;
+    let plane_width = core_width.checked_add(pad)?;
+    let plane_height = core_height.checked_add(pad)?;
+    let bytes = plane_width.checked_mul(plane_height)?.checked_mul(4)?;
+    if plane_width == 0
+        || plane_height == 0
+        || plane_width > u32::MAX as usize
+        || plane_height > u32::MAX as usize
+        || bytes > MAX_PAPER_RGBA_BYTES
+    {
+        return None;
+    }
+    Some((plane_width, plane_height, bytes))
+}
 
-    match context.paper_sampler {
-        Pencil3PaperSampler::Repeat => pattern.add(
-            Svg::new()
-                .x(0.0)
-                .y(0.0)
-                .width(period)
-                .height(period)
-                .view_box(ViewBox::unrounded(0.0, 0.0, TEXTURE_SIZE, TEXTURE_SIZE))
-                .preserve_aspect_none()
-                .add(Use::href(PAPER_IMAGE_ID)),
-        ),
-        Pencil3PaperSampler::ClampToEdge => {
-            let source_width = TEXTURE_SIZE * f64::from(context.background_scale);
-            let source_height = source_width;
-            let mut viewport = Svg::new()
-                .x(0.0)
-                .y(0.0)
-                .width(canvas_width)
-                .height(canvas_height)
-                .view_box(ViewBox::unrounded(0.0, 0.0, canvas_width, canvas_height))
-                .preserve_aspect_none()
-                .clipped_viewport()
-                .add(
-                    Svg::new()
-                        .x(0.0)
-                        .y(0.0)
-                        .width(source_width)
-                        .height(source_height)
-                        .view_box(ViewBox::unrounded(0.0, 0.0, TEXTURE_SIZE, TEXTURE_SIZE))
-                        .preserve_aspect_none()
-                        .clipped_viewport()
-                        .add(Use::href(PAPER_IMAGE_ID)),
-                );
-
-            if canvas_width > source_width {
-                viewport = viewport.add(clamp_viewport(
-                    source_width,
-                    0.0,
-                    canvas_width - source_width,
-                    source_height.min(canvas_height),
-                    TEXTURE_SIZE - 1.0,
-                    0.0,
-                    1.0,
-                    TEXTURE_SIZE,
-                ));
+fn paper_source_index(
+    plane_coordinate: usize,
+    padding: usize,
+    sampler: Pencil3PaperSampler,
+) -> usize {
+    if plane_coordinate < padding {
+        return match sampler {
+            Pencil3PaperSampler::Repeat => {
+                let before = (padding - plane_coordinate) % TEXTURE_SIZE as usize;
+                (TEXTURE_SIZE as usize - before) % TEXTURE_SIZE as usize
             }
-            if canvas_height > source_height {
-                viewport = viewport.add(clamp_viewport(
-                    0.0,
-                    source_height,
-                    source_width.min(canvas_width),
-                    canvas_height - source_height,
-                    0.0,
-                    TEXTURE_SIZE - 1.0,
-                    TEXTURE_SIZE,
-                    1.0,
-                ));
-            }
-            if canvas_width > source_width && canvas_height > source_height {
-                viewport = viewport.add(clamp_viewport(
-                    source_width,
-                    source_height,
-                    canvas_width - source_width,
-                    canvas_height - source_height,
-                    TEXTURE_SIZE - 1.0,
-                    TEXTURE_SIZE - 1.0,
-                    1.0,
-                    1.0,
-                ));
-            }
-            pattern.add(viewport)
-        }
+            Pencil3PaperSampler::ClampToEdge => 0,
+        };
+    }
+    let coordinate = plane_coordinate - padding;
+    match sampler {
+        Pencil3PaperSampler::Repeat => coordinate % TEXTURE_SIZE as usize,
+        Pencil3PaperSampler::ClampToEdge => coordinate.min(TEXTURE_SIZE as usize - 1),
     }
 }
 
-// Explicit target rectangle and source crop describe the edge extrusion.
-#[allow(clippy::too_many_arguments)]
-fn clamp_viewport(
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    view_x: f64,
-    view_y: f64,
-    view_width: f64,
-    view_height: f64,
-) -> Svg {
-    Svg::new()
-        .x(x)
-        .y(y)
-        .width(width)
-        .height(height)
-        .view_box(ViewBox::unrounded(view_x, view_y, view_width, view_height))
-        .preserve_aspect_none()
-        .clipped_viewport()
-        .add(Use::href(PAPER_IMAGE_ID))
+fn make_paper_plane(
+    sampler: Pencil3PaperSampler,
+    padding: usize,
+    plane_width: usize,
+    plane_height: usize,
+    expected_bytes: usize,
+) -> Option<Vec<u8>> {
+    let mut decoder = png::Decoder::new(Cursor::new(PAPER_PNG));
+    decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+    let mut reader = decoder.read_info().ok()?;
+    let input_len = reader.output_buffer_size()?;
+    if input_len != TEXTURE_SIZE as usize * TEXTURE_SIZE as usize * 4 {
+        return None;
+    }
+    let mut source = vec![0; input_len];
+    let frame = reader.next_frame(&mut source).ok()?;
+    if frame.width != TEXTURE_SIZE as u32
+        || frame.height != TEXTURE_SIZE as u32
+        || frame.color_type != png::ColorType::Rgba
+        || frame.bit_depth != png::BitDepth::Eight
+        || frame.buffer_size() != input_len
+    {
+        return None;
+    }
+    reader.finish().ok()?;
+
+    let mut pixels = vec![0; expected_bytes];
+    for y in 0..plane_height {
+        let source_y = paper_source_index(y, padding, sampler);
+        for x in 0..plane_width {
+            let source_x = paper_source_index(x, padding, sampler);
+            let source_offset = (source_y * TEXTURE_SIZE as usize + source_x) * 4;
+            let target_offset = (y * plane_width + x) * 4;
+            pixels[target_offset..target_offset + 4]
+                .copy_from_slice(&source[source_offset..source_offset + 4]);
+        }
+    }
+
+    let mut encoded = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(
+            &mut encoded,
+            u32::try_from(plane_width).ok()?,
+            u32::try_from(plane_height).ok()?,
+        );
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().ok()?;
+        writer.write_image_data(&pixels).ok()?;
+        writer.finish().ok()?;
+    }
+    Some(encoded)
 }
 
 fn atlas_y(native_row: usize) -> usize {
@@ -355,5 +401,173 @@ mod tests {
             alpha_digest(&brush),
             "3ba7ad07529987c81ca5552cf91e256548d1cb7de90720fd96aad4948776674b"
         );
+    }
+}
+
+#[cfg(test)]
+mod paper_sampling_tests {
+    use super::*;
+
+    fn transparent_source() -> PreparedPencil3V3 {
+        PreparedPencil3V3 {
+            records: vec![[1.0, 1.0, 0.5, 0.0, 0.0]],
+            sample_ends: vec![1],
+            bounds: BoundingBox {
+                x_min: 0.5,
+                y_min: 0.5,
+                x_max: 1.5,
+                y_max: 1.5,
+            },
+            color: crate::Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
+            opacity: 0.0,
+        }
+    }
+
+    fn paper_pixels(context: Pencil3PaintContext) -> Vec<u8> {
+        let mut scene = Scene::new(
+            Svg::new()
+                .width(256)
+                .height(256)
+                .view_box(ViewBox::unrounded(0.0, 0.0, 256.0, 256.0)),
+        );
+        let source = transparent_source();
+        assert!(render(&mut scene, &source, context, None));
+        let svg = scene.finish();
+        let prefix = "id=\"sdocx-pencil3-paper-mask-";
+        let start = svg.find(prefix).unwrap() + "id=\"".len();
+        let id = svg[start..].split('"').next().unwrap();
+        // Inspect the actual production paper mask, independently of the
+        // brush texture and per-stamp opacity (the dummy dab is transparent).
+        let overlay = format!(
+            "<rect width=\"256\" height=\"256\" fill=\"white\" mask=\"url(#{id})\"/></svg>"
+        );
+        let root_end = svg.rfind("</svg>").unwrap();
+        let svg = format!("{}{}", &svg[..root_end], overlay);
+        let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixels.as_mut(),
+        );
+        pixels.data().to_vec()
+    }
+
+    #[test]
+    fn paper_preserves_native_nearest_texels_at_fractional_period_and_seams() {
+        let decoder = png::Decoder::new(std::io::Cursor::new(PAPER_PNG));
+        let mut reader = decoder.read_info().unwrap();
+        let mut paper = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut paper).unwrap();
+        assert_eq!(info.color_type, png::ColorType::Rgba);
+        assert_eq!((info.width, info.height), (150, 150));
+        for paper_sampler in [
+            Pencil3PaperSampler::Repeat,
+            Pencil3PaperSampler::ClampToEdge,
+        ] {
+            for y_up in [true, false] {
+                let context = Pencil3PaintContext {
+                    canvas_width: 256,
+                    canvas_height: 256,
+                    background_scale: 0.75,
+                    paper_sampler,
+                    y_up,
+                };
+                let pixels = paper_pixels(context);
+                for (x, y) in [
+                    (5, 7),
+                    (57, 81),
+                    (111, 23),
+                    (112, 23),
+                    (113, 23),
+                    (225, 23),
+                    (33, 111),
+                    (33, 112),
+                    (33, 113),
+                    (33, 225),
+                ] {
+                    let source_x = (x as f64 + 0.5) / 0.75;
+                    let source_y = if y_up {
+                        y as f64 + 0.5
+                    } else {
+                        256.0 - y as f64 - 0.5
+                    } / 0.75;
+                    let index = |v: f64| match paper_sampler {
+                        Pencil3PaperSampler::Repeat => v.floor().rem_euclid(150.0) as usize,
+                        Pencil3PaperSampler::ClampToEdge => v.floor().clamp(0.0, 149.0) as usize,
+                    };
+                    let expected = paper[(index(source_y) * 150 + index(source_x)) * 4 + 3];
+                    let actual = pixels[(y * 256 + x) * 4 + 3];
+                    assert_eq!(
+                        actual, expected,
+                        "{paper_sampler:?} y_up={y_up} pixel=({x},{y})"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn rejected_paper_contexts_leave_the_scene_unchanged() {
+        let source = transparent_source();
+        let context = Pencil3PaintContext {
+            canvas_width: 256,
+            canvas_height: 256,
+            background_scale: 0.75,
+            paper_sampler: Pencil3PaperSampler::Repeat,
+            y_up: true,
+        };
+        let new_scene = || Scene::new(Svg::new().width(256).height(256));
+        let mut scene = new_scene();
+        for scale in [f32::MIN_POSITIVE, 0.00001, f32::MAX] {
+            assert!(!render(
+                &mut scene,
+                &source,
+                Pencil3PaintContext {
+                    background_scale: scale,
+                    ..context
+                },
+                None
+            ));
+        }
+        assert!(render(&mut scene, &source, context, None));
+        let mut fresh = new_scene();
+        assert!(render(&mut fresh, &source, context, None));
+        assert_eq!(scene.finish(), fresh.finish());
+    }
+
+    #[test]
+    fn paper_images_are_shared_by_exact_sampler_context() {
+        let source = transparent_source();
+        let mut scene = Scene::new(Svg::new().width(256).height(256));
+        let context = Pencil3PaintContext {
+            canvas_width: 256,
+            canvas_height: 256,
+            background_scale: 0.75,
+            paper_sampler: Pencil3PaperSampler::Repeat,
+            y_up: true,
+        };
+        assert!(render(&mut scene, &source, context, None));
+        assert!(render(&mut scene, &source, context, None));
+        assert!(render(
+            &mut scene,
+            &source,
+            Pencil3PaintContext {
+                paper_sampler: Pencil3PaperSampler::ClampToEdge,
+                ..context
+            },
+            None
+        ));
+        let svg = scene.finish();
+        assert_eq!(
+            svg.matches("data:image/png;base64,").count(),
+            3,
+            "one shared brush atlas and two distinct paper samplers"
+        );
+        assert!(!svg.contains("<pattern"));
     }
 }
