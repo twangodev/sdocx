@@ -1,0 +1,165 @@
+{
+  "schema": "sdocx-watercolor-native-v1",
+  "scope": "Two root-executed native Drawing calls on synthetic Model-setter ObjectStroke inputs; one stroke per call. This is saved-stroke RT AddPoint geometry/style evidence, not a full GL bitmap render or SDK-deserialized document.",
+  "stream": {
+    "endianness": "little",
+    "record_format": [
+      "x",
+      "y",
+      "sin_phase",
+      "cos_phase",
+      "width_like",
+      "alpha_coefficient"
+    ],
+    "record_stride_bytes": 24,
+    "record_count": 30,
+    "sha256": "51ddbec0fb4ec55ac93f51d50c387f2e62bdac9f3a88df853951118c78b001dd",
+    "source_signature": "SPen::WaterColorBrushStrokeDrawableRTV1::AddPoint(Vector2<float>, float, float), DSO RVA 0x65430",
+    "native_buffer": "A flat std::vector<float>; DrawObjectStroke captures show 15 appended six-f32 records per case."
+  },
+  "cases": [
+    {
+      "case_id": "advanced-setting-null",
+      "advanced_setting": null,
+      "selected_drawable_class": "WaterColorBrushStrokeDrawableGLV1",
+      "stream_offset_bytes": 0,
+      "record_count": 15,
+      "input": {
+        "points_xy": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            5
+          ],
+          [
+            30,
+            5
+          ]
+        ],
+        "pressure": [
+          0.1,
+          0.35,
+          0.7,
+          1.0
+        ],
+        "timestamps": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "pen_size": 8.0,
+        "color_argb": "0x8044aaee",
+        "color_type": 0,
+        "stroke_type": 0,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "canvas": [
+          1920,
+          1080
+        ]
+      },
+      "native_capture_sha256": "7a3ed9bee6c27b97a5ac646ed9e3af68e24bfad065292339d945e4955d5fb0a7"
+    },
+    {
+      "case_id": "advanced-setting-empty",
+      "advanced_setting": "",
+      "selected_drawable_class": "WaterColorBrushStrokeDrawableGLV2",
+      "stream_offset_bytes": 360,
+      "record_count": 15,
+      "input": {
+        "points_xy": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            5
+          ],
+          [
+            30,
+            5
+          ]
+        ],
+        "pressure": [
+          0.1,
+          0.35,
+          0.7,
+          1.0
+        ],
+        "timestamps": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "pen_size": 8.0,
+        "color_argb": "0x8044aaee",
+        "color_type": 0,
+        "stroke_type": 0,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "canvas": [
+          1920,
+          1080
+        ]
+      },
+      "native_capture_sha256": "b5bc8fb4553752af7a37f2fc1760db0c875ede7ec30746f1bfe57deafd85e630"
+    }
+  ],
+  "provenance": {
+    "native_libraries_sha256": {
+      "libSPenWaterColorBrush.so": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea",
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+    },
+    "drawing_caller_capture_runner": {
+      "path": "scratch/watercolor-drawing-caller-v1-root-1/watercolor_drawing_capture.py",
+      "sha256": "4d1a59f60405f98411b959166c27d9861c437e7a17f629a03d2b5cb0d6d8aee2"
+    },
+    "selector_capture_runner": {
+      "path": "scratch/watercolor-selector-capture-v2/watercolor_factory_selector_capture.py",
+      "sha256": "7c716628498c566f81fbb0102c919211ca063a156d1549e5596a27919d38d62e"
+    },
+    "selector_preflight_manifest_sha256": "f03fd21e9b180068e018c9861864098cf44c35b5e21523307355b5548c10a436",
+    "geometry_source": {
+      "path": "crates/sdocx/src/ink/path.rs",
+      "sha256": "1eb781fc613cc10039caf3065c10d578c6ffffbfae4f9433cf1e161b804fc019"
+    },
+    "independent_rust_sampler": {
+      "path": "scratch/watercolor-addpoint-rust-sampler/full_sampler.rs",
+      "sha256": "d05c7fe8871cc62f0d765dacc7e0d8e7764384a02b1318f3fbb320ab10d876ba"
+    },
+    "capture_notes": [
+      "WaterColor factory class was observed after Drawing dispatch; advanced-setting null selected V1 and empty selected V2.",
+      "The root comparison verified lanes 0 through 4 equal across the two classes; lane 5 diverged as expected from their distinct time scaling.",
+      "The capture runner records a negative sincos callsite RVA due to a metadata base-subtraction bug; native AddPoint LR and source identify the AddPoint callsite at WaterColor RVA 0x65478/return 0x6547c. This does not alter captured RT stream bytes."
+    ]
+  },
+  "host_math_reconstruction": {
+    "profile": "x86_64 glibc 2.41 sincosf selected FMA path; independent bounded arithmetic reconstruction, not Android math",
+    "resolver_rva": "0x6e8a0",
+    "selected_target_rva": "0x838c0",
+    "candidate_sha256": "9768655df9a4db33697e5ff7b92f454ececb7619e219b5b7ddea47e3e5461262",
+    "contract_sha256": "12c3b58d078478e8c9243710759aa886ec32081ed11709795309553a5da7a30f",
+    "reason": "Generic Rust libm float and double trig differ by one ULP at a captured phase; compare every native record bit with the actual capture math profile.",
+    "libm_sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    "independent_cpu_differential": "899277 Python model inputs versus the selected host IFUNC, zero bit mismatches; ignored receipt SHA25694627576799bbb72c09f62366d10b478d117823f752fbc520ae1044b91d00b12",
+    "root_rust_differential": "200002 actual Rust candidate inputs versus the selected host IFUNC, zero bit mismatches; comparison source retained in ignored watercolor-glibc-sincosf-root-audit-v1"
+  }
+}
