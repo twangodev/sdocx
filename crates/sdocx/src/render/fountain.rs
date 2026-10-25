@@ -834,16 +834,23 @@ impl V16Plan {
                     .replay_part(replay.then_some(ReplayPart(index + 1)))
                     .transformed(transform);
                 if native_quad_geometry {
-                    svg.push(
-                        stamp.add(
-                            Rectangle::new()
-                                .x(-1)
-                                .y(-1)
-                                .width(2)
-                                .height(2)
-                                .fill(Paint::Gradient(*gradient)),
-                        ),
-                    );
+                    let quad = Rectangle::new()
+                        .x(-1)
+                        .y(-1)
+                        .width(2)
+                        .height(2)
+                        .fill(Paint::Gradient(*gradient));
+                    // RTV5's single-sampled quad supplies no edge coverage:
+                    // its fragment shader owns the radial antialiasing field.
+                    // SVG shape antialiasing would multiply that field again
+                    // near a small quad's boundary. Keep retained PDF paint on
+                    // its existing representation and sampling path.
+                    let quad = if svg.retains_text() {
+                        quad
+                    } else {
+                        quad.crisp_edges()
+                    };
+                    svg.push(stamp.add(quad));
                 } else {
                     svg.push(stamp.add(Circle::new().r(1).fill(Paint::Gradient(*gradient))));
                 }
@@ -2160,7 +2167,26 @@ mod tests {
             (svg, ink, text)
         };
 
+        let mut ordinary = Scene::new(Svg::new().width(64).height(64));
+        assert!(render(&mut ordinary, &make_paint(0.5, None), false, None));
+        let ordinary = ordinary.finish();
+        let ordinary_document = roxmltree::Document::parse(&ordinary).unwrap();
+        let quads = ordinary_document
+            .descendants()
+            .filter(|node| node.has_tag_name("rect"))
+            .collect::<Vec<_>>();
+        assert_eq!(quads.len(), 2);
+        assert!(
+            quads
+                .iter()
+                .all(|quad| quad.attribute("shape-rendering") == Some("crispEdges"))
+        );
+
         let (svg, ink, text) = render_retained(&make_paint(1.0, None));
+        assert!(
+            !svg.contains("shape-rendering"),
+            "retained PDF paint keeps its existing sampling path"
+        );
         assert!(
             svg.contains("<rect"),
             "opaque canonical V16 uses native quad bounds"
@@ -2674,6 +2700,119 @@ mod tests {
             );
             if argb >> 24 == 128 {
                 assert_ne!((paint.opacity as f32).to_bits(), 1.0_f32.to_bits());
+            }
+        }
+    }
+
+    #[test]
+    fn v16_crisp_quad_matches_captured_radial_shader_pixels() {
+        // Host Mesa direct shader replay, not native Drawing; replay-pair.json
+        // SHA-256 7ddcd6f56d925aeaf7312ca435f52fcd5c89d3b8474d7e8a60508bb3d4764170.
+        // Samples are top-down after the captured GL readback row flip.
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let center = Point {
+            x: f64::from(f32::from_bits(0x4304_d2ef)),
+            y: f64::from(f32::from_bits(0x4353_619f)),
+        };
+        let cases = [
+            (
+                1.0_f32,
+                128_u8,
+                [1.0000000521540642, 0., 0., -0.9999999823048711, 0., 1080.],
+                [
+                    0x4304_d2ef,
+                    0x4353_619f,
+                    0x3f80_0000,
+                    0x3f80_0000,
+                    0x3f80_0000,
+                    0,
+                    0x3e4c_cccd,
+                ],
+                [(132, 869, 2), (132, 868, 17), (133, 868, 8)],
+            ),
+            (
+                2.0_f32,
+                255_u8,
+                [
+                    2.0000001043081284,
+                    0.,
+                    0.,
+                    -1.9999999646097422,
+                    -124.1989517211912,
+                    1297.3813676834106,
+                ],
+                [
+                    0x4304_d2ef,
+                    0x4353_619f,
+                    0x3f00_0000,
+                    0x3f00_0000,
+                    0x3f80_0000,
+                    0,
+                    0x3ecc_cccd,
+                ],
+                [(141, 875, 12), (140, 874, 4), (141, 874, 89)],
+            ),
+        ];
+
+        for (q, alpha, matrix, native_record, pixels) in cases {
+            let mut paint = crate::prepare_stroke(&stroke, false);
+            paint.profile = Some("FountainPen");
+            paint.points = Cow::Owned(vec![center]);
+            paint.dot_radii = Some(vec![f64::from(0.1_f32)]);
+            paint.dot_directions = None;
+            paint.bounds = Some(BoundingBox {
+                x_min: 0.,
+                y_min: 0.,
+                x_max: 1920.,
+                y_max: 1080.,
+            });
+            paint.color = "#000000".into();
+            paint.opacity = f64::from(alpha as f32 / 255.0);
+            paint.fountain_v17_rgb = None;
+            paint.fountain_output_scale = Some(q);
+            let stamp = V16Plan::prepare(&paint).unwrap().stamps[0];
+            assert_eq!(
+                [
+                    stamp.x.to_bits(),
+                    stamp.y.to_bits(),
+                    stamp.extent_x.to_bits(),
+                    stamp.extent_y.to_bits(),
+                    1.0_f32.to_bits(),
+                    stamp.gradient_key.inner,
+                    stamp.gradient_key.alpha,
+                ],
+                native_record,
+                "native seven-float record at q={q}, alpha={alpha}"
+            );
+
+            let mut scene = Scene::new(
+                Svg::new()
+                    .width(1920)
+                    .height(1080)
+                    .view_box(super::super::vector::ViewBox::new(0., 0., 1920., 1080., 1)),
+            );
+            scene.scope(
+                Group::new().transformed(Transform::matrix_unrounded(matrix)),
+                |svg| assert!(render(svg, &paint, false, None)),
+            );
+            let tree =
+                resvg::usvg::Tree::from_str(&scene.finish(), &resvg::usvg::Options::default())
+                    .unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            for (x, y, expected) in pixels {
+                let actual = pixmap.pixel(x, y).unwrap().alpha();
+                assert!(
+                    actual.abs_diff(expected) <= 1,
+                    "q={q}, alpha={alpha}, ({x},{y}): SVG {actual}, captured {expected}"
+                );
             }
         }
     }

@@ -563,6 +563,13 @@ impl Group {
         self
     }
 }
+impl Rectangle {
+    /// Leave coverage to the paint field instead of antialiasing its quad boundary.
+    pub fn crisp_edges(mut self) -> Self {
+        self.0.attr("shape-rendering", "crispEdges");
+        self
+    }
+}
 impl Path {
     /// Hide decorative vector paths from the SVG accessibility tree.
     pub(in crate::render) fn aria_hidden(mut self) -> Self {

@@ -31,6 +31,12 @@ const SCALE_SWEEP_RAINBOW_SHA256: &str =
     "b858dec2803116a319b6eb6a11822564792b7404c9215a4d69d4c141045b180a";
 const SCALE_SWEEP_RAINBOW_VALIDATION_SHA256: &str =
     "7701867da41cfbe31be4713a06376a00e813a0c18b7cd41cf2da59d0381534b3";
+const RADIAL_REPLAY_RUNNER_SHA256: &str =
+    "c7130f0549ebd860a5d13e3ff1c8a9a9ff5359ece29ff2ead73033907f395944";
+const RADIAL_REPLAY_PLAN_SHA256: &str =
+    "f913cddbf9dc43621d61beb2b587ac03f2bd2e78d4a6a2edd847441916739e9d";
+const RADIAL_REPLAY_PINS_SHA256: &str =
+    "b62ab727ba4327198524bb6d1f710f1f23c22a35aeef860d802071db43d230ff";
 const FOUNTAIN_PEN_DSO_SHA256: &str =
     "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec";
 const RTV5_QUAD_FILE_OFFSET: usize = 0x3e10c;
@@ -710,6 +716,46 @@ fn sweep_svg_from_plan(
     scene.finish()
 }
 
+fn isolated_record_svg(
+    full_plan: &V16Plan,
+    paint: &crate::PreparedStroke<'_>,
+    record_index: usize,
+    multiplicity: usize,
+    svg_transform: [f64; 6],
+) -> String {
+    assert!(matches!(multiplicity, 1 | 2));
+    let selected = *full_plan
+        .stamps
+        .get(record_index)
+        .expect("selected native upload record is in the prepared plan");
+    let isolated = V16Plan {
+        color: full_plan.color,
+        stamps: vec![selected; multiplicity],
+        y_bounds: None,
+        inverse_scale: full_plan.inverse_scale,
+        native_quad_geometry: full_plan.native_quad_geometry,
+        #[cfg(feature = "pdf")]
+        bounds: None,
+    };
+    let mut scene = Scene::new(
+        Svg::new()
+            .width(WIDTH)
+            .height(HEIGHT)
+            .view_box(ViewBox::new(
+                0.0,
+                0.0,
+                f64::from(WIDTH),
+                f64::from(HEIGHT),
+                1,
+            )),
+    );
+    scene.scope(
+        Group::new().transformed(Transform::matrix_unrounded(svg_transform)),
+        |svg| isolated.emit(svg, paint, false),
+    );
+    scene.finish()
+}
+
 fn retained_scene(
     prepared: &crate::PreparedStroke<'_>,
     svg_transform: [f64; 6],
@@ -954,25 +1000,24 @@ fn rgba_difference(left: &[u8], right: &[u8]) -> serde_json::Value {
     assert_eq!(left.len(), right.len());
     assert_eq!(left.len() % 4, 0);
     let mut changed_pixels = 0usize;
-    let mut alpha_abs_delta = 0u64;
-    let mut max_channel_delta = 0u8;
+    let mut channel_abs_delta = [0u64; 4];
+    let mut max_channel_delta = [0u8; 4];
     for (left, right) in left.as_chunks::<4>().0.iter().zip(right.as_chunks::<4>().0) {
         if left != right {
             changed_pixels += 1;
         }
-        alpha_abs_delta += u64::from(left[3].abs_diff(right[3]));
-        max_channel_delta = max_channel_delta.max(
-            left.iter()
-                .zip(right)
-                .map(|(left, right)| left.abs_diff(*right))
-                .max()
-                .unwrap_or_default(),
-        );
+        for channel in 0..4 {
+            let delta = left[channel].abs_diff(right[channel]);
+            channel_abs_delta[channel] += u64::from(delta);
+            max_channel_delta[channel] = max_channel_delta[channel].max(delta);
+        }
     }
     serde_json::json!({
         "changed_pixels": changed_pixels,
-        "alpha_absolute_delta_sum": alpha_abs_delta,
+        "rgba_channel_absolute_delta_sum": channel_abs_delta,
+        "rgba_channel_mae_bytes": channel_abs_delta.map(|sum| sum as f64 / (left.len() / 4) as f64),
         "max_rgba_channel_delta": max_channel_delta,
+        "alpha_absolute_delta_sum": channel_abs_delta[3],
     })
 }
 
@@ -3207,6 +3252,427 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
             "rainbow_on_validation_sha256": SCALE_SWEEP_RAINBOW_VALIDATION_SHA256,
             "native_projection_transform": "captured GLV16 projection uniform and viewport with one readback-y flip",
             "records": artifact_cases,
+        }))
+        .unwrap(),
+    );
+}
+
+#[test]
+#[ignore = "compares isolated native V16 single/duplicate radial stamps with the production SVG field"]
+fn v16_radial_single_duplicate_replay_matches_production_svg_field() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let candidate_dir = repo.join("tmp/vector-parity-plan/fountain-v16-radial-single-duplicate-v1");
+    let runner_path = candidate_dir.join("replay.py");
+    let plan_path = candidate_dir.join("plan.json");
+    let pins_path = candidate_dir.join("candidate-pins.json");
+    assert_eq!(
+        sha256(&fs::read(&runner_path).unwrap()),
+        RADIAL_REPLAY_RUNNER_SHA256
+    );
+    assert_eq!(
+        sha256(&fs::read(&plan_path).unwrap()),
+        RADIAL_REPLAY_PLAN_SHA256
+    );
+    assert_eq!(
+        sha256(&fs::read(&pins_path).unwrap()),
+        RADIAL_REPLAY_PINS_SHA256
+    );
+    let pins: serde_json::Value = serde_json::from_slice(&fs::read(&pins_path).unwrap()).unwrap();
+    assert_eq!(pins["capture_executed"], false);
+    assert_eq!(
+        pins["candidate"]["runner_sha256"],
+        RADIAL_REPLAY_RUNNER_SHA256
+    );
+    assert_eq!(pins["candidate"]["plan_sha256"], RADIAL_REPLAY_PLAN_SHA256);
+
+    let plan_bytes = fs::read(&plan_path).unwrap();
+    let plan_json: serde_json::Value = serde_json::from_slice(&plan_bytes).unwrap();
+    assert_eq!(
+        plan_json["schema"],
+        "sdocx.fountain.v16.radial-single-duplicate-plan.v1"
+    );
+    assert_eq!(plan_json["status"], "candidate_ready_unrun");
+    assert_eq!(plan_json["matrix"]["case_count"].as_u64(), Some(16));
+    assert_eq!(plan_json["scope"]["Rust_SVG_or_PDF_render_executed"], false);
+    assert_eq!(plan_json["scope"]["pixel_phase_or_scale_fitting"], false);
+
+    let source_path = repo.join(
+        "tmp/vector-parity-plan/fountain-as18-v16-204-thin-scale-candidate-v3/as18-v16-scale-sweep.json",
+    );
+    let source_bytes = fs::read(source_path).expect("pinned q-scale receipt");
+    assert_eq!(sha256(&source_bytes), SCALE_SWEEP_SHA256);
+    let source: serde_json::Value = serde_json::from_slice(&source_bytes).unwrap();
+    let fountain_dso =
+        fs::read(repo.join("scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so"))
+            .expect("pinned FountainPen DSO");
+    assert_eq!(sha256(&fountain_dso), FOUNTAIN_PEN_DSO_SHA256);
+    let quad_bytes = &fountain_dso[RTV5_QUAD_FILE_OFFSET..RTV5_QUAD_FILE_OFFSET + RTV5_QUAD_BYTES];
+    assert_eq!(sha256(quad_bytes), RTV5_QUAD_SHA256);
+
+    let capture_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_RADIAL_REPLAY_CAPTURE_DIR")
+            .expect("set to the root-created radial replay capture directory"),
+    );
+    let attempt_bytes =
+        fs::read(capture_dir.join("attempt.json")).expect("native replay attempt receipt");
+    let attempt: serde_json::Value = serde_json::from_slice(&attempt_bytes).unwrap();
+    assert_eq!(attempt["status"], "started_before_gl_initialization");
+    assert_eq!(attempt["runner_sha256"], RADIAL_REPLAY_RUNNER_SHA256);
+    assert_eq!(attempt["input_receipt_sha256"], SCALE_SWEEP_SHA256);
+    let replay_path = capture_dir.join("replay-pair.json");
+    let replay_bytes = fs::read(&replay_path).expect("complete radial replay receipt");
+    let replay: serde_json::Value = serde_json::from_slice(&replay_bytes).unwrap();
+    assert_eq!(
+        replay["schema"],
+        "sdocx.fountain.v16.radial-single-duplicate-mesa-replay.v1"
+    );
+    assert_eq!(replay["status"], "captured_host_mesa_shader_replay");
+    assert_eq!(replay["input_receipt_sha256"], SCALE_SWEEP_SHA256);
+    assert_eq!(replay["native_library_sha256"], FOUNTAIN_PEN_DSO_SHA256);
+    assert_eq!(replay["cases"].as_array().unwrap().len(), 16);
+    assert_eq!(
+        replay["duplicate_alpha_checks"].as_array().unwrap().len(),
+        8
+    );
+    assert_eq!(
+        replay["replay_program"]["source_vertex_sha256"],
+        "86bb93f6bc3715f6d2995c03d3de6962ea197a06161e5630b406f75395108ce1"
+    );
+    assert_eq!(
+        replay["replay_program"]["source_fragment_sha256"],
+        "132fc7199c6faa0c214a929227ad865f283d0412a6770b9da0da1790e61d7fcb"
+    );
+    assert_eq!(replay["replay_program"]["host_link_status"], 1);
+    assert_eq!(
+        replay["replay_program"]["host_attribute_locations"],
+        serde_json::json!({
+            "aRectPoint": 0, "aPointInfo": 1, "transparency": 2, "AAInfo": 3
+        })
+    );
+    assert_eq!(replay["target"]["size"], serde_json::json!([WIDTH, HEIGHT]));
+    assert_eq!(replay["target"]["internal_format"], "GL_RGBA8");
+    assert_eq!(
+        replay["target"]["clear_rgba"],
+        serde_json::json!([0, 0, 0, 0])
+    );
+    let state = &replay["gl_state_after_setup"];
+    assert_eq!(state["viewport"], serde_json::json!([0, 0, WIDTH, HEIGHT]));
+    assert_eq!(state["blend_src_rgb"], 1);
+    assert_eq!(state["blend_dst_rgb"], 771);
+    assert_eq!(state["blend_src_alpha"], 1);
+    assert_eq!(state["blend_dst_alpha"], 771);
+    assert_eq!(state["blend_equation_rgb"], 32774);
+    assert_eq!(state["blend_equation_alpha"], 32774);
+    assert_eq!(state["color_mask"], serde_json::json!([1, 1, 1, 1]));
+    assert_eq!(state["dither_enabled"], true);
+    assert_eq!(state["depth_test_enabled"], false);
+    assert_eq!(state["stencil_test_enabled"], false);
+    assert_eq!(state["scissor_test_enabled"], false);
+    assert_eq!(state["cull_face_enabled"], false);
+
+    let cases_by_name = source["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|case| (case["case"].as_str().unwrap(), case))
+        .collect::<std::collections::HashMap<_, _>>();
+    let replay_cases = replay["cases"].as_array().unwrap();
+    let mut by_replay_name = std::collections::HashMap::new();
+    for case in replay_cases {
+        assert!(
+            by_replay_name
+                .insert(case["case"].as_str().unwrap(), case)
+                .is_none()
+        );
+    }
+    let output_dir = PathBuf::from(
+        std::env::var_os("SDOCX_FOUNTAIN_V16_RADIAL_REPLAY_ARTIFACT_DIR")
+            .expect("set to a fresh directory for Rust SVG and metrics"),
+    );
+    fs::create_dir(&output_dir).expect("Rust SVG artifact directory must be new");
+    let mut rows = Vec::new();
+    let mut total_compressed_frame_bytes = 0usize;
+
+    for (q, alpha) in [(1_u32, 128_u32), (1, 255), (2, 128), (2, 255)] {
+        let source_name = format!("q{q}x_alpha{alpha}");
+        let source_case = cases_by_name[source_name.as_str()];
+        let argb = if alpha == 128 {
+            0x8000_0000
+        } else {
+            0xff00_0000
+        };
+        let stroke = source_stroke_argb_width(&source, false, argb, 1.0);
+        let prepared = crate::ink::prepare_stroke_for_context_with_fountain_v16_output_scale(
+            &stroke,
+            crate::ink::InkRenderContext::CanonicalPage,
+            q as f32,
+        );
+        assert_eq!(prepared.support, crate::ink::InkSupport::Reconstructed);
+        assert_eq!(prepared.fountain_output_scale, Some(q as f32));
+        assert_eq!(
+            (prepared.opacity as f32).to_bits(),
+            (alpha as f32 / 255.0).to_bits(),
+            "native saved-alpha inputColor remains the V16 outer field factor"
+        );
+        let full_plan = V16Plan::prepare(&prepared).expect("source-generated V16Plan");
+        compare_scale_sweep_plan_to_native(&full_plan, source_case);
+        let native_records = scale_sweep_native_records(source_case);
+        let native_records_json = source_case["rtv_addpoint_entries"].as_array().unwrap();
+        assert_eq!(native_records.len(), native_records_json.len());
+        let native_argb = source_case["saved_color_argb_control"].as_str().unwrap();
+        assert_eq!(native_argb, format!("0x{argb:08x}"));
+        let transform = sweep_svg_transform(source_case);
+
+        for selector in ["first", "middle"] {
+            let record_index = if selector == "first" {
+                0
+            } else {
+                native_records.len() / 2
+            };
+            let source_record = native_records[record_index];
+            let record_bytes = source_record
+                .iter()
+                .flat_map(|word| word.to_le_bytes())
+                .collect::<Vec<_>>();
+            let stamp = full_plan.stamps[record_index];
+            assert_eq!(
+                [
+                    stamp.x.to_bits(),
+                    stamp.y.to_bits(),
+                    stamp.extent_x.to_bits(),
+                    stamp.extent_y.to_bits(),
+                    1.0_f32.to_bits(),
+                    stamp.gradient_key.inner,
+                    stamp.gradient_key.alpha,
+                ],
+                source_record,
+                "selected record retains all seven uploaded lanes"
+            );
+
+            let source_matrix = source_case["renderer_gl_calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|call| {
+                    call["call"] == "glUniformMatrix4fv"
+                        && call["location"].as_u64() == Some(0)
+                        && call["program"].as_u64() == Some(6)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(source_matrix.len(), 1);
+            let expected_projection = source_matrix[0]["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| (value.as_f64().unwrap() as f32).to_bits())
+                .collect::<Vec<_>>();
+            let color_rows = source_case["drawable_color_uniforms"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|event| {
+                    event["call"] == "glUniform4fv"
+                        && event["program"].as_u64() == Some(6)
+                        && event["location"].as_u64() == Some(1)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(color_rows.len(), 1);
+            let expected_color = color_rows[0]["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| (value.as_f64().unwrap() as f32).to_bits())
+                .collect::<Vec<_>>();
+
+            for multiplicity in [1_u64, 2] {
+                let case_id = format!("{source_name}_{selector}_x{multiplicity}");
+                let captured = by_replay_name[case_id.as_str()];
+                assert_eq!(captured["source_case"], source_name);
+                assert_eq!(captured["q"].as_f64(), Some(q as f64));
+                assert_eq!(captured["saved_alpha_case"], format!("alpha{alpha}"));
+                assert_eq!(
+                    captured["selected_record_index"].as_u64(),
+                    Some(record_index as u64)
+                );
+                assert_eq!(
+                    captured["identical_instance_count"].as_u64(),
+                    Some(multiplicity)
+                );
+                assert_eq!(captured["record_sha256"], sha256(&record_bytes));
+                assert_eq!(
+                    captured["instance_upload_bytes"].as_u64(),
+                    Some(28 * multiplicity)
+                );
+                assert_eq!(
+                    captured["instance_upload_sha256"],
+                    sha256(&record_bytes.repeat(multiplicity as usize))
+                );
+                assert_eq!(
+                    captured["selected_record_f32_le_hex"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    7
+                );
+                for (lane, hex_word) in captured["selected_record_f32_le_hex"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .enumerate()
+                {
+                    assert_eq!(
+                        decode_little_endian_word(hex_word.as_str().unwrap()),
+                        source_record[lane]
+                    );
+                }
+                assert_eq!(
+                    captured["projection_f32_words"].as_array().unwrap().len(),
+                    16
+                );
+                let captured_projection = captured["projection_f32_words"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|word| decode_little_endian_word(word.as_str().unwrap()))
+                    .collect::<Vec<_>>();
+                assert_eq!(captured_projection, expected_projection);
+                assert_eq!(
+                    captured["input_color_f32_words"].as_array().unwrap().len(),
+                    4
+                );
+                let captured_color = captured["input_color_f32_words"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|word| decode_little_endian_word(word.as_str().unwrap()))
+                    .collect::<Vec<_>>();
+                assert_eq!(captured_color, expected_color);
+
+                let svg = isolated_record_svg(
+                    &full_plan,
+                    &prepared,
+                    record_index,
+                    multiplicity as usize,
+                    transform,
+                );
+                let svg_path = output_dir.join(format!("{case_id}.svg"));
+                write_new(svg_path.clone(), svg.as_bytes());
+                let rendered = raster_svg(&svg);
+                let artifact_name = captured["rgba_zlib_path"].as_str().unwrap();
+                let relative = Path::new(artifact_name);
+                assert_eq!(
+                    relative.components().count(),
+                    1,
+                    "frame path remains a leaf"
+                );
+                assert!(relative.file_name().is_some());
+                let compressed_path = capture_dir.join(relative);
+                let compressed = fs::read(&compressed_path).expect("captured native replay frame");
+                total_compressed_frame_bytes += compressed.len();
+                assert!(
+                    total_compressed_frame_bytes <= 2 * 1024 * 1024,
+                    "captured compressed-frame budget"
+                );
+                assert_eq!(sha256(&compressed), captured["rgba_zlib_sha256"]);
+                assert_eq!(
+                    compressed.len() as u64,
+                    captured["rgba_zlib_bytes"].as_u64().unwrap()
+                );
+                assert!(captured["alpha_nonzero_pixels"].as_u64().unwrap() > 0);
+                let mut raw = Vec::new();
+                ZlibDecoder::new(compressed.as_slice())
+                    .read_to_end(&mut raw)
+                    .expect("decode compressed Mesa RGBA frame");
+                assert_eq!(raw.len(), (WIDTH * HEIGHT * 4) as usize);
+                assert_eq!(sha256(&raw), captured["rgba_sha256"]);
+                assert_eq!(
+                    raw.len() as u64,
+                    captured["rgba_raw_bytes"].as_u64().unwrap()
+                );
+                let native_topdown = topdown_frame(&raw);
+                let difference = rgba_difference(&native_topdown, &rendered);
+                assert!(
+                    difference["max_rgba_channel_delta"][3].as_u64().unwrap() <= 1,
+                    "single/duplicate radial field exceeds captured Mesa alpha tolerance: {case_id}"
+                );
+
+                rows.push(serde_json::json!({
+                    "case": case_id,
+                    "source_case": source_name,
+                    "q": q,
+                    "saved_alpha": alpha,
+                    "stamp_selector": selector,
+                    "record_index": record_index,
+                    "record_sha256": sha256(&record_bytes),
+                    "identical_instance_count": multiplicity,
+                    "mesa_shader_replay_rgba_sha256": captured["rgba_sha256"],
+                    "replay_readback_order": captured["readback_row_order"],
+                    "rust_svg_path": format!("{case_id}.svg"),
+                    "rust_svg_sha256": sha256(svg.as_bytes()),
+                    "mesa_replay_vs_resvg_rgba": difference,
+                    "pixel_comparison_scope": "Direct host Mesa shader replay versus production SVG rendered by resvg; native Drawing and queue execution were not performed by this replay.",
+                    "native_center_extent_inner_width_alpha_lanes_exact": true,
+                    "projection_and_color_bits_equal_to_source_capture": true,
+                }));
+            }
+
+            let single_name = format!("{source_name}_{selector}_x1");
+            let duplicate_name = format!("{source_name}_{selector}_x2");
+            let single = by_replay_name[single_name.as_str()];
+            let duplicate = by_replay_name[duplicate_name.as_str()];
+            let single_zlib =
+                fs::read(capture_dir.join(single["rgba_zlib_path"].as_str().unwrap())).unwrap();
+            let duplicate_zlib =
+                fs::read(capture_dir.join(duplicate["rgba_zlib_path"].as_str().unwrap())).unwrap();
+            let mut single_raw = Vec::new();
+            let mut duplicate_raw = Vec::new();
+            ZlibDecoder::new(single_zlib.as_slice())
+                .read_to_end(&mut single_raw)
+                .unwrap();
+            ZlibDecoder::new(duplicate_zlib.as_slice())
+                .read_to_end(&mut duplicate_raw)
+                .unwrap();
+            let mut increased = 0usize;
+            let mut decreased = 0usize;
+            for (one, two) in single_raw
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(duplicate_raw.as_chunks::<4>().0)
+            {
+                increased += usize::from(two[3] > one[3]);
+                decreased += usize::from(two[3] < one[3]);
+            }
+            assert!(increased > 0, "identical native stamps increase alpha");
+            assert_eq!(decreased, 0, "source-over duplicate alpha is monotonic");
+            let pair_check = replay["duplicate_alpha_checks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|row| {
+                    row["single_case"] == single_name && row["duplicate_case"] == duplicate_name
+                })
+                .expect("runner retained the pair monotonicity check");
+            assert_eq!(
+                pair_check["pixels_with_increased_alpha"].as_u64(),
+                Some(increased as u64)
+            );
+            assert_eq!(pair_check["pixels_with_decreased_alpha"].as_u64(), Some(0));
+        }
+    }
+
+    assert_eq!(rows.len(), 16);
+    write_new(
+        output_dir.join("manifest.json"),
+        &serde_json::to_vec_pretty(&serde_json::json!({
+            "schema": "sdocx.fountain.v16.radial-single-duplicate-svg-comparison.v1",
+            "scope": "The exact native-upload record is routed through the production Rust V16Plan field and resvg. The separate Mesa receipt replays the same captured direct shader/state; no Drawing queue, device, or PDF claim is made.",
+            "q_scale_receipt_sha256": SCALE_SWEEP_SHA256,
+            "replay_runner_sha256": RADIAL_REPLAY_RUNNER_SHA256,
+            "replay_plan_sha256": RADIAL_REPLAY_PLAN_SHA256,
+            "replay_receipt_sha256": sha256(&replay_bytes),
+            "captured_native_static_quad_sha256": RTV5_QUAD_SHA256,
+            "cases": rows,
         }))
         .unwrap(),
     );

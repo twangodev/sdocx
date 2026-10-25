@@ -69,12 +69,13 @@ viewport, without alignment or resizing. Affected-pixel alpha MAE in bytes is:
 
 | Scale | Native/Rust stamps | Alpha 128: canonical → profile | Alpha 255: canonical → profile |
 | --- | --- | --- | --- |
-| 0.5 | 39 | 12.16 → 1.07 | 23.02 → 1.97 |
-| 1 | 76 | unchanged | unchanged |
-| 2 | 151 | 25.64 → 3.63 | 44.19 → 6.01 |
+| 0.5 | 39 | 14.30 → 0.31 | 26.21 → 0.37 |
+| 1 | 76 | 0.43 → 0.43 | 0.42 → 0.42 |
+| 2 | 151 | 25.82 → 0.35 | 44.59 → 0.35 |
 
 MAE uses each native/render support union; profile pixel support matches native
-in all six cases, and unit-scale SVG bytes are unchanged. The compact native
+in all six cases; specifying a unit-scale profile leaves canonical SVG bytes
+identical. The compact native
 geometry fixture runs in normal Rust tests; framebuffer comparisons remain
 opt-in. A paired rainbow-flag-on native control uses the same six source/scale/
 alpha cases. Native uploaded records and all six full RGBA frames match the
@@ -87,6 +88,19 @@ with postcapture validation
 `7701867da41cfbe31be4713a06376a00e813a0c18b7cd41cf2da59d0381534b3`). Device
 zoom policy, archive-native thin metadata and native PDF appearance remain
 unverified.
+
+Ordinary SVG V16 quads request `shape-rendering="crispEdges"`. The captured
+single-sampled GLES quad has no separate boundary antialiasing: coverage comes
+from its radial fragment field. Default SVG shape antialiasing multiplied that
+field near small quad edges. Changing only this hint reduces the matched-scale
+controls from 1.07–6.01 to 0.31–0.43 alpha bytes in resvg, and from 1.38–6.34 to
+0.15–0.22 in Chromium 153 at DPR 1. Both retain matching support in these
+controls. Full-coverage unit-scale controls improve too; resvg's opaque control
+still has one extra faint pixel (support IoU 0.99724). Sixteen isolated
+single/duplicate stamp shader replays agree with the production SVG within one
+alpha byte per pixel. Normal Rust tests pin six of those pixels; the replay is
+host shader evidence, not a native Drawing or device oracle. The hint applies
+only to the ordinary SVG quad; retained PDF paint and V17 are unchanged.
 
 ## Validation on 2026-09-25
 
