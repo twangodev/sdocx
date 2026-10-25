@@ -232,10 +232,22 @@ produce stream SHA-256
 The raw ObjectStroke size is approximately 0.228; PenCommon clamps the effective
 size to 0.4. The capture declares a synthetic 1920×1080 context and a host glibc
 `sincosf` bridge. It establishes neither Android math equivalence nor pixel,
-device or PDF parity. The unset-setting control has no successful receipt yet.
+device or PDF parity. A separate unset-setting Drawing control selects GLV1; it does not establish V1 geometry. At effective size 2, five V14 one-factor controls retain identical Drawing/replay streams: pressure and orientation ramps change the records, while the tested timestamp and below-threshold tilt ramps match the neutral baseline.
 
 The native V14 path uses its own 150×150 grain and three 100×100 point masks;
 it cannot inherit Pencil3's atlas or record layout. Pencil2 remains generic in
 production pending geometry reconstruction, texture/shader validation and
 output transport checks. Compact capture receipts and the pinned candidate are
 retained under the ignored `tmp/vector-parity-plan/pen-family-audit/` workspace.
+
+## Literal StraightMarker control
+
+Six native Drawing controls request the literal Marker3 and StraightMarker names
+with null, empty and `5;` settings. Both load `libSPenMarker3.so`, return pen
+vptr `0x5055958`, select GLV1 for null and GLV5 for empty/`5;`, and emit identical
+complete streams for each matched pair. The controlled two-point tool-2 source
+has explicit size 8, ARGB `0xff336699`, and curve enabled. The retained capture
+SHA-256 is `8537e503568d6a63512c8acf0777168a8adac85189afee8408032b1eb5c118e9`.
+This supports sharing the existing bounded V5 page handler while preserving its
+settings, tool, style and point-count restrictions. It does not establish
+archive deserialization, omitted style defaults or independent pixel parity.

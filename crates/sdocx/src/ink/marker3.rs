@@ -32,7 +32,7 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     let properties = &rendering.properties;
     let style = &rendering.style;
     let argb = style.color_argb?;
-    if rendering.pen_name.as_deref() != Some(PEN)
+    if !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
         || rendering.tool_type_raw != 2
         || properties.replay_only
@@ -328,6 +328,42 @@ mod tests {
     }
 
     #[test]
+    fn straightmarker_page_route_preserves_captured_v5_geometry_and_gates() {
+        // The literal-name native Drawing matrix selects the same Marker3
+        // factory, V5 drawable and complete XY stream for empty and `5;`.
+        // Null instead selects V1 and must stay outside this V5 route.
+        let fixture = caller_fixture();
+        let case = &fixture["cases"]["marker3_linked_saved1:5:tool2:curve1"];
+        let canonical = caller_stroke(case);
+        let expected = prepare_for_page(&canonical).unwrap();
+        assert_caller_xy_matches(&expected, case);
+        for setting in ["", "5;"] {
+            let mut alias = canonical.clone();
+            let rendering = alias.rendering.as_mut().unwrap();
+            rendering.pen_name = Some(STRAIGHT_PEN.to_owned());
+            rendering.advanced_settings = Some(setting.to_owned());
+            let actual = prepare_for_page(&alias).unwrap();
+            assert_eq!(actual.points, expected.points);
+            assert_eq!(actual.radii, expected.radii);
+            assert_eq!(actual.sample_ends, expected.sample_ends);
+            assert_eq!(actual.opacity, expected.opacity);
+            let prepared = crate::ink::prepare_stroke_for_context(
+                &alias,
+                false,
+                crate::ink::InkRenderContext::CanonicalPage,
+            );
+            assert_eq!(prepared.support, crate::InkSupport::Reconstructed);
+            assert_eq!(prepared.sample_ends.as_ref(), Some(&expected.sample_ends));
+
+            alias.rendering.as_mut().unwrap().advanced_settings = None;
+            assert!(prepare_for_page(&alias).is_none());
+            alias.rendering.as_mut().unwrap().advanced_settings = Some("5;".to_owned());
+            alias.points.truncate(1);
+            assert!(prepare_for_page(&alias).is_none());
+        }
+    }
+
+    #[test]
     fn canonical_page_gate_rejects_unproven_marker3_inputs() {
         let fixture = fixture();
         let case = fixture
@@ -351,7 +387,8 @@ mod tests {
         assert!(prepare_for_page(&rejected).is_none());
 
         let mut rejected = valid.clone();
-        rejected.rendering.as_mut().unwrap().pen_name = Some(STRAIGHT_PEN.to_owned());
+        rejected.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.Marker".to_owned());
         assert!(prepare_for_page(&rejected).is_none());
 
         let mut rejected = valid.clone();

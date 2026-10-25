@@ -75,8 +75,8 @@ decoded and retained. A retained channel is not necessarily used by a pen's
 drawing route. The [pen registry](../crates/sdocx/src/ink.rs) identifies names and
 libraries, not a renderer for every registered pen.
 
-Coverage is incomplete. The pinned APK registry has 44 names: 10 have bounded
-default page-rendering routes, 3 require explicit profiles, 16 bundled names
+Coverage is incomplete. The pinned APK registry has 44 names: 11 have bounded
+default page-rendering routes, 3 require explicit profiles, 15 bundled names
 still use generic strokes, 11 refer to unbundled plugins, and 4 are editing or
 transient tools whose persistent paint is not established. These counts describe
 dispatch, not complete version coverage or visual parity.
@@ -86,7 +86,7 @@ dispatch, not complete version coverage or visual parity.
 | Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 remains generic; InkPen2 V9 requires a profile. StraightInkPen2 remains generic. |
 | Fountain | Fountain V14 and saved AS18/V16 have bounded default routes; V17 rainbow is experimental and explicit. MontblancFountainPen remains generic. |
 | Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has its own grain and point atlas, distinct from Pencil3; a controlled four-point native Drawing/saved-redraw pair agrees byte for byte for empty and explicit `14;` settings, but has no pixel validation. |
-| Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; Marker and StraightMarker remain generic. Library aliases alone do not establish equivalent configured behavior. |
+| Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; StraightMarker reaches the bounded Marker3 V5 route after native literal-name controls matched. Marker remains generic. |
 | Textured brushes | Brush/SimpleBrush, BrushPen and AirBrushPen remain generic. AirBrush's native patterned, low-alpha stamps are not reproduced by its current opaque generic stroke. ChineseBrush V1–V3 requires an explicit profile; V4 is not reconstructed. |
 | Calligraphic nibs | MontblancCalligraphyPen V1 and Oblique V1/V4 have bounded default routes. Oblique V2/V3 and rejected settings remain generic. |
 | Paint and effects | MagicPen V1 has a bounded default route. WaterColorBrush, OilBrush3, Smudge, Beautify and TapePen remain generic; watercolor's shared mask and tape's pattern/reveal composition are not implemented. |
@@ -197,14 +197,14 @@ sampling is producer-owned, while built-in paper repeats. Context defaults,
 real-document/device validation remain integration gaps. Profile-aware replay
 uses source-event particle cutoffs; viewport-aware metadata checks the same
 canvas eligibility as paint.
-Marker3 V5 page exports use native-sampled compound disks for the captured
+Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
 positions, radii and callback boundaries in ten
 [synthetic native cases](../conformance/marker3-saved-native.json).
 The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
 checks null selecting V1, empty/explicit settings selecting V5, source ARGB
-forwarding and linked XY streams; the V5 sampler excludes null settings.
+forwarding and linked XY streams; the V5 sampler excludes null settings. Six additional native literal-name controls select the same factory/drawable and identical complete streams for Marker3 and StraightMarker under null, empty and `5;` settings. This establishes bounded alias routing, not independent device or pixel parity.
 Its [positive paint capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/marker3-paint-positive-native.json)
 executes native mask/composite draws on separate complete framebuffer targets
 in host Mesa, retaining the full RGBA hash and GL error checks. The
