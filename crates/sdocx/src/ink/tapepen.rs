@@ -421,3 +421,32 @@ fn v46_reveal_native_model_rotation_against_native_mask() {
     assert!(max_error <= 1, "max error {max_error}");
     assert!(different <= 1, "different pixels {different}");
 }
+
+// Bounded host-affine TapePen pattern-size control; not production code.
+// Source: RTV1::Draw 0x3a9bc..0x3aa34 in pinned TapePen DSO.
+// V49 trace observes identity Matrix4, origin zero, and RT member +408 = 64
+// for scales zero and one; the remaining controls have uniform receipts only.
+// The scale fallback threshold and divisor come from DSO rodata/code.
+fn pattern_size(scale: f32, texture_width: i32) -> [f32; 2] {
+    let source_extent = scale * texture_width as f32;
+    // Identity affine control: transformed(source_extent) - transformed(origin).
+    let transformed_difference = source_extent - 0.0_f32;
+    let divisor = if scale > 1.0e-6_f32 { scale } else { 4.0_f32 };
+    let value = transformed_difference / divisor;
+    [value, value]
+}
+#[test]
+fn compare_independent_native_uniform_words() {
+    // V49 traced 0/1; V47/V48 independently captured 2/1e-7 uniforms.
+    for (scale_bits, expected) in [
+        (0x3f80_0000, 0x4280_0000), // 1 -> 64
+        (0x4000_0000, 0x4280_0000), // 2 -> 64
+        (0x0000_0000, 0x0000_0000), // 0 -> 0
+        (0x33d6_bf95, 0x35d6_bf95), // 1e-7 -> 1.6e-6
+    ] {
+        assert_eq!(
+            pattern_size(f32::from_bits(scale_bits), 64).map(f32::to_bits),
+            [expected; 2]
+        );
+    }
+}

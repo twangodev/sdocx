@@ -28,7 +28,7 @@
     }
   ],
   "near_zero_controls": {
-    "scope": "Same synthetic affine profile and explicitly supplied asset as positive-scale controls. Static fallback branch selection is inferred, not instruction-traced.",
+    "scope": "Same synthetic affine profile and explicitly supplied asset as positive-scale controls. V49 directly observed zero fallback; near-zero fallback remains inferred.",
     "source_runner_sha256": "cbcc09bf33adcd3977689ba73a42fb9d4032958f404612f8bba4ffe12408e20f",
     "source_manifest_sha256": "80360ef3bbd9162bc08426f737a63aa2c37acac51690a208d5492beb9ad021f3",
     "pattern_size_f32le_hex": {
@@ -60,6 +60,19 @@
       "different_pixels": 34,
       "different_channels": 102,
       "max_channel_difference": 51
+    }
+  },
+  "instruction_trace": {
+    "scope": "V49 traced 0 and 1 under the same synthetic identity-matrix host profile; other scale captures retain uniform observations only.",
+    "runner_sha256": "298e669cbd15ce052249475a118450109568996b883a11b71ad13ae6ba74bc54",
+    "manifest_sha256": "3abbc2ae7bf33398d5e566d9c3f622ee46a6bf4b936f1e71b1a442d612fa8548",
+    "zero_log_sha256": "1bde5d229fc657f733415ac160a09613ed4e1ca3fe602b7828ca3dfc7e24d908",
+    "one_log_sha256": "2e30301125e6a333e579b967af60baa78b9f2b67708e55d026cf8726b9410e11",
+    "texture_extent": 64,
+    "matrix": "identity",
+    "selected_divisor": {
+      "0": 4,
+      "1": 1
     }
   }
 }

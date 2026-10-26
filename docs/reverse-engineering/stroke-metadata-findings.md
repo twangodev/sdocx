@@ -143,8 +143,8 @@ produced identical point streams, pattern uniforms, and final pixels. The
 native scale-dependent vector is subsequently divided by scale, a possible
 explanation for this case, not a general scale-invariance claim. In the same
 profile, native setters also accepted zero and 1e-7; their pattern-size uniforms
-and final pixels differed from scale 1. The fallback branch is inferred from
-static code and the observed uniforms, not directly instruction-traced.
+and final pixels differed from scale 1. A follow-up instruction trace directly observed the zero-scale fallback;
+the near-zero branch remains inferred from static code and observed uniforms.
 
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it
