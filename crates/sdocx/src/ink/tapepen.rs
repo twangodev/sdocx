@@ -206,6 +206,34 @@ fn v54_two_point_curve_stream_matches_bounded_host() {
         "de62cd988bb853335a3e4ca792621fdbde26eeb9808eae9dca9d8fd14101d75a"
     );
 }
+
+// Repeated-point synthetic Model under the pinned host profile; no saved-note
+// or device parity claim. V54 log SHA-256: 100b5ea9e7112465d313bbc4b718c569bb81ef12a71e5a2e18350097d911bef3.
+#[test]
+fn v54_repeated_curve_stream_matches_bounded_host() {
+    use sha2::{Digest, Sha256};
+    let points = tape_curve(
+        &[
+            P { x: 32.0, y: 32.0 },
+            P { x: 32.0, y: 32.0 },
+            P { x: 42.0, y: 32.0 },
+            P { x: 42.0, y: 32.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 420);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "2b2b2f4b8722b906e1af81a28961a38a6f798b8839ebb9cc6f8f9196807c2292"
+    );
+}
 // Native GLSL from the pinned TapePen DSO: vertex offset 0x18bc6 and
 // fragment offset 0x18e58. V42 observes MAX blending on the R8 target.
 // Mask output is the test oracle only; no captured mask enters this model.
