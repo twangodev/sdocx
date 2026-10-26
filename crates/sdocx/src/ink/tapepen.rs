@@ -33,10 +33,10 @@ fn sample_quad(
 // Caller supplies observed spacing and a provisional zero threshold. The
 // capture admits the first zero-distance point; exact field +44 is unobserved.
 // This model is bounded to finite, non-rainbow RGB and curve-enabled
-// input of at least two points. Only the captured three- and four-point
-// profiles are checked; the two-point branch has not completed capture.
+// input of at least three points. A separate native two-point control takes
+// a different endPen branch, whose selection is not yet reconstructed.
 fn tape_curve(points: &[P], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<[u32; 5]> {
-    assert!(points.len() >= 2);
+    assert!(points.len() >= 3);
     let mut last = points[0];
     let mut endpoint = last;
     let mut carry = spacing;
@@ -135,6 +135,37 @@ fn v51_three_point_curve_stream_matches_native() {
     assert_eq!(
         format!("{:x}", Sha256::digest(&bytes)),
         "eb2dfdc2f61ac3f9ef836fd0f1ccfb15d6b821850f3decee820a6eef8fcd3ccd"
+    );
+}
+// Five-point synthetic Model; this tests a source-derived stream against the
+// native AddPoint and source-tracked instance buffer. getLength observed 0.5
+// spacing; threshold 0 is a compatible model input, with no inference here
+// about the native threshold field. No saved-document or device parity claim.
+// Native receipt SHA-256: c7d5c61cf02b0d6ec876e37c1d30d36102d3087d88fbc17516191dc0b93ffadf.
+#[test]
+fn v51_five_point_curve_stream_matches_native() {
+    use sha2::{Digest, Sha256};
+    let points = tape_curve(
+        &[
+            P { x: 32.0, y: 32.0 },
+            P { x: 42.0, y: 32.0 },
+            P { x: 42.0, y: 42.0 },
+            P { x: 52.0, y: 42.0 },
+            P { x: 62.0, y: 32.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 1560);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "4dcb3e46c86849ad2f818b555d608925ce2c5320e393d93884ce1985ce155bbd"
     );
 }
 // Native GLSL from the pinned TapePen DSO: vertex offset 0x18bc6 and
