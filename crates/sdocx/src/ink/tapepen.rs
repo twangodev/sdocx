@@ -33,13 +33,15 @@ fn sample_quad(
 // Caller supplies observed spacing and a provisional zero threshold. The
 // capture admits the first zero-distance point; exact field +44 is unobserved.
 // This model is bounded to finite, non-rainbow RGB and curve-enabled
-// four-point input.
-fn tape_curve(points: [P; 4], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<[u32; 5]> {
+// input of at least two points. Only the captured three- and four-point
+// profiles are checked; the two-point branch has not completed capture.
+fn tape_curve(points: &[P], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<[u32; 5]> {
+    assert!(points.len() >= 2);
     let mut last = points[0];
     let mut endpoint = last;
     let mut carry = spacing;
     let mut out = Vec::new();
-    for &p in &points[..3] {
+    for &p in &points[..points.len() - 1] {
         if p.sub(last).len() < threshold {
             continue;
         }
@@ -51,7 +53,7 @@ fn tape_curve(points: [P; 4], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Ve
     }
     // endPen builds a terminal line from the previous midpoint, then adds
     // the exact endpoint. SmPath line uses the same 15-bit parameter scale.
-    let end = points[3];
+    let end = points[points.len() - 1];
     let length = end.sub(endpoint).len();
     if length > 0.0 {
         let scale = 32767.0_f32 * f32::from_bits(0x3800_00fd);
@@ -86,7 +88,7 @@ fn v32_native_stream() {
     };
     let rgb = [68.0_f32 / 255.0, 170.0_f32 / 255.0, 238.0_f32 / 255.0];
     let actual = tape_curve(
-        [
+        &[
             p(0x00000000, 0x00000000),
             p(0x41200000, 0x00000000),
             p(0x41a00000, 0x40a00000),
@@ -104,6 +106,35 @@ fn v32_native_stream() {
     assert_eq!(
         format!("{:x}", Sha256::digest(&bytes)),
         "b96ea83724950b6751f26594f57dbd057eb099abe1700b62da593e6cb909a2af"
+    );
+}
+
+// V51 synthetic Model, no saved-document or device-parity claim. Native
+// receiver +44 was observed zero; getLength recorded 0.5 spacing.
+// Runner SHA-256: 6ef017d864d3d427921080cbfd4645860a5333f2e275fa95e27b63d26389e20c.
+// Receipt SHA-256: 78e03e21d3033d69796781ccc1c9338a6eab17a92cbbf6ca0811e0d9096412bc.
+#[test]
+fn v51_three_point_curve_stream_matches_native() {
+    use sha2::{Digest, Sha256};
+    let points = tape_curve(
+        &[
+            P { x: 32.0, y: 32.0 },
+            P { x: 42.0, y: 32.0 },
+            P { x: 42.0, y: 42.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 660);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "eb2dfdc2f61ac3f9ef836fd0f1ccfb15d6b821850f3decee820a6eef8fcd3ccd"
     );
 }
 // Native GLSL from the pinned TapePen DSO: vertex offset 0x18bc6 and
@@ -185,7 +216,7 @@ fn v41_reveal_mask_from_curve_and_shader() {
         y: f32::from_bits(y),
     };
     let points = tape_curve(
-        [
+        &[
             p(0, 0),
             p(0x4120_0000, 0),
             p(0x41a0_0000, 0x40a0_0000),
@@ -245,7 +276,7 @@ fn v43_reveal_bend_model_against_native() {
     use sha2::{Digest, Sha256};
     use std::io::Read;
     let points = tape_curve(
-        [
+        &[
             P { x: 32.0, y: 32.0 },
             P { x: 42.0, y: 32.0 },
             P { x: 42.0, y: 42.0 },
@@ -305,7 +336,7 @@ fn v43_reveal_rotated_diagonal_model_against_native() {
         y: f32::from_bits(y),
     };
     let points = tape_curve(
-        [
+        &[
             p(0x4240_0000, 0x4220_0000),
             p(0x424e_a41a, 0x4256_a41a),
             p(0x425d_4833, 0x4286_a41a),
@@ -371,7 +402,7 @@ fn v46_reveal_native_model_rotation_against_native_mask() {
         y: f32::from_bits(y),
     };
     let points = tape_curve(
-        [
+        &[
             p(0x420f_5be6, 0x41dd_5be6),
             p(0x4232_0000, 0x4202_adf3),
             p(0x421e_0000, 0x4225_520d),
