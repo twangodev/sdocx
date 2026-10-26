@@ -31,12 +31,12 @@ fn sample_quad(
 }
 
 // Caller supplies observed spacing and a provisional zero threshold. The
-// capture admits the first zero-distance point; exact field +44 is unobserved.
+// capture admits the first zero-distance point; the meaning of field +44 is unverified.
 // This model is bounded to finite, non-rainbow RGB and curve-enabled
-// input of at least three points. A separate native two-point control takes
-// a different endPen branch, whose selection is not yet reconstructed.
+// input of at least two points. The two-point result is a host-only control;
+// general branch and color behavior remain unverified.
 fn tape_curve(points: &[P], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<[u32; 5]> {
-    assert!(points.len() >= 3);
+    assert!(points.len() >= 2);
     let mut last = points[0];
     let mut endpoint = last;
     let mut carry = spacing;
@@ -50,6 +50,19 @@ fn tape_curve(points: &[P], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<
         sample_quad(&curve, &mut carry, spacing, rgb, &mut out);
         last = p;
         endpoint = midpoint;
+    }
+    // Native saved redraw sets a flag, and drawPoint clears it after AddPoint.
+    // If no point has been emitted, endPen uses the endpoint-only branch.
+    if out.is_empty() {
+        let end = points[points.len() - 1];
+        out.push([
+            end.x.to_bits(),
+            end.y.to_bits(),
+            rgb[0].to_bits(),
+            rgb[1].to_bits(),
+            rgb[2].to_bits(),
+        ]);
+        return out;
     }
     // endPen builds a terminal line from the previous midpoint, then adds
     // the exact endpoint. SmPath line uses the same 15-bit parameter scale.
@@ -166,6 +179,31 @@ fn v51_five_point_curve_stream_matches_native() {
     assert_eq!(
         format!("{:x}", Sha256::digest(&bytes)),
         "4dcb3e46c86849ad2f818b555d608925ce2c5320e393d93884ce1985ce155bbd"
+    );
+}
+
+// V54 two-point synthetic control: host glibc fmodf(0, 0) produced NaN;
+// the guarded native consumer had an empty palette and returned finite RGB.
+// This does not establish Android math or guest floating-point-state parity.
+// Capture log SHA-256: 6bbc4fce620e72f04ddfd1fc6b4ea67aac4049a4c42a99ad85aeea912c37d685.
+#[test]
+fn v54_two_point_curve_stream_matches_bounded_host() {
+    use sha2::{Digest, Sha256};
+    let points = tape_curve(
+        &[P { x: 32.0, y: 32.0 }, P { x: 42.0, y: 32.0 }],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 20);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "de62cd988bb853335a3e4ca792621fdbde26eeb9808eae9dca9d8fd14101d75a"
     );
 }
 // Native GLSL from the pinned TapePen DSO: vertex offset 0x18bc6 and
