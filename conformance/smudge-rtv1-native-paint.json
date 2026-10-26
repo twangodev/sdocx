@@ -101,5 +101,28 @@
     ],
     "translated_quad_sha256_ref": "translated_interior_control.quad_sha256",
     "per_point_matching_draw_uploads": 2
+  },
+  "source_to_addpoint_controls": {
+    "scope": "Three finite synthetic Model strokes under 1920x1080 host profile, tool 2, curve enabled and default settings; resolved width and short-segment behavior are restricted to these controls.",
+    "capture_source_sha256": "6c7fa407c97484aa460b39227f71e02d543da9ba58f50664eba2248602cd3be4",
+    "source_manifest_sha256": "e4775c860a73b4a3e21da03745cfd673687c02b57339df4b286e31bfc1f2b039",
+    "cases": {
+      "bent": {
+        "input_points_f32le_hex": "000082420000784200009242000078420000924200008c420000a24200008c42",
+        "capture_log_sha256": "9fa36189905c4ee65cb9e260d2c865a0de1f5149e967b6170b2d89b94f1437b6",
+        "addpoint_count": 6
+      },
+      "straight": {
+        "input_points_f32le_hex": "000082420000784200009242000078420000a24200007842",
+        "capture_log_sha256": "af5731f3bcf9b4108fadd95603a6510b8dfd7e547fb12a250c16b95f2db2deec",
+        "addpoint_count": 5
+      },
+      "size": {
+        "input_points_f32le_hex": "000082420000784200009242000078420000a24200007842",
+        "capture_log_sha256": "a8626b52d29164e34b72c8d63f7fca1439b3a0e46ab34b11f35e365a55fdd82d",
+        "addpoint_count": 5
+      }
+    },
+    "expected_register_bits_location": "crates/sdocx/src/ink/smudge.rs source_to_addpoint_matches_native_streams"
   }
 }

@@ -1014,3 +1014,125 @@ mod tests {
         assert_eq!(frame.destination_sha256, target_sha);
     }
 }
+
+#[cfg(test)]
+mod smudge_path_capture_tests {
+    // Test-only native GLV1 redraw model for the two captured finite controls.
+    // Caller supplies resolved native data width and redraw's alternating-skip flag.
+    // Evidence: libSPenSmudge.so GLV1 drawLine 0x1a774, redraw 0x1a960,
+    // setScreenResolution 0x1a0fc, constructor 0x19d7c.
+    use crate::ink::path::{P, Quad};
+
+    fn source_to_addpoint(
+        points: &[P],
+        width: f32,
+        screen_short: u32,
+        spacing_factor: f32,
+        skip_short: bool,
+    ) -> Option<Vec<[f32; 3]>> {
+        if points.len() < 2
+            || !width.is_finite()
+            || width <= 0.0
+            || screen_short == 0
+            || !spacing_factor.is_finite()
+            || spacing_factor <= 0.0
+            || points.iter().any(|p| !p.x.is_finite() || !p.y.is_finite())
+        {
+            return None;
+        }
+        let spacing = (width * spacing_factor / 10.0).clamp(3.0, 10.0);
+        let minimum = screen_short as f32 / 360.0;
+        let alternate_limit = minimum * 12.0;
+        let mut previous = points[0];
+        let mut midpoint = previous;
+        let mut pending = 0.0_f32;
+        let mut alternating = true;
+        let mut out = Vec::new();
+        for &p in points {
+            // redraw includes history[0], and then current point
+            let delta = previous.sub(p);
+            let distance = delta.len();
+            if distance < minimum {
+                continue;
+            }
+            if skip_short && distance < alternate_limit {
+                let old = alternating;
+                alternating = !alternating;
+                if old {
+                    continue;
+                }
+            } else {
+                alternating = true;
+            }
+            let next_midpoint = previous.mid(p);
+            let quad = Quad::new(midpoint, previous, next_midpoint);
+            midpoint = next_midpoint;
+            while pending <= quad.length {
+                // Empty paths have no segments, and native getPosTan returns false.
+                if quad.length > 0.0 {
+                    let pos = quad.at(pending);
+                    out.push([pos.x, pos.y, width * 0.5]);
+                }
+                pending += spacing;
+            }
+            pending -= quad.length;
+            previous = p;
+        }
+        Some(out)
+    }
+
+    #[test]
+    fn source_to_addpoint_matches_native_streams() {
+        // Controlled native Model/Drawing captures, 1920x1080 profile,
+        // tool 2, default-null settings, and source points translated by (64, 64).
+        // SetSize at RVA 0x18784 divides input size by the 1.3f constant
+        // at 0xcabc. Captured AddPoint values are expectations only.
+        type Case<'a> = (&'a str, f32, &'a [(f32, f32)], &'a [[u32; 3]]);
+        let cases: &[Case<'_>] = &[
+            (
+                "straight",
+                3.144,
+                &[(65.0, 62.0), (73.0, 62.0), (81.0, 62.0)],
+                &[
+                    [0x42820000, 0x42780000, 0x3f9ac813],
+                    [0x42878e34, 0x42780000, 0x3f9ac813],
+                    [0x428e0000, 0x42780000, 0x3f9ac813],
+                    [0x42940000, 0x42780000, 0x3f9ac813],
+                    [0x429a0000, 0x42780000, 0x3f9ac813],
+                ],
+            ),
+            (
+                "bent",
+                3.144,
+                &[(65.0, 62.0), (73.0, 62.0), (73.0, 70.0), (81.0, 70.0)],
+                &[
+                    [0x42820000, 0x42780000, 0x3f9ac813],
+                    [0x42878e34, 0x42780000, 0x3f9ac813],
+                    [0x428e4271, 0x42799993, 0x3f9ac813],
+                    [0x4291a62b, 0x4280fffb, 0x3f9ac813],
+                    [0x42928fb7, 0x4287ad53, 0x3f9ac813],
+                    [0x42965f32, 0x428b74c0, 0x3f9ac813],
+                ],
+            ),
+            (
+                "larger size",
+                8.0,
+                &[(65.0, 62.0), (73.0, 62.0), (81.0, 62.0)],
+                &[
+                    [0x42820000, 0x42780000, 0x4044ec4f],
+                    [0x42878e34, 0x42780000, 0x4044ec4f],
+                    [0x428e0000, 0x42780000, 0x4044ec4f],
+                    [0x42940000, 0x42780000, 0x4044ec4f],
+                    [0x429a0000, 0x42780000, 0x4044ec4f],
+                ],
+            ),
+        ];
+        for &(name, size, points, expected) in cases {
+            let input: Vec<P> = points.iter().map(|&(x, y)| P { x, y }).collect();
+            let width = size / 1.3_f32;
+            let actual = source_to_addpoint(&input, width, 1080, 1.0, false).unwrap();
+            let actual: Vec<[u32; 3]> = actual.iter().map(|p| p.map(f32::to_bits)).collect();
+            assert_eq!(actual.as_slice(), expected, "{name} native AddPoint bits");
+        }
+    }
+}
