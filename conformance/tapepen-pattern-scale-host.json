@@ -1,0 +1,30 @@
+{
+  "schema": "sdocx.tapepen.pattern-scale-host-control.v1",
+  "scope": "Synthetic Model stroke, 256x256 caller, host Mesa and explicit supplied pattern-1 SVG; not saved SDOCX, app asset mapping, arbitrary transform or device parity.",
+  "source_runner_sha256": "9b4d217d70a4f1e3252381de4b807d5e697304b13c3a32d1615b6cc2b9c4f1d8",
+  "source_manifest_sha256": "ede37c575f934d24e1c5b46b92cd640a59033f03556d4aef0a21c475b0fb5e19",
+  "asset_svg_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+  "instance_stream_sha256": "ca5a310ff7667cc220187ec6da530384936a3505f20cd967fa683bf9a70b7253",
+  "pattern_upload_sha256": "78a0a70b418c59c460f8791d48d7f131ad7d445f3797323eb041fd9b689ba189",
+  "pattern_size": [
+    64,
+    64
+  ],
+  "grain_offset_f32le_hex": "e65b0f42e85bdd41",
+  "runs": [
+    {
+      "pattern_scale": 1,
+      "requested_f32le": "0000803f",
+      "getter_f32le": "0000803f",
+      "log_sha256": "83bcde3b35990345c03c0dc27bb16d0475486d6e13a5cabfdbccf5b0802a324b",
+      "final_native_rgba_sha256": "55cf269ec678baee4b1a79cef9cc5323f0a1e27de1bcbbf02c34d92b41ed0985"
+    },
+    {
+      "pattern_scale": 2,
+      "requested_f32le": "00000040",
+      "getter_f32le": "00000040",
+      "log_sha256": "10bc51271c9e9764f60daee0321afc3a3a3787ba3f20e2e69861712afde5907e",
+      "final_native_rgba_sha256": "55cf269ec678baee4b1a79cef9cc5323f0a1e27de1bcbbf02c34d92b41ed0985"
+    }
+  ]
+}

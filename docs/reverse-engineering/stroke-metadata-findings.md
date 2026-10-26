@@ -133,6 +133,16 @@ remain untraced; neither Tape-only attenuation nor universal exposure of
 underlying page ink is established. Raster surface attenuation does not itself
 delete or subtract underlying stored vector geometry.
 
+A paired synthetic host capture with the same seeded bitmap observed reveal
+attenuation on an intermediate TapePen texture before its final composition
+onto the caller bitmap. It does not establish which page layers a saved note
+places in that intermediate. A separate [pattern-scale control]
+(../../conformance/tapepen-pattern-scale-host.json) sent scales 1 and 2
+through the native Model and render-thread setters; the tested affine profile
+produced identical point streams, pattern uniforms, and final pixels. The
+native scale-dependent vector is subsequently divided by scale, a possible
+explanation for this case, not a general scale-invariance claim.
+
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it
 also reaches this consumer when TapePen resolution succeeds. That does not
