@@ -103,7 +103,7 @@
     "per_point_matching_draw_uploads": 2
   },
   "source_to_addpoint_controls": {
-    "scope": "Three finite synthetic Model strokes under 1920x1080 host profile, tool 2, curve enabled and default settings; resolved width and short-segment behavior are restricted to these controls.",
+    "scope": "Seven finite synthetic Model strokes under 1920x1080 host profile and default settings; sampling and pressure behavior are restricted to these controls.",
     "capture_source_sha256": "6c7fa407c97484aa460b39227f71e02d543da9ba58f50664eba2248602cd3be4",
     "source_manifest_sha256": "e4775c860a73b4a3e21da03745cfd673687c02b57339df4b286e31bfc1f2b039",
     "cases": {
@@ -121,8 +121,37 @@
         "input_points_f32le_hex": "000082420000784200009242000078420000a24200007842",
         "capture_log_sha256": "a8626b52d29164e34b72c8d63f7fca1439b3a0e46ab34b11f35e365a55fdd82d",
         "addpoint_count": 5
+      },
+      "pressure": {
+        "input_points_f32le_hex": "000082420000784200009242000078420000a24200007842",
+        "input_pressure_f32le_hex": "6666663fcdcccc3dcdcc4c3e",
+        "capture_log_sha256": "ed2da418dcd3af031c152ec4027fdb643f7754529e327f312a9c900c38223463",
+        "addpoint_count": 5,
+        "tool_type": 2
+      },
+      "tool1": {
+        "input_points_f32le_hex": "000082420000784200009242000078420000a24200007842",
+        "input_pressure_f32le_hex": "9a99993e9a99193f9a99593f",
+        "capture_log_sha256": "f1e5d71986f317f34e38041f53d44985ef2faed71899bab086cfecfc157817aa",
+        "addpoint_count": 3,
+        "tool_type": 1
+      },
+      "duplicate": {
+        "input_points_f32le_hex": "000082420000784200008242000078420000824200007842",
+        "capture_log_sha256": "32c046035be41d327520752f3b43de2eaac3af66ac73c711815145ba9103ae82",
+        "addpoint_count": 0,
+        "scope": "Native Drawing returned after redraw/drawLine; no RT/GL draw asserted."
+      },
+      "short": {
+        "input_points_f32le_hex": "000082420000784233338242000078426666824200007842",
+        "capture_log_sha256": "e73050be529c949cd9b7ea191012560223701e02086c8a898d3f1cd1822142b8",
+        "addpoint_count": 0,
+        "scope": "Native Drawing returned after redraw/drawLine; no RT/GL draw asserted."
       }
     },
-    "expected_register_bits_location": "crates/sdocx/src/ink/smudge.rs source_to_addpoint_matches_native_streams"
+    "expected_register_bits_location": "crates/sdocx/src/ink/smudge.rs source_to_addpoint_matches_native_streams",
+    "pressure_control_note": "Changed pressures on matched tool-2 straight stroke produced the same observed AddPoint stream as the straight control; no general pressure-independence claim.",
+    "empty_case_capture_source_sha256": "b935ef6faacc7edd417600d78ce967b5bdc1498b5febf51c370a29fad12dc125",
+    "empty_case_manifest_sha256": "79936f9d1c6f21e55c29ab729eb92d3f9843776c37fa0107a078850bc0e8f75c"
   }
 }

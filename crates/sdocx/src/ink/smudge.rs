@@ -1135,4 +1135,39 @@ mod smudge_path_capture_tests {
             assert_eq!(actual.as_slice(), expected, "{name} native AddPoint bits");
         }
     }
+
+    #[test]
+    fn tool1_alternating_filter_matches_native_stream() {
+        // Tool 1; 1920x1080, size 3.144, pressure [0.3, 0.6, 0.85].
+        // Host input was translated by (64, 64) before Model construction.
+        let input = [(65.0, 62.0), (73.0, 62.0), (81.0, 62.0)].map(|(x, y)| P { x, y });
+        let expected = [
+            [0x42820000, 0x42780000, 0x3f9ac813],
+            [0x428771b7, 0x42780000, 0x3f9ac813],
+            [0x428d1c69, 0x42780000, 0x3f9ac813],
+        ];
+        let actual = source_to_addpoint(&input, 3.144_f32 / 1.3, 1080, 1.0, true).unwrap();
+        let actual: Vec<[u32; 3]> = actual.iter().map(|p| p.map(f32::to_bits)).collect();
+        assert_eq!(actual.as_slice(), expected);
+    }
+
+    #[test]
+    fn duplicate_and_short_paths_emit_no_native_points() {
+        // Both controls completed native redraw and drawLine without AddPoint;
+        // neither establishes an RT or GL draw.
+        for xs in [
+            [0x4282_0000, 0x4282_0000, 0x4282_0000],
+            [0x4282_0000, 0x4282_3333, 0x4282_6666],
+        ] {
+            let input = xs.map(|x| P {
+                x: f32::from_bits(x),
+                y: 62.0,
+            });
+            assert!(
+                source_to_addpoint(&input, 3.144_f32 / 1.3, 1080, 1.0, false)
+                    .unwrap()
+                    .is_empty()
+            );
+        }
+    }
 }
