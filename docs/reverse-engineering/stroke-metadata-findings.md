@@ -169,6 +169,9 @@ For one synthetic curve, [size controls](../../conformance/tapepen-sampling-host
 at 2, 8, and 24 produced the same 49-point stream and observed 0.5 spacing,
 but different final bitmap hashes. The size-8 run used a different pinned
 runner; these host captures do not establish general size invariance.
+In a matched pair using the same runner, setting all four saved pressures to
+0 or 0.5 left both the stream and final bitmap hashes unchanged. This single
+stylus control does not establish general pressure independence.
 
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it

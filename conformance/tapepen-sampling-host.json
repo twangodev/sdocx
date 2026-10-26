@@ -34,5 +34,58 @@
       "spacing_f32le": "0000003f"
     }
   },
-  "conclusion": "These three inputs have identical stream and observed spacing and distinct final target hashes. This does not establish general size invariance, threshold semantics, or paint parity."
+  "conclusion": "These three inputs have identical stream and observed spacing and distinct final target hashes. This does not establish general size invariance, threshold semantics, or paint parity.",
+  "pressure_control": {
+    "scope": "Matched synthetic curve-enabled Model stylus controls, V54 runner, pinned Unicorn host and Mesa profile, 256x256; inputs differ only in four saved pressure samples. No Android/device/document parity.",
+    "runner_sha256": "97f0ad32982f0f122b7abf6361e575b85151427ae871513cc827436c35b40fb1",
+    "cases": {
+      "pressure_half": {
+        "log_sha256": "d2b426dad5fb88985bef222af0876a7f438b2f9d687ab649e05a845ae19f600d",
+        "pressure_f32_le": [
+          "0000003f",
+          "0000003f",
+          "0000003f",
+          "0000003f"
+        ],
+        "point_count": 49,
+        "stream_bytes": 980,
+        "stream_sha256": "f18881c934fca24b1067c40cd9b8d13310a41e6da3835d5735c1da59103dc085",
+        "target_rgba_sha256": "624c7cec67d052a2d1e3a0906c5e6563176b2d429a8f7b2f3c01efc8c5b210ae",
+        "observed_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "pressure_zero": {
+        "log_sha256": "f4e70cca792b88da958fed9e933185be8f6e2426a4401b24492d0b0365d8ac18",
+        "pressure_f32_le": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "point_count": 49,
+        "stream_bytes": 980,
+        "stream_sha256": "f18881c934fca24b1067c40cd9b8d13310a41e6da3835d5735c1da59103dc085",
+        "target_rgba_sha256": "624c7cec67d052a2d1e3a0906c5e6563176b2d429a8f7b2f3c01efc8c5b210ae",
+        "observed_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "conclusion": "These two inputs produced identical streams and final target hashes; this does not establish general pressure independence."
+  }
 }
