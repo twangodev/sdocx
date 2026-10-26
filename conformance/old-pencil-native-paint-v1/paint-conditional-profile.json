@@ -1,0 +1,290 @@
+{
+  "atlas": {
+    "compressed_bytes": 30539,
+    "compressed_sha256": "72f21bd4ac7b84a27237a874fd137b50b6cd77c36d98764a3a7f8b11cb73bc6d",
+    "dimensions": [
+      144,
+      144
+    ],
+    "format": "RGBA8",
+    "native_source_pointer": "0x107ffd50",
+    "path": "fixtures/pencil-atlas-rgba8-144x144.zlib",
+    "raw_sha256": "5149e5daea6e172fb1798904209904676bcb49da168993657868c0ef4858d440"
+  },
+  "fixture_provenance": {
+    "atlas_source": "root.pencil_texture_uploads[0].source_zlib_base64 decompresses to exact native source pointer upload bytes; retained compressed fixture SHA is pinned",
+    "instance_vbo_source": "cases[0].native_vertex_input_observer.draw_snapshots[0].enabled_attribute_arrays[index=1].buffer_contents_hex; index=2 fetches alias same buffer at pointer offset 12; exact bytes equal pre-existing 752-byte native sampler fixture",
+    "quad_source": "attribute 0 observed actual 64-byte GL buffer payload, values recorded in this receipt and raw payload hash in V17 draw snapshot",
+    "sparse_expected_source": "cases[0].pixel_evidence.draw_observations[0].post_draw_rgba8.data_base64; decoded GL lower-left RGBA8 rows and converted to top-origin sparse tuple records; expected pixels are used only in assertions, never paint input"
+  },
+  "material": {
+    "blend_calls": [
+      {
+        "call": "glBlendEquationSeparate",
+        "values": [
+          32774,
+          32774
+        ]
+      },
+      {
+        "call": "glBlendFuncSeparate",
+        "values": [
+          770,
+          771,
+          1,
+          771
+        ]
+      }
+    ],
+    "input_color": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "native_texture_upload": {
+      "format": 6408,
+      "height": 144,
+      "level": 0,
+      "offset": [
+        0,
+        0
+      ],
+      "target": 3553,
+      "type": 5121,
+      "width": 144
+    },
+    "sampler": {
+      "mag_filter": 9728,
+      "min_filter": 9728,
+      "wrap_s": 33071,
+      "wrap_t": 33071
+    },
+    "scissor_box": [
+      0,
+      0,
+      1920,
+      1080
+    ],
+    "scissor_enabled": true,
+    "uniform_calls": [
+      {
+        "call": "glUniformMatrix4fv",
+        "count": 1,
+        "guest_pointer": "0x107ff6bc",
+        "location": 0,
+        "lr": "0xb02f74c",
+        "pc": "0xa065160",
+        "program": 4,
+        "raw_f32_le_hex": "8988883a00000000000000000000000000000000d6b9f23a00000000000000000000000000000000000100b800000000000080bf000080bf000000000000803f",
+        "raw_f32_le_sha256": "785e9425ed6ee90c3462351507e6ef09f2100abd15bc08e4337e91048d4c29c8",
+        "transpose": 0,
+        "uniform_name": "uProjectionMatrix",
+        "values_f32": [
+          0.0010416667209938169,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0018518518190830946,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          -1.0,
+          -1.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "call": "glUniform4fv",
+        "count": 1,
+        "guest_pointer": "0x107ff7cc",
+        "location": 3,
+        "lr": "0xb02f85c",
+        "pc": "0xa065150",
+        "program": 4,
+        "raw_f32_le_hex": "0000000000000000000000000000803f",
+        "raw_f32_le_sha256": "7ab8f6c26e4f9862c95a18c8e5c50403eeb64d8869fbbf9a7a6397d9a63b7b0e",
+        "uniform_name": "inputColor",
+        "values_f32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "call": "glUniform1f",
+        "location": 1,
+        "lr": "0xb02f45c",
+        "pc": "0xa065120",
+        "program": 4,
+        "raw_f32_le_hex": "00004040",
+        "raw_f32_le_sha256": "ea2845900b5856c9bf354b1aa9761b5aa6888e5ed61738fe9579ca42bc0f6054",
+        "uniform_name": "numTiles",
+        "value_f32": 3.0
+      },
+      {
+        "call": "glUniform1i",
+        "location": 2,
+        "lr": "0xb02f4a0",
+        "pc": "0xa065110",
+        "program": 4,
+        "uniform_name": "sampler0",
+        "value_i32": 0
+      }
+    ],
+    "viewport": [
+      0,
+      0,
+      1920,
+      1080
+    ]
+  },
+  "native_binary_identity": {
+    "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+    "base_dso_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "graphics_dso_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "pencil_dso_sha256": "39eb599262676ca5ec67b86e702b43474a04e9ca9677072f247b131222189df9"
+  },
+  "native_capture": {
+    "case": "fresh_default_s2_p050",
+    "path": "tmp/vector-parity-plan/pen-family-audit/old-pencil-material-controlled-v17-vbo-observer/root-material-v17.json",
+    "schema": "sdocx-old-pencil-native-drawing-capture.v17",
+    "sha256": "afac7de07513bbbd3b339d3d44cf797670754274ce4a2266af9c9276a9eba417"
+  },
+  "native_draw": {
+    "count": 4,
+    "instances": 47,
+    "mode": 5,
+    "post_nonzero": 35,
+    "post_orientation": "native readback lower-left; sparse fixture row coordinates are top-origin",
+    "post_sha256": "7724889e9372191661250086f01b7b87bcdb3e9fdac5f455bfe2aff5977bfb52",
+    "pre_nonzero": 0,
+    "program": 4,
+    "scissor": [
+      0,
+      0,
+      1920,
+      1080
+    ],
+    "scissor_enabled": true,
+    "target_rgba8": [
+      1920,
+      1080
+    ],
+    "vao": 0,
+    "viewport": [
+      0,
+      0,
+      1920,
+      1080
+    ]
+  },
+  "profile_limits": [
+    "saved-stroke input profile: old Pencil GLV1; tool_type 2; stroke_type 0; curve enabled; size 2; four listed source points; pressure .5 each",
+    "native atlas/material and actual V17 draw inputs are frozen profile evidence, not generalized to all Pencil documents",
+    "unfused F32 source operation order is a conditional software profile, not observed backend machine arithmetic IR",
+    "renderer output is compared to a small native sparse oracle; fixture is not copied to the output and no observed output is used as paint input"
+  ],
+  "saved_stroke_source_profile": {
+    "color_argb": "0xff000000",
+    "curve_enabled": true,
+    "orientation": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "pen_size_f32": 2.0,
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        30.0,
+        10.0
+      ]
+    ],
+    "pressure": [
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "stroke_type": 0,
+    "tilt": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "timestamps": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "tool_type": 2
+  },
+  "schema": "sdocx-old-pencil-paint-rust-source-profile.v1",
+  "shader_join": {
+    "embedded_fragment_sha256": "4f22c3f608e86321db672e41c9166f25c80b617de4b86ea1706b05ad0c081eb1",
+    "embedded_vertex_sha256": "4a8d4a804ca3661f4c9c173cb9f580fafcc5bd85a79d85276d144af60cda2574",
+    "operation_order_model": "source ordered unfused binary32 vertex offset, projection, window conversion, fragment varying planes, UV divide/add, source-over blend; machine IR not observed",
+    "program": 4,
+    "runtime_join_present": true,
+    "runtime_prefix": "#version 300 es \\n "
+  },
+  "sparse_native_frame": {
+    "bytes": 280,
+    "full_frame_baseline": "all other pixels transparent black, established by native pre-draw zero + post-draw nonzero count and hash",
+    "path": "fixtures/native-rgba8-nonzero-v17.bin",
+    "pixel_count": 35,
+    "record_layout": "35 sorted records: little-endian u16 x, little-endian u16 y (top-origin), RGBA8",
+    "sha256": "6ad8dcc464a01961f96d75ae4f0214e3deeefda55d6caeb3dbd480da82f0b580"
+  },
+  "status": "candidate_source_only_not_compiled_or_rendered",
+  "vbo": {
+    "actual_v17_byte_equal_to_existing_native_sampler_fixture": true,
+    "attribute1_offset": 0,
+    "attribute1_size": 3,
+    "attribute2_offset": 12,
+    "attribute2_size": 1,
+    "instance_attribute_buffer_bytes": 752,
+    "quad_bytes_sha256": "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4",
+    "quad_values": [
+      -1,
+      -1,
+      0,
+      1,
+      -1,
+      1,
+      0,
+      0,
+      1,
+      -1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "sha256": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+    "stride": 16
+  }
+}
