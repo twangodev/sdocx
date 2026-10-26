@@ -92,6 +92,71 @@ fn tape_curve(points: &[P], spacing: f32, threshold: f32, rgb: [f32; 3]) -> Vec<
     out
 }
 
+// Bounded non-curve synthetic control, with caller-supplied observed spacing.
+// Sampling advances through straight segments and then emits the exact end.
+// General zero-length and threshold behavior beyond this control is unverified.
+fn tape_polyline(points: &[P], spacing: f32, rgb: [f32; 3]) -> Vec<[u32; 5]> {
+    assert!(points.len() >= 2);
+    let mut carry = spacing;
+    let mut out = Vec::new();
+    let scale = 32767.0_f32 * f32::from_bits(0x3800_00fd);
+    for pair in points.windows(2) {
+        let a = pair[0];
+        let b = pair[1];
+        let length = b.sub(a).len();
+        if length > 0.0 {
+            while carry <= length {
+                let p = a.lerp(b, carry * scale / length);
+                out.push([
+                    p.x.to_bits(),
+                    p.y.to_bits(),
+                    rgb[0].to_bits(),
+                    rgb[1].to_bits(),
+                    rgb[2].to_bits(),
+                ]);
+                carry += spacing;
+            }
+            carry -= length;
+        }
+    }
+    let end = points[points.len() - 1];
+    out.push([
+        end.x.to_bits(),
+        end.y.to_bits(),
+        rgb[0].to_bits(),
+        rgb[1].to_bits(),
+        rgb[2].to_bits(),
+    ]);
+    out
+}
+
+// V54 synthetic Model with curve disabled; pinned host profile only.
+// Capture log SHA-256: 15a3affd7b42ed7e1108d1e83bf38a9a6184303d31fa9ba689f1469f1a55dad5.
+#[test]
+fn v54_no_curve_stream_matches_bounded_host() {
+    use sha2::{Digest, Sha256};
+    let points = tape_polyline(
+        &[
+            P { x: 32.0, y: 32.0 },
+            P { x: 42.0, y: 32.0 },
+            P { x: 42.0, y: 42.0 },
+            P { x: 52.0, y: 42.0 },
+        ],
+        0.5,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 1220);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "ffa896f7013d9d6a42daf588bd277ea0611ce410a6c814f040a7a9598171f2f8"
+    );
+}
+
 #[test]
 fn v32_native_stream() {
     use sha2::{Digest, Sha256};
