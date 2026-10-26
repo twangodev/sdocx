@@ -109,10 +109,10 @@ fn v32_native_stream() {
 // Native GLSL from the pinned TapePen DSO: vertex offset 0x18bc6 and
 // fragment offset 0x18e58. V42 observes MAX blending on the R8 target.
 // Mask output is the test oracle only; no captured mask enters this model.
-// Explicit captured shader and raster profile for two host controls. This
-// uses bounding-box iteration rather than general triangle edge coverage and
-// approximates fragment precision and UNORM rounding. Rotation and offset
-// are zero, the viewport starts at the origin, and blending is MAX.
+// Explicit captured shader and raster profile for bounded host controls. This
+// uses inverse-rotated rectangle coverage rather than general triangle edge
+// coverage and approximates fragment precision and UNORM rounding. The
+// viewport starts at the origin and blending is MAX.
 #[derive(Clone, Copy)]
 struct RevealProfile {
     half_extent: [f32; 2],
@@ -125,10 +125,14 @@ struct RevealProfile {
 
 fn reveal_mask(points: &[[u32; 5]], profile: RevealProfile) -> Vec<u8> {
     const WIDTH: usize = 256;
-    assert_eq!(profile.rotation_rad, 0.0);
     assert_eq!(profile.offset, [0.0, 0.0]);
     assert!(profile.point_radius > 0.0 && profile.aa_width > 0.0);
     let mut mask = vec![0u8; WIDTH * WIDTH];
+    let (sin, cos) = profile.rotation_rad.sin_cos();
+    let hx = profile.half_extent[0];
+    let hy = profile.half_extent[1];
+    let bound_x = (cos * hx).abs() + (sin * hy).abs();
+    let bound_y = (sin * hx).abs() + (cos * hy).abs();
     let aa = profile.aa_width.max(0.001);
     let ax = profile.point_radius * 0.25;
     let ay = profile.point_radius;
@@ -139,16 +143,22 @@ fn reveal_mask(points: &[[u32; 5]], profile: RevealProfile) -> Vec<u8> {
         t * t * (3.0 - 2.0 * t)
     };
     for p in points {
-        let px = f32::from_bits(p[0]);
-        let py = f32::from_bits(p[1]);
-        for y in (py - profile.half_extent[1]).floor().max(0.0) as usize
-            ..((py + profile.half_extent[1]).ceil() as usize).min(WIDTH)
+        let px = f32::from_bits(p[0]) + profile.offset[0];
+        let py = f32::from_bits(p[1]) + profile.offset[1];
+        for y in
+            (py - bound_y).floor().max(0.0) as usize..((py + bound_y).ceil() as usize).min(WIDTH)
         {
-            for x in (px - profile.half_extent[0]).floor().max(0.0) as usize
-                ..((px + profile.half_extent[0]).ceil() as usize).min(WIDTH)
+            for x in (px - bound_x).floor().max(0.0) as usize
+                ..((px + bound_x).ceil() as usize).min(WIDTH)
             {
-                let dx = x as f32 + 0.5 - px;
-                let dy = y as f32 + 0.5 - py;
+                let screen_x = x as f32 + 0.5 - px;
+                let screen_y = y as f32 + 0.5 - py;
+                // Fragment shader rotates vPhysRot back to ellipse-local space.
+                let dx = cos * screen_x + sin * screen_y;
+                let dy = -sin * screen_x + cos * screen_y;
+                if dx.abs() > hx || dy.abs() > hy {
+                    continue;
+                }
                 let k1 = ((dx / ax).powi(2) + (dy / ay).powi(2)).sqrt();
                 let k2 = ((dx / (ax * ax)).powi(2) + (dy / (ay * ay)).powi(2)).sqrt();
                 let sd = if k2 < 1e-7 {
@@ -336,6 +346,70 @@ fn v43_reveal_rotated_diagonal_model_against_native() {
     assert_eq!(
         format!("{:x}", Sha256::digest(&oracle)),
         "c27ce4a8e1d6ee4a74f7a3b9d91a3250a666ee798706ebbd2fe5a07450eaa212"
+    );
+    let mut different = 0;
+    let mut max_error = 0;
+    for (&a, pixel) in actual.iter().zip(oracle.as_chunks::<4>().0.iter()) {
+        different += usize::from(a != pixel[0]);
+        max_error = max_error.max(a.abs_diff(pixel[0]));
+        assert_eq!(a != 0, pixel[0] != 0);
+    }
+    assert!(max_error <= 1, "max error {max_error}");
+    assert!(different <= 1, "different pixels {different}");
+}
+
+// Native ObjectStroke::SetRotation has already run on this input. This model
+// starts with the native post-rotation point array; it does not implement that
+// setter. Spacing 0.5 is observed; zero threshold remains provisional.
+// V46 runner SHA-256: 3a50791175105e279beed31cef3413d652e21e57a12f24fb7cbd8d2b49b21a0f.
+#[test]
+fn v46_reveal_native_model_rotation_against_native_mask() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let p = |x, y| P {
+        x: f32::from_bits(x),
+        y: f32::from_bits(y),
+    };
+    let points = tape_curve(
+        [
+            p(0x420f_5be6, 0x41dd_5be6),
+            p(0x4232_0000, 0x4202_adf3),
+            p(0x421e_0000, 0x4225_520d),
+            p(0x4240_a41a, 0x4239_520d),
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 980);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "ca5a310ff7667cc220187ec6da530384936a3505f20cd967fa683bf9a70b7253"
+    );
+    let actual = reveal_mask(
+        &points,
+        RevealProfile {
+            half_extent: [1.680_000_1, 6.720_000_3],
+            point_radius: 6.0,
+            aa_width: 0.12,
+            border_width: 3.0,
+            rotation_rad: f32::from_bits(0x3f06_0a92),
+            offset: [0.0, 0.0],
+        },
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(&include_bytes!("fixtures/tapepen-v46/mask.rgba.zlib")[..])
+        .read_to_end(&mut oracle)
+        .unwrap();
+    assert_eq!(oracle.len(), 256 * 256 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "10b0db835e4be38b4e67204d90bf231d759b6f57f695790cf18c3636a10558d9"
     );
     let mut different = 0;
     let mut max_error = 0;
