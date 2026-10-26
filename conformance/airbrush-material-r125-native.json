@@ -1,0 +1,166 @@
+{
+  "binary": "airbrush-material-r125-native.bin",
+  "binary_bytes": 64,
+  "binary_format": {
+    "header": "magic[4],version:u16,count:u16",
+    "magic": "ABMT",
+    "omitted_pixel": "exact transparent [0,0,0,0]",
+    "rows": "top-down sparse nonzero pixels [x:u16,y:u16,RGBA8], little-endian",
+    "version": 1
+  },
+  "binary_sha256": "98614e0343dc3b98dbccdd747e2aef992fee3765a540adbb23ad510d4191aac0",
+  "case_id": "airbrush-explicit-empty-tool2-v2-material-r125-bg00000000",
+  "limits": [
+    "synthetic Model setters, host IContext/queue, explicit page-to-native Y-flip, host Mesa",
+    "single texel/material witness only; not Android GPU, whole-stroke, arbitrary transform/scale, or PDF proof"
+  ],
+  "material_witness": {
+    "asset_path": "conformance/airbrush-pattern.r8",
+    "asset_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+    "expected_output_doc_xy": [
+      128,
+      128
+    ],
+    "local_texel_center_xy": [
+      0.046875,
+      -0.015625
+    ],
+    "native_rgba8": [
+      10,
+      21,
+      13,
+      24
+    ],
+    "purpose": "native material control for source RTZ-half sample then F32 alpha multiply and RGBA8 conversion; production renderer output is checked separately",
+    "r8": 125,
+    "texel_top_down_xy": [
+      49,
+      48
+    ]
+  },
+  "native_capture": {
+    "candidate_manifest_sha256": "deef6f8604b99e933ee3da934b5d5aac90e22b21543feab5987f229bee96d13a",
+    "candidate_script_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v30/conformance/capture_candidate.py",
+    "candidate_script_sha256": "47f4a303fcae0e2c0b50344e3aa0a707921e9ee03f27110fcd619cd62407a63e",
+    "draw_call": {
+      "first": 0,
+      "instance_count": 1,
+      "mode": 5,
+      "vertex_count": 4
+    },
+    "path": "/tmp/sdocx-airbrush-material-native-root-v30.log",
+    "post_draw_changed_pixels": 7,
+    "post_draw_document_top_down_sha256": "a2fd2de1b00bb90edff32b2c083468dac9c8f2839b8ed7a69fcbae746d148acc",
+    "post_draw_gl_lower_left_sha256": "b8e76af59bd49e1e657d5b2a908bfbc0a4f923e0199fd570026e4cd1231d50c2",
+    "post_draw_nonzero_pixels": 7,
+    "pre_draw_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+    "pre_draw_nonzero_pixels": 0,
+    "pre_post_gl_errors": [],
+    "schema": "airbrush-pageflip-drawing-to-scene-v30-material-sample-candidate",
+    "sha256": "96b8c61254bc25e2a1d785abb108fcafa6bf46594b6dd9dfeed0f98e2b4d78f4"
+  },
+  "native_model_inputs": {
+    "native_model_setter": "SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)",
+    "source_arrays": {
+      "orientations": {
+        "count": 2,
+        "data_hex": "cdcc4c3e3333b33e",
+        "element_size": 4
+      },
+      "points": {
+        "count": 2,
+        "data_hex": "0074004300840043007c004300840043",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 2,
+        "data_hex": "9a99993e9a99193f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 2,
+        "data_hex": "8fc2f53d0ad7a33e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 2,
+        "data_hex": "2c0100003b010000",
+        "element_size": 4
+      }
+    },
+    "source_point_count": 2,
+    "source_size_f32_bits": "4c374940"
+  },
+  "native_profile": {
+    "advanced_setting_mode": "explicit-empty",
+    "canvas": [
+      256,
+      256
+    ],
+    "draw_matrix3_column_major_f32": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "000080bf",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00008043",
+      "00000000",
+      "0000803f"
+    ],
+    "initial_rgba8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "native_rt_argb": "0x326cdd8f",
+    "native_rt_size_u32": 3,
+    "saved_argb": "0xff6cdd8f",
+    "selected_drawable_version": 2,
+    "source": 0,
+    "tool_type_raw": 2
+  },
+  "native_vbo": {
+    "bytes": 16,
+    "little_endian_f32_hex": "0074004300840043000000000000803f",
+    "row_count": 1,
+    "row_f32": [
+      128.453125,
+      128.515625,
+      0.0,
+      1.0
+    ],
+    "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c",
+    "source": "captured native AddPoint buffer; not injected"
+  },
+  "reuse_v30": {
+    "candidate_manifest_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v30/candidate.json",
+    "candidate_manifest_sha256": "deef6f8604b99e933ee3da934b5d5aac90e22b21543feab5987f229bee96d13a",
+    "native_dso_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_helper_sha256": {
+      "airbrush_saved_caller_native": "6750fbf6c939837713c39a25cd7e485a6189b0f18113b66021f708acc6cd2370",
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "oblique_canvas_native": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e"
+    }
+  },
+  "schema": "sdocx.airbrush-material-r125-pixel-oracle.v1"
+}

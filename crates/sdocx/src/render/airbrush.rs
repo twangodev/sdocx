@@ -133,8 +133,8 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
         let sy = 95 - y.saturating_sub(pad_texels).min(95) as usize;
         for x in 0..edge {
             let sx = x.saturating_sub(pad_texels).min(95) as usize;
-            let r8 = PATTERN_R8[sy * 96 + sx] as u16;
-            let pixel_alpha = ((r8 * u16::from(alpha) + 127) / 255) as u8;
+            let r8 = PATTERN_R8[sy * 96 + sx];
+            let pixel_alpha = native_texel_alpha(r8, alpha);
             rgba.extend_from_slice(&[rgb[0], rgb[1], rgb[2], pixel_alpha]);
         }
     }
@@ -148,7 +148,7 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
     }
 
     let png_key = format!(
-        "airbrush-v2-r8-v1-{:02x}{:02x}{:02x}-a{:02x}-size{}-pad{}",
+        "airbrush-v2-r8-v2-{:02x}{:02x}{:02x}-a{:02x}-size{}-pad{}",
         rgb[0], rgb[1], rgb[2], alpha, source.rt_size, pad_texels
     );
     let image_id = format!("sdocx-{png_key}");
@@ -385,6 +385,16 @@ fn source_part_ends(
     parts
 }
 
+/// Active host-Mesa FS: normalized R8 -> binary16 RTZ -> f32 alpha multiply,
+/// then RGBA8 source-row conversion. All nonzero R8/255 values are normal in
+/// binary16, so clearing 13 low mantissa bits implements that sampled value.
+fn native_texel_alpha(r8: u8, native_alpha: u8) -> u8 {
+    let normalized = f32::from(r8) / 255.0;
+    let sampled = f32::from_bits(normalized.to_bits() & !0x1fff);
+    let input_alpha = f32::from(native_alpha) / 255.0;
+    ((sampled * input_alpha) * 255.0).round_ties_even() as u8
+}
+
 fn encode_png_rgba(width: u32, height: u32, pixels: &[u8]) -> Option<Vec<u8>> {
     let expected = usize::try_from(width.checked_mul(height)?.checked_mul(4)?).ok()?;
     if pixels.len() != expected {
@@ -405,6 +415,18 @@ fn encode_png_rgba(width: u32, height: u32, pixels: &[u8]) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_alpha_preserves_native_half_sampler_boundaries() {
+        // These intrinsic texels straddle RGBA8 rounding after the captured
+        // sampler's RTZ narrowing. Integer R8*A8/255 would incorrectly produce
+        // 25 and 35, respectively, instead of the native shader's 24 and 34.
+        assert!(PATTERN_R8.contains(&125));
+        assert!(PATTERN_R8.contains(&176));
+        for (texel, alpha) in [(0, 0), (4, 1), (125, 24), (129, 25), (176, 34), (255, 50)] {
+            assert_eq!(native_texel_alpha(texel, 50), alpha);
+        }
+    }
 
     #[test]
     fn source_pattern_has_the_pinned_native_hash() {

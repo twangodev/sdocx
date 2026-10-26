@@ -11157,6 +11157,171 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v2_public_transparent_material_r125_matches_native_full_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../conformance/airbrush-material-r125-native.json");
+        const BIN: &[u8] = include_bytes!("../../../conformance/airbrush-material-r125-native.bin");
+        const BIN_SHA256: &str = "98614e0343dc3b98dbccdd747e2aef992fee3765a540adbb23ad510d4191aac0";
+        const FRAME_SHA256: &str =
+            "a2fd2de1b00bb90edff32b2c083468dac9c8f2839b8ed7a69fcbae746d148acc";
+        const NATIVE_VBO_HEX: &str = "0074004300840043000000000000803f";
+
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), BIN_SHA256);
+        let metadata: serde_json::Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(
+            metadata["schema"],
+            "sdocx.airbrush-material-r125-pixel-oracle.v1"
+        );
+        assert_eq!(
+            metadata["case_id"],
+            "airbrush-explicit-empty-tool2-v2-material-r125-bg00000000"
+        );
+        assert_eq!(metadata["material_witness"]["r8"], 125);
+        assert_eq!(
+            metadata["material_witness"]["texel_top_down_xy"],
+            serde_json::json!([49, 48])
+        );
+        assert_eq!(
+            metadata["material_witness"]["native_rgba8"],
+            serde_json::json!([10, 21, 13, 24])
+        );
+        assert_eq!(metadata["native_vbo"]["row_count"], 1);
+        assert_eq!(
+            metadata["native_vbo"]["little_endian_f32_hex"],
+            NATIVE_VBO_HEX
+        );
+        assert_eq!(
+            metadata["native_capture"]["post_draw_document_top_down_sha256"],
+            FRAME_SHA256
+        );
+        assert_eq!(metadata["native_capture"]["post_draw_changed_pixels"], 7);
+        assert_eq!(
+            metadata["native_capture"]["pre_post_gl_errors"],
+            serde_json::json!([])
+        );
+
+        assert_eq!(&BIN[..4], b"ABMT");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        let sparse_count = u16::from_le_bytes(BIN[6..8].try_into().unwrap()) as usize;
+        assert_eq!(sparse_count, 7);
+        assert_eq!(BIN.len(), 8 + sparse_count * 8);
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        let mut offset = 8;
+        for _ in 0..sparse_count {
+            let x = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+            let y = u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+            let pixel = (y * 256 + x) * 4;
+            expected[pixel..pixel + 4].copy_from_slice(&BIN[offset + 4..offset + 8]);
+            offset += 8;
+        }
+        assert_eq!(format!("{:x}", Sha256::digest(&expected)), FRAME_SHA256);
+        assert_eq!(expected[(128 * 256 + 128) * 4..][..4], [10, 21, 13, 24]);
+
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = vec![
+            Point {
+                x: 128.453125,
+                y: 128.515625,
+            },
+            Point {
+                x: 128.484375,
+                y: 128.515625,
+            },
+        ];
+        stroke.pressures = vec![0.3, 0.6];
+        stroke.timestamps = vec![300, 315];
+        stroke.tilts = vec![0.12, 0.32];
+        stroke.orientations = vec![0.2, 0.35];
+        stroke.bbox = BoundingBox {
+            x_min: 128.453125,
+            y_min: 128.515625,
+            x_max: 128.484375,
+            y_max: 128.515625,
+        };
+        let sampler = crate::ink::airbrush::saved_v2_from_stroke(stroke)
+            .expect("explicit-empty SavedV2 R8 material control");
+        assert_eq!(sampler.rows.len(), 1);
+        let model_rows: Vec<u8> = sampler
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        let native_vbo: Vec<u8> = NATIVE_VBO_HEX
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        assert_eq!(
+            model_rows, native_vbo,
+            "production sampler row versus captured native AddPoint VBO"
+        );
+        assert_eq!(sampler.native_argb, 0x326cdd8f);
+
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let rendered = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        assert_eq!((rendered.width, rendered.height), (256, 256));
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("use"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("mask"))
+                .count(),
+            4
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("linearGradient"))
+                .count(),
+            4
+        );
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        assert_eq!(
+            pixmap.data(),
+            expected,
+            "public AirBrush transparent RGBA versus native material control"
+        );
+    }
+
     #[test]
     fn public_saved_v2_profile_fails_closed_for_unset_v1_and_advanced_two() {
         let mut document = public_airbrush_v2_document();
