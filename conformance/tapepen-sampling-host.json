@@ -1,0 +1,38 @@
+{
+  "schema": "sdocx.tapepen.sampling-size-host.v1",
+  "scope": "Synthetic curve-enabled Model; pinned Unicorn host and Mesa profile, 256x256. Size 8 uses V51 runner, sizes 2 and 24 V54. No Android/device/document parity.",
+  "runner_sha256": {
+    "size_8": "6ef017d864d3d427921080cbfd4645860a5333f2e275fa95e27b63d26389e20c",
+    "size_2_and_24": "97f0ad32982f0f122b7abf6361e575b85151427ae871513cc827436c35b40fb1"
+  },
+  "cases": {
+    "size_2": {
+      "log_sha256": "84a2539952adcfa7b82261b2c1b98456ddf2816205c323782bd1ff2f892ab9d5",
+      "size_f32_le": "00000040",
+      "point_count": 49,
+      "stream_bytes": 980,
+      "stream_sha256": "f18881c934fca24b1067c40cd9b8d13310a41e6da3835d5735c1da59103dc085",
+      "target_rgba_sha256": "cbafba0f084047a8bcfa7d0ef8a8bd3276ca29b2b3702a0cd3c8413b934f318b",
+      "spacing_f32le": "0000003f"
+    },
+    "size_8": {
+      "log_sha256": "3a38ccae574109e302215ff5a1225a9f266af2ec277409f2d5af9d6fea2fe17f",
+      "size_f32_le": "00000041",
+      "point_count": 49,
+      "stream_bytes": 980,
+      "stream_sha256": "f18881c934fca24b1067c40cd9b8d13310a41e6da3835d5735c1da59103dc085",
+      "target_rgba_sha256": "624c7cec67d052a2d1e3a0906c5e6563176b2d429a8f7b2f3c01efc8c5b210ae",
+      "spacing_f32le": "0000003f"
+    },
+    "size_24": {
+      "log_sha256": "fe2e3dcbe0f42a892c945254bb674b7a74c570fceae26d37eed995c940fd69ac",
+      "size_f32_le": "0000c041",
+      "point_count": 49,
+      "stream_bytes": 980,
+      "stream_sha256": "f18881c934fca24b1067c40cd9b8d13310a41e6da3835d5735c1da59103dc085",
+      "target_rgba_sha256": "3adf87e26961ea1356b7f43223c8645a344f167652989346b99595b10b611800",
+      "spacing_f32le": "0000003f"
+    }
+  },
+  "conclusion": "These three inputs have identical stream and observed spacing and distinct final target hashes. This does not establish general size invariance, threshold semantics, or paint parity."
+}

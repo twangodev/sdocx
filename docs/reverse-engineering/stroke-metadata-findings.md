@@ -165,6 +165,11 @@ observed pattern size `(96, 48)` at pattern scale 1, and `(0, 0)` at scale
 different x and y values (`0x36200000`, `0x35c00000`). This checks an
 axis-aligned matrix, not arbitrary transforms.
 
+For one synthetic curve, [size controls](../../conformance/tapepen-sampling-host.json)
+at 2, 8, and 24 produced the same 49-point stream and observed 0.5 spacing,
+but different final bitmap hashes. The size-8 run used a different pinned
+runner; these host captures do not establish general size invariance.
+
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it
 also reaches this consumer when TapePen resolution succeeds. That does not
