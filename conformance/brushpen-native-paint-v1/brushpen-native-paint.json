@@ -337,6 +337,194 @@
       "sampler1": [
         1
       ]
+    },
+    "same_context_v17_observation": {
+      "capture_path": "/tmp/sdocx-brushpen-passive-query-root-v17.log",
+      "capture_sha256": "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a",
+      "schema": "brushpen-native-passive-observer-v17",
+      "result_schema": "brushpen-native-queued-canvas-paint-v1",
+      "mesa_egl_context": "0xf787c70",
+      "phase": "native PenGLRenderMsg task2",
+      "draw_args_glDrawArraysInstanced": [
+        5,
+        0,
+        4,
+        26
+      ],
+      "gl_errors_before_queries": [],
+      "gl_errors_after_queries": [],
+      "active_program": {
+        "id": 7,
+        "adapter_expected_id": 3,
+        "matches_adapter_id": false,
+        "link_status": 1,
+        "attached_compiled_shader_count": 2,
+        "vertex_sha256": "44072299681d558389d5a7e94e2c70929b2cf1399a493df777302c30b609fc3e",
+        "fragment_sha256": "4c45b50596922acd7b14e5dd56df2301b8b652e25e89bf466172558e929d44aa",
+        "source_hashes_match_pinned_fixture": true,
+        "identity_note": "The active GLES program ID differs from the synthetic adapter ID; its successful link event has the exact pinned vertex and fragment source hashes."
+      },
+      "sampled_textures": [
+        {
+          "sampler_uniform": "sampler0",
+          "unit": 0,
+          "resource": "BrushPenStrokeDrawableRTV1::buildTextures mPatternsBitmap",
+          "factory_descriptor_index": 3,
+          "descriptor_u32": [
+            144,
+            144,
+            0,
+            2,
+            6,
+            1,
+            0,
+            0
+          ],
+          "factory_sequence": 3,
+          "texture_object_pointer": "0x100fcb90",
+          "factory_return_verified": true,
+          "mesa_texture_name": 5,
+          "gl_texture_target": 3553,
+          "storage_internal_format": 32856,
+          "storage_internal_format_name": "GL_RGBA8",
+          "upload_sequence": 7,
+          "upload_call": "glTexSubImage2D",
+          "upload_dimensions": [
+            144,
+            144
+          ],
+          "upload_format": 6408,
+          "upload_format_name": "GL_RGBA",
+          "upload_type": 5121,
+          "upload_type_name": "GL_UNSIGNED_BYTE",
+          "payload_bytes": 82944,
+          "guest_payload_sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+          "forwarded_host_copy_sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+          "forwarded_host_owned_copy_verified": true,
+          "initialized_tiles": 7,
+          "tiles_total": 9,
+          "tile_size": [
+            48,
+            48
+          ],
+          "effective_sampler": {
+            "min_filter": 9728,
+            "mag_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "uninitialized_tiles": [
+            7,
+            8
+          ],
+          "uninitialized_tiles_note": "The 144x144 upload contains host allocator sentinels in these cells; the retained 26-record input selects only initialized tile indices 0..6."
+        },
+        {
+          "sampler_uniform": "sampler1",
+          "unit": 1,
+          "resource": "BrushPenStrokeDrawableRTV1::buildTextures mGrainBitmap",
+          "factory_descriptor_index": 4,
+          "descriptor_u32": [
+            321,
+            228,
+            0,
+            2,
+            6,
+            1,
+            0,
+            0
+          ],
+          "factory_sequence": 4,
+          "texture_object_pointer": "0x100fcf80",
+          "factory_return_verified": true,
+          "mesa_texture_name": 6,
+          "gl_texture_target": 3553,
+          "storage_internal_format": 32856,
+          "storage_internal_format_name": "GL_RGBA8",
+          "upload_sequence": 8,
+          "upload_call": "glTexSubImage2D",
+          "upload_dimensions": [
+            321,
+            228
+          ],
+          "upload_format": 6408,
+          "upload_format_name": "GL_RGBA",
+          "upload_type": 5121,
+          "upload_type_name": "GL_UNSIGNED_BYTE",
+          "payload_bytes": 292752,
+          "guest_payload_sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+          "forwarded_host_copy_sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+          "forwarded_host_owned_copy_verified": true,
+          "effective_sampler": {
+            "min_filter": 9728,
+            "mag_filter": 9728,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        }
+      ],
+      "target": {
+        "draw_fbo": 2,
+        "read_fbo": 2,
+        "attachment_texture": 4,
+        "dimensions": [
+          321,
+          228
+        ],
+        "storage_internal_format": 32856,
+        "storage_internal_format_name": "GL_RGBA8",
+        "pre_draw_sha256": "f0cae1c3cf0c26f5eb5d3a6a1986263254718bb7ddf89b32d58edc0e4466fb89",
+        "post_draw_format": "RGBA8",
+        "post_draw_bytes": 292752,
+        "post_draw_sha256": "f860fde550dbdaeb5968cc88fa928bc1d84a1a8e33d7d4cdf2dcbf0525396f54"
+      },
+      "blend_state_at_draw": {
+        "enabled": true,
+        "equation_rgb": 32774,
+        "equation_alpha": 32774,
+        "src_rgb": 770,
+        "dst_rgb": 771,
+        "src_alpha": 1,
+        "dst_alpha": 771,
+        "color_write_mask": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "uniforms": {
+        "inputColor": [
+          0.42352941632270813,
+          0.8666666746139526,
+          0.5607843399047852,
+          1.0
+        ],
+        "grain": [
+          321.0,
+          228.0
+        ],
+        "grainOffset": [
+          1.0000005960464478,
+          -2.0000059604644775
+        ],
+        "numTiles": [
+          3.0
+        ],
+        "sampler0": [
+          0
+        ],
+        "sampler1": [
+          1
+        ]
+      },
+      "scope_note": "V17 adds same-context observation for this captured native queued-canvas draw. The V7 capture and its separate-run provenance remain unchanged.",
+      "native_instance_upload": {
+        "buffer_id": 504,
+        "bytes": 1144,
+        "sha256": "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92",
+        "matches_retained_26x44_vbo": true
+      }
     }
   },
   "pins": {
@@ -368,7 +556,7 @@
     "No V7 same-context glTexImage/glTexSubImage payload was retained; upload hashes come from the separate native Init capture, related through pinned RTV1 resource roles and static R8 source joins, not a cross-context texture-id join.",
     "The 10-pixel sparse target is exact for this captured empty RGBA8 host target and draw; it is not a general brush output model.",
     "Blend state is not present in this V7 passive-draw query; do not infer exact destination compositing from this fixture.",
-    "The tracked saved-native geometry conformance cases are not bytewise this capture\u2019s stream."
+    "The tracked saved-native geometry conformance cases are not bytewise this capture’s stream."
   ],
   "schema": "brushpen-native-v7-paint-fixture-v1",
   "scope": "compact retained fixture from a native RTV1 V7 passive Draw observation; controlled host Mesa RGBA8 target; not Android-device pixel parity or production route admission"

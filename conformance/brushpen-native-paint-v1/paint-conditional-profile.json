@@ -39,7 +39,8 @@
       "lp_bld_blend.c": "d5ba2d4afc2f9ef66ea407b4ee3542d4b373c9dcc4cf73a857a57868c79d4f6e",
       "lp_bld_blend_aos.c": "9824bebdcab7bc5a94d74f3cb7afcbe5c191c15bf78d1247aa1fffb0af497109"
     },
-    "condition": "This integer blend-row path is conditional on the V7 target actually using GL_RGBA8 UNORM; the V7 receipt records RGBA8 readback/target metadata but not an internal-format query."
+    "condition": "This integer blend-row path is conditional on the V7 target actually using GL_RGBA8 UNORM; the V7 receipt records RGBA8 readback/target metadata but not an internal-format query.",
+    "v17_condition_status": "Confirmed for the V17 captured draw only: the attached output texture was created as GL_RGBA8 and blending was queried enabled with the recorded source-over factors. This does not make the model portable or general."
   },
   "texture_source_scope": {
     "r8_source_bundle_sha256": "7d10c1cb7ac6ab99a11eb72b91e565cf7e313d7c247da09700445151fb3a70f2",
@@ -48,11 +49,46 @@
     "mask_upload_source_capture_sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c",
     "native_task2_sampler_note": "Texture/sampler object bindings and effective nearest filters were queried in V7; V7 did not capture texture upload bytes. Source bytes and native resource roles are joined from the separate Init capture and pinned source arrays, not by GL object identity across contexts."
   },
-  "requires_native_v9_same_context_state_resource_observer": true,
+  "requires_native_v9_same_context_state_resource_observer": false,
   "scope_limits": [
     "Uses the actual 26x44 native Drawing-produced instance buffer as paint input; does not claim Rust-generated BrushPen geometry parity.",
-    "Reproduces one captured 321x228 transparent llvmpipe target, not a general BrushPen output model.",
+    "Reproduces one captured 321x228 transparent llvmpipe target and the observed V17 resource/state profile, not a general BrushPen output model.",
     "Not Android-device parity or production renderer admission.",
-    "Same-context internal target format, draw-state, and texture-upload observer must confirm the conditional joins before fixture admission."
-  ]
+    "V7 historical flags remain false because that capture lacked target internal-format and draw-blend queries; V17 confirms these conditions and same-context sampled-resource uploads for its captured draw."
+  ],
+  "target_internal_format_observed_in_v17": true,
+  "blend_state_observed_in_v17": true,
+  "same_context_uploads_observed_in_v17": true,
+  "same_context_v17_observation": {
+    "capture_path": "/tmp/sdocx-brushpen-passive-query-root-v17.log",
+    "capture_sha256": "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a",
+    "mesa_egl_context": "0xf787c70",
+    "active_program_id": 7,
+    "adapter_expected_program_id": 3,
+    "linked_shader_hashes_match_fixture": true,
+    "pattern_texture_id": 5,
+    "grain_texture_id": 6,
+    "pattern_payload_sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+    "grain_payload_sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+    "target_texture_id": 4,
+    "target_internal_format_gl_enum": 32856,
+    "target_internal_format_name": "GL_RGBA8",
+    "draw_blend_state": {
+      "blend_enabled": true,
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "dst_alpha": 771,
+      "dst_rgb": 771,
+      "equation_alpha": 32774,
+      "equation_rgb": 32774,
+      "src_alpha": 1,
+      "src_rgb": 770
+    },
+    "post_draw_rgba8_sha256": "f860fde550dbdaeb5968cc88fa928bc1d84a1a8e33d7d4cdf2dcbf0525396f54",
+    "relation_to_historical_join": "The same-drawing V7 cross-capture join below is retained as historical evidence; V17 independently joins the active uploads, sampled names, target format, and blend state in one context."
+  }
 }
