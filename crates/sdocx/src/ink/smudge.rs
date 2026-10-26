@@ -1170,4 +1170,36 @@ mod smudge_path_capture_tests {
             );
         }
     }
+
+    #[test]
+    fn source_to_addpoint_matches_native_interior_spacing() {
+        // Tool 2, 1920x1080 profile, input size 65.0, source width 65/1.3,
+        // pressures [0.3, 0.6, 0.85]; native Model inputs translated by (64, 64).
+        // The expected digest is post-hoc native AddPoint s0-s2 bits, little-endian.
+        let input = [
+            P {
+                x: f32::from_bits(0x42800000),
+                y: f32::from_bits(0x42800000),
+            },
+            P {
+                x: f32::from_bits(0x431a0000),
+                y: f32::from_bits(0x42800000),
+            },
+            P {
+                x: f32::from_bits(0x43740000),
+                y: f32::from_bits(0x42800000),
+            },
+        ];
+        let width = f32::from_bits(0x42820000) / 1.3_f32;
+        let actual = source_to_addpoint(&input, width, 1080, 1.0, false).unwrap();
+        assert_eq!(actual.len(), 28);
+        let raw: Vec<u8> = actual
+            .iter()
+            .flat_map(|point| point.iter().flat_map(|value| value.to_bits().to_le_bytes()))
+            .collect();
+        assert_eq!(
+            super::sha256(&raw),
+            "3bc2b597ed52bc6cc854ec32c232d3da646e7b0e843f87d776de91e8625dbcdc"
+        );
+    }
 }

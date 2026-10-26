@@ -103,7 +103,7 @@
     "per_point_matching_draw_uploads": 2
   },
   "source_to_addpoint_controls": {
-    "scope": "Seven finite synthetic Model strokes under 1920x1080 host profile and default settings; sampling and pressure behavior are restricted to these controls.",
+    "scope": "Eight finite synthetic Model strokes under 1920x1080 host profile and default settings; sampling and pressure behavior are restricted to these controls.",
     "capture_source_sha256": "6c7fa407c97484aa460b39227f71e02d543da9ba58f50664eba2248602cd3be4",
     "source_manifest_sha256": "e4775c860a73b4a3e21da03745cfd673687c02b57339df4b286e31bfc1f2b039",
     "cases": {
@@ -147,11 +147,19 @@
         "capture_log_sha256": "e73050be529c949cd9b7ea191012560223701e02086c8a898d3f1cd1822142b8",
         "addpoint_count": 0,
         "scope": "Native Drawing returned after redraw/drawLine; no RT/GL draw asserted."
+      },
+      "interior_spacing_size65": {
+        "input_points_f32le_hex": "000080420000804200001a43000080420000744300008042",
+        "capture_log_sha256": "a5feb6ea70736749eb608e2a32538e2280e027b733ee86a79a50d0e9e08951dd",
+        "addpoint_count": 28,
+        "ordered_addpoint_sha256": "3bc2b597ed52bc6cc854ec32c232d3da646e7b0e843f87d776de91e8625dbcdc"
       }
     },
     "expected_register_bits_location": "crates/sdocx/src/ink/smudge.rs source_to_addpoint_matches_native_streams",
     "pressure_control_note": "Changed pressures on matched tool-2 straight stroke produced the same observed AddPoint stream as the straight control; no general pressure-independence claim.",
     "empty_case_capture_source_sha256": "b935ef6faacc7edd417600d78ce967b5bdc1498b5febf51c370a29fad12dc125",
-    "empty_case_manifest_sha256": "79936f9d1c6f21e55c29ab729eb92d3f9843776c37fa0107a078850bc0e8f75c"
+    "empty_case_manifest_sha256": "79936f9d1c6f21e55c29ab729eb92d3f9843776c37fa0107a078850bc0e8f75c",
+    "spacing_capture_source_sha256": "81807d19fa9f57c6ebc95eb2115b367319743529a408b19964f2f9aed6f40c16",
+    "spacing_manifest_sha256": "545db5eb68804ec0061c0ded0d7202465afb6a85dfe334023e29ec0017515143"
   }
 }
