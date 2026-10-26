@@ -141,7 +141,10 @@ places in that intermediate. A separate [pattern-scale control]
 through the native Model and render-thread setters; the tested affine profile
 produced identical point streams, pattern uniforms, and final pixels. The
 native scale-dependent vector is subsequently divided by scale, a possible
-explanation for this case, not a general scale-invariance claim.
+explanation for this case, not a general scale-invariance claim. In the same
+profile, native setters also accepted zero and 1e-7; their pattern-size uniforms
+and final pixels differed from scale 1. The fallback branch is inferred from
+static code and the observed uniforms, not directly instruction-traced.
 
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it

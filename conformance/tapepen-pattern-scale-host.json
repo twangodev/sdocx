@@ -26,5 +26,40 @@
       "log_sha256": "10bc51271c9e9764f60daee0321afc3a3a3787ba3f20e2e69861712afde5907e",
       "final_native_rgba_sha256": "55cf269ec678baee4b1a79cef9cc5323f0a1e27de1bcbbf02c34d92b41ed0985"
     }
-  ]
+  ],
+  "near_zero_controls": {
+    "scope": "Same synthetic affine profile and explicitly supplied asset as positive-scale controls. Static fallback branch selection is inferred, not instruction-traced.",
+    "source_runner_sha256": "cbcc09bf33adcd3977689ba73a42fb9d4032958f404612f8bba4ffe12408e20f",
+    "source_manifest_sha256": "80360ef3bbd9162bc08426f737a63aa2c37acac51690a208d5492beb9ad021f3",
+    "pattern_size_f32le_hex": {
+      "0": "0000000000000000",
+      "1e-7": "95bfd63595bfd635"
+    },
+    "runs": [
+      {
+        "scale": "0",
+        "requested_f32le": "00000000",
+        "getter_f32le": "00000000",
+        "log_sha256": "3b0a71ec98dd96dffb46f03517a2d2b3a2fd319816940d4c92dd0aeb3667f21b",
+        "final_native_rgba_sha256": "b90092275279f57b31c2411c287b547b349687bfb381e020b3266385dd52204d"
+      },
+      {
+        "scale": "1e-7",
+        "requested_f32le": "95bfd633",
+        "getter_f32le": "95bfd633",
+        "log_sha256": "d74192a6c9e9075331774d023402b27241a682c88274e09e4029b019fcfb3df2",
+        "final_native_rgba_sha256": "be633becf8cdee962bf4fe9f400720418ca4468f36b251ce81f3f3deb243605f"
+      }
+    ],
+    "zero_vs_scale_one": {
+      "different_pixels": 77,
+      "different_channels": 224,
+      "max_channel_difference": 51
+    },
+    "near_zero_vs_zero": {
+      "different_pixels": 34,
+      "different_channels": 102,
+      "max_channel_difference": 51
+    }
+  }
 }
