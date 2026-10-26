@@ -505,13 +505,15 @@ pub(crate) struct SavedV2Output {
     pub(crate) native_argb: u32,
 }
 
-/// Reconstruct only the captured explicit-empty saved ObjectStroke GLV2 path.
+/// Reconstruct only the captured empty or `2;` saved ObjectStroke GLV2 paths.
 /// Saved playback derives MotionEvent source zero in the native wrapper; each
 /// redraw initializes fresh V2 state and resets its stamp counter.
 pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Output> {
     let rendering = stroke.rendering.as_ref()?;
-    if rendering.advanced_settings.as_deref() != Some("")
-        || !rendering.properties.compressed
+    if !matches!(
+        rendering.advanced_settings.as_deref(),
+        Some("") | Some("2;")
+    ) || !rendering.properties.compressed
         || rendering.tool_type_raw != 2
     {
         return None;

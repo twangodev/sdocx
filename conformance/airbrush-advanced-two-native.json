@@ -1,0 +1,379 @@
+{
+  "schema": "sdocx.airbrush-saved-v2-advanced-two-native-evidence.v1",
+  "provenance": {
+    "capture_log": "/tmp/sdocx-airbrush-advanced-two-native-root-v29-frozen.log",
+    "capture_log_sha256": "1c31632e6aff8cdeaa4ffd57e489e868a66fc107d43c4da6d6125f262dad37ca",
+    "case_id": "airbrush-advanced-two-tool2-v2-bg00000000",
+    "schema": "airbrush-pageflip-drawing-to-scene-v29-source-candidate",
+    "helper_sha256": {
+      "airbrush_saved_caller_native": "f1246404003907d42f41977a16a2e527c4a932be36b85b7f742a6208db49d7e2",
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "oblique_canvas_native": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e"
+    },
+    "native_libraries_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    }
+  },
+  "setting_to_version": {
+    "ObjectStroke_GetAdvancedPenSetting_text": "2;",
+    "ObjectStroke_getter_pointer": "0x1008c370",
+    "Pen_SetAdvancedSetting_calls": [
+      {
+        "entry_pc": "0x1046160",
+        "phase": "setup",
+        "setting_object_head": "d0bf0e0200000000f032031000000000f0debc9a785634120000000000000000",
+        "setting_pointer": "0x200eefb8",
+        "this": "0x10032e80",
+        "version_before": "01000000"
+      },
+      {
+        "entry_pc": "0x1046160",
+        "phase": "draw_object_stroke",
+        "setting_object_head": "d0bf0e020000000070c8081000000000f0debc9a7856341210ed0e2000000000",
+        "setting_pointer": "0x200eecc8",
+        "this": "0x1008c770",
+        "version_before": "01000000"
+      },
+      {
+        "entry_pc": "0x1046160",
+        "phase": "draw_object_stroke",
+        "setting_object_head": "d0bf0e020000000080c3081000000000f0bf0e02000000001000000002000000",
+        "setting_pointer": "0x1008c370",
+        "this": "0x1008c770",
+        "version_before": "02000000"
+      }
+    ],
+    "Drawing_call_with_exact_getter": [
+      {
+        "entry_pc": "0x1046160",
+        "phase": "draw_object_stroke",
+        "setting_object_head": "d0bf0e020000000080c3081000000000f0bf0e02000000001000000002000000",
+        "setting_pointer": "0x1008c370",
+        "this": "0x1008c770",
+        "version_before": "02000000"
+      }
+    ],
+    "selected_Pen_getVersion": 2,
+    "selected_drawable_profile": 2,
+    "selected_drawable_profile_version": 2,
+    "scope": "Synthetic Model ObjectStroke setters, native Drawing handoff; not a deserialized saved note or natural capture."
+  },
+  "source": {
+    "advanced_setting_ascii": "2;",
+    "advanced_setting_mutation": "ObjectStroke::SetAdvancedPenSetting called with explicit native String 2;",
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+    "tool_type": 2,
+    "size_f32_bits": "4c374940",
+    "color_argb_u32": "0xff6cdd8f",
+    "curve_enabled": true,
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "model_source_arrays_read_after_setters": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "native_model_getter_snapshot": {
+      "advanced_before_setter": null,
+      "advanced_mode": "explicit",
+      "advanced_setting": "2;",
+      "color_argb_u32": "0xff6cdd8f",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+      "size": 3.1440000534057617,
+      "size_level": 30,
+      "tool_type": 2
+    }
+  },
+  "native_output": {
+    "draw_signature": [
+      "SPen::AirBrushPenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)"
+    ],
+    "draw_call": {
+      "first": 0,
+      "instance_count": 26,
+      "mode": 5,
+      "vertex_count": 4
+    },
+    "instance_count": 26,
+    "instance_bytes": 416,
+    "instance_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+    "instance_buffer_hex": "0000803f000000c0000000000000803f398e833fabaafabf71972e3f003a3bbfe3388e3facaaeabf5b607fbf88dc8e3dfeff9f3f0200d0bf09f3463f251b213f8be3b83fb0aaaabf71830ebe35827dbf8ae3d83f635575bfe8d512bff3b3513f00000040000000bfe2677a3fc0e654be52b80640af47b1be4e6f5bbf8fd903bf7a140e40ac703dbe63208d3e3d15763f7a141640fd1e85bc8871e83efb1864bf51b81e40fad6233eb28f70bf431daf3effff2740f6ffaf3e3aa66b3fd20dc83e84eb3140bdf5083fbd3fd0be20de69bfe07a3c4006d73b3fd3b0a6be830d723f13ae4740cea3703fe108623f7d5ef0be1d85534010ae933fea4677bfef8384befeff5f40fbffaf3fd5a8073fa719593fb61e6d40aa47cd3f0c63433ef04b7bbf46e17a401b85eb3fcc1b4fbf0379163fd6a38440265c054080177e3f0b97f93df4288c40a1701540ba8d24bf7d1b44bffeff9340fcff2540735d56bd30a67f3ff3289c40370a37409626383f34d531bfd4a3a440558f484005f67fbf1af58e3ca070ad40548f5a40b43e3e3f2f4c2b3f588fb640350a6d40b27eb2bd9e067fbf",
+    "color_alpha_u32": {
+      "argb_u32": "0x4b000000",
+      "entry_pc": "0x104602c",
+      "method": "SPen::Pen::SetColor(int)",
+      "phase": "setup",
+      "this": "0x10032e80"
+    },
+    "initial_rgba8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "pre_draw_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+    "post_draw_rgba8_lower_left_sha256": "83e5d7d6bd6a21f7f7a315de0121798d1e766862270bb858c4a7acc7d2203682",
+    "post_draw_rgba8_top_down_sha256": "c0a0b566e23fda9f7aef64415849abd682da9f8260dbc8ec915571546b2edbda",
+    "nonzero_pixel_count": 19,
+    "sparse_top_down_pixels": [
+      {
+        "x": 1,
+        "y": 0,
+        "rgba8": [
+          24,
+          47,
+          32,
+          54
+        ]
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "rgba8": [
+          54,
+          111,
+          71,
+          127
+        ]
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "rgba8": [
+          33,
+          65,
+          41,
+          76
+        ]
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "rgba8": [
+          4,
+          11,
+          8,
+          12
+        ]
+      },
+      {
+        "x": 2,
+        "y": 1,
+        "rgba8": [
+          17,
+          35,
+          24,
+          41
+        ]
+      },
+      {
+        "x": 3,
+        "y": 1,
+        "rgba8": [
+          44,
+          90,
+          59,
+          104
+        ]
+      },
+      {
+        "x": 4,
+        "y": 1,
+        "rgba8": [
+          31,
+          63,
+          40,
+          71
+        ]
+      },
+      {
+        "x": 5,
+        "y": 1,
+        "rgba8": [
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "rgba8": [
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "x": 3,
+        "y": 2,
+        "rgba8": [
+          33,
+          67,
+          43,
+          76
+        ]
+      },
+      {
+        "x": 4,
+        "y": 2,
+        "rgba8": [
+          40,
+          83,
+          54,
+          95
+        ]
+      },
+      {
+        "x": 5,
+        "y": 2,
+        "rgba8": [
+          14,
+          32,
+          21,
+          35
+        ]
+      },
+      {
+        "x": 6,
+        "y": 2,
+        "rgba8": [
+          1,
+          3,
+          2,
+          3
+        ]
+      },
+      {
+        "x": 4,
+        "y": 3,
+        "rgba8": [
+          22,
+          44,
+          30,
+          52
+        ]
+      },
+      {
+        "x": 5,
+        "y": 3,
+        "rgba8": [
+          41,
+          84,
+          54,
+          96
+        ]
+      },
+      {
+        "x": 6,
+        "y": 3,
+        "rgba8": [
+          4,
+          10,
+          7,
+          11
+        ]
+      },
+      {
+        "x": 4,
+        "y": 4,
+        "rgba8": [
+          1,
+          3,
+          2,
+          3
+        ]
+      },
+      {
+        "x": 5,
+        "y": 4,
+        "rgba8": [
+          11,
+          23,
+          15,
+          27
+        ]
+      },
+      {
+        "x": 6,
+        "y": 4,
+        "rgba8": [
+          5,
+          10,
+          6,
+          11
+        ]
+      }
+    ],
+    "frame_size": [
+      256,
+      256
+    ],
+    "scope": [
+      "Synthetic inputs are the Model ObjectStroke setter arrays/values, IContext callback outputs, explicit initial RGBA8 bytes passed through native SPGraphicsFactory::CreateBitmap, profile request, and synchronous queue scheduler. The app page/view-to-renderer transform is not established.",
+      "Pinned native SPGraphicsFactory/CreateBitmap, SPTextureBitmap/TextureObject, SPPenCanvas/impl, ObjectDrawing, AirBrush factory and selected RTV1 geometry/Draw paths execute. Native PenGLRenderMsg allocation/payload and Run execute; queue scheduling itself is a host adapter.",
+      "The V23 observer uses a real local Mesa EGL/GLES context and direct typed GLES forwards. It captures actual uniform values, current shader sampler/texture state, native FBO color attachment/storage dimensions, and same-target pre/post RGBA8 bytes. This is a Mesa pixel oracle, not Samsung Android driver equivalence.",
+      "The Render target is initialized through native CreateBitmap from explicit RGBA8 input bytes and native target/resource ownership is observed; target allocator/lifetime behavior remains emulated. The exact desktop GL frame does not prove normal app page/view transform.",
+      "sincosf and expf remain Python math callbacks with captured f32 inputs/outputs; renderer strtof and clock_gettime use pinned host libc; allocator/lifetime behavior is not claimed as Android equivalence.",
+      "The explicit 2; advanced-setting value is supplied to the native ObjectStroke setter in this synthetic Model route; this is not an SDK-deserialized saved stroke or natural user capture."
+    ]
+  }
+}

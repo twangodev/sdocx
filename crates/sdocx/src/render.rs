@@ -112,7 +112,7 @@ pub struct InkPen2RenderProfile {
 
 /// Explicit opt-in to the captured saved AirBrush GLV2 texture route.
 ///
-/// This route accepts explicit-empty advanced settings, tool type 2, and the
+/// This route accepts empty or `2;` advanced settings, tool type 2, and the
 /// normal saved style flags. It uses pinned Rust libm for deterministic stamp
 /// angles; Android sincosf parity and arbitrary output transforms are not
 /// claimed. The profile intentionally has no screen dimensions because V2
@@ -120,7 +120,7 @@ pub struct InkPen2RenderProfile {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Explicit-empty saved setting selecting native AirBrush GLV2.
+    /// Empty or `2;` saved setting selecting native AirBrush GLV2.
     SavedV2,
 }
 
@@ -10853,6 +10853,124 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn saved_v2_advanced_two_public_route_matches_native_v29_full_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const NATIVE_INSTANCE_SHA256: &str =
+            "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca";
+        const NATIVE_FRAME_SHA256: &str =
+            "c0a0b566e23fda9f7aef64415849abd682da9f8260dbc8ec915571546b2edbda";
+        const NATIVE_PIXELS: [([u16; 2], [u8; 4]); 19] = [
+            ([1, 0], [24, 47, 32, 54]),
+            ([2, 0], [54, 111, 71, 127]),
+            ([3, 0], [33, 65, 41, 76]),
+            ([4, 0], [4, 11, 8, 12]),
+            ([2, 1], [17, 35, 24, 41]),
+            ([3, 1], [44, 90, 59, 104]),
+            ([4, 1], [31, 63, 40, 71]),
+            ([5, 1], [0, 1, 1, 1]),
+            ([2, 2], [0, 1, 1, 1]),
+            ([3, 2], [33, 67, 43, 76]),
+            ([4, 2], [40, 83, 54, 95]),
+            ([5, 2], [14, 32, 21, 35]),
+            ([6, 2], [1, 3, 2, 3]),
+            ([4, 3], [22, 44, 30, 52]),
+            ([5, 3], [41, 84, 54, 96]),
+            ([6, 3], [4, 10, 7, 11]),
+            ([4, 4], [1, 3, 2, 3]),
+            ([5, 4], [11, 23, 15, 27]),
+            ([6, 4], [5, 10, 6, 11]),
+        ];
+
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-advanced-two-native.json"
+        ))
+        .unwrap();
+        let version = &evidence["setting_to_version"];
+        assert_eq!(version["ObjectStroke_GetAdvancedPenSetting_text"], "2;");
+        assert_eq!(version["selected_Pen_getVersion"], 2);
+        assert_eq!(version["selected_drawable_profile_version"], 2);
+        let setter = &version["Drawing_call_with_exact_getter"][0];
+        assert_eq!(
+            setter["setting_pointer"],
+            version["ObjectStroke_getter_pointer"]
+        );
+
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
+        assert_eq!(
+            stroke
+                .rendering
+                .as_ref()
+                .unwrap()
+                .advanced_settings
+                .as_deref(),
+            Some("2;")
+        );
+        let sampler = crate::ink::airbrush::saved_v2_from_stroke(stroke)
+            .expect("explicit advanced 2; SavedV2 tool-2 source-zero stroke");
+        assert_eq!(sampler.rows.len(), 26);
+        assert_eq!(sampler.native_argb, 0x326cdd8f);
+        let model_instance_bytes: Vec<u8> = sampler
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(model_instance_bytes.len(), 26 * 16);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&model_instance_bytes)),
+            NATIVE_INSTANCE_SHA256,
+            "native V29 26-row AddPoint buffer"
+        );
+
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        for ([x, y], rgba) in NATIVE_PIXELS {
+            let start = (usize::from(y) * 256 + usize::from(x)) * 4;
+            expected[start..start + 4].copy_from_slice(&rgba);
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&expected)),
+            NATIVE_FRAME_SHA256,
+            "reconstructed native V29 transparent RGBA8 frame"
+        );
+
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let rendered = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        assert_eq!((rendered.width, rendered.height), (256, 256));
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(pixmap.data())),
+            NATIVE_FRAME_SHA256,
+            "public SavedV2 PageScene RGBA8 versus native V29 advanced-two frame"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn saved_v2_overlay_profile_matches_native_pageflip_full_rgba() {
         use sha2::{Digest, Sha256};
 
@@ -11478,13 +11596,13 @@ mod tests {
     }
 
     #[test]
-    fn public_saved_v2_profile_fails_closed_for_unset_v1_and_advanced_two() {
+    fn public_saved_v2_profile_fails_closed_for_unset_v1_and_unsupported_setting() {
         let mut document = public_airbrush_v2_document();
         let options = RenderOptions {
             airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
             ..RenderOptions::default()
         };
-        for setting in [None, Some("2;")] {
+        for setting in [None, Some("3;")] {
             let stroke = document.pages[0].strokes_mut().next().unwrap();
             stroke.rendering.as_mut().unwrap().advanced_settings = setting.map(str::to_owned);
             let selected = render_document_svg(&document, &options).remove(0).svg;

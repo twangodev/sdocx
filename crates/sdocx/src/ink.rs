@@ -697,7 +697,10 @@ pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
     if rendering.metadata.is_none()
         || rendering.pen_name.as_deref()
             != Some("com.samsung.android.sdk.pen.pen.preload.AirBrushPen")
-        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("") | Some("2;")
+        )
         || rendering.tool_type_raw != 2
         || properties.replay_only
         || properties.eraser
@@ -719,7 +722,7 @@ pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
     {
         return None;
     }
-    // Native V1 (null setting) and V2 (empty setting) both retain ObjectStroke's
+    // Native V1 (null setting) and V2 (empty or `2;` setting) both retain ObjectStroke's
     // opaque-black default. This recovers RGB only; native alpha is transformed
     // per stamp and cannot be applied as opacity to the generic whole-stroke path.
     Some(rendering.style.color_argb.unwrap_or(0xff00_0000))
