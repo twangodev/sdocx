@@ -1,3 +1,4 @@
 # Native captures are hash-pinned and must retain their exact bytes on every platform.
 conformance/*.json -text
+conformance/**/*.json -text
 crates/sdocx/tests/fixtures/fountain-v16-scale-native.json -text
