@@ -1,6 +1,6 @@
-//! Conditional host-Mesa BrushPen V1 paint model over captured native VBO records.
-//! Records are paint inputs from the native Drawing path; Rust does not generate them here.
-//! The exact frame is capture-specific and not Android-device pixel parity.
+//! Conditional host-Mesa BrushPen V1 paint model joined to a captured native caller.
+//! The test-only sampler regenerates the narrow manual caller profile before paint;
+//! this is not production dispatch or Android-device pixel parity.
 
 #[derive(Clone, Copy)]
 struct Rgba8<'a> {
@@ -319,6 +319,8 @@ mod tests {
     );
     const NATIVE_VBO: &[u8] =
         include_bytes!("../../../../../conformance/brushpen-native-paint-v1/native-vbo-26x44.bin");
+    const SAVED_CALLER: &[u8] =
+        include_bytes!("../../../../../conformance/brushpen-saved-caller-native.json");
     const PROFILE: &[u8] = include_bytes!(
         "../../../../../conformance/brushpen-native-paint-v1/paint-conditional-profile.json"
     );
@@ -360,19 +362,107 @@ mod tests {
         std::array::from_fn(|i| values[i].as_f64().expect("numeric uniform") as f32)
     }
 
-    fn read_native_records(bytes: &[u8]) -> Vec<[f32; 11]> {
-        assert_eq!(bytes.len(), 26 * 44);
-        bytes
-            .as_chunks::<44>()
+    fn hex_bytes(hex: &str) -> Vec<u8> {
+        assert_eq!(hex.len() % 2, 0);
+        hex.as_bytes()
+            .as_chunks::<2>()
             .0
             .iter()
-            .map(|record| {
-                std::array::from_fn(|lane| {
-                    let offset = lane * 4;
-                    f32::from_le_bytes(record[offset..offset + 4].try_into().unwrap())
-                })
-            })
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect()
+    }
+
+    fn hex_f32s(hex: &str) -> Vec<f32> {
+        hex_bytes(hex)
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|word| f32::from_le_bytes(*word))
+            .collect()
+    }
+
+    /// Reconstitute the exact public Stroke values manually passed into the
+    /// native ObjectStroke setter probe. This is synthetic caller state, not a
+    /// decoded note or proof that saved documents select this profile.
+    fn manual_native_caller_stroke(fixture: &Value) -> crate::Stroke {
+        let input = &fixture["input"];
+        let source = &input["source_arrays"];
+        let points = hex_f32s(source["points"]["data_hex"].as_str().unwrap())
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|xy| crate::Point {
+                x: f64::from(xy[0]),
+                y: f64::from(xy[1]),
+            })
+            .collect::<Vec<_>>();
+        let pressures = hex_f32s(source["pressures"]["data_hex"].as_str().unwrap())
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let orientations = hex_f32s(source["orientations"]["data_hex"].as_str().unwrap())
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let tilts = hex_f32s(source["tilts"]["data_hex"].as_str().unwrap())
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let timestamps = hex_bytes(source["timestamps"]["data_hex"].as_str().unwrap())
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|word| i32::from_le_bytes(*word) as i64)
+            .collect();
+        let argb = 0xff6c_dd8f;
+        let size = f32::from_le_bytes(
+            hex_bytes(input["size_f32_bits"].as_str().unwrap())
+                .try_into()
+                .unwrap(),
+        );
+        crate::Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.BrushPen".into()),
+                advanced_settings: Some(String::new()),
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: crate::StrokeProperties {
+                    compressed: input["curve_enabled"].as_bool().unwrap(),
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: false,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(size),
+                    size_level: Some(30),
+                    stroke_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: crate::BoundingBox::default(),
+            points,
+            pressures,
+            timestamps,
+            tilts,
+            orientations,
+            color: Some(crate::Color {
+                r: ((argb >> 16) & 0xff) as u8,
+                g: ((argb >> 8) & 0xff) as u8,
+                b: (argb & 0xff) as u8,
+            }),
+            pen_width: size,
+        }
     }
 
     fn source_textures() -> (Vec<u8>, Vec<u8>) {
@@ -619,11 +709,60 @@ mod tests {
             material["texture_bindings_actual_task2"][1]["texture_2d_id"]
         );
 
-        // Paint input is the native Drawing-produced 26x44 VBO. This test does not run
-        // Rust BrushPen geometry preparation or claim sampler geometry parity.
-        let records = read_native_records(NATIVE_VBO);
+        // Start from the public Stroke representation populated from the exact
+        // native caller-probe source arrays. The setter values are synthetic
+        // caller state, not parsed saved-document data.
+        let caller: Value = serde_json::from_slice(SAVED_CALLER).unwrap();
+        assert_eq!(caller["schema"], "brushpen-saved-caller-native-v1");
+        assert_eq!(caller["producer"]["buffer_sha256"], NATIVE_VBO_SHA256);
+        let stroke = manual_native_caller_stroke(&caller);
+        let caller_context = super::super::SavedBrushPenNativeContext {
+            gl_version: 10,
+            screen_resolution: [
+                caller["profile"]["width"].as_i64().unwrap() as i32,
+                caller["profile"]["height"].as_i64().unwrap() as i32,
+            ],
+            constructor_profile: super::super::SAVED_GLV10_CONSTRUCTOR_PROFILE,
+            fixed_width: 0.0,
+            fixed_width_enabled: false,
+            fixed_opacity_enabled: false,
+        };
+        let sampled = super::super::sample_saved_native_stroke(&stroke, caller_context)
+            .expect("explicit native caller profile should be admitted");
+        assert_eq!(sampled.argb, 0xff6c_dd8f);
+        let mut wrong_version = caller_context;
+        wrong_version.gl_version = 1;
+        assert!(super::super::sample_saved_native_stroke(&stroke, wrong_version).is_none());
+        let mut wrong_context = caller_context;
+        wrong_context.screen_resolution = [1440, 2560];
+        assert!(super::super::sample_saved_native_stroke(&stroke, wrong_context).is_none());
+        let mut unresolved_pen = stroke.clone();
+        unresolved_pen.rendering.as_mut().unwrap().advanced_settings = None;
+        assert!(
+            super::super::sample_saved_native_stroke(&unresolved_pen, caller_context).is_none()
+        );
+        let mut incomplete_channels = stroke.clone();
+        incomplete_channels.tilts.clear();
+        assert!(
+            super::super::sample_saved_native_stroke(&incomplete_channels, caller_context)
+                .is_none()
+        );
+        let records = sampled
+            .output
+            .instances
+            .iter()
+            .map(|instance| instance.values)
+            .collect::<Vec<_>>();
         assert_eq!(records.len(), 26);
         assert!(records.iter().all(|r| (0.0..7.0).contains(&r[3].floor())));
+        let generated_vbo = records
+            .iter()
+            .flat_map(|record| record.iter())
+            .flat_map(|value| value.to_le_bytes())
+            .collect::<Vec<_>>();
+        assert_eq!(generated_vbo.len(), 1144);
+        assert_eq!(sha256(&generated_vbo), NATIVE_VBO_SHA256);
+        assert_eq!(generated_vbo.as_slice(), NATIVE_VBO);
         let (atlas_rgba, grain_rgba) = source_textures();
         let context = Context {
             width: 321,
@@ -636,6 +775,14 @@ mod tests {
             grain_offset: uniform::<2>(material, "grainOffset"),
             num_tiles: uniform::<1>(material, "numTiles")[0],
         };
+        assert_eq!(
+            context.rgb,
+            [
+                ((sampled.argb >> 16) & 0xff) as f32 / 255.0,
+                ((sampled.argb >> 8) & 0xff) as f32 / 255.0,
+                (sampled.argb & 0xff) as f32 / 255.0,
+            ]
+        );
         let atlas = Rgba8 {
             width: 144,
             height: 144,

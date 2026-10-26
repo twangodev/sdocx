@@ -5,9 +5,9 @@
 //! MotionEvent and ObjectStroke source channels through path construction,
 //! radius and opacity state, and stamp sampling, then models the 11-float
 //! records written by those calls. Constructor profiles and event shapes are
-//! narrow;
-//! saved device samples remain outside this module. The paint child separately
-//! checks one conditional host-Mesa frame using native VBO records as input.
+//! narrow; saved device samples remain outside this module. The paint child
+//! joins this sampler to one manually configured native caller profile and a
+//! conditional host-Mesa frame; it is not a production dispatch route.
 
 #[cfg(feature = "serde")]
 mod paint;
@@ -36,7 +36,7 @@ const GLV10_PATH_PARAMETER_SCALE: f32 = f32::from_bits(0x3800_00fd);
 /// Settings traced from this fixture's fresh BrushPen constructor. The saved
 /// cases do not call the size setter, so these defaults are deliberately kept
 /// as an explicit profile instead of treating GLV10 as sufficient admission.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 struct Glv10RuntimeProfile {
     runtime_size: f32,
     pressure_scale: f32,
@@ -864,6 +864,139 @@ pub(super) struct Instance {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(super) struct Output {
     pub(super) instances: Vec<Instance>,
+}
+
+/// Explicit context for the one manually configured Drawing caller profile
+/// joined to the retained 26x44 native buffer. This is test-only evidence,
+/// not a general saved-stroke admission rule.
+#[derive(Clone, Copy)]
+struct SavedBrushPenNativeContext {
+    gl_version: u32,
+    screen_resolution: [i32; 2],
+    constructor_profile: Glv10RuntimeProfile,
+    fixed_width: f32,
+    fixed_width_enabled: bool,
+    fixed_opacity_enabled: bool,
+}
+
+struct SavedBrushPenSamples {
+    output: Output,
+    argb: u32,
+}
+
+/// Bridge an explicitly supplied public `Stroke` through the saved-caller
+/// sampler profile. The fixture behind this bridge was assembled by manual
+/// native ObjectStroke setters; it is not a parsed Drawing/document stroke.
+/// Unknown pen identity, settings, flags, colors, sizes, or context fail closed.
+fn sample_saved_native_stroke(
+    stroke: &crate::Stroke,
+    context: SavedBrushPenNativeContext,
+) -> Option<SavedBrushPenSamples> {
+    const NATIVE_PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.BrushPen";
+    const NATIVE_ADVANCED_SETTING: &str = "";
+    const NATIVE_ARGB: u32 = 0xff6c_dd8f;
+    // The fixture stores the four float bytes in little-endian order as
+    // "4c374940"; interpreted as a host u32 bit pattern this is 0x4049374c.
+    const NATIVE_SIZE_BITS: u32 = 0x4049_374c;
+
+    if context.gl_version != GL_VERSION
+        || context.screen_resolution != [1920, 1080]
+        || context.constructor_profile != SAVED_GLV10_CONSTRUCTOR_PROFILE
+        || context.fixed_width.to_bits() != 0.0_f32.to_bits()
+        || context.fixed_width_enabled
+        || context.fixed_opacity_enabled
+    {
+        return None;
+    }
+
+    let rendering = stroke.rendering.as_ref()?;
+    let style = &rendering.style;
+    let properties = rendering.properties;
+    if rendering.pen_name.as_deref() != Some(NATIVE_PEN_NAME)
+        || rendering.advanced_settings.as_deref() != Some(NATIVE_ADVANCED_SETTING)
+        || rendering.tool_type_raw != 2
+        || !properties.compressed
+        || !properties.stylus_channels
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.millisecond_timestamps
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.binary_added
+        || properties.generated
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || style.fixed_width.is_some()
+        || style.size_level != Some(30)
+        || style.stroke_type_raw != Some(0)
+        || style.color_argb != Some(NATIVE_ARGB)
+    {
+        return None;
+    }
+    let size = style.pen_size?;
+    if size.to_bits() != NATIVE_SIZE_BITS || stroke.pen_width.to_bits() != NATIVE_SIZE_BITS {
+        return None;
+    }
+    let argb = style.color_argb?;
+    let color = stroke.color?;
+    if [color.r, color.g, color.b]
+        != [
+            ((argb >> 16) & 0xff) as u8,
+            ((argb >> 8) & 0xff) as u8,
+            (argb & 0xff) as u8,
+        ]
+    {
+        return None;
+    }
+
+    let points = stroke
+        .points
+        .iter()
+        .map(|point| P {
+            x: point.x as f32,
+            y: point.y as f32,
+        })
+        .collect::<Vec<_>>();
+    let pressures = stroke
+        .pressures
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+    let orientations = stroke
+        .orientations
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+    let tilts = stroke
+        .tilts
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+
+    let mut profile = context.constructor_profile;
+    profile.motion_settings_limits = context.screen_resolution;
+    let samples = sample_object_stroke_wrapper(
+        context.gl_version,
+        profile,
+        size,
+        context.fixed_width,
+        context.fixed_width_enabled,
+        properties.compressed,
+        context.fixed_opacity_enabled,
+        &points,
+        &stroke.timestamps,
+        &pressures,
+        &orientations,
+        &tilts,
+        i32::from(rendering.tool_type_raw),
+    )?;
+    Some(SavedBrushPenSamples {
+        output: sampled_instances(context.gl_version, &samples)?,
+        argb,
+    })
 }
 
 /// Native `makeDrawPoint` state after `drawLine` has built an SmPath.
