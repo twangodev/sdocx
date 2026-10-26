@@ -44,5 +44,29 @@
     "First paint quad is outside the viewport; model executes that draw and rejects unexpected coverage. The final paint draw has nonempty coverage.",
     "Context identity in shader snapshots is adapter-instance scoped, not a proof of arbitrary EGL context reuse.",
     "Synthetic host inputs, queue and libc/libm services remain explicit boundaries."
-  ]
+  ],
+  "translated_interior_control": {
+    "source_point_translation": [
+      64,
+      64
+    ],
+    "quad_sha256": [
+      "630039da471df0d1443e23cf628249d9a38ded480ec137a8d7557df4b397d128",
+      "9f57182ebbb3561093fac07a6a5d1d17f5bdf82df1d772ba06681254aadd06bc"
+    ],
+    "post_draw_sha256": [
+      "7af292f05f8fe36e7f40db6aadf7c363c7abe2902a289712f5a7169229c445c1",
+      "22fcba7b531c82e814451332b4f24df7bacf0ef5dd07e47852ff26b60a8b6935",
+      "08fb1fcaa0ca8caf2c2900e13924d6fc49f53a7074a15375812cc7373423e5f4",
+      "e85b8003770b441b036734f7a554f68c0ad3b95566707a3e499f7fdc7beaa63e"
+    ],
+    "scope": "Host ObjectStroke source points translated before native Model construction; native-generated quads and readbacks observed. First paint pass changes four destination pixels and later feedback samples that destination."
+  },
+  "interpolation_source": {
+    "mesa_package": "25.0.7-2+deb13u1",
+    "file": "src/gallium/drivers/llvmpipe/lp_state_setup.c",
+    "sha256": "766bd73962b6fbd3d588ac56d597619f445c79326266f3cf4b99c739558d3e20",
+    "url": "https://sources.debian.org/data/main/m/mesa/25.0.7-2+deb13u1/src/gallium/drivers/llvmpipe/lp_state_setup.c",
+    "scope": "Float32 triangle-plane setup and captured fragment-IR FMA order. Vertex order after clipping and fixed-point edge coverage remain unverified beyond these controls."
+  }
 }
