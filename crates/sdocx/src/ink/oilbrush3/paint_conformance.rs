@@ -392,19 +392,6 @@ fn sample_linear_rgba_lp(tex: &[Rgba], w: usize, h: usize, u: f32, v: f32) -> [f
     })
 }
 
-fn unpack_p4_triangle(stamp: usize, tri_indexes: [usize; 3]) -> P4Triangle {
-    let state = read_p4_state(STATE, stamp);
-    unpack_p4_triangle_for_page(
-        stamp,
-        tri_indexes,
-        PageSize {
-            width: PAGE,
-            height: PAGE,
-        },
-        state,
-    )
-}
-
 fn read_p4_state(bytes: &[u8], stamp: usize) -> P4State {
     let base = 64 + stamp * 72;
     P4State {
@@ -968,8 +955,8 @@ fn svg_r8_uri(width: usize, height: usize, values: &[u8]) -> String {
 #[cfg(feature = "pdf")]
 fn svg_depth_repeat_uri(depth: &[u8]) -> String {
     assert_eq!(depth.len(), DEPTH_W * DEPTH_H);
-    // Captured depth coordinates range from about -.013 to .091 on both axes.
-    // A 3x3 source-texture tiling preserves GL_REPEAT without baking a page.
+    // A 3x3 source-texture neighborhood preserves GL_REPEAT around the center
+    // tile for the measured V23 and V17 P4 depth-plane domains.
     let mut tiled = vec![0; DEPTH_W * 3 * DEPTH_H * 3];
     let width = DEPTH_W * 3;
     for ty in 0..3 {
@@ -986,28 +973,29 @@ fn svg_depth_repeat_uri(depth: &[u8]) -> String {
 }
 
 #[cfg(feature = "pdf")]
-fn svg_doc_plane(p: Plane) -> [f64; 3] {
+fn svg_doc_plane(p: Plane, page_height: usize) -> [f64; 3] {
     let [origin, dx, dy] = p.0.map(f64::from);
     // Preserve the native Mesa F32 plane and change coordinate bases in F64.
     // Native plane coordinates are fragment centers in GL bottom-origin space;
     // SVG document coordinates are top-origin with x/y pixel centers at n+.5.
-    [dx, -dy, origin - 0.5 * dx + (PAGE as f64 - 0.5) * dy]
+    [dx, -dy, origin - 0.5 * dx + (page_height as f64 - 0.5) * dy]
 }
 
 #[cfg(feature = "pdf")]
 fn svg_plane_image_map(
     u_plane: Plane,
     v_plane: Plane,
-    scale_u: f64,
-    scale_v: f64,
-    offset_u: f64,
-    offset_v: f64,
+    scale: [f64; 2],
+    offset: [f64; 2],
     flip_v: bool,
+    page_height: usize,
 ) -> [f64; 6] {
     // Source-image coordinates are an affine function of document coordinates:
     // (u_doc,v_doc) come from the captured global Mesa planes, not refitted UVs.
-    let u = svg_doc_plane(u_plane);
-    let v = svg_doc_plane(v_plane);
+    let u = svg_doc_plane(u_plane, page_height);
+    let v = svg_doc_plane(v_plane, page_height);
+    let [scale_u, scale_v] = scale;
+    let [offset_u, offset_v] = offset;
     let sy = if flip_v { -scale_v } else { scale_v };
     let so = if flip_v { scale_v + offset_v } else { offset_v };
     let sx = [scale_u * u[0], scale_u * u[1], scale_u * u[2] + offset_u];
@@ -1036,19 +1024,91 @@ fn svg_matrix(m: [f64; 6]) -> String {
 }
 
 #[cfg(feature = "pdf")]
+#[derive(Clone, Copy)]
+struct SvgProfile<'a> {
+    page: PageSize,
+    state: &'a [u8],
+    state_sha256: &'a str,
+    p3_before_p4: &'a [usize],
+}
+
+#[cfg(feature = "pdf")]
+const V23_SVG_PROFILE: SvgProfile<'static> = SvgProfile {
+    page: PageSize {
+        width: PAGE,
+        height: PAGE,
+    },
+    state: STATE,
+    state_sha256: STATE_SHA256,
+    p3_before_p4: &[3, 7, 11],
+};
+
+#[cfg(feature = "pdf")]
+const V17_SVG_PROFILE: SvgProfile<'static> = SvgProfile {
+    page: PageSize {
+        width: V17_PAGE_WIDTH,
+        height: V17_PAGE_HEIGHT,
+    },
+    state: V17_STATE,
+    state_sha256: V17_STATE_SHA256,
+    p3_before_p4: &[3, 7, 11],
+};
+
+#[cfg(feature = "pdf")]
+fn svg_p4_filter_bounds(stamp: usize, page: PageSize, state: &[u8]) -> [usize; 4] {
+    // Filtered inputs are pointwise over P4 coverage. Bound intermediate
+    // Pixmaps to the source-derived two-triangle device bbox, with two pixels
+    // of raster-coverage margin. Keep each feImage's page-sized coordinates
+    // and affine texture map unchanged.
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    for ids in [[0, 1, 2], [3, 4, 5]] {
+        let tri = unpack_p4_triangle_for_page(stamp, ids, page, read_p4_state(state, stamp));
+        for [x, y_gl] in tri.pos {
+            let x = f64::from(x);
+            let y = page.height as f64 - f64::from(y_gl);
+            min_x = min_x.min(x);
+            min_y = min_y.min(y);
+            max_x = max_x.max(x);
+            max_y = max_y.max(y);
+        }
+    }
+    assert!(min_x.is_finite() && min_y.is_finite() && max_x.is_finite() && max_y.is_finite());
+    let page_width = page.width as i64;
+    let page_height = page.height as i64;
+    let left = ((min_x.floor() as i64) - 2).clamp(0, page_width);
+    let top = ((min_y.floor() as i64) - 2).clamp(0, page_height);
+    let right = ((max_x.ceil() as i64) + 2).clamp(0, page_width);
+    let bottom = ((max_y.ceil() as i64) + 2).clamp(0, page_height);
+    assert!(right > left && bottom > top, "nonempty P4 filter bounds");
+    [
+        left as usize,
+        top as usize,
+        (right - left) as usize,
+        (bottom - top) as usize,
+    ]
+}
+
+#[cfg(feature = "pdf")]
 fn append_p4_svg_defs(
     svg: &mut String,
     stamp: usize,
     brush_uri: &str,
     mask_uri: &str,
     depth_uri: &str,
+    page: PageSize,
+    state: &[u8],
 ) {
     use std::fmt::Write as _;
     let filter = format!("oil-p4-{stamp}");
     let brush_page = format!("oil-brush-page-{stamp}");
     let mask_page = format!("oil-mask-page-{stamp}");
     let depth_page = format!("oil-depth-page-{stamp}");
-    for (kind, page, uri, dims, mode) in [
+    let [filter_x, filter_y, filter_width, filter_height] =
+        svg_p4_filter_bounds(stamp, page, state);
+    for (kind, page_id, uri, dims, mode) in [
         ("brush", &brush_page, brush_uri, [18, 18], "pixelated"),
         ("mask", &mask_page, mask_uri, [18, 18], "pixelated"),
         (
@@ -1079,12 +1139,12 @@ fn append_p4_svg_defs(
                 mode
             );
         }
-        let _ = write!(svg, "<g id=\"{page}\">");
+        let _ = write!(svg, "<g id=\"{page_id}\">");
         for (tri_index, ids) in [[0, 1, 2], [3, 4, 5]].into_iter().enumerate() {
-            let tri = unpack_p4_triangle(stamp, ids);
+            let tri = unpack_p4_triangle_for_page(stamp, ids, page, read_p4_state(state, stamp));
             let dest = tri
                 .pos
-                .map(|p| [f64::from(p[0]), PAGE as f64 - f64::from(p[1])]);
+                .map(|p| [f64::from(p[0]), page.height as f64 - f64::from(p[1])]);
             let planes = match kind {
                 // P4 vertex-shader event 110 assigns vBrushUV = aVertex.zw;
                 // fragment-shader event 114 samples both brush and mask with
@@ -1119,7 +1179,12 @@ fn append_p4_svg_defs(
                 ),
             };
             let matrix = svg_matrix(svg_plane_image_map(
-                *planes.0, *planes.1, planes.2, planes.3, planes.4, planes.5, planes.6,
+                *planes.0,
+                *planes.1,
+                [planes.2, planes.3],
+                [planes.4, planes.5],
+                planes.6,
+                page.height,
             ));
             let clip = format!("oil-p4-clip-{stamp}-{tri_index}");
             let _ = write!(
@@ -1130,15 +1195,15 @@ fn append_p4_svg_defs(
                 let _ = write!(svg, "{:.17},{:.17} ", p[0], p[1]);
             }
             if kind == "mask" {
-                // V25 replaces only the nested clamp-copy graph with this
-                // direct image node, retaining the captured transform and
-                // crisp-edged triangle clip.
+                // Keep nearest sampling and the captured triangle transform.
                 let _ = write!(
                     svg,
                     "\"/></clipPath><g clip-path=\"url(#{clip})\" shape-rendering=\"crispEdges\"><image x=\"0\" y=\"0\" width=\"18\" height=\"18\" preserveAspectRatio=\"none\" href=\"{}\" transform=\"{}\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/></g>",
                     uri, matrix
                 );
             } else {
+                // Brush/mask clamp to edge; depth's pre-tiled 3x3 carrier covers
+                // its captured repeat range around the center tile.
                 let _ = write!(
                     svg,
                     "\"/></clipPath><g clip-path=\"url(#{clip})\"><use href=\"#{source_id}\" transform=\"{}\" image-rendering=\"{}\" style=\"image-rendering:{}\"/></g>",
@@ -1156,22 +1221,22 @@ fn append_p4_svg_defs(
     }
     let _ = write!(
         svg,
-        "<filter id=\"{filter}\" filterUnits=\"userSpaceOnUse\" primitiveUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" color-interpolation-filters=\"sRGB\"><feImage href=\"#{brush_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"brush\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{mask_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"mask\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{depth_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"depth\" image-rendering=\"optimizeQuality\" style=\"image-rendering:smooth\"/><feColorMatrix in=\"mask\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"maskRGBA\"/><feColorMatrix in=\"depth\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"depthRGBA\"/><feComposite in=\"maskRGBA\" in2=\"depthRGBA\" operator=\"arithmetic\" k1=\"1\" k2=\"0\" k3=\"0\" k4=\"0\" result=\"maskDepth\"/><feComposite in=\"brush\" in2=\"maskDepth\" operator=\"in\" result=\"stamp\"/></filter>"
+        "<filter id=\"{filter}\" filterUnits=\"userSpaceOnUse\" primitiveUnits=\"userSpaceOnUse\" x=\"{filter_x}\" y=\"{filter_y}\" width=\"{filter_width}\" height=\"{filter_height}\" color-interpolation-filters=\"sRGB\"><feImage href=\"#{brush_page}\" x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" result=\"brush\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{mask_page}\" x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" result=\"mask\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{depth_page}\" x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" result=\"depth\" image-rendering=\"optimizeQuality\" style=\"image-rendering:smooth\"/><feColorMatrix in=\"mask\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"maskRGBA\"/><feColorMatrix in=\"depth\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"depthRGBA\"/><feComposite in=\"maskRGBA\" in2=\"depthRGBA\" operator=\"arithmetic\" k1=\"1\" k2=\"0\" k3=\"0\" k4=\"0\" result=\"maskDepth\"/><feComposite in=\"brush\" in2=\"maskDepth\" operator=\"in\" result=\"stamp\"/></filter>",
+        page.width, page.height, page.width, page.height, page.width, page.height,
     );
 }
 
 #[cfg(feature = "pdf")]
-fn oilbrush3_v25_svg(prefix: usize) -> String {
-    // This is bounded to the captured 15-draw profile and five checked prefix
-    // lengths. Texture20 is modeled as transparent after its null allocation;
-    // the native capture has no clear of that target before the first P4 draw.
-    // The 192x192 canvas below remains a vector/use graph; the separate CPU
-    // canvas exists only to derive each source-input 16x16 P3 feedback texture.
+fn oilbrush3_svg(prefix: usize, profile: SvgProfile<'_>) -> String {
+    // The canvas remains a vector/use graph. The source-derived CPU canvas is
+    // used only to regenerate the 16x16 P3 feedback texture between P4 draws.
     use std::fmt::Write as _;
-    assert!([3, 7, 8, 11, 15].contains(&prefix));
+    assert!((1..=ADDPOINT_COUNT).contains(&prefix));
     assert_eq!(sha256(ADDPOINTS), ADDPOINT_SHA256);
     assert_eq!(sha256(P3_VBO), P3_VBO_SHA256);
-    assert_eq!(sha256(STATE), STATE_SHA256);
+    assert_eq!(profile.state.len(), STATE_BYTES);
+    assert_eq!(sha256(profile.state), profile.state_sha256);
+    let page = profile.page;
     let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
     let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
     let mut mask18 = vec![0u8; 18 * 18];
@@ -1184,34 +1249,65 @@ fn oilbrush3_v25_svg(prefix: usize) -> String {
     let mask_uri = svg_r8_uri(18, 18, &mask18);
     let depth_uri = svg_depth_repeat_uri(&depth);
     let mut svg = format!(
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{PAGE}\" height=\"{PAGE}\" viewBox=\"0 0 {PAGE} {PAGE}\"><defs><g id=\"oil-canvas-0\"/>"
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\"><defs><g id=\"oil-canvas-0\"/>",
+        page.width, page.height, page.width, page.height
     );
-    let mut canvas = vec![Rgba::default(); PIXELS];
+    let mut canvas = vec![Rgba::default(); page.width * page.height];
     let blue = Rgba([68, 170, 238, 255]);
     let mut brush = vec![blue; FEEDBACK * FEEDBACK];
     let mut p3 = 0;
     let mut current = 0usize;
     for stamp in 0..prefix {
-        if matches!(stamp, 3 | 7 | 11) {
-            brush = render_p3(&canvas, read_p3_state(p3), &mask, &depth, &brush);
-            assert!(
-                brush.iter().all(|p| p.0 == [68, 170, 238, 255]),
-                "captured profile P3 source model must produce the checked 16x16 texture"
+        if profile.p3_before_p4.contains(&stamp) {
+            brush = render_p3_for_page(
+                &canvas,
+                page,
+                read_p3_state_from(profile.state, p3),
+                &mask,
+                &depth,
+                &brush,
             );
             p3 += 1;
         }
         let brush_uri = svg_brush_clamped_uri(&brush);
-        append_p4_svg_defs(&mut svg, stamp, &brush_uri, &mask_uri, &depth_uri);
+        append_p4_svg_defs(
+            &mut svg,
+            stamp,
+            &brush_uri,
+            &mask_uri,
+            &depth_uri,
+            page,
+            profile.state,
+        );
         let next = stamp + 1;
         let _ = write!(
             svg,
-            "<g id=\"oil-canvas-{next}\"><use href=\"#oil-canvas-{current}\"/><g filter=\"url(#oil-p4-{stamp})\"><rect x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" fill=\"#000\" fill-opacity=\"0\"/></g></g>"
+            "<g id=\"oil-canvas-{next}\"><use href=\"#oil-canvas-{current}\"/><g filter=\"url(#oil-p4-{stamp})\"><rect x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" fill=\"#000\" fill-opacity=\"0\"/></g></g>",
+            page.width, page.height
         );
-        render_p4(&mut canvas, stamp, &brush, &mask, &depth);
+        render_p4_for_page(
+            &mut canvas,
+            page,
+            stamp,
+            read_p4_state(profile.state, stamp),
+            &brush,
+            &mask,
+            &depth,
+        );
         current = next;
     }
     let _ = write!(svg, "</defs><use href=\"#oil-canvas-{current}\"/></svg>");
     svg
+}
+
+#[cfg(feature = "pdf")]
+fn oilbrush3_v25_svg(prefix: usize) -> String {
+    oilbrush3_svg(prefix, V23_SVG_PROFILE)
+}
+
+#[cfg(feature = "pdf")]
+fn oilbrush3_v17_svg(prefix: usize) -> String {
+    oilbrush3_svg(prefix, V17_SVG_PROFILE)
 }
 
 #[cfg(feature = "pdf")]
@@ -1242,9 +1338,66 @@ fn compare_resvg_prefix(prefix: usize) -> DiffStats {
     compare_frame(&actual, &expected_top)
 }
 
+#[cfg(feature = "pdf")]
+fn compare_resvg_v17_prefix(prefix: usize) -> DiffStats {
+    let svg = oilbrush3_v17_svg(prefix);
+    let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).expect("generated V17 SVG");
+    let mut pix = resvg::tiny_skia::Pixmap::new(V17_PAGE_WIDTH as u32, V17_PAGE_HEIGHT as u32)
+        .expect("V17 page pixmap");
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
+    let native = decode_v17_native_prefix_bundle(V17_PREFIX_BUNDLE);
+    let sparse = decode_v17_expected(native[prefix - 1], V17_PREFIX_SHA256[prefix - 1]);
+    let actual: Vec<Rgba> = pix
+        .data()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|p| Rgba(*p))
+        .collect();
+    let mut expected_top = BTreeMap::new();
+    for (index, pixel) in sparse {
+        let x = index % V17_PAGE_WIDTH;
+        let y_bottom = index / V17_PAGE_WIDTH;
+        expected_top.insert((V17_PAGE_HEIGHT - 1 - y_bottom) * V17_PAGE_WIDTH + x, pixel);
+    }
+    compare_frame(&actual, &expected_top)
+}
+
 #[cfg(all(test, feature = "pdf"))]
 mod v25_svg_tests {
     use super::*;
+
+    #[test]
+    fn v17_source_svg_preserves_native_support_and_records_rgba_residuals() {
+        // Non-texel-center depth sampling exposes SVG filter/interpolation differences.
+        // Pin the measured errors rather than treating this graph as exact native paint.
+        let controls = [
+            (3, 1, [0, 1, 1, 1], [0, 1, 1, 1]),
+            (7, 3, [2, 3, 3, 2], [1, 1, 1, 1]),
+            (8, 7, [3, 5, 7, 4], [1, 1, 1, 1]),
+            (11, 13, [3, 7, 14, 8], [1, 1, 2, 1]),
+            (15, 27, [7, 18, 27, 23], [1, 2, 2, 2]),
+        ];
+        for (prefix, diff_pixels, sums, max) in controls {
+            let row = compare_resvg_v17_prefix(prefix);
+            assert_eq!(
+                row.support,
+                V17_EXPECTED_SUPPORT[prefix - 1],
+                "V17 prefix {prefix}"
+            );
+            assert_eq!(row.support_symdiff, 0, "V17 prefix {prefix} support");
+            assert_eq!(
+                row.diff_pixels, diff_pixels,
+                "V17 prefix {prefix} different pixels"
+            );
+            assert_eq!(row.sums, sums, "V17 prefix {prefix} channel sums");
+            assert_eq!(row.max, max, "V17 prefix {prefix} channel maxima");
+        }
+    }
 
     #[test]
     fn source_svg_matches_native_prefix_support_alpha_and_two_level_rgb_bound() {
