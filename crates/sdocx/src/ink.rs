@@ -61,6 +61,8 @@ mod pencil;
 pub(crate) mod pencil_source;
 #[cfg(test)]
 mod tapepen;
+#[cfg(test)]
+mod tapepen_paint_v32;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
