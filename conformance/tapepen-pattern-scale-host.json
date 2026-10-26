@@ -169,5 +169,45 @@
         "final_rgba_sha256": "12c51ee44e9a4a6d4e177cd520f0cea12576a594b50bdda2ec8d2b829540d082"
       }
     }
+  },
+  "pattern_asset_host_controls": {
+    "scope": "Synthetic native Model stroke with host injection of the corresponding APK-decoded SVG into cleared native pattern store; 256x256 seeded caller bitmap, host Mesa, scale 1. Neither Android JNI resource loading nor device parity is observed. Texture-to-SVG dataflow is inferred from paired controls, not directly traced.",
+    "source_runner_path": "scratch/tapepen-pattern-assets-v51/capture_candidate.py",
+    "source_runner_sha256": "e27988ce7c2c92373f854db9a190abc9d6f69d69c4118c782b674d417486c15b",
+    "source_manifest_path": "scratch/tapepen-pattern-assets-v51/preflight.json",
+    "source_manifest_sha256": "90d420083f5739ac4223fd048ae22d3ef09df4198023631ab4c4d0cce4c00df4",
+    "source_preflight_sha256": "1e0985967e9e26c97d311c96979fe7009ad3d741c955fda1bb77436ef916b8a9",
+    "source_helper_sha256": "cf08a72c39f2fa8f8ad463a8ca87596adbfb9649453ad53cb3e763099c385a97",
+    "candidate_manifest_sha256": "80651713a3069b1be57f7f40d2f1e135092c251ce4c95aafb6687fd103f9574c",
+    "matched_inputs": "Same input values except selected index and asset, and process-local addresses. Index 1 reproduces V47 scale 1 final output.",
+    "texture_evidence": "Upload event 6 copies a live native allocation into 64x64 texture 6, which is bound at unit 0 for draw 0. Factory and GLV1 guards succeeded; native and queue-end GL errors were zero; final native readback equals last caller-target draw.",
+    "runs": [
+      {
+        "pattern_index": 1,
+        "asset_path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+        "asset_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+        "asset_bytes": 13182,
+        "capture_log_path": "/tmp/sdocx-tapepen-pattern-assets-v51-1.log",
+        "capture_log_sha256": "17b94b2b7c6c382f461229030ca91f5cd67b2d5c8d5536f6c4b19518f775ab8d",
+        "gl_upload_event": 6,
+        "gl_texture_id": 6,
+        "upload_rgba_sha256": "78a0a70b418c59c460f8791d48d7f131ad7d445f3797323eb041fd9b689ba189",
+        "final_native_rgba_sha256": "55cf269ec678baee4b1a79cef9cc5323f0a1e27de1bcbbf02c34d92b41ed0985",
+        "qsort_calls": 138
+      },
+      {
+        "pattern_index": 2,
+        "asset_path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_02.svg",
+        "asset_sha256": "cc7e5633414c330095001c06b3ec3eb80e9f3a7ab84cd5bde6cb263c349968be",
+        "asset_bytes": 1309,
+        "capture_log_path": "/tmp/sdocx-tapepen-pattern-assets-v51-2.log",
+        "capture_log_sha256": "26248867f1711c6a66f3b9060ab74e9c9c8f1e1dae9bb3d1ed44fea7485c8993",
+        "gl_upload_event": 6,
+        "gl_texture_id": 6,
+        "upload_rgba_sha256": "60c306db4c0395195c8b66dc9378e74e6d1670e7fb9f492875f1e2afbd82e04f",
+        "final_native_rgba_sha256": "b594a48f1774e8626e272d615d566f6381675b86d1e535834f0ccaf807539bed",
+        "qsort_calls": 3
+      }
+    ]
   }
 }

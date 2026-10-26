@@ -139,6 +139,14 @@ resources before caching it. The [resource hashes](../../conformance/tapepen-pat
 cover those nine packaged SVGs. An existing or overridden cache can bypass
 that load, and the host captures explicitly supply their asset bytes.
 
+A [paired host asset control](../../conformance/tapepen-pattern-scale-host.json)
+injected the pinned pattern 1 and 2 SVGs into the cleared native store with
+otherwise matched synthetic stroke inputs. The observed 64×64 texture upload
+and final caller-bitmap readback hashes differed. Texture 6 was bound for the
+first draw, but the SVG-to-raster dataflow was not directly traced; the asset
+connection is inferred from the controlled inputs. This does not observe
+Android resource loading or establish device parity.
+
 A paired synthetic host capture with the same seeded bitmap observed reveal
 attenuation on an intermediate TapePen texture before its final composition
 onto the caller bitmap. It does not establish which page layers a saved note
