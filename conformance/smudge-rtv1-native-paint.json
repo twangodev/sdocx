@@ -68,5 +68,38 @@
     "sha256": "766bd73962b6fbd3d588ac56d597619f445c79326266f3cf4b99c739558d3e20",
     "url": "https://sources.debian.org/data/main/m/mesa/25.0.7-2+deb13u1/src/gallium/drivers/llvmpipe/lp_state_setup.c",
     "scope": "Float32 triangle-plane setup and captured fragment-IR FMA order. Vertex order after clipping and fixed-point edge coverage remain unverified beyond these controls."
+  },
+  "addpoint_to_quad_control": {
+    "scope": "Synthetic host Model Stroke through pinned V26/V30 Drawing/RTV1 and Mesa profile; two points per control, fixed radius, two source translations; no general Stroke-to-AddPoint, Android or production parity claim.",
+    "capture_source_sha256": "39362ff837977581b499b1e1af72020d98db85ceaf809c8e9908337cb96e77dc",
+    "source_manifest_sha256": "40911d4e3e2c51374114175e0e034e0db26631800c2b95bc30778ad5c7e3565e",
+    "method": "Native AddPoint s0/s1/s2 entry bits compared to both independently observed active VBO uploads per point using the statically recovered MakeQuad arithmetic; all four joined points matched.",
+    "baseline_addpoint_f32_bits": [
+      [
+        "0x3f800000",
+        "0xc0000000",
+        "0x3f9ac813"
+      ],
+      [
+        "0x402a3fe7",
+        "0x3ed6e73a",
+        "0x3f9ac813"
+      ]
+    ],
+    "baseline_quad_sha256_ref": "source.quad_sha256",
+    "translated_addpoint_f32_bits": [
+      [
+        "0x42820000",
+        "0x42780000",
+        "0x3f9ac813"
+      ],
+      [
+        "0x428551ff",
+        "0x4280d6e7",
+        "0x3f9ac813"
+      ]
+    ],
+    "translated_quad_sha256_ref": "translated_interior_control.quad_sha256",
+    "per_point_matching_draw_uploads": 2
   }
 }

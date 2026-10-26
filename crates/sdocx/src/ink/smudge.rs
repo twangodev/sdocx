@@ -816,6 +816,75 @@ mod tests {
         ],
     ];
 
+    // Native RTV1 AddPoint forwards x, y and equal half extents to the
+    // PenCommon MakeQuad helper. This test-only helper covers that bounded
+    // geometry stage; it does not regenerate AddPoint values from a Stroke.
+    fn native_make_quad(x: f32, y: f32, radius: f32) -> [[f32; 4]; 6] {
+        let left = x - radius;
+        let bottom = y - radius;
+        let right = x + radius;
+        let top = y + radius;
+        [
+            [left, bottom, 0.0, 1.0],
+            [left, top, 0.0, 0.0],
+            [right, bottom, 1.0, 1.0],
+            [right, bottom, 1.0, 1.0],
+            [left, top, 0.0, 0.0],
+            [right, top, 1.0, 0.0],
+        ]
+    }
+
+    #[test]
+    fn captured_addpoint_registers_regenerate_native_vbo_quads() {
+        // Independent native AddPoint entry s0/s1/s2 register observations
+        // and each of the two guarded VBO uploads per point agree in the
+        // compact conformance/smudge-rtv1-native-paint.json receipt. Inputs
+        // are synthetic host
+        // Model points under the pinned V26/V30 Drawing and Mesa profile.
+        for (x, y, radius, expected, expected_hash) in [
+            (
+                0x3f800000,
+                0xc0000000,
+                0x3f9ac813,
+                &QUAD_START,
+                "e5825c9e20fc003bc25cbd35827400dbda716f3556828bf34f759b764edb7d22",
+            ),
+            (
+                0x402a3fe7,
+                0x3ed6e73a,
+                0x3f9ac813,
+                &QUAD_NEXT,
+                "3bae4eda1ecc6926c1ba6edb124f8e21d28811ae6f675cb5549b73881630f665",
+            ),
+            (
+                0x42820000,
+                0x42780000,
+                0x3f9ac813,
+                &INTERIOR_FIRST,
+                "630039da471df0d1443e23cf628249d9a38ded480ec137a8d7557df4b397d128",
+            ),
+            (
+                0x428551ff,
+                0x4280d6e7,
+                0x3f9ac813,
+                &INTERIOR_NEXT,
+                "9f57182ebbb3561093fac07a6a5d1d17f5bdf82df1d772ba06681254aadd06bc",
+            ),
+        ] {
+            let quad =
+                native_make_quad(f32::from_bits(x), f32::from_bits(y), f32::from_bits(radius));
+            for (actual, native) in quad.iter().flatten().zip(expected.iter().flatten()) {
+                assert_eq!(actual.to_bits(), native.to_bits(), "native VBO f32 lane");
+            }
+            let raw: Vec<u8> = quad
+                .iter()
+                .flatten()
+                .flat_map(|lane| lane.to_le_bytes())
+                .collect();
+            assert_eq!(sha256(&raw), expected_hash, "native upload SHA-256");
+        }
+    }
+
     #[test]
     fn captured_high_frequency_source_pipeline_stage_hashes() {
         let source = high_frequency_input(WIDTH, HEIGHT);
