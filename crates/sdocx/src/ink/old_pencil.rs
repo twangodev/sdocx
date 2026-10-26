@@ -222,6 +222,124 @@ pub(crate) fn sample_saved_stroke(
     Ok(SampledStroke { records, leg_ends })
 }
 
+/// Test-only bridge from the crate's public saved-stroke model into the native
+/// F32 channels used by the pinned Pencil GLV1 Drawing call. This module is
+/// registered under `cfg(test)`; this bridge is deliberately not a production
+/// admission path. The native control was assembled with ObjectStroke setters,
+/// not deserialized from a Samsung document, so only that unresolved-name,
+/// null-setting, normal compressed-stylus projection is represented here.
+fn sample_public_stroke_for_test(stroke: &crate::Stroke) -> Option<(SampledStroke, u32)> {
+    const PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.Pencil";
+    const ARGB: u32 = 0xff00_0000;
+
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = rendering.properties;
+    if rendering.metadata.is_some()
+        || rendering.pen_name.as_deref() != Some(PEN_NAME)
+        || rendering.advanced_settings.is_some()
+        || rendering.tool_type_raw != 2
+        || properties
+            != (crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: true,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            })
+    {
+        return None;
+    }
+
+    let size = rendering.style.pen_size?;
+    let expected_style = crate::StrokeStyle {
+        color_argb: Some(ARGB),
+        pen_size: Some(size),
+        stroke_type_raw: Some(0),
+        ..crate::StrokeStyle::default()
+    };
+    if rendering.style != expected_style
+        || !size.is_finite()
+        || size <= 0.0
+        || stroke.pen_width.to_bits() != size.to_bits()
+        || stroke.color != Some(crate::Color { r: 0, g: 0, b: 0 })
+    {
+        return None;
+    }
+
+    let count = stroke.points.len();
+    if !(2..=MAX_SOURCE_POINTS).contains(&count)
+        || stroke.pressures.len() != count
+        || stroke.timestamps.len() != count
+        || stroke.tilts.len() != count
+        || stroke.orientations.len() != count
+    {
+        return None;
+    }
+
+    // Compressed point decode rounds coordinates through F32, and float_channel
+    // reads pressure as F32 before widening to the public F64 representation.
+    // Require exact round trips so uncompressed F64 coordinates or hand-built
+    // lossy values do not silently claim this native PointF capture profile.
+    let to_native_f32 = |value: f64| {
+        let value_f32 = value as f32;
+        (value.is_finite() && value_f32.is_finite() && f64::from(value_f32) == value)
+            .then_some(value_f32)
+    };
+    let points = stroke
+        .points
+        .iter()
+        .map(|point| {
+            Some(SavedPoint {
+                x: to_native_f32(point.x)?,
+                y: to_native_f32(point.y)?,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let pressures = stroke
+        .pressures
+        .iter()
+        .map(|&pressure| to_native_f32(pressure))
+        .collect::<Option<Vec<_>>>()?;
+    if stroke
+        .tilts
+        .iter()
+        .chain(&stroke.orientations)
+        .any(|value| to_native_f32(*value).is_none())
+    {
+        return None;
+    }
+
+    let sampled = sample_saved_stroke(
+        &SavedStroke {
+            pen_name: PEN_NAME,
+            tool_type: i32::from(rendering.tool_type_raw),
+            stroke_type: 0,
+            curve_enabled: properties.compressed,
+            points: &points,
+            pressures: &pressures,
+            size,
+        },
+        PencilStyleProfile {
+            size,
+            // V17 observed PencilData byte +9 clear and +12 zero. There is no
+            // persisted-field mapping for the override, so only the explicit
+            // override-off profile is admitted.
+            point_width_override: None,
+        },
+    )
+    .ok()?;
+    Some((sampled, ARGB))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,6 +347,58 @@ mod tests {
 
     const NATIVE_RECORDS: &[u8] =
         include_bytes!("../../../../conformance/old-pencil-glv1-v9-native.bin");
+    const V17_NATIVE_RECORDS: &[u8] = include_bytes!(
+        "../../../../conformance/old-pencil-native-paint-v1/native-instance-vbo-v17.bin"
+    );
+
+    fn public_stroke(size: f32, pressure: &[f32]) -> crate::Stroke {
+        let point_pairs = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 10.0)];
+        let points: Vec<crate::Point> = point_pairs
+            .iter()
+            .map(|&(x, y)| crate::Point { x, y })
+            .collect();
+        let color_argb = 0xff00_0000;
+        crate::Stroke {
+            rendering: Some(crate::StrokeRendering {
+                // V17 exercises ObjectStroke setter input, not deserialized
+                // ObjectMetadata or resolved document registries.
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Pencil".to_owned()),
+                advanced_settings: None,
+                tool_type_raw: 2,
+                properties: crate::StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: Some(color_argb),
+                    pen_size: Some(size),
+                    stroke_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: crate::BoundingBox::default(),
+            points,
+            pressures: pressure.iter().copied().map(f64::from).collect(),
+            timestamps: vec![10, 20, 30, 40],
+            tilts: vec![0.0; 4],
+            orientations: vec![0.0; 4],
+            color: Some(crate::Color { r: 0, g: 0, b: 0 }),
+            pen_width: size,
+        }
+    }
 
     fn assert_case(
         name: &str,
@@ -237,28 +407,10 @@ mod tests {
         size: f32,
         pressure: &[f32],
     ) {
-        let point_pairs = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 10.0)];
-        let points: Vec<SavedPoint> = point_pairs
-            .iter()
-            .map(|&(x, y)| SavedPoint { x, y })
-            .collect();
-        let stroke = SavedStroke {
-            pen_name: "com.samsung.android.sdk.pen.pen.preload.Pencil",
-            tool_type: 2,
-            stroke_type: 0,
-            curve_enabled: true,
-            points: &points,
-            pressures: pressure,
-            size,
-        };
-        let sampled = sample_saved_stroke(
-            &stroke,
-            PencilStyleProfile {
-                size,
-                point_width_override: None,
-            },
-        )
-        .expect("captured legacy Pencil GLV1 profile is supported");
+        let stroke = public_stroke(size, pressure);
+        let (sampled, argb) = sample_public_stroke_for_test(&stroke)
+            .expect("captured legacy Pencil GLV1 public-stroke projection is supported");
+        assert_eq!(argb, 0xff00_0000, "{name}: raw native ARGB");
 
         assert_eq!(
             sampled.records.len(),
@@ -308,5 +460,53 @@ mod tests {
             4.0,
             &[0.25, 0.5, 0.875, 1.25],
         );
+    }
+
+    #[test]
+    fn public_stroke_bridge_reconstructs_the_actual_v17_native_instance_stream() {
+        assert_eq!(V17_NATIVE_RECORDS.len(), 47 * 16);
+        let stroke = public_stroke(2.0, &[0.5, 0.5, 0.5, 0.5]);
+        let (sampled, argb) = sample_public_stroke_for_test(&stroke)
+            .expect("V17 fresh setter profile should map through public Stroke");
+        assert_eq!(argb, 0xff00_0000);
+        assert_eq!(sampled.records.len(), 47);
+        let packed = sampled
+            .records
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect::<Vec<_>>();
+        assert_eq!(packed.as_slice(), V17_NATIVE_RECORDS);
+    }
+
+    #[test]
+    fn public_stroke_bridge_rejects_unobserved_profile_style_and_channel_variants() {
+        let base = public_stroke(2.0, &[0.5, 0.5, 0.5, 0.5]);
+        let mut wrong_name = base.clone();
+        wrong_name.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.Pencil2".to_owned());
+        assert!(sample_public_stroke_for_test(&wrong_name).is_none());
+
+        let mut lossy_point = base.clone();
+        lossy_point.points[1].x = 0.1;
+        assert!(sample_public_stroke_for_test(&lossy_point).is_none());
+
+        let mut lossy_pressure = base.clone();
+        lossy_pressure.pressures[0] = 0.1;
+        assert!(sample_public_stroke_for_test(&lossy_pressure).is_none());
+
+        let mut style_variant = base.clone();
+        style_variant.rendering.as_mut().unwrap().style.size_level = Some(1);
+        style_variant.rendering.as_mut().unwrap().style.fixed_width = Some(1.0);
+        assert!(sample_public_stroke_for_test(&style_variant).is_none());
+
+        let mut eraser = base.clone();
+        eraser.rendering.as_mut().unwrap().properties.eraser = true;
+        assert!(sample_public_stroke_for_test(&eraser).is_none());
+
+        let mut wrong_color = base.clone();
+        wrong_color.rendering.as_mut().unwrap().style.color_argb = Some(0xffff_0000);
+        wrong_color.color = Some(crate::Color { r: 1, g: 0, b: 0 });
+        assert!(sample_public_stroke_for_test(&wrong_color).is_none());
     }
 }
