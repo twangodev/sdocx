@@ -522,23 +522,41 @@ mod tests {
         // V17 adds an independent same-context observation. Keep V7's fixture
         // and cross-capture history intact; this checks the additional direct joins.
         let v17 = &material["same_context_v17_observation"];
-        assert_eq!(v17["capture_sha256"], "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a");
+        assert_eq!(
+            v17["capture_sha256"],
+            "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a"
+        );
         assert_eq!(v17["mesa_egl_context"], "0xf787c70");
         assert_eq!(v17["phase"], "native PenGLRenderMsg task2");
-        assert_eq!(v17["draw_args_glDrawArraysInstanced"], serde_json::json!([5, 0, 4, 26]));
+        assert_eq!(
+            v17["draw_args_glDrawArraysInstanced"],
+            serde_json::json!([5, 0, 4, 26])
+        );
         assert_eq!(v17["gl_errors_before_queries"], serde_json::json!([]));
         assert_eq!(v17["gl_errors_after_queries"], serde_json::json!([]));
         assert_eq!(v17["native_instance_upload"]["bytes"], 26 * 44);
         assert_eq!(v17["native_instance_upload"]["sha256"], NATIVE_VBO_SHA256);
-        assert_eq!(v17["native_instance_upload"]["matches_retained_26x44_vbo"], true);
+        assert_eq!(
+            v17["native_instance_upload"]["matches_retained_26x44_vbo"],
+            true
+        );
         assert_eq!(v17["active_program"]["id"], 7);
         assert_eq!(v17["active_program"]["adapter_expected_id"], 3);
         assert_eq!(v17["active_program"]["matches_adapter_id"], false);
         assert_eq!(v17["active_program"]["link_status"], 1);
         assert_eq!(v17["active_program"]["attached_compiled_shader_count"], 2);
-        assert_eq!(v17["active_program"]["source_hashes_match_pinned_fixture"], true);
-        assert_eq!(v17["active_program"]["vertex_sha256"], material["shader_source"]["vertex_sha256"]);
-        assert_eq!(v17["active_program"]["fragment_sha256"], material["shader_source"]["fragment_sha256"]);
+        assert_eq!(
+            v17["active_program"]["source_hashes_match_pinned_fixture"],
+            true
+        );
+        assert_eq!(
+            v17["active_program"]["vertex_sha256"],
+            material["shader_source"]["vertex_sha256"]
+        );
+        assert_eq!(
+            v17["active_program"]["fragment_sha256"],
+            material["shader_source"]["fragment_sha256"]
+        );
         assert_eq!(v17["target"]["draw_fbo"], 2);
         assert_eq!(v17["target"]["read_fbo"], 2);
         assert_eq!(v17["target"]["attachment_texture"], 4);
@@ -546,7 +564,10 @@ mod tests {
         assert_eq!(v17["target"]["storage_internal_format_name"], "GL_RGBA8");
         assert_eq!(v17["target"]["post_draw_format"], "RGBA8");
         assert_eq!(v17["target"]["post_draw_sha256"], TARGET_RGBA_SHA256);
-        assert_eq!(v17["blend_state_at_draw"], serde_json::json!({"enabled":true,"equation_rgb":32774,"equation_alpha":32774,"src_rgb":770,"dst_rgb":771,"src_alpha":1,"dst_alpha":771,"color_write_mask":[1,1,1,1]}));
+        assert_eq!(
+            v17["blend_state_at_draw"],
+            serde_json::json!({"enabled":true,"equation_rgb":32774,"equation_alpha":32774,"src_rgb":770,"dst_rgb":771,"src_alpha":1,"dst_alpha":771,"color_write_mask":[1,1,1,1]})
+        );
         assert_eq!(v17["sampled_textures"].as_array().unwrap().len(), 2);
         let pattern = &v17["sampled_textures"][0];
         let grain = &v17["sampled_textures"][1];
@@ -562,9 +583,18 @@ mod tests {
         assert_eq!(pattern["initialized_tiles"], 7);
         assert_eq!(pattern["uninitialized_tiles"], serde_json::json!([7, 8]));
         assert_eq!(pattern["forwarded_host_owned_copy_verified"], true);
-        assert_eq!(pattern["guest_payload_sha256"], "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2");
-        assert_eq!(pattern["guest_payload_sha256"], pattern["forwarded_host_copy_sha256"]);
-        assert_eq!(pattern["guest_payload_sha256"], material["source_upload_evidence"]["native_factory_roles"][0]["payload_sha256_with_host_allocator_sentinels"]);
+        assert_eq!(
+            pattern["guest_payload_sha256"],
+            "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2"
+        );
+        assert_eq!(
+            pattern["guest_payload_sha256"],
+            pattern["forwarded_host_copy_sha256"]
+        );
+        assert_eq!(
+            pattern["guest_payload_sha256"],
+            material["source_upload_evidence"]["native_factory_roles"][0]["payload_sha256_with_host_allocator_sentinels"]
+        );
         assert_eq!(grain["sampler_uniform"], "sampler1");
         assert_eq!(grain["unit"], 1);
         assert_eq!(grain["factory_descriptor_index"], 4);
@@ -575,10 +605,19 @@ mod tests {
         assert_eq!(grain["upload_type"], 5121);
         assert_eq!(grain["payload_bytes"], 321 * 228 * 4);
         assert_eq!(grain["forwarded_host_owned_copy_verified"], true);
-        assert_eq!(grain["guest_payload_sha256"], grain["forwarded_host_copy_sha256"]);
+        assert_eq!(
+            grain["guest_payload_sha256"],
+            grain["forwarded_host_copy_sha256"]
+        );
         assert_eq!(grain["guest_payload_sha256"], GRAIN_RGBA_SHA256);
-        assert_eq!(v17["sampled_textures"][0]["mesa_texture_name"], material["texture_bindings_actual_task2"][0]["texture_2d_id"]);
-        assert_eq!(v17["sampled_textures"][1]["mesa_texture_name"], material["texture_bindings_actual_task2"][1]["texture_2d_id"]);
+        assert_eq!(
+            v17["sampled_textures"][0]["mesa_texture_name"],
+            material["texture_bindings_actual_task2"][0]["texture_2d_id"]
+        );
+        assert_eq!(
+            v17["sampled_textures"][1]["mesa_texture_name"],
+            material["texture_bindings_actual_task2"][1]["texture_2d_id"]
+        );
 
         // Paint input is the native Drawing-produced 26x44 VBO. This test does not run
         // Rust BrushPen geometry preparation or claim sampler geometry parity.
@@ -642,20 +681,64 @@ mod tests {
         assert_eq!(profile["target_internal_format_observed_in_v17"], true);
         assert_eq!(profile["blend_state_observed_in_v17"], true);
         assert_eq!(profile["same_context_uploads_observed_in_v17"], true);
-        assert_eq!(profile["same_context_v17_observation"]["capture_sha256"], "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a");
-        assert_eq!(profile["same_context_v17_observation"]["mesa_egl_context"], "0xf787c70");
-        assert_eq!(profile["same_context_v17_observation"]["active_program_id"], 7);
-        assert_eq!(profile["same_context_v17_observation"]["adapter_expected_program_id"], 3);
-        assert_eq!(profile["same_context_v17_observation"]["linked_shader_hashes_match_fixture"], true);
-        assert_eq!(profile["same_context_v17_observation"]["pattern_texture_id"], 5);
-        assert_eq!(profile["same_context_v17_observation"]["grain_texture_id"], 6);
-        assert_eq!(profile["same_context_v17_observation"]["target_texture_id"], 4);
-        assert_eq!(profile["same_context_v17_observation"]["target_internal_format_gl_enum"], 32856);
-        assert_eq!(profile["same_context_v17_observation"]["target_internal_format_name"], "GL_RGBA8");
-        assert_eq!(profile["same_context_v17_observation"]["draw_blend_state"], serde_json::json!({"blend_enabled":true,"color_write_mask":[1,1,1,1],"dst_alpha":771,"dst_rgb":771,"equation_alpha":32774,"equation_rgb":32774,"src_alpha":1,"src_rgb":770}));
-        assert_eq!(profile["same_context_v17_observation"]["post_draw_rgba8_sha256"], TARGET_RGBA_SHA256);
-        assert_eq!(profile["requires_native_v9_same_context_state_resource_observer"], false);
-        assert!(profile["mesa_blend_conversion"]["v17_condition_status"].as_str().unwrap().contains("Confirmed for the V17 captured draw only"));
+        assert_eq!(
+            profile["same_context_v17_observation"]["capture_sha256"],
+            "50d8a712daae286521c303f456e68719a404a1c28512f517e0153be495b05e6a"
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["mesa_egl_context"],
+            "0xf787c70"
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["active_program_id"],
+            7
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["adapter_expected_program_id"],
+            3
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["linked_shader_hashes_match_fixture"],
+            true
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["pattern_texture_id"],
+            5
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["grain_texture_id"],
+            6
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["target_texture_id"],
+            4
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["target_internal_format_gl_enum"],
+            32856
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["target_internal_format_name"],
+            "GL_RGBA8"
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["draw_blend_state"],
+            serde_json::json!({"blend_enabled":true,"color_write_mask":[1,1,1,1],"dst_alpha":771,"dst_rgb":771,"equation_alpha":32774,"equation_rgb":32774,"src_alpha":1,"src_rgb":770})
+        );
+        assert_eq!(
+            profile["same_context_v17_observation"]["post_draw_rgba8_sha256"],
+            TARGET_RGBA_SHA256
+        );
+        assert_eq!(
+            profile["requires_native_v9_same_context_state_resource_observer"],
+            false
+        );
+        assert!(
+            profile["mesa_blend_conversion"]["v17_condition_status"]
+                .as_str()
+                .unwrap()
+                .contains("Confirmed for the V17 captured draw only")
+        );
         assert_eq!(profile["same_drawing_geometry_and_output_join"], true);
         assert_eq!(
             profile["same_drawing_join"]["same_native_vbo_sha256"],
