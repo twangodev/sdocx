@@ -37,53 +37,12 @@ const DEPTH_ZLIB: &[u8] =
 const PROFILE: &[u8] = include_bytes!(
     "../../../../../conformance/oilbrush3-v23-native-paint/oilbrush3-paint-profile.json"
 );
-const NATIVE_PREFIX: [&[u8]; 15] = [
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-01.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-02.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-03.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-04.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-05.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-06.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-07.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-08.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-09.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-10.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-11.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-12.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-13.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-14.sparse-rgba8.bin"
-    ),
-    include_bytes!(
-        "../../../../../conformance/oilbrush3-v23-native-paint/native-after-p4-15.sparse-rgba8.bin"
-    ),
-];
+const NATIVE_PREFIX_BUNDLE: &[u8] = include_bytes!(
+    "../../../../../conformance/oilbrush3-v23-native-paint/native-prefixes-sparse-rgba8-v1.bin"
+);
+const NATIVE_PREFIX_MAGIC: &[u8; 8] = b"SDOCXOB1";
+const NATIVE_PREFIX_COUNT: usize = 15;
+const NATIVE_PREFIX_HEADER_BYTES: usize = 14;
 
 const ADDPOINT_SHA256: &str = "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c";
 const P3_VBO_SHA256: &str = "818bdaddffdbdd6e1cad09a1dac74a1da79ee482bf8b86ee601ccd93c0af3f39";
@@ -92,7 +51,9 @@ const MASK_ZLIB_SHA256: &str = "88e2c40eda7057f95a35a2b80f4d1e95da5ca72267651e4f
 const MASK_R8_SHA256: &str = "fc277b78270fbee42ba6cc96ff4050f5a76c595e9ec841de36e3b7fbe1e368dc";
 const DEPTH_ZLIB_SHA256: &str = "dcfb7a42804115addcc085a729abbd5ba6915ee262363063be1f8c741ed65da5";
 const DEPTH_R8_SHA256: &str = "8188e033fffc6513cc997deb014033e7de1aacd8e27f5c6b464d491c7efaa27a";
-const PROFILE_SHA256: &str = "a7f8ec44958fd64a789b1c202827e4e8e94b7c88dcacf24d071a588a6052ab43";
+const PROFILE_SHA256: &str = "43d2151de7c82d76da165c72815242d6a07442b13555fb0c309aeba6d0073923";
+const NATIVE_PREFIX_BUNDLE_SHA256: &str =
+    "20f504f2780d7d82feafe5ea5970e8a10a4919cd87ee6c2652c64d0229ab7028";
 const PREFIX_SHA256: [&str; 15] = [
     "b9749d0227ccf3087119b940eba436258a33d86a5713bc33740c173af4fe5a4c",
     "8b8aeba311fb068177fb647e50e83c9178e6bc33d363d2978aa8684711f2ac7e",
@@ -568,6 +529,41 @@ fn render_p3(
     out
 }
 
+fn read_u16_le(bytes: &[u8], offset: usize) -> u16 {
+    u16::from_le_bytes(bytes[offset..offset + 2].try_into().expect("two-byte u16"))
+}
+
+fn decode_native_prefix_bundle(bytes: &'static [u8]) -> Vec<&'static [u8]> {
+    assert_eq!(sha256(bytes), NATIVE_PREFIX_BUNDLE_SHA256);
+    assert!(bytes.len() >= NATIVE_PREFIX_HEADER_BYTES);
+    assert_eq!(&bytes[..8], NATIVE_PREFIX_MAGIC);
+    assert_eq!(read_u16_le(bytes, 8), PAGE as u16, "bundle width");
+    assert_eq!(read_u16_le(bytes, 10), PAGE as u16, "bundle height");
+    let count = usize::from(read_u16_le(bytes, 12));
+    assert_eq!(count, NATIVE_PREFIX_COUNT, "bundle prefix count");
+
+    let mut offset = NATIVE_PREFIX_HEADER_BYTES;
+    let mut prefixes = Vec::with_capacity(count);
+    for index in 0..count {
+        let count_end = offset.checked_add(2).expect("entry count offset");
+        assert!(
+            count_end <= bytes.len(),
+            "prefix {index} missing record count"
+        );
+        let records = usize::from(read_u16_le(bytes, offset));
+        let payload_bytes = records.checked_mul(6).expect("sparse payload size");
+        let payload_end = count_end.checked_add(payload_bytes).expect("payload end");
+        assert!(
+            payload_end <= bytes.len(),
+            "prefix {index} truncated payload"
+        );
+        prefixes.push(&bytes[count_end..payload_end]);
+        offset = payload_end;
+    }
+    assert_eq!(offset, bytes.len(), "trailing bytes after prefix bundle");
+    prefixes
+}
+
 fn decode_expected(bytes: &[u8], expected_sha: &str) -> BTreeMap<usize, Rgba> {
     assert_eq!(sha256(bytes), expected_sha);
     assert_eq!(bytes.len() % 6, 0);
@@ -618,6 +614,7 @@ fn simulate() -> Vec<DiffStats> {
     assert_eq!(sha256(MASK_ZLIB), MASK_ZLIB_SHA256);
     assert_eq!(sha256(DEPTH_ZLIB), DEPTH_ZLIB_SHA256);
     assert_eq!(sha256(PROFILE), PROFILE_SHA256);
+    let native_prefixes = decode_native_prefix_bundle(NATIVE_PREFIX_BUNDLE);
     let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
     let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
     let mut canvas = vec![Rgba::default(); PIXELS]; // conditional transparent texture20 initialization profile
@@ -638,7 +635,7 @@ fn simulate() -> Vec<DiffStats> {
             p3_index += 1;
         }
         render_p4(&mut canvas, stamp, &brush, &mask, &depth);
-        let expected = decode_expected(NATIVE_PREFIX[stamp], PREFIX_SHA256[stamp]);
+        let expected = decode_expected(native_prefixes[stamp], PREFIX_SHA256[stamp]);
         stats.push(compare_frame(&canvas, &expected));
     }
     assert_eq!(feedback_unique, [1, 1, 1]);
