@@ -136,3 +136,54 @@ fn v32_host_pattern_composite_matches_within_one_channel_value() {
         "native output fills viewport"
     );
 }
+
+#[test]
+fn v41_reveal_intermediate_attenuation_matches_bounded_host_oracle() {
+    // Inputs are independent native snapshots at the R8 reveal-mask output and
+    // the RGBA intermediate immediately before program 7. The post-draw
+    // intermediate is the oracle. This numerical fit does not establish GPU
+    // precision, native mask generation, or production page composition.
+    // V41 runner SHA-256: ddfc99e6f9af9f68020dc86802beae3eb14a15af4bd228ce60a22805a046adc4.
+    // Reveal-on capture SHA-256: 98b15543b3db1b008d885b490d48f933aee17e9c16711b626b67a32374b36b77.
+    let mask = load(
+        include_bytes!("fixtures/tapepen-v41/mask.rgba.zlib"),
+        256 * 256 * 4,
+        "f5f0d57a32475ae30ea24e34c7179e104fb1d3034172053818b9284266bdc494",
+    );
+    let before = load(
+        include_bytes!("fixtures/tapepen-v41/preimage.rgba.zlib"),
+        256 * 256 * 4,
+        "045b081614f58f38282261248b0d1766698347718851baf0b158e3f63c805d52",
+    );
+    let oracle = load(
+        include_bytes!("fixtures/tapepen-v41/oracle.rgba.zlib"),
+        256 * 256 * 4,
+        "3bb884d8fed797088f2e72f4522a19bbe11aa70bb640e5a267c8abfb715c56f5",
+    );
+    let mut differing_channels = 0;
+    let mut max_error = 0;
+    let mut changed_pixels = 0;
+    for ((mask_pixel, input), native) in mask
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(before.as_chunks::<4>().0.iter())
+        .zip(oracle.as_chunks::<4>().0.iter())
+    {
+        let factor = 1.0 - 0.9 * f64::from(mask_pixel[0]) / 255.0;
+        let mut model = [0_u8; 4];
+        for channel in 0..4 {
+            model[channel] = (f64::from(input[channel]) * factor).round_ties_even() as u8;
+            let error = model[channel].abs_diff(native[channel]);
+            differing_channels += usize::from(error != 0);
+            max_error = max_error.max(error);
+        }
+        let mask_support = mask_pixel[0] != 0;
+        assert_eq!(model != *input, mask_support, "model change support");
+        assert_eq!(native != input, mask_support, "native change support");
+        changed_pixels += usize::from(mask_support);
+    }
+    assert_eq!(changed_pixels, 172);
+    assert_eq!(max_error, 1);
+    assert_eq!(differing_channels, 31);
+}
