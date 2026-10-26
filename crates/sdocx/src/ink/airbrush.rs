@@ -1,7 +1,7 @@
-//! Test-only reconstruction of Samsung Notes AirBrush saved redraw and paint.
+//! Source-derived Samsung Notes AirBrush saved redraw model and conformance tests.
 //!
-//! This module is intentionally unregistered until the profile's saved
-//! settings and rendering contract are admitted by the caller.
+//! Production access is restricted to the explicit saved GLV2 adapter below;
+//! its sampler and paint contract remain opt-in at the renderer.
 use super::path::{P, Quad};
 
 const MAX_POINTS: usize = 65_536;
@@ -493,6 +493,109 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
     output.redraw_after = state.snapshot();
     output.final_state = state.snapshot();
     Some(output)
+}
+
+/// Minimal saved GLV2 output consumed by the production texture renderer.
+#[derive(Clone, Debug)]
+pub(crate) struct SavedV2Output {
+    pub(crate) rows: Vec<[f32; 4]>,
+    pub(crate) sample_ends: Vec<usize>,
+    pub(crate) terminal: std::ops::Range<usize>,
+    pub(crate) rt_size: u32,
+    pub(crate) native_argb: u32,
+}
+
+/// Reconstruct only the captured explicit-empty saved ObjectStroke GLV2 path.
+/// Saved playback derives MotionEvent source zero in the native wrapper; each
+/// redraw initializes fresh V2 state and resets its stamp counter.
+pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Output> {
+    let rendering = stroke.rendering.as_ref()?;
+    if rendering.advanced_settings.as_deref() != Some("")
+        || !rendering.properties.compressed
+        || rendering.tool_type_raw != 2
+    {
+        return None;
+    }
+    let source_argb = super::saved_airbrush_argb(stroke)?;
+    let raw_size = rendering.style.pen_size?;
+    if !raw_size.is_finite() {
+        return None;
+    }
+    let size = raw_size.clamp(0.4, 800.0);
+    let rt_size = size as u32;
+    if rt_size == 0 {
+        return None;
+    }
+    let count = stroke.points.len();
+    if !(2..=MAX_POINTS).contains(&count)
+        || stroke.pressures.len() != count
+        || stroke.timestamps.len() != count
+        || stroke.tilts.len() != count
+        || stroke.orientations.len() != count
+    {
+        return None;
+    }
+    if stroke
+        .pressures
+        .iter()
+        .chain(&stroke.tilts)
+        .chain(&stroke.orientations)
+        .any(|value| !(*value as f32).is_finite())
+        || stroke
+            .timestamps
+            .iter()
+            .any(|value| i32::try_from(*value).is_err())
+    {
+        return None;
+    }
+    let points: Vec<P> = stroke
+        .points
+        .iter()
+        .map(|point| P {
+            x: point.x as f32,
+            y: point.y as f32,
+        })
+        .collect();
+    if points
+        .iter()
+        .any(|point| !point.x.is_finite() || !point.y.is_finite())
+    {
+        return None;
+    }
+    let output = saved_redraw_v2(V2Input {
+        history: &points[..count - 1],
+        endpoint: *points.last()?,
+        initial_position: points[0],
+        size,
+        tolerance: size / 20.0,
+        tool_type: 2,
+        source: 0,
+        counter_seed: 0,
+    })?;
+    if output.stamps.len() > MAX_STAMPS
+        || output.history_ends.len() != count.saturating_sub(2)
+        || output.history_ends.windows(2).any(|ends| ends[0] > ends[1])
+        || output
+            .history_ends
+            .last()
+            .is_some_and(|end| *end > output.stamps.len())
+        || output.terminal.start > output.terminal.end
+        || output.terminal.end != output.stamps.len()
+    {
+        return None;
+    }
+    let rows = output
+        .stamps
+        .into_iter()
+        .map(|stamp| stamp.values)
+        .collect();
+    Some(SavedV2Output {
+        rows,
+        sample_ends: output.history_ends,
+        terminal: output.terminal,
+        rt_size,
+        native_argb: saved_get_color(source_argb),
+    })
 }
 
 #[cfg(test)]

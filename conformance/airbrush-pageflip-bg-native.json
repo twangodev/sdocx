@@ -1,0 +1,86 @@
+{
+  "background_rgba8": [
+    252,
+    252,
+    252,
+    255
+  ],
+  "binary": "airbrush-pageflip-bg-native.bin",
+  "binary_bytes": 160,
+  "binary_format": {
+    "header": "magic[4],version:u16,count:u16",
+    "magic": "ABBG",
+    "omitted_pixel": "exact [252,252,252,255]",
+    "rows": "sparse differences from exact background, [x:u16,y_top_down:u16,RGBA8], little-endian",
+    "version": 1
+  },
+  "binary_sha256": "652b51cb8c0bdf9b7fc58d88a10404117c18bbbaf49cb856eb1029093d0f460b",
+  "capture_manifest_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v28/candidate.json",
+  "capture_manifest_sha256": "77d684381f2203b730c4dbf2a25fdef52e5b9a8e4aa20c110cc19e6dc3fcd023",
+  "capture_script_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v28/capture_candidate.py",
+  "capture_script_sha256": "51e92afcf75dad277c773831b17a2e773453fd9743e48998cfb4891dc9354734",
+  "case_id": "airbrush-explicit-empty-tool2-v2-bgfcfcfcff",
+  "dimensions": [
+    256,
+    256
+  ],
+  "limits": [
+    "synthetic Model setters and explicit page-to-native Y flip",
+    "host Mesa RGBA8, not Android GPU parity",
+    "only explicit-empty saved V2 tool 2 source 0; does not validate unset V1 or setting 2;",
+    "does not establish arbitrary size, transform, resolution or PDF behavior"
+  ],
+  "native_capture_log": "/tmp/sdocx-airbrush-pageflip-native-root-v28-opaque.log",
+  "native_capture_log_sha256": "ad8bb7662edbec3852aa244552e1a0bec9628e7b7cbf8bf1e1deecf289c7fc19",
+  "native_input_checks": {
+    "bitmap_initial_rgba8": [
+      252,
+      252,
+      252,
+      255
+    ],
+    "bitmap_initial_rgba8_sha256": "58451335f520887b25c551445b3bdfdb812bf4ce076de9270c502a0ef73c545a",
+    "post_draw_changed_pixels_from_background": 19,
+    "post_draw_document_top_down_frame_bytes": 262144,
+    "post_draw_document_top_down_sha256": "46749a09577a07f94bb21bc1cd532f7d913a3a3db85eec44c1e685d2766c2f65",
+    "post_draw_gl_errors": [],
+    "post_draw_gl_lower_left_sha256": "9eda42f74d36530e26751e7f00c697b19f9bdd12078f2f07f8c65a621660514e",
+    "post_draw_nonzero_pixels": 65536,
+    "pre_draw_gl_errors": [],
+    "same_target_pre_draw_equals_input": true,
+    "same_target_pre_draw_rgba8_sha256": "58451335f520887b25c551445b3bdfdb812bf4ce076de9270c502a0ef73c545a"
+  },
+  "native_source": {
+    "advanced_setting_mode": "explicit-empty",
+    "counter_seed": 0,
+    "draw_matrix3_column_major_f32": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      256.0,
+      1.0
+    ],
+    "motion_event_source": 0,
+    "native_drawing_input_proof": "V28 native saved DrawData/Drawing/RT draw; no output/framebuffer mutation; source and VBO contract are the same V27 explicit-empty source-zero case",
+    "native_instance_count": 26,
+    "native_instance_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+    "native_rt_size_u32": 3,
+    "rt_argb_after_native_get_color": "0x326cdd8f",
+    "saved_argb": "0xff6cdd8f",
+    "selected_drawable_version": 2,
+    "source_size_f32": 3.1440000534057617,
+    "tool_type_raw": 2
+  },
+  "reuse_geometry": {
+    "binary_contains_vbo_rows": true,
+    "binary_path": "conformance/airbrush-pageflip-native.bin",
+    "binary_sha256": "d73101e402f80ce63d35a5a7a711ebf427bc36b325dae930caf107253ad99a08",
+    "metadata_path": "conformance/airbrush-pageflip-native.json",
+    "metadata_sha256": "8dfe39a255fc12584d093cb973b05bd122ffb95fdcb52820bb2d89d48e0c16bb"
+  },
+  "schema": "sdocx.airbrush-public-bg-pixel-oracle.v1"
+}

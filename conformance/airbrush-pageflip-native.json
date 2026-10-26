@@ -1,0 +1,103 @@
+{
+  "binary": "airbrush-pageflip-native.bin",
+  "binary_format": {
+    "background": "transparent exact zero pre-draw clear; omitted sparse pixels are exact zero",
+    "byte_order": "little-endian",
+    "case": "index:u8,vector_bytes:u16,sparse_pixel_count:u16, vector_bytes little-endian f32, sparse rows [x:u16,y_top_down:u16,RGBA8]",
+    "header": "magic[4],version:u16,case_count:u16",
+    "magic": "ABP1",
+    "version": 1
+  },
+  "binary_sha256": "d73101e402f80ce63d35a5a7a711ebf427bc36b325dae930caf107253ad99a08",
+  "cases": [
+    {
+      "binary_case_index": 0,
+      "binary_sparse_pixels": 19,
+      "binary_vector_bytes": 416,
+      "height": 256,
+      "id": "document-y-down-source-size-3p144-rt3",
+      "initial_clear_nonzero_pixels": 0,
+      "native_capture_sha256": "ccb761e2b52b631637d66e07cd0d69f9ea452fae138c16006f5070a1a86e95e9",
+      "native_instance_bytes": 416,
+      "native_instance_count": 26,
+      "native_instance_sha256": "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca",
+      "native_nonzero_pixels": 19,
+      "native_readback_bottom_up_sha256": "83e5d7d6bd6a21f7f7a315de0121798d1e766862270bb858c4a7acc7d2203682",
+      "native_readback_top_down_sha256": "c0a0b566e23fda9f7aef64415849abd682da9f8260dbc8ec915571546b2edbda",
+      "native_runner_sha256": "849ec93008e77878c396e1ac2263e56059b94f5df6435b37d6f78337f846662e",
+      "source": {
+        "advanced_setting_mode": "explicit-empty",
+        "canvas_matrix_api": "SPPenCanvas::SetMatrix on Drawing and pen canvases, read back through GetModelMatrix",
+        "counter_seed": 0,
+        "draw_matrix3_column_major_f32": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          256.0,
+          1.0
+        ],
+        "history_rule": "V2 receives points except final endpoint as history, then final point as EndPen endpoint",
+        "initial_position_f32": [
+          0.0,
+          0.0
+        ],
+        "matrix_scope": "synthetic explicit page-to-native Y-flip; no application viewport claim",
+        "motion_event_source": 0,
+        "native_pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "native_rt_size_u32": 3,
+        "points_f32": [
+          [
+            1.0,
+            -2.0
+          ],
+          [
+            3.0,
+            1.0
+          ],
+          [
+            6.0,
+            4.0
+          ]
+        ],
+        "rt_argb_after_native_get_color": "0x326cdd8f",
+        "saved_argb": "0xff6cdd8f",
+        "selected_drawable_version": 2,
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits": "4c374940",
+        "tolerance_prestate_f32": 0.1572,
+        "tool_type_raw": 2
+      },
+      "width": 256
+    }
+  ],
+  "pattern": {
+    "bytes": 9216,
+    "path": "../../../../conformance/airbrush-pattern.r8",
+    "sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172"
+  },
+  "provenance": {
+    "capture_log_path": "/tmp/sdocx-airbrush-pageflip-native-root-v27.log",
+    "capture_log_sha256": "ccb761e2b52b631637d66e07cd0d69f9ea452fae138c16006f5070a1a86e95e9",
+    "native_DSO_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "renderer_DSO_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "runner_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v27/conformance/capture_candidate.py",
+    "runner_sha256": "849ec93008e77878c396e1ac2263e56059b94f5df6435b37d6f78337f846662e",
+    "scope": "explicit-empty SavedV2, tool2, saved-wrapper source0, 3-point synthetic Model setters, RT3, transparent 256x256 target, native SetMatrix page flip"
+  },
+  "schema": "sdocx.airbrush-pageflip-paint-oracles.v1",
+  "scope": "One bounded full-frame RGBA oracle in document-oriented top-down coordinates; synthetic Drawing inputs/matrix and host Mesa. Does not establish ordinary app page mapping, arbitrary transforms/resolution, Android GPU parity, unset V1, advanced setting 2;, or PDF."
+}

@@ -1,8 +1,8 @@
 //! Shared, sample-addressable ink geometry for exports and interactive replay.
 use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
-#[cfg(test)]
-mod airbrush;
+#[allow(dead_code)]
+pub(crate) mod airbrush;
 #[cfg(test)]
 mod brushpen;
 pub(crate) mod calligraphy;

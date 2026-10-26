@@ -2850,6 +2850,7 @@ mod tests {
                 None,
                 None,
                 None,
+                None,
             );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));

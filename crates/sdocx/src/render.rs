@@ -20,6 +20,7 @@ use vector::{
     Transform, ViewBox, color_hex, coordinate, decimal,
 };
 
+mod airbrush;
 mod arrows;
 mod calligraphy;
 mod code;
@@ -107,6 +108,20 @@ pub struct InkPen2RenderProfile {
     /// Select the captured enhanced antialiasing paint route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub enhanced_antialias: bool,
+}
+
+/// Explicit opt-in to the captured saved AirBrush GLV2 texture route.
+///
+/// This route accepts explicit-empty advanced settings, tool type 2, and the
+/// normal saved style flags. It uses pinned Rust libm for deterministic stamp
+/// angles; Android sincosf parity and arbitrary output transforms are not
+/// claimed. The profile intentionally has no screen dimensions because V2
+/// stamp generation does not read the pen screen-size fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AirBrushRenderProfile {
+    /// Explicit-empty saved setting selecting native AirBrush GLV2.
+    SavedV2,
 }
 
 /// Explicit canonical canvas policy for fresh Pencil3 V3 reconstruction.
@@ -274,6 +289,9 @@ pub struct RenderOptions {
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
+    /// Explicit opt-in to a bounded saved AirBrush GLV2 intrinsic-texture route.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub airbrush_profile: Option<AirBrushRenderProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -757,6 +775,7 @@ impl DocumentTextCache {
             options.fountain_v16_output_scale_profile,
             options.fountain_v14_output_scale_profile,
             options.pencil3_profile,
+            options.airbrush_profile,
             slice,
             observer,
         );
@@ -1193,6 +1212,7 @@ fn render_page_contents_svg(
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    airbrush_profile: Option<AirBrushRenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
@@ -1257,6 +1277,7 @@ fn render_page_contents_svg(
         fountain_v16_output_scale_profile,
         fountain_v14_output_scale_profile,
         pencil3_profile,
+        airbrush_profile,
         slice,
     };
     let total = page.composed_objects().count();
@@ -1297,6 +1318,7 @@ struct CompositionContext<'a> {
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    airbrush_profile: Option<AirBrushRenderProfile>,
     slice: Option<PageSlice>,
 }
 
@@ -1366,6 +1388,7 @@ fn render_object(
                 context.fountain_v16_output_scale_profile,
                 context.fountain_v14_output_scale_profile,
                 context.pencil3_profile,
+                context.airbrush_profile,
                 context.slice,
             );
             *stroke_index += 1;
@@ -3609,6 +3632,7 @@ fn render_stroke(
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
+    airbrush_profile: Option<AirBrushRenderProfile>,
     slice: Option<PageSlice>,
 ) {
     // Saved ObjectDrawing admission requires at least two source points before
@@ -3709,6 +3733,13 @@ fn render_stroke(
         if pencil3::render(svg, &ink, context, replay_index) {
             return;
         }
+    }
+    if native_allowed
+        && airbrush_profile == Some(AirBrushRenderProfile::SavedV2)
+        && let Some(paint) = airbrush::prepare(stroke, theme, viewport)
+        && airbrush::render(svg, &paint, replay_index)
+    {
+        return;
     }
     if native_allowed && let Some(ink) = prepare_inkpen2_v9(stroke, inkpen2_profile, theme) {
         render_inkpen2_v9(svg, &ink, replay_index);
@@ -10767,6 +10798,380 @@ mod tests {
                     .collect::<Vec<_>>();
                 assert_eq!(parts, ["2", "3"]);
             }
+        }
+    }
+
+    fn public_airbrush_v2_document() -> Document {
+        let mut document = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let mut stroke = document.pages[0].strokes().next().unwrap().clone();
+        stroke.points = vec![
+            Point { x: 1.0, y: -2.0 },
+            Point { x: 3.0, y: 1.0 },
+            Point { x: 6.0, y: 4.0 },
+        ];
+        stroke.pressures = vec![0.3, 0.6, 0.85];
+        stroke.timestamps = vec![300, 315, 340];
+        stroke.tilts = vec![0.12, 0.32, 0.55];
+        stroke.orientations = vec![0.2, 0.35, 0.55];
+        stroke.color = None;
+        stroke.pen_width = 3.144;
+        stroke.bbox = BoundingBox {
+            x_min: 1.0,
+            y_min: -2.0,
+            x_max: 6.0,
+            y_max: 4.0,
+        };
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.AirBrushPen".into());
+        rendering.advanced_settings = Some(String::new());
+        rendering.tool_type_raw = 2;
+        rendering.properties.compressed = true;
+        rendering.properties.replay_only = false;
+        rendering.properties.eraser = false;
+        rendering.properties.fixed_width = false;
+        rendering.properties.top_layer_pen = false;
+        rendering.properties.alpha_lock = false;
+        rendering.properties.fixed_opacity = false;
+        rendering.properties.rainbow_effect = false;
+        rendering.properties.straighten = false;
+        rendering.properties.reveal_mode = false;
+        rendering.style.pen_size = Some(3.144);
+        rendering.style.color_argb = Some(0xff6c_dd8f);
+        rendering.style.stroke_type_raw = Some(0);
+        rendering.style.color_type_raw = Some(0);
+        let page = &mut document.pages[0];
+        page.width = 256;
+        page.height = 256;
+        page.background_color = None;
+        page.objects = vec![stroke.into()];
+        document.metadata.dark_mode_compatibility = Some(false);
+        document
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v2_overlay_profile_matches_native_pageflip_full_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../conformance/airbrush-pageflip-native.json");
+        const BIN: &[u8] = include_bytes!("../../../conformance/airbrush-pageflip-native.bin");
+        const BIN_SHA256: &str = "d73101e402f80ce63d35a5a7a711ebf427bc36b325dae930caf107253ad99a08";
+        const CAPTURE_SHA256: &str =
+            "ccb761e2b52b631637d66e07cd0d69f9ea452fae138c16006f5070a1a86e95e9";
+        const FRAME_SHA256: &str =
+            "c0a0b566e23fda9f7aef64415849abd682da9f8260dbc8ec915571546b2edbda";
+
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), BIN_SHA256);
+        let metadata: serde_json::Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(
+            metadata["schema"],
+            "sdocx.airbrush-pageflip-paint-oracles.v1"
+        );
+        let capture_sha = metadata["cases"][0]["native_capture_sha256"]
+            .as_str()
+            .unwrap();
+        assert_eq!(capture_sha, CAPTURE_SHA256);
+        let case = &metadata["cases"][0];
+        assert_eq!(case["native_readback_top_down_sha256"], FRAME_SHA256);
+        assert_eq!(case["native_nonzero_pixels"], 19);
+        assert_eq!(case["native_instance_count"], 26);
+        assert_eq!(
+            case["native_instance_sha256"],
+            "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+        );
+        assert_eq!(case["source"]["advanced_setting_mode"], "explicit-empty");
+        assert_eq!(case["source"]["selected_drawable_version"], 2);
+        assert_eq!(case["source"]["tool_type_raw"], 2);
+        assert_eq!(case["source"]["motion_event_source"], 0);
+        assert_eq!(case["source"]["counter_seed"], 0);
+        assert_eq!(case["source"]["native_rt_size_u32"], 3);
+        assert_eq!(case["source"]["draw_matrix3_column_major_f32"][4], -1.0);
+        assert_eq!(case["source"]["draw_matrix3_column_major_f32"][7], 256.0);
+
+        assert_eq!(&BIN[..4], b"ABP1");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        assert_eq!(u16::from_le_bytes(BIN[6..8].try_into().unwrap()), 1);
+        let mut offset = 8;
+        assert_eq!(BIN[offset], 0);
+        offset += 1;
+        let vector_bytes = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+        offset += 2;
+        let sparse_count = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+        offset += 2;
+        assert_eq!(vector_bytes, 26 * 16);
+        assert_eq!(sparse_count, 19);
+        let native_rows = &BIN[offset..offset + vector_bytes];
+        assert_eq!(
+            format!("{:x}", Sha256::digest(native_rows)),
+            case["native_instance_sha256"]
+        );
+
+        let document = public_airbrush_v2_document();
+        let source_stroke = document.pages[0].strokes().next().unwrap();
+        let sampler = crate::ink::airbrush::saved_v2_from_stroke(source_stroke)
+            .expect("explicit-empty SavedV2 tool-2 source-zero stroke");
+        let model_rows: Vec<u8> = sampler
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            model_rows, native_rows,
+            "production SavedV2 sampler row stream"
+        );
+        assert_eq!(sampler.native_argb, 0x326cdd8f);
+
+        offset += vector_bytes;
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        for _ in 0..sparse_count {
+            let x = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+            let y = u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+            let rgba = &BIN[offset + 4..offset + 8];
+            offset += 8;
+            let pixel = (y * 256 + x) * 4;
+            expected[pixel..pixel + 4].copy_from_slice(rgba);
+        }
+        assert_eq!(offset, BIN.len());
+        assert_eq!(format!("{:x}", Sha256::digest(&expected)), FRAME_SHA256);
+
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        // The native control starts with a transparent canvas. Exercise the same
+        // page-content renderer used by PDF overlays, which omits the paper fill.
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let rendered = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        assert_eq!((rendered.width, rendered.height), (256, 256));
+        assert_eq!(rendered.svg.matches("data:image/png;base64,").count(), 1);
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("use"))
+                .count(),
+            26
+        );
+        assert!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("g"))
+                .all(|node| node.attribute("opacity").is_none())
+        );
+
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let differences: Vec<_> = pixmap
+            .data()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(expected.as_chunks::<4>().0.iter())
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .map(|(i, (a, b))| (i % 256, i / 256, a, b))
+            .collect();
+        assert!(
+            differences.is_empty(),
+            "{} pixels differ; first: {:?}",
+            differences.len(),
+            differences.iter().take(8).collect::<Vec<_>>()
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v2_public_document_background_matches_native_pageflip_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../conformance/airbrush-pageflip-bg-native.json");
+        const BIN: &[u8] = include_bytes!("../../../conformance/airbrush-pageflip-bg-native.bin");
+        const V27_JSON: &str = include_str!("../../../conformance/airbrush-pageflip-native.json");
+        const V27_BIN: &[u8] = include_bytes!("../../../conformance/airbrush-pageflip-native.bin");
+        const BG_BIN_SHA256: &str =
+            "652b51cb8c0bdf9b7fc58d88a10404117c18bbbaf49cb856eb1029093d0f460b";
+        const V27_BIN_SHA256: &str =
+            "d73101e402f80ce63d35a5a7a711ebf427bc36b325dae930caf107253ad99a08";
+        const NATIVE_FRAME_SHA256: &str =
+            "46749a09577a07f94bb21bc1cd532f7d913a3a3db85eec44c1e685d2766c2f65";
+
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), BG_BIN_SHA256);
+        assert_eq!(format!("{:x}", Sha256::digest(V27_BIN)), V27_BIN_SHA256);
+        let metadata: serde_json::Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(
+            metadata["schema"],
+            "sdocx.airbrush-public-bg-pixel-oracle.v1"
+        );
+        assert_eq!(
+            metadata["case_id"],
+            "airbrush-explicit-empty-tool2-v2-bgfcfcfcff"
+        );
+        assert_eq!(
+            metadata["background_rgba8"],
+            serde_json::json!([252, 252, 252, 255])
+        );
+        assert_eq!(metadata["dimensions"], serde_json::json!([256, 256]));
+        assert_eq!(
+            metadata["native_input_checks"]["same_target_pre_draw_equals_input"],
+            true
+        );
+        assert_eq!(
+            metadata["native_input_checks"]["same_target_pre_draw_rgba8_sha256"],
+            "58451335f520887b25c551445b3bdfdb812bf4ce076de9270c502a0ef73c545a"
+        );
+        assert_eq!(
+            metadata["native_input_checks"]["post_draw_document_top_down_sha256"],
+            NATIVE_FRAME_SHA256
+        );
+        assert_eq!(
+            metadata["native_input_checks"]["post_draw_changed_pixels_from_background"],
+            19
+        );
+        assert_eq!(
+            metadata["native_source"]["native_instance_sha256"],
+            "086947babde38e1f14f1dbd4a7fe419a3fc64cee8f2921515d5a3b2f8d2154ca"
+        );
+        assert_eq!(metadata["reuse_geometry"]["binary_sha256"], V27_BIN_SHA256);
+
+        let prior: serde_json::Value = serde_json::from_str(V27_JSON).unwrap();
+        assert_eq!(
+            prior["cases"][0]["source"]["advanced_setting_mode"],
+            "explicit-empty"
+        );
+        assert_eq!(prior["cases"][0]["source"]["selected_drawable_version"], 2);
+        assert_eq!(prior["cases"][0]["source"]["tool_type_raw"], 2);
+        assert_eq!(prior["cases"][0]["source"]["motion_event_source"], 0);
+
+        assert_eq!(&BIN[..4], b"ABBG");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        let sparse_count = u16::from_le_bytes(BIN[6..8].try_into().unwrap()) as usize;
+        assert_eq!(sparse_count, 19);
+        assert_eq!(BIN.len(), 8 + sparse_count * 8);
+        let mut expected = [252_u8, 252, 252, 255].repeat(256 * 256);
+        let mut offset = 8;
+        for _ in 0..sparse_count {
+            let x = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+            let y = u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+            let pixel = (y * 256 + x) * 4;
+            expected[pixel..pixel + 4].copy_from_slice(&BIN[offset + 4..offset + 8]);
+            offset += 8;
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&expected)),
+            NATIVE_FRAME_SHA256
+        );
+
+        let document = public_airbrush_v2_document();
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let rendered = render_document_svg(&document, &options).remove(0);
+        assert_eq!((rendered.width, rendered.height), (256, 256));
+        assert_eq!(rendered.svg.matches("data:image/png;base64,").count(), 1);
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        assert!(
+            pixmap.data() == expected,
+            "public AirBrush SVG background RGBA must match native"
+        );
+    }
+
+    #[test]
+    fn saved_v2_strokes_share_texture_and_keep_unique_mask_resources() {
+        let mut document = public_airbrush_v2_document();
+        let object = document.pages[0].objects[0].clone();
+        document.pages[0].objects.push(object);
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let rendered = render_document_svg(&document, &options).remove(0);
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|n| n.has_tag_name("image"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants().filter(|n| n.has_tag_name("use")).count(),
+            52
+        );
+        let mut ids = std::collections::HashSet::new();
+        for id in xml.descendants().filter_map(|n| n.attribute("id")) {
+            assert!(ids.insert(id), "duplicate scene resource {id}");
+        }
+    }
+
+    #[test]
+    fn saved_v2_over_budget_stroke_keeps_whole_generic_fallback() {
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points[1].x = 6_000.0;
+        stroke.points[2].x = 12_000.0;
+        stroke.bbox.x_max = 12_000.0;
+        assert!(
+            super::airbrush::prepare(stroke, RenderTheme::for_canvas(false), [256, 256]).is_none()
+        );
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let selected = render_document_svg(&document, &options).remove(0);
+        let fallback = render_document_svg(&document, &RenderOptions::default()).remove(0);
+        assert_eq!(
+            selected.svg, fallback.svg,
+            "budget rejection must not drop any part of the stroke"
+        );
+    }
+
+    #[test]
+    fn public_saved_v2_profile_fails_closed_for_unset_v1_and_advanced_two() {
+        let mut document = public_airbrush_v2_document();
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        for setting in [None, Some("2;")] {
+            let stroke = document.pages[0].strokes_mut().next().unwrap();
+            stroke.rendering.as_mut().unwrap().advanced_settings = setting.map(str::to_owned);
+            let selected = render_document_svg(&document, &options).remove(0).svg;
+            let fallback = render_document_svg(&document, &RenderOptions::default())
+                .remove(0)
+                .svg;
+            assert_eq!(selected, fallback);
         }
     }
 
