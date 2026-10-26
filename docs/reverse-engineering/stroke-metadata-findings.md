@@ -151,6 +151,9 @@ explanation for this case, not a general scale-invariance claim. In the same
 profile, native setters also accepted zero and 1e-7; their pattern-size uniforms
 and final pixels differed from scale 1. A follow-up instruction trace directly observed the zero-scale fallback;
 the near-zero branch remains inferred from static code and observed uniforms.
+A further host trace with scale `(1.5, 0.75)` and translation `(24, 16)`
+observed pattern size `(96, 48)` at pattern scale 1, and `(0, 0)` at scale
+0. This checks an axis-aligned matrix, not arbitrary transforms.
 
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it

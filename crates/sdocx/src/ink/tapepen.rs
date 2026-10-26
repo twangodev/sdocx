@@ -422,31 +422,56 @@ fn v46_reveal_native_model_rotation_against_native_mask() {
     assert!(different <= 1, "different pixels {different}");
 }
 
-// Bounded host-affine TapePen pattern-size control; not production code.
-// Source: RTV1::Draw 0x3a9bc..0x3aa34 in pinned TapePen DSO.
-// V49 trace observes identity Matrix4, origin zero, and RT member +408 = 64
-// for scales zero and one; the remaining controls have uniform receipts only.
-// The scale fallback threshold and divisor come from DSO rodata/code.
-fn pattern_size(scale: f32, texture_width: i32) -> [f32; 2] {
-    let source_extent = scale * texture_width as f32;
-    // Identity affine control: transformed(source_extent) - transformed(origin).
-    let transformed_difference = source_extent - 0.0_f32;
+// Bounded TapePen pattern-size model, using the captured axis-aligned
+// Matrix4 profiles only. V49 used identity; V50 used scale (1.5, 0.75)
+// and translation (24, 16). This does not model rotation or general matrices.
+// RTV1::Draw 0x3a9bc..0x3aa38 and transform helper 0x3b154..0x3b17c:
+// matrix-vector products use FMUL followed by FMLA, then homogeneous divide,
+// subtraction of the transformed origin, and finally the scale divisor.
+fn pattern_size(scale: f32, texture_width: i32, matrix: [f32; 4]) -> [f32; 2] {
+    let extent = scale * texture_width as f32;
+    // The captured matrix has zero off-diagonal and perspective terms. Keep
+    // the native multiply/fused-add order instead of cancelling translation.
+    let transform = |axis_scale: f32, translation: f32, x: f32, y: f32| {
+        let lane_x = 0.0_f32 * y; // initial FMUL
+        let lane_x = axis_scale.mul_add(x, lane_x);
+        let lane_x = 0.0_f32.mul_add(0.0, lane_x);
+        translation.mul_add(1.0, lane_x)
+    };
+    let origin = [matrix[2] / 1.0_f32, matrix[3] / 1.0_f32];
+    let transformed = [
+        transform(matrix[0], matrix[2], extent, extent),
+        // For Y, native starts with scale_y * y before adding zero * x.
+        0.0_f32.mul_add(extent, matrix[1] * extent),
+    ];
+    let transformed = [
+        transformed[0],
+        matrix[3].mul_add(1.0, 0.0_f32.mul_add(0.0, transformed[1])),
+    ];
     let divisor = if scale > 1.0e-6_f32 { scale } else { 4.0_f32 };
-    let value = transformed_difference / divisor;
-    [value, value]
+    [
+        (transformed[0] / 1.0_f32 - origin[0]) / divisor,
+        (transformed[1] / 1.0_f32 - origin[1]) / divisor,
+    ]
 }
+
 #[test]
 fn compare_independent_native_uniform_words() {
-    // V49 traced 0/1; V47/V48 independently captured 2/1e-7 uniforms.
-    for (scale_bits, expected) in [
-        (0x3f80_0000, 0x4280_0000), // 1 -> 64
-        (0x4000_0000, 0x4280_0000), // 2 -> 64
-        (0x0000_0000, 0x0000_0000), // 0 -> 0
-        (0x33d6_bf95, 0x35d6_bf95), // 1e-7 -> 1.6e-6
+    let identity = [1.0, 1.0, 0.0, 0.0];
+    let transformed = [1.5, 0.75, 24.0, 16.0];
+    // Exact input words and GL uniform words: V49/V50 paired 0/1 captures.
+    for (matrix, scale_bits, expected) in [
+        (identity, 0x0000_0000, [0x0000_0000, 0x0000_0000]),
+        (identity, 0x3f80_0000, [0x4280_0000, 0x4280_0000]),
+        (transformed, 0x0000_0000, [0x0000_0000, 0x0000_0000]),
+        (transformed, 0x3f80_0000, [0x42c0_0000, 0x4240_0000]),
+        // V47/V48 identity captures.
+        (identity, 0x4000_0000, [0x4280_0000, 0x4280_0000]),
+        (identity, 0x33d6_bf95, [0x35d6_bf95, 0x35d6_bf95]),
     ] {
         assert_eq!(
-            pattern_size(f32::from_bits(scale_bits), 64).map(f32::to_bits),
-            [expected; 2]
+            pattern_size(f32::from_bits(scale_bits), 64, matrix).map(f32::to_bits),
+            expected
         );
     }
 }

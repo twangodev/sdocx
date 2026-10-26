@@ -130,5 +130,36 @@
         "sha256": "132d58bd9e596bd11acaa4aff0b0f6edfff366dfd801643d83a85d9ac65f378d"
       }
     ]
+  },
+  "axis_aligned_transform_controls": {
+    "scope": "Synthetic host controls only, same 64px texture and scale/translation matrix; no rotation/shear/projective claim.",
+    "runner_sha256": "468f52e62ab93643271c6654c681f66fc802adb65a25491bcd579d7a2cdbb06d",
+    "manifest_sha256": "16f9d03019a258b296657d23ff76e2874ee2e6ec8993a70ce63b736f2934e67d",
+    "matrix_scale": [
+      1.5,
+      0.75
+    ],
+    "matrix_translation": [
+      24,
+      16
+    ],
+    "cases": {
+      "0": {
+        "log_sha256": "709b97f4526117aa9daf04eff00606259c1ff6e21dd3d71adab583213f38b445",
+        "pattern_size": [
+          0,
+          0
+        ],
+        "final_rgba_sha256": "75b9c81ce3a49c252a8c37874dc0819c0042050837b6fc113463c211b4d18e63"
+      },
+      "1": {
+        "log_sha256": "bf77c447371cc00d66c48caabdd9a878ac7ec37f30072c5cc964ef64798adfb6",
+        "pattern_size": [
+          96,
+          48
+        ],
+        "final_rgba_sha256": "cbda544f2eb0f2e8ffd8714ba1848655b6b69cf0ea1a22ccca9c1d51242590cb"
+      }
+    }
   }
 }
