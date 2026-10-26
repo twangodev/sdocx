@@ -283,3 +283,67 @@ fn v43_reveal_bend_model_against_native() {
     assert!(max_error <= 1, "max error {max_error}");
     assert!(different <= 1, "different pixels {different}");
 }
+
+// V43 rotated path. Rotation here describes input geometry; the captured
+// stamp-rotation uniform is zero. Threshold remains a provisional profile input.
+#[test]
+fn v43_reveal_rotated_diagonal_model_against_native() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let p = |x, y| P {
+        x: f32::from_bits(x),
+        y: f32::from_bits(y),
+    };
+    let points = tape_curve(
+        [
+            p(0x4240_0000, 0x4220_0000),
+            p(0x424e_a41a, 0x4256_a41a),
+            p(0x425d_4833, 0x4286_a41a),
+            p(0x426b_ec4d, 0x42a1_f626),
+        ],
+        0.5,
+        0.0,
+        [204.0 / 255.0, 102.0 / 255.0, 51.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(bytes.len(), 1700);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "6485e1daa81e086c8042bc1b29d0ad1e377a3370ad1d1eb0847583a6b6596211"
+    );
+    let actual = reveal_mask(
+        &points,
+        RevealProfile {
+            half_extent: [f32::from_bits(0x3f63_4219), f32::from_bits(0x4063_4219)],
+            point_radius: 3.0,
+            aa_width: f32::from_bits(0x3e3c_0b2c),
+            border_width: 3.0,
+            rotation_rad: 0.0,
+            offset: [0.0, 0.0],
+        },
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v43/diagonal-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(oracle.len(), 256 * 256 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "c27ce4a8e1d6ee4a74f7a3b9d91a3250a666ee798706ebbd2fe5a07450eaa212"
+    );
+    let mut different = 0;
+    let mut max_error = 0;
+    for (&a, pixel) in actual.iter().zip(oracle.as_chunks::<4>().0.iter()) {
+        different += usize::from(a != pixel[0]);
+        max_error = max_error.max(a.abs_diff(pixel[0]));
+        assert_eq!(a != 0, pixel[0] != 0);
+    }
+    assert!(max_error <= 1, "max error {max_error}");
+    assert!(different <= 1, "different pixels {different}");
+}
