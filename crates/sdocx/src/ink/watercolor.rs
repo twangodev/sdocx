@@ -104,6 +104,15 @@ enum DrawableVersion {
     V2,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MathProfile {
+    /// Direct glibc 2.41 `sincosf` FMA implementation used by the older captures.
+    GlibcSincosfFma,
+    /// V22 capture callback: Python `math.sin` and `math.cos` on the exact f32
+    /// input promoted to f64, each result independently rounded back to f32.
+    CapturePythonDoubleSinCos,
+}
+
 impl DrawableVersion {
     fn from_observed_class(name: &str) -> Option<Self> {
         match name {
@@ -135,6 +144,14 @@ struct Dib {
 fn sample_saved_stroke(
     input: SavedStrokeInput<'_>,
     version: DrawableVersion,
+) -> Result<Vec<[f32; 6]>, &'static str> {
+    sample_saved_stroke_with_math(input, version, MathProfile::GlibcSincosfFma)
+}
+
+fn sample_saved_stroke_with_math(
+    input: SavedStrokeInput<'_>,
+    version: DrawableVersion,
+    math_profile: MathProfile,
 ) -> Result<Vec<[f32; 6]>, &'static str> {
     let n = input.points.len();
     if !(2..=MAX_INPUT_POINTS).contains(&n)
@@ -251,8 +268,16 @@ fn sample_saved_stroke(
                 return Err("dab output limit exceeded");
             }
             let p = curve.at(distance);
-            let (sin, cos) = host_math::sincosf_bounded(phase)
-                .ok_or("phase outside the captured host math profile")?;
+            let (sin, cos) = match math_profile {
+                MathProfile::GlibcSincosfFma => host_math::sincosf_bounded(phase),
+                MathProfile::CapturePythonDoubleSinCos
+                    if phase.is_finite() && (0.0..=TAU).contains(&phase) =>
+                {
+                    Some(((phase as f64).sin() as f32, (phase as f64).cos() as f32))
+                }
+                MathProfile::CapturePythonDoubleSinCos => None,
+            }
+            .ok_or("phase outside the selected captured host math profile")?;
             output.push(Dib {
                 lanes: [
                     p.x,

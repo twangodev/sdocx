@@ -1,7 +1,8 @@
 //! Saved WaterColor stroke -> native six-lane dabs -> generated SVG -> resvg frame.
 //! RNE is a named, V13-captured host position profile; this is not universal GLSL behavior.
 use super::{
-    DrawableVersion, NEG_TAU, PHASE_STEP, SavedStrokeInput, TAU, host_math, sample_saved_stroke,
+    DrawableVersion, MathProfile, NEG_TAU, PHASE_STEP, SavedStrokeInput, TAU, host_math,
+    sample_saved_stroke, sample_saved_stroke_with_math,
 };
 use crate::Point;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
@@ -168,6 +169,58 @@ fn vertices(r: [f32; 6]) -> [Vertex; 4] {
         };
     }
     o
+}
+
+/// Build the screen-space quad from the captured draw MVP. The pinned Mesa NIR
+/// lowers this mediump shader's model and projection arithmetic to f16, then
+/// widens `gl_Position`; mirror its multiply/add ordering before viewport map.
+/// The historical `vertices` helper above models the older centered profile.
+fn vertices_with_projection(r: [f32; 6], matrix: [f32; 16]) -> [Vertex; 4] {
+    let [x, y, lane2, lane3, radius, _] = r;
+    let (x, y, lane2, lane3, radius) = (
+        half_rne(x),
+        half_rne(y),
+        half_rne(lane2),
+        half_rne(lane3),
+        half_rne(radius),
+    );
+    let rect = [
+        (-1.0f32, -1.0f32, 0.0f32, 1.0f32),
+        (-1.0, 1.0, 0.0, 0.0),
+        (1.0, -1.0, 1.0, 1.0),
+        (1.0, 1.0, 1.0, 0.0),
+    ];
+    rect.map(|(rx, ry, u, v)| {
+        let lx = half_mul(half_rne(rx), radius);
+        let ly = half_mul(half_rne(ry), radius);
+        let xx = half_mul(lane3, lx);
+        let xy = half_mul(lane2, lx);
+        let yx = half_mul(lane2, ly);
+        let yy = half_mul(lane3, ly);
+        let mx = half_add(half_add(xx, x), half_rne(-yx));
+        let my = half_add(half_add(xy, y), yy);
+
+        // Captured Mesa NIR source BLAKE3
+        // 1fb6ed1d6f0d83fc69a07fd1fb1d803d8fb7a2055c5e79d19a9e71c7cf3f7c95
+        // (debug stderr lines 1262-1357) shows f16 column products, translation
+        // add, then other-axis add; `gl_Position` widens only afterward.
+        let clip_x = half_add(
+            half_add(half_mul(half_rne(matrix[0]), mx), half_rne(matrix[12])),
+            half_mul(half_rne(matrix[4]), my),
+        );
+        let clip_y = half_add(
+            half_add(half_mul(half_rne(matrix[1]), mx), half_rne(matrix[13])),
+            half_mul(half_rne(matrix[5]), my),
+        );
+        let bottom_x = (clip_x + 1.0_f32) * 128.0_f32;
+        let bottom_y = (clip_y + 1.0_f32) * 128.0_f32;
+        Vertex {
+            x: f64::from(bottom_x),
+            y: f64::from(256.0_f32 - bottom_y),
+            u: f64::from(u),
+            v: f64::from(v),
+        }
+    })
 }
 fn mesa_linear_coeff(pos: [(f32, f32); 3], values: [f32; 3]) -> (f32, f32, f32) {
     let [(x0, y0), (x1, y1), (x2, y2)] = pos;
@@ -384,6 +437,34 @@ fn atlas(alpha: f32) -> String {
     )
 }
 fn make_svg(rows: &[[f32; 6]], color: [f32; 4], high_branch_admitted: bool) -> String {
+    make_svg_with_projection_translation(rows, color, high_branch_admitted, [0.0, 0.0])
+}
+
+fn make_svg_with_projection_translation(
+    rows: &[[f32; 6]],
+    color: [f32; 4],
+    high_branch_admitted: bool,
+    translation_ndc: [f32; 2],
+) -> String {
+    make_svg_inner(rows, color, high_branch_admitted, None, translation_ndc)
+}
+
+fn make_svg_with_projection_matrix(
+    rows: &[[f32; 6]],
+    color: [f32; 4],
+    high_branch_admitted: bool,
+    matrix: [f32; 16],
+) -> String {
+    make_svg_inner(rows, color, high_branch_admitted, Some(matrix), [0.0, 0.0])
+}
+
+fn make_svg_inner(
+    rows: &[[f32; 6]],
+    color: [f32; 4],
+    high_branch_admitted: bool,
+    projection: Option<[f32; 16]>,
+    translation_ndc: [f32; 2],
+) -> String {
     assert!(!rows.is_empty() && rows.len() <= 480);
     assert!(
         rows.len() <= 15 || high_branch_admitted,
@@ -405,7 +486,18 @@ fn make_svg(rows: &[[f32; 6]], color: [f32; 4], high_branch_admitted: bool) -> S
             .entry(abits)
             .or_insert_with(|| atlas(row[5]))
             .clone();
-        let v = vertices(row);
+        let v = if let Some(matrix) = projection {
+            vertices_with_projection(row, matrix)
+        } else {
+            let mut v = vertices(row);
+            // `vertices` maps the historical centered projection. A legacy
+            // NDC translation is kept for callers that use that profile.
+            for vertex in &mut v {
+                vertex.x += 128.0 * f64::from(translation_ndc[0]);
+                vertex.y -= 128.0 * f64::from(translation_ndc[1]);
+            }
+            v
+        };
         let ts = [[0usize, 1, 2], [2, 1, 3]];
         for (k, t) in ts.into_iter().enumerate() {
             let id = format!("native-triangle-{i:0digits$}-{k}");
@@ -861,4 +953,342 @@ fn watercolor_repeat32_source_plane_svg_matches_native_dense_full_frame() {
         &mut pix.as_mut(),
     );
     assert_dense_final_frame(pix.data(), &fixture);
+}
+
+#[test]
+fn controlled_drawing_capture_v22_geometry_and_full_frame() {
+    const CAPTURE: &str =
+        include_str!("../../../../../conformance/watercolor-drawing-capture-v22.json");
+    let fixture: Value = serde_json::from_str(CAPTURE).unwrap();
+    assert_eq!(
+        fixture["schema"],
+        "sdocx-watercolor-controlled-drawing-capture-v22-v1"
+    );
+    assert_eq!(
+        fixture["provenance"]["mesa_vertex_shader_ir"]["source_blake3"],
+        "1fb6ed1d6f0d83fc69a07fd1fb1d803d8fb7a2055c5e79d19a9e71c7cf3f7c95"
+    );
+    assert_eq!(
+        fixture["provenance"]["mesa_vertex_shader_ir"]["debug_stderr_sha256"],
+        "67a820e7a577e5a38d45bce8f92d63b322fe40c67872685793003a5bb81ba029"
+    );
+    assert_eq!(
+        fixture["provenance"]["case_id"],
+        "watercolor-unset-tool2-v1"
+    );
+    assert!(
+        fixture["scope"]
+            .as_str()
+            .unwrap()
+            .contains("Not a deserialized/saved-note stroke")
+    );
+    assert_eq!(fixture["input"]["advanced_setting_mode"], "default-null");
+    assert_eq!(fixture["input"]["target_dimensions"][0], 256);
+    assert_eq!(fixture["input"]["target_dimensions"][1], 256);
+    assert_eq!(fixture["native_geometry"]["record_count"], 8);
+    assert_eq!(fixture["native_geometry"]["record_bytes"], 192);
+    assert_eq!(
+        fixture["native_geometry"]["sha256"],
+        "9876831bb99e269a27b0d4c3b1b093dbae1ee3858460aa3219d33929dd1ff371"
+    );
+    assert_eq!(
+        fixture["resource_path"]["texture_factory_source_symbol"]["source_rva"],
+        "0x5ac68"
+    );
+    assert_eq!(
+        fixture["resource_path"]["static_abi_x0_x5"]
+            .as_array()
+            .unwrap()
+            .len(),
+        6
+    );
+    assert_eq!(
+        fixture["resource_path"]["inherited_create_pen_canvas_override_removed"],
+        true
+    );
+    assert_eq!(
+        fixture["resource_path"]["runtime_raw_private_canvas_this_plus_200_read"],
+        false
+    );
+    assert_eq!(fixture["draws"][0]["fbo"], 2);
+    assert_eq!(fixture["draws"][0]["attachment_texture"], 2);
+    assert_eq!(fixture["draws"][0]["sampled_texture"], 3);
+    assert_eq!(fixture["draws"][1]["fbo"], 1);
+    assert_eq!(fixture["draws"][1]["attachment_texture"], 1);
+    assert_eq!(fixture["draws"][1]["sampled_texture"], 2);
+    assert_eq!(
+        fixture["draws"][0]["sampler_parameters"]["min_filter"],
+        9728
+    );
+    assert_eq!(fixture["draws"][0]["sampler_parameters"]["wrap_s"], 33071);
+
+    let decode_hex = |s: &str| -> Vec<u8> {
+        assert_eq!(s.len() % 2, 0);
+        s.as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| {
+                let d = |v: u8| match v {
+                    b'0'..=b'9' => v - b'0',
+                    b'a'..=b'f' => v - b'a' + 10,
+                    b'A'..=b'F' => v - b'A' + 10,
+                    _ => panic!("invalid hex"),
+                };
+                d(p[0]) * 16 + d(p[1])
+            })
+            .collect()
+    };
+    let floats32 = |s: &str| -> Vec<f32> {
+        decode_hex(s)
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes(*b))
+            .collect()
+    };
+    let arrays = &fixture["input"]["source_arrays"];
+    let point_bytes = decode_hex(arrays["points"]["data_hex"].as_str().unwrap());
+    let points: Vec<Point> = point_bytes
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| Point {
+            x: f32::from_le_bytes(b[..4].try_into().unwrap()) as f64,
+            y: f32::from_le_bytes(b[4..].try_into().unwrap()) as f64,
+        })
+        .collect();
+    let pressures = floats32(arrays["pressures"]["data_hex"].as_str().unwrap())
+        .into_iter()
+        .map(f64::from)
+        .collect::<Vec<_>>();
+    let timestamps = decode_hex(arrays["timestamps"]["data_hex"].as_str().unwrap())
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| i32::from_le_bytes(*b) as i64)
+        .collect::<Vec<_>>();
+    let screen = fixture["input"]["screen_profile_dimensions"]
+        .as_array()
+        .unwrap();
+    let argb = u32::from_str_radix(
+        fixture["input"]["color_argb_u32"]
+            .as_str()
+            .unwrap()
+            .trim_start_matches("0x"),
+        16,
+    )
+    .unwrap();
+    let size_bytes = decode_hex(fixture["input"]["size_f32_bits"].as_str().unwrap());
+    let input = SavedStrokeInput {
+        points: &points,
+        pressures: &pressures,
+        timestamps: &timestamps,
+        pen_size: f32::from_bits(u32::from_le_bytes(size_bytes.try_into().unwrap())),
+        color_argb: argb,
+        color_type: fixture["input"]["color_type"].as_u64().unwrap() as u8,
+        stroke_type: fixture["input"]["stroke_type"].as_u64().unwrap() as u8,
+        curve_enabled: fixture["input"]["curve_enabled"].as_bool().unwrap(),
+        tool_type: fixture["input"]["tool_type"].as_u64().unwrap() as u8,
+        canvas: [
+            screen[0].as_u64().unwrap() as u32,
+            screen[1].as_u64().unwrap() as u32,
+        ],
+    };
+    let rows = sample_saved_stroke_with_math(
+        input,
+        DrawableVersion::V1,
+        MathProfile::CapturePythonDoubleSinCos,
+    )
+    .unwrap();
+    let actual_stream = serialize_stream(&rows);
+    assert_eq!(rows.len(), 8);
+    assert_eq!(actual_stream.len(), 192);
+    let native_stream = decode_hex(fixture["native_geometry"]["records_hex"].as_str().unwrap());
+    if actual_stream != native_stream {
+        let first_lane = actual_stream
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(native_stream.as_chunks::<4>().0.iter())
+            .position(|(actual, expected)| actual != expected)
+            .unwrap();
+        let actual_bits = u32::from_le_bytes(
+            actual_stream[first_lane * 4..first_lane * 4 + 4]
+                .try_into()
+                .unwrap(),
+        );
+        let native_bits = u32::from_le_bytes(
+            native_stream[first_lane * 4..first_lane * 4 + 4]
+                .try_into()
+                .unwrap(),
+        );
+        panic!(
+            "native geometry first differs at row {}, lane {}: sampler={actual_bits:#010x}, native={native_bits:#010x}",
+            first_lane / 6,
+            first_lane % 6
+        );
+    }
+    assert_eq!(
+        sha256(&actual_stream),
+        fixture["native_geometry"]["sha256"].as_str().unwrap(),
+        "geometry sampler must reproduce native Drawing rows before paint comparison"
+    );
+
+    let color = input_color(argb);
+    let projection = fixture["draws"][0]["uniforms"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["call"] == "glUniformMatrix4fv" && row["location"] == 0)
+        .expect("captured native draw projection uniform");
+    let matrix = projection["values"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| value.as_f64().unwrap() as f32)
+        .collect::<Vec<_>>();
+    assert_eq!(matrix.len(), 16);
+    assert_eq!(matrix[0].to_bits(), (1.0f32 / 128.0).to_bits());
+    assert_eq!(matrix[5].to_bits(), (1.0f32 / 128.0).to_bits());
+    assert_eq!(matrix[12].to_bits(), (-1.0f32).to_bits());
+    assert_eq!(matrix[13].to_bits(), (-1.0f32).to_bits());
+    let expected_matrix = [
+        1.0f32 / 128.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0f32 / 128.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        f32::from_bits(0xb800_0100),
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0,
+    ];
+    assert_eq!(
+        matrix
+            .iter()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>(),
+        expected_matrix
+            .iter()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>()
+    );
+    let matrix: [f32; 16] = matrix.try_into().unwrap();
+    let svg = make_svg_with_projection_matrix(&rows, color, false, matrix);
+    let target = &fixture["input"]["target_dimensions"];
+    assert_eq!(target[0].as_u64(), Some(256));
+    assert_eq!(target[1].as_u64(), Some(256));
+    let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+    let mut pix = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
+
+    // Sparse records are the captured native pixels; omitted pixels are zero.
+    // Compare the full viewport after converting GL's lower-left rows to the
+    // top-left Pixmap layout, without resizing the 256x256 target.
+    let native = &fixture["draws"][1]["post"];
+    assert_eq!(native["row_origin"], "GL lower-left");
+    assert_eq!(
+        fixture["draws"][1]["pre"]["nonzero_pixels"].as_u64(),
+        Some(0)
+    );
+    assert_eq!(
+        fixture["draws"][1]["pre"]["sha256"],
+        "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+    );
+    assert_eq!(
+        sha256(PATTERN_PNG),
+        fixture["pattern_upload"]["asset_png_sha256"]
+            .as_str()
+            .unwrap()
+    );
+    let pattern = resvg::tiny_skia::Pixmap::decode_png(PATTERN_PNG).unwrap();
+    assert_eq!(
+        sha256(pattern.data()),
+        fixture["pattern_upload"]["native_uploaded_rgba_sha256"]
+            .as_str()
+            .unwrap()
+    );
+    let mut raw_bottom_up = vec![0u8; 256 * 256 * 4];
+    let sparse = decode_hex(
+        native["sparse_entries_u16_index_rgba_hex"]
+            .as_str()
+            .unwrap(),
+    );
+    assert_eq!(
+        sparse.len(),
+        native["sparse_entries"].as_u64().unwrap() as usize * 6
+    );
+    assert_eq!(native["nonzero_pixels"], native["sparse_entries"]);
+    let mut last = None;
+    for entry in sparse.as_chunks::<6>().0.iter() {
+        let index = u16::from_le_bytes(entry[..2].try_into().unwrap()) as usize;
+        assert!(index < 256 * 256);
+        assert!(
+            last.is_none_or(|prior| prior < index),
+            "sparse indices are strictly ordered"
+        );
+        last = Some(index);
+        raw_bottom_up[index * 4..index * 4 + 4].copy_from_slice(&entry[2..]);
+    }
+    assert_eq!(sha256(&raw_bottom_up), native["sha256"].as_str().unwrap());
+    let row_bytes = 256 * 4;
+    let mut native_top_left = vec![0u8; raw_bottom_up.len()];
+    for y in 0..256 {
+        let source_y = 255 - y;
+        native_top_left[y * row_bytes..(y + 1) * row_bytes]
+            .copy_from_slice(&raw_bottom_up[source_y * row_bytes..(source_y + 1) * row_bytes]);
+    }
+    let candidate_nonzero_pixels = pix
+        .data()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| pixel.iter().any(|&channel| channel != 0))
+        .count();
+    assert_eq!(
+        candidate_nonzero_pixels,
+        native["nonzero_pixels"].as_u64().unwrap() as usize,
+        "candidate/native support count mismatch; candidate hash={} expected native raw hash={}",
+        sha256(pix.data()),
+        native["sha256"].as_str().unwrap()
+    );
+    let differing_bytes = pix
+        .data()
+        .iter()
+        .zip(&native_top_left)
+        .filter(|(candidate, expected)| candidate != expected)
+        .count();
+    let first_difference = pix
+        .data()
+        .iter()
+        .zip(&native_top_left)
+        .position(|(candidate, expected)| candidate != expected);
+    let first_byte_difference = first_difference.map(|offset| {
+        (
+            offset / 4 % 256,
+            offset / (256 * 4),
+            offset % 4,
+            pix.data()[offset],
+            native_top_left[offset],
+        )
+    });
+    assert_eq!(
+        differing_bytes,
+        0,
+        "full-frame candidate/native mismatch: {differing_bytes} bytes, first difference (x,y,ch,candidate,native)={first_byte_difference:?}, candidate hash={} expected native raw hash={}",
+        sha256(pix.data()),
+        native["sha256"].as_str().unwrap()
+    );
 }

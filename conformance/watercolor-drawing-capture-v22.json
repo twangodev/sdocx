@@ -1,0 +1,403 @@
+{
+  "draws": [
+    {
+      "attachment_texture": 2,
+      "draw_call": {
+        "first": 0,
+        "instance_count": 8,
+        "mode": 5,
+        "vertex_count": 4
+      },
+      "fbo": 2,
+      "post": {
+        "byte_length": 262144,
+        "format": "RGBA8",
+        "height": 256,
+        "nonzero_channels": [
+          9,
+          17,
+          0,
+          54
+        ],
+        "nonzero_pixels": 54,
+        "row_origin": "GL lower-left",
+        "sha256": "81c459d1870805ba7d21065926bd1b0f7e67ef1f2336456808b2e63b79983ed6",
+        "sparse_entries": 54,
+        "sparse_entries_u16_index_rgba_hex": "0000000200ff0100ff0600ff0200ff0500ff0300ff0500ff04008e0400ff0500000000ff0600000000ff0700000000ff0001000000ff0101000300ff0201ff0300ff0301ff0400ff0401ff0300ff0501000100ff0601000000ff0701000000ff0801000000ff0002000000ff0102000000ff0202000300ff0302ff0300ff0402ff0200ff0502000100ff0602000000ff0702000000ff0802000000ff0003000000ff0103000000ff0203000000ff0303000100ff0403000100ff0503000100ff0603000000ff0703000000ff0803000000ff0903000000ff0004000000ff0104000000ff0204000000ff0304000000ff0404000000ff0504000000ff0604000000ff0704000000ff0105000000ff0205000000ff0305000000ff0405000000ff0505000000ff0605000000ff0206000000ff0306000000ff0406000000ff0207000000ff",
+        "width": 256
+      },
+      "pre": {
+        "byte_length": 262144,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "nonzero_pixels": 0,
+        "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+      },
+      "program": 4,
+      "sampled_texture": 3,
+      "sampler_object": 3,
+      "sampler_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "uniforms": [
+        {
+          "call": "glUniformMatrix4fv",
+          "count": 1,
+          "float32_le_hex": "0000003c000000000000000000000000000000000000003c00000000000000000000000000000000000100b800000000000080bf000080bf000000000000803f",
+          "location": 0,
+          "pointer": "0x10086b3c",
+          "program": 4,
+          "transpose": 0,
+          "values": [
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 1,
+          "program": 4,
+          "unit": 0
+        }
+      ]
+    },
+    {
+      "attachment_texture": 1,
+      "draw_call": {
+        "first": 0,
+        "instance_count": 1,
+        "mode": 4,
+        "vertex_count": 6
+      },
+      "fbo": 1,
+      "post": {
+        "byte_length": 262144,
+        "format": "RGBA8",
+        "height": 256,
+        "nonzero_channels": [
+          9,
+          9,
+          9,
+          9
+        ],
+        "nonzero_pixels": 9,
+        "row_origin": "GL lower-left",
+        "sha256": "4db2b1cb2c26c991b7fb09a455b9f4341d0c63f205f0de4589fd06733f5895d0",
+        "sparse_entries": 9,
+        "sparse_entries_u16_index_rgba_hex": "010003060407020003050306030003050306040002040305020101030203030102040305040101030203030201030203040201020102",
+        "width": 256
+      },
+      "pre": {
+        "byte_length": 262144,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "nonzero_pixels": 0,
+        "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+      },
+      "program": 5,
+      "sampled_texture": 2,
+      "sampler_object": 2,
+      "sampler_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "uniforms": [
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "program": 5,
+          "unit": 0
+        },
+        {
+          "call": "glUniform1i",
+          "location": 3,
+          "program": 5,
+          "unit": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "count": 1,
+          "float32_le_hex": "d9d8d83ededd5d3f908f0f3f0000803f",
+          "location": 2,
+          "pointer": "0x10089fdc",
+          "program": 5,
+          "values": [
+            0.42352941632270813,
+            0.8666666746139526,
+            0.5607843399047852,
+            1.0
+          ]
+        }
+      ]
+    }
+  ],
+  "host_math_profile": {
+    "event_count": 8,
+    "events": [
+      {
+        "cos_f32_bits": "0000803f",
+        "function": "sincosf",
+        "input_f32_bits": "00000000",
+        "sin_f32_bits": "00000000"
+      },
+      {
+        "cos_f32_bits": "003a3bbf",
+        "function": "sincosf",
+        "input_f32_bits": "cd071940",
+        "sin_f32_bits": "71972e3f"
+      },
+      {
+        "cos_f32_bits": "88dc8e3d",
+        "function": "sincosf",
+        "input_f32_bits": "cd079940",
+        "sin_f32_bits": "5b607fbf"
+      },
+      {
+        "cos_f32_bits": "211b213f",
+        "function": "sincosf",
+        "input_f32_bits": "c8de633f",
+        "sin_f32_bits": "0cf3463f"
+      },
+      {
+        "cos_f32_bits": "35827dbf",
+        "function": "sincosf",
+        "input_f32_bits": "7fff5140",
+        "sin_f32_bits": "75830ebe"
+      },
+      {
+        "cos_f32_bits": "f6b3513f",
+        "function": "sincosf",
+        "input_f32_bits": "a683b540",
+        "sin_f32_bits": "e4d512bf"
+      },
+      {
+        "cos_f32_bits": "c9e654be",
+        "function": "sincosf",
+        "input_f32_bits": "c4dee33f",
+        "sin_f32_bits": "e2677a3f"
+      },
+      {
+        "cos_f32_bits": "86d903bf",
+        "function": "sincosf",
+        "input_f32_bits": "987b8540",
+        "sin_f32_bits": "536f5bbf"
+      }
+    ],
+    "name": "capture Python math.sin/math.cos",
+    "not_android_libm_claim": true,
+    "scope": "V22 Unicorn sincosf import callback; callback reads the f32 angle, calls Python math.sin and math.cos as binary64, independently packs each result to f32"
+  },
+  "input": {
+    "advanced_setting_mode": "default-null",
+    "color_argb_u32": "0xff6cdd8f",
+    "color_type": 0,
+    "curve_enabled": true,
+    "native_profile_version": 1,
+    "outer_canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "render_message_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "screen_profile_dimensions": [
+      1920,
+      1080
+    ],
+    "size_f32_bits": "4c374940",
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "target_dimensions": [
+      256,
+      256
+    ],
+    "tool_type": 2
+  },
+  "native_geometry": {
+    "producer": "native Drawing/WaterColor RTV1 AddPoint callbacks",
+    "receiver": "0x1007e380",
+    "record_bytes": 192,
+    "record_count": 8,
+    "records_hex": "0000803f000000c0000000000000803ffd6567400ad7233dda42923fb89be4bf71972e3f003a3bbf8d757140a69bc43b6a0bc93fe26e92bf5b607fbf88dc8e3d1d857b40a69bc43bd8fc07403099a1be0cf3463f211b213f57ca8240a69bc43ba55f2240a6fb833e75830ebe35827dbf3b4e8540a69bc43bfe183f403fc8543fe4d512bff6b3513f1fd28740a69bc43be1285e4054c9b33fe2677a3fc9e654be03568a40a69bc43b4e8f7f40892efd3f536f5bbf86d903bfe7d98c40a69bc43b",
+    "sha256": "9876831bb99e269a27b0d4c3b1b093dbae1ee3858460aa3219d33929dd1ff371",
+    "six_f32_lanes_per_record": true
+  },
+  "pattern_upload": {
+    "asset": "conformance/watercolor-pattern.png",
+    "asset_png_sha256": "b321ea19bf487ac9a1e8cf2d99d4e76efe3ede4fe31406558340cf2af01194b6",
+    "native_rgba_equals_decoded_png": true,
+    "native_uploaded_rgba_sha256": "5d648cecd3cbecf11e3dfe9f83d105a09ad6244ecb7ed38466e3dfc1f18bcaae"
+  },
+  "provenance": {
+    "candidate_sha256": "c42701f1ca80effbdb0eb8cee0ab785f6063cbdb80031b0b1a097b5dc0bf9087",
+    "case_id": "watercolor-unset-tool2-v1",
+    "draw_contract_receipt_sha256": "64a559d14096449ab2a2c4a96489428294ea91390074606bda1be1baa7fc861f",
+    "native_helpers_sha256": {
+      "airbrush_texture_native": "6b33ed37a316f76908821e9069a852b34e483ac0da18e6b04e3357a889e59ea3",
+      "canvas_probe_fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "inkpen_paint_native": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+      "renderer_v25_fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "typed_renderer_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+      "watercolor_canvas_source": "44c420dca5eedc0b296980b76613fa5688956725488de611c06ece8568ca602e",
+      "watercolor_drawing_source": "a4b1edbdd732c62f9ba2323381118f5fb16855bde50237636eab00265aa470f8",
+      "watercolor_natural_resource_bridge": "c42701f1ca80effbdb0eb8cee0ab785f6063cbdb80031b0b1a097b5dc0bf9087"
+    },
+    "native_libraries_sha256": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "WaterColorBrush": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "mesa_vertex_shader_ir": {
+      "source_blake3": "1fb6ed1d6f0d83fc69a07fd1fb1d803d8fb7a2055c5e79d19a9e71c7cf3f7c95",
+      "debug_stderr_path": "/tmp/sdocx-watercolor-natural-resource-root-v22-ir.stderr",
+      "debug_stderr_sha256": "67a820e7a577e5a38d45bce8f92d63b322fe40c67872685793003a5bb81ba029",
+      "nir_source_lines": [1262, 1357],
+      "precision_contract": "mediump inputs and uniforms narrow to f16; model and MVP use ordered f16 multiply/add operations; clip coordinates widen to f32 for gl_Position"
+    },
+    "root_capture_log": "/tmp/sdocx-watercolor-natural-resource-root-v22.log",
+    "root_exit_code": 0,
+    "v22_freeze_receipt_sha256": "19b134a4c98d107f21ef85bd365c1e267c8bc9a7081a2b7048e490d86e76fc20"
+  },
+  "resource_path": {
+    "egl_context": "0x23214430",
+    "inherited_create_pen_canvas_override_removed": true,
+    "mesa_sampler_names": [
+      1,
+      2,
+      3
+    ],
+    "native_bitmap_factory_returns": [
+      {
+        "bitmap": "0x1007e700",
+        "caller_lr": "0x1049318",
+        "tag": "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush;0;"
+      },
+      {
+        "bitmap": "0x1008a1b0",
+        "caller_lr": "0x90649c4",
+        "tag": "WaterColorBrushStrokeDrawableRTV1::buildTextures mPatternsTexture"
+      }
+    ],
+    "native_sampler_tokens": [
+      100,
+      101,
+      102
+    ],
+    "outer_canvas": {
+      "bitmap": "0x100730a0",
+      "dimensions": [
+        256,
+        256
+      ],
+      "native_canvas": "0x100734a0",
+      "texture_bitmap_getter_return": "0x10073150"
+    },
+    "runtime_raw_private_canvas_this_plus_200_read": false,
+    "runtime_roles": {
+      "composite_pass": "FBO1 color attachment texture1; samples scratch texture2",
+      "stroke_pass": "FBO2 color attachment texture2; samples pattern texture3"
+    },
+    "same_context_for_observations": true,
+    "source_contract_private_canvas_this_plus_200": true,
+    "static_abi_x0_x5": [
+      "descriptor",
+      "tag",
+      "data",
+      "uint pointer",
+      "count (w4)",
+      "TextureBufferInfo pointer"
+    ],
+    "tags": [
+      "watercolor-native-canvas",
+      "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush;0;",
+      "WaterColorBrushStrokeDrawableRTV1::buildTextures mPatternsTexture"
+    ],
+    "texture_factory_source_symbol": {
+      "demangled_symbol": "SPen::GLES::RendererFactoryImpl::CreateTextureObject(SPen::TextureDescriptor const&, char const*, void const*, unsigned int const*, unsigned int, SPen::TextureBufferInfo const*)",
+      "mangled_symbol": "_ZN4SPen4GLES19RendererFactoryImpl19CreateTextureObjectERKNS_17TextureDescriptorEPKcPKvPKjjPKNS_17TextureBufferInfoE",
+      "mapped_address": "0xa05ac68",
+      "source_rva": "0x5ac68"
+    },
+    "texture_factory_symbol": "SPen::GLES::RendererFactoryImpl::CreateTextureObject(SPen::TextureDescriptor const&, char const*, void const*, unsigned int const*, unsigned int, SPen::TextureBufferInfo const*)",
+    "texture_names": [
+      1,
+      2,
+      3
+    ]
+  },
+  "schema": "sdocx-watercolor-controlled-drawing-capture-v22-v1",
+  "scope": "Host-controlled ObjectStroke setter arrays and IContext profile; native Drawing/WaterColor GLV1 geometry generation, native PenGLRenderMsg/RTV1 lifecycle and Draw, and actual Mesa draw/readback. Not a deserialized/saved-note stroke or Android GPU parity."
+}
