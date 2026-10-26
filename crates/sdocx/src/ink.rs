@@ -19,6 +19,8 @@ mod oilbrush3;
 mod pencil2;
 #[cfg(all(test, feature = "serde"))]
 mod simplebrush;
+#[cfg(test)]
+mod smudge;
 #[cfg(all(test, feature = "serde"))]
 mod watercolor;
 

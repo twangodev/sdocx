@@ -1,0 +1,48 @@
+{
+  "schema": "sdocx.smudge.rtv1-source-paint.v1",
+  "scope": "Test-only source-input CPU paint; two captured native-generated quads, not generalized Stroke-to-quad generation, production, SVG/PDF or device parity.",
+  "native_library": {
+    "name": "libSPenSmudge.so",
+    "sha256": "be57058d0ccdce51004132332a1cf5b84f6432b759350e9f23db3d70b3bc6926",
+    "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+  },
+  "source": {
+    "target": [
+      256,
+      256
+    ],
+    "scratch": [
+      128,
+      128
+    ],
+    "quad_sha256": [
+      "e5825c9e20fc003bc25cbd35827400dbda716f3556828bf34f759b764edb7d22",
+      "3bae4eda1ecc6926c1ba6edb124f8e21d28811ae6f675cb5549b73881630f665"
+    ],
+    "shader_sha256": {
+      "program4_vertex": "5f4155bfaeb69fe41ddc5380eca2ac671fac6560d57c705d5e1ebb9259ecfdff",
+      "program4_fragment": "905fa7fdc14544045e18d40f5d76f110f647eb8dfbfcfb709b9ffe9518d884bb",
+      "program5_vertex": "572091d0e037e57ca5a08f882cfd4db059cf5e31bab92ac3f7692891ca758a76",
+      "program5_fragment": "26d6f8c09a31cf304aa6e8396b2beae3255e25aa1c289341c031d3bd56c85273"
+    },
+    "geometry_location": "crates/sdocx/src/ink/smudge.rs constants; native float bits and upload hashes checked in Rust",
+    "generated_input": "Deterministic per-channel x/y high-frequency RGBA8 formula in Rust, opaque alpha; separate all-zero transparent control."
+  },
+  "oracle_role": "Per-draw full-frame hashes are expected outputs only. No captured framebuffer or scratch pixels are renderer inputs.",
+  "expected_high_frequency": [
+    "23bb17fcc69a3ea6cef1a602196adf5c79e0a413c85113f230e170866653f308",
+    "fff4fb36d37d47efdf75673ab9d8e844c406aebd19791a5ddc27b16a457ecc8a",
+    "859333655cac79883d8b8fa21c640e8bbb9a8f42072ec60f959576549f26a1cc",
+    "2bbb8a791f65101cf83749e1b828af34165e8a97db0fcced6d26826fa8c5e250"
+  ],
+  "driver": "Mesa25.0.7-2+deb13u1 llvmpipe LLVM19.1.7",
+  "actual_driver_ir_sha256": "8802e495fc1a2bb9d0debe673f10ea0ac80c3aef487b4a875939807ab1e9b9bd",
+  "proof": "Native full Model Construct, lower Drawing helper, native queued renderer and same-bitmap API/Mesa readback joins. Link-time shader bytes independently match native DSO strings.",
+  "limits": [
+    "P4 final mix narrows to half; P5 output remains F32. Samplers use fixed-fraction integer interpolation and F16RTZ.",
+    "CVTPS2DQ nearest-even assumes unrecorded MXCSR; dither is enabled but has no observed pixel effect in these controls.",
+    "First paint quad is outside the viewport; model executes that draw and rejects unexpected coverage. The final paint draw has nonempty coverage.",
+    "Context identity in shader snapshots is adapter-instance scoped, not a proof of arbitrary EGL context reuse.",
+    "Synthetic host inputs, queue and libc/libm services remain explicit boundaries."
+  ]
+}
