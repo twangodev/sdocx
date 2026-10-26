@@ -41,6 +41,127 @@ struct SavedStrokeInput<'a> {
     color_argb: u32,
 }
 
+/// Context that is external to a public `Stroke` but observed for this one
+/// synthetic Drawing profile. The selected GL version and source are never
+/// inferred from a missing stroke field.
+#[derive(Clone, Copy)]
+struct PublicStrokeContext {
+    selected_gl_version: u32,
+    source: i32,
+    screen_resolution: [u32; 2],
+    model_matrix: [f32; 9],
+}
+
+/// Adapt only the pinned OilBrush3 Model setter profile into the sampler.
+/// This remains test-only and does not turn the synthetic input into evidence
+/// for general serialized-stroke admission.
+fn sample_public_stroke<F>(
+    stroke: &crate::Stroke,
+    context: PublicStrokeContext,
+    atan2f: F,
+) -> Result<Vec<[f32; 28]>, &'static str>
+where
+    F: FnMut(f32, f32) -> Result<f32, &'static str>,
+{
+    const PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.OilBrush3";
+    const ADVANCED_SETTING: &str = "";
+    const SIZE_BITS: u32 = 0x4100_0000; // Model ObjectStroke SetPenSize(8.0).
+    const ARGB: u32 = 0x8044_aaee;
+    const IDENTITY: [f32; 9] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+
+    if context.selected_gl_version != 1
+        || context.source != 0
+        || context.screen_resolution != [1920, 1080]
+        || context.model_matrix != IDENTITY
+    {
+        return Err("Drawing context is outside the captured OilBrush3 GLV1 profile");
+    }
+    let rendering = stroke
+        .rendering
+        .as_ref()
+        .ok_or("resolved OilBrush3 stroke metadata is required")?;
+    let style = &rendering.style;
+    let properties = rendering.properties;
+    if rendering.pen_name.as_deref() != Some(PEN_NAME)
+        || rendering.advanced_settings.as_deref() != Some(ADVANCED_SETTING)
+        || rendering.tool_type_raw != 2
+        || !properties.compressed
+        || !properties.stylus_channels
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.millisecond_timestamps
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.binary_added
+        || properties.generated
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || style.size_level != Some(0)
+        || style.stroke_type_raw != Some(0)
+        || style.color_type_raw != Some(0)
+    {
+        return Err("stroke metadata is outside the captured OilBrush3 profile");
+    }
+    let size = style
+        .pen_size
+        .ok_or("explicit ObjectStroke pen size is required")?;
+    let argb = style
+        .color_argb
+        .ok_or("explicit ObjectStroke ARGB is required")?;
+    if size.to_bits() != SIZE_BITS || stroke.pen_width.to_bits() != SIZE_BITS || argb != ARGB {
+        return Err("style values are outside the captured OilBrush3 profile");
+    }
+    let color = stroke
+        .color
+        .ok_or("RGB color derived from ARGB is required")?;
+    if [color.r, color.g, color.b]
+        != [
+            ((ARGB >> 16) & 0xff) as u8,
+            ((ARGB >> 8) & 0xff) as u8,
+            (ARGB & 0xff) as u8,
+        ]
+    {
+        return Err("Stroke RGB and retained ARGB disagree");
+    }
+    let timestamps = stroke
+        .timestamps
+        .iter()
+        .map(|&value| i32::try_from(value).map_err(|_| "timestamp is outside i32 range"))
+        .collect::<Result<Vec<_>, _>>()?;
+    let pressures = stroke
+        .pressures
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+    let tilts = stroke
+        .tilts
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+    let orientations = stroke
+        .orientations
+        .iter()
+        .map(|&value| value as f32)
+        .collect::<Vec<_>>();
+    let input = SavedStrokeInput {
+        points: &stroke.points,
+        pressures: &pressures,
+        timestamps: &timestamps,
+        tilts: &tilts,
+        orientations: &orientations,
+        size,
+        screen_resolution: context.screen_resolution,
+        tool_type: i32::from(rendering.tool_type_raw),
+        source: context.source,
+        curve_enabled: properties.compressed,
+        color_argb: argb,
+    };
+    sample_saved_stroke(&input, atan2f)
+}
+
 #[derive(Default)]
 struct AddPointState {
     previous_x: f32,
@@ -238,7 +359,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{SavedStrokeInput, sample_saved_stroke};
+    use super::{PublicStrokeContext, SavedStrokeInput, sample_public_stroke, sample_saved_stroke};
     use crate::Point;
     use serde_json::Value;
     use sha2::{Digest, Sha256};
@@ -384,6 +505,127 @@ mod tests {
                 case["name"]
             );
         }
+    }
+
+    fn public_stroke_from_fixture(fixture: &Value) -> crate::Stroke {
+        let case = &fixture["cases"][0];
+        let values = input_from_fixture(fixture, case);
+        let input = &fixture["input"];
+        let argb = u32::from_str_radix(
+            input["color_argb"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        crate::Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                // Explicit Model setter inputs from the V10 controlled Drawing capture.
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.OilBrush3".to_owned()),
+                advanced_settings: Some(String::new()),
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: crate::StrokeProperties {
+                    compressed: input["curve_enabled"].as_bool().unwrap(),
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: false,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(values.size),
+                    size_level: Some(0),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..crate::StrokeStyle::default()
+                },
+            }),
+            bbox: crate::BoundingBox::default(),
+            points: values.points,
+            pressures: values.pressures.into_iter().map(f64::from).collect(),
+            timestamps: values.timestamps.into_iter().map(i64::from).collect(),
+            tilts: values.tilts.into_iter().map(f64::from).collect(),
+            orientations: values.orientations.into_iter().map(f64::from).collect(),
+            color: Some(crate::Color {
+                r: ((argb >> 16) & 0xff) as u8,
+                g: ((argb >> 8) & 0xff) as u8,
+                b: (argb & 0xff) as u8,
+            }),
+            pen_width: values.size,
+        }
+    }
+
+    #[test]
+    fn public_stroke_adapter_reconstructs_v10_drawing_call_stream() {
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let stroke = public_stroke_from_fixture(&fixture);
+        let context = PublicStrokeContext {
+            selected_gl_version: 1,
+            source: 0,
+            screen_resolution: [1920, 1080],
+            model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        };
+        let oracle = fixture["atan2f_oracle"]["calls"].as_array().unwrap();
+        assert_eq!(oracle.len(), 11);
+        let mut math_call = 0;
+        let records = sample_public_stroke(&stroke, context, |y, x| {
+            let call = oracle.get(math_call).ok_or("unobserved atan2f call")?;
+            if y.to_bits() != f32_bits(&call["s0_y_f32_bits"])
+                || x.to_bits() != f32_bits(&call["s1_x_f32_bits"])
+            {
+                return Err("atan2f input differs from pinned native call sequence");
+            }
+            math_call += 1;
+            Ok(f32::from_bits(f32_bits(&call["s0_result_f32_bits"])))
+        })
+        .unwrap();
+        assert_eq!(math_call, 11);
+        assert_eq!(records.len(), 15);
+        assert_eq!(records.len() * 112, 1680);
+        assert_eq!(
+            digest(&records),
+            "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+        );
+
+        let mut wrong_context = context;
+        wrong_context.selected_gl_version = 2;
+        assert!(sample_public_stroke(&stroke, wrong_context, |_, _| Ok(0.0)).is_err());
+        let mut unresolved = stroke.clone();
+        unresolved.rendering.as_mut().unwrap().pen_name = None;
+        assert!(sample_public_stroke(&unresolved, context, |_, _| Ok(0.0)).is_err());
+
+        let mut inconsistent = stroke.clone();
+        inconsistent.pen_width = f32::from_bits(inconsistent.pen_width.to_bits() + 1);
+        assert!(sample_public_stroke(&inconsistent, context, |_, _| Ok(0.0)).is_err());
+        inconsistent = stroke.clone();
+        inconsistent.color.as_mut().unwrap().r ^= 1;
+        assert!(sample_public_stroke(&inconsistent, context, |_, _| Ok(0.0)).is_err());
+
+        let mut incomplete = stroke.clone();
+        incomplete.tilts.pop();
+        assert!(sample_public_stroke(&incomplete, context, |_, _| Ok(0.0)).is_err());
+        let mut out_of_range = stroke.clone();
+        out_of_range.timestamps[0] = i64::from(i32::MAX) + 1;
+        assert!(sample_public_stroke(&out_of_range, context, |_, _| Ok(0.0)).is_err());
+        let mut unsupported = stroke.clone();
+        unsupported
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        assert!(sample_public_stroke(&unsupported, context, |_, _| Ok(0.0)).is_err());
     }
 }
 
