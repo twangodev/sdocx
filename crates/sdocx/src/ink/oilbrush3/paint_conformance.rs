@@ -1,11 +1,12 @@
-//! Test-only source-input CPU model of one OilBrush3 V23 paint replay.
+//! Test-only source-input CPU model of two OilBrush3 host paint controls.
 //!
 //! The native-captured AddPoint/VBO streams are explicit geometry inputs; this test does not
 //! regenerate the OilBrush3 sampler. Native readbacks are expected sparse outputs only.
-//! P4/P3 varyings,
-//! R8 texture samples, RGBA8 feedback, and all blend values are computed from
+//! P4/P3 varyings, R8 texture samples, and RGBA8 feedback are computed from
 //! the captured AddPoint stream, draw uniforms, VBO and source texture planes.
-//! This bounded Mesa/llvmpipe profile is not production dispatch.
+//! P4 uses a bounded llvmpipe host model for RGBA8 framebuffer source-over; the
+//! supplied shader LLVM IR does not include fixed-function blend lowering. This
+//! profile is not production dispatch.
 
 use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
@@ -13,6 +14,9 @@ use std::{collections::BTreeMap, io::Read};
 
 const PAGE: usize = 192;
 const PIXELS: usize = PAGE * PAGE;
+const V17_PAGE_WIDTH: usize = 1920;
+const V17_PAGE_HEIGHT: usize = 1080;
+const V17_PIXELS: usize = V17_PAGE_WIDTH * V17_PAGE_HEIGHT;
 const FEEDBACK: usize = 16;
 const MASK_W: usize = 16;
 const MASK_H: usize = 16;
@@ -51,9 +55,36 @@ const MASK_ZLIB_SHA256: &str = "88e2c40eda7057f95a35a2b80f4d1e95da5ca72267651e4f
 const MASK_R8_SHA256: &str = "fc277b78270fbee42ba6cc96ff4050f5a76c595e9ec841de36e3b7fbe1e368dc";
 const DEPTH_ZLIB_SHA256: &str = "dcfb7a42804115addcc085a729abbd5ba6915ee262363063be1f8c741ed65da5";
 const DEPTH_R8_SHA256: &str = "8188e033fffc6513cc997deb014033e7de1aacd8e27f5c6b464d491c7efaa27a";
-const PROFILE_SHA256: &str = "43d2151de7c82d76da165c72815242d6a07442b13555fb0c309aeba6d0073923";
+const PROFILE_SHA256: &str = "560837b7cc189e849c19d332894a88868066dc1fe8478b7028a376f4f57387a8";
 const NATIVE_PREFIX_BUNDLE_SHA256: &str =
     "20f504f2780d7d82feafe5ea5970e8a10a4919cd87ee6c2652c64d0229ab7028";
+const V17_STATE: &[u8] = include_bytes!(
+    "../../../../../conformance/oilbrush3-v17-native-paint/oilbrush3-v17-draw-state-f32le.bin"
+);
+const V17_PREFIX_BUNDLE: &[u8] = include_bytes!(
+    "../../../../../conformance/oilbrush3-v17-native-paint/oilbrush3-v17-native-prefixes-sparse-rgba8-v2.bin"
+);
+const V17_STATE_SHA256: &str = "5962fca258a4158fe42c83ce46ab6f4559ceddf1c2e26b57a9294c6b1d59c18b";
+const V17_PREFIX_BUNDLE_SHA256: &str =
+    "92e5080f149a59e8569301d3d0577b1df7d13f1d0dd71dc63037342e6470ba05";
+const V17_PREFIX_SHA256: [&str; 15] = [
+    "a99168eb91498958bbdc6bfa502136595c35e1f58eb3eb759b58b1b121754660",
+    "14dfa1bf824eb8fb3f1e38cfb1fd3c688fb320d9dcf1902f4bd1bff3ea4d43f5",
+    "d506ab378408fd74f759e499a2f7465da759dc0e299199a2861a5af3b0fff09a",
+    "224377c3189bb5956786984a1d5c0517c206e3d27e2f7b9464cc87e48313f492",
+    "8cfdfabe9647747a67c209341548f4f4f30293a4e1299c9196f76499973787dc",
+    "5f3910208918f6dcf2d360b72a986fa6344dbf9ebf53577c0f4e6d4cd460ac9c",
+    "4a46b3fb0ccf5e67dfec9c46aa4455d9a986ea7ad92a46c8c0e43bde1c11844d",
+    "66f9508fc3a9e439c97fdbe7b2cb8690b93a050235e85255eb787992682d1fcf",
+    "db1e2ed1e08e71198362a0c622d3828fb143f33f8974b199ad3bae3bab97aa22",
+    "91e10428dce2b8f97b0e58239330446804129bccc71207700d641cafcfd97fd6",
+    "43de6795188eb427026165ef2ed6f84d7823298a9c014d206497b2fb2ad0f013",
+    "cb263a7850a6bf05d202ec365ea7f78c7ce6d6374d54c9876f7fbf76fe905621",
+    "fcb7f045933cf361f0b12500e4ffd4abe6820912a231024fa9ac660094c6f3df",
+    "a54a69f9bfb1532f70a3a64a6962bf5481508c57fdba58eb345b9b8d36149e7a",
+    "14f1911a67ba192934f2b3534f94925b7ec6b900d7046705fdfbdca16d8824ee",
+];
+const V17_EXPECTED_SUPPORT: [usize; 15] = [3, 6, 9, 9, 10, 13, 17, 23, 31, 37, 43, 54, 61, 67, 76];
 const PREFIX_SHA256: [&str; 15] = [
     "b9749d0227ccf3087119b940eba436258a33d86a5713bc33740c173af4fe5a4c",
     "8b8aeba311fb068177fb647e50e83c9178e6bc33d363d2978aa8684711f2ac7e",
@@ -72,24 +103,6 @@ const PREFIX_SHA256: [&str; 15] = [
     "c8a5b1153dc13458d161696e957fe2f7be0f766a1467a2150f22e5b48061aa6b",
 ];
 const EXPECTED_SUPPORT: [usize; 15] = [3, 7, 9, 9, 10, 13, 17, 23, 31, 37, 43, 54, 61, 67, 76];
-const EXPECTED_DIFF_PIXELS: [usize; 15] = [1, 4, 4, 4, 3, 5, 6, 7, 10, 13, 13, 13, 14, 14, 16];
-const EXPECTED_ABS_SUMS: [[u64; 4]; 15] = [
-    [1, 0, 0, 0],
-    [2, 1, 1, 0],
-    [2, 2, 1, 0],
-    [2, 2, 1, 0],
-    [2, 1, 0, 0],
-    [3, 1, 1, 0],
-    [3, 1, 2, 0],
-    [3, 1, 3, 0],
-    [3, 1, 6, 0],
-    [4, 1, 8, 0],
-    [4, 1, 8, 0],
-    [4, 1, 8, 0],
-    [5, 1, 9, 0],
-    [5, 1, 9, 0],
-    [6, 1, 11, 0],
-];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 struct Rgba([u8; 4]);
@@ -123,6 +136,19 @@ struct P3State {
 }
 
 #[derive(Clone, Copy, Debug)]
+struct PageSize {
+    width: usize,
+    height: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct P4State {
+    projection: [f32; 16],
+    model: [f32; 16],
+    depth_scale: [f32; 2],
+}
+
+#[derive(Clone, Copy, Debug)]
 struct DiffStats {
     support: usize,
     support_symdiff: usize,
@@ -151,8 +177,26 @@ fn fdiv(a: f32, b: f32) -> f32 {
 fn ffma(a: f32, b: f32, c: f32) -> f32 {
     ((f64::from(a) * f64::from(b)) + f64::from(c)) as f32
 }
-fn quant(x: f64) -> u8 {
-    x.mul_add(255.0, 0.0).round_ties_even().clamp(0.0, 255.0) as u8
+fn quant(x: f32) -> u8 {
+    // Mesa converts the shader's clamped F32 output before byte blending.
+    // CVTPS2DQ follows MXCSR; this host profile assumes nearest-even.
+    (x.clamp(0.0, 1.0) * 255.0).round_ties_even() as u8
+}
+
+// Captured P4 state uses FUNC_ADD with ONE / ONE_MINUS_SRC_ALPHA for color
+// and alpha on RGBA8 attachments. Quantize the shader result first, then model
+// the normalized-integer framebuffer blend from Mesa 25.0.7 lp_build_mul_norm.
+// This common driver path has captured Crayon2 IR corroboration; OilBrush3's
+// shader-only IR does not independently establish its active blend lowering.
+fn rgba8_source_over(src: [u8; 4], dst: [u8; 4]) -> [u8; 4] {
+    let inverse_alpha = 255 - u32::from(src[3]);
+    std::array::from_fn(|channel| {
+        let src = u32::from(src[channel]);
+        let dst = u32::from(dst[channel]);
+        let product = dst * inverse_alpha;
+        let contribution = (product + (product >> 8) + 128) >> 8;
+        (src + contribution).min(255) as u8
+    })
 }
 
 fn decode_zlib(bytes: &[u8], expected_len: usize, expected_sha: &str) -> Vec<u8> {
@@ -240,71 +284,145 @@ fn inside_triangle(p: [f64; 2], tri: [[f32; 2]; 3]) -> Option<[f64; 3]> {
     }
 }
 
-fn sample_nearest_r8(tex: &[u8], w: usize, h: usize, u: f64, v: f64, repeat: bool) -> u8 {
-    fn coord(t: f64, n: usize, repeat: bool) -> usize {
-        let i = if repeat {
-            ((t.rem_euclid(1.0)) * n as f64).floor() as isize
-        } else {
-            (t * n as f64).floor() as isize
-        };
-        i.clamp(0, n as isize - 1) as usize
+// Mesa Gallivm's captured RGBA8 sampler profile, reconstructed from the active
+// V17 NIR/LLVM in root-driver-ir-receipt.json. Coordinates are quantized to an
+// 8-bit subtexel grid before byte-domain bilinear interpolation. All shader
+// samplers are lowp: normalized byte values narrow to binary16 toward zero and
+// widen to F32 before shader arithmetic. CVTPS2DQ follows MXCSR; this candidate
+// assumes default RN-even, which was not directly recorded in the capture.
+const UNORM8_TO_F32: f32 = f32::from_bits(0x3b80_8081);
+
+fn unorm8_half_rtz(value: u8) -> f32 {
+    let normalized = f32::from(value) * UNORM8_TO_F32;
+    if normalized == 0.0 {
+        return 0.0;
     }
-    tex[coord(v, h, repeat) * w + coord(u, w, repeat)]
+    let bits = normalized.to_bits();
+    let exponent = ((bits >> 23) & 0xff) as i32 - 127;
+    debug_assert!((-14..=0).contains(&exponent), "UNORM8 sample is normal F16");
+    let half = (((exponent + 15) as u16) << 10) | ((bits >> 13) as u16 & 0x03ff);
+    f16_to_f32(half)
 }
 
-fn sample_nearest_rgba(tex: &[Rgba], w: usize, h: usize, u: f64, v: f64) -> Rgba {
-    let x = ((u * w as f64).floor() as isize).clamp(0, w as isize - 1) as usize;
-    let y = ((v * h as f64).floor() as isize).clamp(0, h as isize - 1) as usize;
-    tex[y * w + x]
-}
-
-fn sample_linear_r8(tex: &[u8], w: usize, h: usize, u: f64, v: f64, repeat: bool) -> f64 {
-    fn index(i: isize, n: usize, repeat: bool) -> usize {
-        if repeat {
-            i.rem_euclid(n as isize) as usize
-        } else {
-            i.clamp(0, n as isize - 1) as usize
+fn f16_to_f32(bits: u16) -> f32 {
+    let sign = (u32::from(bits & 0x8000)) << 16;
+    let exponent = i32::from((bits >> 10) & 0x1f);
+    let fraction = u32::from(bits & 0x03ff);
+    let result = match exponent {
+        0 if fraction == 0 => sign,
+        0 => {
+            let mut significand = fraction;
+            let mut unbiased = -14;
+            while significand & 0x0400 == 0 {
+                significand <<= 1;
+                unbiased -= 1;
+            }
+            significand &= 0x03ff;
+            sign | (((unbiased + 127) as u32) << 23) | (significand << 13)
         }
-    }
-    let x = u * w as f64 - 0.5;
-    let y = v * h as f64 - 0.5;
-    let x0 = x.floor() as isize;
-    let y0 = y.floor() as isize;
-    let fx = x - x0 as f64;
-    let fy = y - y0 as f64;
-    let ch = |ix: isize, iy: isize| {
-        f64::from(tex[index(iy, h, repeat) * w + index(ix, w, repeat)]) / 255.0
+        0x1f => sign | 0x7f80_0000 | (fraction << 13),
+        _ => sign | (((exponent - 15 + 127) as u32) << 23) | (fraction << 13),
     };
-    ch(x0, y0) * (1.0 - fx) * (1.0 - fy)
-        + ch(x0 + 1, y0) * fx * (1.0 - fy)
-        + ch(x0, y0 + 1) * (1.0 - fx) * fy
-        + ch(x0 + 1, y0 + 1) * fx * fy
+    f32::from_bits(result)
 }
 
-fn sample_linear_rgba(tex: &[Rgba], w: usize, h: usize, u: f64, v: f64) -> [f64; 4] {
-    let x = u * w as f64 - 0.5;
-    let y = v * h as f64 - 0.5;
-    let x0 = x.floor() as isize;
-    let y0 = y.floor() as isize;
-    let fx = x - x0 as f64;
-    let fy = y - y0 as f64;
-    let clamp = |n: isize, lim: usize| n.clamp(0, lim as isize - 1) as usize;
-    let ch = |ix: isize, iy: isize, c: usize| {
-        f64::from(tex[clamp(iy, h) * w + clamp(ix, w)].0[c]) / 255.0
-    };
-    std::array::from_fn(|c| {
-        ch(x0, y0, c) * (1.0 - fx) * (1.0 - fy)
-            + ch(x0 + 1, y0, c) * fx * (1.0 - fy)
-            + ch(x0, y0 + 1, c) * (1.0 - fx) * fy
-            + ch(x0 + 1, y0 + 1, c) * fx * fy
+fn nearest_index(coord: f32, size: usize, repeat: bool) -> usize {
+    let coord = if repeat { coord.rem_euclid(1.0) } else { coord };
+    ((coord * size as f32).floor() as isize).clamp(0, size as isize - 1) as usize
+}
+
+fn sample_nearest_r8_lp(tex: &[u8], w: usize, h: usize, u: f32, v: f32, repeat: bool) -> f32 {
+    let x = nearest_index(u, w, repeat);
+    let y = nearest_index(v, h, repeat);
+    unorm8_half_rtz(tex[y * w + x])
+}
+
+fn sample_nearest_rgba_lp(tex: &[Rgba], w: usize, h: usize, u: f32, v: f32) -> [f32; 4] {
+    let x = nearest_index(u, w, false);
+    let y = nearest_index(v, h, false);
+    tex[y * w + x].0.map(unorm8_half_rtz)
+}
+
+fn cvtps2dq_default(value: f32) -> i32 {
+    // The captured Gallivm lowering is CVTPS2DQ, whose rounding follows MXCSR.
+    value.round_ties_even() as i32
+}
+
+fn sampler_axis(coord: f32, size: usize) -> (isize, i32) {
+    let scale = (size << 8) as f32;
+    let fixed = cvtps2dq_default(coord * scale) - 128;
+    ((fixed >> 8) as isize, fixed & 0xff)
+}
+
+fn sampler_index(index: isize, size: usize, repeat: bool) -> usize {
+    if repeat {
+        index.rem_euclid(size as isize) as usize
+    } else {
+        index.clamp(0, size as isize - 1) as usize
+    }
+}
+
+// Gallivm emits PMULHRSW(frac, delta << 7), then adds the byte base and
+// packs unsigned; integer form is base + ((frac*delta + 128) >> 8).
+fn sampler_lerp_u8(a: u8, b: u8, fraction: i32) -> u8 {
+    let delta = i32::from(b) - i32::from(a);
+    (i32::from(a) + ((fraction * delta + 128) >> 8)).clamp(0, 255) as u8
+}
+
+fn sample_linear_r8_lp(tex: &[u8], w: usize, h: usize, u: f32, v: f32, repeat: bool) -> f32 {
+    let (x0, fx) = sampler_axis(u, w);
+    let (y0, fy) = sampler_axis(v, h);
+    let at =
+        |x: isize, y: isize| tex[sampler_index(y, h, repeat) * w + sampler_index(x, w, repeat)];
+    let top = sampler_lerp_u8(at(x0, y0), at(x0 + 1, y0), fx);
+    let bottom = sampler_lerp_u8(at(x0, y0 + 1), at(x0 + 1, y0 + 1), fx);
+    unorm8_half_rtz(sampler_lerp_u8(top, bottom, fy))
+}
+
+fn sample_linear_rgba_lp(tex: &[Rgba], w: usize, h: usize, u: f32, v: f32) -> [f32; 4] {
+    let (x0, fx) = sampler_axis(u, w);
+    let (y0, fy) = sampler_axis(v, h);
+    std::array::from_fn(|channel| {
+        let at = |x: isize, y: isize| {
+            tex[sampler_index(y, h, false) * w + sampler_index(x, w, false)].0[channel]
+        };
+        let top = sampler_lerp_u8(at(x0, y0), at(x0 + 1, y0), fx);
+        let bottom = sampler_lerp_u8(at(x0, y0 + 1), at(x0 + 1, y0 + 1), fx);
+        unorm8_half_rtz(sampler_lerp_u8(top, bottom, fy))
     })
 }
 
 fn unpack_p4_triangle(stamp: usize, tri_indexes: [usize; 3]) -> P4Triangle {
-    let proj = std::array::from_fn(|i| read_f32(STATE, i * 4));
+    let state = read_p4_state(STATE, stamp);
+    unpack_p4_triangle_for_page(
+        stamp,
+        tri_indexes,
+        PageSize {
+            width: PAGE,
+            height: PAGE,
+        },
+        state,
+    )
+}
+
+fn read_p4_state(bytes: &[u8], stamp: usize) -> P4State {
     let base = 64 + stamp * 72;
-    let model: [f32; 16] = std::array::from_fn(|i| read_f32(STATE, base + i * 4));
-    let depth_scale = [read_f32(STATE, base + 64), read_f32(STATE, base + 68)];
+    P4State {
+        projection: std::array::from_fn(|i| read_f32(bytes, i * 4)),
+        model: std::array::from_fn(|i| read_f32(bytes, base + i * 4)),
+        depth_scale: [read_f32(bytes, base + 64), read_f32(bytes, base + 68)],
+    }
+}
+
+fn unpack_p4_triangle_for_page(
+    stamp: usize,
+    tri_indexes: [usize; 3],
+    page: PageSize,
+    state: P4State,
+) -> P4Triangle {
+    let model = state.model;
+    let proj = state.projection;
+    let depth_scale = state.depth_scale;
     let record = &ADDPOINTS[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
     let draw_params = [
         read_f32(record, 96),
@@ -333,8 +451,10 @@ fn unpack_p4_triangle(stamp: usize, tri_indexes: [usize; 3]) -> P4Triangle {
             fmul(fadd(fdiv(clip[1], clip[3]), 1.0), 0.5),
         ];
         let inv_w = fdiv(1.0, clip[3]);
-        let wx = fadd(fmul(fmul(clip[0], inv_w), 96.0), 96.0);
-        let wy = fadd(fmul(fmul(clip[1], inv_w), 96.0), 96.0);
+        let half_width = (page.width as f64 * 0.5) as f32;
+        let half_height = (page.height as f64 * 0.5) as f32;
+        let wx = fadd(fmul(fmul(clip[0], inv_w), half_width), half_width);
+        let wy = fadd(fmul(fmul(clip[1], inv_w), half_height), half_height);
         *vertex = P4Vertex {
             x: wx,
             y: wy,
@@ -364,9 +484,33 @@ fn render_p4(
     mask: &[u8],
     depth: &[u8],
 ) -> usize {
+    render_p4_for_page(
+        canvas,
+        PageSize {
+            width: PAGE,
+            height: PAGE,
+        },
+        stamp,
+        read_p4_state(STATE, stamp),
+        brush,
+        mask,
+        depth,
+    )
+}
+
+fn render_p4_for_page(
+    canvas: &mut [Rgba],
+    page: PageSize,
+    stamp: usize,
+    state: P4State,
+    brush: &[Rgba],
+    mask: &[u8],
+    depth: &[u8],
+) -> usize {
+    assert_eq!(canvas.len(), page.width * page.height);
     let mut touched = std::collections::BTreeSet::new();
     for ids in [[0, 1, 2], [3, 4, 5]] {
-        let tri = unpack_p4_triangle(stamp, ids);
+        let tri = unpack_p4_triangle_for_page(stamp, ids, page, state);
         let min_x = ((tri
             .pos
             .iter()
@@ -382,7 +526,7 @@ fn render_p4(
             .fold(f64::NEG_INFINITY, f64::max)
             - 0.5)
             .ceil() as isize)
-            .min(PAGE as isize - 1);
+            .min(page.width as isize - 1);
         let min_y = ((tri
             .pos
             .iter()
@@ -398,13 +542,13 @@ fn render_p4(
             .fold(f64::NEG_INFINITY, f64::max)
             - 0.5)
             .ceil() as isize)
-            .min(PAGE as isize - 1);
+            .min(page.height as isize - 1);
         if min_x > max_x || min_y > max_y {
             continue;
         }
         for y in min_y as usize..=max_y as usize {
             for x in min_x as usize..=max_x as usize {
-                let index = y * PAGE + x;
+                let index = y * page.width + x;
                 if touched.contains(&index) {
                     continue;
                 }
@@ -412,33 +556,22 @@ fn render_p4(
                     continue;
                 }
                 touched.insert(index);
-                let mu = f64::from(eval_plane(tri.mask_u, x, y));
-                let mv = f64::from(eval_plane(tri.mask_v, x, y));
-                let du = f64::from(eval_plane(tri.depth_u, x, y));
-                let dv = f64::from(eval_plane(tri.depth_v, x, y));
-                let src = sample_nearest_rgba(brush, FEEDBACK, FEEDBACK, mu, mv).0;
-                let mask_r =
-                    f64::from(sample_nearest_r8(mask, MASK_W, MASK_H, mu, mv, false)) / 255.0;
-                let depth_r = sample_linear_r8(depth, DEPTH_W, DEPTH_H, du, dv, true);
-                let alpha = fmul(
-                    fmul((f64::from(src[3]) / 255.0) as f32, mask_r as f32),
-                    depth_r as f32,
-                );
-                let rgb: [f32; 3] = std::array::from_fn(|c| {
-                    fmul(
-                        fmul((f64::from(src[c]) / 255.0) as f32, mask_r as f32),
-                        depth_r as f32,
-                    )
+                let mu = eval_plane(tri.mask_u, x, y);
+                let mv = eval_plane(tri.mask_v, x, y);
+                let du = eval_plane(tri.depth_u, x, y);
+                let dv = eval_plane(tri.depth_v, x, y);
+                let src = sample_nearest_rgba_lp(brush, FEEDBACK, FEEDBACK, mu, mv);
+                let mask_r = sample_nearest_r8_lp(mask, MASK_W, MASK_H, mu, mv, false);
+                let depth_r = sample_linear_r8_lp(depth, DEPTH_W, DEPTH_H, du, dv, true);
+                // P4 NIR multiplies sampled brush by depth first, then by mask.
+                let alpha = fmul(fmul(src[3], depth_r), mask_r);
+                let rgb: [f32; 3] = std::array::from_fn(|c| fmul(fmul(src[c], depth_r), mask_r));
+                // This host converts the fragment source to RGBA8 before
+                // the fixed-function normalized-integer blend with its RGBA8 dst.
+                let src = std::array::from_fn(|channel| {
+                    quant(if channel == 3 { alpha } else { rgb[channel] })
                 });
-                let dst = canvas[index].0;
-                let inv = 1.0 - f64::from(alpha);
-                let out = [
-                    f64::from(rgb[0]) + (f64::from(dst[0]) / 255.0) * inv,
-                    f64::from(rgb[1]) + (f64::from(dst[1]) / 255.0) * inv,
-                    f64::from(rgb[2]) + (f64::from(dst[2]) / 255.0) * inv,
-                    f64::from(alpha) + (f64::from(dst[3]) / 255.0) * inv,
-                ];
-                canvas[index] = Rgba(out.map(quant));
+                canvas[index] = Rgba(rgba8_source_over(src, canvas[index].0));
             }
         }
     }
@@ -446,12 +579,16 @@ fn render_p4(
 }
 
 fn read_p3_state(index: usize) -> P3State {
+    read_p3_state_from(STATE, index)
+}
+
+fn read_p3_state_from(bytes: &[u8], index: usize) -> P3State {
     let base = 64 + ADDPOINT_COUNT * 72 + index * 140;
     P3State {
-        projection: std::array::from_fn(|i| read_f32(STATE, base + i * 4)),
-        model: std::array::from_fn(|i| read_f32(STATE, base + 64 + i * 4)),
-        depth_scale: [read_f32(STATE, base + 128), read_f32(STATE, base + 132)],
-        ratio: read_f32(STATE, base + 136),
+        projection: std::array::from_fn(|i| read_f32(bytes, base + i * 4)),
+        model: std::array::from_fn(|i| read_f32(bytes, base + 64 + i * 4)),
+        depth_scale: [read_f32(bytes, base + 128), read_f32(bytes, base + 132)],
+        ratio: read_f32(bytes, base + 136),
     }
 }
 
@@ -462,6 +599,28 @@ fn render_p3(
     depth: &[u8],
     brush: &[Rgba],
 ) -> Vec<Rgba> {
+    render_p3_for_page(
+        canvas,
+        PageSize {
+            width: PAGE,
+            height: PAGE,
+        },
+        params,
+        mask,
+        depth,
+        brush,
+    )
+}
+
+fn render_p3_for_page(
+    canvas: &[Rgba],
+    page: PageSize,
+    params: P3State,
+    mask: &[u8],
+    depth: &[u8],
+    brush: &[Rgba],
+) -> Vec<Rgba> {
+    assert_eq!(canvas.len(), page.width * page.height);
     let mut out = vec![Rgba::default(); FEEDBACK * FEEDBACK];
     let mut vertices = [[0.0_f64; 4]; 6];
     for (row, v) in vertices.iter_mut().enumerate() {
@@ -499,30 +658,28 @@ fn render_p3(
                     (weights[0] * tri[0][lane] + weights[1] * tri[1][lane])
                         + weights[2] * tri[2][lane]
                 };
-                let (cu, cv) = (lerp(2), lerp(3));
-                // Brush coordinates are the untransformed attribute ZW lanes.
-                let bu = weights[0] * f64::from(read_f32(P3_VBO, ids[0] * 16 + 8))
+                let (cu, cv) = (lerp(2) as f32, lerp(3) as f32);
+                // Brush/mask coordinates are the untransformed attribute ZW lanes.
+                let bu = (weights[0] * f64::from(read_f32(P3_VBO, ids[0] * 16 + 8))
                     + weights[1] * f64::from(read_f32(P3_VBO, ids[1] * 16 + 8))
-                    + weights[2] * f64::from(read_f32(P3_VBO, ids[2] * 16 + 8));
-                let bv = weights[0] * f64::from(read_f32(P3_VBO, ids[0] * 16 + 12))
+                    + weights[2] * f64::from(read_f32(P3_VBO, ids[2] * 16 + 8)))
+                    as f32;
+                let bv = (weights[0] * f64::from(read_f32(P3_VBO, ids[0] * 16 + 12))
                     + weights[1] * f64::from(read_f32(P3_VBO, ids[1] * 16 + 12))
-                    + weights[2] * f64::from(read_f32(P3_VBO, ids[2] * 16 + 12));
-                let cr = sample_linear_rgba(canvas, PAGE, PAGE, cu, cv);
-                let mu = f64::from(sample_nearest_r8(mask, MASK_W, MASK_H, bu, bv, false)) / 255.0;
-                let du = cu * f64::from(params.depth_scale[0]);
-                let dv = cv * f64::from(params.depth_scale[1]);
-                let dr = sample_linear_r8(depth, DEPTH_W, DEPTH_H, du, dv, true);
-                let b = fmul(fmul(mu as f32, params.ratio), dr as f32);
-                let ca: [f32; 4] = cr.map(|c| fmul(c as f32, b));
-                let br = sample_nearest_rgba(brush, FEEDBACK, FEEDBACK, bu, bv).0;
-                let alpha_inv = 1.0 - f64::from(ca[3]);
-                let result = [
-                    f64::from(ca[0]) + (f64::from(br[0]) / 255.0) * alpha_inv,
-                    f64::from(ca[1]) + (f64::from(br[1]) / 255.0) * alpha_inv,
-                    f64::from(ca[2]) + (f64::from(br[2]) / 255.0) * alpha_inv,
-                    f64::from(ca[3]) + (f64::from(br[3]) / 255.0) * alpha_inv,
-                ];
-                out[index] = Rgba(result.map(quant));
+                    + weights[2] * f64::from(read_f32(P3_VBO, ids[2] * 16 + 12)))
+                    as f32;
+                let cr = sample_linear_rgba_lp(canvas, page.width, page.height, cu, cv);
+                let mu = sample_nearest_r8_lp(mask, MASK_W, MASK_H, bu, bv, false);
+                let du = fmul(cu, params.depth_scale[0]);
+                let dv = fmul(cv, params.depth_scale[1]);
+                let dr = sample_linear_r8_lp(depth, DEPTH_W, DEPTH_H, du, dv, true);
+                let b = fmul(fmul(mu, params.ratio), dr);
+                let ca: [f32; 4] = cr.map(|c| fmul(c, b));
+                let br = sample_nearest_rgba_lp(brush, FEEDBACK, FEEDBACK, bu, bv);
+                let alpha_inv = 1.0 - ca[3];
+                let result: [u8; 4] =
+                    std::array::from_fn(|c| quant(ca[c] + fmul(br[c], alpha_inv)));
+                out[index] = Rgba(result);
             }
         }
     }
@@ -564,6 +721,39 @@ fn decode_native_prefix_bundle(bytes: &'static [u8]) -> Vec<&'static [u8]> {
     prefixes
 }
 
+fn read_u32_le(bytes: &[u8], offset: usize) -> u32 {
+    u32::from_le_bytes(bytes[offset..offset + 4].try_into().expect("four-byte u32"))
+}
+
+fn decode_v17_native_prefix_bundle(bytes: &'static [u8]) -> Vec<&'static [u8]> {
+    assert_eq!(sha256(bytes), V17_PREFIX_BUNDLE_SHA256);
+    assert!(bytes.len() >= 18);
+    assert_eq!(&bytes[..8], b"SDOCXOV2");
+    assert_eq!(read_u32_le(bytes, 8), V17_PAGE_WIDTH as u32);
+    assert_eq!(read_u32_le(bytes, 12), V17_PAGE_HEIGHT as u32);
+    assert_eq!(read_u16_le(bytes, 16) as usize, NATIVE_PREFIX_COUNT);
+
+    let mut offset: usize = 18;
+    let mut prefixes = Vec::with_capacity(NATIVE_PREFIX_COUNT);
+    for index in 0..NATIVE_PREFIX_COUNT {
+        let count_end = offset.checked_add(4).expect("V17 prefix count offset");
+        assert!(count_end <= bytes.len(), "V17 prefix {index} missing count");
+        let records = read_u32_le(bytes, offset) as usize;
+        let payload_bytes = records.checked_mul(8).expect("V17 sparse payload size");
+        let payload_end = count_end
+            .checked_add(payload_bytes)
+            .expect("V17 payload end");
+        assert!(
+            payload_end <= bytes.len(),
+            "V17 prefix {index} truncated payload"
+        );
+        prefixes.push(&bytes[count_end..payload_end]);
+        offset = payload_end;
+    }
+    assert_eq!(offset, bytes.len(), "V17 trailing bundle bytes");
+    prefixes
+}
+
 fn decode_expected(bytes: &[u8], expected_sha: &str) -> BTreeMap<usize, Rgba> {
     assert_eq!(sha256(bytes), expected_sha);
     assert_eq!(bytes.len() % 6, 0);
@@ -572,6 +762,20 @@ fn decode_expected(bytes: &[u8], expected_sha: &str) -> BTreeMap<usize, Rgba> {
         let index = usize::from(u16::from_le_bytes([r[0], r[1]]));
         assert!(index < PIXELS);
         let rgba = Rgba([r[2], r[3], r[4], r[5]]);
+        assert!(rgba.0.iter().any(|c| *c != 0));
+        assert!(out.insert(index, rgba).is_none());
+    }
+    out
+}
+
+fn decode_v17_expected(bytes: &[u8], expected_sha: &str) -> BTreeMap<usize, Rgba> {
+    assert_eq!(sha256(bytes), expected_sha);
+    assert_eq!(bytes.len() % 8, 0);
+    let mut out = BTreeMap::new();
+    for record in bytes.as_chunks::<8>().0 {
+        let index = read_u32_le(record, 0) as usize;
+        assert!(index < V17_PIXELS);
+        let rgba = Rgba(record[4..8].try_into().expect("four-byte RGBA"));
         assert!(rgba.0.iter().any(|c| *c != 0));
         assert!(out.insert(index, rgba).is_none());
     }
@@ -640,6 +844,61 @@ fn simulate() -> Vec<DiffStats> {
     }
     assert_eq!(feedback_unique, [1, 1, 1]);
     assert!(brush.iter().all(|p| p.0 == [68, 170, 238, 255]));
+    stats
+}
+
+fn simulate_v17_public_drawing() -> Vec<DiffStats> {
+    assert_eq!(ADDPOINTS.len(), ADDPOINT_COUNT * ADDPOINT_STRIDE);
+    assert_eq!(sha256(ADDPOINTS), ADDPOINT_SHA256);
+    assert_eq!(sha256(P3_VBO), P3_VBO_SHA256);
+    assert_eq!(P3_VBO, &ADDPOINTS[..96]);
+    assert_eq!(V17_STATE.len(), STATE_BYTES);
+    assert_eq!(sha256(V17_STATE), V17_STATE_SHA256);
+    let native_prefixes = decode_v17_native_prefix_bundle(V17_PREFIX_BUNDLE);
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let page = PageSize {
+        width: V17_PAGE_WIDTH,
+        height: V17_PAGE_HEIGHT,
+    };
+    let mut canvas = vec![Rgba::default(); page.width * page.height];
+    // The captured Model color is 0x8044aaee. OilBrush3 initializes its feedback brush
+    // as the source RGB with opaque alpha; the pre-feedback readback is not a model input.
+    let color_argb = 0x8044_aaee_u32;
+    let initial_brush_color = Rgba([
+        ((color_argb >> 16) & 0xff) as u8,
+        ((color_argb >> 8) & 0xff) as u8,
+        (color_argb & 0xff) as u8,
+        0xff,
+    ]);
+    let mut brush = vec![initial_brush_color; FEEDBACK * FEEDBACK];
+    let mut p3_index = 0;
+    let mut stats = Vec::with_capacity(ADDPOINT_COUNT);
+    for stamp in 0..ADDPOINT_COUNT {
+        if matches!(stamp, 3 | 7 | 11) {
+            brush = render_p3_for_page(
+                &canvas,
+                page,
+                read_p3_state_from(V17_STATE, p3_index),
+                &mask,
+                &depth,
+                &brush,
+            );
+            p3_index += 1;
+        }
+        render_p4_for_page(
+            &mut canvas,
+            page,
+            stamp,
+            read_p4_state(V17_STATE, stamp),
+            &brush,
+            &mask,
+            &depth,
+        );
+        let expected = decode_v17_expected(native_prefixes[stamp], V17_PREFIX_SHA256[stamp]);
+        stats.push(compare_frame(&canvas, &expected));
+    }
+    assert_eq!(p3_index, 3);
     stats
 }
 
@@ -1008,7 +1267,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn oilbrush3_v23_source_model_matches_all_native_prefix_support_and_bounded_rgb_error() {
+    fn oilbrush3_v17_public_drawing_source_model_matches_native_prefixes_exactly() {
+        let rows = simulate_v17_public_drawing();
+        assert_eq!(rows.len(), 15);
+        for (i, row) in rows.iter().enumerate() {
+            assert_eq!(
+                row.support,
+                V17_EXPECTED_SUPPORT[i],
+                "V17 prefix {} support",
+                i + 1
+            );
+            assert_eq!(
+                row.support_symdiff,
+                0,
+                "V17 prefix {} support symmetric difference",
+                i + 1
+            );
+            assert_eq!(row.diff_pixels, 0, "V17 prefix {} pixels", i + 1);
+            assert_eq!(row.sums, [0; 4], "V17 prefix {} channel sums", i + 1);
+            assert_eq!(row.max, [0; 4], "V17 prefix {} channel maxima", i + 1);
+        }
+    }
+
+    #[test]
+    fn oilbrush3_v23_source_model_matches_native_prefixes_exactly() {
         let rows = simulate();
         assert_eq!(rows.len(), 15);
         for (i, row) in rows.iter().enumerate() {
@@ -1019,23 +1301,9 @@ mod tests {
                 "prefix {} support symmetric difference",
                 i + 1
             );
-            assert!(
-                row.max[..3].iter().all(|v| *v <= 1),
-                "prefix {} RGB max: {:?}",
-                i + 1,
-                row.max
-            );
-            assert_eq!(row.max[3], 0, "prefix {} alpha max", i + 1);
-            assert_eq!(
-                row.diff_pixels,
-                EXPECTED_DIFF_PIXELS[i],
-                "prefix {} diff pixels",
-                i + 1
-            );
-            assert_eq!(row.sums, EXPECTED_ABS_SUMS[i], "prefix {} abs sums", i + 1);
+            assert_eq!(row.diff_pixels, 0, "V23 prefix {} pixels", i + 1);
+            assert_eq!(row.sums, [0; 4], "V23 prefix {} channel sums", i + 1);
+            assert_eq!(row.max, [0; 4], "V23 prefix {} channel maxima", i + 1);
         }
-        assert_eq!(rows[14].diff_pixels, 16);
-        assert_eq!(rows[14].sums, [6, 1, 11, 0]);
-        assert_eq!(rows[14].max, [1, 1, 1, 0]);
     }
 }

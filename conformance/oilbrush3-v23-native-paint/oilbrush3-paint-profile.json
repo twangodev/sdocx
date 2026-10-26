@@ -1,18 +1,18 @@
 {
   "assertion_contract": {
     "expected_support_symmetric_difference_zero": true,
-    "final_diff_pixels": 16,
+    "final_diff_pixels": 0,
     "final_sum_abs_rgba": [
-      6,
-      1,
-      11,
+      0,
+      0,
+      0,
       0
     ],
     "max_abs_alpha8_error": 0,
     "max_abs_rgb8_error_per_channel": [
-      1,
-      1,
-      1
+      0,
+      0,
+      0
     ],
     "native_prefix_alpha_support": [
       3,
@@ -31,7 +31,7 @@
       67,
       76
     ],
-    "source": "V23 comparison receipt; native sparse frames are only comparison oracles."
+    "source": "All 15 expected native frames unchanged; Rust model uses fixed-point lowp sampling and RGBA8 pre-blend quantization."
   },
   "inputs": {
     "draw_state": {
@@ -87,7 +87,8 @@
     "Pixel-center triangle ownership/interpolation, F32/FMA emulation, and RGBA8 round-even are bounded CPU model assumptions; not guaranteed across drivers.",
     "P3-generated 16x16 RGBA8 feedback is generated from the CPU canvas/source shader after draws 3, 7, and 11; no native feedback pixels are inputs.",
     "Native frames are expected outputs only and are never used to compute triangles, varyings, texture samples, canvas, P3 feedback, or paint values.",
-    "Native expected RGBA8 sparse prefixes are stored together in the versioned SDOCXOB1 bundle; per-prefix payload SHA-256 values remain pinned independently."
+    "Native expected RGBA8 sparse prefixes are stored together in the versioned SDOCXOB1 bundle; per-prefix payload SHA-256 values remain pinned independently.",
+    "Updated host model follows captured OilBrush3 sampler LLVM and pinned common Mesa normalized-byte blend lowering. Oil-specific active blend IR and MXCSR rounding mode were not captured; nearest-even remains an explicit host assumption."
   ],
   "native_expected_prefixes": [
     {
