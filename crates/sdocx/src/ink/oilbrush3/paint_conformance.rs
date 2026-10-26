@@ -643,6 +643,366 @@ fn simulate() -> Vec<DiffStats> {
     stats
 }
 
+// Test-only V25 SVG conformance builder. It uses the bounded captured P4/P3
+// source inputs and never embeds a CPU or captured framebuffer as a page image.
+#[cfg(feature = "pdf")]
+fn svg_data_uri(width: u32, height: u32, rgba: &[u8]) -> String {
+    use base64::Engine as _;
+    let mut encoded = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut encoded, width, height);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        let mut writer = encoder.write_header().expect("PNG header");
+        writer.write_image_data(rgba).expect("PNG pixels");
+    }
+    format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(encoded)
+    )
+}
+
+#[cfg(feature = "pdf")]
+fn svg_texture_uri(width: usize, height: usize, pixels: &[Rgba]) -> String {
+    assert_eq!(pixels.len(), width * height);
+    // The model arrays use GL bottom-row-first order; PNG rows are top-down.
+    let mut rgba = Vec::with_capacity(pixels.len() * 4);
+    for y in (0..height).rev() {
+        for p in &pixels[y * width..(y + 1) * width] {
+            rgba.extend_from_slice(&p.0);
+        }
+    }
+    svg_data_uri(width as u32, height as u32, &rgba)
+}
+
+#[cfg(feature = "pdf")]
+fn svg_brush_clamped_uri(pixels: &[Rgba]) -> String {
+    assert_eq!(pixels.len(), FEEDBACK * FEEDBACK);
+    let mut padded = vec![Rgba::default(); 18 * 18];
+    for y in 0usize..18 {
+        for x in 0usize..18 {
+            let sx = x.saturating_sub(1).min(FEEDBACK - 1);
+            let sy = y.saturating_sub(1).min(FEEDBACK - 1);
+            padded[y * 18 + x] = pixels[sy * FEEDBACK + sx];
+        }
+    }
+    // GL_CLAMP_TO_EDGE extends the source texel at each border; this direct
+    // padded carrier removes SVG image-edge coverage from the actual quad clip.
+    svg_texture_uri(18, 18, &padded)
+}
+
+#[cfg(feature = "pdf")]
+fn svg_r8_uri(width: usize, height: usize, values: &[u8]) -> String {
+    assert_eq!(values.len(), width * height);
+    let mut rgba = Vec::with_capacity(values.len() * 4);
+    // Preserve the native source-upload row order for mask and depth inputs.
+    for y in 0..height {
+        for r in &values[y * width..(y + 1) * width] {
+            // Match the captured source PNG carrier: R8 is replicated to RGB,
+            // with opaque alpha. The shader-facing filter matrix later reads R.
+            rgba.extend_from_slice(&[*r, *r, *r, 255]);
+        }
+    }
+    svg_data_uri(width as u32, height as u32, &rgba)
+}
+
+#[cfg(feature = "pdf")]
+fn svg_depth_repeat_uri(depth: &[u8]) -> String {
+    assert_eq!(depth.len(), DEPTH_W * DEPTH_H);
+    // Captured depth coordinates range from about -.013 to .091 on both axes.
+    // A 3x3 source-texture tiling preserves GL_REPEAT without baking a page.
+    let mut tiled = vec![0; DEPTH_W * 3 * DEPTH_H * 3];
+    let width = DEPTH_W * 3;
+    for ty in 0..3 {
+        for tx in 0..3 {
+            for y in 0..DEPTH_H {
+                let dst = (ty * DEPTH_H + y) * width + tx * DEPTH_W;
+                tiled[dst..dst + DEPTH_W].copy_from_slice(&depth[y * DEPTH_W..(y + 1) * DEPTH_W]);
+            }
+        }
+    }
+    // Source textures are encoded in their captured upload row order. The
+    // shader V coordinate is used directly for these source R8 inputs.
+    svg_r8_uri(width, DEPTH_H * 3, &tiled)
+}
+
+#[cfg(feature = "pdf")]
+fn svg_doc_plane(p: Plane) -> [f64; 3] {
+    let [origin, dx, dy] = p.0.map(f64::from);
+    // Preserve the native Mesa F32 plane and change coordinate bases in F64.
+    // Native plane coordinates are fragment centers in GL bottom-origin space;
+    // SVG document coordinates are top-origin with x/y pixel centers at n+.5.
+    [dx, -dy, origin - 0.5 * dx + (PAGE as f64 - 0.5) * dy]
+}
+
+#[cfg(feature = "pdf")]
+fn svg_plane_image_map(
+    u_plane: Plane,
+    v_plane: Plane,
+    scale_u: f64,
+    scale_v: f64,
+    offset_u: f64,
+    offset_v: f64,
+    flip_v: bool,
+) -> [f64; 6] {
+    // Source-image coordinates are an affine function of document coordinates:
+    // (u_doc,v_doc) come from the captured global Mesa planes, not refitted UVs.
+    let u = svg_doc_plane(u_plane);
+    let v = svg_doc_plane(v_plane);
+    let sy = if flip_v { -scale_v } else { scale_v };
+    let so = if flip_v { scale_v + offset_v } else { offset_v };
+    let sx = [scale_u * u[0], scale_u * u[1], scale_u * u[2] + offset_u];
+    let sy = [sy * v[0], sy * v[1], sy * v[2] + so];
+    let det = sx[0] * sy[1] - sx[1] * sy[0];
+    assert!(
+        det.is_finite() && det.abs() > 1e-12,
+        "degenerate captured source plane"
+    );
+    // Invert source(x,y)=A*document(x,y)+b to obtain SVG's image transform.
+    let a = sy[1] / det;
+    let c = -sx[1] / det;
+    let b = -sy[0] / det;
+    let d = sx[0] / det;
+    let e = -(a * sx[2] + c * sy[2]);
+    let f = -(b * sx[2] + d * sy[2]);
+    [a, b, c, d, e, f]
+}
+
+#[cfg(feature = "pdf")]
+fn svg_matrix(m: [f64; 6]) -> String {
+    format!(
+        "matrix({:.17} {:.17} {:.17} {:.17} {:.17} {:.17})",
+        m[0], m[1], m[2], m[3], m[4], m[5]
+    )
+}
+
+#[cfg(feature = "pdf")]
+fn append_p4_svg_defs(
+    svg: &mut String,
+    stamp: usize,
+    brush_uri: &str,
+    mask_uri: &str,
+    depth_uri: &str,
+) {
+    use std::fmt::Write as _;
+    let filter = format!("oil-p4-{stamp}");
+    let brush_page = format!("oil-brush-page-{stamp}");
+    let mask_page = format!("oil-mask-page-{stamp}");
+    let depth_page = format!("oil-depth-page-{stamp}");
+    for (kind, page, uri, dims, mode) in [
+        ("brush", &brush_page, brush_uri, [18, 18], "pixelated"),
+        ("mask", &mask_page, mask_uri, [18, 18], "pixelated"),
+        (
+            "depth",
+            &depth_page,
+            depth_uri,
+            [DEPTH_W * 3, DEPTH_H * 3],
+            "smooth",
+        ),
+    ] {
+        let source_id = match kind {
+            "brush" => format!("oil-brush-source-{stamp}"),
+            "mask" => "oil-mask-source".to_owned(),
+            _ => "oil-depth-source".to_owned(),
+        };
+        if kind == "brush" || (kind == "depth" && stamp == 0) {
+            let _ = write!(
+                svg,
+                "<image id=\"{source_id}\" x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" href=\"{}\" image-rendering=\"{}\" style=\"image-rendering:{}\"/>",
+                dims[0],
+                dims[1],
+                uri,
+                if mode == "pixelated" {
+                    "optimizeSpeed"
+                } else {
+                    "optimizeQuality"
+                },
+                mode
+            );
+        }
+        let _ = write!(svg, "<g id=\"{page}\">");
+        for (tri_index, ids) in [[0, 1, 2], [3, 4, 5]].into_iter().enumerate() {
+            let tri = unpack_p4_triangle(stamp, ids);
+            let dest = tri
+                .pos
+                .map(|p| [f64::from(p[0]), PAGE as f64 - f64::from(p[1])]);
+            let planes = match kind {
+                // P4 vertex-shader event 110 assigns vBrushUV = aVertex.zw;
+                // fragment-shader event 114 samples both brush and mask with
+                // vBrushUV. The source is pinned in capture.json SHA-256
+                // 8dbf4a98…; canvas UV is used for depth only on this route.
+                "brush" => (
+                    &tri.mask_u,
+                    &tri.mask_v,
+                    FEEDBACK as f64,
+                    FEEDBACK as f64,
+                    1.0,
+                    1.0,
+                    true,
+                ),
+                "mask" => (
+                    &tri.mask_u,
+                    &tri.mask_v,
+                    MASK_W as f64,
+                    MASK_H as f64,
+                    1.0,
+                    1.0,
+                    false,
+                ),
+                _ => (
+                    &tri.depth_u,
+                    &tri.depth_v,
+                    DEPTH_W as f64,
+                    DEPTH_H as f64,
+                    DEPTH_W as f64,
+                    DEPTH_H as f64,
+                    false,
+                ),
+            };
+            let matrix = svg_matrix(svg_plane_image_map(
+                *planes.0, *planes.1, planes.2, planes.3, planes.4, planes.5, planes.6,
+            ));
+            let clip = format!("oil-p4-clip-{stamp}-{tri_index}");
+            let _ = write!(
+                svg,
+                "<clipPath id=\"{clip}\" clipPathUnits=\"userSpaceOnUse\" shape-rendering=\"crispEdges\"><polygon shape-rendering=\"crispEdges\" points=\""
+            );
+            for p in dest {
+                let _ = write!(svg, "{:.17},{:.17} ", p[0], p[1]);
+            }
+            if kind == "mask" {
+                // V25 replaces only the nested clamp-copy graph with this
+                // direct image node, retaining the captured transform and
+                // crisp-edged triangle clip.
+                let _ = write!(
+                    svg,
+                    "\"/></clipPath><g clip-path=\"url(#{clip})\" shape-rendering=\"crispEdges\"><image x=\"0\" y=\"0\" width=\"18\" height=\"18\" preserveAspectRatio=\"none\" href=\"{}\" transform=\"{}\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/></g>",
+                    uri, matrix
+                );
+            } else {
+                let _ = write!(
+                    svg,
+                    "\"/></clipPath><g clip-path=\"url(#{clip})\"><use href=\"#{source_id}\" transform=\"{}\" image-rendering=\"{}\" style=\"image-rendering:{}\"/></g>",
+                    matrix,
+                    if mode == "pixelated" {
+                        "optimizeSpeed"
+                    } else {
+                        "optimizeQuality"
+                    },
+                    mode
+                );
+            }
+        }
+        let _ = write!(svg, "</g>");
+    }
+    let _ = write!(
+        svg,
+        "<filter id=\"{filter}\" filterUnits=\"userSpaceOnUse\" primitiveUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" color-interpolation-filters=\"sRGB\"><feImage href=\"#{brush_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"brush\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{mask_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"mask\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\"/><feImage href=\"#{depth_page}\" x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" preserveAspectRatio=\"none\" result=\"depth\" image-rendering=\"optimizeQuality\" style=\"image-rendering:smooth\"/><feColorMatrix in=\"mask\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"maskRGBA\"/><feColorMatrix in=\"depth\" type=\"matrix\" values=\"0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0\" result=\"depthRGBA\"/><feComposite in=\"maskRGBA\" in2=\"depthRGBA\" operator=\"arithmetic\" k1=\"1\" k2=\"0\" k3=\"0\" k4=\"0\" result=\"maskDepth\"/><feComposite in=\"brush\" in2=\"maskDepth\" operator=\"in\" result=\"stamp\"/></filter>"
+    );
+}
+
+#[cfg(feature = "pdf")]
+fn oilbrush3_v25_svg(prefix: usize) -> String {
+    // This is bounded to the captured 15-draw profile and five checked prefix
+    // lengths. Texture20 is modeled as transparent after its null allocation;
+    // the native capture has no clear of that target before the first P4 draw.
+    // The 192x192 canvas below remains a vector/use graph; the separate CPU
+    // canvas exists only to derive each source-input 16x16 P3 feedback texture.
+    use std::fmt::Write as _;
+    assert!([3, 7, 8, 11, 15].contains(&prefix));
+    assert_eq!(sha256(ADDPOINTS), ADDPOINT_SHA256);
+    assert_eq!(sha256(P3_VBO), P3_VBO_SHA256);
+    assert_eq!(sha256(STATE), STATE_SHA256);
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let mut mask18 = vec![0u8; 18 * 18];
+    for y in 0..18 {
+        for x in 0..18 {
+            mask18[y * 18 + x] =
+                mask[y.saturating_sub(1).min(15) * MASK_W + x.saturating_sub(1).min(15)];
+        }
+    }
+    let mask_uri = svg_r8_uri(18, 18, &mask18);
+    let depth_uri = svg_depth_repeat_uri(&depth);
+    let mut svg = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{PAGE}\" height=\"{PAGE}\" viewBox=\"0 0 {PAGE} {PAGE}\"><defs><g id=\"oil-canvas-0\"/>"
+    );
+    let mut canvas = vec![Rgba::default(); PIXELS];
+    let blue = Rgba([68, 170, 238, 255]);
+    let mut brush = vec![blue; FEEDBACK * FEEDBACK];
+    let mut p3 = 0;
+    let mut current = 0usize;
+    for stamp in 0..prefix {
+        if matches!(stamp, 3 | 7 | 11) {
+            brush = render_p3(&canvas, read_p3_state(p3), &mask, &depth, &brush);
+            assert!(
+                brush.iter().all(|p| p.0 == [68, 170, 238, 255]),
+                "captured profile P3 source model must produce the checked 16x16 texture"
+            );
+            p3 += 1;
+        }
+        let brush_uri = svg_brush_clamped_uri(&brush);
+        append_p4_svg_defs(&mut svg, stamp, &brush_uri, &mask_uri, &depth_uri);
+        let next = stamp + 1;
+        let _ = write!(
+            svg,
+            "<g id=\"oil-canvas-{next}\"><use href=\"#oil-canvas-{current}\"/><g filter=\"url(#oil-p4-{stamp})\"><rect x=\"0\" y=\"0\" width=\"{PAGE}\" height=\"{PAGE}\" fill=\"#000\" fill-opacity=\"0\"/></g></g>"
+        );
+        render_p4(&mut canvas, stamp, &brush, &mask, &depth);
+        current = next;
+    }
+    let _ = write!(svg, "</defs><use href=\"#oil-canvas-{current}\"/></svg>");
+    svg
+}
+
+#[cfg(feature = "pdf")]
+fn compare_resvg_prefix(prefix: usize) -> DiffStats {
+    let svg = oilbrush3_v25_svg(prefix);
+    let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).expect("generated V25 SVG");
+    let mut pix = resvg::tiny_skia::Pixmap::new(PAGE as u32, PAGE as u32).expect("page pixmap");
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
+    let native = decode_native_prefix_bundle(NATIVE_PREFIX_BUNDLE);
+    let sparse = decode_expected(native[prefix - 1], PREFIX_SHA256[prefix - 1]);
+    let actual: Vec<Rgba> = pix
+        .data()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|p| Rgba(*p))
+        .collect();
+    let mut expected_top = BTreeMap::new();
+    for (index, pixel) in sparse {
+        let x = index % PAGE;
+        let y_bottom = index / PAGE;
+        expected_top.insert((PAGE - 1 - y_bottom) * PAGE + x, pixel);
+    }
+    compare_frame(&actual, &expected_top)
+}
+
+#[cfg(all(test, feature = "pdf"))]
+mod v25_svg_tests {
+    use super::*;
+
+    #[test]
+    fn source_svg_matches_native_prefix_support_alpha_and_two_level_rgb_bound() {
+        for prefix in [3, 7, 8, 11, 15] {
+            let row = compare_resvg_prefix(prefix);
+            assert_eq!(row.support, EXPECTED_SUPPORT[prefix - 1], "prefix {prefix}");
+            assert_eq!(row.support_symdiff, 0, "prefix {prefix} support");
+            assert_eq!(row.max[3], 0, "prefix {prefix} alpha");
+            assert!(
+                row.max[..3].iter().all(|v| *v <= 2),
+                "prefix {prefix} RGB: {:?}",
+                row.max
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
