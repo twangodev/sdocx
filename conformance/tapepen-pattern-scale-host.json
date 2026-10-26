@@ -159,6 +159,14 @@
           48
         ],
         "final_rgba_sha256": "cbda544f2eb0f2e8ffd8714ba1848655b6b69cf0ea1a22ccca9c1d51242590cb"
+      },
+      "1e-7": {
+        "log_sha256": "a393a7a8fa690d27e2022efb433daac1c9e921633ae54985c224d814c81f8493",
+        "pattern_size_f32_bits": [
+          "0x36200000",
+          "0x35c00000"
+        ],
+        "final_rgba_sha256": "12c51ee44e9a4a6d4e177cd520f0cea12576a594b50bdda2ec8d2b829540d082"
       }
     }
   }

@@ -153,7 +153,9 @@ and final pixels differed from scale 1. A follow-up instruction trace directly o
 the near-zero branch remains inferred from static code and observed uniforms.
 A further host trace with scale `(1.5, 0.75)` and translation `(24, 16)`
 observed pattern size `(96, 48)` at pattern scale 1, and `(0, 0)` at scale
-0. This checks an axis-aligned matrix, not arbitrary transforms.
+0. At pattern scale `1e-7`, rounding before translation subtraction yields
+different x and y values (`0x36200000`, `0x35c00000`). This checks an
+axis-aligned matrix, not arbitrary transforms.
 
 The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
 reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it

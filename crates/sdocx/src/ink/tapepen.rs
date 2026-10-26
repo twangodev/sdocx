@@ -465,6 +465,8 @@ fn compare_independent_native_uniform_words() {
         (identity, 0x3f80_0000, [0x4280_0000, 0x4280_0000]),
         (transformed, 0x0000_0000, [0x0000_0000, 0x0000_0000]),
         (transformed, 0x3f80_0000, [0x42c0_0000, 0x4240_0000]),
+        // V50 translated tiny-scale capture retains rounding before subtraction.
+        (transformed, 0x33d6_bf95, [0x3620_0000, 0x35c0_0000]),
         // V47/V48 identity captures.
         (identity, 0x4000_0000, [0x4280_0000, 0x4280_0000]),
         (identity, 0x33d6_bf95, [0x35d6_bf95, 0x35d6_bf95]),
