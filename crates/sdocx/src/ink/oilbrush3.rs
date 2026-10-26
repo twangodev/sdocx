@@ -386,3 +386,8 @@ mod tests {
         }
     }
 }
+
+// Native-derived, source-input CPU paint conformance is test-only and bounded to its captured host profile.
+#[cfg(test)]
+#[path = "oilbrush3/paint_conformance.rs"]
+mod paint_conformance;

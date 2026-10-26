@@ -1,0 +1,270 @@
+{
+  "assertion_contract": {
+    "expected_support_symmetric_difference_zero": true,
+    "final_diff_pixels": 16,
+    "final_sum_abs_rgba": [
+      6,
+      1,
+      11,
+      0
+    ],
+    "max_abs_alpha8_error": 0,
+    "max_abs_rgb8_error_per_channel": [
+      1,
+      1,
+      1
+    ],
+    "native_prefix_alpha_support": [
+      3,
+      7,
+      9,
+      9,
+      10,
+      13,
+      17,
+      23,
+      31,
+      37,
+      43,
+      54,
+      61,
+      67,
+      76
+    ],
+    "source": "V23 comparison receipt; native sparse frames are only comparison oracles."
+  },
+  "inputs": {
+    "draw_state": {
+      "bytes": 1564,
+      "fixture": "oilbrush3-captured-draw-state-f32le.bin",
+      "layout": "16 F32 P4 projection; 15 records of 16 F32 P4 model matrix + 2 F32 depth scale; three records of 16 F32 P3 projection + 16 F32 P3 model + 2 F32 depth scale + F32 blend ratio.",
+      "sha256": "e8e6cdaf090ef76b70dd2824bcb7f7c979da910802794bc7183eb8ebbb383227"
+    },
+    "geometry": {
+      "bytes": 1680,
+      "fixture": "oilbrush3-addpoint-records-15x28-f32le.bin",
+      "role": "Actual 15 x 28-lane GLV1 AddPoint geometry output; lanes 0..23 include actual repeated P4 six-vertex VBO, lanes 24..27 are per-record source tuples.",
+      "sha256": "8862a946e50f1df2a4a74e940f58d3e03f839875e104d9cdeeba6efdd486870c"
+    },
+    "p3_vbo": {
+      "bytes": 96,
+      "fixture": "oilbrush3-p3-vbo-6x4-f32le.bin",
+      "role": "Actual six-vertex P3 VBO bytes; same captured bytes as repeated P4 vertex input.",
+      "sha256": "818bdaddffdbdd6e1cad09a1dac74a1da79ee482bf8b86ee601ccd93c0af3f39"
+    },
+    "textures": {
+      "depth": {
+        "dimensions": [
+          297,
+          372
+        ],
+        "fixture": "oilbrush3-depth-r8.zlib",
+        "png_path": "scratch/oilbrush3-material-capture-v9/svg-prototype/assets/depth297x372-red-opaque.png",
+        "png_sha256": "5c0b127592d1d08054189a8d56c76dbf54ff5a5c023af3439036f16195e1633e",
+        "r8_bytes": 110484,
+        "r8_sha256": "8188e033fffc6513cc997deb014033e7de1aacd8e27f5c6b464d491c7efaa27a",
+        "zlib_bytes": 103545,
+        "zlib_sha256": "dcfb7a42804115addcc085a729abbd5ba6915ee262363063be1f8c741ed65da5"
+      },
+      "mask": {
+        "dimensions": [
+          16,
+          16
+        ],
+        "fixture": "oilbrush3-mask-r8.zlib",
+        "png_path": "scratch/oilbrush3-material-capture-v9/svg-prototype/assets/mask16-red-opaque.png",
+        "png_sha256": "fe8bc6ff81b98f774bfff1f63f6c57ee2bbc01320adf77c8890966b52bbeb9f7",
+        "r8_bytes": 256,
+        "r8_sha256": "fc277b78270fbee42ba6cc96ff4050f5a76c595e9ec841de36e3b7fbe1e368dc",
+        "zlib_bytes": 68,
+        "zlib_sha256": "88e2c40eda7057f95a35a2b80f4d1e95da5ca72267651e4f12e2b93dd3523302"
+      }
+    }
+  },
+  "limitations": [
+    "CPU target starts transparent RGBA8; V23 capture has glTexImage2D null allocation and no proven explicit clear of target texture20 before the first draw, so zero initialization is an unverified profile assumption.",
+    "One synthetic 15-stamp host replay, fixed 192x192 Mesa llvmpipe GLES3.2; not Samsung device, PDF/SVG, or arbitrary document parity.",
+    "Pixel-center triangle ownership/interpolation, F32/FMA emulation, and RGBA8 round-even are bounded CPU model assumptions; not guaranteed across drivers.",
+    "P3-generated 16x16 RGBA8 feedback is generated from the CPU canvas/source shader after draws 3, 7, and 11; no native feedback pixels are inputs.",
+    "Native frames are expected outputs only and are never used to compute triangles, varyings, texture samples, canvas, P3 feedback, or paint values."
+  ],
+  "native_expected_prefixes": [
+    {
+      "archive_offset": 147486,
+      "bytes": 18,
+      "event": 928,
+      "fixture": "native-after-p4-01.sparse-rgba8.bin",
+      "fixture_sha256": "b9749d0227ccf3087119b940eba436258a33d86a5713bc33740c173af4fe5a4c",
+      "index": 1,
+      "raw_bottom_up_sha256": "ca8e8958c4455ee217a493be3a255c4edbca0ee6729ba70a22bb257d7ee4e6a6",
+      "records": 3
+    },
+    {
+      "archive_offset": 442398,
+      "bytes": 42,
+      "event": 963,
+      "fixture": "native-after-p4-02.sparse-rgba8.bin",
+      "fixture_sha256": "8b8aeba311fb068177fb647e50e83c9178e6bc33d363d2978aa8684711f2ac7e",
+      "index": 2,
+      "raw_bottom_up_sha256": "866b96ed2aa103e1dc32bc8ccc618f1c943ee43d7b4c9375acbe69e752f4328d",
+      "records": 7
+    },
+    {
+      "archive_offset": 737310,
+      "bytes": 54,
+      "event": 998,
+      "fixture": "native-after-p4-03.sparse-rgba8.bin",
+      "fixture_sha256": "1aee423e984a9384e2c741f1b026da86d8f26a028e90db6074e124511a7f19a0",
+      "index": 3,
+      "raw_bottom_up_sha256": "cd85ab3191b99d92c7d84d2d2feb19b076251147e6e884756fa4d3c884e1e019",
+      "records": 9
+    },
+    {
+      "archive_offset": 1034270,
+      "bytes": 54,
+      "event": 1071,
+      "fixture": "native-after-p4-04.sparse-rgba8.bin",
+      "fixture_sha256": "f34b6cc30f3754c30371e8e7283bc90f02795e875917fdba5aef6042dbe8229f",
+      "index": 4,
+      "raw_bottom_up_sha256": "86afcc916f658301985874de2ab68675b41cf93d61b0f460e6db9b0983629f15",
+      "records": 9
+    },
+    {
+      "archive_offset": 1329182,
+      "bytes": 60,
+      "event": 1106,
+      "fixture": "native-after-p4-05.sparse-rgba8.bin",
+      "fixture_sha256": "814a13898983b5cf723e676bfb0c87364ffd0f50bb75357734c0191da4816e03",
+      "index": 5,
+      "raw_bottom_up_sha256": "dbeb951c1c19958b8b9145c6f9394a1f88bf6adf8875c42ef804396f59f2c22b",
+      "records": 10
+    },
+    {
+      "archive_offset": 1624094,
+      "bytes": 78,
+      "event": 1141,
+      "fixture": "native-after-p4-06.sparse-rgba8.bin",
+      "fixture_sha256": "611729bc3b7d719222138818de227688c70a460ca6cb7b92aad4fb6cda7b02fb",
+      "index": 6,
+      "raw_bottom_up_sha256": "bcedad737ef3bf51b9933ba4e3b91fe491bda8204e7847d4c5bb7325e92c2d10",
+      "records": 13
+    },
+    {
+      "archive_offset": 1919006,
+      "bytes": 102,
+      "event": 1176,
+      "fixture": "native-after-p4-07.sparse-rgba8.bin",
+      "fixture_sha256": "e1ca0470a16be38a1fe55df43a27e2ea2e93144be36629cd1bbc887baf6460d0",
+      "index": 7,
+      "raw_bottom_up_sha256": "010b58d8d720965e53757f5eb1f83eb9b97f92e5d34afedd68b6058820c3a11d",
+      "records": 17
+    },
+    {
+      "archive_offset": 2215966,
+      "bytes": 138,
+      "event": 1247,
+      "fixture": "native-after-p4-08.sparse-rgba8.bin",
+      "fixture_sha256": "62e8cd23edfa96a5d79b6fff2764bfe3eb39293cde2d3278105dddb58e4247aa",
+      "index": 8,
+      "raw_bottom_up_sha256": "1c3ca8379e6f713045c3f4398ae502e6f1f9eff7e2c68aa1a9f31bf730de5c30",
+      "records": 23
+    },
+    {
+      "archive_offset": 2510878,
+      "bytes": 186,
+      "event": 1282,
+      "fixture": "native-after-p4-09.sparse-rgba8.bin",
+      "fixture_sha256": "c34d3d52e9feb19e17a0492aea157d3451afd40de98b4f580816d635a7d995ae",
+      "index": 9,
+      "raw_bottom_up_sha256": "cf1c25e2bac6aba7dddedb8f75f41a200513f20cbdf4c3e67e675aa6d9edcd25",
+      "records": 31
+    },
+    {
+      "archive_offset": 2805790,
+      "bytes": 222,
+      "event": 1317,
+      "fixture": "native-after-p4-10.sparse-rgba8.bin",
+      "fixture_sha256": "9e87fbe2c7814eaea6083f9a65d5aa0333487117b9cb64b7da5ab22c90ef6f9f",
+      "index": 10,
+      "raw_bottom_up_sha256": "b2f0815503d3523e550c4d2007f1f469e04521309beaa8ee7943ab87d8214d54",
+      "records": 37
+    },
+    {
+      "archive_offset": 3100702,
+      "bytes": 258,
+      "event": 1352,
+      "fixture": "native-after-p4-11.sparse-rgba8.bin",
+      "fixture_sha256": "b5fabe9e06b7cdbdc5430a836c6bb5caf83bdf1a161c18b5f297c2b2d30244ad",
+      "index": 11,
+      "raw_bottom_up_sha256": "e40d71ab5fb7a55315706cd20baefde1752c87a1877d0b960c3d3e158fa85c60",
+      "records": 43
+    },
+    {
+      "archive_offset": 3397662,
+      "bytes": 324,
+      "event": 1423,
+      "fixture": "native-after-p4-12.sparse-rgba8.bin",
+      "fixture_sha256": "1847b2e5a916e9c8ed1782558117877596b740b87918d051f1de5437b784d837",
+      "index": 12,
+      "raw_bottom_up_sha256": "f5b7e7c3545f3222935a3567a4dd218999cf018be758af25c7b9f4e38b904d51",
+      "records": 54
+    },
+    {
+      "archive_offset": 3692574,
+      "bytes": 366,
+      "event": 1458,
+      "fixture": "native-after-p4-13.sparse-rgba8.bin",
+      "fixture_sha256": "99706a4fa83a7da45284c4b4fac08a73eebacb4a4ae947d2f30bd1b7f24a3e78",
+      "index": 13,
+      "raw_bottom_up_sha256": "bc2c1aaaa67fb3296b2a0f9bdffd8e2b18357a2a1f023be72d221d9fa4887b45",
+      "records": 61
+    },
+    {
+      "archive_offset": 3987486,
+      "bytes": 402,
+      "event": 1493,
+      "fixture": "native-after-p4-14.sparse-rgba8.bin",
+      "fixture_sha256": "59655086e5af2afd8f70816a7ce8d699ebb6534d31cf4be2b1c56afa8dd741a7",
+      "index": 14,
+      "raw_bottom_up_sha256": "686bdd698a3ed1d17ffe7598db7535fd736794a13273c0cd28089460c156e143",
+      "records": 67
+    },
+    {
+      "archive_offset": 4282398,
+      "bytes": 456,
+      "event": 1528,
+      "fixture": "native-after-p4-15.sparse-rgba8.bin",
+      "fixture_sha256": "c8a5b1153dc13458d161696e957fe2f7be0f766a1467a2150f22e5b48061aa6b",
+      "index": 15,
+      "raw_bottom_up_sha256": "3cf1ceead230c64b09b203ea15e275c453d84ebf75d3935ae768d7000c10afaa",
+      "records": 76
+    }
+  ],
+  "provenance": {
+    "addpoint_input_fixture_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/input-fixture.json",
+    "addpoint_input_fixture_sha256": "85c09c60d66562b430b5377fa907c766eb0e2da6e04912ae134d8f6f900cf317",
+    "capture_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/captures/root-draw-snapshots-v10-a/capture.json",
+    "capture_sha256": "8dbf4a983df380f8944c319eb54caed64fecc1d008deb8812e515388331ab78c",
+    "comparison_receipt_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/source-full-15-cpu-feedback-v23-directmask-comparison/expected-only-comparison-v23.json",
+    "comparison_receipt_sha256": "ed6d1739265044d0aa15bdfef1c0e8b7cc42b857570fa28b1c19660371b631d2",
+    "material_payload_sha256": "8393cd2c68ca8cb71717de5b1ee1f70a35c857109eaf7d6afc454c6d5dc93099",
+    "p4_glplanes_receipt_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/source-full-15-mesa-glplanes-v16/captured-p4-glplanes-v16.json",
+    "p4_glplanes_receipt_sha256": "09005bb039e7e355874b057220dc17f1a9f8684498baae83f09d3230daacf947",
+    "snapshot_archive_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/captures/root-draw-snapshots-v10-a/draw-pass-fbo-snapshots.bin",
+    "snapshot_archive_sha256": "96438bc622e1527ae50130a065cc060e4f106628f3af20ff52d8e0949ad2171d",
+    "source_model_receipt_path": "scratch/oilbrush3-material-capture-v10-draw-snapshots/source-full-15-cpu-feedback-v23-directmask/source-cpu-model-v23.json",
+    "source_model_receipt_sha256": "a63ef47ef82056577c5fbdaf506b56a434d403302e01d559ab7a36fad30d7a5e"
+  },
+  "schema": "sdocx.oilbrush3.v23-rust-paint-fixtures.v1",
+  "scope": {
+    "GLES": "captured host Mesa llvmpipe GLES3.2 profile",
+    "capture": "synthetic ObjectStroke Drawing input replayed through a separately constructed OilBrush3 RTV1; controlled Mesa 192x192 target",
+    "input_pen": "OilBrush3, style read back from native Pen",
+    "native_Drawing_admission": false,
+    "natural_serialized_document": false,
+    "target_size": [
+      192,
+      192
+    ]
+  }
+}
