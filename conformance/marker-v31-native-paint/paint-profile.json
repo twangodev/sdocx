@@ -1,0 +1,204 @@
+{
+  "schema": "sdocx.marker.v31.native-paint-profile.v1",
+  "scope": {
+    "kind": "one synthetic saved native Model::ObjectStroke capture",
+    "serialized_or_natural_oracle": false,
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker",
+    "pen_version": 31,
+    "tool_type": 2,
+    "stroke_type": 0,
+    "curve_enabled": true,
+    "point_count": 4,
+    "size_f32_bits": "41400000",
+    "color_argb": "0x80ffcb30",
+    "target_rgba8": [
+      1920,
+      1080
+    ]
+  },
+  "source_receipt": {
+    "path": "scratch/legacy-marker-drawing-root-v31-preflight-fix/output/null.json",
+    "sha256": "73ffde5ea4ab6075bf78e92f0b1b702e1b03c5251d91552aab428270a4f6bc70",
+    "role": "Source evidence for VBO, cap texture, shader, uniforms, and GL state. The large capture receipt is not copied into conformance."
+  },
+  "source_cap_texture_sidecar": {
+    "path": "scratch/legacy-marker-drawing-root-v31-preflight-fix/output/null-cap-textures.rgba8.bin",
+    "sha256": "6355aeca3989e08ed0943f5d91931636800b49afe06b3cdc48d4cc3712f0923f",
+    "dimensions": [
+      54,
+      72
+    ],
+    "count": 2,
+    "role": "Actual glTexImage RGBA8 upload bytes; model input."
+  },
+  "context": {
+    "vendor": "Mesa",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "gles": "3.2",
+    "glsl": "3.20"
+  },
+  "draws": [
+    {
+      "program": 4,
+      "mode": "GL_TRIANGLE_STRIP",
+      "count": 48,
+      "attribute_lanes": 2
+    },
+    {
+      "program": 6,
+      "mode": "GL_TRIANGLES",
+      "count": 6,
+      "attribute_lanes": 4,
+      "texture_index": 0,
+      "revert_coordinate": 1.0
+    },
+    {
+      "program": 5,
+      "mode": "GL_TRIANGLE_STRIP",
+      "count": 56,
+      "attribute_lanes": 3
+    },
+    {
+      "program": 5,
+      "mode": "GL_TRIANGLE_STRIP",
+      "count": 56,
+      "attribute_lanes": 3
+    },
+    {
+      "program": 6,
+      "mode": "GL_TRIANGLES",
+      "count": 6,
+      "attribute_lanes": 4,
+      "texture_index": 1,
+      "revert_coordinate": 0.0
+    }
+  ],
+  "fixed_function": {
+    "viewport": [
+      0,
+      0,
+      1920,
+      1080
+    ],
+    "color_attachment": "RGBA8",
+    "depth_stencil_attachment": "DEPTH24_STENCIL8",
+    "clear_depth": 1.0,
+    "depth_func": "LESS",
+    "depth_test_by_draw": [
+      true,
+      true,
+      true,
+      true,
+      false
+    ],
+    "depth_write_by_draw": [
+      true,
+      true,
+      true,
+      true,
+      false
+    ],
+    "blend_equation": "FUNC_ADD",
+    "blend_src_rgb_alpha": "ONE",
+    "blend_dst_rgb_alpha": "ONE_MINUS_SRC_ALPHA",
+    "cap_filter": "NEAREST",
+    "cap_wrap": "CLAMP_TO_EDGE"
+  },
+  "assertion_contract": {
+    "native_prefix_support": [
+      247,
+      304,
+      337,
+      367,
+      423
+    ],
+    "required_support_symmetric_difference": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_abs_rgba8_channel_error_by_prefix": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "comparison": "Native frames are expected output only; CPU model independently rasterizes source VBOs/shaders/uniforms/textures/state."
+  },
+  "limitations": [
+    "Single synthetic four-point Model::ObjectStroke saved-route capture; not a serialized natural document.",
+    "Mesa llvmpipe capture profile and one fixed 1920x1080 target; not general GPU, scale, or arbitrary saved-file parity.",
+    "The one-level component tolerance covers observed fixed-function/F32 rounding only; no pixel values are copied or corrected.",
+    "No SVG/PDF or production rendering route is added by this test."
+  ],
+  "observed_cpu_model_vs_native_prefix_errors": {
+    "source": "V37 independent CPU model receipt; model generated from captured VBO, shaders, uniforms, cap textures, and GL state before native readback comparison.",
+    "receipt_path": "scratch/legacy-marker-drawing-root-v37-independent-cpu-raster/receipt.json",
+    "receipt_sha256": "1be33d43198e665aaf498339434d78842786d4c97511cc6a45b4c3e8ed496486",
+    "per_prefix": [
+      {
+        "draw": 0,
+        "diff_pixels": 0,
+        "diff_channel_bytes": 0,
+        "abs_sums_rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "max": 0
+      },
+      {
+        "draw": 1,
+        "diff_pixels": 4,
+        "diff_channel_bytes": 7,
+        "abs_sums_rgba": [
+          3,
+          1,
+          0,
+          3
+        ],
+        "max": 1
+      },
+      {
+        "draw": 2,
+        "diff_pixels": 5,
+        "diff_channel_bytes": 9,
+        "abs_sums_rgba": [
+          4,
+          1,
+          0,
+          4
+        ],
+        "max": 1
+      },
+      {
+        "draw": 3,
+        "diff_pixels": 6,
+        "diff_channel_bytes": 10,
+        "abs_sums_rgba": [
+          4,
+          2,
+          0,
+          4
+        ],
+        "max": 1
+      },
+      {
+        "draw": 4,
+        "diff_pixels": 8,
+        "diff_channel_bytes": 12,
+        "abs_sums_rgba": [
+          4,
+          3,
+          1,
+          4
+        ],
+        "max": 1
+      }
+    ]
+  }
+}
