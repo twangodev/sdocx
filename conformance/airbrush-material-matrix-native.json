@@ -1,0 +1,873 @@
+{
+  "binary": "airbrush-material-matrix-native.bin",
+  "binary_bytes": 1056,
+  "binary_format": {
+    "case": "index:u8,vbo_bytes:u16,sparse_count:u16,vbo bytes, sparse rows [x:u16,y_top_down:u16,RGBA8], little-endian",
+    "header": "magic[4],version:u16,case_count:u16",
+    "magic": "ABMX",
+    "sparse_frame_default": "transparent RGBA8 [0,0,0,0]",
+    "version": 1
+  },
+  "binary_sha256": "790f41410ad84341d1291c84272a04131931f8e9e1b8e38ad52c84e17db5315d",
+  "cases": [
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-0.log",
+      "capture_log_sha256": "361a0b7500a86a2454349c01469b37065b2554daf60072cd235eb2b259dfd0ef",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3.144-colorff44aaee-interior-basis3-bg00000000",
+      "index": 0,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 7,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 7,
+        "post_document_top_down_sha256": "cf1b3421fdc99e91190b61a04e73be5307c678eab0f1460a5dccef3123b5d051",
+        "post_gl_lower_left_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xff44aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0xff44aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "0074004300840043007c004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits_le": "4c374940",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x3244aaee",
+        "rt_set_pen_data_size_f32_bits": "0x4049374c",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8483e"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-1.log",
+      "capture_log_sha256": "dafdeb1c617204dc8dedc01cf43f9ca32e192c3f4388728afb2e1d312542e44c",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3.144-color8044aaee-interior-basis3-bg00000000",
+      "index": 1,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 7,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 7,
+        "post_document_top_down_sha256": "3ed92da40f162315a5c7c8ca5c1385df94d9e2f1102818dd2eb7698e9af87bc5",
+        "post_gl_lower_left_sha256": "940c7d45f6e2533b0e31064b7adea217e53c2921ef0462f338356247ea30c0bb",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0x8044aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0x8044aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "0074004300840043007c004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits_le": "4c374940",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x1944aaee",
+        "rt_set_pen_data_size_f32_bits": "0x4049374c",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8c83d"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-2.log",
+      "capture_log_sha256": "02fda07464f2c71d8916a419ffb480230eb37a28ddafc1161b4e487fcbb56cb7",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3.144-color0144aaee-interior-basis3-bg00000000",
+      "index": 2,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 2,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 2,
+        "post_document_top_down_sha256": "235934c821eadd3afec71b0103ac255dbbb2a38198281548030a30bef2c1ff0a",
+        "post_gl_lower_left_sha256": "235934c821eadd3afec71b0103ac255dbbb2a38198281548030a30bef2c1ff0a",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0x144aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0x0144aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "0074004300840043007c004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits_le": "4c374940",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x0344aaee",
+        "rt_set_pen_data_size_f32_bits": "0x4049374c",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc1c0403c"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-3.log",
+      "capture_log_sha256": "5bc819b0fe54608a592145dc56b9652c71cbcb3887e9d01bd02af30325b90fd2",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3.144-color00abcdef-interior-basis3-bg00000000",
+      "index": 3,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 2,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 2,
+        "post_document_top_down_sha256": "83173d22393f29329817a71fc7f36127b41be2697fb12ea29359b9b431b92ec3",
+        "post_gl_lower_left_sha256": "83173d22393f29329817a71fc7f36127b41be2697fb12ea29359b9b431b92ec3",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xabcdef",
+        "motion_event_source": 0,
+        "source_argb_u32": "0x00abcdef",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "0074004300840043007c004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits_le": "4c374940",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x03abcdef",
+        "rt_set_pen_data_size_f32_bits": "0x4049374c",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "acab2b3fcecd4d3ff0ef6f3fc1c0403c"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-4.log",
+      "capture_log_sha256": "45c75163f35d7e0b9e8484705455b21e90927ecdbca8b2020271a4e95ceb544d",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3.144-colorff44aaee-tie-basis3-bg00000000",
+      "index": 4,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 7,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 7,
+        "post_document_top_down_sha256": "cf1b3421fdc99e91190b61a04e73be5307c678eab0f1460a5dccef3123b5d051",
+        "post_gl_lower_left_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xff44aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0xff44aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00700043008400430078004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.1440000534057617,
+        "source_size_f32_bits_le": "4c374940",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x3244aaee",
+        "rt_set_pen_data_size_f32_bits": "0x4049374c",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8483e"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "c3b770286911c8de4610b70aa9fa4544e928db1f4760b1e681fb947ae938f979"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-5.log",
+      "capture_log_sha256": "e98510994972707b1632b415b8c2fa65fa0f1e92d38cd7a1af7c877b7b11a6ef",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size3-colorff44aaee-interior-basis3-bg00000000",
+      "index": 5,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 7,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 7,
+        "post_document_top_down_sha256": "cf1b3421fdc99e91190b61a04e73be5307c678eab0f1460a5dccef3123b5d051",
+        "post_gl_lower_left_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xff44aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0xff44aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "0074004300840043007c004300840043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 3.0,
+        "source_size_f32_bits_le": "00004040",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x3244aaee",
+        "rt_set_pen_data_size_f32_bits": "0x40400000",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8483e"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "2e2eee90f41841a6fce8d344abc484f73763f446ccc5ec8a6f5abd0c2b84923c"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-6.log",
+      "capture_log_sha256": "ec87cdb7133985c6c152c83d6e6935e90ff5bb95fa7761160dd26266d6632a10",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size8-colorff44aaee-interior-basis8-bg00000000",
+      "index": 6,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 39,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 39,
+        "post_document_top_down_sha256": "052dd403ba918c5d81cda23295f888b8d6391be31fd5f82fe1aad638f2cf9741",
+        "post_gl_lower_left_sha256": "0223575942fe7da0deab73ba5460381a2390ba28f7144a1aa63a7e4a85fde65b",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xff44aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0xff44aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00600043ab8a004300680043ab8a0043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 8.0,
+        "source_size_f32_bits_le": "00000041",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x3244aaee",
+        "rt_set_pen_data_size_f32_bits": "0x41000000",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8483e"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "d6156feec99ccec47bbf82834ac77db0e86b20eb410a45228b1db736672588d2"
+      }
+    },
+    {
+      "candidate_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "capture_log_path": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-7.log",
+      "capture_log_sha256": "318de8d8b25c89b105385b89a26abbcdc73d847fbedd7277af1117686686447a",
+      "capture_script_sha256": "acf975ad06b6f028f88fdcc740ea723557cf6b1677f3c167ab228e0d23a02c7e",
+      "case_id": "airbrush-explicit-empty-tool2-v2-material-size8.75-colorff44aaee-interior-basis8-bg00000000",
+      "index": 7,
+      "native_frame": {
+        "background_rgba8": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "binary_sparse_count": 39,
+        "gl_errors": [],
+        "height": 256,
+        "painted_pixels": 39,
+        "post_document_top_down_sha256": "052dd403ba918c5d81cda23295f888b8d6391be31fd5f82fe1aad638f2cf9741",
+        "post_gl_lower_left_sha256": "0223575942fe7da0deab73ba5460381a2390ba28f7144a1aa63a7e4a85fde65b",
+        "pre_gl_lower_left_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "width": 256
+      },
+      "native_inputs": {
+        "advanced_setting_mode": "explicit-empty",
+        "model_color_getter_u32": "0xff44aaee",
+        "motion_event_source": 0,
+        "source_argb_u32": "0xff44aaee",
+        "source_arrays": {
+          "orientations": {
+            "count": 2,
+            "data_hex": "cdcc4c3e3333b33e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 2,
+            "data_hex": "00600043ab8a004300680043ab8a0043",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 2,
+            "data_hex": "9a99993e9a99193f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 2,
+            "data_hex": "8fc2f53d0ad7a33e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 2,
+            "data_hex": "2c0100003b010000",
+            "element_size": 4
+          }
+        },
+        "source_size_f32": 8.75,
+        "source_size_f32_bits_le": "00000c41",
+        "tool_type_raw": 2
+      },
+      "native_paint": {
+        "active_sampled_texture": {
+          "active_texture_enum": 33984,
+          "sampler_parameters": {
+            "mag_filter": 9728,
+            "min_filter": 9728,
+            "wrap_s": 33071,
+            "wrap_t": 33071
+          },
+          "texture_object_parameters": {
+            "base_level": 0,
+            "mag_filter": 9729,
+            "max_level": 1000,
+            "min_filter": 9986,
+            "swizzle_a": 6406,
+            "swizzle_b": 6405,
+            "swizzle_g": 6404,
+            "swizzle_r": 6403,
+            "wrap_s": 10497,
+            "wrap_t": 10497
+          }
+        },
+        "rt_set_pen_data_argb_u32": "0x3244aaee",
+        "rt_set_pen_data_size_f32_bits": "0x410c0000",
+        "selected_drawable_version": 2,
+        "uniform_location": 2,
+        "uniform_program": 4,
+        "uniform_rgba_f32_le_hex": "8988883eabaa2a3fefee6e3fc9c8483e"
+      },
+      "native_vbo": {
+        "bytes": 16,
+        "draw_call": [
+          5,
+          0,
+          4,
+          1
+        ],
+        "row_count": 1,
+        "sha256": "d6156feec99ccec47bbf82834ac77db0e86b20eb410a45228b1db736672588d2"
+      }
+    }
+  ],
+  "dimensions": [
+    256,
+    256
+  ],
+  "limits": [
+    "synthetic native Model setters, host IContext/queue, explicit page-to-native Y-flip, host Mesa",
+    "explicit-empty SavedV2 tool2 source0 only; not unset V1 or advanced setting 2;",
+    "these eight material/size witnesses do not prove Android GPU parity, arbitrary transform/scale, PDF or all stroke histories"
+  ],
+  "pattern_asset_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+  "provenance": {
+    "all_cases_drawn": true,
+    "all_cases_pre_post_gl_errors": [],
+    "all_cases_prezero": true,
+    "native_dso_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_helper_sha256": {
+      "airbrush_saved_caller_native": "6750fbf6c939837713c39a25cd7e485a6189b0f18113b66021f708acc6cd2370",
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "oblique_canvas_native": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e"
+    },
+    "native_logs": "/tmp/sdocx-airbrush-material-matrix-root-v32-exec2-{0..7}.log"
+  },
+  "root_validation_summary_sha256": "1a18e4cf55e27f73fe75cce3a1b22c3ef15f41886b907aa69960e4e732f52c46",
+  "schema": "sdocx.airbrush-material-matrix-native-oracles.v1",
+  "v32_candidate_manifest_sha256": "464586ed844c9a1943bbe785915cafb5db9e56cc98c9e05b9a6d1a99c047e021",
+  "v32_input_cases_sha256": "7b8befc817cf6e1ba198238389df20c3659580e58c6c7345adf9f64e7e043929",
+  "interpolation_precision_profile": {
+    "scope": "captured host Mesa setup_variant_0 and fragment JIT; arbitrary output transforms and Android GPUs unverified",
+    "subpixel_bits": 8,
+    "clip_origin_gl_enum": 36001,
+    "LP_DEBUG_present": false,
+    "varyings": "highp F32; separate F32 triangle setup and fragment FMA interpolation",
+    "sampler": "normalized R8 narrowed with binary16 RTZ",
+    "probe_captures": [
+      {
+        "case": 0,
+        "capture_sha256": "f6a0e2f40fca12c632595f8eec5cb52d23b6b1e538f1820e5799bffd0ad6f71f",
+        "active_jit_sha256": "4a25e5cf0c735029b3baf77705e587ef8b83a42d6a984ade2fa86e6747307689",
+        "post_rgba_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34"
+      },
+      {
+        "case": 4,
+        "capture_sha256": "f835a819c07f276212037322c7a16d69a9d6ff98ec2e9b5d0d3ddf265ad91c50",
+        "active_jit_sha256": "4ad53e69e05619d5abcd01ebcfdb1f0b6209143728053e66ec39b14665a0dff4",
+        "post_rgba_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34"
+      }
+    ]
+  }
+}

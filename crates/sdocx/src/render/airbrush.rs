@@ -16,10 +16,10 @@ const PATTERN_R8: &[u8; 96 * 96] = include_bytes!("airbrush_assets/airbrush-patt
 const MAX_STAMPS: usize = 32_768;
 const MAX_SOURCE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
-// Four gradients, four masks, four nested groups, and one image use per stamp.
+// Six gradients/masks and two independently transformed triangle images per stamp.
 // The bound includes generous ID/coordinate attribute growth and is checked
 // before any per-stamp SVG elements are allocated.
-const STAMP_MARKUP_BUDGET: usize = 3_072;
+const STAMP_MARKUP_BUDGET: usize = 6_144;
 const MAX_MASK_PIXELS: u64 = 64 * 1024 * 1024;
 const MAX_PNG_BYTES: usize = 1024 * 1024;
 #[cfg(test)]
@@ -34,15 +34,16 @@ struct HalfPlane {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct QuadCoverage {
-    edges: [HalfPlane; 4],
-    bounds: [f64; 4], // x, y, width, height; one unit of mask-only padding
+struct TriangleCoverage {
+    edges: [HalfPlane; 3],
+    bounds: [f64; 4],
 }
 
 #[derive(Debug)]
 pub(crate) struct Prepared {
     rows: Vec<[f32; 4]>,
-    coverage: Vec<QuadCoverage>,
+    coverage: Vec<[TriangleCoverage; 2]>,
+    atlas_to_page: Vec<[[f64; 6]; 2]>,
     sample_ends: Vec<usize>,
     terminal: std::ops::Range<usize>,
     png: Vec<u8>,
@@ -103,24 +104,23 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
     let coverage = source
         .rows
         .iter()
-        .map(|row| projected_quad_coverage(*row, half, viewport))
+        .map(|row| projected_triangle_coverage(*row, half, viewport))
         .collect::<Option<Vec<_>>>()?;
 
     // Native CLAMP_TO_EDGE repeats the captured R8 boundary samples beyond
     // the quad. The padding is at least one output pixel at 1x plus one texel;
     // it changes texture storage only, not stamp geometry or phase.
     let pad_texels = (1.0 / texel_px).ceil() as u32 + 1;
-    let pad = pad_texels as f32 * texel_px;
     let edge = 96_u32.checked_add(pad_texels.checked_mul(2)?)?;
     let rgba_bytes = usize::try_from(edge.checked_mul(edge)?.checked_mul(4)?).ok()?;
     if rgba_bytes > MAX_PNG_BYTES {
         return None;
     }
 
-    let mask_pixels = coverage.iter().try_fold(0_u64, |total, quad| {
-        let width = quad.bounds[2].ceil() as u64;
-        let height = quad.bounds[3].ceil() as u64;
-        total.checked_add(width.checked_mul(height)?.checked_mul(4)?)
+    let mask_pixels = coverage.iter().flatten().try_fold(0_u64, |total, tri| {
+        let width = tri.bounds[2].ceil() as u64;
+        let height = tri.bounds[3].ceil() as u64;
+        total.checked_add(width.checked_mul(height)?.checked_mul(3)?)
     })?;
     if mask_pixels > MAX_MASK_PIXELS {
         return None;
@@ -154,9 +154,12 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
         rgb[0], rgb[1], rgb[2], alpha, source.rt_size, pad_texels
     );
     let image_id = format!("sdocx-{png_key}");
-    let image_side = f64::from(source.rt_size as f32 + 2.0 * pad);
-    let image_x = -f64::from(half) - f64::from(pad);
-    let image_y = image_x;
+    let image_side = f64::from(edge);
+    let atlas_to_page = source
+        .rows
+        .iter()
+        .map(|row| native_uv_source_to_page(*row, half, viewport, pad_texels))
+        .collect::<Option<Vec<_>>>()?;
     Some(Prepared {
         rows: source.rows,
         coverage,
@@ -165,9 +168,10 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
         png,
         png_key,
         image_id,
-        image_x,
-        image_y,
+        image_x: 0.0,
+        image_y: 0.0,
         image_side,
+        atlas_to_page,
     })
 }
 
@@ -195,36 +199,39 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
 
     let mut definitions = Definitions::new();
     for coverage in &prepared.coverage {
-        let masks: [super::vector::Definition<Mask>; 4] =
-            std::array::from_fn(|_| scene.definition::<Mask>());
-        for (edge_index, mask) in masks.iter().enumerate() {
-            let edge = coverage.edges[edge_index];
-            let gradient = scene.definition::<Gradient>();
-            let (gradient_from, gradient_to, opacity_from, opacity_to) = if edge.inclusive_edge {
-                (edge.gradient_to, edge.gradient_from, 0.0, 1.0)
-            } else {
-                (edge.gradient_from, edge.gradient_to, 1.0, 0.0)
-            };
-            definitions = definitions.add(
-                LinearGradient::new(&gradient)
-                    .x1(gradient_from[0])
-                    .y1(gradient_from[1])
-                    .x2(gradient_to[0])
-                    .y2(gradient_to[1])
-                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_from))
-                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_to)),
-            );
-            let [x, y, width, height] = coverage.bounds;
-            definitions = definitions.add(
-                SvgMask::alpha(&mask.id_text(), x, y, width, height).add(
-                    Rectangle::new()
-                        .x(x)
-                        .y(y)
-                        .width(width)
-                        .height(height)
-                        .fill(Paint::Gradient(gradient)),
-                ),
-            );
+        let masks: [[super::vector::Definition<Mask>; 3]; 2] =
+            std::array::from_fn(|_| std::array::from_fn(|_| scene.definition::<Mask>()));
+        for tri in 0..2 {
+            for (edge_index, mask) in masks[tri].iter().enumerate() {
+                let edge = coverage[tri].edges[edge_index];
+                let gradient = scene.definition::<Gradient>();
+                let (gradient_from, gradient_to, opacity_from, opacity_to) = if edge.inclusive_edge
+                {
+                    (edge.gradient_to, edge.gradient_from, 0.0, 1.0)
+                } else {
+                    (edge.gradient_from, edge.gradient_to, 1.0, 0.0)
+                };
+                definitions = definitions.add(
+                    LinearGradient::new(&gradient)
+                        .x1(gradient_from[0])
+                        .y1(gradient_from[1])
+                        .x2(gradient_to[0])
+                        .y2(gradient_to[1])
+                        .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_from))
+                        .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_to)),
+                );
+                let [x, y, width, height] = coverage[tri].bounds;
+                definitions = definitions.add(
+                    SvgMask::alpha(&mask.id_text(), x, y, width, height).add(
+                        Rectangle::new()
+                            .x(x)
+                            .y(y)
+                            .width(width)
+                            .height(height)
+                            .fill(Paint::Gradient(gradient)),
+                    ),
+                );
+            }
         }
         stamp_masks.push(masks);
     }
@@ -240,25 +247,19 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
             &prepared.terminal,
             prepared.rows.len(),
         );
-        for (index, row) in prepared.rows.iter().enumerate() {
-            let [x, y, sin, cos] = *row;
+        for (index, masks) in stamp_masks.iter().enumerate() {
             let part = replay_index
                 .and_then(|_| replay_parts.get(index).copied())
                 .map(ReplayPart);
-            let transform = Transform::matrix_unrounded([
-                f64::from(cos),
-                f64::from(sin),
-                -f64::from(sin),
-                f64::from(cos),
-                f64::from(x),
-                f64::from(y),
-            ]);
-            let flipped_image = Group::new()
-                .transformed(Transform::matrix_unrounded([1.0, 0.0, 0.0, -1.0, 0.0, 0.0]))
-                .add(Use::href(&prepared.image_id).replay_part(part));
-            let mut stamp = Group::new().transformed(transform).add(flipped_image);
-            for mask in stamp_masks[index].iter().rev() {
-                stamp = Group::new().masked(mask).add(stamp);
+            let mut stamp = Group::new();
+            for (triangle_masks, transform) in masks.iter().zip(&prepared.atlas_to_page[index]) {
+                let mut image = Group::new()
+                    .transformed(Transform::matrix_unrounded(*transform))
+                    .add(Use::href(&prepared.image_id).replay_part(part));
+                for mask in triangle_masks.iter().rev() {
+                    image = Group::new().masked(mask).add(image);
+                }
+                stamp = Group::new().add(stamp).add(image);
             }
             scene.push(stamp);
         }
@@ -266,112 +267,207 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
     true
 }
 
-/// Recreate the native vertex transform and viewport projection using f32
-/// arithmetic, then derive the four source-ordered quad half-planes in page
-/// coordinates. Only mask regions receive the one-unit AABB expansion.
-fn projected_quad_coverage(
-    [x, y, sin, cos]: [f32; 4],
-    half: f32,
-    viewport: [u32; 2],
-) -> Option<QuadCoverage> {
+#[derive(Clone, Copy)]
+struct NativeQuad {
+    window: [[f32; 2]; 4],
+    page: [[f64; 2]; 4],
+}
+#[derive(Clone, Copy)]
+struct NativeTriangle {
+    indices: [usize; 3],
+    window: [[f32; 2]; 3],
+    page: [[f64; 2]; 3],
+}
+#[derive(Clone, Copy)]
+struct UvPlane {
+    origin: f32,
+    dx: f32,
+    dy: f32,
+}
+
+fn native_projected_quad(row: [f32; 4], half: f32, viewport: [u32; 2]) -> Option<NativeQuad> {
     let [width, height] = viewport;
     if width == 0 || height == 0 {
         return None;
     }
-    let width_f = width as f32;
-    let height_f = height as f32;
-    let projection_x = 2.0_f32 / width_f;
-    let projection_y = -2.0_f32 / height_f;
-    let viewport_half_x = width_f * 0.5;
-    let viewport_half_y = height_f * 0.5;
-    let vertices = [[-half, -half], [-half, half], [half, half], [half, -half]];
-    let mut points = [[0.0_f64; 2]; 4];
-    for (index, [vx, vy]) in vertices.into_iter().enumerate() {
-        // Keep the native matrix's separate multiply/add sequencing. Rust f32
-        // operators round at each operation; do not combine into a fitted
-        // affine or move the quad to pixel centers.
-        let model_x = cos * vx + (-sin) * vy + x;
-        let model_y = sin * vx + cos * vy + y;
-        let clip_x = projection_x * model_x - 1.0;
-        let clip_y = projection_y * model_y + 1.0;
-        let window_x = (clip_x + 1.0) * viewport_half_x;
-        let window_y = (clip_y + 1.0) * viewport_half_y;
-        let page_y = height_f - window_y;
-        if !window_x.is_finite() || !page_y.is_finite() {
+    let w = width as f32;
+    let h = height as f32;
+    let [x, y, sin, cos] = row;
+    let corners = [[-half, -half], [-half, half], [half, -half], [half, half]];
+    let mut window = [[0.0_f32; 2]; 4];
+    let mut page = [[0.0_f64; 2]; 4];
+    for (i, [vx, vy]) in corners.into_iter().enumerate() {
+        let mx = (cos * vx + x) + (-sin * vy);
+        let my = (sin * vx + y) + (cos * vy);
+        let clipx = (2.0 / w) * mx - 1.0;
+        let clipy = (-2.0 / h) * my + 1.0;
+        window[i][0] = (clipx * 1.0) * (w * 0.5) + w * 0.5;
+        window[i][1] = (clipy * 1.0) * (h * 0.5) + h * 0.5;
+        if window[i].iter().any(|coordinate| !coordinate.is_finite()) {
             return None;
         }
-        points[index] = [f64::from(window_x), f64::from(page_y)];
+        page[i] = [f64::from(window[i][0]), f64::from(h - window[i][1])];
     }
+    Some(NativeQuad { window, page })
+}
 
-    let center = [
-        points.iter().map(|point| point[0]).sum::<f64>() * 0.25,
-        points.iter().map(|point| point[1]).sum::<f64>() * 0.25,
-    ];
-    let min_x = points
-        .iter()
-        .map(|point| point[0])
-        .fold(f64::INFINITY, f64::min);
-    let max_x = points
-        .iter()
-        .map(|point| point[0])
-        .fold(f64::NEG_INFINITY, f64::max);
-    let min_y = points
-        .iter()
-        .map(|point| point[1])
-        .fold(f64::INFINITY, f64::min);
-    let max_y = points
-        .iter()
-        .map(|point| point[1])
-        .fold(f64::NEG_INFINITY, f64::max);
-    let signed_area = points
-        .iter()
-        .zip(points.iter().cycle().skip(1))
-        .take(4)
-        .map(|(a, b)| a[0] * b[1] - b[0] * a[1])
-        .sum::<f64>();
-    if !signed_area.is_finite() || signed_area.abs() <= f64::EPSILON {
+fn orient_strip_triangles(quad: NativeQuad) -> Option<[NativeTriangle; 2]> {
+    let mut out = Vec::with_capacity(2);
+    for mut ids in [[0usize, 1, 2], [2, 1, 3]] {
+        let fixed = |x: f32| i128::from(((x - 0.5) * 256.0).round_ties_even() as i64);
+        let [i, j, k] = ids;
+        let dx01 = fixed(quad.window[i][0]) - fixed(quad.window[j][0]);
+        let dy01 = fixed(quad.window[i][1]) - fixed(quad.window[j][1]);
+        let dx20 = fixed(quad.window[k][0]) - fixed(quad.window[i][0]);
+        let dy20 = fixed(quad.window[k][1]) - fixed(quad.window[i][1]);
+        let area = dx01
+            .checked_mul(dy20)?
+            .checked_sub(dx20.checked_mul(dy01)?)?;
+        if area == 0 {
+            return None;
+        }
+        if area < 0 {
+            ids = [j, i, k];
+        }
+        out.push(NativeTriangle {
+            indices: ids,
+            window: ids.map(|n| quad.window[n]),
+            page: ids.map(|n| quad.page[n]),
+        });
+    }
+    out.try_into().ok()
+}
+
+// Captured Mesa setup_variant_0: keep separate binary32 operations and its
+// half-pixel origin. Replacing this with an ideal affine loses nearest-cell ties.
+fn mesa_linear_plane(p: [[f32; 2]; 3], a: [f32; 3]) -> Option<UvPlane> {
+    let [p0, p1, p2] = p;
+    let [a0, a1, a2] = a;
+    let dx01 = p0[0] - p1[0];
+    let dy01 = p0[1] - p1[1];
+    let dx20 = p2[0] - p0[0];
+    let dy20 = p2[1] - p0[1];
+    let area = dx01 * dy20 - dy01 * dx20;
+    if area == 0.0 || !area.is_finite() {
         return None;
     }
+    let ooa = 1.0 / area;
+    let dy20ooa = dy20 * ooa;
+    let dy01ooa = dy01 * ooa;
+    let dx20ooa = dx20 * ooa;
+    let dx01ooa = dx01 * ooa;
+    let da01 = a0 - a1;
+    let da20 = a2 - a0;
+    let dx = da01 * dy20ooa - da20 * dy01ooa;
+    let dy = da20 * dx01ooa - da01 * dx20ooa;
+    let centered = dx * (p0[0] - 0.5) + dy * (p0[1] - 0.5);
+    let origin = a0 - centered;
+    (origin.is_finite() && dx.is_finite() && dy.is_finite()).then_some(UvPlane { origin, dx, dy })
+}
 
-    let edges = std::array::from_fn(|index| {
-        let a = points[index];
-        let b = points[(index + 1) % 4];
+fn source_pixel_to_page(u: UvPlane, v: UvPlane, pad: u32, height: u32) -> Option<[f64; 6]> {
+    let h = height as f32;
+    let coeff = |p: UvPlane| {
+        let sx = f64::from(96.0 * p.dx);
+        let sy = f64::from(-96.0 * p.dy);
+        let offset = p.origin - p.dx * 0.5 + p.dy * (h - 0.5);
+        let c = f64::from(pad as f32 + 96.0 * offset);
+        (sx, sy, c)
+    };
+    let (a, c, e) = coeff(u);
+    let (b, d, f) = coeff(v);
+    let det = a * d - b * c;
+    if !det.is_finite() || det == 0.0 {
+        return None;
+    }
+    let m = [
+        d / det,
+        -b / det,
+        -c / det,
+        a / det,
+        (c * f - d * e) / det,
+        (b * e - a * f) / det,
+    ];
+    m.iter().all(|x| x.is_finite()).then_some(m)
+}
+
+fn native_uv_source_to_page(
+    row: [f32; 4],
+    half: f32,
+    viewport: [u32; 2],
+    pad: u32,
+) -> Option<[[f64; 6]; 2]> {
+    let quad = native_projected_quad(row, half, viewport)?;
+    let triangles = orient_strip_triangles(quad)?;
+    let uv = [[0.0_f32, 1.0], [0.0, 0.0], [1.0, 1.0], [1.0, 0.0]];
+    let mut matrices = Vec::with_capacity(2);
+    for tri in triangles {
+        let u = mesa_linear_plane(tri.window, tri.indices.map(|i| uv[i][0]))?;
+        let v = mesa_linear_plane(tri.window, tri.indices.map(|i| uv[i][1]))?;
+        matrices.push(source_pixel_to_page(u, v, pad, viewport[1])?);
+    }
+    matrices.try_into().ok()
+}
+
+fn triangle_halfplanes(points: [[f64; 2]; 3]) -> Option<TriangleCoverage> {
+    let center = [
+        points.iter().map(|p| p[0]).sum::<f64>() / 3.0,
+        points.iter().map(|p| p[1]).sum::<f64>() / 3.0,
+    ];
+    let edges = std::array::from_fn(|i| {
+        let a = points[i];
+        let b = points[(i + 1) % 3];
         let dx = b[0] - a[0];
         let dy = b[1] - a[1];
-        let length = dx.hypot(dy);
-        let cross_to_center = dx * (center[1] - a[1]) - dy * (center[0] - a[0]);
-        let (normal_x, normal_y) = if cross_to_center > 0.0 {
-            (-dy / length, dx / length)
+        let len = dx.hypot(dy);
+        let cross = dx * (center[1] - a[1]) - dy * (center[0] - a[0]);
+        let (nx, ny) = if cross > 0.0 {
+            (-dy / len, dx / len)
         } else {
-            (dy / length, -dx / length)
+            (dy / len, -dx / len)
         };
-        let midpoint = [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5];
+        let mid = [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5];
         HalfPlane {
-            gradient_from: [midpoint[0] + normal_x * 0.5, midpoint[1] + normal_y * 0.5],
-            gradient_to: [midpoint[0] - normal_x * 0.5, midpoint[1] - normal_y * 0.5],
-            // Clockwise page-space quads include ties on left and bottom.
-            inclusive_edge: dy > 0.0 || (dy == 0.0 && dx > 0.0),
+            gradient_from: [mid[0] + nx * 0.5, mid[1] + ny * 0.5],
+            gradient_to: [mid[0] - nx * 0.5, mid[1] - ny * 0.5],
+            // Inclusion is geometric left/bottom; winding reverses the
+            // directed-edge predicate for the two page-space triangles.
+            inclusive_edge: if cross > 0.0 {
+                dy < 0.0 || (dy == 0.0 && dx < 0.0)
+            } else {
+                dy > 0.0 || (dy == 0.0 && dx > 0.0)
+            },
         }
     });
-    if edges.iter().any(|edge| {
-        edge.gradient_from
-            .into_iter()
-            .chain(edge.gradient_to)
-            .any(|coordinate| !coordinate.is_finite())
-    }) {
+    let minx = points.iter().map(|p| p[0]).fold(f64::INFINITY, f64::min);
+    let maxx = points
+        .iter()
+        .map(|p| p[0])
+        .fold(f64::NEG_INFINITY, f64::max);
+    let miny = points.iter().map(|p| p[1]).fold(f64::INFINITY, f64::min);
+    let maxy = points
+        .iter()
+        .map(|p| p[1])
+        .fold(f64::NEG_INFINITY, f64::max);
+    let bounds = [minx - 1.0, miny - 1.0, maxx - minx + 2.0, maxy - miny + 2.0];
+    if bounds.iter().any(|v| !v.is_finite()) {
         return None;
     }
+    Some(TriangleCoverage { edges, bounds })
+}
 
-    let bounds = [
-        min_x - 1.0,
-        min_y - 1.0,
-        max_x - min_x + 2.0,
-        max_y - min_y + 2.0,
-    ];
-    if bounds.iter().any(|value| !value.is_finite()) || bounds[2] <= 0.0 || bounds[3] <= 0.0 {
-        return None;
+fn projected_triangle_coverage(
+    row: [f32; 4],
+    half: f32,
+    viewport: [u32; 2],
+) -> Option<[TriangleCoverage; 2]> {
+    let quad = native_projected_quad(row, half, viewport)?;
+    let triangles = orient_strip_triangles(quad)?;
+    let mut out = Vec::with_capacity(2);
+    for tri in triangles {
+        out.push(triangle_halfplanes(tri.page)?);
     }
-    Some(QuadCoverage { edges, bounds })
+    out.try_into().ok()
 }
 
 fn source_part_ends(

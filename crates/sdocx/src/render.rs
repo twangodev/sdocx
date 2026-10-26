@@ -11088,7 +11088,7 @@ mod tests {
             xml.descendants()
                 .filter(|node| node.has_tag_name("use"))
                 .count(),
-            26
+            52
         );
         assert!(
             xml.descendants()
@@ -11400,7 +11400,7 @@ mod tests {
         );
         assert_eq!(
             xml.descendants().filter(|n| n.has_tag_name("use")).count(),
-            52
+            104
         );
         let mut ids = std::collections::HashSet::new();
         for id in xml.descendants().filter_map(|n| n.attribute("id")) {
@@ -11566,19 +11566,19 @@ mod tests {
             xml.descendants()
                 .filter(|node| node.has_tag_name("use"))
                 .count(),
-            1
+            2
         );
         assert_eq!(
             xml.descendants()
                 .filter(|node| node.has_tag_name("mask"))
                 .count(),
-            4
+            6
         );
         assert_eq!(
             xml.descendants()
                 .filter(|node| node.has_tag_name("linearGradient"))
                 .count(),
-            4
+            6
         );
         let tree =
             resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
@@ -11592,6 +11592,316 @@ mod tests {
             pixmap.data(),
             expected,
             "public AirBrush transparent RGBA versus native material control"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v2_public_material_matrix_matches_native_page_scene_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str =
+            include_str!("../../../conformance/airbrush-material-matrix-native.json");
+        const BIN: &[u8] =
+            include_bytes!("../../../conformance/airbrush-material-matrix-native.bin");
+        const JSON_SHA256: &str =
+            "8ea53d0dbc087a6dd24aa19c80210f1207cd043b7a546347cd8f24413943d54a";
+        const BIN_SHA256: &str = "790f41410ad84341d1291c84272a04131931f8e9e1b8e38ad52c84e17db5315d";
+        const NATIVE_PATTERN_SHA256: &str =
+            "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172";
+
+        fn bytes_from_hex(value: &str) -> Vec<u8> {
+            assert!(value.len().is_multiple_of(2));
+            value
+                .as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        }
+        fn f32_values(value: &str) -> Vec<f64> {
+            bytes_from_hex(value)
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|bytes| f64::from(f32::from_le_bytes(*bytes)))
+                .collect()
+        }
+        fn argb(value: &str) -> u32 {
+            u32::from_str_radix(value.strip_prefix("0x").unwrap(), 16).unwrap()
+        }
+
+        assert_eq!(
+            format!("{:x}", Sha256::digest(JSON.as_bytes())),
+            JSON_SHA256
+        );
+        assert_eq!(format!("{:x}", Sha256::digest(BIN)), BIN_SHA256);
+        let metadata: serde_json::Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(
+            metadata["schema"],
+            "sdocx.airbrush-material-matrix-native-oracles.v1"
+        );
+        assert_eq!(metadata["dimensions"], serde_json::json!([256, 256]));
+        assert_eq!(metadata["pattern_asset_sha256"], NATIVE_PATTERN_SHA256);
+        assert_eq!(&BIN[..4], b"ABMX");
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        let case_count = u16::from_le_bytes(BIN[6..8].try_into().unwrap()) as usize;
+        assert_eq!(case_count, 8);
+        assert_eq!(metadata["cases"].as_array().unwrap().len(), case_count);
+
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let mut failures = Vec::new();
+        let mut offset = 8;
+        for case_index in 0..case_count {
+            let fixture = &metadata["cases"][case_index];
+            assert_eq!(fixture["index"], case_index);
+            let index = BIN[offset] as usize;
+            offset += 1;
+            assert_eq!(index, case_index);
+            let vbo_bytes =
+                u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+            let sparse_count =
+                u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+            offset += 4;
+            assert_eq!(
+                vbo_bytes,
+                fixture["native_vbo"]["bytes"].as_u64().unwrap() as usize
+            );
+            let native_vbo = &BIN[offset..offset + vbo_bytes];
+            offset += vbo_bytes;
+            assert_eq!(
+                format!("{:x}", Sha256::digest(native_vbo)),
+                fixture["native_vbo"]["sha256"]
+            );
+            assert_eq!(
+                sparse_count,
+                fixture["native_frame"]["painted_pixels"].as_u64().unwrap() as usize
+            );
+            assert_eq!(
+                sparse_count,
+                fixture["native_frame"]["binary_sparse_count"]
+                    .as_u64()
+                    .unwrap() as usize
+            );
+
+            let mut expected = vec![0_u8; 256 * 256 * 4];
+            for _ in 0..sparse_count {
+                let x = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+                let y =
+                    u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+                let pixel = (y * 256 + x) * 4;
+                expected[pixel..pixel + 4].copy_from_slice(&BIN[offset + 4..offset + 8]);
+                offset += 8;
+            }
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&expected)),
+                fixture["native_frame"]["post_document_top_down_sha256"]
+            );
+            assert_eq!(
+                fixture["native_frame"]["background_rgba8"],
+                serde_json::json!([0, 0, 0, 0])
+            );
+            assert_eq!(fixture["native_frame"]["gl_errors"], serde_json::json!([]));
+            assert_eq!(
+                fixture["native_vbo"]["draw_call"],
+                serde_json::json!([5, 0, 4, 1])
+            );
+
+            let source = &fixture["native_inputs"];
+            assert_eq!(source["advanced_setting_mode"], "explicit-empty");
+            assert_eq!(source["tool_type_raw"], 2);
+            assert_eq!(source["motion_event_source"], 0);
+            let source_size_bytes =
+                bytes_from_hex(source["source_size_f32_bits_le"].as_str().unwrap());
+            let source_size = f32::from_le_bytes(source_size_bytes.try_into().unwrap());
+            let source_argb = argb(source["source_argb_u32"].as_str().unwrap());
+            assert_eq!(
+                argb(source["model_color_getter_u32"].as_str().unwrap()),
+                source_argb
+            );
+            let source_arrays = &source["source_arrays"];
+            let point_values = f32_values(source_arrays["points"]["data_hex"].as_str().unwrap());
+            assert_eq!(point_values.len(), 4);
+            let points = point_values
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|point| Point {
+                    x: point[0],
+                    y: point[1],
+                })
+                .collect::<Vec<_>>();
+            let pressures = f32_values(source_arrays["pressures"]["data_hex"].as_str().unwrap());
+            let timestamps =
+                bytes_from_hex(source_arrays["timestamps"]["data_hex"].as_str().unwrap())
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|bytes| i64::from(i32::from_le_bytes(*bytes)))
+                    .collect::<Vec<_>>();
+            let tilts = f32_values(source_arrays["tilts"]["data_hex"].as_str().unwrap());
+            let orientations =
+                f32_values(source_arrays["orientations"]["data_hex"].as_str().unwrap());
+            assert_eq!(pressures.len(), 2);
+            assert_eq!(timestamps.len(), 2);
+            assert_eq!(tilts.len(), 2);
+            assert_eq!(orientations.len(), 2);
+
+            let mut document = public_airbrush_v2_document();
+            let stroke = document.pages[0].strokes_mut().next().unwrap();
+            stroke.points = points;
+            stroke.pressures = pressures;
+            stroke.timestamps = timestamps;
+            stroke.tilts = tilts;
+            stroke.orientations = orientations;
+            stroke.color = None;
+            stroke.pen_width = source_size;
+            let (x_min, x_max) = stroke
+                .points
+                .iter()
+                .map(|point| point.x)
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), x| {
+                    (min.min(x), max.max(x))
+                });
+            let (y_min, y_max) = stroke
+                .points
+                .iter()
+                .map(|point| point.y)
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), y| {
+                    (min.min(y), max.max(y))
+                });
+            stroke.bbox = BoundingBox {
+                x_min,
+                y_min,
+                x_max,
+                y_max,
+            };
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some(String::new());
+            rendering.tool_type_raw = 2;
+            rendering.style.pen_size = Some(source_size);
+            rendering.style.color_argb = Some(source_argb);
+            let sampler = crate::ink::airbrush::saved_v2_from_stroke(stroke)
+                .expect("explicit-empty SavedV2 native material case");
+
+            let native_paint = &fixture["native_paint"];
+            let rt_argb = argb(native_paint["rt_set_pen_data_argb_u32"].as_str().unwrap());
+            assert_eq!(sampler.native_argb, rt_argb, "native RTV1 SetPenData color");
+            let rt_size_bits = u32::from_str_radix(
+                native_paint["rt_set_pen_data_size_f32_bits"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            assert_eq!(
+                rt_size_bits,
+                source_size.to_bits(),
+                "native RTV1 SetPenData size argument"
+            );
+            let rgb_a = [
+                ((rt_argb >> 16) & 0xff) as u8,
+                ((rt_argb >> 8) & 0xff) as u8,
+                (rt_argb & 0xff) as u8,
+                (rt_argb >> 24) as u8,
+            ];
+            let native_uniform: Vec<u8> = rgb_a
+                .iter()
+                .flat_map(|byte| (f32::from(*byte) / 255.0).to_le_bytes())
+                .collect();
+            assert_eq!(
+                native_uniform,
+                bytes_from_hex(native_paint["uniform_rgba_f32_le_hex"].as_str().unwrap()),
+                "actual captured AirBrush inputColor uniform"
+            );
+
+            let model_rows: Vec<u8> = sampler
+                .rows
+                .iter()
+                .flatten()
+                .flat_map(|value| value.to_le_bytes())
+                .collect();
+            assert_eq!(
+                model_rows, native_vbo,
+                "production sampler versus actual native AddPoint rows"
+            );
+            assert_eq!(
+                sampler.rows.len(),
+                fixture["native_vbo"]["row_count"].as_u64().unwrap() as usize
+            );
+
+            let layout = layout_document(&document);
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let mut cache = super::DocumentTextCache::default();
+            let rendered = cache
+                .render_layout_page_scene_requests(
+                    &document,
+                    &[request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0)
+                .page;
+            assert_eq!((rendered.width, rendered.height), (256, 256));
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("image"))
+                    .count(),
+                1
+            );
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("use"))
+                    .count(),
+                sampler.rows.len() * 2
+            );
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("mask"))
+                    .count(),
+                sampler.rows.len() * 6
+            );
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("linearGradient"))
+                    .count(),
+                sampler.rows.len() * 6
+            );
+            let tree = resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default())
+                .unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            if pixmap.data() != expected {
+                let differing_pixels = pixmap
+                    .data()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(expected.as_chunks::<4>().0)
+                    .filter(|(a, b)| a != b)
+                    .count();
+                failures.push((
+                    fixture["case_id"].as_str().unwrap().to_owned(),
+                    differing_pixels,
+                    format!("{:x}", Sha256::digest(pixmap.data())),
+                ));
+            }
+        }
+        assert_eq!(offset, BIN.len(), "trailing material matrix fixture bytes");
+        assert!(
+            failures.is_empty(),
+            "native full-frame mismatches: {failures:?}"
         );
     }
 
