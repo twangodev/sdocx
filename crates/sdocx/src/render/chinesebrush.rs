@@ -77,13 +77,14 @@ pub(crate) struct Prepared {
 }
 
 fn gl_version(setting: &str) -> Option<i32> {
-    // These are resolved values from StrokeRendering, not invented source
-    // profile labels. V4 has a different getter value despite drawing through
-    // GLV3 and stays out until its numeric caller is checked against this model.
+    // The setting is the stored Pen getter. V4 is admitted only because the
+    // pinned paired Drawing capture verifies getter 4 selecting the same
+    // GLV3 drawable, AddPoint stream and complete host-Mesa frame as getter 3.
     match setting {
         "1;" => Some(1),
         "2;" => Some(2),
         "3;" => Some(3),
+        "4;" => Some(3),
         _ => None,
     }
 }
@@ -447,11 +448,386 @@ fn render_stamps(svg: &mut Scene, prepared: &Prepared, replay: bool) {
 #[cfg(test)]
 mod tests {
     use super::{
-        ATLAS_WIDTH, MAX_ESTIMATED_MARKUP_BYTES, SOURCE_ATLAS, TILE_COUNT, TILE_SIZE,
-        estimated_markup_bytes, png_tile, source_alpha, tile_opacity,
+        ATLAS_WIDTH, MAX_ESTIMATED_MARKUP_BYTES, Prepared, SOURCE_ATLAS, TILE_COUNT, TILE_SIZE,
+        estimated_markup_bytes, png_tile, prepare, source_alpha, tile_opacity,
+    };
+    use crate::render::ChineseBrushRenderProfile;
+    use crate::{
+        BoundingBox, Color, ObjectMetadata, Point, Stroke, StrokeProperties, StrokeRendering,
+        StrokeStyle,
     };
     use png::{BitDepth, ColorType, Decoder};
+    use serde_json::Value;
+    use sha2::{Digest, Sha256};
     use std::io::Cursor;
+
+    fn fixture_bytes(hex: &str) -> Vec<u8> {
+        assert_eq!(hex.len() % 2, 0);
+        let (pairs, remainder) = hex.as_bytes().as_chunks::<2>();
+        assert!(remainder.is_empty());
+        pairs
+            .iter()
+            .map(|pair| {
+                let digit = |byte: u8| match byte {
+                    b'0'..=b'9' => byte - b'0',
+                    b'a'..=b'f' => byte - b'a' + 10,
+                    b'A'..=b'F' => byte - b'A' + 10,
+                    _ => panic!("invalid fixture hex"),
+                };
+                digit(pair[0]) * 16 + digit(pair[1])
+            })
+            .collect()
+    }
+
+    fn fixture_f32s(source: &Value, channel: &str) -> Vec<f32> {
+        let bytes = fixture_bytes(
+            source["source_arrays"][channel]["data_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        let (words, remainder) = bytes.as_chunks::<4>();
+        assert!(remainder.is_empty());
+        words
+            .iter()
+            .map(|bytes| f32::from_le_bytes(*bytes))
+            .collect()
+    }
+
+    fn capture_stroke(source: &Value, setting: &str) -> Stroke {
+        let point_bytes = fixture_bytes(
+            source["source_arrays"]["points"]["data_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        let (point_pairs, remainder) = point_bytes.as_chunks::<8>();
+        assert!(remainder.is_empty());
+        let points: Vec<_> = point_pairs
+            .iter()
+            .map(|xy| Point {
+                x: f64::from(f32::from_le_bytes([xy[0], xy[1], xy[2], xy[3]])),
+                y: f64::from(f32::from_le_bytes([xy[4], xy[5], xy[6], xy[7]])),
+            })
+            .collect();
+        let pressures: Vec<_> = fixture_f32s(source, "pressures")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let timestamp_bytes = fixture_bytes(
+            source["source_arrays"]["timestamps"]["data_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        let (timestamp_words, remainder) = timestamp_bytes.as_chunks::<4>();
+        assert!(remainder.is_empty());
+        let timestamps: Vec<_> = timestamp_words
+            .iter()
+            .map(|bytes| i64::from(i32::from_le_bytes(*bytes)))
+            .collect();
+        let tilts: Vec<_> = fixture_f32s(source, "tilts")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let orientations: Vec<_> = fixture_f32s(source, "orientations")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let bbox = BoundingBox {
+            x_min: 1.0,
+            y_min: -2.0,
+            x_max: 6.0,
+            y_max: 4.0,
+        };
+        let metadata = ObjectMetadata {
+            format_version: 1,
+            uuid: "synthetic-native-glv3-pair".into(),
+            modified_time_raw: 0,
+            bbox,
+            replay_timestamp_raw: 0,
+            resize_mode_raw: 0,
+            rotatable: true,
+            selectable: true,
+            movable: true,
+            visible: true,
+            replayable: true,
+            out_of_canvas_enabled: false,
+            template: false,
+            flip_enabled: false,
+            float_drawn_rect: false,
+            locked: false,
+            removable: true,
+            rotation_degrees: None,
+            property_mask: Vec::new(),
+            field_mask: Vec::new(),
+            fixed_trailing_data: Vec::new(),
+            flexible_trailing_data: Vec::new(),
+        };
+        let argb = u32::from_str_radix(
+            source["color_argb_u32"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        let size_bytes = fixture_bytes(source["size_f32_bits"].as_str().unwrap());
+        let (size_words, remainder) = size_bytes.as_chunks::<4>();
+        assert!(remainder.is_empty() && size_words.len() == 1);
+        let size_bits = u32::from_le_bytes(size_words[0]);
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: Some(Box::new(metadata)),
+                pen_name: Some(source["pen_name"].as_str().unwrap().to_owned()),
+                advanced_settings: Some(setting.to_owned()),
+                tool_type_raw: source["tool_type"].as_u64().unwrap() as u16,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: true,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(f32::from_bits(size_bits)),
+                    stroke_type_raw: Some(0),
+                    line_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox,
+            points,
+            pressures,
+            timestamps,
+            tilts,
+            orientations,
+            color: Some(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            }),
+            pen_width: f32::from_bits(size_bits),
+        }
+    }
+
+    fn stamp_fingerprint(prepared: &Prepared) -> Vec<(u64, u64, u64, usize, u64, Option<usize>)> {
+        prepared
+            .stamps
+            .iter()
+            .map(|stamp| {
+                (
+                    stamp.x.to_bits(),
+                    stamp.y.to_bits(),
+                    stamp.radius.to_bits(),
+                    stamp.tile,
+                    stamp.opacity.to_bits(),
+                    stamp.mask,
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn captured_setting4_selects_glv3_and_matches_native_setting3_model_and_paint_pair() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-glv3-setting4-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            fixture["schema"],
+            "chinesebrush-native-glv3-setting-pair-v1"
+        );
+        assert_eq!(
+            fixture["scope"]["pixel_claim"],
+            "native pair equality only; no assertion that this raster matches Rust SVG or Samsung device output"
+        );
+        let source = &fixture["source_input"];
+        let profile = ChineseBrushRenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let native_stream = fixture_bytes(
+            fixture["native_addpoint_stream"]["buffer_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        let native_stream_sha = format!("{:x}", Sha256::digest(&native_stream));
+        assert_eq!(
+            native_stream_sha,
+            fixture["native_addpoint_stream"]["buffer_sha256"]
+                .as_str()
+                .unwrap()
+        );
+        assert_eq!(native_stream.len(), 80);
+        assert_eq!(fixture["native_paint_frame"]["nonzero_pixels"], 11);
+        assert_eq!(
+            fixture["cases"]["3;"]["paint_readback_sha256"],
+            fixture["cases"]["4;"]["paint_readback_sha256"]
+        );
+        assert_eq!(
+            fixture["cases"]["3;"]["paint_nonzero_pixels"],
+            fixture["cases"]["4;"]["paint_nonzero_pixels"]
+        );
+        let paired_frame_sha = fixture["paired_assertions"]["frame_rgba8_sha256_equal"]
+            .as_str()
+            .unwrap();
+        assert_eq!(
+            paired_frame_sha,
+            fixture["cases"]["3;"]["paint_readback_sha256"]
+        );
+        assert_eq!(
+            paired_frame_sha,
+            fixture["cases"]["4;"]["paint_readback_sha256"]
+        );
+        let native_frame = &fixture["native_paint_frame"];
+        assert_eq!(native_frame["format"], "GL_RGBA/GL_UNSIGNED_BYTE");
+        assert_eq!(native_frame["row_origin"], "GL lower-left");
+        let width = usize::try_from(native_frame["width"].as_u64().unwrap()).unwrap();
+        let height = usize::try_from(native_frame["height"].as_u64().unwrap()).unwrap();
+        let initial: Vec<u8> = native_frame["initial_rgba8"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| u8::try_from(value.as_u64().unwrap()).unwrap())
+            .collect();
+        assert_eq!(initial.len(), 4);
+        let pixels_len = width.checked_mul(height).unwrap();
+        let mut reconstructed_frame = Vec::with_capacity(pixels_len.checked_mul(4).unwrap());
+        for _ in 0..pixels_len {
+            reconstructed_frame.extend_from_slice(&initial);
+        }
+        let mut seen_pixels = vec![false; pixels_len];
+        for pixel in fixture["native_paint_sparse_pixels"].as_array().unwrap() {
+            let x = usize::try_from(pixel["x"].as_u64().unwrap()).unwrap();
+            let y = usize::try_from(pixel["y_gl_lower_left"].as_u64().unwrap()).unwrap();
+            assert!(
+                x < width && y < height,
+                "sparse native pixel outside captured frame"
+            );
+            let index = y.checked_mul(width).unwrap().checked_add(x).unwrap();
+            assert!(
+                !seen_pixels[index],
+                "duplicate sparse native pixel coordinate"
+            );
+            seen_pixels[index] = true;
+            let rgba: Vec<u8> = pixel["rgba8"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| u8::try_from(value.as_u64().unwrap()).unwrap())
+                .collect();
+            assert_eq!(rgba.len(), 4);
+            assert!(rgba.iter().any(|channel| *channel != 0));
+            let offset = index.checked_mul(4).unwrap();
+            reconstructed_frame[offset..offset + 4].copy_from_slice(&rgba);
+        }
+        assert_eq!(seen_pixels.iter().filter(|seen| **seen).count(), 11);
+        assert_eq!(
+            seen_pixels.iter().filter(|seen| **seen).count(),
+            usize::try_from(native_frame["nonzero_pixels"].as_u64().unwrap()).unwrap()
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&reconstructed_frame)),
+            native_frame["sha256"].as_str().unwrap(),
+            "the compact sparse native samples must reconstruct the exact captured RGBA8 frame"
+        );
+        assert_eq!(paired_frame_sha, native_frame["sha256"].as_str().unwrap());
+
+        let points: Vec<[f32; 2]> = {
+            let bytes = fixture_bytes(
+                source["source_arrays"]["points"]["data_hex"]
+                    .as_str()
+                    .unwrap(),
+            );
+            let (pairs, remainder) = bytes.as_chunks::<8>();
+            assert!(remainder.is_empty());
+            pairs
+                .iter()
+                .map(|pair| {
+                    [
+                        f32::from_le_bytes([pair[0], pair[1], pair[2], pair[3]]),
+                        f32::from_le_bytes([pair[4], pair[5], pair[6], pair[7]]),
+                    ]
+                })
+                .collect()
+        };
+        let pressure = fixture_f32s(source, "pressures");
+        let timestamp_bytes = fixture_bytes(
+            source["source_arrays"]["timestamps"]["data_hex"]
+                .as_str()
+                .unwrap(),
+        );
+        let (timestamp_words, remainder) = timestamp_bytes.as_chunks::<4>();
+        assert!(remainder.is_empty());
+        let times: Vec<i32> = timestamp_words
+            .iter()
+            .map(|bytes| i32::from_le_bytes(*bytes))
+            .collect();
+        let size_bytes = fixture_bytes(source["size_f32_bits"].as_str().unwrap());
+        let (size_words, remainder) = size_bytes.as_chunks::<4>();
+        assert!(remainder.is_empty() && size_words.len() == 1);
+        let size = f32::from_bits(u32::from_le_bytes(size_words[0]));
+        let model = crate::ink::chinesebrush_glv123::run_model_bounded(
+            &points, &pressure, &times, size, 3, 1920, 1080, 2, true, 1024,
+        )
+        .unwrap();
+        let mut model_stream = Vec::with_capacity(model.len() * 16);
+        for [x, y, radius, phase, scalar] in model {
+            for value in [
+                x,
+                y,
+                radius,
+                crate::ink::chinesebrush_glv123::packed_w(phase, scalar),
+            ] {
+                model_stream.extend_from_slice(&value.to_le_bytes());
+            }
+        }
+        assert_eq!(
+            model_stream, native_stream,
+            "bounded Rust model matches the paired native AddPoint Vector4 stream"
+        );
+
+        let mut prepared = Vec::new();
+        for (setting, stored_version) in [("3;", 3), ("4;", 4)] {
+            let case = &fixture["cases"][setting];
+            assert_eq!(case["stored_pen_getter_version"], stored_version);
+            assert_eq!(case["selected_drawable_profile_version"], 3);
+            assert_eq!(case["canvas_dimensions"], serde_json::json!([1920, 1080]));
+            let stroke = capture_stroke(source, setting);
+            assert_eq!(
+                stroke
+                    .rendering
+                    .as_ref()
+                    .unwrap()
+                    .style
+                    .pen_size
+                    .unwrap()
+                    .to_bits(),
+                0x4049_374c
+            );
+            prepared.push(
+                prepare(&stroke, profile, None)
+                    .expect("captured saved setting routes through bounded GLV3 paint"),
+            );
+        }
+        assert_eq!(prepared[0].stamps.len(), 5);
+        assert_eq!(
+            stamp_fingerprint(&prepared[0]),
+            stamp_fingerprint(&prepared[1])
+        );
+        assert_eq!(prepared[0].sample_ends, prepared[1].sample_ends);
+        assert_eq!(prepared[0].tiles, prepared[1].tiles);
+        assert!(prepared[0].fringe_masks.is_empty() && prepared[1].fringe_masks.is_empty());
+        assert!(prepare(&capture_stroke(source, "5;"), profile, None).is_none());
+    }
 
     #[test]
     fn atlas_rgba_and_row_major_cells_are_pinned_to_native_asset() {

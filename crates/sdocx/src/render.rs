@@ -12531,7 +12531,7 @@ mod tests {
             .rendering
             .as_mut()
             .unwrap()
-            .advanced_settings = Some("4;".into());
+            .advanced_settings = Some("5;".into());
         let fallback = render_document_svg(&unsupported, &options).remove(0).svg;
         let fallback_xml = roxmltree::Document::parse(&fallback).unwrap();
         assert_eq!(

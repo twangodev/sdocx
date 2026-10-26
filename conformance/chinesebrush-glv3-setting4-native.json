@@ -1,0 +1,230 @@
+{
+  "schema": "chinesebrush-native-glv3-setting-pair-v1",
+  "scope": {
+    "capture": "source-driven synthetic Model/Drawing input, actual pinned ChineseBrush/Renderer native calls and host Mesa GLES readback; not SDK/device capture",
+    "claim": "settings 3 and 4 keep their stored getter values but both select drawable profile 3, produce the same 80-byte AddPoint stream, and produce byte-identical host Mesa RGBA8 frames",
+    "pixel_claim": "native pair equality only; no assertion that this raster matches Rust SVG or Samsung device output"
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "source_input": {
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+    "size_f32_bits": "4c374940",
+    "color_argb_u32": "0xff6cdd8f",
+    "tool_type": 2,
+    "stroke_type": 0,
+    "curve_enabled": true,
+    "compressed": true,
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    }
+  },
+  "native_addpoint_stream": {
+    "callback_count": 5,
+    "instance_float_count": 20,
+    "buffer_bytes": 80,
+    "buffer_sha256": "43ab5d696b12aa9cf8085b7773bb25c35f22a0e754b1d5cec061267a8309c23b",
+    "buffer_hex": "0000803f000000c08f75713f0ad7a33d89dd0f408ec369be04097e3f6de78b3f648858400a5f9a3f3c4e853fb4c8064088b2954034d12940f6978b3fb29d4740fdffbf40faff7f40b0e1913f58398440"
+  },
+  "native_paint_frame": {
+    "width": 1920,
+    "height": 1080,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_origin": "GL lower-left",
+    "sha256": "debb0b8d49103a856806bf8662c1e6432f2c9e1fc4e93e3c8fe7ce407d0db60a",
+    "status": "ok",
+    "initial_rgba8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "gl_errors_before": [],
+    "gl_errors_after": [],
+    "nonzero_pixels": 11
+  },
+  "native_paint_sparse_pixels": [
+    {
+      "x": 5,
+      "y_gl_lower_left": 1075,
+      "rgba8": [
+        11,
+        23,
+        15,
+        27
+      ]
+    },
+    {
+      "x": 6,
+      "y_gl_lower_left": 1075,
+      "rgba8": [
+        14,
+        29,
+        19,
+        33
+      ]
+    },
+    {
+      "x": 4,
+      "y_gl_lower_left": 1076,
+      "rgba8": [
+        12,
+        24,
+        16,
+        28
+      ]
+    },
+    {
+      "x": 5,
+      "y_gl_lower_left": 1076,
+      "rgba8": [
+        14,
+        29,
+        19,
+        33
+      ]
+    },
+    {
+      "x": 6,
+      "y_gl_lower_left": 1076,
+      "rgba8": [
+        14,
+        29,
+        19,
+        33
+      ]
+    },
+    {
+      "x": 4,
+      "y_gl_lower_left": 1077,
+      "rgba8": [
+        35,
+        72,
+        47,
+        83
+      ]
+    },
+    {
+      "x": 5,
+      "y_gl_lower_left": 1077,
+      "rgba8": [
+        7,
+        14,
+        9,
+        16
+      ]
+    },
+    {
+      "x": 2,
+      "y_gl_lower_left": 1078,
+      "rgba8": [
+        4,
+        9,
+        6,
+        10
+      ]
+    },
+    {
+      "x": 3,
+      "y_gl_lower_left": 1078,
+      "rgba8": [
+        32,
+        66,
+        43,
+        76
+      ]
+    },
+    {
+      "x": 2,
+      "y_gl_lower_left": 1079,
+      "rgba8": [
+        5,
+        10,
+        7,
+        12
+      ]
+    },
+    {
+      "x": 3,
+      "y_gl_lower_left": 1079,
+      "rgba8": [
+        14,
+        29,
+        19,
+        34
+      ]
+    }
+  ],
+  "cases": {
+    "3;": {
+      "stored_pen_getter_version": 3,
+      "selected_drawable_profile_version": 3,
+      "drawable_primary_vptr": "0x50493a8",
+      "drawable_subobject_vptr": "0x5049458",
+      "canvas_dimensions": [
+        1920,
+        1080
+      ],
+      "paint_readback_sha256": "debb0b8d49103a856806bf8662c1e6432f2c9e1fc4e93e3c8fe7ce407d0db60a",
+      "paint_nonzero_pixels": 11
+    },
+    "4;": {
+      "stored_pen_getter_version": 4,
+      "selected_drawable_profile_version": 3,
+      "drawable_primary_vptr": "0x50493a8",
+      "drawable_subobject_vptr": "0x5049458",
+      "canvas_dimensions": [
+        1920,
+        1080
+      ],
+      "paint_readback_sha256": "debb0b8d49103a856806bf8662c1e6432f2c9e1fc4e93e3c8fe7ce407d0db60a",
+      "paint_nonzero_pixels": 11
+    }
+  },
+  "paired_assertions": {
+    "stored_versions": [
+      3,
+      4
+    ],
+    "selected_drawable_profile_versions": [
+      3,
+      3
+    ],
+    "addpoint_stream_sha256_equal": "43ab5d696b12aa9cf8085b7773bb25c35f22a0e754b1d5cec061267a8309c23b",
+    "frame_rgba8_sha256_equal": "debb0b8d49103a856806bf8662c1e6432f2c9e1fc4e93e3c8fe7ce407d0db60a",
+    "frame_nonzero_pixels": 11
+  }
+}
