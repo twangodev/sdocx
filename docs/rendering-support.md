@@ -76,7 +76,7 @@ drawing route. The [pen registry](../crates/sdocx/src/ink.rs) identifies names a
 libraries, not a renderer for every registered pen.
 
 Coverage is incomplete. The pinned APK registry has 44 names: 11 have bounded
-default page-rendering routes, 3 require explicit profiles, 15 bundled names
+default page-rendering routes, 4 require explicit profiles, 14 bundled names
 still use generic strokes, 11 refer to unbundled plugins, and 4 are editing or
 transient tools whose persistent paint is not established. These counts describe
 dispatch, not complete version coverage or visual parity.
