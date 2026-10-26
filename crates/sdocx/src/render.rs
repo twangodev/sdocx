@@ -11006,6 +11006,161 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn saved_v2_integer_edge_overlay_matches_native_full_rgba() {
+        use sha2::{Digest, Sha256};
+
+        const JSON: &str = include_str!("../../../conformance/airbrush-pageflip-integer-edge.json");
+        const BIN: &[u8] =
+            include_bytes!("../../../conformance/airbrush-pageflip-integer-edge.bin");
+        const FRAME_SHA256: &str =
+            "3ad2010aa04fb518253e6acaa6fd8f733a1a9954bf919b1d90db13c5aadf2613";
+
+        let metadata: serde_json::Value = serde_json::from_str(JSON).unwrap();
+        assert_eq!(
+            metadata["schema"],
+            "sdocx.airbrush-integer-edge-pixel-and-sampler-receipt.v1"
+        );
+        assert_eq!(
+            metadata["case_id"],
+            "airbrush-explicit-empty-tool2-v2-material-r125-bg00000000-integer-edge"
+        );
+        assert_eq!(
+            metadata["frame"]["top_down_full_frame_sha256"],
+            FRAME_SHA256
+        );
+        assert_eq!(metadata["frame"]["native_nonzero_pixel_count"], 5);
+        assert_eq!(BIN.get(..4), Some(&b"AIE1"[..]));
+        assert_eq!(u16::from_le_bytes(BIN[4..6].try_into().unwrap()), 1);
+        assert_eq!(u16::from_le_bytes(BIN[6..8].try_into().unwrap()), 5);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(BIN)),
+            "14c1d4f418a967c796c1c8b9f0b7e97b9f20a81431df8b44ab5bd1b8c1b40cb8"
+        );
+
+        let case = &metadata["native_draw"];
+        assert_eq!(case["draw_call"]["mode"], 5);
+        assert_eq!(case["draw_call"]["vertex_count"], 4);
+        assert_eq!(case["draw_call"]["instance_count"], 1);
+        assert_eq!(
+            case["native_instance_hex"],
+            "0000004300000043000000000000803f"
+        );
+        assert_eq!(case["effective_texture_and_sampler"]["texture_2d"], 3);
+        assert_eq!(case["effective_texture_and_sampler"]["sampler_object"], 3);
+        assert_eq!(case["active_sampler"]["name_bytes_hex"], "73616d706c657230");
+        assert_eq!(case["active_sampler"]["units"][0], 0);
+        assert_eq!(
+            metadata["sampler_row_reference"]["row_file"],
+            "actual-sampler-rows.r8"
+        );
+
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        let mut offset = 8;
+        for _ in 0..5 {
+            let x = u16::from_le_bytes(BIN[offset..offset + 2].try_into().unwrap()) as usize;
+            let y = u16::from_le_bytes(BIN[offset + 2..offset + 4].try_into().unwrap()) as usize;
+            let rgba = &BIN[offset + 4..offset + 8];
+            offset += 8;
+            let pixel = (y * 256 + x) * 4;
+            expected[pixel..pixel + 4].copy_from_slice(rgba);
+        }
+        assert_eq!(offset, BIN.len());
+        assert_eq!(format!("{:x}", Sha256::digest(&expected)), FRAME_SHA256);
+
+        let mut document = public_airbrush_v2_document();
+        let mut stroke = document.pages[0].strokes().next().unwrap().clone();
+        stroke.points = vec![
+            Point { x: 128.0, y: 128.0 },
+            Point {
+                x: 128.03125,
+                y: 128.0,
+            },
+        ];
+        stroke.pressures = vec![0.3, 0.6];
+        stroke.timestamps = vec![300, 315];
+        stroke.tilts = vec![0.12, 0.32];
+        stroke.orientations = vec![0.2, 0.35];
+        stroke.bbox = BoundingBox {
+            x_min: 128.0,
+            y_min: 128.0,
+            x_max: 128.03125,
+            y_max: 128.0,
+        };
+        document.pages[0].objects = vec![stroke.into()];
+        let source_stroke = document.pages[0].strokes().next().unwrap();
+        assert_eq!(
+            source_stroke.points,
+            [
+                Point { x: 128.0, y: 128.0 },
+                Point {
+                    x: 128.03125,
+                    y: 128.0
+                }
+            ]
+        );
+        assert_eq!(source_stroke.pressures, [0.3, 0.6]);
+        assert_eq!(source_stroke.timestamps, [300, 315]);
+        assert_eq!(source_stroke.tilts, [0.12, 0.32]);
+        assert_eq!(source_stroke.orientations, [0.2, 0.35]);
+        let sampler = crate::ink::airbrush::saved_v2_from_stroke(source_stroke)
+            .expect("explicit-empty SavedV2 tool-2 source-zero integer-edge stroke");
+        let native_rows: Vec<u8> = case["native_instance_hex"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let model_rows: Vec<u8> = sampler
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            model_rows, native_rows,
+            "production SavedV2 native one-stamp row"
+        );
+        assert_eq!(sampler.rows.len(), 1);
+        assert_eq!(sampler.native_argb, 0x326cdd8f);
+
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let rendered = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        assert_eq!((rendered.width, rendered.height), (256, 256));
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(pixmap.data())),
+            FRAME_SHA256,
+            "all PageScene RGBA8 pixels versus native full-frame oracle"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn saved_v2_public_document_background_matches_native_pageflip_rgba() {
         use sha2::{Digest, Sha256};
 

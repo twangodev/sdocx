@@ -1,0 +1,295 @@
+{
+  "schema": "sdocx.airbrush-integer-edge-pixel-and-sampler-receipt.v1",
+  "case_id": "airbrush-explicit-empty-tool2-v2-material-r125-bg00000000-integer-edge",
+  "source_capture": {
+    "path": "/tmp/sdocx-airbrush-integer-edge-native-root-v31.log",
+    "sha256": "df5066201c6eb9ae49f097ec7f266d491421fbc871c373d7a1824ba3a7cac6bc",
+    "runner_sha256": "855b787764237b8e7e8456ff75a1550b04718609df2b9bb09ac8e307d99f68be",
+    "runner_manifest_sha256": "8795726ae5351dc9522b8abdb5e99115535a1073ec98d8b47a8e6ff159720013",
+    "source_r8_asset_sha256": "2bcc637332cb6ca7da347f6bc0010a3312901fc19aa69dee31e4d8b4ced75172",
+    "native_dso_sha256": {
+      "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_helper_sha256": {
+      "airbrush_saved_caller_native": "855b787764237b8e7e8456ff75a1550b04718609df2b9bb09ac8e307d99f68be",
+      "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "oblique_canvas_native": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e"
+    }
+  },
+  "input": {
+    "points_f32": [
+      [
+        128.0,
+        128.0
+      ],
+      [
+        128.03125,
+        128.0
+      ]
+    ],
+    "source_arrays": {
+      "orientations": {
+        "count": 2,
+        "data_hex": "cdcc4c3e3333b33e",
+        "element_size": 4
+      },
+      "points": {
+        "count": 2,
+        "data_hex": "00000043000000430008004300000043",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 2,
+        "data_hex": "9a99993e9a99193f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 2,
+        "data_hex": "8fc2f53d0ad7a33e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 2,
+        "data_hex": "2c0100003b010000",
+        "element_size": 4
+      }
+    },
+    "argb": "0xff6cdd8f",
+    "size_f32_bits": "4c374940",
+    "advanced_setting_mode": "explicit-empty",
+    "advanced_setting": "",
+    "rt_size": 3
+  },
+  "native_draw": {
+    "draw_call": {
+      "first": 0,
+      "instance_count": 1,
+      "mode": 5,
+      "vertex_count": 4
+    },
+    "native_instance_bytes_sha256": "440886b6589ff1362f39c2ad03cf47e96eafb9a5ed5dd545a12a1e060eeb50e3",
+    "native_instance_hex": "0000004300000043000000000000803f",
+    "actual_upload_texture": 3,
+    "actual_active_program": 4,
+    "active_sampler": {
+      "index": 1,
+      "location": 1,
+      "name_bytes_hex": "73616d706c657230",
+      "size": 1,
+      "type": "0x8b5e",
+      "units": [
+        0
+      ]
+    },
+    "effective_texture_and_sampler": {
+      "active_texture_enum": 33984,
+      "proof": "read-only actual Mesa GL state at the native draw; texture parameters include channel swizzles and mip levels; capture requires all active sampler units equal active unit",
+      "sampler_object": 3,
+      "sampler_parameters": {
+        "mag_filter": 9728,
+        "min_filter": 9728,
+        "wrap_s": 33071,
+        "wrap_t": 33071
+      },
+      "texture_2d": 3,
+      "texture_object_parameters": {
+        "base_level": 0,
+        "mag_filter": 9729,
+        "max_level": 1000,
+        "min_filter": 9986,
+        "swizzle_a": 6406,
+        "swizzle_b": 6405,
+        "swizzle_g": 6404,
+        "swizzle_r": 6403,
+        "wrap_s": 10497,
+        "wrap_t": 10497
+      }
+    },
+    "captured_upload_rgba8": {
+      "dimensions": [
+        96,
+        96
+      ],
+      "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+      "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+      "source_r8_red_channel_exact_match": true,
+      "remaining_channels_all_zero": true
+    },
+    "native_errors_before_after_draw": []
+  },
+  "frame": {
+    "dimensions": [
+      256,
+      256
+    ],
+    "format": "RGBA8",
+    "native_storage_row_origin": "GL lower-left",
+    "public_page_scene_row_origin": "top-left",
+    "row_conversion": "reverse the 256 captured RGBA rows once",
+    "lower_left_full_frame_sha256": "cfc2fde872abafafa2d8d52fc9813fd9912370435371769284649f4677b284fd",
+    "top_down_full_frame_sha256": "3ad2010aa04fb518253e6acaa6fd8f733a1a9954bf919b1d90db13c5aadf2613",
+    "native_nonzero_pixel_count": 5,
+    "sparse_expected_full_frame_recipe": "zero-filled 256*256*4 bytes; write the five top-down records in five-pixels.bin; SHA-256 must equal top_down_full_frame_sha256",
+    "pixels": [
+      {
+        "x": 126,
+        "y_top_down": 127,
+        "rgba8": [
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "x": 127,
+        "y_top_down": 127,
+        "rgba8": [
+          6,
+          13,
+          8,
+          15
+        ]
+      },
+      {
+        "x": 128,
+        "y_top_down": 127,
+        "rgba8": [
+          9,
+          19,
+          12,
+          22
+        ]
+      },
+      {
+        "x": 127,
+        "y_top_down": 128,
+        "rgba8": [
+          2,
+          4,
+          3,
+          5
+        ]
+      },
+      {
+        "x": 128,
+        "y_top_down": 128,
+        "rgba8": [
+          7,
+          14,
+          9,
+          16
+        ]
+      }
+    ]
+  },
+  "sampler_row_reference": {
+    "texture": 3,
+    "sampler_object": 3,
+    "active_unit": 0,
+    "sampler_uniform": "sampler0",
+    "effective_parameters": {
+      "mag_filter": 9728,
+      "min_filter": 9728,
+      "wrap_s": 33071,
+      "wrap_t": 33071
+    },
+    "texture_parameter_state": {
+      "base_level": 0,
+      "mag_filter": 9729,
+      "max_level": 1000,
+      "min_filter": 9986,
+      "swizzle_a": 6406,
+      "swizzle_b": 6405,
+      "swizzle_g": 6404,
+      "swizzle_r": 6403,
+      "wrap_s": 10497,
+      "wrap_t": 10497
+    },
+    "source_and_upload_join": "the captured glTexSubImage2D payload for bound texture 3 has SHA above; its R channel is byte-identical to conformance/airbrush-pattern.r8 and the other RGBA channels are zero",
+    "row_file": "actual-sampler-rows.r8",
+    "row_file_layout": [
+      {
+        "name": "row_y0",
+        "y_native_upload_order": 0,
+        "offset": 0,
+        "length": 96,
+        "sha256": "b9e425d2c08016d6a4347c2f7145fbd6952b212acadba03176e05505baf5eb16"
+      },
+      {
+        "name": "row_y48",
+        "y_native_upload_order": 48,
+        "offset": 96,
+        "length": 96,
+        "sha256": "7688c7b77c2c89c312f2a638f39c12eddb0cab36af72eb1cc77ed760fdbbd2dd"
+      },
+      {
+        "name": "row_y95",
+        "y_native_upload_order": 95,
+        "offset": 192,
+        "length": 96,
+        "sha256": "f0d348d064954ac9bc5cbd2e058687c8983a9885ba0afe9cf416c647c3e842ba"
+      }
+    ],
+    "column_file": "actual-sampler-columns.r8",
+    "column_file_layout": [
+      {
+        "name": "column_x0",
+        "x": 0,
+        "offset": 0,
+        "length": 96,
+        "sha256": "17de5c6dc182efd4ccc8e021a547f40c4729b5d9beb7a5b7762a031274e6c608"
+      },
+      {
+        "name": "column_x95",
+        "x": 95,
+        "offset": 96,
+        "length": 96,
+        "sha256": "231e299a887a68528381cddf9e164a04d9a8eadf1d2847354b982aecea433c8e"
+      }
+    ]
+  },
+  "limits": [
+    "Actual host Mesa capture only; not Android GPU parity.",
+    "This receipt joins the full frame hash to five stored pixels because the frame has exactly five nonzero pixels; it does not include the 256 KiB full-frame payload.",
+    "The sampled texture content is observed from the captured native GLES upload and joined to the R8 source by byte identity."
+  ],
+  "mesa_source_edge_rule": {
+    "audit_path": "tmp/vector-parity-plan/mesa-precision-source-audit/source-raster-v16/edge-rule-airbrush-v16.md",
+    "audit_sha256": "1c600553b5f1275df87f4fefc87fb75a8859fc28ee780b19841014b61efa3506",
+    "mesa_source_version": "Debian Mesa 25.0.7-2+deb13u1",
+    "source_files": {
+      "src/mesa/main/framebuffer.h": "af304207693d1a256ad369a647aa475bf25bf61d3b2df45679a036d36a2e8867",
+      "src/mesa/state_tracker/st_atom_framebuffer.c": "1c536dbe18f0c6b26285d3dac347c18eb1ef1d0e59e30f2b8676cbbff8e86663",
+      "src/mesa/state_tracker/st_atom_viewport.c": "05182850838a2a719baa2ba5426e1c927bbc0ff84f8c4d917276d802d576ada2",
+      "src/mesa/state_tracker/st_atom_rasterizer.c": "e98b3e3e16ca68a0f835fedabdf7f8565e86cbe82ea5275fff222a1d0f5cd6f",
+      "src/gallium/drivers/llvmpipe/lp_setup.c": "897cf155b4ef7a3bd29b219927343a62e02aa223c85f7745185afe5dd61b7175",
+      "src/gallium/drivers/llvmpipe/lp_setup_tri.c": "fabf85a1370e015b92c807d46f3cfeac44d4676fbd74e863073d4486c574dd3a",
+      "src/gallium/drivers/llvmpipe/lp_rast_tri_tmp.h": "1d6bc40f08f54e21c9415d644cc4fa9168c34bae7563c63dba51b57338046f08"
+    },
+    "source_conclusion": "For a user-created FBO with Y_0_BOTTOM and default lower-left clip origin, llvmpipe includes pixel-center ties on GL left/bottom and excludes right/top. The capture records Draw/Read FBO 1, texture attachment 1, 256x256 viewport, page-to-native y-flip, and default GLES context. Mapping back to document top-left coordinates makes document-left and document-bottom the included edges.",
+    "observed_capture_join": {
+      "draw_fbo": 1,
+      "read_fbo": 1,
+      "viewport": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "color_attachment_texture": 1,
+      "matrix_kind": "synthetic explicit page-to-native Y flip [1,0,0,0,-1,0,0,256,1]",
+      "clip_origin_query": "not directly recorded in this capture; applicable source conclusion is conditional on default lower-left clip origin (the source receipt states GL_UPPER_LEFT changes the predicate)"
+    },
+    "boundary": "This is llvmpipe source behavior for the stated framebuffer/orientation condition. It is not a claim about Android drivers or all GL backends."
+  }
+}

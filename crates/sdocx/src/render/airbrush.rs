@@ -30,6 +30,7 @@ const NATIVE_PATTERN_SHA256: &str =
 struct HalfPlane {
     gradient_from: [f64; 2],
     gradient_to: [f64; 2],
+    inclusive_edge: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -128,9 +129,10 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
     let mut rgba = Vec::new();
     rgba.try_reserve_exact(rgba_bytes).ok()?;
     for y in 0..edge {
-        // Native GL uploads the R8 rows bottom-first; the SVG image rows are
-        // top-first. Reverse the captured field once, preserving edge samples.
-        let sy = 95 - y.saturating_sub(pad_texels).min(95) as usize;
+        // Preserve source row order in the PNG. The local-y reflection on each
+        // Use below makes SVG nearest sampling follow native floor(v * 96),
+        // including exact texel-row boundaries.
+        let sy = y.saturating_sub(pad_texels).min(95) as usize;
         for x in 0..edge {
             let sx = x.saturating_sub(pad_texels).min(95) as usize;
             let r8 = PATTERN_R8[sy * 96 + sx];
@@ -148,7 +150,7 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
     }
 
     let png_key = format!(
-        "airbrush-v2-r8-v2-{:02x}{:02x}{:02x}-a{:02x}-size{}-pad{}",
+        "airbrush-v2-r8-v3-{:02x}{:02x}{:02x}-a{:02x}-size{}-pad{}",
         rgb[0], rgb[1], rgb[2], alpha, source.rt_size, pad_texels
     );
     let image_id = format!("sdocx-{png_key}");
@@ -198,14 +200,19 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
         for (edge_index, mask) in masks.iter().enumerate() {
             let edge = coverage.edges[edge_index];
             let gradient = scene.definition::<Gradient>();
+            let (gradient_from, gradient_to, opacity_from, opacity_to) = if edge.inclusive_edge {
+                (edge.gradient_to, edge.gradient_from, 0.0, 1.0)
+            } else {
+                (edge.gradient_from, edge.gradient_to, 1.0, 0.0)
+            };
             definitions = definitions.add(
                 LinearGradient::new(&gradient)
-                    .x1(edge.gradient_from[0])
-                    .y1(edge.gradient_from[1])
-                    .x2(edge.gradient_to[0])
-                    .y2(edge.gradient_to[1])
-                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(1.0))
-                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(0.0)),
+                    .x1(gradient_from[0])
+                    .y1(gradient_from[1])
+                    .x2(gradient_to[0])
+                    .y2(gradient_to[1])
+                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_from))
+                    .add(Stop::new(0.5, Some(ColorValue::WHITE)).opacity(opacity_to)),
             );
             let [x, y, width, height] = coverage.bounds;
             definitions = definitions.add(
@@ -246,9 +253,10 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
                 f64::from(x),
                 f64::from(y),
             ]);
-            let mut stamp = Group::new()
-                .transformed(transform)
+            let flipped_image = Group::new()
+                .transformed(Transform::matrix_unrounded([1.0, 0.0, 0.0, -1.0, 0.0, 0.0]))
                 .add(Use::href(&prepared.image_id).replay_part(part));
+            let mut stamp = Group::new().transformed(transform).add(flipped_image);
             for mask in stamp_masks[index].iter().rev() {
                 stamp = Group::new().masked(mask).add(stamp);
             }
@@ -341,6 +349,8 @@ fn projected_quad_coverage(
         HalfPlane {
             gradient_from: [midpoint[0] + normal_x * 0.5, midpoint[1] + normal_y * 0.5],
             gradient_to: [midpoint[0] - normal_x * 0.5, midpoint[1] - normal_y * 0.5],
+            // Clockwise page-space quads include ties on left and bottom.
+            inclusive_edge: dy > 0.0 || (dy == 0.0 && dx > 0.0),
         }
     });
     if edges.iter().any(|edge| {
