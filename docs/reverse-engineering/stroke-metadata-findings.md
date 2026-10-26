@@ -133,6 +133,12 @@ remain untraced; neither Tape-only attenuation nor universal exposure of
 underlying page ink is established. Raster surface attenuation does not itself
 delete or subtract underlying stored vector geometry.
 
+On the pinned APK’s cold resource path, `EnsurePatternLoaded` accepts pattern
+IDs 1–9 and resolves the unchanged ID as `tape_pattern_%02d` from Android raw
+resources before caching it. The [resource hashes](../../conformance/tapepen-pattern-scale-host.json)
+cover those nine packaged SVGs. An existing or overridden cache can bypass
+that load, and the host captures explicitly supply their asset bytes.
+
 A paired synthetic host capture with the same seeded bitmap observed reveal
 attenuation on an intermediate TapePen texture before its final composition
 onto the caller bitmap. It does not establish which page layers a saved note

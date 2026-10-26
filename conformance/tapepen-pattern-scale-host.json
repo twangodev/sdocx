@@ -74,5 +74,61 @@
       "0": 4,
       "1": 1
     }
+  },
+  "static_android_asset_mapping": {
+    "scope": "Cold/default cache path in the pinned APK. A populated or overridden cache is not established by this static analysis.",
+    "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+    "pen_common_sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "loader_rva": "0x4416c",
+    "format_literal": "tape_pattern_%02d",
+    "formatter_rva": "0x449d0",
+    "store_rva": "0x44768",
+    "assets": [
+      {
+        "index": 1,
+        "resource": "tape_pattern_01",
+        "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+      },
+      {
+        "index": 2,
+        "resource": "tape_pattern_02",
+        "sha256": "cc7e5633414c330095001c06b3ec3eb80e9f3a7ab84cd5bde6cb263c349968be"
+      },
+      {
+        "index": 3,
+        "resource": "tape_pattern_03",
+        "sha256": "14680dcf24c814d6f0941618a69c1de1eaf4019dcf397016a1bec7760e7d443a"
+      },
+      {
+        "index": 4,
+        "resource": "tape_pattern_04",
+        "sha256": "fccc0921615191d88c5d706e531e851515655dead876dee687fc566f98913759"
+      },
+      {
+        "index": 5,
+        "resource": "tape_pattern_05",
+        "sha256": "8849365a02ee89698b967b7b09967e6d6f89e14ab9fb3c45dabc06dab683a065"
+      },
+      {
+        "index": 6,
+        "resource": "tape_pattern_06",
+        "sha256": "955848e333e7c728a8853b880829277257c46c426b5339a3d1f859f92b19d8a2"
+      },
+      {
+        "index": 7,
+        "resource": "tape_pattern_07",
+        "sha256": "6072217c32b755f58ed4f8a424ffaa590a2a7f7889da6e232fe8284f329ba4fe"
+      },
+      {
+        "index": 8,
+        "resource": "tape_pattern_08",
+        "sha256": "6b227b88622a457b2f82eb2b101d14bfa238af64b5aef7743e0688e77266d8d6"
+      },
+      {
+        "index": 9,
+        "resource": "tape_pattern_09",
+        "sha256": "132d58bd9e596bd11acaa4aff0b0f6edfff366dfd801643d83a85d9ac65f378d"
+      }
+    ]
   }
 }
