@@ -461,6 +461,11 @@ control, PDF-versus-SVG error drops from 10.592% at 1× to 1.41% after an
 sampling and nested-mask rasterization; it does not justify a global width or
 opacity adjustment. A vector formulation with fewer mask layers is under
 investigation. No paired native PDF appearance match is established.
+An experimental combined Type 4 field for two [captured orientations](../../conformance/fountain-v14-type4-orientation-host.json)
+still misses or adds native support pixels in MuPDF and PDFium at 1×/2×/4×.
+These tiny host-snapped controls do not isolate the cause or establish a
+general reader contract; three non-parallelogram continuous controls were
+skipped rather than approximated.
 Default output is unchanged.
 
 ### PDF appearance check

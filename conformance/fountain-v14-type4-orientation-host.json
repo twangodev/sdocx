@@ -1,0 +1,153 @@
+{
+  "schema": "sdocx.fountain-v14.type4-orientation-host.v1",
+  "scope": "Two retained synthetic single stamps, 90 and 45 degrees, scales 1/2/4, host-snapped vertices and direct grayscale Type 1 shading with Type 4 function; not actual public PDF or Android/device parity. Native GL alpha rows reversed once for top-down PDF readers. Union alpha8 MAE includes either native or PDF nonzero pixel; no shift or fitted phase.",
+  "fixture_sha256": "0b3a00ba2d42dada27a0771e20d14aa85e4d660e535708a834c41da971096fef",
+  "generator_sha256": "fe41e1ef68fa233bdb786e7ba92e1c518746449050aeba3dd866dcddbf7f96ab",
+  "pdf_helper_sha256": "f84d3254558004caeb37a5e7be548765d4f7965e30d9f1619918cf06b774c6d9",
+  "reader_versions": {
+    "mupdf": "1.28.2",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "4.30.0",
+    "pdfium": "126.0.6462.0"
+  },
+  "skipped_non_parallelogram": [
+    {
+      "case": "r0_d2_p1",
+      "scale": 1,
+      "profile": "continuous"
+    },
+    {
+      "case": "r0_d2_p1",
+      "scale": 2,
+      "profile": "continuous"
+    },
+    {
+      "case": "r0_d2_p1",
+      "scale": 4,
+      "profile": "continuous"
+    }
+  ],
+  "cases": [
+    {
+      "case": "r0_d1_p1",
+      "scale": 1,
+      "native_alpha_sha256": "e10a2adf304795db95932a03f970207af763923f72cac7a01fd577169a121d9d",
+      "pdf_sha256": "c41043f9b2034d0e4e92abbaecbb0cae8bd8c3dbdb7bdd6b46216b91b032ef34",
+      "mupdf": {
+        "native_support": 4,
+        "pdf_support": 3,
+        "overlap": 3,
+        "union_mae": 18.5,
+        "max_error": 35
+      },
+      "pdfium": {
+        "native_support": 4,
+        "pdf_support": 3,
+        "overlap": 2,
+        "union_mae": 15.2,
+        "max_error": 32
+      }
+    },
+    {
+      "case": "r0_d1_p1",
+      "scale": 2,
+      "native_alpha_sha256": "012b8c7fd84ea1e27bbe1043f787de4e2605af7b547c6959f50b92321465efb0",
+      "pdf_sha256": "05107e713583b13f68393250b97f25d93ce0f1bc323e575f3e078ba98594855d",
+      "mupdf": {
+        "native_support": 2,
+        "pdf_support": 4,
+        "overlap": 2,
+        "union_mae": 34.5,
+        "max_error": 66
+      },
+      "pdfium": {
+        "native_support": 2,
+        "pdf_support": 4,
+        "overlap": 1,
+        "union_mae": 24.4,
+        "max_error": 44
+      }
+    },
+    {
+      "case": "r0_d1_p1",
+      "scale": 4,
+      "native_alpha_sha256": "64a6b1ec3f677156c3bff22f87de923acf105b48b757c7041c64d6299bd99f5e",
+      "pdf_sha256": "2abc9973ebb39381786b6f27cdfe677d18637b104f5359e0ff9e47e204f3d474",
+      "mupdf": {
+        "native_support": 2,
+        "pdf_support": 2,
+        "overlap": 1,
+        "union_mae": 67.666667,
+        "max_error": 102
+      },
+      "pdfium": {
+        "native_support": 2,
+        "pdf_support": 2,
+        "overlap": 1,
+        "union_mae": 68.0,
+        "max_error": 102
+      }
+    },
+    {
+      "case": "r0_d2_p1",
+      "scale": 1,
+      "native_alpha_sha256": "cce90f132831af678555ccfc9cf5a5023f26fe768be22992d6e11d8670953b48",
+      "pdf_sha256": "3669b4b48b2854397282dce164ea3f21e081ef919e3995a0577a6d86b1b91d53",
+      "mupdf": {
+        "native_support": 3,
+        "pdf_support": 3,
+        "overlap": 2,
+        "union_mae": 15.0,
+        "max_error": 28
+      },
+      "pdfium": {
+        "native_support": 3,
+        "pdf_support": 2,
+        "overlap": 2,
+        "union_mae": 17.333333,
+        "max_error": 18
+      }
+    },
+    {
+      "case": "r0_d2_p1",
+      "scale": 2,
+      "native_alpha_sha256": "bbfe2a6afb7940def566900728cd35fbcf4f807616e4318344100c08b77469ea",
+      "pdf_sha256": "458294c6233b1fb5a2b9e8e9a5c2bb820ac93365b6be864f25e5fad1ecd63ee4",
+      "mupdf": {
+        "native_support": 2,
+        "pdf_support": 4,
+        "overlap": 2,
+        "union_mae": 26.5,
+        "max_error": 74
+      },
+      "pdfium": {
+        "native_support": 2,
+        "pdf_support": 3,
+        "overlap": 1,
+        "union_mae": 21.5,
+        "max_error": 32
+      }
+    },
+    {
+      "case": "r0_d2_p1",
+      "scale": 4,
+      "native_alpha_sha256": "f39f1a202065371a9c6103bcac50df50b049a98d6812fe3bc23e287775c212f3",
+      "pdf_sha256": "604e9b38512fba3cc5a1db47aa1bc7005ba18ff4e11ba5b26fc0e9888ef335b8",
+      "mupdf": {
+        "native_support": 2,
+        "pdf_support": 2,
+        "overlap": 1,
+        "union_mae": 50.333333,
+        "max_error": 104
+      },
+      "pdfium": {
+        "native_support": 2,
+        "pdf_support": 2,
+        "overlap": 1,
+        "union_mae": 50.0,
+        "max_error": 104
+      }
+    }
+  ],
+  "conclusion": "The six host-snapped single-stamp controls do not match native support and have nonzero reader error; the combined field is not admitted. Coordinate-only controls also diverge from ideal center samples, but clipped tiny stamps do not isolate the cause."
+}
