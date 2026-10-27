@@ -95,8 +95,12 @@ dispatch, not complete version coverage or visual parity.
 For one clipped synthetic SimpleBrush host-Mesa control, a test-only SVG radial
 fringe derived from the captured geometry has 137/137 native support overlap,
 versus 40/137 for the generic fallback; its total alpha error is 738 versus
-23,129. This single 1× transparent-background comparison does not establish
-saved-note admission, PDF behavior, other scales or device parity.
+23,129, and its premultiplied RGBA error is 2,180 versus 66,288. For the same
+input, a MuPDF 1.28.2 rasterization of the generated PDFs gives 115/137 versus
+50/137 support overlap and alpha error 3,845 versus 23,138. The captured shader
+ignores input alpha; the generic Brush route also uses whole-stroke opacity 1
+for this control. This single 1× transparent-background comparison does not
+establish saved-note admission, general PDF behavior, other scales or device parity.
 
 The SDK chooser also lists TriangleMosaicPen, which is absent from the pinned
 native registry; that entry does not establish a loadable or rendered plugin.

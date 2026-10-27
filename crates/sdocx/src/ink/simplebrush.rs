@@ -377,6 +377,10 @@ mod tests {
             }),
             pen_width: 8.,
         };
+        // The native fragment shader ignores input alpha in this capture. The
+        // generic Brush route also uses whole-stroke opacity 1, despite the
+        // saved 0x80 alpha; compare the actual routes, not an assumed opacity.
+        assert_eq!(crate::prepare_stroke(&stroke, false).opacity, 1.0);
         let document = Document {
             pages: vec![Page {
                 uuid: "simplebrush-v25".into(),
@@ -405,6 +409,15 @@ mod tests {
             .remove(0)
             .page
             .svg;
+        if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_EXPORT_DIR") {
+            let directory = std::path::Path::new(&directory);
+            std::fs::create_dir_all(directory).unwrap();
+            for (name, source) in [("candidate", &svg), ("fallback", &fallback)] {
+                let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
+                let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
+                std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
+            }
+        }
         let raster = |source: &str| {
             let tree =
                 resvg::usvg::Tree::from_str(source, &resvg::usvg::Options::default()).unwrap();
@@ -424,6 +437,7 @@ mod tests {
             let mut intersection = 0usize;
             let mut union = 0usize;
             let mut alpha_error = 0u64;
+            let mut rgba_error = 0u64;
             let mut support = 0usize;
             for y in 0..16 {
                 for x in 0..32 {
@@ -433,9 +447,16 @@ mod tests {
                     union += usize::from(n != 0 || a != 0);
                     support += usize::from(a != 0);
                     alpha_error += u64::from(n.abs_diff(a));
+                    let native_pixel = &native[(y * 32 + x) * 4..][..4];
+                    let output_pixel = &image.data()[((1079 - y) * 1920 + x) * 4..][..4];
+                    rgba_error += native_pixel
+                        .iter()
+                        .zip(output_pixel)
+                        .map(|(native, actual)| u64::from(native.abs_diff(*actual)))
+                        .sum::<u64>();
                 }
             }
-            (intersection, union, support, alpha_error)
+            (intersection, union, support, alpha_error, rgba_error)
         };
         let candidate_metrics = metrics(&candidate);
         let fallback_metrics = metrics(&fallback);
@@ -456,7 +477,7 @@ mod tests {
             );
         }
         eprintln!(
-            "v25 candidate (intersection, union, support, alpha error): {candidate_metrics:?}; fallback: {fallback_metrics:?}"
+            "v25 candidate (intersection, union, support, alpha error, RGBA error): {candidate_metrics:?}; fallback: {fallback_metrics:?}"
         );
         assert_eq!(
             native
@@ -475,5 +496,6 @@ mod tests {
             candidate_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * candidate_metrics.1
         );
         assert!(candidate_metrics.3 < fallback_metrics.3);
+        assert!(candidate_metrics.4 < fallback_metrics.4);
     }
 }
