@@ -593,7 +593,11 @@ three RGBA bytes on these host captures; it does not establish export parity.
 A [GLV1 source matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-glv1-source-native.json)
 checks native source getters and complete XYZ streams; the Rust source model
 matches all 35 two- to eight-point cases, including duplicate/nearby-event
-admission, native width transitions and the 0.4–800 size clamp. A
+admission, native width transitions and the 0.4–800 size clamp. An omitted
+saved size uses the native zero default and 0.4 floor. Three minimum-size
+host controls improve over the generic omitted-size fallback in SVG and PDF.
+The native default comes from synthetic Model/Drawing input, not a serialized
+MagicPen note. A
 [NoCurve event matrix](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-nocurve-source-events-native.json)
 adds 18 controls for admission cutoffs, first-admitted width seeding, terminal
 ranges, direct dots and thick-stroke sampling, with exact complete streams. A separate

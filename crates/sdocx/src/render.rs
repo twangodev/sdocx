@@ -8332,6 +8332,78 @@ mod tests {
     }
 
     #[test]
+    fn magicpen_v1_omitted_size_matches_native_and_zero_size_exports() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/magicpen-glv1-source-native.json"
+        ))
+        .unwrap();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "size_omitted")
+            .unwrap();
+        let input = &case["input"];
+        let words = |value: &serde_json::Value| -> Vec<u32> {
+            value
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|word| u32::from_str_radix(word.as_str().unwrap(), 16).unwrap())
+                .collect()
+        };
+        let mut stroke = magicpen_v1_stroke();
+        let point_words = words(&input["points_f32_u32_hex"]);
+        stroke.points = point_words
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|xy| Point {
+                x: f32::from_bits(xy[0]) as f64,
+                y: f32::from_bits(xy[1]) as f64,
+            })
+            .collect();
+        stroke.pressures = words(&input["pressure_f32_u32_hex"])
+            .into_iter()
+            .map(|word| f32::from_bits(word) as f64)
+            .collect();
+        stroke.pen_width = 0.8;
+        stroke.rendering.as_mut().unwrap().style.pen_size = None;
+        stroke.rendering.as_mut().unwrap().properties.compressed = true;
+        let native: Vec<u32> = words(&case["native"]["xyz_f32_u32_hex"]);
+        let actual: Vec<u32> = crate::ink::prepare_magicpen_v1_source(&stroke)
+            .unwrap()
+            .records
+            .into_iter()
+            .flatten()
+            .collect();
+        assert_eq!(actual, native);
+        for curved in [true, false] {
+            stroke.rendering.as_mut().unwrap().properties.compressed = curved;
+            let mut explicit = stroke.clone();
+            explicit.rendering.as_mut().unwrap().style.pen_size = Some(0.0);
+            let mut page = page_with_uncolored_stroke();
+            page.objects = vec![stroke.clone().into()];
+            let omitted_document = document(page.clone());
+            page.objects = vec![explicit.into()];
+            let explicit_document = document(page);
+            let options = RenderOptions::default();
+            assert_eq!(
+                render_document_svg(&omitted_document, &options)[0].svg,
+                render_document_svg(&explicit_document, &options)[0].svg
+            );
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(&omitted_document, &options, &Default::default())
+                    .unwrap(),
+                crate::render_document_pdf(&explicit_document, &options, &Default::default())
+                    .unwrap()
+            );
+            assert_eq!(stroke.rendering.as_ref().unwrap().style.pen_size, None);
+        }
+    }
+
+    #[test]
     fn magicpen_v1_omitted_settings_and_color_match_native_defaults() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/magicpen-admission-defaults-native.json"

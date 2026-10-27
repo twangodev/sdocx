@@ -49,7 +49,9 @@ pub(crate) fn prepare_source_v1(stroke: &Stroke) -> Option<PreparedMagicPenV1> {
     // Drawing selects GLV1 for null settings; ObjectStroke's omitted color
     // is opaque black. Keep those defaults local to native preparation.
     let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
-    let size = rendering.style.pen_size?;
+    // ObjectStroke defaults an omitted saved size to zero; Pen::SetSize
+    // applies the native 0.4 floor inside the source model.
+    let size = rendering.style.pen_size.unwrap_or(0.0);
     if !size.is_finite()
         || stroke.points.iter().any(|point| {
             !point.x.is_finite()
