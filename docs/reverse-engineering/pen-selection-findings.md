@@ -221,6 +221,15 @@ Graphics vtable provenance is hash-pinned in the oracle; MotionEvent, factory
 and bitmap interfaces remain synthetic, with no texture upload, GPU pixels or
 full application parity established.
 
+An offline comparison of the retained `libSPenAirBrushPen.so` (SHA-256
+`92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423`)
+finds that the entire 308-byte GLV1 `drawPoint` function at file offset
+`0x25ff8` is byte-identical to GLV2 `drawPoint` at `0x2735c`. These offsets
+also equal the symbol virtual addresses in this library. `readelf -Ws` reports
+separate GLV1 and GLV2 `drawLine` and `RedrawPen` functions; the identical
+`drawPoint` bytes alone do not establish class inheritance or equivalent
+sampling, selector behavior, or rendered pixels across versions.
+
 ## Pencil2 current renderer control
 
 A controlled four-point tool-2 native Drawing capture selects

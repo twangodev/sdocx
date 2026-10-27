@@ -31,6 +31,8 @@ pub(super) struct Input<'a> {
     pub history: &'a [P],
     pub endpoint: P,
     pub size: f32,
+    pub tool_type: i32,
+    pub source: i32,
     pub runtime: Runtime,
 }
 
@@ -53,120 +55,42 @@ fn midpoint(a: P, b: P) -> P {
     a.mid(b)
 }
 
-fn sample_quad(
-    out: &mut Output,
-    start: P,
-    control: P,
-    end: P,
-    spacing: f32,
-    include_end: bool,
-    counter: &mut u32,
-) -> Option<()> {
-    if out.stamps.len() >= MAX_STAMPS
-        || !spacing.is_finite()
-        || spacing <= 0.0
-        || ![start.x, start.y, control.x, control.y, end.x, end.y]
-            .into_iter()
-            .all(f32::is_finite)
-    {
-        return None;
-    }
-    let path = Quad::new(start, control, end);
-    if path.length == 0.0 {
-        if include_end {
-            push_stamp(out, end, counter)?;
-        }
-        return Some(());
-    }
-    let repeats = (path.length / spacing).trunc();
-    if !repeats.is_finite() || repeats < 0.0 || repeats as usize > MAX_STAMPS - out.stamps.len() {
-        return None;
-    }
-    let count = repeats as usize;
-    let step = if count == 0 {
-        0.0
-    } else {
-        path.length / count as f32
-    };
-    let n = count + usize::from(include_end && count > 0);
-    let mut distance = 0.0_f32;
-    for i in 0..n {
-        if i < count {
-            push_stamp(out, path.at(distance), counter)?;
-            distance += step;
-        } else {
-            push_stamp(out, end, counter)?;
-        }
-    }
-    Some(())
-}
-
-fn push_stamp(out: &mut Output, p: P, counter: &mut u32) -> Option<()> {
-    if out.stamps.len() >= MAX_STAMPS {
-        return None;
-    }
-    let degrees = (*counter as f32) * 137.0;
-    let radians = ((degrees as f64 * std::f64::consts::PI) / 180.0) as f32;
-    // The conformance runner's explicit sincosf host boundary evaluates the
-    // angle with Python's binary64 libm and rounds each result to f32.
-    let sin = libm::sin(radians as f64) as f32;
-    let cos = libm::cos(radians as f64) as f32;
-    out.stamps.push(Stamp {
-        values: [p.x, p.y, sin, cos],
-    });
-    *counter = counter.checked_add(1)?;
-    Some(())
-}
-
-/// Run the observed V1 saved redraw lifecycle for explicit finite event data.
-/// The native call emits one quadratic to each history midpoint, followed by
-/// a terminal quadratic to the current event. The captured numeric profile
-/// is independent of tool type at this sampling stage.
+/// Reconstruct the captured V1 saved redraw using the shared movement and
+/// sampling state. V1 and V2 differ in PenData writeback; this output models
+/// only their observed AddPoint stream, not those side effects.
 pub(super) fn saved_redraw(input: Input<'_>) -> Option<Output> {
-    let Input {
-        history,
-        endpoint,
-        size,
-        runtime,
-    } = input;
-    if history.is_empty() || history.len() > MAX_POINTS || !size.is_finite() || size <= 0.0 {
-        return None;
+    let first = *input.history.first()?;
+    if input.history.len() <= MAX_POINTS
+        && v2_spacing(input.size).is_some()
+        && first.x.is_finite()
+        && first.y.is_finite()
+        && input.endpoint.x == first.x
+        && input.endpoint.y == first.y
+        && input
+            .history
+            .iter()
+            .all(|p| p.x == first.x && p.y == first.y)
+    {
+        return Some(Output {
+            history_ends: vec![0; input.history.len().saturating_sub(1)],
+            ..Output::default()
+        });
     }
-    let spacing = ((size.trunc() * 2.0) / 20.0).max(f32::MIN_POSITIVE);
-    let mut output = Output::default();
-    let mut counter = runtime.counter_seed;
-    let mut previous_raw = history[0];
-    // RedrawPen seeds the GL drawable's active midpoint from history[0]; the
-    // separately supplied runtime previous_position is consumed by its
-    // movement/tolerance gate, not as this path's first moveTo coordinate.
-    let mut previous_mid = history[0];
-    for &current in history.iter().skip(1) {
-        let mid = midpoint(previous_raw, current);
-        sample_quad(
-            &mut output,
-            previous_mid,
-            previous_raw,
-            mid,
-            spacing,
-            false,
-            &mut counter,
-        )?;
-        output.history_ends.push(output.stamps.len());
-        previous_raw = current;
-        previous_mid = mid;
-    }
-    let start = output.stamps.len();
-    sample_quad(
-        &mut output,
-        previous_mid,
-        previous_raw,
-        endpoint,
-        spacing,
-        false,
-        &mut counter,
-    )?;
-    output.terminal = start..output.stamps.len();
-    Some(output)
+    let result = saved_redraw_v2(V2Input {
+        history: input.history,
+        endpoint: input.endpoint,
+        initial_position: *input.history.first()?,
+        size: input.size,
+        tolerance: input.size / 20.0,
+        tool_type: input.tool_type,
+        source: input.source,
+        counter_seed: input.runtime.counter_seed,
+    })?;
+    Some(Output {
+        stamps: result.stamps,
+        history_ends: result.history_ends,
+        terminal: result.terminal,
+    })
 }
 
 /// Direct V2 saved-redraw input used only by this module's conformance tests.
@@ -636,6 +560,12 @@ mod tests {
                 history: &history,
                 endpoint: point(&input["endpoint"]),
                 size: input["size"].as_f64().unwrap() as f32,
+                tool_type: if input["id"].as_str().unwrap().starts_with("tool2") {
+                    2
+                } else {
+                    1
+                },
+                source: 0,
                 runtime: Runtime {
                     counter_seed: runtime["counter_seed"].as_u64().unwrap() as u32,
                 },
@@ -828,7 +758,52 @@ mod tests {
     }
 
     #[test]
-    fn short_saved_v1_native_stream_exposes_legacy_sampler_gap() {
+    fn v1_boundary_streams_match_native() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-v1-v2-boundary-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let points: Vec<P> = case["points_f32_le"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: little_endian_f32(p[0].as_str().unwrap()),
+                    y: little_endian_f32(p[1].as_str().unwrap()),
+                })
+                .collect();
+            let output = saved_redraw(Input {
+                history: &points[..7],
+                endpoint: points[7],
+                size: 14.0,
+                tool_type: case["tool_type"].as_i64().unwrap() as i32,
+                source: case["source"].as_i64().unwrap() as i32,
+                runtime: Runtime { counter_seed: 0 },
+            })
+            .unwrap();
+            let actual: Vec<_> = output
+                .stamps
+                .iter()
+                .map(|s| s.values.map(f32::to_bits))
+                .collect();
+            let expected: Vec<[u32; 4]> = case["v1_stamps_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|row| {
+                    std::array::from_fn(|i| {
+                        u32::from_str_radix(row[i].as_str().unwrap(), 16).unwrap()
+                    })
+                })
+                .collect();
+            assert_eq!(actual, expected, "native V1 boundary: {case}");
+            assert_eq!(case["v2_matches_v1"], true);
+        }
+    }
+
+    #[test]
+    fn short_saved_v1_native_stream_matches_shared_sampler() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/airbrush-short-v1-v2-native.json"
         ))
@@ -890,12 +865,18 @@ mod tests {
             history,
             endpoint,
             size,
+            tool_type: 2,
+            source: 0,
             runtime: Runtime { counter_seed: 0 },
         })
         .unwrap();
-        assert!(
-            legacy.stamps.is_empty(),
-            "legacy V1 model does not handle short moves"
+        assert_eq!(
+            legacy
+                .stamps
+                .iter()
+                .map(|s| s.values.map(f32::to_bits))
+                .collect::<Vec<_>>(),
+            expected
         );
         assert_eq!(expected.len(), 2, "native V1 emits short-move stamps");
     }
@@ -959,6 +940,8 @@ mod tests {
                 history: &points[..points.len() - 1],
                 endpoint: *points.last().unwrap(),
                 size: little_endian_f32(input["size_f32_bits"].as_str().unwrap()),
+                tool_type: 2,
+                source: 0,
                 runtime: Runtime { counter_seed: 0 },
             })
             .unwrap();
