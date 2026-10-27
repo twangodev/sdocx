@@ -1,0 +1,291 @@
+{
+  "schema": "sdocx-inkpen2-literal-v1-paired-paint-native-v1",
+  "scope": "Paired synthetic ObjectStroke Drawing and RTV1 host Mesa, transparent target; no serialized notes or device output. The capture adapter was relocated after execution; only its repository-root calculation changed.",
+  "capture_script": "tmp/vector-parity-plan/inkpen2-literal-v1/capture.py",
+  "adapter_sha256": "56c0e809ba0a0059e79fa1ac545457232976405dc6b62df53c6e186798d0810b",
+  "compared": [
+    "geometry bytes",
+    "RGBA bytes",
+    "draw calls",
+    "shader programs",
+    "output size",
+    "draw matrix"
+  ],
+  "cases": {
+    "baseline": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            16,
+            3
+          ],
+          [
+            24,
+            3
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "color_argb": "0xff336699",
+      "scale": 1.0,
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 137,
+      "selected_versions": [
+        "1",
+        "1"
+      ],
+      "advanced_settings": [
+        null,
+        "1;"
+      ]
+    },
+    "turn_half_red": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            0,
+            8
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "color_argb": "0x80ff0000",
+      "scale": 0.5,
+      "geometry_sha256": "dba295426f2bcdf542866796c6924d8dc754dba5844adb52cacf0a7bd4271963",
+      "rgba_sha256": "11b1266290e16597f75e70340ee9c937f8cef132835c49579d232a2e1be33efd",
+      "rgba_zlib_base64": "eNrt0rERQUEYRtFbiQIUIlGOKshVIhGK5RLJowUzRoanCzN7znzbwP23AAAAAAAAAAAAAAAAAAAAGN1q3lTTrW6XuhzrqMp497/X/VnPd70PdVBmTI9517oqMZ71vFe9znVWYwzLefvan+r0qc/vbWqjzDj339Xu9we2tV3UQhUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7BF/zyI+0=",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 27,
+      "selected_versions": [
+        "1",
+        "1"
+      ],
+      "advanced_settings": [
+        null,
+        "1;"
+      ]
+    },
+    "short_double": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.1,
+            0
+          ],
+          [
+            0.2,
+            0.1
+          ],
+          [
+            0.3,
+            0.1
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "color_argb": "0x00336699",
+      "scale": 2.0,
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "1414745bf70770c58da731a8572bfcccb2101d8492706e748c81304ba0a72fb6",
+      "rgba_zlib_base64": "eNrt17sNgzAQAFBGoKGhoU9D4QGYAGUKImULxoBl+VygIEqfAr8nnXSyuzv7ZBcFAAAAAAAAAAAAAAAAAMChbNpnnfoxInIVyUf16N5pmJb0mtdP7HmsqUwe9/6r95czYA7cX8z7n96fEXsqpP+Y/3j/4f8HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwbxs7t1fd",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 52,
+      "selected_versions": [
+        "1",
+        "1"
+      ],
+      "advanced_settings": [
+        null,
+        "1;"
+      ]
+    },
+    "large_reverse": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            -8,
+            0
+          ]
+        ],
+        "size": 12,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "color_argb": "0xff336699",
+      "scale": 1.0,
+      "geometry_sha256": "d05eafd170df481fd416b4c4b3b36cbfa3ae3be4ddb89cd2646e179f187003fd",
+      "rgba_sha256": "8e9b8500bf3e2f189c3cbfcdb5d89d1ca444e02532de86381743a0580218c418",
+      "rgba_zlib_base64": "eNrt2UsrRGEYB3BhJrcaWaBIWSCa3GaBsiErGylSbilmbJSdhYWFnVxioc7MB1A+gi9gY2llbScbH8AwNxrkspzR71dP7+nU2Tz/9306c6aiAgAAAAAAAAAAAAAAAH5XFa6NhBuaOiqrw3WVVaEaHfm/aiIt3R3ji+f9ywf3w/EgHUukXmKJIFPJfMWDbKUH106f2sfmDnWsfGXPdHN0YqtnZud6cPXkMZNvOpfxZjbrTO7xZCH7VD73tz2Q2xO5Nd03v3cbqou06mZ5CNU3tnVOrl8MrBw95DMMCjmnivJNFu4VrcUz4G0OZJ/ZSL70zu7e6GyZZD8Vv/yQ40+1+Wn9Uu975rmpa2RJh0tb++jc8fd5B19nwF/2R2E+RBf273S4tHVNb1/96bx/f86LroMPzwytnT3psPwx//H+h99/+P5DefH9l8/8/wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAKXoFGBz9RA==",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 258,
+      "selected_versions": [
+        "1",
+        "1"
+      ],
+      "advanced_settings": [
+        null,
+        "1;"
+      ]
+    }
+  },
+  "adapter_relocated_sha256": "13762469e10888556248a767f86507cac7082f9f79bb66bf9ba328fa0cd08199",
+  "capture_script_sha256": "8fb7276c095dca15548b3220844088c1f078348218eda448c8e0e7d3819c885f",
+  "adapter_script": "tmp/vector-parity-plan/inkpen2-literal-v1/adapter.py"
+}

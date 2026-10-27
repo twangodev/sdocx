@@ -125,7 +125,7 @@ pub struct InkPen2RenderProfile {
     pub enhanced_antialias: bool,
 }
 
-/// Explicit output scale for the experimental null-setting InkPen2 V1 vector approximation.
+/// Explicit output scale for the experimental InkPen2 V1 vector approximation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum InkPen2V1OutputScale {
@@ -4600,7 +4600,7 @@ fn prepare_inkpen2_internal(
         _ => false,
     };
     let supported_setting = match rendering.advanced_settings.as_deref() {
-        None if v1_scale.is_some() => true,
+        None | Some("1;") if v1_scale.is_some() => true,
         Some("9;") => true,
         // Native Drawing selects V9 for a non-null empty setting in both names.
         Some("") => !active_rainbow && rendering.style.color_type_raw.unwrap_or(0) == 0,
@@ -4621,9 +4621,13 @@ fn prepare_inkpen2_internal(
                 Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
                     | Some("com.samsung.android.sdk.pen.pen.preload.StraightInkPen2")
             )
-            || rendering.advanced_settings.is_some()
+            || !matches!(rendering.advanced_settings.as_deref(), None | Some("1;"))
             // An unresolved table reference is not evidence of a native null setting.
-            || rendering.style.advanced_pen_setting_id.is_some()
+            || (rendering.advanced_settings.is_none()
+                && rendering.style.advanced_pen_setting_id.is_some())
+            || (rendering.advanced_settings.as_deref() == Some("1;")
+                && rendering.pen_name.as_deref()
+                    != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2"))
             || active_rainbow
             || rendering.style.color_type_raw.unwrap_or(0) != 0
             || rendering.style.color_argb.is_none());
@@ -18160,6 +18164,164 @@ mod tests {
                 )
                 .unwrap();
                 results.push((svg, pdf));
+            }
+            assert_eq!(results[0], results[1], "{name}");
+            assert_eq!(case["selected_versions"], serde_json::json!(["1", "1"]));
+            let theme = RenderTheme::for_canvas(false);
+            let mut rejected = stroke.clone();
+            rejected.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+            assert!(
+                super::prepare_inkpen2_v1(&rejected, options.inkpen2_profile, theme, scale)
+                    .is_none()
+            );
+            rejected = stroke.clone();
+            rejected
+                .rendering
+                .as_mut()
+                .unwrap()
+                .properties
+                .rainbow_effect = true;
+            assert!(
+                super::prepare_inkpen2_v1(&rejected, options.inkpen2_profile, theme, scale)
+                    .is_none()
+            );
+            rejected = stroke.clone();
+            rejected.rendering.as_mut().unwrap().style.color_type_raw = Some(1);
+            assert!(
+                super::prepare_inkpen2_v1(&rejected, options.inkpen2_profile, theme, scale)
+                    .is_none()
+            );
+            assert!(super::prepare_inkpen2_v1(&stroke, None, theme, scale).is_none());
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_literal_v1_paired_public_outputs() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-literal-v1-paired-paint-native.json"
+        ))
+        .unwrap();
+        for (name, case) in receipt["cases"].as_object().unwrap() {
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                case["rgba_sha256"].as_str().unwrap()
+            );
+            let input = &case["input"];
+            let color = u32::from_str_radix(
+                case["color_argb"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let scale = match case["scale"].as_f64().unwrap() {
+                0.5 => super::InkPen2V1OutputScale::Half,
+                1.0 => super::InkPen2V1OutputScale::One,
+                2.0 => super::InkPen2V1OutputScale::Double,
+                _ => panic!("unexpected scale"),
+            };
+            let mut stroke = inkpen2_color_stroke(color, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            let size = input["size"].as_f64().unwrap() as f32;
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap() + 32.,
+                    y: p[1].as_f64().unwrap() + 32.,
+                })
+                .collect();
+            stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            let options = RenderOptions {
+                inkpen2_profile: Some(InkPen2RenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    enhanced_antialias: false,
+                }),
+                inkpen2_v1_output_scale: Some(scale),
+                ..Default::default()
+            };
+            let mut results = Vec::new();
+            for setting in [None, Some("1;")] {
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.advanced_settings = setting.map(str::to_owned);
+                rendering.style.advanced_pen_setting_id = setting.map(|_| 1);
+                let prepared = super::prepare_inkpen2_v1(
+                    &stroke,
+                    options.inkpen2_profile,
+                    RenderTheme::for_canvas(false),
+                    scale,
+                )
+                .unwrap();
+                // Native geometry is captured before the draw translation.
+                let mut untranslated = stroke.clone();
+                for point in &mut untranslated.points {
+                    point.x -= 32.;
+                    point.y -= 32.;
+                }
+                let geometry = super::prepare_inkpen2_v1(
+                    &untranslated,
+                    options.inkpen2_profile,
+                    RenderTheme::for_canvas(false),
+                    scale,
+                )
+                .unwrap();
+                let bytes: Vec<u8> = geometry
+                    .records
+                    .iter()
+                    .flat_map(|r| r[..3].iter().flat_map(|f| f.to_le_bytes()))
+                    .collect();
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(bytes)),
+                    case["geometry_sha256"].as_str().unwrap(),
+                    "{name} {setting:?}"
+                );
+                assert!(!prepared.records.is_empty());
+                let mut page = page_with_uncolored_stroke();
+                page.width = 128;
+                page.height = 96;
+                page.objects = vec![stroke.clone().into()];
+                let doc = document(page);
+                let layout = layout_document(&doc);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                let svg = super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg;
+                let pdf = crate::render_svg_pages_pdf(
+                    &[crate::RenderedPage::new(0, 128, 96, svg.clone())],
+                    &Default::default(),
+                )
+                .unwrap();
+                let document_pdf =
+                    crate::render_document_pdf(&doc, &options, &Default::default()).unwrap();
+                results.push((svg, pdf, document_pdf));
             }
             assert_eq!(results[0], results[1], "{name}");
             assert_eq!(case["selected_versions"], serde_json::json!(["1", "1"]));
