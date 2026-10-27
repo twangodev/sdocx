@@ -143,10 +143,25 @@ struct Core<'a> {
     bounds: [f32; 4],
     rainbow_offset: f32,
     current_rgb: [f32; 3],
+    #[cfg(test)]
+    v1_callback: bool,
 }
 
 impl<'a> Core<'a> {
     fn add_point(&mut self, p: P, radius: f32, rgb: [f32; 3]) -> Option<()> {
+        // RTV1 clamps the drawable radius before AddPoint adds 0.75. This
+        // branch is restricted to native geometry controls, not paint.
+        #[cfg(test)]
+        if self.v1_callback {
+            if self.output.vertices.len() >= self.max_emissions {
+                return None;
+            }
+            self.output
+                .vertices
+                .push([p.x, p.y, radius.max(1.) + 0.75, 0., 0., 0., 0., 0., 0.]);
+            self.no_emission = false;
+            return Some(());
+        }
         let [sx, sy] = self.input.runtime.inverse_scale;
         if !p.x.is_finite() || !p.y.is_finite() || !radius.is_finite() || sx <= 0. || sy <= 0. {
             return None;
@@ -267,7 +282,15 @@ impl<'a> Core<'a> {
 
     fn finish(mut self) -> Option<Output> {
         let n = self.input.points.len();
-        for i in 1..n {
+        #[cfg(test)]
+        let movement_end = if self.v1_callback {
+            n.saturating_sub(1)
+        } else {
+            n
+        };
+        #[cfg(not(test))]
+        let movement_end = n;
+        for i in 1..movement_end {
             let p = self.input.points[i];
             let dx = p.x - self.control.x;
             let dy = p.y - self.control.y;
@@ -304,6 +327,25 @@ impl<'a> Core<'a> {
             self.output.sample_ends.push(self.output.vertices.len());
         }
         let start = self.output.vertices.len();
+        // V1 endPen uses the last sample as the quadratic endpoint and
+        // tapers to 0.6 times the last movement radius.
+        #[cfg(test)]
+        if self.v1_callback {
+            let endpoint = *self.input.points.last()?;
+            let terminal = Quad::new(self.last, self.control, endpoint);
+            let mut d = self.residual;
+            let count = ((terminal.length - d) / self.input.runtime.spacing) as i32 + 1;
+            let target = ((self.radius as f64) * 0.6) as f32;
+            let increment = (target - self.radius) / count as f32;
+            let mut radius = self.radius;
+            while d <= terminal.length {
+                self.add_point(terminal.at(d), radius, self.current_rgb)?;
+                radius += increment;
+                d += self.input.runtime.spacing;
+            }
+            self.output.terminal = start..self.output.vertices.len();
+            return Some(self.output);
+        }
         if self.no_emission {
             let rgb = if let Some(rainbow) = self.input.rainbow {
                 if rainbow.palette_argb.is_empty() {
@@ -385,6 +427,10 @@ pub(crate) fn redraw(input: Input<'_>) -> Option<Output> {
 /// This is used by public dispatch to reject excessive vector expansion while
 /// leaving the diagnostic fixture path at its broader historical bound.
 pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<Output> {
+    redraw_with_mode(input, max_emissions, false)
+}
+
+fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<Output> {
     let n = input.points.len();
     let rt = input.runtime;
     if input.is_shape
@@ -437,8 +483,16 @@ pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<O
         ],
         rainbow_offset: input.rainbow.map_or(0.0, |rainbow| rainbow.offset),
         current_rgb: input.rgb.map(|channel| f32::from(channel) / 255.0),
+        #[cfg(test)]
+        v1_callback: v1,
     };
     core.output.sample_ends.push(0);
+    #[cfg(test)]
+    if v1 {
+        core.add_point(first, input.size / 3., [0.; 3])?;
+    }
+    #[cfg(not(test))]
+    let _ = v1;
     core.finish()
 }
 
@@ -610,6 +664,73 @@ mod tests {
 
     fn number(value: &Value) -> f32 {
         value.as_f64().unwrap() as f32
+    }
+
+    // A bounded synthetic profile, not evidence for arbitrary strokes or paint.
+    #[test]
+    fn null_v1_controls_match_candidate_geometry() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-null-v1-controls-native.json"
+        ))
+        .unwrap();
+        for (name, case) in receipt["cases"].as_object().unwrap() {
+            let i = &case["input"];
+            let points: Vec<P> = i["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: f32_from_le_hex(&p[0]),
+                    y: f32_from_le_hex(&p[1]),
+                })
+                .collect();
+            let times: Vec<i32> = i["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|x| x.as_i64().unwrap() as i32)
+                .collect();
+            let pressure: Vec<f32> = i["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(f32_from_le_hex)
+                .collect();
+            let tools = vec![i["tool_type"].as_i64().unwrap() as i32; points.len()];
+            let out = super::redraw_with_mode(
+                Input {
+                    points: &points,
+                    times: &times,
+                    pressures: &pressure,
+                    tools: &tools,
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: f32_from_le_hex(&i["pen_size_f32_bits"]),
+                    // Both native curve flag values follow this curve in the captured profile.
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min: 1080,
+                        initial_alternation: false,
+                        initial_time: times[0],
+                    },
+                },
+                10000,
+                true,
+            )
+            .unwrap();
+            let actual: Vec<u8> = out
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            let expected = hex_bytes(case["stream_hex"].as_str().unwrap());
+            assert_eq!(actual, expected, "{name}");
+        }
     }
 
     #[test]
