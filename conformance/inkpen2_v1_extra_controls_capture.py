@@ -12,6 +12,10 @@ cases = {
  'size_eight': {'size': 8},
  'long_curve': {'points': [[i * 2, ((i % 8) - 4) ** 2 * .3] for i in range(32)], 'pressure': [((i % 10) + 1) / 10 for i in range(32)], 'timestamps': [i * 10 for i in range(32)], 'tilt': [0]*32, 'orientation': [0]*32},
  'long_straight': {'points': [[i * 3, 0] for i in range(32)], 'pressure': [.5]*32, 'timestamps': [i * 10 for i in range(32)], 'tilt': [0]*32, 'orientation': [0]*32},
+ 'fractional_negative': {'points': [[-18.75, -7.125], [-12.3, -3.7], [-4.6, -9.9], [2.25, -1.875]]},
+ 'irregular_time': {'timestamps': [0, 1, 100, 10000]},
+ 'reverse_time': {'timestamps': [30, 20, 10, 0]},
+ 'curve_disabled': {'curve_enabled': False},
 }
 env=os.environ.copy(); env['PYTHONPATH']=os.pathsep.join(str(root/p) for p in ('scratch/straightinkpen2-alias','scratch/apk-analysis-runtime/python','scratch/apk-analysis-runtime/binutils-aarch64/usr/bin'))
 out={}; route_rejections={}
@@ -37,4 +41,9 @@ with tempfile.TemporaryDirectory() as temp:
   out[name]={'input':x['input'],'stream_hex':data.hex(),'stream_sha256':hashlib.sha256(data).hexdigest(),'record_count':len(data)//12,'redraw_rect_f32_bits':x['native_calls']['separate_saved_RedrawPen_rect_f32_bits']}
   print(name,len(data)//12,file=sys.stderr,flush=True)
 receipt={'schema':'sdocx-inkpen2-v1-extra-controls-native-v1','profile':{'width':1920,'height':1080,'identity_canvas_matrix':True},'scope':'Synthetic ObjectStroke setters through native Drawing and saved RedrawPen; callback records only, no paint or deserialization.','source_harness_sha256':hashlib.sha256((root/'scratch/straightinkpen2-alias/inkpen2_saved_caller_native.py').read_bytes()).hexdigest(),'capture_script':'conformance/inkpen2_v1_extra_controls_capture.py','cases':out,'route_rejections':route_rejections}
-(root/'conformance/inkpen2-v1-extra-controls-native.json').write_text(json.dumps(receipt,indent=2)+'\n')
+def compact_arrays(value, depth=0):
+ if isinstance(value, dict) and value:
+  fields = [f'{" " * (depth + 2)}{json.dumps(k)}: {compact_arrays(v, depth + 2)}' for k, v in value.items()]
+  return '{\n' + ',\n'.join(fields) + '\n' + ' ' * depth + '}'
+ return json.dumps(value)
+(root/'conformance/inkpen2-v1-extra-controls-native.json').write_text(compact_arrays(receipt)+'\n')
