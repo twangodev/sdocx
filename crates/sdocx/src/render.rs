@@ -7121,11 +7121,26 @@ mod tests {
             .svg
             .clone();
         let xml = roxmltree::Document::parse(&svg).unwrap();
-        assert!(
-            xml.descendants()
-                .any(|node| node.has_tag_name("line") || node.has_tag_name("polyline"))
-        );
-        assert!(!xml.descendants().any(|node| node.has_tag_name("circle")));
+        let circles: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("circle"))
+            .collect();
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-gradual-native.json"
+        ))
+        .unwrap();
+        let expected = native["cases"]["gradual_diagonal"]["add_points"]
+            .as_array()
+            .unwrap();
+        assert_eq!(circles.len(), expected.len());
+        for (circle, point) in circles.iter().zip(expected) {
+            for (index, attribute) in ["cx", "cy", "r"].iter().enumerate() {
+                let actual: f32 = circle.attribute(*attribute).unwrap().parse().unwrap();
+                let expected =
+                    point[index].as_f64().unwrap() as f32 + if index == 2 { 0.5 } else { 0.0 };
+                assert!((actual - expected).abs() < 0.0001);
+            }
+        }
         #[cfg(feature = "pdf")]
         {
             let options = crate::PdfOptions::default();

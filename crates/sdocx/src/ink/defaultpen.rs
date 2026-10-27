@@ -234,11 +234,6 @@ pub(super) fn saved_with_boundaries(
             terminal_start: 0,
         });
     };
-    // Delayed start changes native terminal state; retain generic rendering
-    // until that transition is reconstructed.
-    if first_move > 1 {
-        return None;
-    }
     let threshold = if tool == 1 || (tool == 2 && source == 0x1002) {
         50.0_f32
     } else {
@@ -251,7 +246,7 @@ pub(super) fn saved_with_boundaries(
     let mut control = input[first_move];
     let mut retained = input[first_move];
     let mut endpoint = input[first_move];
-    let mut cubic_end = false;
+    let mut cubic_end = true;
     // RedrawPen calls redrawLine once for the initial historical event. The
     // captured six-point caller emits no AddPoint at that first return.
     redraw_ends.resize(first_move, 0);
@@ -261,7 +256,12 @@ pub(super) fn saved_with_boundaries(
     // midpoint quadratic and advance its retained start/control state.
     for &next in &input[first_move + 1..input.len() - 1] {
         let previous = endpoint;
-        let distance = next.sub(previous).len();
+        let delta = next.sub(previous);
+        if delta.x.abs() < 1.5 && delta.y.abs() < 1.5 {
+            redraw_ends.push(output.len());
+            continue;
+        }
+        let distance = delta.len();
         let accepted = if distance > threshold {
             alternate = true;
             true
@@ -380,12 +380,7 @@ mod tests {
                     y: p[1].as_f64().unwrap(),
                 })
                 .collect();
-            let actual = saved(&points, 10.0, 1, 0);
-            if name != "stationary" {
-                assert!(actual.is_none(), "{name} must retain generic geometry");
-                continue;
-            }
-            let actual = actual.unwrap();
+            let actual = saved(&points, 10.0, 1, 0).unwrap();
             let expected = case["add_points"].as_array().unwrap();
             assert_eq!(actual.len(), expected.len(), "{name}");
             for (actual, expected) in actual.iter().zip(expected) {
