@@ -819,6 +819,8 @@ mod tests {
             stroke.color.unwrap()
         );
         stroke.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
         stroke.rendering.as_mut().unwrap().advanced_settings = None;
         stroke.rendering.as_mut().unwrap().style.pen_size = Some(4.0);
