@@ -1,0 +1,61 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "geometry_count": 8,
+  "geometry_sha256": "41851f3133fe888671009c67d41739a5dbf79aebc301108144d69fabcd1b83fa",
+  "full_frame_sha256": "a8983ada89baa013614a7281078f20043d8815172a3dff32acc73207d5d9b804",
+  "crop": {
+    "dimensions": [
+      144,
+      32
+    ],
+    "sha256": "eb4062dda035ae78e2e4fd34a12c4cade1e3a086ceb2936a8fe5f450b988dfac",
+    "nonzero_alpha_pixels": 48
+  },
+  "paint_clean": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  },
+  "execution_command": "See simplebrush-threshold-sequences.json for input bits and capture command.",
+  "public_comparison": {
+    "metrics": [
+      "support_intersection",
+      "support_union",
+      "absolute_alpha_error"
+    ],
+    "svg": {
+      "profiled": [
+        48,
+        48,
+        263
+      ],
+      "fallback": [
+        14,
+        48,
+        8398
+      ]
+    },
+    "pdf_mupdf_4_3": {
+      "profiled": [
+        40,
+        50,
+        1882
+      ],
+      "fallback": [
+        10,
+        48,
+        8722
+      ]
+    },
+    "pdf_method": "Export through SDOCX_SIMPLEBRUSH_EXPORT_DIR in skipped_segment_public_paint_controls; compare alpha with compare_simplebrush_fringe_pdf.py metrics at 4/3 raster scale."
+  }
+}

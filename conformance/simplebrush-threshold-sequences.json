@@ -1,0 +1,162 @@
+{
+  "scope": "Synthetic ObjectStroke via emulated native Drawing, host queue and Mesa GLES; not device or saved-note evidence. Shared boundaries and script hashes: simplebrush-short-sequences.json.",
+  "command": "SIMPLEBRUSH_POINTS and SIMPLEBRUSH_PRESSURES as recorded; PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py --case simplebrush_pressure_first075 --dispatch-task-seq 0 --dispatch-task-seq 1 --dispatch-task-seq 2 --dispatch-task-seq 3 --dispatch-task-seq 4 --dispatch-task-seq 5 --dispatch-task-seq 6 --dispatch-task-seq 7",
+  "cases": [
+    {
+      "case": "sdocx-threshold",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "0000b040",
+          "00008040"
+        ],
+        [
+          "3333b340",
+          "00008040"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a996140abaa8240000080409a996140aaaa8a40000080409a99614000009840000080409a9961400000984000008040989961403cd7964000008040814e6340fd34a240000080406a0365403133b3400000804053b86640",
+      "geometry_sha256": "268009b185d0baebe0c670a881a2e250e8fbfe7aaadfb61a49c5408d2f6e0ea2",
+      "frame_sha256": "6fcdaa122c8e10f1644c42be61db6d8b3011cdc25451b40624bfc34abba9f053",
+      "paint_clean": true
+    },
+    {
+      "case": "below",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "cff7af40",
+          "00008040"
+        ],
+        [
+          "3333b340",
+          "00008040"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a9961402dd88240000080409a996140b6608b40000080409a99614098999940000080409a9961409a99994000008040999961400a87964000008040814e6340a2caa14000008040690365403133b3400000804051b86640",
+      "geometry_sha256": "f45ea38f96a1f8fcdbcf3f3c29bff940ca183a6a2ecd040cf5f3f8766a63428c",
+      "frame_sha256": "d9e34596733410f46698db363e24bab3a1bfea9f8e53f324f7f86750ea10e015",
+      "paint_clean": true
+    },
+    {
+      "case": "above",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "3108b040",
+          "00008040"
+        ],
+        [
+          "3333b340",
+          "00008040"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a9961401fab8240000080409a9961407cac8a40000080409a99614016049840000080409a99614018049840000080409a99614060d6964000008040824e6340ec33a240000080406a0365403133b3400000804052b86640",
+      "geometry_sha256": "41851f3133fe888671009c67d41739a5dbf79aebc301108144d69fabcd1b83fa",
+      "frame_sha256": "a8983ada89baa013614a7281078f20043d8815172a3dff32acc73207d5d9b804",
+      "paint_clean": true
+    },
+    {
+      "case": "vertical",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "00008040",
+          "0000b040"
+        ],
+        [
+          "00008040",
+          "3333b340"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a99614000008040abaa82409a99614000008040aaaa8a409a99614000008040000098409a996140000080400000984098996140000080403cd79640814e634000008040fd34a2406a036540000080403133b34053b86640",
+      "geometry_sha256": "23249fa86c486df5fab8e41e3b0c4ba107d199f4520578f8caeff8a7e0505713",
+      "frame_sha256": "c1a47e45b56679cf16e374280852ea293f98e94c8732b3f34fd3d0314bcdb7fc",
+      "paint_clean": true
+    },
+    {
+      "case": "diagonal_below",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "cff7af40",
+          "cff7af40"
+        ],
+        [
+          "3333b340",
+          "3333b340"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a9961402dd882402dd882409a996140b6608b40b6608b409a99614099999940999999409a9961409a9999409a9999409a9961400a8796400a879640824e6340a2caa140a2caa1406a0365403133b3403133b34052b86640",
+      "geometry_sha256": "2761b833cde6f55f4b9fedc25d03582c37e6dca6ae0c8b269588dd69e64bc9c0",
+      "frame_sha256": "08317f38ca03ddf75ab18e49d26a327abc7fbfbc45540561f3bdb50349d005b0",
+      "paint_clean": true
+    },
+    {
+      "case": "diagonal_equal",
+      "points": [
+        [
+          "00008040",
+          "00008040"
+        ],
+        [
+          "0000b040",
+          "0000b040"
+        ],
+        [
+          "3333b340",
+          "3333b340"
+        ]
+      ],
+      "pressures": [
+        "0000803e",
+        "0000403f",
+        "0000003f"
+      ],
+      "geometry_hex": "00008040000080409a996140abaa8240abaa82409a996140aaaa8a40aaaa8a409a996140feff9740feff97409a99614000009840000098409a9961403cd796403cd79640824e6340fd34a240fd34a2406a0365403133b3403133b34052b86640",
+      "geometry_sha256": "b74230aa3df5c5b39d5480967eaaf3aba6e22d14cd34b3eb158b78c61248e7b4",
+      "frame_sha256": "3b2efbe4c3c3f55a5f8dc0c931b7069821a9c7782bd48e4050e2d7c3c2d1f02c",
+      "paint_clean": true
+    }
+  ]
+}
