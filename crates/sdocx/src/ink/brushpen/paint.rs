@@ -942,6 +942,67 @@ mod tests {
             .flat_map(f32::to_le_bytes)
             .collect();
         assert_eq!(generated_geometry, native_geometry);
+        let imports = fixture["paint"]["draw_time_uniform_imports"]["imports"]
+            .as_array()
+            .unwrap();
+        let values = |key: &str, location: u64| -> Vec<f32> {
+            imports.iter().find(|row| row[key] == location).unwrap()["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect()
+        };
+        let color = values("uniform4fv_location", 4);
+        let (atlas_rgba, grain_rgba) = source_textures();
+        let mut painted = vec![0; 321 * 228 * 4];
+        let records: Vec<_> = sampled
+            .output
+            .instances
+            .iter()
+            .map(|instance| instance.values)
+            .collect();
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas_rgba,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain_rgba,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: values("location", 0).try_into().unwrap(),
+                rgb: color[..3].try_into().unwrap(),
+                grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+                grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                num_tiles: 3.0,
+            },
+            &mut painted,
+        )
+        .unwrap();
+        assert_eq!(sha256(&painted), fixture["paint"]["full_rgba_sha256"]);
+        let mut document_crop = Vec::new();
+        ZlibDecoder::new(
+            &include_bytes!(
+                "../../../../../conformance/brushpen-long-native/crop-133x49-rgba8.zlib"
+            )[..],
+        )
+        .read_to_end(&mut document_crop)
+        .unwrap();
+        let paint_crop: Vec<_> = (38..87)
+            .flat_map(|y| {
+                painted[(y * 321 + 28) * 4..(y * 321 + 161) * 4]
+                    .iter()
+                    .copied()
+            })
+            .collect();
+        assert_eq!(paint_crop, document_crop);
         let document = crate::Document {
             pages: vec![crate::Page {
                 uuid: "brushpen-long-native".into(),

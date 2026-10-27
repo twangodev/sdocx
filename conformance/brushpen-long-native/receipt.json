@@ -104,7 +104,77 @@
     "target_dimensions": [
       321,
       228
-    ]
+    ],
+    "draw_time_uniform_imports": {
+      "capture_runner": "tmp/vector-parity-plan/brushpen-same-drawing-queue/long_mapdraw.py",
+      "capture_runner_sha256": "4c2cd4079c1a808c51843bd5442946a1f1fdcedd6f3e755af55bc56d47f0ff21",
+      "scope": "Native task2 intercepted uniform imports forwarded to Mesa. Post-draw query in long-paint-native.json refers to a different program.",
+      "imports": [
+        {
+          "count": 1,
+          "location": 0,
+          "transpose": 0,
+          "values": [
+            0.006230529397726059,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.008771929889917374,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "count": 1,
+          "phase": "native PenGLRenderMsg task2",
+          "raw_f32_le": "d9d8d83ededd5d3f908f0f3f0000803f",
+          "uniform4fv_location": 4,
+          "values": [
+            0.42352941632270813,
+            0.8666666746139526,
+            0.5607843399047852,
+            1.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            321.0,
+            228.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            29.999998092651367,
+            39.999996185302734
+          ]
+        },
+        {
+          "uniform1f_location": 1,
+          "value": 3.0
+        },
+        {
+          "uniform1i_location": 2,
+          "value": 0
+        },
+        {
+          "uniform1i_location": 3,
+          "value": 1
+        }
+      ]
+    }
   },
   "profile": {
     "canvas_model_matrix_f32_bits": [
@@ -158,5 +228,40 @@
     "svg_sha256": "11df58e60d33a158170eda4caeb1eac7b502f110d95851d0f766a993f5bc2c29"
   },
   "schema": "brushpen-long-native-control-v1",
-  "scope": "Synthetic ObjectStroke; native Model Drawing GLV10 and queued RTV1 on host Mesa with host queue/canvas adapters; not parsed notes or Samsung device parity. Native crop uses GL bottom-up rows."
+  "scope": "Synthetic ObjectStroke; native Model Drawing GLV10 and queued RTV1 on host Mesa with host queue/canvas adapters; not parsed notes or Samsung device parity. Native crop uses GL bottom-up rows.",
+  "vector_prototype_comparison": {
+    "scope": "Synthetic host-Mesa eight-point control, source-coordinate comparison on #fcfcfc; fixture-only SVG generated from native captured records, not production dispatch, Samsung device, or saved-note parity.",
+    "generator": "tmp/vector-parity-plan/brushpen-long-vector-prototype/build.py",
+    "generator_sha256": "d12e5e52551135e2bfd8236ae469d450c7c93aac3333b0ee24c22a6a2b96e09c",
+    "candidate_svg_bytes": 1111148,
+    "candidate_pdf_bytes_approx": 1200000,
+    "assumptions": [
+      "164 captured native geometry records and task-2 projection, grain and grain-offset uniforms",
+      "Intrinsic mask and grain textures with reusable grain symbol; shader alpha polynomial and eight-sector continuum fwidth approximation",
+      "Outer vertical reflection aligns GL bottom-up readback with source-coordinate export comparison",
+      "One captured profile does not establish scale-independent or general pen behavior"
+    ],
+    "comparison": {
+      "chromium_svg": {
+        "support_iou": 0.9790909090909091,
+        "union_roi_rgb_mae": 0.576050135501355,
+        "support": 1077,
+        "max_channel_error": 88
+      },
+      "pdfium_pdf": {
+        "support_iou": 0.9425795053003534,
+        "union_roi_rgb_mae": 1.3978658536585367,
+        "support": 1099,
+        "max_channel_error": 110
+      },
+      "resvg": {
+        "support_iou": 0.9736363636363636,
+        "union_roi_rgb_mae": 0.6879516711833785,
+        "support": 1071,
+        "max_channel_error": 93
+      }
+    },
+    "pdf_api_limitation": "Candidate SVG converted with public render_svg_pages_pdf, not render_document_pdf dispatch; fallback used render_document_pdf. PDFium rendered at 4/3 scale.",
+    "generated_outputs": "Removed as reproducible intermediates; generator remains under ignored tmp."
+  }
 }
