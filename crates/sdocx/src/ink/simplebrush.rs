@@ -311,7 +311,10 @@ pub(crate) fn prepare_stroke(
         return Err("unsupported SimpleBrush stroke metadata or channels");
     }
     let size = rendering.style.pen_size.ok_or("missing pen size")?;
-    if !matches!(size.to_bits(), 0x4080_0000 | 0x4100_0000 | 0x4140_0000)
+    if !matches!(
+        size.to_bits(),
+        0x4080_0000 | 0x4100_0000 | 0x4140_0000 | 0x4180_0000
+    ) || (size == 16.0 && stroke.points.len() != 3)
         || stroke.pen_width.to_bits() != size.to_bits()
     {
         return Err("unsupported SimpleBrush size");
@@ -713,6 +716,9 @@ mod tests {
             (false, 12) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
             }
+            (false, 16) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-size16-crop.rgba")
+            }
             (true, 4) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-four-size4-crop.rgba")
             }
@@ -732,6 +738,9 @@ mod tests {
             (false, 8) => include_str!("../../../../conformance/simplebrush-paint-v25.json"),
             (false, 12) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
+            }
+            (false, 16) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-size16.json")
             }
             (true, 4) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four-size4.json")
@@ -767,6 +776,7 @@ mod tests {
             (false, 4) => 80,
             (false, 8) => 137,
             (false, 12) => 185,
+            (false, 16) => 249,
             (true, 4) if alt => 151,
             (true, 4) => 128,
             (true, 8) => 214,
@@ -774,7 +784,11 @@ mod tests {
             _ => unreachable!(),
         };
         let size = size as f32;
-        let (crop_width, crop_height) = if four { (40, 20) } else { (32, 16) };
+        let (crop_width, crop_height) = if four || size == 16.0 {
+            (40, 20)
+        } else {
+            (32, 16)
+        };
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
         assert_eq!(
             samples.len(),
@@ -784,6 +798,8 @@ mod tests {
                 24
             } else if four {
                 18
+            } else if size == 16.0 {
+                12
             } else if size == 4.0 {
                 17
             } else {
@@ -1051,6 +1067,12 @@ mod tests {
     #[test]
     fn v25_size4_paint_control() {
         v25_paint_control(4, false, false);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v25_size16_paint_control() {
+        v25_paint_control(16, false, false);
     }
 
     #[cfg(feature = "pdf")]

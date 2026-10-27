@@ -100,6 +100,24 @@ fn size_four_admits_three_and_four_points() {
     );
 }
 
+#[test]
+fn size_sixteen_admits_only_three_points() {
+    let mut source = stroke();
+    source.pen_width = 16.0;
+    source.rendering.as_mut().unwrap().style.pen_size = Some(16.0);
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
+    source.points.push(Point { x: 39.0, y: 31.0 });
+    source.pressures.push(f64::from(0.4_f32));
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_err());
+    let doc = document(source);
+    assert_eq!(
+        render_document_svg(&doc, &options()).remove(0).svg,
+        render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg
+    );
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn options_default_for_legacy_data_and_roundtrip_profile() {
