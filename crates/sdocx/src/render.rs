@@ -4993,7 +4993,7 @@ fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
             != Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
         || !matches!(
             rendering.advanced_settings.as_deref(),
-            Some("1;" | "2;" | "3;")
+            Some("1;" | "2;" | "3;" | "4;")
         )
     {
         return None;
@@ -13560,12 +13560,17 @@ mod tests {
         generic.rendering.as_mut().unwrap().metadata = None;
         assert_eq!(super::stroke_paint(&generic, false).color, "#1a1a1a");
 
+        let mut captured_alias = stroke.clone();
+        captured_alias.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());
+        assert_eq!(super::stroke_paint(&captured_alias, false).color, "#000000");
+        assert_eq!(super::stroke_paint(&captured_alias, true).color, "#ffffff");
+
         let mut unknown_version = stroke.clone();
         unknown_version
             .rendering
             .as_mut()
             .unwrap()
-            .advanced_settings = Some("4;".into());
+            .advanced_settings = Some("5;".into());
         assert_eq!(
             super::stroke_paint(&unknown_version, false).color,
             "#1a1a1a"

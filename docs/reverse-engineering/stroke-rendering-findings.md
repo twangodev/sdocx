@@ -357,6 +357,17 @@ sampling differences remain. The [V14 findings](fountain-v14.md) describe its sa
 
 ## ChineseBrush source and paint controls
 
+A synthetic native Model/Drawing control with literal setting `4;` and no
+`ObjectStroke::SetColor` call returned `0xff000000` from `GetColor` and passed
+that value to both `Pen::SetColor` and `PenDrawableRT::SetPenData`. It selected
+GLV3. The [compact receipt](../../conformance/chinesebrush-setting4-omitted-color-native.json)
+records the inputs, native library hashes and calls. The capture uses Unicorn
+and synthetic host inputs; it does not establish device or pixel parity. The
+capture adapter can be run with its four pinned helpers restored from the parent
+of commit `2ffac9f` into a temporary `conformance` directory, with `scratch`
+linked to the native inputs. Its output is a full capture, of which the receipt
+retains the color and selection evidence.
+
 The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
 them (PenCommon RVA `0x45fdc`, SHA-256
 `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`).

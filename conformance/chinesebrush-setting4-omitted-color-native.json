@@ -1,0 +1,114 @@
+{
+  "schema": "chinesebrush-setting4-omitted-color-native-v1",
+  "scope": "Synthetic native Model ObjectStroke and Drawing call under Unicorn; no SetColor call on source object. Renderer and device paint are not captured.",
+  "source_input": {
+    "advanced_setting_ascii": "4;",
+    "color_argb_u32": null,
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "4;",
+      "advanced_setting_getter_called": true,
+      "color_argb_u32": "0xff000000",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+      "size": 3.1440000534057617,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+    "point_count": 3,
+    "size_f32_bits": "4c374940",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "native_helper_sha256": {
+    "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "native_selection": {
+    "version": 4,
+    "redraw_target_symbols": [
+      "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ],
+    "paint_color_calls": [
+      {
+        "argb_u32": "0xff000000",
+        "entry_pc": "0x104602c",
+        "method": "SPen::Pen::SetColor(int)",
+        "phase": "setup",
+        "this": "0x1002cad0"
+      },
+      {
+        "argb_u32": "0xff000000",
+        "entry_pc": "0x104602c",
+        "method": "SPen::Pen::SetColor(int)",
+        "phase": "draw_object_stroke",
+        "this": "0x10034780"
+      },
+      {
+        "argb_u32": "0xff000000",
+        "entry_pc": "0x104602c",
+        "method": "SPen::Pen::SetColor(int)",
+        "phase": "draw_object_stroke",
+        "this": "0x10034780"
+      },
+      {
+        "argb_u32": "0xff000000",
+        "entry_pc": "0x104a558",
+        "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+        "phase": "draw_object_stroke",
+        "size_f32_bits": "0x4049374c",
+        "this": "0x10035a60"
+      }
+    ]
+  },
+  "producer": {
+    "buffer_bytes": 80,
+    "buffer_sha256": "43ab5d696b12aa9cf8085b7773bb25c35f22a0e754b1d5cec061267a8309c23b",
+    "callback_count": 5
+  },
+  "host_boundaries": [
+    "Native ObjectStroke input arrays and IContext/canvas/resource/queue are synthetic host inputs; native Model getters, ObjectDrawing route, ChineseBrush factory/version selection, MotionEvent getter path, selected GLV1/2/3 redraw and RTV1 AddPoint execute in pinned DSOs.",
+    "The queue adapter synchronously dispatches task vslot+16; renderer/GLES callbacks and pixel rendering are outside this capture. sincosf and expf imports are serviced by Python math callbacks, so target libm math execution is not claimed.",
+    "The supplied advanced setting is an explicit synthetic ObjectStroke input. This is not an SDK-deserialized app stroke; no Samsung device or user-captured stroke is claimed."
+  ],
+  "capture_adapter_sha256": "59ad82d35d38a5f273a38161627be9ccf1bdd56ad8a05bfaa11cf9abfc1887b8"
+}
