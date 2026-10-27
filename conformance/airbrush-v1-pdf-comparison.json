@@ -558,5 +558,22 @@
         ]
       }
     }
+  },
+  "triangle_clip_experiment": {
+    "scope": "PyMuPDF 1.28.2 at 96 dpi only; first stamp uses two geometric PDF triangle clips and the same image affine, while the second stamp retains its original masks. Synthetic native host Mesa full frame; not a general viewer or device result.",
+    "probe": "tmp/vector-parity-plan/airbrush-pdf-clip-isolation/probe.py",
+    "input_pdf_sha256": "c4cae99811523ed338c094262db172e7ceb044455f87b0660fbbfbe452c4873a",
+    "first_stamp_alpha_sums": {
+      "original_masks_triangle_0": 46,
+      "original_masks_triangle_1": 4,
+      "original_masks_both": 50,
+      "clips_triangle_0": 37,
+      "clips_triangle_1": 7,
+      "clips_both": 44
+    },
+    "mixed_center_alpha": 22,
+    "native_center_alpha": 52,
+    "mixed_native_3x3_alpha_absolute_error": 82,
+    "interpretation": "Clips changed first-stamp coverage but did not restore the missing center opacity in this comparison; the native receipt does not isolate either stamp."
   }
 }
