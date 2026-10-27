@@ -1,0 +1,304 @@
+{
+  "schema": "sdocx-pencil2-v14-device-grain-transform-v1",
+  "scope": "Controlled native RTV4 host Mesa replay of 84 pinned records on a 192x192 target with inverse scale (1,1); not a full Drawing, saved-note, Android device, or production capture. Compare readback alpha after translating coordinates back to baseline.",
+  "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "controls": [
+    {
+      "scope": "Controlled host Mesa RTV4 replay with same 84 records, 192x192 target and identity inverse scale; draw matrix x translation +6. Not full Drawing, device, or production evidence.",
+      "matrix_column_major": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        6.0,
+        0,
+        0,
+        1
+      ],
+      "expected_pixel_translation": [
+        6,
+        0
+      ],
+      "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+      "transformed_sha256": "a12c58b452789cb4bb9394f39033117384370c949deb76bfbab728eec022cd3c",
+      "pixels_compared_nonzero_union": 52,
+      "translated_alpha_mismatches": 37,
+      "sum_absolute_alpha_difference": 577,
+      "max_absolute_alpha_difference": 54,
+      "examples": [
+        [
+          3,
+          1
+        ],
+        [
+          15,
+          18
+        ],
+        [
+          19,
+          26
+        ],
+        [
+          33,
+          15
+        ],
+        [
+          33,
+          16
+        ],
+        [
+          50,
+          38
+        ],
+        [
+          24,
+          31
+        ],
+        [
+          63,
+          41
+        ],
+        [
+          67,
+          65
+        ],
+        [
+          34,
+          47
+        ]
+      ],
+      "draw_uniform_events": [
+        {
+          "name": "glUniformMatrix4fv",
+          "location": 0,
+          "count": 1,
+          "values": [
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -0.9375,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "glUniform2fv",
+          "location": 4,
+          "count": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "glUniform1f",
+          "location": 1,
+          "values": [
+            3.0
+          ]
+        },
+        {
+          "name": "glUniform1i",
+          "args": [
+            2,
+            0
+          ],
+          "result": null
+        },
+        {
+          "name": "glUniform1f",
+          "location": 6,
+          "values": [
+            75.0
+          ]
+        },
+        {
+          "name": "glUniform1f",
+          "location": 5,
+          "values": [
+            75.0
+          ]
+        },
+        {
+          "name": "glUniform1i",
+          "args": [
+            3,
+            1
+          ],
+          "result": null
+        }
+      ],
+      "source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+      "wrapper_sha256": "969a1797e3a279eed8ab1106bc7a7cd393a08fc2342f68966d26a06b2d2e488b"
+    },
+    {
+      "scope": "Controlled host Mesa RTV4 replay with same 84 records, 192x192 target and identity inverse scale; draw matrix x translation +75. Not full Drawing, device, or production evidence.",
+      "matrix_column_major": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        75.0,
+        0,
+        0,
+        1
+      ],
+      "expected_pixel_translation": [
+        75,
+        0
+      ],
+      "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+      "transformed_sha256": "fd225164e4189cdabafd8aa9b1eec9c4b55247381be94db52e17ba35f4813b90",
+      "pixels_compared_nonzero_union": 52,
+      "translated_alpha_mismatches": 14,
+      "sum_absolute_alpha_difference": 226,
+      "max_absolute_alpha_difference": 45,
+      "examples": [
+        [
+          15,
+          8
+        ],
+        [
+          33,
+          26
+        ],
+        [
+          33,
+          24
+        ],
+        [
+          37,
+          41
+        ],
+        [
+          47,
+          36
+        ],
+        [
+          61,
+          48
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          145,
+          100
+        ],
+        [
+          96,
+          55
+        ],
+        [
+          165,
+          159
+        ]
+      ],
+      "draw_uniform_events": [
+        {
+          "name": "glUniformMatrix4fv",
+          "location": 0,
+          "count": 1,
+          "values": [
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -0.21875,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "glUniform2fv",
+          "location": 4,
+          "count": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "glUniform1f",
+          "location": 1,
+          "values": [
+            3.0
+          ]
+        },
+        {
+          "name": "glUniform1i",
+          "args": [
+            2,
+            0
+          ],
+          "result": null
+        },
+        {
+          "name": "glUniform1f",
+          "location": 6,
+          "values": [
+            75.0
+          ]
+        },
+        {
+          "name": "glUniform1f",
+          "location": 5,
+          "values": [
+            75.0
+          ]
+        },
+        {
+          "name": "glUniform1i",
+          "args": [
+            3,
+            1
+          ],
+          "result": null
+        }
+      ],
+      "source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+      "wrapper_sha256": "5aad5238d968ef321a20e1c423b20c19ea6f472faaa18049d5d9e1324eb73509"
+    }
+  ],
+  "interpretation": "The shader samples grain using gl_FragCoord and grainOffset remains (0,0). The +6 and +75 pixel translations change alpha after alignment; the latter equals the nominal repeat period, but exact periodicity is not observed and these aggregate frames do not isolate its cause. Floating-point coordinate and sampling boundaries are plausible but unproven.",
+  "scripts": [
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-transform-probe/probe.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-transform-probe/probe_period.py"
+  ]
+}
