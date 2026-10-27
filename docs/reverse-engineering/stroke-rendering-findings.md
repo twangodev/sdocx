@@ -1098,3 +1098,15 @@ test-only graph import without production scene integration or a proven PDF
 library allocation bound. Reproduction is retained in
 `tmp/marker-owner-boolean/src/bin/direct_pdf_prepared.rs` and
 `scratch/legacy-marker-prepared-krilla.patch`.
+
+A scratch Rust pipeline now carries the recovered source mesh and clipped
+polygons as typed values into an ordered PDF plan, without the earlier SVG/JSON
+path-plan intermediary. It accepts explicit ARGB and projection scale and
+tracks cumulative source points, mesh vertices, clipping work, visible
+vertices and prepared-form resources. Long and 2× bend source controls pass;
+blue and self-overlap fall back. The 2× direct PDF's MuPDF/PDFium RGB L1 was
+11410/9995 and its size 49 KB. This is not wired to `CompositionContext` and
+does not prove production page fallback or PDF-library allocation bounds.
+The retained pipeline is `tmp/marker-owner-boolean/src/bin/source_to_plan.rs`
+and `clip_typed.inc`, using the neighboring source mesh and prepared-form
+modules.
