@@ -265,6 +265,8 @@ A resolution-specific scalar model evaluates the shader and rounded source-over 
 
 A controlled host-Mesa RTV4 replay translates the same 84 records by six pixels in the draw matrix. After alignment with the baseline, alpha differs at 37 of 52 nonzero-union pixels (absolute difference sum 577, maximum 54); the grain offset uniform remains (0, 0). The fragment shader samples grain using `gl_FragCoord`, so this is consistent with grain fixed in device coordinates as geometry moves. A 75-pixel translation, the nominal grain repeat period, still differs at 14 of 52 pixels (sum 226, maximum 45); the aggregate frame does not isolate the cause or establish exact periodicity. The [compact receipt](../../conformance/pencil2-v14-device-grain-transform-native.json) identifies the scripts and controls. This is not full Drawing, saved-note, Android, or production output evidence.
 
+A separate host-Mesa control holds the geometry and matrix fixed and overrides only the grain-offset uniform from (0, 0) to (75, 0). Despite the nominal one-period shift, 11 alpha pixels change (absolute difference sum 127, maximum 34). This isolates the difference from translated geometry; finite-precision texture coordinates are a possible explanation, not an observed cause. The [receipt](../../conformance/pencil2-v14-grain-offset-native.json) pins the capture and reproduction script. This host adapter control does not establish saved-note or device behavior.
+
 ## Literal StraightMarker control
 
 Six native Drawing controls request the literal Marker3 and StraightMarker names

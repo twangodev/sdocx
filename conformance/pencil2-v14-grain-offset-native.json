@@ -1,0 +1,93 @@
+{
+  "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "offset_sha256": "191c87bec9b270c169277cf9a7de4aa6656a9bc88fb309700e370cd511d55433",
+  "changed_alpha_pixels": 11,
+  "absolute_difference": 127,
+  "max_difference": 34,
+  "rows": [
+    [
+      1,
+      0,
+      15,
+      8
+    ],
+    [
+      5,
+      0,
+      50,
+      38
+    ],
+    [
+      6,
+      0,
+      24,
+      48
+    ],
+    [
+      10,
+      0,
+      37,
+      41
+    ],
+    [
+      15,
+      0,
+      74,
+      84
+    ],
+    [
+      20,
+      2,
+      3,
+      7
+    ],
+    [
+      25,
+      4,
+      31,
+      55
+    ],
+    [
+      25,
+      5,
+      154,
+      151
+    ],
+    [
+      25,
+      6,
+      44,
+      41
+    ],
+    [
+      29,
+      8,
+      43,
+      41
+    ],
+    [
+      29,
+      10,
+      38,
+      72
+    ]
+  ],
+  "uniforms": [
+    {
+      "name": "glUniform2fv",
+      "location": 4,
+      "count": 1,
+      "values": [
+        75.0,
+        0.0
+      ]
+    }
+  ],
+  "schema": "sdocx-pencil2-v14-grain-offset-native-v1",
+  "scope": "Controlled native Pencil2 RTV4 host Mesa replay of pinned 84 records on a 192x192 target, comparing identical geometry and matrix while the host GL adapter overrides grainOffset from (0,0) to (75,0). Not full Drawing, saved-note, Android, or production output.",
+  "capture_source": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/capture_candidate.py",
+  "capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "reproduction_script": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-grain-offset-probe/probe.py",
+  "reproduction_script_sha256": "2f455c5b37949708a6e07c988882335202954b8919257d2fb6868a4827025480",
+  "interpretation": "Changing only the host-supplied grain uniform changes pixels despite a nominal one-period shift. Finite-precision texture coordinates are a possible explanation, not directly established by this capture."
+}
