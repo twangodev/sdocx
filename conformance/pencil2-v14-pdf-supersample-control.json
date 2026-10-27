@@ -1,0 +1,12 @@
+{
+  "schema": "sdocx-pencil2-v14-pdf-supersample-control-v1",
+  "scope": "Same 84-record black-stroke SVG-to-PDF and pinned host-Mesa alpha frame as pencil2-v14-svg-pdf-control.json, rendered with transparent output at integer multiples of 192x192 then averaged in nonoverlapping blocks to 192x192. This is a reader-side rasterization experiment, not a vector-paint correction.",
+  "script": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_pdf_supersample_control.py",
+  "reproduction_command": "PYTHONPATH=/home/jding/.cache/uv/archive-v0/4VQ8fPp5Pb2XimZ9eh7Km .venv/bin/python tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_pdf_supersample_control.py",
+  "alpha_vs_native": {
+    "mupdf": {"1x": [53, 2436, 127, 32], "2x": [52, 1245, 80, 53], "4x": [59, 904, 56, 62], "8x": [65, 898, 54, 66]},
+    "pdfium": {"1x": [61, 3318, 145, 32], "2x": [60, 1786, 87, 60], "4x": [63, 1106, 63, 63], "8x": [64, 893, 54, 65]}
+  },
+  "metric_order": ["different_pixels", "sum_absolute_error", "maximum_absolute_error", "nonzero_support"],
+  "limitations": ["The SVG prototype and native frame are retained under tmp/vector-parity-plan; runner and dependencies are described in pencil2-v14-svg-pdf-control.json.", "Supersampling reduces errors but leaves substantial discrepancies and excess support at 8x. It does not identify their causes or establish convergence.", "One synthetic stroke, scale and host only; no saved-note, Android, arbitrary-color or production parity."]
+}
