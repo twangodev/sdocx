@@ -1,0 +1,45 @@
+{
+  "schema": "sdocx-pencil2-v14-svg-pdf-control-v1",
+  "scope": "Pinned 84-stamp host-Mesa RTV4 synthetic black stroke, 192x192 at one scale; SVG V8 prototype converted through local sdocx SVG-to-PDF exporter, compared to same native alpha frame. This is not a saved-note, device, or production paint control.",
+  "native_frame_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "svg_sha256": "9bb2f830f94281d25665d342d054b3096223f1f81b7b0c5015dbba390d498b93",
+  "pdf_sha256": "f1a90233cac5eb3b0fdb353fe25ce713f9768fd54a70750decbf5331826f55ba",
+  "pdf_bytes": 343992,
+  "alpha_vs_native": {
+    "resvg_0_45_1": {
+      "different": 32,
+      "sum_abs": 93,
+      "max_abs": 19,
+      "support": 52
+    },
+    "mupdf_1_28_2": {
+      "different": 53,
+      "sum_abs": 2436,
+      "max_abs": 127,
+      "support": 32
+    },
+    "pdfium_4_30_0": {
+      "different": 61,
+      "sum_abs": 3318,
+      "max_abs": 145,
+      "support": 32
+    }
+  },
+  "native_support": 52,
+  "script": "conformance/pencil2_v14_svg_pdf_control.py",
+  "runner_source": "conformance/pencil2_v14_svg_pdf_runner.rs; PDF dpi=72; build against this checkout with shared agent target",
+  "limitations": [
+    "SVG prototype and native frame reside in tmp/vector-parity-plan/pen-family-audit and must remain available to reproduce.",
+    "PDF reader differences establish neither cause nor behavior in other viewers or scales.",
+    "Native alpha is compared to transparent PDF reader output; this does not establish RGB behavior.",
+    "No natural Drawing admission, Android, saved-note, arbitrary color, or production parity."
+  ],
+  "reproduction_command": "PYTHONPATH=/home/jding/.cache/uv/archive-v0/4VQ8fPp5Pb2XimZ9eh7Km .venv/bin/python conformance/pencil2_v14_svg_pdf_control.py",
+  "runner_build": "Place runner_source in a temporary Cargo package named sdocx-svg-pdf-brush with a path dependency on crates/sdocx and feature pdf; cargo build using the shared agent target and profile settings.",
+  "independent_reproduction": {
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pdfium": "156.0.8076.0",
+    "result": "Native, SVG and PDF hashes and all reported alpha metrics reproduced."
+  }
+}
