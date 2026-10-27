@@ -903,3 +903,22 @@ though generated geometry matches native within 0.00005. The retained
 `63135813951f5a4821430cdbe7628ebec3befd5aadd96154df9d06b82cbd5aba`.
 The existing scratch mesh and grouped-paint probes reproduce the comparison.
 This route requires correct overlap ownership and output budgets before admission.
+
+Normalizing body-triangle winding removes cancellation at the self-overlap:
+on the original host frame, profile versus normalized grouped mesh white RGB
+L1 is 11401 versus 8725 in resvg and 13119 versus 10521 in public PDF. A
+blue, alpha-200 overlap control gives 18535 versus 14730 and 19837 versus
+15216. On the verified explicit 2× projection bend, the corresponding values
+are 55870 versus 8974 and 57691 versus 11875. These remain approximations:
+the captured native order depth-tests the body, start cap and both fringe
+strips, then paints the end cap with depth disabled. Grouping bands does not
+reproduce first-fragment ownership in overlapping fringe triangles or the final
+cap's source-over behavior. A source-geometry overlap guard and per-page output
+budget have not been established, so no production paint profile is admitted.
+The normalized `scratch/legacy-marker-triangle-winding-probe.py` SHA-256 is
+`867f3b05c2e8ad7e4e65355999ee9784cb7705ad5ba02c2547439c67a9f12ddb`;
+`tmp/legacy-marker-source-controls/self-overlap-blue.py` and its JSON capture
+hash to `6ff9a01bc5de4480eccece2e974b9199ed10765df86822f8fdf04f5002ae495d`
+and `c940623a8cb4dccb87c963db2dc2c58526867e441b9468873e11862a48c19f0e`.
+The retained `bend-null-scale2.json` capture hashes to
+`d739615d3cd7e3a9d677b03cfe14677e85cbf8bf0775d0f65ab7d46c2fdcdab0`.
