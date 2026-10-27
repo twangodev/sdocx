@@ -1,0 +1,138 @@
+{
+  "schema": "sdocx.nine-patch-gradient-native-control.v1",
+  "scope": "Synthetic opaque gradient source; direct ARM64 native nine-patch helper with q supplied directly; bitmap placement and public SVG/PDF export. Single synthetic probe, not saved-note or device evidence.",
+  "native": {
+    "source_dimensions": [
+      512,
+      256
+    ],
+    "cuts": [
+      128,
+      64,
+      384,
+      192
+    ],
+    "q": 0.75,
+    "placement": [
+      8.25,
+      8.5,
+      40.5,
+      24.25
+    ],
+    "source_rgba_sha256": "b6ad5007ead064733ad17686d554a80218e203ea7ec92ac3d3de42b296d429ff",
+    "prepared_rgba_sha256": "5ec5461e0a7f064c4cf6e5a64e35cbeef98cb0ee2711963d352296d97bcc633d",
+    "output_rgba_sha256": "bff70586861298530a9228ec74d6d83f6c8fdda9b0ddec1553ae4cfc253c08ce",
+    "source_formula": "RGBA = (x mod 256, y mod 256, (3*x+7*y) mod 256, 255)"
+  },
+  "intermediate_comparison": {
+    "absolute_channel_error": {
+      "nearest": 786536,
+      "bilinear_patch_clamped": 296453,
+      "bilinear_unclamped": 297278
+    },
+    "max_channel_error": {
+      "nearest": 201,
+      "bilinear_patch_clamped": 19,
+      "bilinear_unclamped": 32
+    },
+    "limitation": "Floating bilinear does not reproduce native quantization; flat-color controls cannot identify the filter."
+  },
+  "svg_rgb_absolute_error": {
+    "rasterizer": "resvg 0.45.1",
+    "gradient": {
+      "vector": {
+        "full": 10067,
+        "interior": 9631,
+        "outer_edge": 436,
+        "vertical_seams": 3666,
+        "horizontal_seams": 6843,
+        "svg_bytes": 7204
+      },
+      "bilinear_patch_clamped": {
+        "full": 2199,
+        "interior": 2021,
+        "outer_edge": 178,
+        "vertical_seams": 355,
+        "horizontal_seams": 823,
+        "svg_bytes": 13577
+      }
+    },
+    "flat_control_native_prepared_full": {
+      "opaque": 44,
+      "translucent": 182
+    },
+    "limitation": "Native-prepared bitmap is used for flat controls; software bilinear matches its premultiplied intermediate exactly for these constant regions."
+  },
+  "pdf_rgb_absolute_error": {
+    "rasterizer": "PyMuPDF 1.28.2 at 96 dpi",
+    "opaque": {
+      "vector": [
+        42475,
+        12057,
+        28468,
+        4855,
+        10125
+      ],
+      "prepared": [
+        54318,
+        23801,
+        28567,
+        9564,
+        19175
+      ],
+      "pdf_bytes": [
+        5003,
+        5040
+      ]
+    },
+    "translucent": {
+      "vector": [
+        28008,
+        12013,
+        14045,
+        4762,
+        10149
+      ],
+      "prepared": [
+        37454,
+        22002,
+        13502,
+        8145,
+        18458
+      ],
+      "pdf_bytes": [
+        5859,
+        5828
+      ]
+    },
+    "gradient": {
+      "vector": [
+        47740,
+        27471,
+        18319,
+        5223,
+        12112
+      ],
+      "bilinear_patch_clamped": [
+        48206,
+        27879,
+        18377,
+        5173,
+        13283
+      ],
+      "pdf_bytes": [
+        190354,
+        349415
+      ]
+    },
+    "metric_order": [
+      "full",
+      "interior",
+      "outer_edge",
+      "vertical_seams",
+      "horizontal_seams"
+    ]
+  },
+  "memory": "Uncompressed source and prepared buffers each require 4 bytes per pixel for RGBA8, excluding decoder and encoder allocations.",
+  "conclusion": "Single bitmap placement improves tested SVG controls but worsens the tested public PDF outputs; no renderer change was made."
+}
