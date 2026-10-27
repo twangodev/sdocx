@@ -1,0 +1,26 @@
+{
+  "schema": "sdocx.nine-patch-four-bit-sampler-control.v1",
+  "scope": "Two synthetic images at one set of cuts, q, and placement; direct ARM64 native helper capture and public SVG/PDF rasterization. No saved-note, device, or exact pixel parity claim.",
+  "candidate": "Patch-clamped bilinear interpolation in premultiplied RGBA, floor each fractional coordinate to 4 bits and floor the combined weighted channel result. Coordinates use floating point, not a proven native fixed-point sequence.",
+  "gradient": {
+    "source": "See nine-patch-gradient-native-control.json",
+    "intermediate_channel_absolute_error": {"floating_bilinear": 296453, "four_bit": 16398},
+    "four_bit_mismatched_pixels": 9565,
+    "four_bit_max_channel_error": 16,
+    "svg_full_rgb_absolute_error": {"vector": 10067, "floating_bilinear": 2199, "four_bit": 1288},
+    "pdf_full_rgb_absolute_error": {"vector": 47740, "floating_bilinear": 48206, "four_bit": 48511}
+  },
+  "independent_translucent_gradient": {
+    "source_formula_premultiplied_rgba": "((7*x+11*y)%128, (13*x+3*y)%128, (5*x+17*y)%128, 128+(x+y)%128)",
+    "source_rgba_sha256": "8f4b2f5da6a714160db3748f40449eb4bf4f5b07139fbd4879b5f2cb1bfe5c79",
+    "prepared_rgba_sha256": "e796890a295fa78c3de88a75906f9dd0077e325ca8c26583edad21c5ef374ebc",
+    "output_rgba_sha256": "73ec7aae287c4bb6a717a632e9804c8436c175df489277b1193e703a58b711c0",
+    "intermediate_channel_absolute_error": {"floating_bilinear": 601622, "four_bit": 118472},
+    "four_bit_mismatched_pixels": 28631,
+    "four_bit_max_channel_error": 8,
+    "svg_full_rgb_absolute_error": {"vector": 10606, "four_bit": 2440, "native_prepared": 2148},
+    "pdf_full_rgb_absolute_error": {"vector": 65680, "four_bit": 62692, "native_prepared": 62695}
+  },
+  "rasterizers": "resvg 0.45.1 and PyMuPDF 1.28.2 at 96 dpi; alpha-composited over RGB 252",
+  "conclusion": "Four-bit truncated bilinear approximates these intermediates substantially better, but does not reproduce native pixels. SVG error improves in both controls; PDF effects differ, so no common rendering change is established."
+}
