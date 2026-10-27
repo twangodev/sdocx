@@ -1,10 +1,10 @@
 {
   "schema": "sdocx-marker-synthetic-serialized-drawing-v1",
-  "scope": "Synthetic altered pen-name table and omitted advanced setting from FountainPen note; native ObjectStrokeImpl pointer, visibility and native table-resolved pen name are seeded by host; OnAttach alone did not resolve name. Native queued drawing and host Mesa paint execute with pinned adapters; no Android or full loader claim.",
+  "scope": "Synthetic pen-name table mutation and omitted advanced setting from published FountainPen compatibility note; native Model init array, ObjectStroke constructor, Construct, NewApplyBinary, OnAttach, name resolution, Drawing and queued Mesa paint execute. UUID callbacks are host no-ops; ModelContext and StringIDManager wrapper allocations, Drawing context, canvas, queue, and graphics adapters are host supplied. Not a full Samsung note loader or Android device run.",
   "archive_sha256": "b0233b505f42a2a875e60ee3d2aee0d6e0f4e0db3ce8e5536a8f2b68e75d91e1",
   "frame_sha256": "1f73dbfc32ae402fab7ff83b676d19f0e90f3af6ad8d211e6f859c7c89cfafac",
   "table_sha256": "9fcf3c0e6a07a9ada5d734f172616b3e18f1557016996a3f68f36e4736a34d33",
-  "capture_script_sha256": "36b228390538b8c5f4f21b91a24b014e67e121495aca96e5933136f3cc8a2b49",
+  "capture_script_sha256": "ea592d1ae95032c58c1e02c4ac888bd58028e317818767d9e41b058f15e5c971",
   "native_model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
   "native_marker_sha256": "f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6",
   "native_model": {
@@ -55,8 +55,8 @@
     "queue_count": 20
   },
   "host_paint": {
-    "capture_script_sha256": "b2354ca2dab7733b4f6011625d1c4c9bcd921c0712f6b8a1fc1c93e40756f365",
-    "full_capture_sha256": "f452f44d67c359147306494d594bdcceae9284b531516ee4aeec4d6c00b1d07e",
+    "capture_script_sha256": "ba00715a9cf43a5124244e9d71a867019dc36930fec91a1d1300d5dbf4526c0e",
+    "full_capture_sha256": "3c1f829cf77b540010c925910bde3c8c294e2f290a243e1764bc7c0137af2c3d",
     "size": [
       1920,
       1080
@@ -74,7 +74,8 @@
       6
     ],
     "completed_queue_tasks": 20,
-    "no_gl_errors": true
+    "no_gl_errors": true,
+    "comparison_to_seeded_capture": "RGBA frame SHA-256 identical to prior host-seeded implementation/name/visibility control"
   },
   "comparison": {
     "scope": "PyMuPDF rasterization of one isolated parsed stroke on white, at 1 page unit per output pixel; native premultiplied RGBA composited on white. Support is any RGB channel <250; RGB L1 is summed over support union.",
@@ -97,13 +98,14 @@
   "reproducibility": {
     "generator_path": "tmp/legacy-marker-source-controls/make_serialized_marker.py",
     "generator_sha256": "d3733ac72f38a62bd3fb8ec74461789e109890771270a64ab032515396fc2d6c",
-    "native_drawing_script": "tmp/legacy-marker-source-controls/serialized-drawing.py",
-    "native_paint_script": "tmp/legacy-marker-source-controls/serialized-paint.py",
+    "native_drawing_script": "tmp/legacy-marker-source-controls/serialized-unseeded.py",
+    "native_paint_script": "tmp/legacy-marker-source-controls/serialized-unseeded-paint.py",
     "export_source": "tmp/legacy-marker-source-controls/export/src/main.rs",
     "comparison_script": "tmp/legacy-marker-source-controls/compare_serialized_paint.py",
     "retained_parser_fixture": "crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx",
     "fixture_sha256": "ec4476cba55a9e92e4d5c54eb5789e0842a223e120825009fffd004a952d7de5",
     "fixture_boundary": "One modified source stroke object and original string table retained. Other 76 strokes, 5 shapes, 1 line, second page and media removed; layer trailer replaced by zeros, original manifest hashes are not refreshed. This reduced archive is a Rust parser fixture, not a validated Samsung-loadable note; source UUIDs, timestamps and target handwritten stroke remain."
   },
-  "source_attribution": "Adapted from 02-shapes-and-dot-calibration in SDOCX Compatibility Corpus by the SDOCX Compatibility Corpus contributors, CC BY 4.0: https://huggingface.co/datasets/twangodev/sdocx-compatibility. Pen-name table and setting were changed and the parser fixture was reduced to one stroke."
+  "source_attribution": "Adapted from 02-shapes-and-dot-calibration in SDOCX Compatibility Corpus by the SDOCX Compatibility Corpus contributors, CC BY 4.0: https://huggingface.co/datasets/twangodev/sdocx-compatibility. Pen-name table and setting were changed and the parser fixture was reduced to one stroke.",
+  "unseeded_capture_sha256": "15ac076ecc8ae470d0f67dfa408e32b267bd2d424babc09e15f7f948f030167c"
 }

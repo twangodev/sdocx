@@ -48,8 +48,33 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
             include_bytes!("../../../../conformance/legacy-marker-alphac8-sparse-rgba8.bin")
                 .as_slice(),
         ),
+        (
+            "size2",
+            include_bytes!("../../../../conformance/legacy-marker-size2-sparse-rgba8.bin")
+                .as_slice(),
+        ),
+        (
+            "size3",
+            include_bytes!("../../../../conformance/legacy-marker-size3-sparse-rgba8.bin")
+                .as_slice(),
+        ),
+        (
+            "size6",
+            include_bytes!("../../../../conformance/legacy-marker-size6-sparse-rgba8.bin")
+                .as_slice(),
+        ),
+        (
+            "size24",
+            include_bytes!("../../../../conformance/legacy-marker-size24-sparse-rgba8.bin")
+                .as_slice(),
+        ),
+        (
+            "size48",
+            include_bytes!("../../../../conformance/legacy-marker-size48-sparse-rgba8.bin")
+                .as_slice(),
+        ),
     ] {
-        let inp = &fixture["cases"][if case.starts_with("alpha") {
+        let inp = &fixture["cases"][if case.starts_with("alpha") || case.starts_with("size") {
             "straight"
         } else {
             case
@@ -84,7 +109,14 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
                         "alphac8" => 0xc8ffcb30,
                         _ => 0x80ffcb30,
                     }),
-                    pen_size: Some(12.0),
+                    pen_size: Some(match case {
+                        "size2" => 2.0,
+                        "size3" => 3.0,
+                        "size6" => 6.0,
+                        "size24" => 24.0,
+                        "size48" => 48.0,
+                        _ => 12.0,
+                    }),
                     stroke_type_raw: Some(0),
                     ..Default::default()
                 },
@@ -117,7 +149,14 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
                 g: 203,
                 b: 48,
             }),
-            pen_width: 12.0,
+            pen_width: match case {
+                "size2" => 2.0,
+                "size3" => 3.0,
+                "size6" => 6.0,
+                "size24" => 24.0,
+                "size48" => 48.0,
+                _ => 12.0,
+            },
         };
         let mut scene = Scene::new(Svg::new().width(1920).height(1080));
         render_stroke(
@@ -202,22 +241,20 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
                 max = max.max(d);
             }
         }
-        let max_different_pixels = if matches!(case, "bend" | "alpha01") {
-            288
-        } else {
-            328
-        };
-        let max_absolute_sum = match case {
-            "bend" => 97063,
-            "alpha40" => 63371,
-            "alpha01" => 10436,
-            "alphac8" => 177668,
-            _ => 117109,
+        let (max_different_pixels, max_absolute_sum, max_channel) = match case {
+            "bend" => (248, 48983, 179),
+            "alpha40" => (208, 24584, 115),
+            "alpha01" => (180, 9828, 52),
+            "alphac8" => (208, 56418, 251),
+            "size2" => (10, 1850, 104),
+            "size3" => (16, 2969, 128),
+            "size6" => (53, 10367, 128),
+            "size24" => (758, 144762, 181),
+            "size48" => (1403, 298130, 180),
+            _ => (208, 39534, 179),
         };
         assert!(
-            n <= max_different_pixels
-                && sum <= max_absolute_sum
-                && max <= if case == "alphac8" { 251 } else { 179 },
+            n <= max_different_pixels && sum <= max_absolute_sum && max <= max_channel,
             "{case}: {n} pixels, sum {sum}, max {max}"
         );
     }

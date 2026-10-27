@@ -671,6 +671,14 @@ fn prepare_stroke_inner<'a>(
                 ink.opacity,
             )
         } else {
+            if saved_legacy_marker_argb(stroke).is_some()
+                && let Some(size) = stroke.rendering.as_ref().and_then(|r| r.style.pen_size)
+                && size.is_finite()
+                && size.clamp(0.4, 800.0).trunc() >= 2.0
+            {
+                paint.width = f64::from(size.clamp(0.4, 800.0).trunc());
+                paint.segment_widths = None;
+            }
             (
                 Cow::Borrowed(stroke.points.as_slice()),
                 None,
@@ -1164,6 +1172,30 @@ mod tests {
         assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
         input.rendering = None;
         assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
+    }
+
+    #[test]
+    fn legacy_marker_fallback_uses_quantized_size_and_ignores_pressure() {
+        let mut input = oblique_stroke();
+        let rendering = input.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker".into());
+        rendering.tool_type_raw = 2;
+        rendering.advanced_settings = None;
+        rendering.properties.compressed = true;
+        input.pressures = vec![0.1, 0.5, 0.9];
+        for (size, expected) in [(2.0, 2.0), (2.5, 2.0), (12.75, 12.0), (900.0, 800.0)] {
+            input.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            let prepared = prepare_stroke(&input, false);
+            assert_eq!(prepared.width, expected);
+            assert!(prepared.segment_widths.is_none());
+        }
+        for size in [1.75, f32::NAN] {
+            input.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            assert!(prepare_stroke(&input, false).segment_widths.is_some());
+        }
+        input.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+        input.rendering.as_mut().unwrap().advanced_settings = Some("unknown".into());
+        assert!(prepare_stroke(&input, false).segment_widths.is_some());
     }
 
     fn defaultpen_stroke() -> Stroke {

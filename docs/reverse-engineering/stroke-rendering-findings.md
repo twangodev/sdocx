@@ -526,13 +526,16 @@ require the pinned local native inputs and helpers checked by their preflight.
 A [synthetic serialized control](../../conformance/legacy-marker-synthetic-serialized-drawing.json)
 replaces a FountainPen frame's pen-name table entry with Marker and omits its
 advanced setting. Native binary decoding and the Rust parser agree byte for
-byte on all five 204-point channels. The host supplies the implementation pointer,
-visibility and native table-resolved name: `OnAttach` alone did not resolve it in
-this harness. Native Drawing selects GLV1 and its 20 queued tasks produce a
-host-Mesa frame. Against that frame on white, generic SVG/PDF support IoUs at
+byte on all five 204-point channels. After running the Model initializer, the
+native constructor, binary reader and
+`OnAttach` resolve the name without supplying the implementation pointer,
+visibility or name. Native Drawing selects GLV1 and its 20 queued tasks produce
+a host-Mesa frame identical to the earlier seeded control. Host no-op UUID
+callbacks and synthetic ModelContext, canvas and queue adapters remain. Against
+that frame on white, the previous generic SVG/PDF support IoUs at
 1× are 0.367/0.369 (threshold 250); native GL row indices map directly to page
 Y under the supplied host matrix. This is one synthetic frame, not a real Marker
-note, Android or unseeded native loader comparison. The reduced parser fixture
+note, Android or full native note-loader comparison. The reduced parser fixture
 retains only the selected handwritten stroke, source identifiers/timestamps and
 original string table; other objects, pages and media are removed. It adapts
 [SDOCX Compatibility Corpus](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
@@ -665,3 +668,28 @@ on the old opaque fallback for these controls but omits cap texture, fringe and
 depth behavior; it is not admitted. Reproduction is retained in
 `scratch/legacy-marker-fallback-prototype.rs` and
 `scratch/legacy-marker-vector-prototype.rs`.
+
+For the same Marker metadata profile, the generic fallback now uses a constant
+width derived from the saved size when the native integer width is at least two;
+it retains the previous pressure-based approximation for smaller widths and
+unknown metadata. Native `Pen::SetSize` clamps finite values to 0.4–800, then
+`PenDrawableRT::SetPenData` at RVA `0x4a588` truncates the float to an unsigned
+integer; RTV1 computes its body radius from that integer. The Model controls at
+2.5 and 12.75 produced identical vector and final-frame hashes to 2 and 12,
+respectively. Replacing the four pressure samples with all ones also left every
+native vector and the final frame unchanged for the straight size-12 control.
+The [width receipt](../../conformance/legacy-marker-width-controls.json) records
+these host controls and the audited size-24 and size-48 queue shapes.
+
+On the straight controls at sizes 2, 3, 6, 24 and 48, constant width reduced
+resvg absolute RGBA error from 15386/22816/48643/289559/718745 to
+1850/2969/10367/144762/298130; PyMuPDF comparisons likewise improved. The size-12
+bent control improved from 97063 to 48983. The fallback remains a round polyline,
+not the native mesh or textured cap. At size 1 and at 1.25, 1.5 and 1.75, both
+integer- and half-pixel straight controls yielded transparent native frames;
+all tested nominal-width and blending approximations increased error against
+them, so these thin widths retain the previous fallback. Size 0.4 produced
+nonzero pixels and remains unverified beyond the captured straight stroke.
+Other curves, subpixel alignments, size values and device output remain outside
+the comparisons; the integer threshold at 2 follows native quantization but the
+fallback is not a native rendering of the thin bucket.
