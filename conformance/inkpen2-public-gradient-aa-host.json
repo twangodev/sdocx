@@ -284,5 +284,94 @@
     "scope": "Test-only public preparation reflects f32 record centers as 96-y before constructing atlas and retained PDF field; outer matrix [scale,0,0,scale,0,96-96*scale] preserves the baseline physical geometry to 1e-4 for these records. This is not production admission, device parity, or a general transform claim.",
     "render_rs_sha256": "f5385eb081b8491516d1291d4400c23e4468d4bc4045794cd5ff6b5992129ab7",
     "reader_versions": "same pinned resvg 0.47.0 and MuPDF 1.28.2 as baseline"
+  },
+  "mupdf_constant_mask_boundary": {
+    "scope": "Synthetic constant opaque Type 1 soft-mask versus unmasked solid fill under the same retained form transforms. This checks MuPDF coverage behavior, not the varying native gradient or full PDF parity.",
+    "reader": "PyMuPDF/MuPDF 1.28.2",
+    "script_sha256": "9e7c637a08c8bcdb10c9a5358752aa89a74c5d6502d92b763ba9962ba16947d5",
+    "result_sha256": "c18a25738ebe3d5df3f13b4316567ccc029e5533939ece353c3bacbfb924ec3c",
+    "cases": [
+      {
+        "case": "scale1_aa1_alpha255",
+        "source_pdf_sha256": "0b3b00c6f5bb5e54acf621cc301a45cb0df7832104aea5bbe5f898c9539eba3c",
+        "masked_pdf_sha256": "cb1272734f6406c18a749c042e069986b7685f81fee4dea7d86831c212fd95f5",
+        "unmasked_pdf_sha256": "082add758505321f5e6ad0708e46d641bbcbd87cd8ddf5f43224d6a506508ef7",
+        "device_top_y": 90.5517245,
+        "changed_pixels": 32,
+        "max_alpha_difference": 118,
+        "boundary_rows": [
+          {
+            "y": 90,
+            "type1_nonzero": 0,
+            "solid_nonzero": 27,
+            "type1_alpha_sum": 0,
+            "solid_alpha_sum": 3116,
+            "changed": 27
+          },
+          {
+            "y": 91,
+            "type1_nonzero": 26,
+            "solid_nonzero": 27,
+            "type1_alpha_sum": 6630,
+            "solid_alpha_sum": 6734,
+            "changed": 1
+          }
+        ]
+      },
+      {
+        "case": "scale2_aa1_alpha255",
+        "source_pdf_sha256": "589bef669012778dc18918f275d0adf3a35faa3327f67c887bf9e3b5611c0bba",
+        "masked_pdf_sha256": "0c8499493bd6cca20e6ab2a881eceadf5d06e54de6910d887bcd3fa9fa0dc096",
+        "unmasked_pdf_sha256": "370a38c017d93916d4696fb806436358a434fea67c4411f1e890fe8d5bf100cc",
+        "device_top_y": 85.104457,
+        "changed_pixels": 63,
+        "max_alpha_difference": 238,
+        "boundary_rows": [
+          {
+            "y": 85,
+            "type1_nonzero": 0,
+            "solid_nonzero": 53,
+            "type1_alpha_sum": 0,
+            "solid_alpha_sum": 12586,
+            "changed": 53
+          },
+          {
+            "y": 86,
+            "type1_nonzero": 52,
+            "solid_nonzero": 53,
+            "type1_alpha_sum": 13260,
+            "solid_alpha_sum": 13485,
+            "changed": 1
+          }
+        ]
+      },
+      {
+        "case": "scale4_aa1_alpha255",
+        "source_pdf_sha256": "1414313bfe355e311da681e187933a97472425e5651b9644911c7fc3ac2398b8",
+        "masked_pdf_sha256": "f557a9957bb91444f28010c781569374a7ebd590c2cf748ee028bff4150f3d01",
+        "unmasked_pdf_sha256": "87894e892f0d226e29d21add7d277baa8fbbf40fe2d6dc0fa6957fb78c793b3d",
+        "device_top_y": 74.209906,
+        "changed_pixels": 127,
+        "max_alpha_difference": 204,
+        "boundary_rows": [
+          {
+            "y": 74,
+            "type1_nonzero": 0,
+            "solid_nonzero": 106,
+            "type1_alpha_sum": 0,
+            "solid_alpha_sum": 21576,
+            "changed": 106
+          },
+          {
+            "y": 75,
+            "type1_nonzero": 105,
+            "solid_nonzero": 106,
+            "type1_alpha_sum": 26775,
+            "solid_alpha_sum": 26970,
+            "changed": 1
+          }
+        ]
+      }
+    ]
   }
 }

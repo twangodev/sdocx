@@ -332,6 +332,9 @@ Reflecting records before public atlas and PDF sidecar creation, with the
 conjugated chart, raises resvg support IoU to 0.989–1 and reduces its RGB-byte
 MAE to 0.39–1.98 in these controls. MuPDF residuals remain similar; neither
 production integration nor arbitrary transforms are established.
+In a corrected constant opaque-mask control at those three transforms,
+MuPDF omits the top boundary row visible in the matching unmasked fill. This
+isolates a reader coverage effect, not the full varying-gradient residual.
 Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
 The public active-gradient route is limited to explicit AA-off profiles with
 minimum screen dimension 1080, type 1, positive distance, nonnegative offset,
