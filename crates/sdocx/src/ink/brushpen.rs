@@ -2181,77 +2181,90 @@ mod tests {
 
     #[test]
     fn glv10_drawing_caller_screen_limits_reconstruct_full_native_buffer() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/brushpen-saved-caller-native.json"
-        ))
-        .unwrap();
-        assert_eq!(fixture["schema"], "brushpen-saved-caller-native-v1");
-        assert_eq!(fixture["profile"]["width"], 1920);
-        assert_eq!(fixture["profile"]["height"], 1080);
+        for (fixture_text, width, height, hash) in [
+            (
+                include_str!("../../../../conformance/brushpen-saved-caller-native.json"),
+                1920,
+                1080,
+                "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92",
+            ),
+            (
+                include_str!("../../../../conformance/brushpen-2560x1440-native.json"),
+                2560,
+                1440,
+                "83f6f5b115f2826000a79875b78f62374a571e3921299eff08c199cb04627199",
+            ),
+        ] {
+            let fixture: Value = serde_json::from_str(fixture_text).unwrap();
+            assert!(matches!(
+                fixture["schema"].as_str(),
+                Some("brushpen-saved-caller-native-v1" | "brushpen-saved-admission-probe-v1")
+            ));
+            assert_eq!(fixture["profile"]["width"], width);
+            assert_eq!(fixture["profile"]["height"], height);
 
-        let source = &fixture["input"]["source_arrays"];
-        let points_flat = f32s_from_hex(source["points"]["data_hex"].as_str().unwrap());
-        assert_eq!(points_flat.len() % 2, 0);
-        let points = points_flat
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|xy| P { x: xy[0], y: xy[1] })
-            .collect::<Vec<_>>();
-        let times_bytes = bytes_from_hex(source["timestamps"]["data_hex"].as_str().unwrap());
-        let times = times_bytes
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .map(|bytes| i32::from_le_bytes(*bytes) as i64)
-            .collect::<Vec<_>>();
-        let pressures = f32s_from_hex(source["pressures"]["data_hex"].as_str().unwrap());
-        let orientations = f32s_from_hex(source["orientations"]["data_hex"].as_str().unwrap());
-        let tilts = f32s_from_hex(source["tilts"]["data_hex"].as_str().unwrap());
+            let source = &fixture["input"]["source_arrays"];
+            let points_flat = f32s_from_hex(source["points"]["data_hex"].as_str().unwrap());
+            assert_eq!(points_flat.len() % 2, 0);
+            let points = points_flat
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|xy| P { x: xy[0], y: xy[1] })
+                .collect::<Vec<_>>();
+            let times_bytes = bytes_from_hex(source["timestamps"]["data_hex"].as_str().unwrap());
+            let times = times_bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|bytes| i32::from_le_bytes(*bytes) as i64)
+                .collect::<Vec<_>>();
+            let pressures = f32s_from_hex(source["pressures"]["data_hex"].as_str().unwrap());
+            let orientations = f32s_from_hex(source["orientations"]["data_hex"].as_str().unwrap());
+            let tilts = f32s_from_hex(source["tilts"]["data_hex"].as_str().unwrap());
 
-        let mut profile = SAVED_GLV10_CONSTRUCTOR_PROFILE;
-        profile.runtime_size = f32_bits(&fixture["input"]["size_f32_bits"]);
-        profile.motion_settings_limits = [
-            fixture["profile"]["width"].as_i64().unwrap() as i32,
-            fixture["profile"]["height"].as_i64().unwrap() as i32,
-        ];
-        assert_eq!(
-            SAVED_GLV10_CONSTRUCTOR_PROFILE.motion_settings_limits,
-            [1440, 2560]
-        );
-        assert_eq!(profile.motion_settings_limits, [1920, 1080]);
+            let mut profile = SAVED_GLV10_CONSTRUCTOR_PROFILE;
+            profile.runtime_size = f32_bits(&fixture["input"]["size_f32_bits"]);
+            profile.motion_settings_limits = [
+                fixture["profile"]["width"].as_i64().unwrap() as i32,
+                fixture["profile"]["height"].as_i64().unwrap() as i32,
+            ];
+            assert_eq!(
+                SAVED_GLV10_CONSTRUCTOR_PROFILE.motion_settings_limits,
+                [1440, 2560]
+            );
+            assert_eq!(profile.motion_settings_limits, [width, height]);
 
-        let samples = sample_object_stroke_wrapper(
-            GL_VERSION,
-            profile,
-            profile.runtime_size,
-            0.0,
-            false,
-            fixture["input"]["curve_enabled"].as_bool().unwrap(),
-            false,
-            &points,
-            &times,
-            &pressures,
-            &orientations,
-            &tilts,
-            fixture["input"]["tool_type"].as_i64().unwrap() as i32,
-        )
-        .expect("captured Drawing source should be admitted by the bounded GLV10 profile");
-        let packed = sampled_instances(GL_VERSION, &samples).unwrap();
-        let actual_bytes = packed
-            .instances
-            .iter()
-            .flat_map(|instance| instance.values.iter())
-            .flat_map(|value| value.to_le_bytes())
-            .collect::<Vec<_>>();
-        let expected_bytes = bytes_from_hex(fixture["producer"]["buffer_hex"].as_str().unwrap());
-        assert_eq!(actual_bytes.len(), 1144);
-        assert_eq!(samples.len(), 26);
-        assert_eq!(actual_bytes, expected_bytes);
-        assert_eq!(
-            fixture["producer"]["buffer_sha256"].as_str().unwrap(),
-            "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92"
-        );
+            let samples = sample_object_stroke_wrapper(
+                GL_VERSION,
+                profile,
+                profile.runtime_size,
+                0.0,
+                false,
+                fixture["input"]["curve_enabled"].as_bool().unwrap(),
+                false,
+                &points,
+                &times,
+                &pressures,
+                &orientations,
+                &tilts,
+                fixture["input"]["tool_type"].as_i64().unwrap() as i32,
+            )
+            .expect("captured Drawing source should be admitted by the bounded GLV10 profile");
+            let packed = sampled_instances(GL_VERSION, &samples).unwrap();
+            let actual_bytes = packed
+                .instances
+                .iter()
+                .flat_map(|instance| instance.values.iter())
+                .flat_map(|value| value.to_le_bytes())
+                .collect::<Vec<_>>();
+            let expected_bytes =
+                bytes_from_hex(fixture["producer"]["buffer_hex"].as_str().unwrap());
+            assert_eq!(actual_bytes.len(), 1144);
+            assert_eq!(samples.len(), 26);
+            assert_eq!(actual_bytes, expected_bytes);
+            assert_eq!(fixture["producer"]["buffer_sha256"].as_str().unwrap(), hash);
+        }
     }
 
     #[test]

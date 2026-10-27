@@ -1,0 +1,428 @@
+{
+  "capture_script": "scratch/brushpen-screen-limits/capture.py",
+  "host_boundaries": [
+    "Pen/model input arrays are synthetic host allocations read by actual Model getters.",
+    "IContext dimensions and canvas/resource/queue objects are explicit host profile; queue posts synchronously dispatch task vslot+16.",
+    "No SDK document parser, real Notes device, user-stroke capture, GPU renderer, or pixels."
+  ],
+  "input": {
+    "advanced_setting_ascii": "10;",
+    "color_argb_u32": "0xff6cdd8f",
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "10;",
+      "color_argb_u32": "0xff6cdd8f",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+      "size": 3.1440000534057617,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+    "point_count": 3,
+    "size_f32_bits": "4c374940",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "native_selection": {
+    "draw_object_stroke_entries": [
+      {
+        "pc": "0x505c1f8",
+        "phase": "draw_object_stroke",
+        "pointer_heads": {
+          "x0_head": "c87f090500000000407f03100000000090f7021000000000600500100000000000000000666626400000000000000000486d0701000000000000000000000000106c031000000000000000000000000010730310000000001073031000000000",
+          "x1_head": "203049070000000000000000000000000000000000000000e0ec021000000000e0e80210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "x2_head": "000000000000000000000000000000000000000000000000bc570c02000000009065031000000000000200000000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c02000000000000000000000000e065031000000000",
+          "x3_head": "000000000000000000000000000000000000000000000000bc570c02000000009065031000000000000200000000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c02000000000000000000000000e065031000000000",
+          "x4_head": "636f6d2e73616d73756e672e616e64726f69642e73646b2e70656e2e70656e2e7072656c6f61642e427275736850656e00000000000000000000000000000000f0bf0e0200000000180000001200000000000000000000000000000000000000"
+        },
+        "regs": {
+          "s0": "0x0",
+          "s1": "0x0",
+          "s2": "0x3ecccccd",
+          "s3": "0x0",
+          "s4": "0x0",
+          "s5": "0x0",
+          "s6": "0x0",
+          "s7": "0x0",
+          "x0": "0x10037198",
+          "x1": "0x1002e7e0",
+          "x2": "0x200eee90",
+          "x3": "0x200eee90",
+          "x4": "0x10036a00",
+          "x5": "0x10034c00",
+          "x6": "0x3",
+          "x7": "0x0"
+        },
+        "signatures": [
+          "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+        ]
+      }
+    ],
+    "factory_symbol": "createPenInst",
+    "getStrokeDrawableGL_primary_vptr": "0x5097f18",
+    "loader_calls": [
+      {
+        "flags": 2,
+        "fn": "dlopen",
+        "name": "libSPenBrushPen.so"
+      },
+      {
+        "fn": "dlsym",
+        "handle": "0x50000001",
+        "name": "createPenInst"
+      }
+    ],
+    "pen_address": "0x10036b10",
+    "redraw_target_symbols": [
+      "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ],
+    "redraw_vtable_slot_target": "0x505c1f8",
+    "rt_address": "0x10037f40",
+    "rt_vptr": "0x5098b30",
+    "selected_drawable_subobject_vptr": "0x5097fc8",
+    "size_f32_bits": "4c374940",
+    "version": 10
+  },
+  "producer": {
+    "append_rows": [
+      {
+        "after_count_bytes": 44,
+        "before_count_bytes": 0,
+        "delta_bytes": "eae8633ff685d9bf0000803f5c8f823eb4b8e0bd26e8993e0000000000000000000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x0"
+        ]
+      },
+      {
+        "after_count_bytes": 88,
+        "before_count_bytes": 44,
+        "delta_bytes": "e07f643fbe14d9bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 132,
+        "before_count_bytes": 88,
+        "delta_bytes": "c67c663f1297d7bf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 176,
+        "before_count_bytes": 132,
+        "delta_bytes": "50416a3faac3d4bf0000803fec515040b4b8e0bd26e8993ed5000e3f3e01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 220,
+        "before_count_bytes": 176,
+        "delta_bytes": "7444703f4e41d0bf0000803ff6288840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 264,
+        "before_count_bytes": 220,
+        "delta_bytes": "a616793fa8a3c9bf0000803ff628a840b4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 308,
+        "before_count_bytes": 264,
+        "delta_bytes": "7cb3823f6c67c0bf0000803ff628c840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 352,
+        "before_count_bytes": 308,
+        "delta_bytes": "97048b3fc4edb3bf0000803f5c8f823eb4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 396,
+        "before_count_bytes": 352,
+        "delta_bytes": "83fe953fe276a3bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 440,
+        "before_count_bytes": 396,
+        "delta_bytes": "743ba43f781b8ebf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 484,
+        "before_count_bytes": 440,
+        "delta_bytes": "2475b63fe18965bf0000803fec515040b4b8e0bd26e8993ed5000e3f4101553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 528,
+        "before_count_bytes": 484,
+        "delta_bytes": "fc8acd3f594820bf0000803ff6288840b4b8e0bd26e8993ed4000e3f3f01553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbde0b8b4",
+          "0x3e99e826",
+          "0x3f0e00d4"
+        ]
+      },
+      {
+        "after_count_bytes": 572,
+        "before_count_bytes": 528,
+        "delta_bytes": "ec33db3f90ddfebc0000803ff628a840513093be2712f03ed5000e3f4001553f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f0e00d5"
+        ]
+      },
+      {
+        "after_count_bytes": 616,
+        "before_count_bytes": 572,
+        "delta_bytes": "d245eb3f96632c3e7d05823ff628c840513093be2712f03e971a113fa6e7523f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f111a97"
+        ]
+      },
+      {
+        "after_count_bytes": 660,
+        "before_count_bytes": 616,
+        "delta_bytes": "2a22fc3f4feebd3e2613843f5c8f823e513093be2712f03ef328143ff2c4503f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f1428f3"
+        ]
+      },
+      {
+        "after_count_bytes": 704,
+        "before_count_bytes": 660,
+        "delta_bytes": "47e806401ba7133f1c29863fd7a3a03f513093be2712f03e752b173fb0994e3f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f172b75"
+        ]
+      },
+      {
+        "after_count_bytes": 748,
+        "before_count_bytes": 704,
+        "delta_bytes": "692c1040122c493f8147883fec511040513093be2712f03eb2211a3f72664c3f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f1a21b2"
+        ]
+      },
+      {
+        "after_count_bytes": 792,
+        "before_count_bytes": 748,
+        "delta_bytes": "85e1194067897f3f776e8a3fec515040513093be2712f03e470b1d3fd02b4a3f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f1d0b47"
+        ]
+      },
+      {
+        "after_count_bytes": 836,
+        "before_count_bytes": 792,
+        "delta_bytes": "cf0b244044619b3f209e8c3ff6288840513093be2712f03ed7e71f3f5aea473f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f1fe7d7"
+        ]
+      },
+      {
+        "after_count_bytes": 880,
+        "before_count_bytes": 836,
+        "delta_bytes": "9aaf2e40746db73fa0d68e3ff628a840513093be2712f03e12b7223fafa2453f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f22b712"
+        ]
+      },
+      {
+        "after_count_bytes": 924,
+        "before_count_bytes": 880,
+        "delta_bytes": "61d139400bebd33f1a18913ff628c840513093be2712f03eb278253f6555433f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f2578b2"
+        ]
+      },
+      {
+        "after_count_bytes": 968,
+        "before_count_bytes": 924,
+        "delta_bytes": "c5754540cedbf03fb362933f5c8f823e513093be2712f03e742c283f1203413f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f282c74"
+        ]
+      },
+      {
+        "after_count_bytes": 1012,
+        "before_count_bytes": 968,
+        "delta_bytes": "90a15140c92007408fb6953fd7a3a03f513093be2712f03e23d22a3f53ac3e3f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f2ad223"
+        ]
+      },
+      {
+        "after_count_bytes": 1056,
+        "before_count_bytes": 1012,
+        "delta_bytes": "b4595e40190f1640d413983fec511040513093be2712f03e91692d3fbb513c3f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f2d6991"
+        ]
+      },
+      {
+        "after_count_bytes": 1100,
+        "before_count_bytes": 1056,
+        "delta_bytes": "52a36b40c6392540a87a9a3fec515040513093be2712f03e9ef22f3fe4f3393f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f2ff29e"
+        ]
+      },
+      {
+        "after_count_bytes": 1144,
+        "before_count_bytes": 1100,
+        "delta_bytes": "b3837940c4a1344032eb9c3ff6288840513093be2712f03e276d323f5f93373f000000000000000000000000",
+        "float_args": [
+          "0x437f0000",
+          "0xbe933051",
+          "0x3ef01227",
+          "0x3f326d27"
+        ]
+      }
+    ],
+    "buffer_bytes": 1144,
+    "buffer_hex": "eae8633ff685d9bf0000803f5c8f823eb4b8e0bd26e8993e0000000000000000000000000000000000000000e07f643fbe14d9bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000c67c663f1297d7bf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000050416a3faac3d4bf0000803fec515040b4b8e0bd26e8993ed5000e3f3e01553f0000000000000000000000007444703f4e41d0bf0000803ff6288840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000a616793fa8a3c9bf0000803ff628a840b4b8e0bd26e8993ed5000e3f4001553f0000000000000000000000007cb3823f6c67c0bf0000803ff628c840b4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000097048b3fc4edb3bf0000803f5c8f823eb4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000083fe953fe276a3bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000743ba43f781b8ebf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f0000000000000000000000002475b63fe18965bf0000803fec515040b4b8e0bd26e8993ed5000e3f4101553f000000000000000000000000fc8acd3f594820bf0000803ff6288840b4b8e0bd26e8993ed4000e3f3f01553f000000000000000000000000ec33db3f90ddfebc0000803ff628a840513093be2712f03ed5000e3f4001553f000000000000000000000000d245eb3f96632c3e7d05823ff628c840513093be2712f03e971a113fa6e7523f0000000000000000000000002a22fc3f4feebd3e2613843f5c8f823e513093be2712f03ef328143ff2c4503f00000000000000000000000047e806401ba7133f1c29863fd7a3a03f513093be2712f03e752b173fb0994e3f000000000000000000000000692c1040122c493f8147883fec511040513093be2712f03eb2211a3f72664c3f00000000000000000000000085e1194067897f3f776e8a3fec515040513093be2712f03e470b1d3fd02b4a3f000000000000000000000000cf0b244044619b3f209e8c3ff6288840513093be2712f03ed7e71f3f5aea473f0000000000000000000000009aaf2e40746db73fa0d68e3ff628a840513093be2712f03e12b7223fafa2453f00000000000000000000000061d139400bebd33f1a18913ff628c840513093be2712f03eb278253f6555433f000000000000000000000000c5754540cedbf03fb362933f5c8f823e513093be2712f03e742c283f1203413f00000000000000000000000090a15140c92007408fb6953fd7a3a03f513093be2712f03e23d22a3f53ac3e3f000000000000000000000000b4595e40190f1640d413983fec511040513093be2712f03e91692d3fbb513c3f00000000000000000000000052a36b40c6392540a87a9a3fec515040513093be2712f03e9ef22f3fe4f3393f000000000000000000000000b3837940c4a1344032eb9c3ff6288840513093be2712f03e276d323f5f93373f000000000000000000000000",
+    "buffer_sha256": "83f6f5b115f2826000a79875b78f62374a571e3921299eff08c199cb04627199",
+    "callback_count": 26,
+    "instance_float_count": 286,
+    "rt_ids": [
+      "0x10037f40"
+    ]
+  },
+  "profile": {
+    "height": 1440,
+    "source": "explicit host IContext profile arguments",
+    "width": 2560
+  },
+  "schema": "brushpen-saved-admission-probe-v1"
+}
