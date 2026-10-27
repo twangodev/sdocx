@@ -174,9 +174,10 @@ these captures.
 
 V3 preparation now stops at 2,048 particles and 65,536 source points, with no
 partial stream or caller RNG changes on rejection. Admission requires exact
-Pencil3 empty/`4;` settings, ordinary tool 2, complete finite channels, explicit
+Pencil3 empty/`4;` settings, tools 1, 2 or 3, complete finite channels, explicit
 ARGB and supported style defaults. Explicit-profile replay reveals the same
 saved-redraw particle stream using source-event cutoffs.
+A [curve-enabled tool 1 capture](../../conformance/pencil3-v3-tool1-curve-native.json) verifies the complete 77-record V3 stream through the native Drawing route; Rust matches every packed word. The earlier tool 1 fixture used a straight input and did not establish this admitted route.
 Native `Pen::SetSize` at PenCommon `0x45fdc` clamps to [0.4,800]. Drawing forwards
 omitted size as zero, yielding 0.4; explicit 0/0.1 and 800/900 controls match
 complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted

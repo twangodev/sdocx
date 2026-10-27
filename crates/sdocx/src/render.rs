@@ -9888,6 +9888,30 @@ mod tests {
     }
 
     #[test]
+    fn pencil3_tool1_profile_exposes_particles() {
+        let mut stroke = pencil3_native_profile_stroke();
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 1;
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        let prepared = super::prepare_stroke_for_viewport_with_theme(
+            &stroke,
+            RenderTheme::for_canvas(false),
+            &options,
+            [320, 180],
+        );
+        assert_eq!(prepared.profile, Some("Pencil3V3"));
+        assert!(!prepared.points.is_empty());
+    }
+
+    #[test]
     fn pencil3_tool3_profile_exposes_particles_and_replay() {
         let mut stroke = pencil3_native_profile_stroke();
         stroke.rendering.as_mut().unwrap().tool_type_raw = 3;

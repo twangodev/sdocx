@@ -187,7 +187,7 @@ The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles default to the generic pressure approximation. An explicit
 `Pencil3RenderProfile` admits bounded V3 intrinsic-texture paint for ordinary
-curve-enabled tool-2 and tool-3 strokes with empty/`4;` settings, supplied screen/canvas dimensions and
+curve-enabled tool-1, tool-2 and tool-3 strokes with empty/`4;` settings, supplied screen/canvas dimensions and
 a chosen paper sampler; canvas dimensions must match the page. Paper sampling
 uses a bounded intrinsic texel plane to preserve nearest repeat/clamp coverage
 across fractional tile seams; stroke geometry remains vector. A test-only
@@ -207,8 +207,8 @@ matches all 48 particles in two redraw phases, including private RNG state and
 reset behavior. The [V3 saved sampler](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-sampler-inputs-native.json)
 reconstructs complete native particle streams from source channels across five
 profiles, including varied pressure, tilt, tools and context dimensions. The
-tool-3 adapter matches its captured particle stream; saved settings and native
-appearance for that route remain unverified.
+tool-1 and tool-3 adapters match their captured particle streams; saved settings
+and native appearance for those routes remain unverified.
 A [V3 host paint join](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil-v3-paint-join.json) replays those
 captured streams through the extracted shader and masks at three scales, with
 synthetic projection, color and paper phase; native device/FBO paint is unverified.

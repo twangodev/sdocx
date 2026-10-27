@@ -32,7 +32,7 @@ fn saved_pencil3_v3_inputs(stroke: &Stroke) -> Option<(u32, f32)> {
             rendering.advanced_settings.as_deref(),
             Some("") | Some("4;")
         )
-        || !matches!(rendering.tool_type_raw, 2 | 3)
+        || !matches!(rendering.tool_type_raw, 1..=3)
         || !rendering.properties.compressed
         || rendering.properties.replay_only
         || rendering.properties.eraser
@@ -361,6 +361,30 @@ mod tests {
     }
 
     #[test]
+    fn tool1_curve_adapter_matches_complete_native_stream() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-v3-tool1-curve-native.json"
+        ))
+        .unwrap();
+        let profile = &fixture["input_profile"];
+        assert_eq!(profile["curve_enabled"], true);
+        let prepared = prepare_pencil3_v3_source(&fixture_stroke(profile), 1920, 1080)
+            .expect("native curve-enabled tool 1 profile");
+        let actual = prepared
+            .records
+            .iter()
+            .flat_map(|record| record.iter().map(|value| value.to_bits()))
+            .collect::<Vec<_>>();
+        let native = fixture["v3"]["native_packed_stream_f32_bits_le"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(little_word)
+            .collect::<Vec<_>>();
+        assert_eq!(actual, native, "complete native packed stream");
+    }
+
+    #[test]
     fn source_event_ends_match_native_v3_boundaries_without_changing_streams() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/pencil3-sampler-inputs-native.json"
@@ -418,7 +442,7 @@ mod tests {
             assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
         }
         stroke.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());
-        for tool in [1, 4] {
+        for tool in [0, 4] {
             stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
             assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
         }
