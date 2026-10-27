@@ -35,7 +35,7 @@ code = code.replace('input_case=INPUT_CASES[args.case]', "input_case=json.loads(
 code = code.replace("choices=('empty','9'),default='9'", "choices=('null',),default='null'")
 code = code.replace("choices=(1.0,2.0,4.0)", "choices=(0.5,1.0,2.0,4.0)")
 code = code.replace("default=1440)", "default=1920)").replace("default=2560)", "default=1080)")
-code = code.replace("('line0_curve_short_history_color',1440,2560)", "('line0_curve_short_history_color',1920,1080)")
+code = code.replace("if (args.case,args.width,args.height)!=('line0_curve_short_history_color',1440,2560):", "if args.case != 'line0_curve_short_history_color' or not (0 < args.width <= 65535 and 0 < args.height <= 65535):")
 if opaque_background:
     code = code.replace("  before_draw_fbo=bp.C.c_int();", "  p.mesa.f['glClearColor'](1.0,1.0,1.0,1.0); p.mesa.f['glClear'](0x4000)\n  before_draw_fbo=bp.C.c_int();")
 code = code.replace('InkPen2StrokeDrawableRTV3::', 'InkPen2StrokeDrawableRTV1::')

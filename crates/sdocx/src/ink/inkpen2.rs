@@ -662,6 +662,58 @@ mod tests {
 
     // A bounded synthetic profile, not evidence for arbitrary strokes or paint.
     #[test]
+    fn null_v1_screen_profiles_match_candidate_geometry() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-v1-screen-profiles-native.json"
+        ))
+        .unwrap();
+        let points = [
+            P { x: 0., y: 0. },
+            P { x: 8., y: 0. },
+            P { x: 16., y: 3. },
+            P { x: 24., y: 3. },
+        ];
+        for (profile, native) in receipt["profiles"].as_object().unwrap() {
+            let (width, height) = profile.split_once('x').unwrap();
+            let resolution_min = width.parse::<i32>().unwrap().min(height.parse().unwrap());
+            let output = super::redraw_v1_bounded(
+                Input {
+                    points: &points,
+                    times: &[0, 10, 20, 30],
+                    pressures: &[0.2, 0.4, 0.6, 0.8],
+                    tools: &[2; 4],
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: 4.,
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min,
+                        initial_alternation: false,
+                        initial_time: 0,
+                    },
+                },
+                10000,
+            )
+            .unwrap();
+            let actual: Vec<u8> = output
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            assert_eq!(
+                actual,
+                hex_bytes(native["stream_hex"].as_str().unwrap()),
+                "{profile}"
+            );
+        }
+    }
+
+    #[test]
     fn null_v1_controls_match_candidate_geometry() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen2-null-v1-controls-native.json"

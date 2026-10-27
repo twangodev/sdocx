@@ -4607,9 +4607,10 @@ fn prepare_inkpen2_internal(
         _ => false,
     };
     let unsupported_v1 = v1_scale.is_some()
-        && (profile.screen_width != 1920
-            || profile.screen_height != 1080
-            || profile.enhanced_antialias
+        && (!matches!(
+            (profile.screen_width, profile.screen_height),
+            (1920, 1080) | (1080, 1920)
+        ) || profile.enhanced_antialias
             || !matches!(
                 rendering.pen_name.as_deref(),
                 Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
@@ -17735,6 +17736,12 @@ mod tests {
             enhanced_antialias: false,
         });
         assert!(super::prepare_inkpen2_v1(&admitted, wrong_profile, theme, scale).is_none());
+        let unverified_profile = Some(InkPen2RenderProfile {
+            screen_width: 1440,
+            screen_height: 2560,
+            enhanced_antialias: false,
+        });
+        assert!(super::prepare_inkpen2_v1(&admitted, unverified_profile, theme, scale).is_none());
         let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options)
             .unwrap()
             .svg;
@@ -18102,6 +18109,10 @@ mod tests {
             "../../../conformance/inkpen2-null-v1-shapes-paint-native.json"
         ))
         .unwrap();
+        let profiles: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-v1-screen-paint-native.json"
+        ))
+        .unwrap();
         for (name, capture) in receipt["cases"].as_object().unwrap() {
             let input = &capture["input"];
             let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
@@ -18153,6 +18164,36 @@ mod tests {
                     .svg
             };
             let actual = render(&mut cache, &options);
+            let portrait_capture = &profiles["cases"][name]["1080x1920"];
+            assert_eq!(
+                portrait_capture["geometry_sha256"], capture["geometry_sha256"],
+                "{name}"
+            );
+            assert_eq!(
+                portrait_capture["rgba_sha256"], capture["rgba_sha256"],
+                "{name}"
+            );
+            let mut portrait_options = options.clone();
+            portrait_options
+                .inkpen2_profile
+                .as_mut()
+                .unwrap()
+                .screen_width = 1080;
+            portrait_options
+                .inkpen2_profile
+                .as_mut()
+                .unwrap()
+                .screen_height = 1920;
+            let portrait = render(&mut cache, &portrait_options);
+            assert_eq!(actual, portrait, "{name}: public SVG");
+            let pdf = |svg: String| {
+                crate::render_svg_pages_pdf(
+                    &[crate::RenderedPage::new(0, 128, 96, svg)],
+                    &Default::default(),
+                )
+                .unwrap()
+            };
+            assert_eq!(pdf(actual.clone()), pdf(portrait), "{name}: public PDF");
             let generic = render(&mut cache, &RenderOptions::default());
             if let Some(directory) = std::env::var_os("SDOCX_V1_SHAPE_PDF_CAPTURE") {
                 let directory = std::path::Path::new(&directory);
