@@ -11264,7 +11264,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn public_inkpen_alpha_is_applied_once_in_normal_and_replay_svg() {
-        for setting in [None, Some(""), Some("4;")] {
+        for setting in [None, Some(""), Some("4;"), Some("18;0;100;")] {
             let mut stroke = fountain_color_stroke("14;");
             let rendering = stroke.rendering.as_mut().unwrap();
             rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());

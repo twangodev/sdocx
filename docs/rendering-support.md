@@ -249,13 +249,14 @@ modes, using saved ARGB or the native opaque-black default when it is absent;
 a bounded compound contour approximates native coverage at one SVG pixel per
 source unit. Replay preserves source-event cutoffs and folds the terminal suffix
 into the final event. Unsupported inputs and exhausted budgets retain fallback;
-the context-free preparer remains unchanged. Ordinary V1 and V4
-(empty or `4;` settings) use saved RGB when the public stroke color is absent,
+the context-free preparer remains unchanged. Ordinary V1 and observed V4
+(empty, `4;` or `18;0;100;` settings) use saved RGB when the public stroke color is absent,
 and apply saved ARGB alpha once per stroke in SVG/PDF. An explicit
 `InkPenRenderProfile` now selects bounded V4 geometry for ordinary strokes with
 saved ARGB and a caller-supplied display size; the default remains generic. The
 exact `18;0;100;` setting also admits the native opaque-black default when ARGB
-is absent, as observed in a synthetic serialized-frame derivative.
+is absent, as observed in a synthetic serialized-frame derivative; this color
+is retained when geometry falls back.
 Its contour approximates native coverage, and V4 replay event boundaries and
 other output scales remain unverified.
 The numeric core matches twenty-one

@@ -156,9 +156,9 @@ by the host; the terminal event clock models signed last-minus-first time.
 Only SmPath is constructed natively. This establishes the selected synthetic
 call-path observations, not Android lifecycle, Rust or appearance parity.
 
-The test-only Rust numeric core matches these configured-context fixtures and
-four native setter cases for fixed width and size clamps; it is not a shipped
-InkPen render route. Separate Base cubic captures
+The Rust numeric core matches these configured-context fixtures and four native
+setter cases for fixed width and size clamps. An explicit display profile selects
+a bounded V4 vector route; unsupported inputs retain generic fallback. Separate Base cubic captures
 (`smpath-cubic.json`) match three measured lengths and 21 sampled positions
 bit-for-bit. Native subdivision tests control deviations from the one-third
 and two-thirds chord points against 0.5, down to 1024-wide intervals in the
@@ -198,9 +198,9 @@ buffer and derived pen bounds; dirty clearing requires SetPointData success
 extended rectangle is queued to RT (`0x31220–0x31248`). Queue execution and
 callback lifetime are not guaranteed by the ordinary true return.
 Saved channels remain distinct from generated points, bounds and cache state;
-no saved-array setter is reached in this bounded chain. Current Rust uses
-the [generic fallback](stroke-rendering-findings.md), without this V4 law.
-Other versions, no-curve, StrokeTip, clean-cache reuse, live input and full
+no saved-array setter is reached in this bounded chain. The bounded Rust route
+includes curve and no-curve geometry but does not establish full native paint
+parity. Other versions, StrokeTip, clean-cache reuse, live input and full
 shader behavior are separate. [Opacity](pen-opacity-findings.md) and
 [native PDF transport](native-pdf-stroke-findings.md) do not certify vector
 outlines or complete visual parity for this source trace.
