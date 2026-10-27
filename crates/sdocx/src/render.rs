@@ -11193,8 +11193,17 @@ mod tests {
         frame[14] &= !2;
         frame.drain(94..98);
         payload.extend(frame);
-        let mut stroke =
-            crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+        let object = crate::StoredObject {
+            object_type: crate::ObjectType::Stroke,
+            declared_size: (payload.len() + 32) as u32,
+            payload_offset: 0,
+            payload_size: payload.len(),
+            integrity_trailer: [0; 32],
+            children: vec![],
+        };
+        let mut stroke = object
+            .decode_stroke(&payload, &crate::ParseLimits::default())
+            .unwrap();
         let style = &stroke.rendering.as_ref().unwrap().style;
         assert_eq!(style.legacy_pen_name_id, Some(0));
         assert_eq!(style.advanced_pen_setting_id, None);
@@ -11219,15 +11228,28 @@ mod tests {
             ..RenderOptions::default()
         };
         let theme = RenderTheme::for_canvas(false);
-        assert!(
-            super::prepare_inkpen2_v1(
-                &stroke,
-                options.inkpen2_profile,
-                theme,
-                options.inkpen2_v1_output_scale.unwrap()
-            )
-            .is_some()
-        );
+        let prepared = super::prepare_inkpen2_v1(
+            &stroke,
+            options.inkpen2_profile,
+            theme,
+            options.inkpen2_v1_output_scale.unwrap(),
+        )
+        .unwrap();
+        // The same sample bytes were loaded by native NewApplyBinary in a
+        // separate control whose setting ID resolved to `1;`. Its V1 stream
+        // also matches this setter-built null-setting baseline. This checks
+        // geometry across those controls, not native loading of this mutation.
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-controls-native.json"
+        ))
+        .unwrap();
+        let expected = decode(native["cases"]["baseline"]["stream_hex"].as_str().unwrap());
+        let actual: Vec<u8> = prepared
+            .records
+            .iter()
+            .flat_map(|record| record[..3].iter().flat_map(|value| value.to_le_bytes()))
+            .collect();
+        assert_eq!(actual, expected);
         assert!(super::prepare_inkpen2_v9(&stroke, options.inkpen2_profile, theme).is_none());
     }
 
