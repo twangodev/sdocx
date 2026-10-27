@@ -1,0 +1,63 @@
+{
+  "schema": "sdocx.airbrush-v2-stationary-native.v1",
+  "runner_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py",
+  "runner_sha256": "d38a83f3cf71b228f58654c08a135d3f91d3bda0349df1d6014926752dc3b73e",
+  "command": "AB_N=4 PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin:tmp/conformance-cleanup/native-capture-a241793/conformance LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu python3 tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py --single-case --print-capture --advanced-mode explicit-empty --width 256 --height 256 --source-size 3.144",
+  "native_hashes": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "model_state": {
+    "advanced_before_setter": null,
+    "advanced_mode": "explicit-empty",
+    "advanced_setting": "",
+    "color_argb_u32": "0xff44aaee",
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+    "size": 3.1440000534057617,
+    "size_level": 30,
+    "tool_type": 2
+  },
+  "source_arrays": {
+    "orientations": {"count": 4, "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e", "element_size": 4},
+    "points": {"count": 4, "data_hex": "0074004300840043007400430084004300740043008400430074004300840043", "element_size": 8},
+    "pressures": {"count": 4, "data_hex": "9a99993e9a99993e9a99993e9a99993e", "element_size": 4},
+    "tilts": {"count": 4, "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d", "element_size": 4},
+    "timestamps": {"count": 4, "data_hex": "2c0100003b0100004a01000059010000", "element_size": 4}
+  },
+  "selected_profile": 2,
+  "instance_hex": "0074004300840043000000000000803f",
+  "frame_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34",
+  "frame_row_origin": "GL lower-left",
+  "frame_nonzero_pixels": [
+    [127, 126, [2, 4, 6, 6]],
+    [128, 126, [1, 2, 3, 3]],
+    [127, 127, [1, 3, 5, 5]],
+    [128, 127, [6, 16, 22, 24]],
+    [129, 127, [1, 2, 3, 3]],
+    [127, 128, [1, 3, 4, 4]],
+    [128, 128, [4, 9, 13, 14]]
+  ],
+  "limitations": "Synthetic Model setters and host queue adapters; framebuffer captured from Mesa GLES, not Android or PDF.",
+  "pdf_comparison": {
+    "renderer": "MuPDF 2.0 via PyMuPDF 2.0",
+    "pdf_sha256": "d7a0cdfcda9c53a55559a6966b77df9998beb6b22feac2b8b2523d9ff67f1015",
+    "page_points": [192, 192],
+    "raster_size": [256, 256],
+    "native_row_transform": "vertical flip to top-left",
+    "rgba_comparison": "premultiplied RGBA8 on transparent",
+    "max_channel_absolute_error": 14,
+    "absolute_channel_error_sum": 169,
+    "differing_pixels": 9,
+    "native_alpha_sum": 59,
+    "pdf_alpha_sum": 52,
+    "native_alpha_support": 7,
+    "pdf_alpha_support": 6,
+    "limitation": "One scale and synthetic host-Mesa frame; not device or general PDF parity."
+  }
+}

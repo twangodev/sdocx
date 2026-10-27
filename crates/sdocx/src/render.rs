@@ -12666,6 +12666,98 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn saved_v2_stationary_public_route_matches_native_frame() {
+        use sha2::{Digest, Sha256};
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-v2-stationary-native.json"
+        ))
+        .unwrap();
+        assert_eq!(evidence["selected_profile"], 2);
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = vec![
+            Point {
+                x: 128.453125,
+                y: 128.515625
+            };
+            4
+        ];
+        stroke.pressures = vec![0.3; 4];
+        stroke.tilts = vec![0.12; 4];
+        stroke.orientations = vec![0.2; 4];
+        stroke.timestamps = vec![300, 315, 330, 345];
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff44aaee);
+        let sampled = crate::ink::airbrush::saved_v2_from_stroke(stroke).unwrap();
+        let bytes: Vec<u8> = sampled
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(hex, evidence["instance_hex"].as_str().unwrap());
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let scene = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0);
+        if let Some(path) = std::env::var_os("SDOCX_AIRBRUSH_STATIONARY_PDF") {
+            let pdf = crate::pdf::render_scenes_pdf_with_progress(
+                std::slice::from_ref(&scene),
+                &crate::PdfOptions::default(),
+                &mut |_| {},
+            )
+            .unwrap();
+            std::fs::write(path, pdf).unwrap();
+        }
+        let tree =
+            resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let mut expected = vec![0u8; 256 * 256 * 4];
+        for entry in evidence["frame_nonzero_pixels"].as_array().unwrap() {
+            let x = entry[0].as_u64().unwrap() as usize;
+            let y = entry[1].as_u64().unwrap() as usize;
+            for (channel, value) in entry[2].as_array().unwrap().iter().enumerate() {
+                expected[(y * 256 + x) * 4 + channel] = value.as_u64().unwrap() as u8;
+            }
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&expected)),
+            evidence["frame_sha256"].as_str().unwrap()
+        );
+        let flipped: Vec<u8> = expected
+            .as_chunks::<{ 256 * 4 }>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(
+            pixmap.data(),
+            flipped,
+            "public V2 SVG versus native host frame"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn saved_v1_public_short_stroke_matches_native_frame() {
         use sha2::{Digest, Sha256};
         let evidence: serde_json::Value = serde_json::from_str(include_str!(
