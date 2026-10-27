@@ -7,7 +7,8 @@
     "pdf-phase-probe.py": "a6ba693fa95537b1ebdc24f7f408043ac148635256e13134637f0c3f3eb8a56b",
     "pdf-mask-ablation.py": "b5f6d0debcfdf7ba3e600cc94733afe654c4b7466413971f575c004bb4a09f72",
     "pdf-clip-probe.py": "5e13988c534d69ae6fc04db13f781df4b279abbf5072be6f084b53c74e7f527f",
-    "pdf-gradient-probe.py": "7ac57eca60f6387c43d3b93c1a017e6125bc09dc96160cb4dbe7ae0967e5a612"
+    "pdf-gradient-probe.py": "7ac57eca60f6387c43d3b93c1a017e6125bc09dc96160cb4dbe7ae0967e5a612",
+    "pdf-rect-probe.py": "c6a4936ff3883e466b529c7cf7bb50e070e031ed901df3459e96fa4ffab41c21"
   },
   "input_geometry_sha256": {
     "long": "a3e92df3d96ad24fcbf6379109b0767a0b7157124209838c07c877273bbda598",
@@ -51,6 +52,26 @@
     "clip_pdf_bytes": {
       "long": 222898,
       "second": 187608
+    },
+    "rectangle_coverage_mask_svg_pdf_iou": {
+      "long_pdfium_1x": 0.907359,
+      "long_mupdf_1x": 0.880677,
+      "long_pdfium_2x": 0.962413,
+      "long_mupdf_2x": 0.9464,
+      "long_pdfium_4x": 0.981491,
+      "long_mupdf_4x": 0.975306,
+      "second_pdfium_1x": 0.813149,
+      "second_mupdf_1x": 0.86729,
+      "second_pdfium_2x": 0.912466,
+      "second_mupdf_2x": 0.928369,
+      "second_pdfium_4x": 0.955773,
+      "second_mupdf_4x": 0.966753
+    },
+    "rectangle_coverage_mask_native_pdf_union_mae": {
+      "long_pdfium": 8.706068,
+      "long_mupdf": 10.998233,
+      "second_pdfium": 24.77208,
+      "second_mupdf": 17.318015
     }
   },
   "limitations": [
@@ -58,6 +79,7 @@
     "Replacing soft coverage with hard clip loses the fade and worsens native accuracy.",
     "Moving fade into source before nonlinear filter triggered resvg 0.47.0 composite dimension assertion; not evaluated further.",
     "A half-output-pixel global translation is renderer and scale dependent and is not an admitted fix.",
-    "Scripts and JSON results are under ignored tmp; scripts use existing local Python environment and shared prebuilt helper."
+    "Scripts and JSON results are under ignored tmp; scripts use existing local Python environment and shared prebuilt helper.",
+    "Replacing the coverage circle with a rectangle filled by the same transparent radial gradient worsened support IoU at 1x, 2x and 4x for both renderers and controls; this does not identify the transport defect."
   ]
 }

@@ -1,0 +1,54 @@
+{
+  "schema": "sdocx-simplebrush-fringe-width-comparison-v1",
+  "scope": "Synthetic HostV25 controls; public page SVG and PDF at 1x, transparent background. Native references are bottom-up host-Mesa crops; no device or saved-note parity is established.",
+  "method": "Paired public renderer profile with gradient fringe widths 1.0 and 1.1 scene units. PDF rasterized at 4/3 scale by PyMuPDF 1.28.2; support and absolute alpha error measured within each complete native crop.",
+  "svg_observation": "All 26 controls had unchanged support intersection and union, and lower alpha and RGBA error with width 1.1.",
+  "conclusion": "Width 1.1 worsens PDF alpha error in 25 of 26 controls with identical support; retain width 1.0. PDFium was unavailable.",
+  "pdf_columns": [
+    "control",
+    "baseline_intersection",
+    "baseline_union",
+    "baseline_alpha_error",
+    "wide_intersection",
+    "wide_union",
+    "wide_alpha_error"
+  ],
+  "comparison_script": {
+    "path": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/compare_simplebrush_fringe_pdf.py",
+    "sha256": "932f3fb89eaabff590e212af00e39d74be65c0d8f10694ed45174e29ddc9f466"
+  },
+  "reproduction": [
+    "Create empty baseline and wide output directories.",
+    "Run SDOCX_SIMPLEBRUSH_EXPORT_DIR=<baseline> CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --lib --features pdf,serde ink::simplebrush::tests -- --nocapture.",
+    "Temporarily change the gradient inner-radius subtraction in crates/sdocx/src/render/simplebrush.rs from 1.0 to 1.1 and repeat the same command with SDOCX_SIMPLEBRUSH_EXPORT_DIR=<wide>; restore the source afterward.",
+    "Run .venv/bin/python tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/compare_simplebrush_fringe_pdf.py <baseline> <wide> with PyMuPDF 1.28.2. The script reads the retained native RGBA crops and writes metric rows to stdout."
+  ],
+  "pdf_metrics": [
+    ["simplebrush-size-3-10", 141, 167, 3353, 141, 167, 3540],
+    ["simplebrush-paint-v25-size12", 172, 185, 3574, 172, 185, 3726],
+    ["simplebrush-7-12", 529, 581, 11485, 529, 581, 11576],
+    ["simplebrush-paint-v25-four-size12", 275, 297, 5313, 275, 297, 5478],
+    ["simplebrush-paint-v25-size16", 223, 249, 4146, 223, 249, 4300],
+    ["simplebrush-six-size16", 582, 628, 9074, 582, 628, 9319],
+    ["simplebrush-paint-v25-four-size16", 353, 384, 5856, 353, 384, 6055],
+    ["simplebrush-paint-v25-four-size16-alt", 383, 407, 4889, 383, 407, 5089],
+    ["simplebrush-size-16-20", 1916, 2016, 20400, 1916, 2016, 21061],
+    ["simplebrush-edge-16-24", 2161, 2268, 18527, 2161, 2268, 19510],
+    ["simplebrush-edge-7-24", 909, 959, 8532, 909, 959, 8838],
+    ["simplebrush-edge-16-3", 427, 551, 27165, 427, 551, 27187],
+    ["simplebrush-edge-7-3", 171, 222, 11401, 171, 222, 11348],
+    ["simplebrush-paint-v25-size4", 68, 83, 3154, 68, 83, 3361],
+    ["simplebrush-six-size4", 188, 222, 7823, 188, 222, 8104],
+    ["simplebrush-paint-v25-four-size4", 115, 134, 4488, 115, 134, 4721],
+    ["simplebrush-paint-v25-four-size4-alt", 128, 157, 6246, 128, 157, 6296],
+    ["simplebrush-size-7-55", 270, 327, 11137, 270, 327, 11200],
+    ["simplebrush-paint-v25", 115, 137, 3845, 115, 137, 3971],
+    ["simplebrush-128-8", 7437, 8415, 214961, 7437, 8415, 216806],
+    ["simplebrush-16-8", 895, 1015, 26396, 895, 1015, 26640],
+    ["simplebrush-17-8", 938, 1068, 28033, 938, 1068, 28291],
+    ["simplebrush-32-8", 1821, 2063, 53095, 1821, 2063, 53580],
+    ["simplebrush-5-8", 241, 278, 7649, 241, 278, 7696],
+    ["simplebrush-64-8", 3703, 4191, 107318, 3703, 4191, 108242],
+    ["simplebrush-paint-v25-four", 189, 217, 5761, 189, 217, 5950]
+  ]
+}
