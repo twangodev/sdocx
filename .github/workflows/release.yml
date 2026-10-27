@@ -22,6 +22,7 @@ jobs:
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       sdocx--release_created: ${{ steps.release.outputs['crates/sdocx--release_created'] }}
+      sdocx--tag_name: ${{ steps.release.outputs['crates/sdocx--tag_name'] }}
       sdocx--sha: ${{ steps.release.outputs['crates/sdocx--sha'] }}
       sdocx-cli--release_created: ${{ steps.release.outputs['crates/sdocx-cli--release_created'] }}
       sdocx-cli--tag_name: ${{ steps.release.outputs['crates/sdocx-cli--tag_name'] }}
@@ -34,13 +35,21 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-github-pull-request: true
 
+  feature-sdk:
+    name: Feature SDK release
+    needs: [release-please]
+    if: needs.release-please.outputs.sdocx--release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Feature SDK release
-        if: steps.release.outputs['crates/sdocx--release_created'] == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SDK_TAG: ${{ steps.release.outputs['crates/sdocx--tag_name'] }}
+          SDK_TAG: ${{ needs.release-please.outputs.sdocx--tag_name }}
         run: gh release edit "$SDK_TAG" --latest
 
   build:
@@ -244,3 +253,20 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  release-pr:
+    name: Update release pull request
+    needs: [release-please, feature-sdk, build, upload-release-assets, publish, npm, docker]
+    if: >-
+      ${{ always() && needs.release-please.result == 'success' &&
+          !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-release: true
