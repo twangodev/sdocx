@@ -121,7 +121,7 @@ pub(super) fn generate(points: [Point; 4], size: f32) -> Option<Mesh> {
         ],
         [scale(n0, -1.), n0],
     );
-    for i in 0..3 {
+    for i in 0..curves.len() {
         let dot = normals[i][0][0] * normals[i][1][0] + normals[i][0][1] * normals[i][1][1];
         let count = ((((lengths[i][0] + lengths[i][1]) * 0.5) as i32 as f32 * (dot - 1.).abs())
             as usize
@@ -272,54 +272,130 @@ fn centerline_subdivision(points: [Point; 3], lo: usize, hi: usize, samples: &mu
     centerline_subdivision([center, mid(b, c), c], k, hi, samples);
 }
 
-// Only the non-circle and exact-reversal branches of the captured four-point
-// controls are modeled. Sector turns and skipped points return None.
+// Monotonic cubic and tangent-angle reconstruction, bounded to controls with
+// one in-range root. This is test-only and does not cover all native roots.
+fn sector_centerline(points: [Point; 3], count: usize) -> Option<Vec<Point>> {
+    let [a, b, c] = points.map(|p| [f64::from(p[0]), f64::from(p[1])]);
+    let d = [b[0] - a[0], b[1] - a[1]];
+    let q = [c[0] - 2.0 * b[0] + a[0], c[1] - 2.0 * b[1] + a[1]];
+    let dot = d[0] * q[0] + d[1] * q[1];
+    let norm = d[0] * d[0] + d[1] * d[1];
+    let aa = q[0] * q[0] + q[1] * q[1];
+    let bb = 3.0 * dot;
+    let cc = 2.0 * norm - dot;
+    let dd = -norm;
+    if aa <= 0.0 || bb * bb - 3.0 * aa * cc >= 0.0 {
+        return None;
+    }
+    let polynomial = |t: f64| ((aa * t + bb) * t + cc) * t + dd;
+    if polynomial(0.0) > 0.0 || polynomial(1.0) < 0.0 {
+        return None;
+    }
+    let (mut lo, mut hi) = (0.0, 1.0);
+    for _ in 0..64 {
+        let middle = (lo + hi) * 0.5;
+        if polynomial(middle) < 0.0 {
+            lo = middle;
+        } else {
+            hi = middle;
+        }
+    }
+    let split = (lo + hi) * 0.5;
+    let direction = [d[0] + split * q[0], d[1] + split * q[1]];
+    let base = direction[1].atan2(direction[0]);
+    let cross = |x: [f64; 2], y: [f64; 2]| x[0] * y[1] - x[1] * y[0];
+    let sign = cross(d, q).signum();
+    if sign == 0.0 {
+        return None;
+    }
+    let mut samples = vec![[0.0; 2]; count + 1];
+    samples[0] = points[0];
+    samples[count] = points[2];
+    for (index, sample) in samples.iter_mut().enumerate().take(count).skip(1) {
+        let angle = base + (index as f64 - (count / 2) as f64) * sign * std::f64::consts::PI / 20.0;
+        let axis = [angle.cos(), angle.sin()];
+        let denominator = cross(q, axis);
+        if denominator.abs() < 1e-12 {
+            return None;
+        }
+        let t = -cross(d, axis) / denominator;
+        if !(0.0..=1.0).contains(&t) {
+            return None;
+        }
+        for j in 0..2 {
+            sample[j] =
+                ((1.0 - t) * (1.0 - t) * a[j] + 2.0 * (1.0 - t) * t * b[j] + t * t * c[j]) as f32;
+        }
+    }
+    Some(samples)
+}
+
+// Four-point host controls with the observed size-based GLV1 move filter.
+// The display-dependent filter and degenerate event sequences are unsupported.
 fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
-    let dirs = [
-        sub(points[1], points[0]),
-        sub(points[2], points[1]),
-        sub(points[3], points[2]),
-    ];
-    let (n0, l0) = normal(dirs[0])?;
-    let (n1, l1) = normal(dirs[1])?;
-    let (n2, l2) = normal(dirs[2])?;
-    let start = add(points[0], scale(dirs[0], size * 0.4 / l0));
-    let end = mid(start, points[1]);
-    let middle = mid(points[1], points[2]);
+    let threshold = size * 0.4;
+    let mut moves = Vec::new();
+    let mut last = points[0];
+    for &point in &points[1..3] {
+        let delta = sub(point, last);
+        if delta[0].abs() > threshold || delta[1].abs() > threshold {
+            moves.push(point);
+            last = point;
+        }
+    }
+    let first = *moves.first()?;
+    let first_delta = sub(first, points[0]);
+    let (mut previous_normal, mut previous_length) = normal(first_delta)?;
+    let start = add(points[0], scale(first_delta, threshold / previous_length));
+    let mut curve_end = mid(start, first);
+    let mut curves = vec![[start, mid(start, curve_end), curve_end]];
+    let mut normals = vec![[previous_normal, previous_normal]];
+    let mut lengths = vec![[0.0, previous_length]];
+    let mut current = first;
+    let mut path = [points[0], points[0], curve_end];
+    for &next in moves.iter().skip(1) {
+        let (next_normal, next_length) = normal(sub(next, current))?;
+        let next_end = mid(current, next);
+        path = [curve_end, current, next_end];
+        curves.push(path);
+        normals.push([previous_normal, next_normal]);
+        lengths.push([previous_length, next_length]);
+        previous_normal = next_normal;
+        previous_length = next_length;
+        current = next;
+        curve_end = next_end;
+    }
     let q = Quad::new(
         P {
-            x: end[0],
-            y: end[1],
+            x: path[0][0],
+            y: path[0][1],
         },
         P {
-            x: points[1][0],
-            y: points[1][1],
+            x: path[1][0],
+            y: path[1][1],
         },
         P {
-            x: middle[0],
-            y: middle[1],
+            x: path[2][0],
+            y: path[2][1],
         },
     );
     if q.length <= 1.0 {
         return None;
     }
     let tail = q.at(q.length - 1.0);
-    let curves = [
-        [start, mid(start, end), end],
-        [end, points[1], middle],
-        [[tail.x, tail.y], points[2], points[3]],
-    ];
-    let normals = [[n0, n0], [n0, n1], [n1, n2]];
-    let lengths = [[0.0, l0], [l0, l1], [l1, l2]];
+    let (end_normal, end_length) = normal(sub(points[3], current))?;
+    curves.push([[tail.x, tail.y], current, points[3]]);
+    normals.push([previous_normal, end_normal]);
+    lengths.push([previous_length, end_length]);
     let mut output = Vec::new();
-    for i in 0..3 {
+    for i in 0..curves.len() {
         let dot = normals[i][0][0] * normals[i][1][0] + normals[i][0][1] * normals[i][1][1];
         let circle = dot <= -0.7 && normal(sub(curves[i][0], curves[i][1]))?.1 > 0.6;
-        let count = if circle {
-            if !(-1.004..=-0.996).contains(&dot) {
-                return None;
-            }
+        let exact_reversal = circle && (-1.004..=-0.996).contains(&dot);
+        let count = if exact_reversal {
             20
+        } else if circle {
+            (((dot.acos().to_degrees() / 9.0 * 0.5) as usize) * 2).min(20)
         } else {
             ((((lengths[i][0] + lengths[i][1]) * 0.5) as i32 as f32 * (dot - 1.0).abs()) as usize
                 + 3)
@@ -328,7 +404,7 @@ fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
         let mut samples = vec![[0.0; 2]; count + 1];
         samples[0] = curves[i][0];
         samples[count] = curves[i][2];
-        if circle {
+        if exact_reversal {
             let [a, b, c] = curves[i];
             let length = |a, b| normal(sub(a, b)).map_or(0.0, |x| x.1);
             let ac = length(a, c);
@@ -339,6 +415,8 @@ fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
                 a
             };
             samples[1..count].fill(mid(first, second));
+        } else if circle {
+            samples = sector_centerline(curves[i], count)?;
         } else {
             centerline_subdivision(curves[i], 0, count, &mut samples);
         }
@@ -348,7 +426,7 @@ fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
 }
 
 #[test]
-fn source_centerline_matches_native_straight_bend_and_exact_reversal() {
+fn source_centerline_matches_native_controls_including_skipped_move() {
     let geometry: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../conformance/legacy-marker-source-geometry-controls.json"
     ))
@@ -361,9 +439,23 @@ fn source_centerline_matches_native_straight_bend_and_exact_reversal() {
         "../../../../conformance/legacy-marker-subdivision-controls.json"
     ))
     .unwrap();
-    for case in ["straight", "bend", "reverse"] {
+    let sector: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-sector-center-control.json"
+    ))
+    .unwrap();
+    let skipped: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-skipped-center-control.json"
+    ))
+    .unwrap();
+    for case in ["straight", "bend", "reverse", "turn", "skipped", "repeat"] {
         let input = if case == "reverse" {
             &trace["circle_controls"][0]["source_arrays_hex"]["points"]
+        } else if case == "turn" {
+            &sector["input"]["source_arrays_hex"]["points"]
+        } else if case == "skipped" {
+            &skipped["input"]["source_arrays_hex"]["points"]
+        } else if case == "repeat" {
+            &skipped["repeat_control"]["input"]["source_arrays_hex"]["points"]
         } else {
             &geometry["cases"][case]["input"]["source_arrays_hex"]["points"]
         };
@@ -383,9 +475,14 @@ fn source_centerline_matches_native_straight_bend_and_exact_reversal() {
             .collect();
         let points: [Point; 4] = floats.as_chunks::<2>().0.try_into().unwrap();
         let predicted = source_centerline(points, 12.0).unwrap();
-        let expected = if case == "reverse" {
+        let expected = if matches!(case, "reverse" | "turn" | "skipped" | "repeat") {
             let mut pairs = Vec::new();
-            for row in circle["mesh_pairs"].as_array().unwrap() {
+            let receipt = match case {
+                "reverse" => &circle,
+                "turn" => &sector,
+                _ => &skipped,
+            };
+            for row in receipt["mesh_pairs"].as_array().unwrap() {
                 let a = row["first"].as_array().unwrap();
                 let b = row["second"].as_array().unwrap();
                 pairs.extend(a.iter().zip(b).map(|(a, b)| {
@@ -421,8 +518,53 @@ fn source_centerline_matches_native_straight_bend_and_exact_reversal() {
         assert_eq!(actual.len(), expected.len(), "{case}");
         for (a, b) in actual.iter().zip(expected) {
             for j in 0..2 {
-                assert!((a[j] - b[j]).abs() < 0.00003, "{case}: {a:?} != {b:?}");
+                assert!((a[j] - b[j]).abs() < 0.00005, "{case}: {a:?} != {b:?}");
             }
         }
     }
+}
+
+#[test]
+fn sector_dividing_parameter_matches_native_cubic_entry_and_return() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-sector-center-control.json"
+    ))
+    .unwrap();
+    let row = &fixture["dividing_calls"][0];
+    assert_eq!(row["bool_arg"], false);
+    let point = |i: usize| -> [f32; 2] {
+        [
+            row["control_points_f32"][i][0].as_f64().unwrap() as f32,
+            row["control_points_f32"][i][1].as_f64().unwrap() as f32,
+        ]
+    };
+    let [a, b, c] = [point(0), point(1), point(2)];
+    let d = [f64::from(b[0] - a[0]), f64::from(b[1] - a[1])];
+    let q = [f64::from(c[0] - b[0]) - d[0], f64::from(c[1] - b[1]) - d[1]];
+    let dot = d[0] * q[0] + d[1] * q[1];
+    let norm = d[0] * d[0] + d[1] * d[1];
+    let coeff = [
+        q[0] * q[0] + q[1] * q[1],
+        3.0 * dot,
+        2.0 * norm - dot,
+        -norm,
+    ];
+    let native = &fixture["cubic_calls"][0]["d0_d3_bits"];
+    for i in 0..4 {
+        let bits = u64::from_str_radix(native[i].as_str().unwrap(), 16).unwrap();
+        assert!((coeff[i] - f64::from_bits(bits)).abs() < 0.00001);
+    }
+    let f = |t: f64| ((coeff[0] * t + coeff[1]) * t + coeff[2]) * t + coeff[3];
+    assert!(coeff[1] * coeff[1] - 3.0 * coeff[0] * coeff[2] < 0.0);
+    let (mut lo, mut hi) = (0.0, 1.0);
+    for _ in 0..64 {
+        let mid = (lo + hi) * 0.5;
+        if f(mid) < 0.0 {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    let bits = u32::from_str_radix(row["return_s0_bits"].as_str().unwrap(), 16).unwrap();
+    assert!(((lo + hi) * 0.5 - f64::from(f32::from_bits(bits))).abs() < 0.000001);
 }

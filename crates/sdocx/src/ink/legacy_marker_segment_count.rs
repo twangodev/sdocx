@@ -258,3 +258,41 @@ fn thin_marker_host_width_one_has_collapsed_cores_and_nan_fringe_inputs() {
     }
     assert_eq!(checked, 5);
 }
+
+#[test]
+fn move_filter_matches_native_axis_threshold_and_repeated_points() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-move-filter-controls.json"
+    ))
+    .unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let points: Vec<[f32; 2]> = case["points_f32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+            .collect();
+        let threshold = case["size_f32"].as_f64().unwrap() as f32 * 0.4;
+        let mut last = points[0];
+        let mut expected = vec![("0x32b94", last)];
+        for &point in &points[1..points.len() - 1] {
+            if (point[0] - last[0]).abs() > threshold || (point[1] - last[1]).abs() > threshold {
+                expected.push(("0x32bc8", point));
+                last = point;
+            }
+        }
+        expected.push(("0x331a0", *points.last().unwrap()));
+        let rows = case["events"].as_array().unwrap();
+        assert_eq!(expected.len(), rows.len(), "{}", case["name"]);
+        for ((target, point), native) in expected.iter().zip(rows) {
+            assert_eq!(native["target_rva"], *target, "{}", case["name"]);
+            let actual = [
+                native["point_f32"][0].as_f64().unwrap() as f32,
+                native["point_f32"][1].as_f64().unwrap() as f32,
+            ];
+            assert_eq!(*point, actual, "{}", case["name"]);
+            assert_eq!(native["accepted"], true);
+            assert_eq!(native["allocation_size"], 48);
+        }
+    }
+}

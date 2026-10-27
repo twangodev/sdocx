@@ -710,9 +710,28 @@ including the terminal `SmPath` sample. The reversal's interior edge-pair
 midpoints agree within 0.00001 units with the center selected by `makeCircle`
 at RVA `0x3423c`; the [compact reversal receipt](../../conformance/legacy-marker-reversal-circle-control.json)
 records native edge pairs and the source capture and script hashes. The turn
-control selects the distinct `makeCircularSector` branch, which this model
-returns as unsupported. Skipped-point and other stroke shapes also remain
-unmodeled. A diagnostic round-polyline through captured native centers reduced
+control selects `makeCircularSector`: the current test-only model
+reconstructs its unique dividing-parameter cubic root and samples the quadratic
+at nine-degree tangent increments. The [sector receipt](../../conformance/legacy-marker-sector-center-control.json)
+retains native cubic entry, dividing-parameter return and edge pairs. The model
+rejects non-monotonic or multiple-root cases and many stroke shapes. A diagnostic
+round-polyline through captured native centers reduced
 resvg absolute RGBA error on bend, turn and reversal from 48998/21527/11923 to
-39207/17138/4571; these centers were taken from the native capture, not generated
-for the turn, and the result does not justify production admission.
+39207/17138/4571; source-generated centers reproduce those diagnostic metrics
+on the four controls. Other branch and paint coverage remain insufficient for production
+admission.
+
+The size-based GLV1 move filter compares each coordinate delta to `0.4 * size`
+and queues a move only when either absolute delta is strictly greater than that
+threshold. In six [queue controls](../../conformance/legacy-marker-move-filter-controls.json),
+size-12 deltas below or equal to 4.8 were skipped, a 4.9 delta was accepted,
+and a diagonal `(4,4)` was skipped despite exceeding 4.8 in Euclidean length.
+A repeated final point still queued EndPen. These are queue-acceptance observations;
+they do not by themselves establish execution of every rejected-guard task. A
+separate [guarded dispatch receipt](../../conformance/legacy-marker-skipped-center-control.json)
+confirms the complete native output for one skipped move; replacing it with a
+repeated point produced identical native mesh and frame hashes. The test-only
+source-centerline model now follows this filter for those four-point controls
+and matches their center samples. The alternate GLV1 branch uses a
+viewport-dependent threshold, and repeated final points, missing moves, other
+root configurations and general-length state remain outside this centerline model.
