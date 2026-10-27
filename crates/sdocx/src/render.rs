@@ -4143,7 +4143,7 @@ fn render_stroke(
         paint.sample_ends = None;
         if let Some((argb, size)) = stroke.rendering.as_ref().and_then(|r| {
             if r.advanced_settings.as_deref() == Some("") {
-                Some((r.style.color_argb?, r.style.pen_size?))
+                Some((r.style.color_argb.unwrap_or(0xff00_0000), r.style.pen_size?))
             } else {
                 None
             }

@@ -816,13 +816,16 @@ need an explicit source for the PenData resolution rather than infer it from
 page export size.
 
 The opt-in Marker centerline route also accepts explicit empty advanced settings
-when saved ARGB is present. In five [paired host controls](../../conformance/legacy-marker-empty-setting-host-pairs.json),
+with saved ARGB or omitted color. In five [paired host controls](../../conformance/legacy-marker-empty-setting-host-pairs.json),
 null settings select native GLV1 and empty settings select GLV2; all draw-prefix
 frames and uploaded geometry buffers match between each pair. The controls cover
 straight, bent and longer strokes, multiple colors/alphas and a verified 2× host
 projection override. Public empty-setting SVG/PDF RGB L1 improves over fallback
-in all five comparisons. The default generic route is unchanged; absent-color
-empty settings and other settings retain fallback. These are synthetic host-Mesa
+in all five comparisons. Three additional empty-setting controls omit the native SetColor call: Model
+returns opaque black, and their host frames match explicit-black controls at
+every draw prefix. Public SVG/PDF errors improve over generic fallback on
+straight and bent 1× and bent 2× controls. The default generic route is
+unchanged; other settings retain fallback. These are synthetic host-Mesa
 controls, not native PDF, Android zoom or device parity.
 
 An explicit `LegacyMarkerCenterlineProfile` now lets a caller provide the
@@ -864,3 +867,17 @@ Even two bands produced 35/77 KB SVG and 82/186 KB PDF per stroke, and only
 the four-point mesh is source-generated. This remains a diagnostic, not a
 scalable general-stroke implementation. The ignored
 `scratch/legacy-marker-triangle-band-probe.py` retains the band experiment.
+
+A scratch general-length ordinary-quadratic mesh reproduces all five native
+vertex streams within 0.00005 for the six-point long-turn and size-8 blue
+720×480 controls. It rejects circular/sector branches. Grouping same-opacity
+fringe polygons reduces repeated PDF objects and seams: on white, the long-turn
+resvg/PDF RGB L1 is 4651/5495 versus 13568/14240 for the current profile;
+the PDF is 18 KB versus 2.5 KB. For the blue control it is 10265/10414 versus
+12646/13146. Grouping does not prove native depth ownership for self-overlap,
+and the SVG remains about 96 KB for each six-point example. This is a scratch
+experiment with no production dispatch; resource budgets, overlap, sector and
+scale behavior remain unresolved. Reproduction uses
+`scratch/legacy-marker-long-generated-mesh.rs` and
+`scratch/legacy-marker-triangle-grouped-probe.py` with the temporary export
+harness in `tmp/marker-triangle-export`.

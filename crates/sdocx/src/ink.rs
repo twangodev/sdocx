@@ -826,8 +826,7 @@ fn legacy_marker_argb(stroke: &Stroke, allow_explicit_empty: bool) -> Option<u32
     let properties = &rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker")
         || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
-        || (rendering.advanced_settings.is_some()
-            && (!allow_explicit_empty || rendering.style.color_argb.is_none()))
+        || (rendering.advanced_settings.is_some() && !allow_explicit_empty)
         || rendering.tool_type_raw != 2
         || !properties.compressed
         || properties.replay_only
