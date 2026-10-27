@@ -673,6 +673,13 @@ mod tests {
             "../../../../conformance/inkpen2-null-v1-controls-native.json"
         ))
         .unwrap();
+        assert_eq!(receipt["cases"].as_object().unwrap().len(), 14);
+        // Drawing did not create a pen for the one-point setter input, so
+        // that observation does not validate direct V1 RedrawPen geometry.
+        assert_eq!(
+            receipt["route_rejections"]["single"]["native_result"]["factory_count"],
+            0
+        );
         for (name, case) in receipt["cases"].as_object().unwrap() {
             let i = &case["input"];
             let points: Vec<P> = i["points_f32_bits"]

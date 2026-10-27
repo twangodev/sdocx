@@ -148,6 +148,214 @@
       "stream_sha256": "dd64c3e16726a8ff0076d16177a8116a83e918a38c29d8aa74cd75faacd73dce",
       "record_count": 25,
       "redraw_rect_f32_bits": "5655f5408ee88841b4af1342e9d3d241"
+    },
+    "duplicate": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00004040", "0000a040"], ["00004040", "0000a040"], ["00004040", "0000a040"], ["00004040", "0000a040"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000040400000a04056550540",
+      "stream_sha256": "abc6fc66ed502521f7bb855dbb2e60fe1cd40ac40dbd387f324cae7e093d192a",
+      "record_count": 1,
+      "redraw_rect_f32_bits": "aaaa2a3faaaa2a40abaaaa40abaaea40"
+    },
+    "short": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00000000", "00000000"], ["cdcccc3d", "00000000"], ["cdcc4c3e", "cdcccc3d"], ["9a99993e", "cdcccc3d"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000000000000000056550540",
+      "stream_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "record_count": 1,
+      "redraw_rect_f32_bits": "565515c0565515c05655154056551540"
+    },
+    "two_points": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00000000", "00000000"], ["0000a040", "00004040"]],
+        "pressure_f32_bits": ["0000003f", "0000003f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000"],
+        "timestamps_i32": [0, 0],
+        "tool_type": 2
+      },
+      "stream_hex": "0000000000000000565505403594163fdab1b43e175d24400921ca3f0a8e723ff60d1b40f75e124029a5af3fd6be11403e0b48407f0df03fb66f0840ae0a834004401d402a41fe3f",
+      "stream_sha256": "4e9272efe78194f456fd0c349477b45921471f03a9c3b44108878020efb5448c",
+      "record_count": 6,
+      "redraw_rect_f32_bits": "0ab84ec0dcc65dc0f89aea404c30b640"
+    },
+    "straight": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00008041", "00000000"], ["0000c041", "00000000"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000000000000000056550540f4fb7f3f00000000175d2440678ce33f0000000074d1254086c6314000000000d1452740f4ff7f40000000002eba28400000a040000000008b2e2a40feffbf4000000000bd7c2a40feffdf4000000000efca2a40fcffff400000000021192b40feff0f410000000053672b40feff1f410000000085b52b40feff2f4100000000b7032c40fdff3f4100000000e9512c4087704d41000000001da02c40b8285c4100000000a478284090286c41000000002c51244013707d4100000000b42920409fff8741000000003b021c40e2048f4100000000c2da1740be5d9641000000004ab31340330a9e4100000000d28b0f40400aa6410000000059640b40e65dae4100000000e03c07402505b7410000000068150340fdffbf4100000000dfdbfd3f",
+      "stream_sha256": "668d83f7c209a41ed021e5947539b899ec5c930356fb671940c15bc590cad41f",
+      "record_count": 25,
+      "redraw_rect_f32_bits": "565515c01da07cc0bbddd9411da07c40"
+    },
+    "turn": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00000041", "00000041"], ["00000000", "00000041"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000000000000000056550540f4fb7f3f00000000175d2440678ce33f0000000074d1254086c6314000000000d1452740f4ff7f40000000002eba2840ae46a5408fc9cc3d8b2e2a401127c4408fc9cc3ece962a4027a1dc40c462663f11ff2a4021b5ee40e7cacc3f54672b40aa62fa404fff1f4097cf2b40b4a9ff4029666640da372c400dc1fd40ebda96401da02c40642ef2408491b440f3a3274045c3dc40e25bcd40c9a722405586be40afbae0409fab1d409282a740fd43ea4075af184023098d407512f2404bb313400d345e401726f84021b70e407b6a1b40e37efc40f7ba0940176ba33fd81cff40cdbe044036a38a3cf7ffff404685ff3f",
+      "stream_sha256": "dba295426f2bcdf542866796c6924d8dc754dba5844adb52cacf0a7bd4271963",
+      "record_count": 21,
+      "redraw_rect_f32_bits": "5cad4ec02eba38c08e083e411fbe3441"
+    },
+    "reverse": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00000000", "00000000"], ["000000c1", "00000000"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000000000000000056550540f4fb7f3f00000000175d2440678ce33f0000000074d1254086c6314000000000d1452740f4ff7f40000000002eba2840bfffaf40000000008b2e2a400000c04000000000f0ca2a404200b0400000000054672b400600804000000000b8032c40e23d4a40000000001da02c40215d0f4000000000a478284079bb9e3f000000002c5124404ffb233e00000000b4292040daf37fbf000000003b021c40204ef0bf00000000c2da1740eded32c0000000004ab31340935170c000000000d28b0f40002998c00000000059640b409777b9c000000000e03c07409614dcc00000000068150340f4ffffc000000000dfdbfd3f",
+      "stream_sha256": "a6eaaf639aded2e00c76e45699c69f028b7cc6c1b80fb2a47ca459a4e7645700",
+      "record_count": 21,
+      "redraw_rect_f32_bits": "76bb33c11da07cc0bcb20e411da07c40"
+    },
+    "large_size": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "00004041",
+        "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00008041", "00004040"], ["0000c041", "00004040"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "000000000000000000009840f4fb7f3f00000000a38bc640678ce33f000000002ebac84086c6314000000000bae8ca40f4ff7f40000000004617cd40b0739f40a87ab93cd145cf4060e7be40a87ab93d1cbbcf40105bde40fea9503e6730d040c0cefd40a87ab93eb2a5d04037a10e41d2e7103ffd1ad140105b1e41fea9503f4890d140e7142e41e8018e3f9305d240bfce3d41a87ab93fde7ad2409b324b41e3e2de3f2cf0d240b75759413c60ff3ff7b4cc40b1b46841fd1a0e40c279c6408b4979410cb21a408d3ec040228b85414e7525405803ba40a01f8d4178c52c4023c8b340925f944181693240ee8cad40dff29b4177133740b951a74089d9a3415ac33a408416a1408e13ac412c793d404fdb9a40eea0b441ea343f401aa09440aa81bd4195f63f40e6648e40",
+      "stream_sha256": "df13c57023d8a58232792f5c1c71b148b86bcfb22c54a32c76c39956417e9f9d",
+      "record_count": 25,
+      "redraw_rect_f32_bits": "248caec0568cd6c0e41aeb41cacb1a41"
+    },
+    "small_size": {
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+        "pen_size_f32_bits": "cdcc4c3e",
+        "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00008041", "00004040"], ["0000c041", "00004040"]],
+        "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+        "stroke_type": 0,
+        "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+        "timestamps_i32": [0, 10, 20, 30],
+        "tool_type": 2
+      },
+      "stream_hex": "00000000000000000000e03ff4fb7f3f000000000000e03f678ce33f000000000000e03f86c63140000000000000e03ff4ff7f40000000000000e03fb0739f40a87ab93c0000e03f60e7be40a87ab93d0000e03f105bde40fea9503e0000e03fc0cefd40a87ab93e0000e03f37a10e41d2e7103f0000e03f105b1e41fea9503f0000e03fe7142e41e8018e3f0000e03fbfce3d41a87ab93f0000e03f9b324b41e3e2de3f0000e03fb75759413c60ff3f0000e03fb1b46841fd1a0e400000e03f8b4979410cb21a400000e03f228b85414e7525400000e03fa01f8d4178c52c400000e03f925f9441816932400000e03fdff29b41771337400000e03f89d9a3415ac33a400000e03f8e13ac412c793d400000e03feea0b441ea343f400000e03faa81bd4195f63f400000e03f",
+      "stream_sha256": "7bef4ee9c5587ebabe8519003ec1da3f70008bf5afd4095afb212785a5addc39",
+      "record_count": 25,
+      "redraw_rect_f32_bits": "000000c0000000c0aa81d5414afbbf40"
+    }
+  },
+  "route_rejections": {
+    "single": {
+      "input": {
+        "points": [[3, 5]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.5],
+        "timestamps": [0],
+        "tilt": [0],
+        "orientation": [0]
+      },
+      "native_result": {"draw_result": 0, "stroke_type": 0, "factory_count": 0, "loader_calls": [], "redraw_entries": []}
     }
   }
 }
