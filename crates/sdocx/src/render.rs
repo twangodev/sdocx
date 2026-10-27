@@ -9888,6 +9888,79 @@ mod tests {
     }
 
     #[test]
+    fn pencil3_tool3_profile_exposes_particles_and_replay() {
+        let mut stroke = pencil3_native_profile_stroke();
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 3;
+        let source =
+            crate::ink::pencil_source::prepare_pencil3_v3_source(&stroke, 2560, 1440).unwrap();
+        assert!(!source.records.is_empty());
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let prepared =
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [320, 180]);
+        assert_eq!(prepared.profile, Some("Pencil3V3"));
+        assert_eq!(prepared.points.len(), source.records.len());
+        for (point, record) in prepared.points.iter().zip(&source.records) {
+            assert_eq!(
+                (point.x, point.y),
+                (f64::from(record[0]), f64::from(record[1]))
+            );
+        }
+        assert_eq!(prepared.sample_ends.as_ref(), Some(&source.sample_ends));
+        assert_eq!(source.sample_ends.last(), Some(&source.records.len()));
+        assert_ne!(
+            super::prepare_stroke_for_viewport_with_theme(
+                &stroke,
+                theme,
+                &RenderOptions::default(),
+                [320, 180],
+            )
+            .profile,
+            Some("Pencil3V3")
+        );
+        assert_ne!(
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [321, 180])
+                .profile,
+            Some("Pencil3V3")
+        );
+
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        page.objects = vec![stroke.into()];
+        let doc = document(page);
+        let layout = layout_document(&doc);
+        let normal = super::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+        let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+        assert_eq!(normal.svg.matches("data:image/png;base64,").count(), 2);
+        assert_eq!(replay.svg.matches("data:image/png;base64,").count(), 2);
+        let xml = roxmltree::Document::parse(&replay.svg).unwrap();
+        let group = xml
+            .descendants()
+            .find(|n| n.attribute("data-replay-stroke") == Some("0"))
+            .unwrap();
+        let parts: Vec<_> = group
+            .descendants()
+            .filter_map(|n| n.attribute("data-replay-part"))
+            .collect();
+        assert_eq!(
+            parts,
+            (1..=source.records.len())
+                .map(|i| i.to_string())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
     fn pencil3_replay_retains_particles_resources_and_source_cutoffs() {
         let stroke = pencil3_native_profile_stroke();
         let mut page = page_with_uncolored_stroke();

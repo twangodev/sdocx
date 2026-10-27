@@ -32,7 +32,7 @@ fn saved_pencil3_v3_inputs(stroke: &Stroke) -> Option<(u32, f32)> {
             rendering.advanced_settings.as_deref(),
             Some("") | Some("4;")
         )
-        || rendering.tool_type_raw != 2
+        || !matches!(rendering.tool_type_raw, 2 | 3)
         || !rendering.properties.compressed
         || rendering.properties.replay_only
         || rendering.properties.eraser
@@ -270,6 +270,8 @@ mod tests {
                 .map(|value| value.as_f64().unwrap())
                 .collect::<Vec<_>>()
         };
+        // The capture supplies channels and tool type; saved properties, style,
+        // and selector settings below are synthetic adapter inputs.
         let properties = StrokeProperties {
             compressed: true,
             replay_only: false,
@@ -290,7 +292,7 @@ mod tests {
             metadata: None,
             pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Pencil3".into()),
             advanced_settings: Some("4;".into()),
-            tool_type_raw: 2,
+            tool_type_raw: profile["tool_type"].as_u64().unwrap() as u16,
             properties,
             style: StrokeStyle {
                 color_argb: Some(0xff33_6699),
@@ -332,7 +334,7 @@ mod tests {
         .unwrap();
         for (name, case) in fixture["cases"].as_object().unwrap() {
             let profile = &case["input_profile"];
-            if profile["tool_type"] != 2 {
+            if profile["tool_type"] != 2 && profile["tool_type"] != 3 {
                 continue;
             }
             let prepared = prepare_pencil3_v3_source(
@@ -416,13 +418,30 @@ mod tests {
             assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
         }
         stroke.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());
-        stroke.rendering.as_mut().unwrap().tool_type_raw = 1;
-        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
+        for tool in [1, 4] {
+            stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+            assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
+        }
         stroke.rendering.as_mut().unwrap().tool_type_raw = 2;
         stroke.tilts.pop();
         assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
         stroke.tilts.push(0.0);
         stroke.pressures[1] = f64::NAN;
+        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
+    }
+
+    #[test]
+    fn tool3_transparency_uses_the_same_source_admission() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-sampler-inputs-native.json"
+        ))
+        .unwrap();
+        let mut stroke = fixture_stroke(&fixture["cases"]["tool3_curve_4pt"]["input_profile"]);
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x0033_6699);
+        assert!(saved_pencil3_v3_transparent(&stroke));
+        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_some());
+        stroke.rendering.as_mut().unwrap().properties.compressed = false;
+        assert!(!saved_pencil3_v3_transparent(&stroke));
         assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
     }
 
