@@ -10514,6 +10514,16 @@ mod tests {
                 .collect()
         };
         let bytes = decode_hex(uploads[0].as_str().unwrap());
+        let empty_receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-empty-setting-paint-native.json"
+        ))
+        .unwrap();
+        let empty_producer = &empty_receipt["producer"];
+        assert_eq!(
+            decode_hex(empty_producer["shared_upload_bytes_hex"].as_str().unwrap()),
+            bytes
+        );
+        assert_eq!(empty_producer["sha256"], producer["sha256"]);
         assert_eq!(bytes, decode_hex(uploads[1].as_str().unwrap()));
         assert_eq!(bytes.len(), producer["bytes"].as_u64().unwrap() as usize);
         assert_eq!(
@@ -10539,16 +10549,36 @@ mod tests {
         for name in ["InkPen2", "StraightInkPen2"] {
             stroke.rendering.as_mut().unwrap().pen_name =
                 Some(format!("com.samsung.android.sdk.pen.pen.preload.{name}"));
-            let actual: Vec<u8> =
-                prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
-                    .unwrap()
-                    .records
-                    .iter()
-                    .flatten()
-                    .flat_map(|v| v.to_le_bytes())
-                    .collect();
-            assert_eq!(actual, bytes);
+            for setting in ["", "9;"] {
+                stroke.rendering.as_mut().unwrap().advanced_settings = Some(setting.to_owned());
+                let actual: Vec<u8> =
+                    prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                        .unwrap()
+                        .records
+                        .iter()
+                        .flatten()
+                        .flat_map(|v| v.to_le_bytes())
+                        .collect();
+                assert_eq!(actual, bytes);
+                let cases = empty_receipt["cases"].as_array().unwrap();
+                assert_eq!(
+                    cases
+                        .iter()
+                        .filter(|case| {
+                            case["pen_name"]
+                                == format!("com.samsung.android.sdk.pen.pen.preload.{name}")
+                                && case["advanced_getter_pointer_nonnull"] == true
+                                && case["advanced_getter_utf8"] == setting
+                                && case["selected_drawable_version"] == "9"
+                                && case["gl_error_after_draw"] == 0
+                                && case["gl_errors_recorded"] == serde_json::json!([])
+                        })
+                        .count(),
+                    1
+                );
+            }
         }
+        assert_eq!(empty_receipt["cases"].as_array().unwrap().len(), 4);
 
         let readback = &receipt["readback"];
         let frames: Vec<Vec<u8>> = readback["paired_full_bytes_zlib_base64"]
@@ -10568,6 +10598,19 @@ mod tests {
             .collect();
         assert_eq!(frames.len(), 2);
         assert_eq!(frames[0], frames[1]);
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(
+                empty_receipt["readback"]["full_bytes_zlib_base64"]
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut empty_frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut empty_frame)
+            .unwrap();
+        assert_eq!(empty_frame, frames[0]);
+        assert_eq!(empty_receipt["readback"]["sha256"], readback["sha256"]);
         assert_eq!(frames[0].len(), 128 * 96 * 4);
         assert_eq!(
             format!("{:x}", Sha256::digest(&frames[0])),

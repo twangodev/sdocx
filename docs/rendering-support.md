@@ -390,7 +390,7 @@ fresh per-stroke state and identity inverse scale. `enhanced_antialias` selects
 MAX coverage with one saved-alpha composite; false retains per-stamp source-over.
 It does not infer the app's display or antialias policy.
 Without that option, InkPen2 and StraightInkPen2 retain the generic approximation.
-For normal-color StraightInkPen2 `9;` inputs and non-rainbow, normal-color inputs with a non-null empty setting for either name, the same opt-in profile is admitted. A [four-way Drawing capture](../conformance/inkpen2-empty-setting-native.json) matches all callback geometry for the empty and explicit settings on both names; paint equivalence for the empty setting is inferred from the shared drawable and records, not independently captured. Null settings remain outside this route.
+For normal-color StraightInkPen2 `9;` inputs and non-rainbow, normal-color inputs with a non-null empty setting for either name, the same opt-in profile is admitted. A [four-way Drawing capture](../conformance/inkpen2-empty-setting-native.json) matches all callback geometry for the empty and explicit settings on both names. A separate [four-way host-Mesa paint capture](../conformance/inkpen2-empty-setting-paint-native.json) independently matches the full uploaded records and RGBA readback for these cases; it does not establish Android device or full application canvas parity. Null settings remain outside this route.
 A [paired literal-name Drawing capture](../conformance/straightinkpen2-v9-alias-native.json)
 selects the same V9 drawable and matches all callback geometry for one synthetic
 control. A [paired host-Mesa paint capture](../conformance/straightinkpen2-v9-paired-paint-native.json)
