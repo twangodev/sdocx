@@ -3771,13 +3771,7 @@ fn render_stroke(
         && let Some(profile) = pencil3_profile
         && let Some(ink) = prepare_pencil3_v3(stroke, profile, theme, viewport)
     {
-        let context = pencil3::Pencil3PaintContext {
-            canvas_width: profile.canvas_width,
-            canvas_height: profile.canvas_height,
-            background_scale: profile.screen_width.min(profile.screen_height) as f32 / 1440.0,
-            paper_sampler: profile.paper_sampler,
-            y_up: false,
-        };
+        let context = pencil3_paint_context(profile);
         if pencil3::render(svg, &ink, context, replay_index) {
             return;
         }
@@ -4571,6 +4565,16 @@ fn render_inkpen2_v9(
     inkpen2_vector::render(svg, ink, replay_index);
 }
 
+fn pencil3_paint_context(profile: Pencil3RenderProfile) -> pencil3::Pencil3PaintContext {
+    pencil3::Pencil3PaintContext {
+        canvas_width: profile.canvas_width,
+        canvas_height: profile.canvas_height,
+        background_scale: profile.screen_width.min(profile.screen_height) as f32 / 1440.0,
+        paper_sampler: profile.paper_sampler,
+        y_up: false,
+    }
+}
+
 fn prepare_pencil3_v3(
     stroke: &Stroke,
     profile: Pencil3RenderProfile,
@@ -4692,10 +4696,10 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
             crate::ink::InkRenderContext::CanonicalPage,
         );
     }
-    let Some(ink) = options
-        .pencil3_profile
-        .and_then(|profile| prepare_pencil3_v3(stroke, profile, theme, viewport))
-    else {
+    let Some(ink) = options.pencil3_profile.and_then(|profile| {
+        let ink = prepare_pencil3_v3(stroke, profile, theme, viewport)?;
+        pencil3::eligible(&ink, pencil3_paint_context(profile)).then_some(ink)
+    }) else {
         return prepare_stroke_for_page_with_theme(stroke, theme, options);
     };
     let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
@@ -9870,6 +9874,60 @@ mod tests {
             #[cfg(not(feature = "pdf"))]
             assert_eq!(normal.width, replay.width);
         }
+    }
+
+    #[test]
+    fn pencil3_replay_metadata_falls_back_when_paper_exceeds_budget() {
+        let stroke = pencil3_native_profile_stroke();
+        let mut page = page_with_uncolored_stroke();
+        page.width = 4096;
+        page.height = 4096;
+        page.objects = vec![stroke.clone().into()];
+        let doc = document(page);
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 4096,
+                canvas_height: 4096,
+                paper_sampler: super::Pencil3PaperSampler::Repeat,
+            }),
+            ..RenderOptions::default()
+        };
+        let ink = super::prepare_pencil3_v3(
+            &stroke,
+            options.pencil3_profile.unwrap(),
+            RenderTheme::for_canvas(false),
+            [4096, 4096],
+        )
+        .unwrap();
+        let mut context = super::pencil3_paint_context(options.pencil3_profile.unwrap());
+        assert!(!super::pencil3::eligible(&ink, context));
+        context.canvas_width = 128;
+        context.canvas_height = 128;
+        assert!(super::pencil3::eligible(&ink, context));
+        assert_eq!(
+            render_document_svg(&doc, &options).remove(0).svg,
+            render_document_svg(&doc, &RenderOptions::default())
+                .remove(0)
+                .svg,
+        );
+        let layout = layout_document(&doc);
+        let replay = super::render_layout_page_replay_svg(&doc, &layout, 0, &options)
+            .unwrap()
+            .svg;
+        let fallback_replay =
+            super::render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg;
+        assert_eq!(replay, fallback_replay);
+        let prepared = super::prepare_stroke_for_viewport_with_theme(
+            &stroke,
+            RenderTheme::for_canvas(false),
+            &options,
+            [4096, 4096],
+        );
+        assert_ne!(prepared.profile, Some("Pencil3V3"));
     }
 
     #[test]

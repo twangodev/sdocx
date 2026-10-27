@@ -51,51 +51,21 @@ pub(super) fn render(
     context: Pencil3PaintContext,
     replay_index: Option<usize>,
 ) -> bool {
+    let Some(plane) = preflight(source, context) else {
+        return false;
+    };
     let records = &source.records;
-    if records.is_empty()
-        || records.len() > MAX_RECORDS
-        || context.canvas_width == 0
-        || context.canvas_height == 0
-        || context.canvas_width > i32::MAX as u32
-        || context.canvas_height > i32::MAX as u32
-        || !context.background_scale.is_finite()
-        || context.background_scale <= 0.0
-        || !valid_bounds(source.bounds)
-        || !source.opacity.is_finite()
-        || !(0.0..=1.0).contains(&source.opacity)
-        || records
-            .iter()
-            .any(|record| f64::from(record[4]) * f64::from(source.opacity) * 1.5 > 1.0)
-    {
-        return false;
-    }
-    if records.iter().any(|record| !valid_record(record)) {
-        return false;
-    }
-
-    let width = f64::from(context.canvas_width);
-    let height = f64::from(context.canvas_height);
-    let background_scale = f64::from(context.background_scale);
-    let Some(padding) = paper_padding(background_scale) else {
-        return false;
-    };
-    let Some((plane_width, plane_height, plane_bytes)) =
-        paper_plane_dimensions(width, height, background_scale, padding)
-    else {
-        return false;
-    };
-    let pad_world = padding as f64 * background_scale;
-    let plane_width_world = plane_width as f64 * background_scale;
-    let plane_height_world = plane_height as f64 * background_scale;
-    // usvg geometry and transforms are binary32 even though SVG attributes
-    // are serialized as f64. Reject an unrepresentable material before any
-    // scene definitions or shared-image bookkeeping change.
-    if [pad_world, plane_width_world, plane_height_world]
-        .iter()
-        .any(|value| !value.is_finite() || *value > f64::from(f32::MAX))
-    {
-        return false;
-    }
+    let PaperPlane {
+        width,
+        height,
+        padding,
+        plane_width,
+        plane_height,
+        plane_bytes,
+        pad_world,
+        plane_width_world,
+        plane_height_world,
+    } = plane;
     let sampler_key = match context.paper_sampler {
         Pencil3PaperSampler::Repeat => "repeat",
         Pencil3PaperSampler::ClampToEdge => "clamp",
@@ -218,6 +188,77 @@ pub(super) fn render(
         }
     });
     true
+}
+
+struct PaperPlane {
+    width: f64,
+    height: f64,
+    padding: usize,
+    plane_width: usize,
+    plane_height: usize,
+    plane_bytes: usize,
+    pad_world: f64,
+    plane_width_world: f64,
+    plane_height_world: f64,
+}
+
+/// Check paint constraints without allocating the paper image or changing the scene.
+pub(super) fn eligible(source: &PreparedPencil3V3, context: Pencil3PaintContext) -> bool {
+    preflight(source, context).is_some()
+}
+
+fn preflight(source: &PreparedPencil3V3, context: Pencil3PaintContext) -> Option<PaperPlane> {
+    let records = &source.records;
+    if records.is_empty()
+        || records.len() > MAX_RECORDS
+        || context.canvas_width == 0
+        || context.canvas_height == 0
+        || context.canvas_width > i32::MAX as u32
+        || context.canvas_height > i32::MAX as u32
+        || !context.background_scale.is_finite()
+        || context.background_scale <= 0.0
+        || !valid_bounds(source.bounds)
+        || !source.opacity.is_finite()
+        || !(0.0..=1.0).contains(&source.opacity)
+        || records
+            .iter()
+            .any(|record| f64::from(record[4]) * f64::from(source.opacity) * 1.5 > 1.0)
+    {
+        return None;
+    }
+    if records.iter().any(|record| !valid_record(record)) {
+        return None;
+    }
+
+    let width = f64::from(context.canvas_width);
+    let height = f64::from(context.canvas_height);
+    let background_scale = f64::from(context.background_scale);
+    let padding = paper_padding(background_scale)?;
+    let (plane_width, plane_height, plane_bytes) =
+        paper_plane_dimensions(width, height, background_scale, padding)?;
+    let pad_world = padding as f64 * background_scale;
+    let plane_width_world = plane_width as f64 * background_scale;
+    let plane_height_world = plane_height as f64 * background_scale;
+    // usvg geometry and transforms are binary32 even though SVG attributes
+    // are serialized as f64. Reject an unrepresentable material before any
+    // scene definitions or shared-image bookkeeping change.
+    if [pad_world, plane_width_world, plane_height_world]
+        .iter()
+        .any(|value| !value.is_finite() || *value > f64::from(f32::MAX))
+    {
+        return None;
+    }
+    Some(PaperPlane {
+        width,
+        height,
+        padding,
+        plane_width,
+        plane_height,
+        plane_bytes,
+        pad_world,
+        plane_width_world,
+        plane_height_world,
+    })
 }
 
 fn valid_record(record: &[f32; 5]) -> bool {

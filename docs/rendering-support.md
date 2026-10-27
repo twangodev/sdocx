@@ -230,7 +230,8 @@ generic fallback across five consumers; PDF residuals remain. Supplied-paper
 sampling is producer-owned, while built-in paper repeats. Context defaults,
 real-document/device validation remain integration gaps. Profile-aware replay
 uses source-event particle cutoffs; viewport-aware metadata checks the same
-canvas eligibility as paint.
+canvas, particle and paper-plane eligibility as paint. A later image allocation
+or encoding failure can still make rendering fall back after metadata preparation.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
