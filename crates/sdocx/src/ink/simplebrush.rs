@@ -681,25 +681,41 @@ mod tests {
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    fn v25_paint_control(size12: bool) {
+    fn v25_paint_control(size12: bool, four: bool) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
         };
         use std::fmt::Write;
 
-        // OpenGL bottom-up rows, cropped at x=0..32, y=0..16. Full-frame
+        // OpenGL bottom-up rows, cropped at x=0..crop_width, y=0..crop_height. Full-frame
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
-        let native: &[u8] = if size12 {
-            include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
-        } else {
-            include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
+        let native: &[u8] = match (four, size12) {
+            (false, false) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
+            }
+            (false, true) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
+            }
+            (true, false) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")
+            }
+            (true, true) => include_bytes!(
+                "../../../../conformance/simplebrush-paint-v25-four-size12-crop.rgba"
+            ),
         };
-        let receipt: Value = serde_json::from_str(if size12 {
-            include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
-        } else {
-            include_str!("../../../../conformance/simplebrush-paint-v25.json")
+        let receipt: Value = serde_json::from_str(match (four, size12) {
+            (false, false) => include_str!("../../../../conformance/simplebrush-paint-v25.json"),
+            (false, true) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
+            }
+            (true, false) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four.json")
+            }
+            (true, true) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four-size12.json")
+            }
         })
         .unwrap();
         assert_eq!(
@@ -708,12 +724,26 @@ mod tests {
                 .as_str()
                 .unwrap()
         );
-        let points = [[0., 0.], [10., 0.], [20., 5.]];
-        let pressures = [0.5, 0.25, 0.75];
+        let points: &[[f32; 2]] = if four {
+            &[[0., 0.], [10., 0.], [20., 5.], [29., 11.]]
+        } else {
+            &[[0., 0.], [10., 0.], [20., 5.]]
+        };
+        let pressures: &[f32] = if four {
+            &[0.5, 0.25, 0.75, 0.4]
+        } else {
+            &[0.5, 0.25, 0.75]
+        };
         let size = if size12 { 12. } else { 8. };
-        let expected_support = if size12 { 185 } else { 137 };
-        let samples = reconstruct(&points, &pressures, size, 2, true).unwrap();
-        assert_eq!(samples.len(), 14);
+        let expected_support = match (four, size12) {
+            (false, false) => 137,
+            (false, true) => 185,
+            (true, false) => 214,
+            (true, true) => 295,
+        };
+        let (crop_width, crop_height) = if four { (40, 20) } else { (32, 16) };
+        let samples = reconstruct(points, pressures, size, 2, true).unwrap();
+        assert_eq!(samples.len(), if four { 18 } else { 14 });
         let geometry: Vec<u8> = samples
             .iter()
             .flatten()
@@ -872,15 +902,15 @@ mod tests {
             let mut alpha_error = 0u64;
             let mut rgba_error = 0u64;
             let mut support = 0usize;
-            for y in 0..16 {
-                for x in 0..32 {
-                    let n = native[(y * 32 + x) * 4 + 3];
+            for y in 0..crop_height {
+                for x in 0..crop_width {
+                    let n = native[(y * crop_width + x) * 4 + 3];
                     let a = image.data()[((1079 - y) * 1920 + x) * 4 + 3];
                     intersection += usize::from(n != 0 && a != 0);
                     union += usize::from(n != 0 || a != 0);
                     support += usize::from(a != 0);
                     alpha_error += u64::from(n.abs_diff(a));
-                    let native_pixel = &native[(y * 32 + x) * 4..][..4];
+                    let native_pixel = &native[(y * crop_width + x) * 4..][..4];
                     let output_pixel = &image.data()[((1079 - y) * 1920 + x) * 4..][..4];
                     rgba_error += native_pixel
                         .iter()
@@ -924,7 +954,8 @@ mod tests {
             expected_support
         );
         assert_eq!(
-            candidate_metrics.2, expected_support,
+            candidate_metrics.2,
+            expected_support + usize::from(four && size12) * 2,
             "retained source-derived candidate support"
         );
         assert!(
@@ -940,12 +971,18 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(false);
+        v25_paint_control(false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(true);
+        v25_paint_control(true, false);
+    }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v25_four_point_paint_control() {
+        v25_paint_control(false, true);
+        v25_paint_control(true, true);
     }
 }
