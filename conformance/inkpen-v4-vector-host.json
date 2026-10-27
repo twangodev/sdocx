@@ -1,0 +1,360 @@
+{
+  "schema": "sdocx.inkpen-v4.vector-host.v1",
+  "scope": "One synthetic V4 4-point saved-stroke geometry, explicit 1920x1080 display and 128x64 host framebuffer; black and three color/alpha controls. Candidate is test-only V1 compound contour fed by native-matching V4 records, not public admission. Generic is current public output. Comparison strips generic page background and reflects both exports to top-down native orientation; no fitted phase. No Android, saved-note or arbitrary-scale parity claim.",
+  "source_sha256": "b9217a28ea44b6b7baa1c09b00d3e66b7b98f4f9c37e92b388decdf80c8156b0",
+  "native_black_fixture_sha256": "48907aed06bbd5aedd70801ff51b0f3cffe881d4ce91dc1e30f98e73fd973ff6",
+  "native_color_fixture_sha256": "7a5abc7462969a8f1d99763c87f6f5d7fc5e6dd021250b246cf0dc09336ee20e",
+  "native_stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+  "resvg_runner_sha256": "9d8ae4ea9f44889bc4c10791b147770b74e6df62f756fa747da89ca20938e30a",
+  "versions": {
+    "resvg": "0.47.0",
+    "mupdf": "1.28.2",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "4.30.0",
+    "pdfium": "126.0.6462.0"
+  },
+  "cases": [
+    {
+      "case": "black",
+      "native_rgba_sha256": "6e7fbee39b673aadeca7f2722ba51b7c9a864a959afa24f0753053bfb21a3475",
+      "shared_roi": [
+        0,
+        49,
+        34,
+        64
+      ],
+      "outputs": {
+        "candidate": {
+          "svg_sha256": "d839243b5d92eae333b70a9a72616ebde80a2de432c6a8cfc14ce70e03c330a0",
+          "pdf_sha256": "699c9f704dbcf9c317511fd8e60d98ba96c0bc1a24f54c3f53b8203d82a0c0a4",
+          "resvg_rgba_sha256": "460a29c557d27da9f8d2cb0d713963075002440264027c8ec542408360457106",
+          "pdf_image_objects": 0
+        },
+        "generic": {
+          "svg_sha256": "2613f7bb26eb1f0ec8fd2c053f2eef11ac6d17a1ae34757faa18fc0998c9144d",
+          "pdf_sha256": "b0d90f05be69ef250badd6374ecc866458e17cbded23544eda72b04f0c26ed86",
+          "resvg_rgba_sha256": "d1ccf6a687a8dae008bc97a1d5bd937571b6a6aba66fa0e014518ad2a49de3fc",
+          "pdf_image_objects": 0
+        }
+      },
+      "metrics": {
+        "candidate": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 169,
+            "support_iou": 0.988304,
+            "alpha_mae_union": 7.643275,
+            "premul_rgba_mae_shared_roi": 0.640686,
+            "max_error_shared_roi": 47
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 171,
+            "support_iou": 1.0,
+            "alpha_mae_union": 7.216374,
+            "premul_rgba_mae_shared_roi": 0.604902,
+            "max_error_shared_roi": 43
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 171,
+            "support_iou": 1.0,
+            "alpha_mae_union": 18.619883,
+            "premul_rgba_mae_shared_roi": 1.560784,
+            "max_error_shared_roi": 138
+          }
+        },
+        "generic": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 149.170984,
+            "premul_rgba_mae_shared_roi": 14.112745,
+            "max_error_shared_roi": 255
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 103,
+            "support_iou": 0.427083,
+            "alpha_mae_union": 149.885417,
+            "premul_rgba_mae_shared_roi": 14.106863,
+            "max_error_shared_roi": 255
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 149.259067,
+            "premul_rgba_mae_shared_roi": 14.121078,
+            "max_error_shared_roi": 255
+          }
+        }
+      },
+      "native_frame_zlib": {
+        "offset": 0,
+        "length": 245,
+        "raw_length": 32768,
+        "zlib_sha256": "a546cf5b4200b66bc08c9f50db3df970f0420e221f0f8d129c270ed4bba0f011"
+      }
+    },
+    {
+      "case": "ffa1b2c3",
+      "native_rgba_sha256": "de7bdbaf50169f99671308f20fe34465de78577cfb97d3ab9da1c1156a05d1e4",
+      "shared_roi": [
+        0,
+        49,
+        34,
+        64
+      ],
+      "outputs": {
+        "candidate": {
+          "svg_sha256": "648941d67eb5f496f16c233c01fcdbc0878aae2af2c9c123fc18e3ce70010925",
+          "pdf_sha256": "930d2692c97c515b3aef77eb4ccee2d3968d2f70ee7015a044f690b88c2fb617",
+          "resvg_rgba_sha256": "a88e9ecbe7d4caeac67bdcc81293e3dade8968c8bfcb8f5f582e01d120fff02a",
+          "pdf_image_objects": 0
+        },
+        "generic": {
+          "svg_sha256": "a3c20b26a4e9e898b8dd779029424ac28b9113112bf0054adf1ef9f65a81ad58",
+          "pdf_sha256": "586a3d87c20cbcd8e84ae66bae60617ce8676f76ee0f2e5744d3e09b7b4ad028",
+          "resvg_rgba_sha256": "abaa6a778a1d8178ae0a9a87c95ecfe5a32d5eeb5529a7d8e7a9021170bc7773",
+          "pdf_image_objects": 0
+        }
+      },
+      "metrics": {
+        "candidate": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 169,
+            "support_iou": 0.988304,
+            "alpha_mae_union": 7.643275,
+            "premul_rgba_mae_shared_roi": 1.965686,
+            "max_error_shared_roi": 47
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 171,
+            "support_iou": 1.0,
+            "alpha_mae_union": 7.216374,
+            "premul_rgba_mae_shared_roi": 1.87402,
+            "max_error_shared_roi": 43
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 171,
+            "support_iou": 1.0,
+            "alpha_mae_union": 18.619883,
+            "premul_rgba_mae_shared_roi": 4.827941,
+            "max_error_shared_roi": 138
+          }
+        },
+        "generic": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 149.170984,
+            "premul_rgba_mae_shared_roi": 43.656863,
+            "max_error_shared_roi": 255
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 103,
+            "support_iou": 0.427083,
+            "alpha_mae_union": 149.885417,
+            "premul_rgba_mae_shared_roi": 43.642647,
+            "max_error_shared_roi": 255
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 149.259067,
+            "premul_rgba_mae_shared_roi": 43.683824,
+            "max_error_shared_roi": 255
+          }
+        }
+      },
+      "native_frame_zlib": {
+        "offset": 245,
+        "length": 385,
+        "raw_length": 32768,
+        "zlib_sha256": "957f719e5335bb15fe48629a45c12a9d42db1d9c628b98f59e0b0b3c17ddd1fa"
+      }
+    },
+    {
+      "case": "80402010",
+      "native_rgba_sha256": "6717aff7e6db610e12307c6f52a2960c46163ef00cb47a15c81e87aa6eaf72b5",
+      "shared_roi": [
+        0,
+        49,
+        34,
+        64
+      ],
+      "outputs": {
+        "candidate": {
+          "svg_sha256": "bc7c4de93cce258829838b9828e39bac1869956874592a78a22495b869fc2679",
+          "pdf_sha256": "a372f6d56fba6446c473b69b0ce3bddfa2d74ad29a371123fa69ed0820a670e3",
+          "resvg_rgba_sha256": "c02a518348ee14eaf17f7d7ab632d0a309926c75e14a53db0a7d9964a96ac8ab",
+          "pdf_image_objects": 0
+        },
+        "generic": {
+          "svg_sha256": "c405db714923b24405f4a758ae4a7bd9f289934ed531e56759a7eaf5e8361c32",
+          "pdf_sha256": "3b8cbfbd17bffb1344a65ff938378d16ef6eb9762b7a7c08d932f3299643eca7",
+          "resvg_rgba_sha256": "12553fab5b9ea0082031de1af41fbe18bde77425ce35f51ab33b7e0b8761ebb7",
+          "pdf_image_objects": 0
+        }
+      },
+      "metrics": {
+        "candidate": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 169,
+            "support_iou": 0.988304,
+            "alpha_mae_union": 3.847953,
+            "premul_rgba_mae_shared_roi": 0.461765,
+            "max_error_shared_roi": 24
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 171,
+            "support_iou": 1.0,
+            "alpha_mae_union": 3.654971,
+            "premul_rgba_mae_shared_roi": 0.454412,
+            "max_error_shared_roi": 22
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 170,
+            "support_iou": 0.994152,
+            "alpha_mae_union": 9.900585,
+            "premul_rgba_mae_shared_roi": 1.171078,
+            "max_error_shared_roi": 68
+          }
+        },
+        "generic": {
+          "resvg": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 74.839378,
+            "premul_rgba_mae_shared_roi": 10.177941,
+            "max_error_shared_roi": 128
+          },
+          "mupdf": {
+            "native_support": 171,
+            "output_support": 103,
+            "support_iou": 0.427083,
+            "alpha_mae_union": 75.229167,
+            "premul_rgba_mae_shared_roi": 10.191667,
+            "max_error_shared_roi": 128
+          },
+          "pdfium": {
+            "native_support": 171,
+            "output_support": 104,
+            "support_iou": 0.42487,
+            "alpha_mae_union": 75.07772,
+            "premul_rgba_mae_shared_roi": 10.210294,
+            "max_error_shared_roi": 128
+          }
+        }
+      },
+      "native_frame_zlib": {
+        "offset": 630,
+        "length": 314,
+        "raw_length": 32768,
+        "zlib_sha256": "9375dc10f2030841bd5026a15c6d68379b4dfc503f4127421b0387437d9c9bb0"
+      }
+    },
+    {
+      "case": "00010203",
+      "native_rgba_sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+      "shared_roi": [
+        0,
+        0,
+        128,
+        64
+      ],
+      "outputs": {
+        "candidate": {
+          "svg_sha256": "7e61a018c2bc06bb7d936753355f0b1024f6c3a28cd8d1ef5a9d5c4557c726eb",
+          "pdf_sha256": "4274d64cd4b1b2e1e554cdb455833cb04f936d9ad42e443afe17ace94601457b",
+          "resvg_rgba_sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+          "pdf_image_objects": 0
+        },
+        "generic": {
+          "svg_sha256": "992fdb8f914f612197f7b7a47e2f578ceb16b3269a039becf402b253142e0156",
+          "pdf_sha256": "7e327debfe9aa6b5f61f09e7ea5e05a635d9b028baef72af851c0ce40a2275b0",
+          "resvg_rgba_sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+          "pdf_image_objects": 0
+        }
+      },
+      "metrics": {
+        "candidate": {
+          "resvg": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          },
+          "mupdf": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          },
+          "pdfium": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          }
+        },
+        "generic": {
+          "resvg": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          },
+          "mupdf": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          },
+          "pdfium": {
+            "native_support": 0,
+            "output_support": 0,
+            "support_iou": 1,
+            "alpha_mae_union": 0,
+            "premul_rgba_mae_shared_roi": 0.0,
+            "max_error_shared_roi": 0
+          }
+        }
+      },
+      "native_frame_zlib": {
+        "offset": 944,
+        "length": 52,
+        "raw_length": 32768,
+        "zlib_sha256": "68fd155905b9eff026cbbf66de60f2429d460da6f818aa5a7bea9edb5ecbfa4f"
+      }
+    }
+  ],
+  "native_frames": {
+    "file": "inkpen-v4-vector-host.bin",
+    "length": 996,
+    "sha256": "5e13a635f80402e5c651b2b42c1f9a41bb9f98ca07e580b1ff2427793dd2198b",
+    "storage": "concatenated per-case zlib raw 128x64 RGBA8 bottom-up"
+  }
+}

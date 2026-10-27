@@ -1234,6 +1234,392 @@ mod tests {
         }
     }
 
+    // Experimental paired output for the retained joined native capture. This
+    // does not enable the candidate in production or assert pixel parity.
+    #[cfg(feature = "pdf")]
+    #[test]
+    #[ignore = "writes experimental SVG/PDF to SDOCX_INKPEN_V4_EXPORT_DIR"]
+    fn export_v4_joined_candidate_and_generic_fallback() {
+        use sha2::{Digest, Sha256};
+
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/conformance-cleanup/native-capture-a241793/conformance/inkpen-joined-paint-native.json");
+        let bytes = std::fs::read(root).expect("retained joined paint capture is required");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            "48907aed06bbd5aedd70801ff51b0f3cffe881d4ce91dc1e30f98e73fd973ff6"
+        );
+        let fixture: Value = serde_json::from_slice(&bytes).unwrap();
+        let case = &fixture["cases"]["inkpen_v4_black_1920x1080_to_128x64"];
+        let caller = &case["source_caller"];
+        let mut input = native_caller_stroke(&caller["input"]);
+        input.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
+        let resolution = &caller["screen_resolution"][0];
+        let ink = prepare(
+            &input,
+            RuntimeContext {
+                curve_enabled: caller["input"]["curve_enabled"].as_bool().unwrap(),
+                screen_width: resolution["width"].as_u64().unwrap() as u32,
+                screen_height: resolution["height"].as_u64().unwrap() as u32,
+            },
+        )
+        .expect("captured V4 input");
+        let stream = caller["streams"]["draw_object_stroke"]["values_f32_bits"]
+            .as_array()
+            .unwrap();
+        assert_eq!(stream.len(), ink.points.len() * 3);
+        for (i, point) in ink.points.iter().enumerate() {
+            assert_eq!(
+                (point.x as f32).to_bits(),
+                native_f32(stream[3 * i].as_str().unwrap()).to_bits()
+            );
+            assert_eq!(
+                (point.y as f32).to_bits(),
+                native_f32(stream[3 * i + 1].as_str().unwrap()).to_bits()
+            );
+            assert_eq!(
+                ink.radii[i].to_bits(),
+                native_f32(stream[3 * i + 2].as_str().unwrap()).to_bits()
+            );
+        }
+        assert_eq!(
+            caller["streams"]["draw_object_stroke"]["sha256"],
+            "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+        );
+        assert_eq!(
+            case["target"]["viewport"],
+            serde_json::json!([0, 0, 128, 64])
+        );
+        let candidate = crate::render::inkpen_v1_vector_candidate_svg(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal.clone(),
+            "#000000",
+            1.0,
+            [128, 64],
+            false,
+        )
+        .expect("bounded V4 contour candidate");
+        let page = crate::Page {
+            uuid: "inkpen-v4-capture".into(),
+            width: 128,
+            height: 64,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![input.into()],
+        };
+        let document = crate::Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let fallback = crate::render_document_svg(&document, &crate::RenderOptions::default())
+            .remove(0)
+            .svg;
+        let output = std::path::PathBuf::from(
+            std::env::var_os("SDOCX_INKPEN_V4_EXPORT_DIR")
+                .expect("set SDOCX_INKPEN_V4_EXPORT_DIR to a fresh directory"),
+        );
+        std::fs::create_dir(&output).expect("output directory must not already exist");
+        let write_pair = |prefix: &str, candidate: String, fallback: String| {
+            for (kind, raw_svg) in [("candidate", candidate), ("generic", fallback)] {
+                let name = format!("{prefix}{kind}");
+                std::fs::write(output.join(format!("{name}-raw.svg")), &raw_svg).unwrap();
+                let start = raw_svg.find('>').unwrap() + 1;
+                let end = raw_svg.rfind("</svg>").unwrap();
+                let mut body = &raw_svg[start..end];
+                if kind == "generic" {
+                    let background =
+                        "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>";
+                    body = body
+                        .trim_start()
+                        .strip_prefix(background)
+                        .expect("page background");
+                }
+                // The retained native framebuffer is bottom-up. Both exports use
+                // the same reflection and transparent page for a controlled comparison.
+                let svg = format!(
+                    "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                    &raw_svg[..start],
+                );
+                let page = crate::RenderedPage::new(0, 128, 64, svg.clone());
+                let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                    .expect("experimental SVG must lower to PDF");
+                std::fs::write(output.join(format!("{name}.svg")), svg).unwrap();
+                std::fs::write(output.join(format!("{name}.pdf")), pdf).unwrap();
+            }
+        };
+        write_pair("", candidate.svg, fallback);
+
+        let color_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
+            "../../tmp/vector-parity-plan/inkpen-saved-rgb/native-inputs/inkpen-color-native.json",
+        );
+        let color_bytes = std::fs::read(color_path).expect("retained color capture is required");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&color_bytes)),
+            "7a5abc7462969a8f1d99763c87f6f5d7fc5e6dd021250b246cf0dc09336ee20e"
+        );
+        let colors: Value = serde_json::from_slice(&color_bytes).unwrap();
+        for argb in [0xffa1_b2c3_u32, 0x8040_2010, 0x0001_0203] {
+            let id = format!("inkpen_v4_argb_{argb:08x}_1920x1080_to_128x64");
+            let color_case = &colors["cases"][&id];
+            assert_eq!(
+                color_case["requested_argb_u32"].as_u64(),
+                Some(u64::from(argb))
+            );
+            assert_eq!(color_case["target"]["viewport"], case["target"]["viewport"]);
+            let color_caller = &color_case["source_caller"];
+            assert_eq!(
+                color_caller["screen_resolution"],
+                caller["screen_resolution"]
+            );
+            assert_eq!(
+                color_caller["streams"]["draw_object_stroke"]["values_f32_bits"],
+                caller["streams"]["draw_object_stroke"]["values_f32_bits"]
+            );
+            let mut color_input = native_caller_stroke(&color_caller["input"]);
+            color_input.rendering.as_mut().unwrap().style.color_argb = Some(argb);
+            let color_ink = prepare(
+                &color_input,
+                RuntimeContext {
+                    curve_enabled: color_caller["input"]["curve_enabled"].as_bool().unwrap(),
+                    screen_width: resolution["width"].as_u64().unwrap() as u32,
+                    screen_height: resolution["height"].as_u64().unwrap() as u32,
+                },
+            )
+            .expect("captured V4 color input");
+            assert_eq!(color_ink.points.len(), ink.points.len());
+            for (index, point) in color_ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[3 * index].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[3 * index + 1].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    color_ink.radii[index].to_bits(),
+                    native_f32(stream[3 * index + 2].as_str().unwrap()).to_bits()
+                );
+            }
+            let rgb = format!("#{:06x}", argb & 0x00ff_ffff);
+            let opacity = f64::from((argb >> 24) as u8) / 255.0;
+            let color_candidate = crate::render::inkpen_v1_vector_candidate_svg(
+                &color_ink.points,
+                &color_ink.radii,
+                &color_ink.sample_ends,
+                color_ink.terminal.clone(),
+                &rgb,
+                opacity,
+                [128, 64],
+                false,
+            )
+            .expect("bounded V4 color contour candidate");
+            let color_page = crate::Page {
+                uuid: id,
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![color_input.into()],
+            };
+            let color_document = crate::Document {
+                pages: vec![color_page],
+                metadata: Default::default(),
+            };
+            let color_fallback =
+                crate::render_document_svg(&color_document, &crate::RenderOptions::default())
+                    .remove(0)
+                    .svg;
+            write_pair(
+                &format!("argb-{argb:08x}-"),
+                color_candidate.svg,
+                color_fallback,
+            );
+        }
+    }
+
+    #[test]
+    fn v4_vector_candidate_improves_on_generic_against_host_frames() {
+        use flate2::read::ZlibDecoder;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v4-vector-host.json"
+        ))
+        .unwrap();
+        let frames = include_bytes!("../../../../conformance/inkpen-v4-vector-host.bin");
+        let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        assert_eq!(
+            frames.len(),
+            receipt["native_frames"]["length"].as_u64().unwrap() as usize
+        );
+        assert_eq!(
+            hash(frames),
+            receipt["native_frames"]["sha256"].as_str().unwrap()
+        );
+        let source: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &source["cases"]["straight_curve_tool1_empty"];
+        let stream = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+            .as_array()
+            .unwrap();
+        assert_eq!(
+            case["streams"]["draw_object_stroke"]["sha256"],
+            receipt["native_stream_sha256"]
+        );
+        let mut input = native_caller_stroke(&case["input"]);
+        let ink = prepare(
+            &input,
+            RuntimeContext {
+                curve_enabled: true,
+                screen_width: 1920,
+                screen_height: 1080,
+            },
+        )
+        .unwrap();
+        assert_eq!(stream.len(), ink.points.len() * 3);
+        for (i, point) in ink.points.iter().enumerate() {
+            assert_eq!(
+                (point.x as f32).to_bits(),
+                native_f32(stream[3 * i].as_str().unwrap()).to_bits()
+            );
+            assert_eq!(
+                (point.y as f32).to_bits(),
+                native_f32(stream[3 * i + 1].as_str().unwrap()).to_bits()
+            );
+            assert_eq!(
+                ink.radii[i].to_bits(),
+                native_f32(stream[3 * i + 2].as_str().unwrap()).to_bits()
+            );
+        }
+        let render = |raw: &str, generic: bool| {
+            let start = raw.find('>').unwrap() + 1;
+            let end = raw.rfind("</svg>").unwrap();
+            let mut body = &raw[start..end];
+            if generic {
+                body = body
+                    .trim_start()
+                    .strip_prefix(
+                        "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>",
+                    )
+                    .expect("generic page background");
+            }
+            let svg = format!(
+                "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                &raw[..start]
+            );
+            let tree = resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 64).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap.data().to_vec()
+        };
+        for (index, argb) in [0xff00_0000_u32, 0xffa1_b2c3, 0x8040_2010, 0x0001_0203]
+            .into_iter()
+            .enumerate()
+        {
+            let entry = &receipt["cases"][index];
+            let frame = &entry["native_frame_zlib"];
+            let offset = frame["offset"].as_u64().unwrap() as usize;
+            let length = frame["length"].as_u64().unwrap() as usize;
+            let compressed = &frames[offset..offset + length];
+            assert_eq!(hash(compressed), frame["zlib_sha256"].as_str().unwrap());
+            let mut native = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(native.len(), frame["raw_length"].as_u64().unwrap() as usize);
+            assert_eq!(native.len(), 128 * 64 * 4);
+            assert_eq!(hash(&native), entry["native_rgba_sha256"].as_str().unwrap());
+            input.rendering.as_mut().unwrap().style.color_argb = Some(argb);
+            let rgb = format!("#{:06x}", argb & 0x00ff_ffff);
+            let candidate = crate::render::inkpen_v1_vector_candidate_svg(
+                &ink.points,
+                &ink.radii,
+                &ink.sample_ends,
+                ink.terminal.clone(),
+                &rgb,
+                f64::from((argb >> 24) as u8) / 255.0,
+                [128, 64],
+                false,
+            )
+            .unwrap();
+            let page = crate::Page {
+                uuid: "inkpen-v4-capture".into(),
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![input.clone().into()],
+            };
+            let document = crate::Document {
+                pages: vec![page],
+                metadata: Default::default(),
+            };
+            let generic = crate::render_document_svg(&document, &crate::RenderOptions::default())
+                .remove(0)
+                .svg;
+            let candidate_pixels = render(&candidate.svg, false);
+            let generic_pixels = render(&generic, true);
+            let metrics = |pixels: &[u8]| {
+                let mut intersection = 0usize;
+                let mut union = 0usize;
+                let mut alpha_error = 0u64;
+                let mut rgba_error = 0u64;
+                for (a, b) in native
+                    .as_chunks::<{ 128 * 4 }>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flat_map(|row| row.as_chunks::<4>().0.iter())
+                    .zip(pixels.as_chunks::<4>().0.iter())
+                {
+                    intersection += usize::from(a[3] != 0 && b[3] != 0);
+                    union += usize::from(a[3] != 0 || b[3] != 0);
+                    alpha_error += u64::from(a[3].abs_diff(b[3]));
+                    rgba_error += a
+                        .iter()
+                        .zip(b)
+                        .map(|(x, y)| u64::from(x.abs_diff(*y)))
+                        .sum::<u64>();
+                }
+                (intersection, union, alpha_error, rgba_error)
+            };
+            let c = metrics(&candidate_pixels);
+            let g = metrics(&generic_pixels);
+            if argb >> 24 == 0 {
+                assert!(native.iter().all(|&v| v == 0));
+                assert!(candidate_pixels.iter().all(|&v| v == 0));
+                assert!(generic_pixels.iter().all(|&v| v == 0));
+            } else {
+                assert!(c.1 > 0 && g.1 > 0);
+                assert!(
+                    c.0 * g.1 > g.0 * c.1,
+                    "support IoU for {argb:08x}: {c:?} vs {g:?}"
+                );
+                assert!(
+                    c.2 * (g.1 as u64) < g.2 * (c.1 as u64),
+                    "alpha error for {argb:08x}: {c:?} vs {g:?}"
+                );
+                assert!(c.3 < g.3, "RGBA error for {argb:08x}: {c:?} vs {g:?}");
+            }
+        }
+    }
+
     #[test]
     fn matches_drawing_selected_v4_empty_setting_full_callback_bits() {
         let fixture: Value = serde_json::from_str(include_str!(

@@ -292,6 +292,11 @@ This is one host Mesa witness, not a universal device derivative contract.
 A [V1 scale replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-scale-native.json) checks fresh
 1×/2×/4× native Draw targets and separate identity-transform controls. Its
 pixel-dependent edge band prevents treating a fixed 1× contour as a general paint law.
+A [test-only V4 contour comparison](../conformance/inkpen-v4-vector-host.json)
+improves alpha and color error over the generic route in resvg, MuPDF and
+PDFium for one synthetic stroke at opaque and partial alpha; zero alpha stays
+empty. Display-profile admission, replay integration and other scales remain
+unverified, so V4 production rendering is unchanged.
 A [V1 reuse oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-reuse-native.json) checks source-event
 and terminal vector prefixes, short/long preceding strokes and distinct source
 objects. Rust matches the complete first/target streams and their native boundaries.
