@@ -296,3 +296,5 @@ SHA-256 is `8537e503568d6a63512c8acf0777168a8adac85189afee8408032b1eb5c118e9`.
 This supports sharing the existing bounded V5 page handler while preserving its
 settings, tool, style and point-count restrictions. It does not establish
 archive deserialization, omitted style defaults or independent pixel parity.
+
+A [colored-paint host control](../../conformance/pencil2-v14-color-paint-native.json) uploads two captured size-2 synthetic geometry streams, one black and one `0x80336699`, through the native RTV4 replay. All 66 pixels in their alpha-support union differ from simply scaling the final black alpha by 128/255, with maximum difference 22. This is consistent with per-record source-over accumulation, so a translucent stroke cannot use that final-alpha scaling shortcut. The colored premultiplied RGB differs by at most three bytes from final alpha multiplied by the corresponding color channel. The host adapter substitutes the captured streams before GPU upload; this is not full Drawing, device, saved-note, or PDF evidence.

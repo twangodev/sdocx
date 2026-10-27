@@ -1,0 +1,46 @@
+{
+  "schema": "sdocx-pencil2-v14-colored-paint-native-v1",
+  "scope": "Controlled native RTV4 host Mesa replay, using pinned synthetic native black and translucent colored records. Host replaces the published vector before GPU upload and restores it afterwards. Not full Drawing, saved-note, device, or production output.",
+  "inputs": {
+    "black_stream_sha256": "33026ad32ab277696f01a2948ad62d06b9790cd1f7ef2de225bd7830ba998942",
+    "color_stream_sha256": "e5d265076c55dc7b0a4fce981993f48e867cbd71a102bd1c21ea40d8480d6130",
+    "color_argb": "0x80336699",
+    "frame_size": [
+      192,
+      192
+    ]
+  },
+  "readback_sha256": {
+    "black": "24556642b79d22442c2a13fecacb2e21dfe79c889aaa31dba957a90663ad4cec",
+    "color": "2ad53fb7831f42d633242c3491579e1f4380a73d5a5de0b64cf9f734bb0983a3"
+  },
+  "support_union": 66,
+  "alpha_vs_half_black": {
+    "different": 66,
+    "absolute_sum": 701,
+    "maximum": 22
+  },
+  "rgb_vs_color_times_final_alpha": [
+    {
+      "different": 26,
+      "absolute_sum": 29,
+      "maximum": 2
+    },
+    {
+      "different": 32,
+      "absolute_sum": 33,
+      "maximum": 2
+    },
+    {
+      "different": 26,
+      "absolute_sum": 31,
+      "maximum": 3
+    }
+  ],
+  "interpretation": "The final translucent alpha cannot be obtained by scaling the final opaque alpha; consistent with per-record source-over accumulation. Premultiplied RGB is close to color times final alpha but differs by up to 3 bytes in this RGBA8 replay.",
+  "reproduction": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_color_paint_capture.py",
+  "limitations": [
+    "Both streams are native geometry for size 2 synthetic inputs; the host adapter substitutes them for the baseline replay stream.",
+    "One color and one stroke only; this does not establish arbitrary colors, renderer or PDF parity."
+  ]
+}
