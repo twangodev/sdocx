@@ -142,6 +142,11 @@ pub(crate) fn saved_pencil3_v3_transparent(stroke: &Stroke) -> bool {
     saved_pencil3_v3_inputs(stroke).is_some_and(|(argb, _)| argb >> 24 == 0)
 }
 
+/// Saved color for the same bounded source profile used by V3 reconstruction.
+pub(crate) fn saved_pencil3_v3_argb(stroke: &Stroke) -> Option<u32> {
+    saved_pencil3_v3_inputs(stroke).map(|(argb, _)| argb)
+}
+
 /// Prepare an ordinary Pencil3 saved stroke for its V3 source path.
 ///
 /// The caller supplies the native screen profile because it is part of the

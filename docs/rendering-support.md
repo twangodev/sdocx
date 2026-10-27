@@ -196,8 +196,8 @@ Remaining pencil work: reconstruct and validate production texture and paint
 for Pencil, Pencil2 and ColoredPencil; establish Pencil3's saved-note runtime
 context and compare its SVG/PDF output against native device and real-note
 exports. Then evaluate a better default where the required context is known.
-For ordinary V3 strokes, a fully transparent saved color also remains invisible
-on the generic fallback; partial-opacity fallback is still approximate. A
+For ordinary V3 strokes, the generic fallback retains saved RGB and remains
+invisible for fully transparent saved color; partial-opacity fallback is still approximate. A
 half-opacity whole-stroke candidate reduced color error in one host control but
 did not improve support or reproduce native per-particle compositing.
 The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-saved-caller-native.json) captures

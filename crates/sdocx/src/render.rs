@@ -4966,6 +4966,7 @@ fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
         chinesebrush_source_color(stroke)
             .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
             .or_else(|| crate::ink::saved_airbrush_argb(stroke).map(argb_rgb))
+            .or_else(|| crate::ink::pencil_source::saved_pencil3_v3_argb(stroke).map(argb_rgb))
             .or_else(|| saved_textured_pen_argb(stroke).map(argb_rgb))
     })
 }
@@ -9742,6 +9743,30 @@ mod tests {
             y_max: 110.,
         };
         stroke
+    }
+
+    #[test]
+    fn pencil3_fallback_preserves_supported_saved_rgb() {
+        let mut stroke = pencil3_native_profile_stroke();
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x8012_3456);
+        assert_eq!(super::stroke_paint(&stroke, false).color, "#123456");
+        assert_eq!(super::prepare_stroke_for_page(&stroke, false).opacity, 1.0);
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.clone().into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+            .svg
+            .clone();
+        assert!(svg.contains(r##"stroke="#123456""##));
+
+        stroke.color = Some(Color {
+            r: 0xab,
+            g: 0xcd,
+            b: 0xef,
+        });
+        assert_eq!(super::stroke_paint(&stroke, false).color, "#abcdef");
+        stroke.color = None;
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
+        assert_eq!(super::stroke_paint(&stroke, false).color, "#1a1a1a");
     }
 
     #[cfg(feature = "pdf")]

@@ -146,6 +146,10 @@ canvas, supplied screen dimensions and an explicit paper sampler. [Native PDF st
 are derived output; original vector channels and configured coverage inputs
 remain separate source boundaries.
 
+The generic fallback preserves explicit saved RGB for the same bounded V3
+source profile. This follows the shader's input color; it does not reproduce
+the texture or apply partial saved alpha to the whole approximate stroke.
+
 The conformance witnesses include [`pencil_native.py`](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil_native.py)
 for native `drawPoint`, RTV1 `AddPoint`, bounds and saved redraw; ten saved
 cases use an AOSP bionic RNG model checked against CTS vectors, not Samsung
