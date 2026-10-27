@@ -2282,17 +2282,28 @@ fn render_nine_patch(
                 |svg| {
                     for y in 0..3 {
                         for x in 0..3 {
+                            // The source image itself bounds the outside edges. Do not
+                            // clip them a second time at the same fractional device
+                            // coordinates: two antialiased clips attenuate coverage.
+                            let sw = sx[x + 1] - sx[x];
+                            let sh = sy[y + 1] - sy[y];
+                            let dw = dx[x + 1] - dx[x];
+                            let dh = dy[y + 1] - dy[y];
+                            let left = i32::from(x == 0);
+                            let right = i32::from(x == 2);
+                            let top = i32::from(y == 0);
+                            let bottom = i32::from(y == 2);
                             svg.scope(
                                 Svg::new()
-                                    .x(f64::from(dx[x]))
-                                    .y(f64::from(dy[y]))
-                                    .width(f64::from(dx[x + 1] - dx[x]))
-                                    .height(f64::from(dy[y + 1] - dy[y]))
+                                    .x(f64::from(dx[x] - dw * left as f32))
+                                    .y(f64::from(dy[y] - dh * top as f32))
+                                    .width(f64::from(dw * (1 + left + right) as f32))
+                                    .height(f64::from(dh * (1 + top + bottom) as f32))
                                     .view_box(ViewBox::unrounded(
-                                        f64::from(sx[x]),
-                                        f64::from(sy[y]),
-                                        f64::from(sx[x + 1] - sx[x]),
-                                        f64::from(sy[y + 1] - sy[y]),
+                                        f64::from(sx[x]) - f64::from(sw) * f64::from(left),
+                                        f64::from(sy[y]) - f64::from(sh) * f64::from(top),
+                                        f64::from(sw) * f64::from(1 + left + right),
+                                        f64::from(sh) * f64::from(1 + top + bottom),
                                     ))
                                     .preserve_aspect_none()
                                     .clipped_viewport(),
@@ -5396,6 +5407,16 @@ mod tests {
         assert_eq!(middle.attribute("y"), Some("1"));
         assert_eq!(middle.attribute("width"), Some("2"));
         assert_eq!(middle.attribute("height"), Some("1"));
+        // The source image, rather than an additional coincident viewport
+        // clip, bounds the outside edge of the top-left patch.
+        let corner = patches
+            .iter()
+            .find(|n| n.attribute("viewBox") == Some("-1 -1 2 2"))
+            .unwrap();
+        assert_eq!(corner.attribute("x"), Some("-1"));
+        assert_eq!(corner.attribute("y"), Some("-1"));
+        assert_eq!(corner.attribute("width"), Some("2"));
+        assert_eq!(corner.attribute("height"), Some("2"));
         image.rotation_degrees = Some(30.0);
         let rotated = render_test_placed_image(image.clone(), test_rgb_png());
         assert!(rotated.contains("rotate(30 45 45)"));

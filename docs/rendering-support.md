@@ -76,8 +76,8 @@ that intermediate bitmap. Transformed fills, original/border metadata, and degen
 patches retain the existing fallback. Active nine-patch records retain an
 unsupported diagnostic. A [synthetic native nine-color control](../conformance/nine-patch-native-control.json)
 compares source-sized preprocessing and fractional placement against public exports.
-The nine-patch SVG reduces total RGB error from 57,589 to 18,321 compared with
-ordinary image placement, but misses 30 native edge-support pixels; the PDF
+The nine-patch SVG reduces total RGB error from 57,589 to 8,135 compared with
+ordinary image placement, but misses 20 native edge-support pixels; the PDF
 reduces error from 77,804 to 42,475. Sampling and seam differences remain, and
 native pixel parity is unverified.
 

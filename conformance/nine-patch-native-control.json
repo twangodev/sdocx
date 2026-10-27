@@ -317,5 +317,51 @@
     },
     "svg_sha256": "46972662b53dec44ae94f815e9c280a2978d12a876ba37cfd1080fa24cdf6ba1",
     "scope": "Actual public renderer output after replacing the outer viewport with a matrix group; resvg 0.45.1 at 1x."
+  },
+  "public_expanded_outer_candidate": {
+    "sha256": "d8169ba295d5c442327fbdd1bcbd3377652876bdf25e180dcd23693e70ed802b",
+    "format": "rgba",
+    "metrics": {
+      "full": {
+        "pixels": 1536,
+        "changed_pixels": 125,
+        "rgb_abs_error": 8135,
+        "max_channel_error": 80
+      },
+      "interior": {
+        "pixels": 465,
+        "changed_pixels": 88,
+        "rgb_abs_error": 7887,
+        "max_channel_error": 80
+      },
+      "outer_edge": {
+        "pixels": 96,
+        "changed_pixels": 37,
+        "rgb_abs_error": 248,
+        "max_channel_error": 36
+      },
+      "vertical_seams": {
+        "pixels": 90,
+        "changed_pixels": 38,
+        "rgb_abs_error": 3261,
+        "max_channel_error": 80
+      },
+      "horizontal_seams": {
+        "pixels": 186,
+        "changed_pixels": 70,
+        "rgb_abs_error": 6769,
+        "max_channel_error": 80
+      }
+    },
+    "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+    "support": {
+      "native_pixels": 561,
+      "output_pixels": 541,
+      "intersection": 541,
+      "native_only": 20,
+      "output_only": 0
+    },
+    "svg_sha256": "fb80807830b12091772c60854247cbeb64855f90a62c8b07d9719d44f6d84589",
+    "scope": "Actual public renderer output after expanding outer source viewports; resvg 0.45.1 at 1x. The PDF raster is unchanged from the prior public candidate."
   }
 }
