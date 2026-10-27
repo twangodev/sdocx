@@ -510,8 +510,9 @@ struct PreparedPdfPaperRecords {
     records: Vec<PreparedPdfPaperRecord>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct ImportedSourcePage {
+    source_key: String,
     source_page_index: i32,
     source_to_display: [f64; 6],
     source_crop: [f64; 4],
@@ -533,7 +534,6 @@ struct SingleXOutputPage {
 
 pub(super) struct SingleXPaperPlan {
     parsed_sources: std::collections::BTreeMap<String, ParsedSource>,
-    source_key: String,
     note_width: u32,
     note_height: u32,
     output_pages: Vec<SingleXOutputPage>,
@@ -724,22 +724,11 @@ pub(super) fn plan_singlex_pdf_paper(
     }
 
     let prepared = prepare_pdf_paper_records(&document.metadata, records)?;
-    let first_prepared = prepared
-        .records
-        .first()
-        .ok_or_else(|| reject(0, "PDF-paper source record was not resolved"))?;
-    let source_key = first_prepared.source_key.clone();
     for (record_index, prepared_record) in prepared.records.iter().enumerate() {
         if prepared_record.inferred {
             return Err(reject(
                 record_index,
                 "PDF-paper media binding must be authoritative",
-            ));
-        }
-        if prepared_record.source_key != source_key {
-            return Err(reject(
-                record_index,
-                "contiguous PDF-paper records must resolve to one source PDF",
             ));
         }
         if prepared_record.source_page_index != records[record_index].page_index {
@@ -749,12 +738,22 @@ pub(super) fn plan_singlex_pdf_paper(
             ));
         }
     }
-    let source = prepared
-        .sources
-        .get(&source_key)
-        .ok_or_else(|| reject(0, "resolved PDF-paper source is missing"))?;
+    if prepared.sources.len() > 1 {
+        for source in prepared.sources.values() {
+            if !catalog_is_page_tree_only(&source.doc).unwrap_or(false) {
+                return Err(reject(
+                    0,
+                    "multiple PDF-paper sources require page-tree-only catalogs",
+                ));
+            }
+        }
+    }
     let mut imported_sources = Vec::with_capacity(prepared.records.len());
     for (record_index, prepared_record) in prepared.records.iter().enumerate() {
+        let source = prepared
+            .sources
+            .get(&prepared_record.source_key)
+            .ok_or_else(|| reject(record_index, "resolved PDF-paper source is missing"))?;
         let source_number = u32::try_from(prepared_record.source_page_index)
             .ok()
             .and_then(|index| index.checked_add(1))
@@ -798,6 +797,7 @@ pub(super) fn plan_singlex_pdf_paper(
             ));
         }
         imported_sources.push(ImportedSourcePage {
+            source_key: prepared_record.source_key.clone(),
             source_page_index: prepared_record.source_page_index,
             source_to_display,
             source_crop: crop,
@@ -875,7 +875,7 @@ pub(super) fn plan_singlex_pdf_paper(
         .enumerate()
         .map(|(record_index, record)| {
             Ok(paper_segments::ResolvedRecord {
-                source_key: &source_key,
+                source_key: &prepared.records[record_index].source_key,
                 page_index: record.page_index,
                 rectangle: {
                     let rectangle = paper_segments::RuntimeRect::from_saved(record.rectangle)
@@ -962,7 +962,7 @@ pub(super) fn plan_singlex_pdf_paper(
                     ));
                 }
                 imported_record_count += 1;
-                Some(imported_sources[record_index])
+                Some(imported_sources[record_index].clone())
             } else {
                 None
             };
@@ -993,7 +993,8 @@ pub(super) fn plan_singlex_pdf_paper(
                     }
                 }
             }
-            let (physical_width, physical_height) = if let Some(imported_source) = imported_source {
+            let (physical_width, physical_height) = if let Some(imported_source) = &imported_source
+            {
                 (
                     imported_source.physical_surface[0],
                     imported_source.physical_surface[1],
@@ -1048,7 +1049,6 @@ pub(super) fn plan_singlex_pdf_paper(
 
     Ok(Some(SingleXPaperPlan {
         parsed_sources: prepared.sources,
-        source_key,
         note_width,
         note_height,
         output_pages,
@@ -1232,7 +1232,7 @@ pub(super) fn render_singlex_pdf_paper_plan(
     for (index, output) in plan.output_pages.iter().enumerate() {
         let overlay_page_number = u32::try_from(index + 1)
             .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
-        if let Some(imported_source) = output.imported_source {
+        if let Some(imported_source) = &output.imported_source {
             let (display_to_source, clip) = imported_overlay_placement(
                 imported_source.source_to_display,
                 imported_source.source_crop,
@@ -1243,7 +1243,7 @@ pub(super) fn render_singlex_pdf_paper_plan(
             )
             .map_err(|_| super::PdfError::InvalidPageSize { page_index: index })?;
             outputs.push(OutputPage::Imported {
-                source_key: &plan.source_key,
+                source_key: &imported_source.source_key,
                 source_page_index: imported_source.source_page_index,
                 overlay_bytes: &constrained_overlay_bytes,
                 overlay_page_number,
@@ -3899,7 +3899,6 @@ mod tests {
 
         let plan = SingleXPaperPlan {
             parsed_sources: std::collections::BTreeMap::new(),
-            source_key: String::new(),
             note_width: 1_812,
             note_height: 7_000,
             output_pages: [(0, 5_000, 505.0), (5_000, 2_000, 202.0)]

@@ -775,8 +775,9 @@ all ordered signed PDF records, version-dependent rectangles and raw template ty
 modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
 PDF export now preserves source PDF paper for a bounded continuous-note class:
-one authoritative source PDF with contiguous, top-aligned, full-width integer
-paper records. Source-page indices may repeat or appear in a different order;
+authoritative source PDFs with contiguous, top-aligned, full-width integer
+paper records. When multiple source PDFs are used, each catalog must contain only
+its page tree so document-level context is not silently lost. Source-page indices may repeat or appear in a different order;
 the native segment selector starts a new group when indices are not consecutive,
 and the SDK imports the selected source pages in record order. Source CropBox
 origins and quarter-turn rotations are preserved; UserUnit must be 1. The note must use the
@@ -799,8 +800,8 @@ are preserved and its page-5 bounds match native model placement within
 queries; multi-image SDK export has synthetic coverage. This is model/transport
 validation, not native pixel parity.
 A saved stroke's generated flag alone does not exclude it. Other visible text,
-image transforms, multiple source PDFs, gaps between records and unverified
-cases still fail explicitly. SVG previews continue to report omitted
+image transforms, gaps between records, multi-source documents with global
+catalog context and unverified cases still fail explicitly. SVG previews continue to report omitted
 PDF backgrounds; converting those diagnostic-aware pages to PDF fails explicitly.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the Rust model and verified vector PDF transport.

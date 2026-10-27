@@ -26,26 +26,30 @@ const PDF_BINDING: u32 = 42;
 const SOURCE_WIDTH: f32 = 726.204_3;
 const SOURCE_HEIGHT: f32 = 595.440_06;
 
-fn media_manifest() -> sdocx::MediaManifest {
-    let file_name = "paper.pdf";
-    let mut record = Vec::new();
-    record.extend_from_slice(&PDF_BINDING.to_le_bytes());
-    record.extend_from_slice(&(file_name.len() as u16).to_le_bytes());
-    for unit in file_name.encode_utf16() {
-        record.extend_from_slice(&unit.to_le_bytes());
-    }
-    record.extend_from_slice(&[0, 0]); // no recorded SHA-256
-    record.extend_from_slice(&1_u16.to_le_bytes());
-    record.extend_from_slice(&0_i64.to_le_bytes());
-    record.push(0); // not an attached asset
-
+fn media_manifest_entries(entries: &[(u32, &str)]) -> sdocx::MediaManifest {
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&5500_u32.to_le_bytes());
-    bytes.extend_from_slice(&1_u16.to_le_bytes());
-    bytes.extend_from_slice(&(record.len() as u32).to_le_bytes());
-    bytes.extend_from_slice(&record);
+    bytes.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    for (binding, file_name) in entries {
+        let mut record = Vec::new();
+        record.extend_from_slice(&binding.to_le_bytes());
+        record.extend_from_slice(&(file_name.len() as u16).to_le_bytes());
+        for unit in file_name.encode_utf16() {
+            record.extend_from_slice(&unit.to_le_bytes());
+        }
+        record.extend_from_slice(&[0, 0]);
+        record.extend_from_slice(&1_u16.to_le_bytes());
+        record.extend_from_slice(&0_i64.to_le_bytes());
+        record.push(0);
+        bytes.extend_from_slice(&(record.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(&record);
+    }
     bytes.extend_from_slice(b"EOFX");
     parse_media_manifest_bytes(&bytes).expect("test manifest is valid")
+}
+
+fn media_manifest() -> sdocx::MediaManifest {
+    media_manifest_entries(&[(PDF_BINDING, "paper.pdf")])
 }
 
 fn bbox(x0: f64, y0: f64, x1: f64, y1: f64) -> BoundingBox {
@@ -1303,6 +1307,66 @@ fn public_pdf_paper_accepts_indirect_page_box_coordinates() {
         })
         .collect::<Vec<_>>();
     assert_eq!(values, [20.0, 35.0, 570.0, 535.0]);
+}
+
+#[test]
+fn public_pdf_paper_imports_multiple_page_tree_only_sources_in_record_order() {
+    let records = [
+        [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485],
+        [43, 0, 0, 1485, NOTE_WIDTH as i32, 3012],
+        [PDF_BINDING as i32, 0, 0, 3012, NOTE_WIDTH as i32, 4539],
+    ];
+    let mut document = document_with_records(
+        true,
+        None,
+        0,
+        1,
+        true,
+        &records,
+        &[[SOURCE_WIDTH, SOURCE_HEIGHT]],
+    );
+    document.metadata.media_manifest = Some(media_manifest_entries(&[
+        (PDF_BINDING, "paper.pdf"),
+        (43, "other.pdf"),
+    ]));
+    document.metadata.archive_resources.push(ArchiveResource {
+        name: "media/other.pdf".into(),
+        archive_id: None,
+        content: ArchiveResourceContent::Opaque {
+            data: source_pdf_pages(0, 1, &[[400.0, 300.0]]),
+        },
+    });
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(pdf.get_pages().len(), 11);
+    assert_eq!(
+        page_box(&pdf, 1),
+        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)]
+    );
+    assert_eq!(page_box(&pdf, 2), [0.0, 0.0, 400.0, 300.0]);
+    assert_eq!(page_box(&pdf, 3), page_box(&pdf, 1));
+    assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+    assert!(page_invokes_crossing_stroke_form(&pdf, 2));
+    assert_ne!(pdf.get_pages()[&1], pdf.get_pages()[&3]);
+
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[1].content
+    else {
+        unreachable!()
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let root = source.trailer.get(b"Root").unwrap().as_reference().unwrap();
+    source
+        .get_dictionary_mut(root)
+        .unwrap()
+        .set("PageMode", Object::Name(b"UseOutlines".to_vec()));
+    let mut bytes = Vec::new();
+    source.save_to(&mut bytes).unwrap();
+    *data = bytes;
+    assert!(matches!(
+        export(&document, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
 }
 
 #[test]
