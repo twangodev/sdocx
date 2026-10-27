@@ -578,6 +578,36 @@ mod tests {
     }
 
     #[test]
+    fn single_point_native_controls_remain_outside_profile() {
+        let controls: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-one-point-drawing.json"
+        ))
+        .unwrap();
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let mut stroke = fixture_stroke(&fixture["cases"][0]["input"]);
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x80402010);
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.points.truncate(1);
+        stroke.pressures.truncate(1);
+        for control in controls["controls"].as_array().unwrap() {
+            assert_eq!(control["drawing_return"], 0);
+            assert_eq!(control["factory_created_pen_count"], 0);
+            assert!(control["loader_calls"].as_array().unwrap().is_empty());
+            let input = &control["input"];
+            let size = input["size"].as_f64().unwrap() as f32;
+            stroke.points[0] = crate::Point {
+                x: input["points"][0][0].as_f64().unwrap(),
+                y: input["points"][0][1].as_f64().unwrap(),
+            };
+            stroke.pressures[0] = input["pressure"][0].as_f64().unwrap();
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.pen_width = size;
+            assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        }
+    }
+
+    #[test]
     fn production_adapter_enforces_profile_and_color() {
         let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
         let mut stroke = fixture_stroke(&fixture["cases"][0]["input"]);

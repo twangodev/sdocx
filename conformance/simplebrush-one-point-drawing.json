@@ -1,0 +1,260 @@
+{
+  "scope": "Synthetic single-point ObjectStroke setter inputs through emulated native Drawing with host context and deferred queue; no Mesa draw or device observation. Three paired size/pressure controls, not a full cross product.",
+  "script": "scratch/simplebrush-one-point/simplebrush-5-source-capture.py",
+  "script_sha256": "c463b71fb3ece7ec9bdc456619d292a958b12ade72abb37ce1d961a25e4d1b95",
+  "controls": [
+    {
+      "drawing_return": 0,
+      "factory_created_pen_count": 0,
+      "input": {
+        "curve_enabled": true,
+        "orientation": [
+          0.0
+        ],
+        "points": [
+          [
+            0.0,
+            4.0
+          ]
+        ],
+        "pressure": [
+          0
+        ],
+        "size": 4.0,
+        "stroke_type": 0,
+        "tilt": [
+          0.0
+        ],
+        "timestamps": [
+          0
+        ],
+        "tool_type": 2
+      },
+      "loader_calls": [],
+      "object_stroke_snapshots": [
+        {
+          "curve_enabled": 1,
+          "label": "before_drawObjectStroke",
+          "point_count": 1,
+          "size_bits": "00008040",
+          "stroke_type": 0,
+          "tool_type": 2
+        }
+      ],
+      "queue_submissions": 3,
+      "schema": "sdocx-simplebrush-one-point-drawing-v1",
+      "scope": "Synthetic ObjectStroke through emulated native Drawing under explicit host context and queue. No paint or device observation.",
+      "source_object_arrays": {
+        "orientations": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetOrientation() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823180"
+        },
+        "points": {
+          "count": 1,
+          "data_hex": "0000000000008040",
+          "element_size": 8,
+          "getter": "SPen::ObjectStroke::GetPoint() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823140"
+        },
+        "pressures": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetPressure() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823150"
+        },
+        "tilts": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTilt() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823170"
+        },
+        "timestamps": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTimeStamp() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823160"
+        }
+      }
+    },
+    {
+      "drawing_return": 0,
+      "factory_created_pen_count": 0,
+      "input": {
+        "curve_enabled": true,
+        "orientation": [
+          0.0
+        ],
+        "points": [
+          [
+            0.0,
+            4.0
+          ]
+        ],
+        "pressure": [
+          0.25
+        ],
+        "size": 8.0,
+        "stroke_type": 0,
+        "tilt": [
+          0.0
+        ],
+        "timestamps": [
+          0
+        ],
+        "tool_type": 2
+      },
+      "loader_calls": [],
+      "object_stroke_snapshots": [
+        {
+          "curve_enabled": 1,
+          "label": "before_drawObjectStroke",
+          "point_count": 1,
+          "size_bits": "00000041",
+          "stroke_type": 0,
+          "tool_type": 2
+        }
+      ],
+      "queue_submissions": 3,
+      "schema": "sdocx-simplebrush-one-point-drawing-v1",
+      "scope": "Synthetic ObjectStroke through emulated native Drawing under explicit host context and queue. No paint or device observation.",
+      "source_object_arrays": {
+        "orientations": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetOrientation() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823180"
+        },
+        "points": {
+          "count": 1,
+          "data_hex": "0000000000008040",
+          "element_size": 8,
+          "getter": "SPen::ObjectStroke::GetPoint() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823140"
+        },
+        "pressures": {
+          "count": 1,
+          "data_hex": "0000803e",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetPressure() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823150"
+        },
+        "tilts": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTilt() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823170"
+        },
+        "timestamps": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTimeStamp() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823160"
+        }
+      }
+    },
+    {
+      "drawing_return": 0,
+      "factory_created_pen_count": 0,
+      "input": {
+        "curve_enabled": true,
+        "orientation": [
+          0.0
+        ],
+        "points": [
+          [
+            0.0,
+            4.0
+          ]
+        ],
+        "pressure": [
+          1
+        ],
+        "size": 16.0,
+        "stroke_type": 0,
+        "tilt": [
+          0.0
+        ],
+        "timestamps": [
+          0
+        ],
+        "tool_type": 2
+      },
+      "loader_calls": [],
+      "object_stroke_snapshots": [
+        {
+          "curve_enabled": 1,
+          "label": "before_drawObjectStroke",
+          "point_count": 1,
+          "size_bits": "00008041",
+          "stroke_type": 0,
+          "tool_type": 2
+        }
+      ],
+      "queue_submissions": 3,
+      "schema": "sdocx-simplebrush-one-point-drawing-v1",
+      "scope": "Synthetic ObjectStroke through emulated native Drawing under explicit host context and queue. No paint or device observation.",
+      "source_object_arrays": {
+        "orientations": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetOrientation() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823180"
+        },
+        "points": {
+          "count": 1,
+          "data_hex": "0000000000008040",
+          "element_size": 8,
+          "getter": "SPen::ObjectStroke::GetPoint() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823140"
+        },
+        "pressures": {
+          "count": 1,
+          "data_hex": "0000803f",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetPressure() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823150"
+        },
+        "tilts": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTilt() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823170"
+        },
+        "timestamps": {
+          "count": 1,
+          "data_hex": "00000000",
+          "element_size": 4,
+          "getter": "SPen::ObjectStroke::GetTimeStamp() const",
+          "matches_SetPoint_input": true,
+          "return_x0": "0x10823160"
+        }
+      }
+    }
+  ],
+  "observation": "Each drawObjectStroke returned 0, called no loader, and created no factory pen. The three queued tasks are canvas setup; no paint capture was obtained. This does not establish behavior for other inputs or saved note deserialization."
+}
