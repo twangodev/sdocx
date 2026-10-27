@@ -269,6 +269,8 @@ A separate host-Mesa control holds the geometry and matrix fixed and overrides o
 
 Four additional host-Mesa controls override that same uniform to -0.001, 0.001, 74.999 and 75.001 pixels. The frames at -0.001 and 74.999 have identical RGBA hashes, as do the frames at 0.001 and 75.001. Relative to zero offset, the negative and positive controls change 2 and 34 alpha pixels, respectively. The result is consistent with sensitivity near grain texture sampling boundaries, but does not establish the exact GPU arithmetic, other scales, or device behavior. The [receipt](../../conformance/pencil2-v14-grain-offset-epsilon-native.json) retains the controls and reproduction command.
 
+A controlled host-Mesa RTV4 replay of the same 84 black-stroke records changes only the preclear from transparent black to RGBA (64, 32, 96, 128). All 52 changed pixels agree within one byte per channel with source-over predictions from the transparent-target alpha; the observed blend calls use SRC_ALPHA and ONE_MINUS_SRC_ALPHA for RGB, and ONE and ONE_MINUS_SRC_ALPHA for alpha. The [compact receipt](../../conformance/pencil2-v14-background-native.json) records the control and reproduction command. This aggregate observation does not establish exact fragment arithmetic, full Drawing, saved-note, Android, device, or production behavior.
+
 ## Literal StraightMarker control
 
 Six native Drawing controls request the literal Marker3 and StraightMarker names

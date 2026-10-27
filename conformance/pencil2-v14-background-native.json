@@ -1,0 +1,28 @@
+{
+  "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "background_sha256": "a78680a6d05afb8aad1d58a98293ec67f50e325684cb37b894e689603636f58a",
+  "preclear": [64, 32, 96, 128],
+  "changed_pixels": 52,
+  "blend_calls": [
+    {"name": "glBlendEquationSeparate", "args": [32774, 32774], "result": null},
+    {"name": "glBlendFuncSeparate", "args": [770, 771, 1, 771], "result": null}
+  ],
+  "schema": "sdocx-pencil2-v14-background-native-v1",
+  "scope": "Controlled host Mesa RTV4 replay of pinned 84 Drawing AddPoint records, changing only preclear to RGBA (0.25,0.125,0.375,0.5); not saved-note, full Drawing, Android, or device output.",
+  "capture_source": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/capture_candidate.py",
+  "reproduction_script": "conformance/pencil2_v14_background_capture.py",
+  "command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil2_v14_background_capture.py",
+  "witness_rows": [
+    [0, 0, [0, 0, 0, 3], [63, 32, 95, 129]],
+    [1, 0, [0, 0, 0, 15], [61, 30, 90, 135]],
+    [2, 0, [0, 0, 0, 19], [60, 29, 89, 137]],
+    [3, 0, [0, 0, 0, 33], [56, 27, 83, 144]],
+    [4, 0, [0, 0, 0, 33], [55, 28, 84, 144]],
+    [5, 0, [0, 0, 0, 50], [51, 26, 77, 153]],
+    [6, 0, [0, 0, 0, 24], [59, 29, 86, 140]],
+    [7, 0, [0, 0, 0, 63], [48, 24, 72, 159]]
+  ],
+  "comparison": "For the 52 changed pixels, black-stroke transparent-target alpha predicts each RGB channel as round(preRGB*(255-alpha)/255) and output alpha as round(128+alpha*127/255), both within one byte. These are observed aggregate results, not proof of exact per-fragment or quantization arithmetic.",
+  "capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "reproduction_script_sha256": "2562c45d4e00c82c08230a7a378bb0a07bfbb1e05fc4fea19455bbe26211e94e"
+}
