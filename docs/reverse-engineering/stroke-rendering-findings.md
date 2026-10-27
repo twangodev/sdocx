@@ -616,6 +616,16 @@ model. These host controls do not establish threshold-edge, device or full
 no-curve mesh parity. The existing subdivision receipt retains state and vector
 hashes; temporary scripts retain the full captures.
 
+Eight [thin Marker host controls](../../conformance/legacy-marker-thin-host-controls.json)
+cover saved sizes 0.4, 1.0 and 1.9, straight/bent/shifted points and source
+alpha 0, 128 or 255. In five controls quantizing to width 1, the native core
+edge pairs coincide, fringe inputs contain NaNs and all five host-Mesa draw
+prefixes leave a transparent frame. The two 0.4-unit straight controls and one
+bent control instead paint pixels. Generic SVG/PDF exports paint 26–52 pixels
+at width 1 in four paired controls. The empty frames are host observations:
+NaN handling, other transforms, output scales and Android appearance remain
+unverified, so these results do not justify suppressing thin strokes generally.
+
 ### Legacy Marker subdivision edges and fringe
 
 The [edge test](../../crates/sdocx/tests/legacy_marker_edges.rs) joins the
@@ -693,3 +703,16 @@ nonzero pixels and remains unverified beyond the captured straight stroke.
 Other curves, subpixel alignments, size values and device output remain outside
 the comparisons; the integer threshold at 2 follows native quantization but the
 fallback is not a native rendering of the thin bucket.
+
+The test-only four-point source-centerline model reconstructs the observed
+quadratic subdivision and exact-reversal circle centers from source points,
+including the terminal `SmPath` sample. The reversal's interior edge-pair
+midpoints agree within 0.00001 units with the center selected by `makeCircle`
+at RVA `0x3423c`; the [compact reversal receipt](../../conformance/legacy-marker-reversal-circle-control.json)
+records native edge pairs and the source capture and script hashes. The turn
+control selects the distinct `makeCircularSector` branch, which this model
+returns as unsupported. Skipped-point and other stroke shapes also remain
+unmodeled. A diagnostic round-polyline through captured native centers reduced
+resvg absolute RGBA error on bend, turn and reversal from 48998/21527/11923 to
+39207/17138/4571; these centers were taken from the native capture, not generated
+for the turn, and the result does not justify production admission.

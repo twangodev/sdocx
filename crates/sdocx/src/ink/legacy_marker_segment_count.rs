@@ -217,3 +217,44 @@ fn no_curve_edge_count_matches_native_straight_and_bent_controls() {
         }
     }
 }
+
+#[test]
+fn thin_marker_host_width_one_has_collapsed_cores_and_nan_fringe_inputs() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-thin-host-controls.json"
+    ))
+    .unwrap();
+    let mut checked = 0;
+    for case in receipt["cases"].as_array().unwrap() {
+        let bits =
+            u32::from_str_radix(case["input"]["size_f32_bits"].as_str().unwrap(), 16).unwrap();
+        if f32::from_bits(bits).trunc() != 1.0 {
+            continue;
+        }
+        assert_eq!(case["nonzero_channel_bytes"], 0, "{}", case["name"]);
+        let mut core_count = 0;
+        let mut fringe_count = 0;
+        for merge in case["merge_inputs"].as_array().unwrap() {
+            let a = merge["inputs_hex"][0].as_str().unwrap();
+            let b = merge["inputs_hex"][1].as_str().unwrap();
+            if merge["stride"] == 8 {
+                assert_eq!(a, b);
+                core_count += 1;
+            } else {
+                let (pairs, rest) = a.as_bytes().as_chunks::<2>();
+                assert!(rest.is_empty());
+                let data: Vec<u8> = pairs
+                    .iter()
+                    .map(|p| u8::from_str_radix(std::str::from_utf8(p).unwrap(), 16).unwrap())
+                    .collect();
+                let (words, rest) = data.as_chunks::<4>();
+                assert!(rest.is_empty());
+                assert!(words.iter().all(|word| f32::from_le_bytes(*word).is_nan()));
+                fringe_count += 1;
+            }
+        }
+        assert_eq!((core_count, fringe_count), (3, 6));
+        checked += 1;
+    }
+    assert_eq!(checked, 5);
+}
