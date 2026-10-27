@@ -883,6 +883,72 @@ mod tests {
     }
 
     #[test]
+    fn null_v1_extra_controls_match_candidate_geometry() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-v1-extra-controls-native.json"
+        ))
+        .unwrap();
+        for (name, case) in receipt["cases"].as_object().unwrap() {
+            let i = &case["input"];
+            let points: Vec<P> = i["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: f32_from_le_hex(&p[0]),
+                    y: f32_from_le_hex(&p[1]),
+                })
+                .collect();
+            let times: Vec<i32> = i["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|x| x.as_i64().unwrap() as i32)
+                .collect();
+            let pressure: Vec<f32> = i["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(f32_from_le_hex)
+                .collect();
+            let tools = vec![i["tool_type"].as_i64().unwrap() as i32; points.len()];
+            let out = super::redraw_with_mode(
+                Input {
+                    points: &points,
+                    times: &times,
+                    pressures: &pressure,
+                    tools: &tools,
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: f32_from_le_hex(&i["pen_size_f32_bits"]),
+                    // Both native curve flag values follow this curve in the captured profile.
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min: 1080,
+                        initial_alternation: false,
+                        initial_time: times[0],
+                    },
+                },
+                10000,
+                true,
+            )
+            .unwrap();
+            let actual: Vec<u8> = out
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            let expected = hex_bytes(case["stream_hex"].as_str().unwrap());
+            assert_eq!(actual, expected, "{name}");
+        }
+    }
+
+    #[test]
     fn saved_native_fixture_matches_every_rtv3_float_bit() {
         let fixture: Value =
             serde_json::from_str(include_str!("../../../../conformance/inkpen2-saved.json"))
