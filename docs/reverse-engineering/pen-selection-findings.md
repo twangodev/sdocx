@@ -247,7 +247,7 @@ The test-only Rust sampler checks all 14 float lanes bit for bit in three
 84-record streams, including combined pressure/orientation and separate
 pressure controls. Its compact [native fixture](../../conformance/pencil2-v14-native.json)
 retains the input, native pressure-alpha state/returns and hashes; the packed
-record file is 14,112 bytes. Portable `libm` math matches these host captures. A test-only public Stroke adapter derives the controlled fixed-opacity-disabled alpha state and reproduces all six streams. Empty and `14;` settings match in one paired native Drawing control; parsed-note context remains unverified.
+record file is 14,112 bytes. Portable `libm` math matches these host captures. A test-only public Stroke adapter derives the controlled fixed-opacity-disabled alpha state and reproduces all six streams. Empty and `14;` settings match in one paired native Drawing control; parsed-note context remains unverified. A controlled RTV4 replay at inverse scale 0.5 also matches all 84 reconstructed records; the scale used by real Drawing remains unverified.
 
 The native V14 path uses its own 150×150 grain and three 100×100 point masks;
 it cannot inherit Pencil3's atlas or record layout. Direct native texture

@@ -4,7 +4,7 @@
 //! material, texture sampling, alpha compositing, or PDF/SVG paint output.
 //!
 //! Scope is intentionally narrow: tool 2, source 0, stroke type 0, curve path,
-//! finite point channels, identity inverse scale, and captured native alpha state.
+//! finite point channels, captured inverse-scale profiles, and native alpha state.
 //! This samples RTV4 records; it does not render the shader or claim pixel parity.
 
 use std::fmt;
@@ -211,6 +211,19 @@ fn finite_input(input: &SavedInput) -> Result<(), SamplerError> {
 /// Reconstructs the captured curve-enabled saved redraw path and all 14 source-backed
 /// RTV4 lanes. It accepts only the captured style/context profile.
 pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord>, SamplerError> {
+    sample_with_inverse_scale(input, alpha, 1.0)
+}
+
+/// Controlled isotropic inverse-scale profiles observed in the host native replay.
+/// This does not establish the scale selected by Drawing or a device.
+pub fn sample_with_inverse_scale(
+    input: &SavedInput,
+    alpha: AlphaState,
+    inverse_scale: f32,
+) -> Result<Vec<SampledRecord>, SamplerError> {
+    if inverse_scale != 1.0 && inverse_scale != 0.5 {
+        return Err(SamplerError::Unsupported("uncaptured inverse scale"));
+    }
     finite_input(input)?;
     let base_radius = alpha.base;
     if !base_radius.is_finite() || base_radius <= 0.0 {
@@ -286,8 +299,8 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
                 radius,
                 opacity,
                 [mean_orientation, tilt_factor],
-                tile,
-                input.color_argb,
+                [tile, input.color_argb],
+                inverse_scale,
             );
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
@@ -343,8 +356,8 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
                 radius,
                 opacity,
                 [mean_orientation, tilt_factor],
-                tile,
-                input.color_argb,
+                [tile, input.color_argb],
+                inverse_scale,
             );
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
@@ -361,8 +374,8 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
             target_radius,
             target_alpha,
             [mean_orientation, tilt_factor],
-            tile,
-            input.color_argb,
+            [tile, input.color_argb],
+            inverse_scale,
         );
     } else if out.is_empty() {
         emit_record(
@@ -371,8 +384,8 @@ pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord
             target_radius,
             target_alpha,
             [mean_orientation, tilt_factor],
-            tile,
-            input.color_argb,
+            [tile, input.color_argb],
+            inverse_scale,
         );
     }
     Ok(out)
@@ -384,19 +397,20 @@ fn emit_record(
     radius: f32,
     alpha: f32,
     orientation_and_draw_factor: [f32; 2],
-    tile: u32,
-    color: u32,
+    tile_and_color: [u32; 2],
+    inverse_scale: f32,
 ) {
+    let [tile, color] = tile_and_color;
     let [orientation, draw_factor] = orientation_and_draw_factor;
     // The source-confirmed AddPoint writer: x/y center unchanged, extents use
-    // radius/inverse-scale with 0.5 padding. Capture profile's inverse scales are 1.
+    // radius/inverse-scale with 0.5 padding, then transformed back to canvas space.
     let stamp_radius = radius * 0.5; // drawPoint passes half the pen-width state to RTV4.
-    let a = stamp_radius;
-    let b = stamp_radius;
+    let a = stamp_radius / inverse_scale;
+    let b = stamp_radius / inverse_scale;
     let t = a.min(b);
     let k = if t < 0.5 { 0.5 / t } else { 1.0 }.max(1.0);
-    let extent_x = (a * k) + 0.5;
-    let extent_y = (b * k) + 0.5;
+    let extent_x = ((a * k) + 0.5) * inverse_scale;
+    let extent_y = ((b * k) + 0.5) * inverse_scale;
     let alpha_by_width = 1.0 / k;
     let (sine, cosine) = host_sincosf(orientation);
     let rgb = [
@@ -414,7 +428,7 @@ fn emit_record(
     lanes[6] = tile as f32;
     lanes[7] = -sine;
     lanes[8] = cosine;
-    let min_extent = extent_x.min(extent_y);
+    let min_extent = extent_x.min(extent_y) / inverse_scale;
     lanes[9] = ((min_extent - 1.0) / min_extent) * 0.5;
     lanes[10] = alpha_by_width;
     lanes[11..14].copy_from_slice(&rgb);
@@ -695,6 +709,40 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn half_inverse_scale_matches_native_replay() {
+        let fixture = fixture();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "v5_exact_combined")
+            .unwrap();
+        let input = saved_input(case).unwrap();
+        let records =
+            sample_with_inverse_scale(&input, native_alpha_state(case).unwrap(), 0.5).unwrap();
+        let native = include_bytes!("../../../../conformance/pencil2-v14-inverse-half-native.bin");
+        assert_eq!(
+            sha256(native),
+            "90411693fc5886863b702db2407776f3dc7358685ae2047a2b1e40f476f4ab60"
+        );
+        assert_eq!(records.len() * 56, native.len());
+        for (index, record) in records.iter().enumerate() {
+            for lane in 0..14 {
+                let offset = index * 56 + lane * 4;
+                let expected = u32::from_le_bytes(native[offset..offset + 4].try_into().unwrap());
+                assert_eq!(
+                    record.lanes[lane].to_bits(),
+                    expected,
+                    "record {index}, lane {lane}"
+                );
+            }
+        }
+        assert!(
+            sample_with_inverse_scale(&input, native_alpha_state(case).unwrap(), 0.75).is_err()
+        );
     }
 
     // Fresh controlled Model/Drawing context with fixed opacity disabled. This
