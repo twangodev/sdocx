@@ -1085,3 +1085,16 @@ retained prototype and temporary test patch are
 `tmp/marker-owner-boolean/src/bin/direct_pdf_form.rs` and
 `scratch/legacy-marker-krilla-replacement.patch`. No Marker production dispatch
 is enabled.
+
+A scratch typed Form compiler now prepares its resource graph before marker
+replacement, charging attempted path work to a page budget and committing
+resource reservations only after successful compilation. In a temporary
+Krilla test, the source-generated long control rendered at MuPDF/PDFium RGB L1
+4951/4249, with a 107 KB PDF. The detached graph must be made reachable from a
+temporary trailer root before `lopdf` renumbers its object references; omitting
+that step produced invalid resources and a large visual error. Three focused
+scratch tests passed, including budget reservation rollback. This remains a
+test-only graph import without production scene integration or a proven PDF
+library allocation bound. Reproduction is retained in
+`tmp/marker-owner-boolean/src/bin/direct_pdf_prepared.rs` and
+`scratch/legacy-marker-prepared-krilla.patch`.
