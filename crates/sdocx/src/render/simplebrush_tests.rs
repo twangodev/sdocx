@@ -121,6 +121,30 @@ fn size_sixteen_admits_three_or_four_points() {
     );
 }
 
+#[test]
+fn six_point_admission_is_bounded_to_captured_sizes() {
+    let mut source = stroke();
+    for point in [
+        Point { x: 39.0, y: 31.0 },
+        Point { x: 45.0, y: 35.0 },
+        Point { x: 52.0, y: 39.0 },
+    ] {
+        source.points.push(point);
+        source.pressures.push(f64::from(0.4_f32));
+    }
+    for size in [4.0, 8.0, 12.0, 16.0] {
+        source.pen_width = size;
+        source.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        assert_eq!(
+            crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok(),
+            size == 4.0 || size == 16.0
+        );
+    }
+    source.points.push(Point { x: 60.0, y: 42.0 });
+    source.pressures.push(f64::from(0.4_f32));
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_err());
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn options_default_for_legacy_data_and_roundtrip_profile() {

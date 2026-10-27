@@ -318,7 +318,10 @@ pub(crate) fn prepare_stroke(
     {
         return Err("unsupported SimpleBrush size");
     }
-    if !matches!(stroke.points.len(), 3 | 4) || stroke.pressures.len() != stroke.points.len() {
+    if !(matches!(stroke.points.len(), 3 | 4)
+        || (stroke.points.len() == 6 && matches!(size.to_bits(), 0x4080_0000 | 0x4180_0000)))
+        || stroke.pressures.len() != stroke.points.len()
+    {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -692,7 +695,7 @@ mod tests {
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    fn v25_paint_control(size: u32, four: bool, alt: bool) {
+    fn v25_paint_control(size: u32, four: bool, alt: bool, six: bool) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -703,6 +706,12 @@ mod tests {
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
         let native: &[u8] = match (four, size) {
+            (_, 4) if six => {
+                include_bytes!("../../../../conformance/simplebrush-six-size4-crop.rgba")
+            }
+            (_, 16) if six => {
+                include_bytes!("../../../../conformance/simplebrush-six-size16-crop.rgba")
+            }
             (true, 16) if alt => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba"
             ),
@@ -736,6 +745,8 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            (_, 4) if six => include_str!("../../../../conformance/simplebrush-six-size4.json"),
+            (_, 16) if six => include_str!("../../../../conformance/simplebrush-six-size16.json"),
             (true, 16) if alt => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four-size16-alt.json")
             }
@@ -767,23 +778,40 @@ mod tests {
         .unwrap();
         assert_eq!(
             format!("{:x}", Sha256::digest(native)),
-            receipt["paint_observation"]["crop"]["sha256"]
-                .as_str()
-                .unwrap()
+            (if six {
+                &receipt["crop"]["sha256"]
+            } else {
+                &receipt["paint_observation"]["crop"]["sha256"]
+            })
+            .as_str()
+            .unwrap()
         );
-        let points: &[[f32; 2]] = if alt {
+        let points: &[[f32; 2]] = if six {
+            &[
+                [0., 0.],
+                [10., 0.],
+                [20., 5.],
+                [29., 11.],
+                [37., 8.],
+                [45., 15.],
+            ]
+        } else if alt {
             &[[0., 0.], [8., 8.], [17., 3.], [27., 8.]]
         } else if four {
             &[[0., 0.], [10., 0.], [20., 5.], [29., 11.]]
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if four {
+        let pressures: &[f32] = if six {
+            &[0.5, 0.25, 0.75, 0.4, 0.6, 0.3]
+        } else if four {
             &[0.5, 0.25, 0.75, 0.4]
         } else {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            (_, 4) if six => 211,
+            (_, 16) if six => 623,
             (false, 4) => 80,
             (false, 8) => 137,
             (false, 12) => 185,
@@ -797,7 +825,9 @@ mod tests {
             _ => unreachable!(),
         };
         let size = size as f32;
-        let (crop_width, crop_height) = if four || size == 16.0 {
+        let (crop_width, crop_height) = if six {
+            (64, 32)
+        } else if four || size == 16.0 {
             (40, 20)
         } else {
             (32, 16)
@@ -805,7 +835,11 @@ mod tests {
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
         assert_eq!(
             samples.len(),
-            if four && size == 16.0 {
+            if six && size == 4.0 {
+                36
+            } else if six {
+                24
+            } else if four && size == 16.0 {
                 16
             } else if alt {
                 22
@@ -828,7 +862,13 @@ mod tests {
             .collect();
         assert_eq!(
             format!("{:x}", Sha256::digest(&geometry)),
-            receipt["input"]["geometry_vector_sha256"].as_str().unwrap()
+            (if six {
+                &receipt["geometry_sha256"]
+            } else {
+                &receipt["input"]["geometry_vector_sha256"]
+            })
+            .as_str()
+            .unwrap()
         );
         let mut svg = String::from(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>"##,
@@ -955,7 +995,7 @@ mod tests {
                 let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
                 let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
                 use std::io::Write as _;
-                let path = directory.join(format!("{name}-{size}-{four}-{alt}.pdf"));
+                let path = directory.join(format!("{name}-{size}-{four}-{alt}-{six}.pdf"));
                 let mut file = std::fs::OpenOptions::new()
                     .write(true)
                     .create_new(true)
@@ -1051,6 +1091,13 @@ mod tests {
         assert!(profiled_metrics.4 < fallback_metrics.4);
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn six_point_public_paint_controls() {
+        v25_paint_control(4, false, false, true);
+        v25_paint_control(16, false, false, true);
+    }
+
     #[test]
     fn size4_candidate_geometry_matches_native() {
         let receipt: Value = serde_json::from_str(include_str!(
@@ -1080,34 +1127,78 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size4_paint_control() {
-        v25_paint_control(4, false, false);
+        v25_paint_control(4, false, false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size16_paint_control() {
-        v25_paint_control(16, false, false);
+        v25_paint_control(16, false, false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(8, false, false);
+        v25_paint_control(8, false, false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(12, false, false);
+        v25_paint_control(12, false, false, false);
     }
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_four_point_paint_control() {
-        v25_paint_control(4, true, false);
-        v25_paint_control(4, true, true);
-        v25_paint_control(8, true, false);
-        v25_paint_control(12, true, false);
-        v25_paint_control(16, true, false);
-        v25_paint_control(16, true, true);
+        v25_paint_control(4, true, false, false);
+        v25_paint_control(4, true, true, false);
+        v25_paint_control(8, true, false, false);
+        v25_paint_control(12, true, false, false);
+        v25_paint_control(16, true, false, false);
+        v25_paint_control(16, true, true, false);
+    }
+}
+
+#[cfg(test)]
+mod six_point_native_probe {
+    use super::{NativeInput, generate};
+
+    #[test]
+    fn six_point_native_geometry() {
+        let points = [
+            [0., 0.],
+            [10., 0.],
+            [20., 5.],
+            [29., 11.],
+            [37., 8.],
+            [45., 15.],
+        ];
+        let pressures = [0.5, 0.25, 0.75, 0.4, 0.6, 0.3];
+        for (size, expected) in [
+            (
+                4.,
+                &include_bytes!("../../../../conformance/simplebrush-six-size4-geometry.bin")[..],
+            ),
+            (
+                16.,
+                &include_bytes!("../../../../conformance/simplebrush-six-size16-geometry.bin")[..],
+            ),
+        ] {
+            let samples = generate(NativeInput {
+                points: &points,
+                pressures: &pressures,
+                size,
+                tool_type: 2,
+                curve_enabled: true,
+                max_samples: 10000,
+            })
+            .unwrap();
+            let bytes: Vec<u8> = samples
+                .into_iter()
+                .flatten()
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            assert_eq!(bytes, expected, "size {size}");
+        }
     }
 }

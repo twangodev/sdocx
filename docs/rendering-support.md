@@ -106,13 +106,14 @@ dispatch, not complete version coverage or visual parity.
 
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null settings, tool 2,
-curve-enabled strokes without saved stylus channels, with three or four points
-and sizes 4, 8, 12 or 16; unsupported
+curve-enabled strokes without saved stylus channels, with three or four points and sizes 4, 8, 12 or 16, or six points
+and sizes 4 or 16; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
 output pixel for its fringe. Each scene has a shared stamp budget, and sliced
 exports omit off-slice stamps while retaining boundary intersections. It is not validated for general saved notes,
 other scales, device rendering, or replay parity.
+Two six-point synthetic host controls at sizes 4 and 16 match native geometry bit for bit. Their SVG support overlaps native support at 211/211 and 623/623 pixels, versus 95/211 and 248/623 for generic paint. Rasterized PDF overlap is 188/211 and 582/623, versus 105/211 and 267/623 for generic paint. These are bounded host controls.
 For one clipped synthetic size-8 SimpleBrush host-Mesa control, the profile's SVG has
 137/137 native support overlap,
 versus 40/137 for the generic fallback; its total alpha error is 737 versus
