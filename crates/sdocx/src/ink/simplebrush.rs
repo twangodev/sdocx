@@ -316,10 +316,7 @@ pub(crate) fn prepare_stroke(
     {
         return Err("unsupported SimpleBrush size");
     }
-    if !matches!(stroke.points.len(), 3 | 4)
-        || (size == 4.0 && stroke.points.len() != 3)
-        || stroke.pressures.len() != stroke.points.len()
-    {
+    if !matches!(stroke.points.len(), 3 | 4) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -693,7 +690,7 @@ mod tests {
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    fn v25_paint_control(size: u32, four: bool) {
+    fn v25_paint_control(size: u32, four: bool, alt: bool) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -704,6 +701,9 @@ mod tests {
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
         let native: &[u8] = match (four, size) {
+            (true, 4) if alt => include_bytes!(
+                "../../../../conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba"
+            ),
             (false, 4) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size4-crop.rgba")
             }
@@ -712,6 +712,9 @@ mod tests {
             }
             (false, 12) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
+            }
+            (true, 4) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-four-size4-crop.rgba")
             }
             (true, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")
@@ -722,10 +725,16 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            (true, 4) if alt => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four-size4-alt.json")
+            }
             (false, 4) => include_str!("../../../../conformance/simplebrush-paint-v25-size4.json"),
             (false, 8) => include_str!("../../../../conformance/simplebrush-paint-v25.json"),
             (false, 12) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
+            }
+            (true, 4) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four-size4.json")
             }
             (true, 8) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four.json")
@@ -742,7 +751,9 @@ mod tests {
                 .as_str()
                 .unwrap()
         );
-        let points: &[[f32; 2]] = if four {
+        let points: &[[f32; 2]] = if alt {
+            &[[0., 0.], [8., 8.], [17., 3.], [27., 8.]]
+        } else if four {
             &[[0., 0.], [10., 0.], [20., 5.], [29., 11.]]
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
@@ -756,6 +767,8 @@ mod tests {
             (false, 4) => 80,
             (false, 8) => 137,
             (false, 12) => 185,
+            (true, 4) if alt => 151,
+            (true, 4) => 128,
             (true, 8) => 214,
             (true, 12) => 295,
             _ => unreachable!(),
@@ -765,7 +778,11 @@ mod tests {
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
         assert_eq!(
             samples.len(),
-            if four {
+            if alt {
+                22
+            } else if four && size == 4.0 {
+                24
+            } else if four {
                 18
             } else if size == 4.0 {
                 17
@@ -906,7 +923,14 @@ mod tests {
             ] {
                 let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
                 let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
-                std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
+                use std::io::Write as _;
+                let path = directory.join(format!("{name}-{size}-{four}-{alt}.pdf"));
+                let mut file = std::fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(path)
+                    .unwrap();
+                file.write_all(&pdf).unwrap();
             }
         }
         let raster = |source: &str| {
@@ -1026,24 +1050,26 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size4_paint_control() {
-        v25_paint_control(4, false);
+        v25_paint_control(4, false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(8, false);
+        v25_paint_control(8, false, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(12, false);
+        v25_paint_control(12, false, false);
     }
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_four_point_paint_control() {
-        v25_paint_control(8, true);
-        v25_paint_control(12, true);
+        v25_paint_control(4, true, false);
+        v25_paint_control(4, true, true);
+        v25_paint_control(8, true, false);
+        v25_paint_control(12, true, false);
     }
 }

@@ -107,7 +107,7 @@ dispatch, not complete version coverage or visual parity.
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null settings, tool 2,
 curve-enabled strokes without saved stylus channels, with three or four points
-and sizes 8 or 12, or three points at size 4; unsupported
+and sizes 4, 8 or 12; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
 output pixel for its fringe. Each scene has a shared stamp budget, and sliced
@@ -131,6 +131,7 @@ at size 12 it overlaps 295/297 versus 119/295, with two additional fringe
 pixels. MuPDF rasterization of the size-12 PDF overlaps 275/297 versus 119/295
 for fallback. These remain synthetic host controls.
 For the three-point [size-4 control](../conformance/simplebrush-paint-v25-size4.json), geometry matches the native vector. Profile SVG overlaps 80/80 native pixels versus 31/80 for fallback, with alpha error 761 versus 13,579. A 1× MuPDF PDF raster overlaps 68/83 versus 31/80, with alpha error 3,154 versus 13,210. These remain synthetic host controls.
+Two four-point size-4 host controls, a [bent stroke](../conformance/simplebrush-paint-v25-four-size4.json) and a [zigzag](../conformance/simplebrush-paint-v25-four-size4-alt.json), match native geometry. Profile SVG support overlaps 128/128 and 151/151 versus 55/128 and 72/151 for fallback. Their MuPDF PDF overlaps are 115/134 and 128/157 versus 61/128 and 74/151 for fallback; alpha error also decreases in both. These synthetic captures do not establish device parity.
 Four captured geometry streams also pass through a test-only public `Stroke`
 adapter with an explicit identity coordinate context. Its synthetic saved curve
 flag uses property bit 0, which native controls identify as `IsCurveEnabled`;
