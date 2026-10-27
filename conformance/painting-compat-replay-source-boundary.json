@@ -1,0 +1,36 @@
+{
+  "schema": "sdocx-painting-compat-replay-source-boundary-v1",
+  "scope": "Static AArch64 disassembly only; no runtime playback, native pixels, ordinary Notes replay or Android claim.",
+  "library_sha256": "fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8",
+  "symbol": "SPen::PaintingCompatReplayDrawing::DrawObjectStroke(void*, SPen::ObjectStroke*, int, int, SPen::RectF*)",
+  "symbol_rva": "0x64a84",
+  "disassembly_path": "tmp/legacy-marker-source-controls/painting-replay-draw.asm",
+  "disassembly_sha256": "e12b4e48165b5e96379031db679e3ff819d5e39e76fe529a706de75608f895ce",
+  "observations": [
+    {
+      "rva": "0x64ab8\u20130x64abc",
+      "observation": "Copies third and fourth call arguments into w22 and w24 respectively."
+    },
+    {
+      "rva": "0x64b6c\u20130x64b90",
+      "observation": "Calls native source getters for points, pressure, timestamps and point count."
+    },
+    {
+      "rva": "0x64b94\u20130x64bac",
+      "observation": "Selects MotionEvent action 0 when index w24 is zero, 1 when nonzero and equal to point_count-1, otherwise 2."
+    },
+    {
+      "rva": "0x64e18\u20130x64e30",
+      "observation": "Stores a MotionEvent pointer, applies selected action and increments receiver member at byte offset 528."
+    },
+    {
+      "rva": "0x64e34\u20130x64ea8",
+      "observation": "Branches between MotionEvent AddBatch and TouchStrokeDrawing OnTouch based on sample index and receiver state."
+    }
+  ],
+  "limitations": [
+    "PaintingCompat replay belongs to the painting subsystem; equivalence to normal Samsung Notes replay is not established.",
+    "The existing Marker harness invokes completed ObjectDrawing saved redraw; it does not construct or exercise PaintingCompatReplay lifecycle, its native PageDoc/bitmap manager, TouchStrokeDrawing state, timer scheduling or framebuffer presentation.",
+    "Finished truncated strokes are not replay-frame controls. Source inspection does not provide native runtime or SVG/PDF comparison."
+  ]
+}

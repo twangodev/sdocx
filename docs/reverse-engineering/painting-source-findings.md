@@ -463,7 +463,11 @@ The latter consumes these model channels:
 
 At `0x64d90` these values feed the `MotionEvent` constructor, rather than
 being inferred from the foreground image. Pen identity and settings are used
-at `0x64ac8`, `0x64b10`, `0x64b64`. Replay still draws into native pen canvases
+at `0x64ac8`, `0x64b10`, `0x64b64`. A [static boundary receipt](../../conformance/painting-compat-replay-source-boundary.json)
+records how the sample index selects action 0 for the first sample, 1 for the
+last and 2 for intermediates before native `OnTouch` or batching. This is
+PaintingCompat source evidence, not an executed replay capture or proof of the
+ordinary Notes replay path. Replay still draws into native pen canvases
 and bitmaps. Preserving the samples is different from reproducing every
 brush's pigment, wet/dry state, texture or blend appearance as SVG.
 
