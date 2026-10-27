@@ -4366,7 +4366,10 @@ fn prepare_inkpen2_v9(
     }) {
         return None;
     }
-    if active_rainbow && output.vertices.iter().any(|record| record[5] != 1.0) {
+    if active_rainbow
+        && (output.vertices.iter().any(|record| record[5] != 1.0)
+            || !inkpen2_vector::valid_record_rgb(&output.vertices))
+    {
         return None;
     }
     if output.vertices.is_empty() {
@@ -9955,6 +9958,51 @@ mod tests {
                 "active AA-off gradients retain vector PDF shading"
             );
         }
+    }
+
+    #[test]
+    fn inkpen2_out_of_range_rainbow_uses_whole_stroke_fallback() {
+        // The native color callback saturates its quotient for this finite
+        // offset and can emit RGB far outside [0, 1]. Those values cannot be
+        // represented by the admitted SVG and PDF per-stamp paint routes.
+        let mut stroke = inkpen2_active_rainbow_hybrid_stroke();
+        stroke.rendering.as_mut().unwrap().style.rainbow_offset = Some(1.0e20);
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        assert!(
+            prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false)).is_none()
+        );
+
+        stroke.bbox = BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 24.,
+            y_max: 3.,
+        };
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        page.objects = vec![stroke.into()];
+        let doc = document(page);
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            chinesebrush_profile: None,
+            ..RenderOptions::default()
+        };
+        let fallback = RenderOptions {
+            inkpen2_profile: None,
+            ..options.clone()
+        };
+        assert_eq!(
+            render_document_svg(&doc, &options).remove(0).svg,
+            render_document_svg(&doc, &fallback).remove(0).svg
+        );
+        #[cfg(feature = "pdf")]
+        crate::render_document_pdf(&doc, &options, &crate::PdfOptions::default())
+            .expect("unsupported rainbow RGB must fall back before PDF registration");
     }
 
     #[test]

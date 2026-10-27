@@ -118,7 +118,7 @@ fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) 
     });
 }
 
-fn valid_record_rgb(records: &[[f32; 9]]) -> bool {
+pub(super) fn valid_record_rgb(records: &[[f32; 9]]) -> bool {
     records.iter().all(|record| {
         record[6..9]
             .iter()
