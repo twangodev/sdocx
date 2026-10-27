@@ -1,0 +1,156 @@
+{
+  "schema": "sdocx.airbrush-v1-replay-boundaries.v1",
+  "native_library_sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+  "helper_sha256": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+  "capture_script_sha256": "dec62a25fd2e1ed8d98097ef0e34c4b453d442989cf0f719ecdbebc902174a9b",
+  "capture_sha256": "a9ec28363c8ad4568b86ad0b22b2b09764eba5da0c7a8f9a7c52c529c4069153",
+  "command": "PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin:tmp/conformance-cleanup/native-capture-a241793/conformance LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu python3 tmp/vector-parity-plan/pen-family-audit/airbrush-v1-replay-boundaries/capture.py",
+  "scope": "Native V1 and V2 MotionEvent RedrawPen with synthetic history, endpoint, queue and callback hosts; hooks at native drawLine and endPen entry/return count native AddPoint rows. V1 helper installs synthetic RTV1 object and vtable; V2 helper uses native constructor and RTV1 subobject. Not captured physical events, deserialization, progressive canvas display, or GPU output.",
+  "cases": [
+    {
+      "id": "straight",
+      "calls": [
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 10
+        },
+        {
+          "call": "endPen",
+          "entry": 10,
+          "exit": 40
+        }
+      ],
+      "v1_v2_rows_and_boundaries_equal": true
+    },
+    {
+      "id": "curve",
+      "calls": [
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 4
+        },
+        {
+          "call": "drawLine",
+          "entry": 4,
+          "exit": 4
+        },
+        {
+          "call": "drawLine",
+          "entry": 4,
+          "exit": 20
+        },
+        {
+          "call": "endPen",
+          "entry": 20,
+          "exit": 32
+        }
+      ],
+      "v1_v2_rows_and_boundaries_equal": true
+    },
+    {
+      "id": "short",
+      "calls": [
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 1
+        },
+        {
+          "call": "drawLine",
+          "entry": 1,
+          "exit": 1
+        },
+        {
+          "call": "drawLine",
+          "entry": 1,
+          "exit": 1
+        },
+        {
+          "call": "drawLine",
+          "entry": 1,
+          "exit": 2
+        },
+        {
+          "call": "drawLine",
+          "entry": 2,
+          "exit": 2
+        },
+        {
+          "call": "endPen",
+          "entry": 2,
+          "exit": 3
+        }
+      ],
+      "v1_v2_rows_and_boundaries_equal": true
+    },
+    {
+      "id": "source1002",
+      "calls": [
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 0
+        },
+        {
+          "call": "drawLine",
+          "entry": 0,
+          "exit": 1
+        },
+        {
+          "call": "drawLine",
+          "entry": 1,
+          "exit": 1
+        },
+        {
+          "call": "drawLine",
+          "entry": 1,
+          "exit": 1
+        },
+        {
+          "call": "endPen",
+          "entry": 1,
+          "exit": 2
+        }
+      ],
+      "v1_v2_rows_and_boundaries_equal": true
+    },
+    {
+      "id": "empty",
+      "calls": [
+        {
+          "call": "endPen",
+          "entry": 0,
+          "exit": 1
+        }
+      ],
+      "v1_v2_rows_and_boundaries_equal": true
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "capture_sha256": "857c5aae17d54ff6200fa488f6ebdb9d2b92ee16f2a67b90ee03cfd638c3dfbd",
+  "input": {
+    "advanced_setting_mode": "unset",
+    "curve_enabled": true,
+    "orientations_f32_le": "cdcc4c3ecdcc4c3e",
+    "points_f32_le": "00740043008400430074004300840043",
+    "pressures_f32_le": "9a99993e9a99993e",
+    "size": 3.1440000534057617,
+    "tilts_f32_le": "8fc2f53d8fc2f53d",
+    "timestamps_i32_le": "2c0100003b010000",
+    "tool_type": 2,
+    "viewport": [
+      256,
+      256
+    ]
+  },
+  "native_libraries_sha256": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "result": {
+    "buffer_hex": "0074004300840043000000000000803f",
+    "draw_result": 1,
+    "native_path_entry_counts": {
+      "AddPoint(": 1,
+      "RedrawPen(": 3,
+      "drawLine(": 0,
+      "drawPoint(": 1,
+      "endPen(": 1,
+      "startPen(": 0
+    },
+    "pen_gl_render_message_count": 1,
+    "producer_callback_count": 1,
+    "redraw_target_symbols": [
+      "non-virtual thunk to SPen::AirBrushPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ],
+    "selected_drawable_profile_version": 1
+  },
+  "runner_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/stationary-two-capture.py",
+  "runner_sha256": "6c9feff55953a5b1fa4dae34261c725540813fbad491c4e7d18ee46f3c9ec39a",
+  "schema": "sdocx.airbrush-v1-stationary-two-native.v1",
+  "scope": "Synthetic Model ObjectStroke setters and host callbacks, native Drawing and AirBrush, synchronous host queue. Not a deserialized note or Android GPU result. No framebuffer readback was captured."
+}

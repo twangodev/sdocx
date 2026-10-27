@@ -55,6 +55,15 @@ pub(crate) struct Prepared {
 }
 
 pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -> Option<Prepared> {
+    prepare_source(stroke, theme, viewport, false)
+}
+
+pub(crate) fn prepare_source(
+    stroke: &Stroke,
+    theme: RenderTheme,
+    viewport: [u32; 2],
+    v1: bool,
+) -> Option<Prepared> {
     if viewport.contains(&0) {
         return None;
     }
@@ -69,7 +78,7 @@ pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -
     if source_bytes > MAX_SOURCE_BYTES {
         return None;
     }
-    let source = airbrush::saved_v2_from_stroke(stroke)?;
+    let source = airbrush::saved_from_stroke(stroke, v1)?;
     if source.rows.is_empty() || source.rows.len() > MAX_STAMPS {
         return None;
     }

@@ -60,7 +60,7 @@ fn midpoint(a: P, b: P) -> P {
 /// only their observed AddPoint stream, not those side effects.
 pub(super) fn saved_redraw(input: Input<'_>) -> Option<Output> {
     let first = *input.history.first()?;
-    if input.history.len() <= MAX_POINTS
+    if (2..=MAX_POINTS).contains(&input.history.len())
         && v2_spacing(input.size).is_some()
         && first.x.is_finite()
         && first.y.is_finite()
@@ -433,11 +433,19 @@ pub(crate) struct SavedV2Output {
 /// Saved playback derives MotionEvent source zero in the native wrapper; each
 /// redraw initializes fresh V2 state and resets its stamp counter.
 pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Output> {
+    saved_from_stroke(stroke, false)
+}
+
+pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<SavedV2Output> {
     let rendering = stroke.rendering.as_ref()?;
-    if !matches!(
-        rendering.advanced_settings.as_deref(),
-        Some("") | Some("2;")
-    ) || !rendering.properties.compressed
+    if !(if v1 {
+        rendering.advanced_settings.is_none()
+    } else {
+        matches!(
+            rendering.advanced_settings.as_deref(),
+            Some("") | Some("2;")
+        )
+    }) || !rendering.properties.compressed
         || rendering.tool_type_raw != 2
     {
         return None;
@@ -488,16 +496,32 @@ pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Outp
     {
         return None;
     }
-    let output = saved_redraw_v2(V2Input {
-        history: &points[..count - 1],
-        endpoint: *points.last()?,
-        initial_position: points[0],
-        size,
-        tolerance: size / 20.0,
-        tool_type: 2,
-        source: 0,
-        counter_seed: 0,
-    })?;
+    let output = if v1 {
+        saved_redraw(Input {
+            history: &points[..count - 1],
+            endpoint: *points.last()?,
+            size,
+            tool_type: 2,
+            source: 0,
+            runtime: Runtime { counter_seed: 0 },
+        })?
+    } else {
+        let output = saved_redraw_v2(V2Input {
+            history: &points[..count - 1],
+            endpoint: *points.last()?,
+            initial_position: points[0],
+            size,
+            tolerance: size / 20.0,
+            tool_type: 2,
+            source: 0,
+            counter_seed: 0,
+        })?;
+        Output {
+            stamps: output.stamps,
+            history_ends: output.history_ends,
+            terminal: output.terminal,
+        }
+    };
     if output.stamps.len() > MAX_STAMPS
         || output.history_ends.len() != count.saturating_sub(2)
         || output.history_ends.windows(2).any(|ends| ends[0] > ends[1])
@@ -528,6 +552,55 @@ pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Outp
 mod tests {
     use super::*;
     use serde_json::Value;
+
+    #[test]
+    fn v1_replay_boundaries_match_native_calls() {
+        // Native MotionEvent redraw captures, including empty drawLine calls:
+        // conformance/airbrush-v1-replay-boundaries-native.json.
+        let curve = [(0., 0.), (8., 5.), (16., 0.), (24., -5.)].map(|(x, y)| P { x, y });
+        let short = std::array::from_fn::<_, 8, _>(|i| P {
+            x: i as f32 * 0.0625,
+            y: 0.,
+        });
+        for (history, endpoint, size, source, ends, terminal) in [
+            (
+                &curve[..],
+                P { x: 32., y: 0. },
+                10.,
+                0,
+                vec![4, 4, 20],
+                20..32,
+            ),
+            (
+                &short[..],
+                P { x: 0.5, y: 0. },
+                14.,
+                0,
+                vec![0, 0, 1, 1, 1, 2, 2],
+                2..3,
+            ),
+            (
+                &short[..],
+                P { x: 0.5, y: 0. },
+                14.,
+                4098,
+                vec![0, 0, 0, 0, 1, 1, 1],
+                1..2,
+            ),
+        ] {
+            let output = saved_redraw(Input {
+                history,
+                endpoint,
+                size,
+                tool_type: 2,
+                source,
+                runtime: Runtime { counter_seed: 0 },
+            })
+            .unwrap();
+            assert_eq!(output.history_ends, ends);
+            assert_eq!(output.terminal, terminal);
+        }
+    }
 
     fn point(value: &Value) -> P {
         let v = value.as_array().unwrap();
@@ -755,6 +828,36 @@ mod tests {
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect();
         f32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    #[test]
+    fn v1_two_point_stationary_drawing_matches_native_stamp() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-v1-stationary-two-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["result"]["selected_drawable_profile_version"], 1);
+        let point = P {
+            x: 128.453_13,
+            y: 128.515_63,
+        };
+        let output = saved_redraw(Input {
+            history: &[point],
+            endpoint: point,
+            size: fixture["input"]["size"].as_f64().unwrap() as f32,
+            tool_type: 2,
+            source: 0,
+            runtime: Runtime { counter_seed: 0 },
+        })
+        .unwrap();
+        let actual: String = output
+            .stamps
+            .iter()
+            .flat_map(|stamp| stamp.values)
+            .flat_map(f32::to_le_bytes)
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        assert_eq!(actual, fixture["result"]["buffer_hex"].as_str().unwrap());
     }
 
     #[test]

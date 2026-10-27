@@ -125,18 +125,21 @@ pub struct InkPen2RenderProfile {
     pub enhanced_antialias: bool,
 }
 
-/// Explicit opt-in to the captured saved AirBrush GLV2 texture route.
+/// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
-/// This route accepts empty or `2;` advanced settings, tool type 2, and the
-/// normal saved style flags. It uses pinned Rust libm for deterministic stamp
-/// angles; Android sincosf parity and arbitrary output transforms are not
-/// claimed. The profile intentionally has no screen dimensions because V2
-/// stamp generation does not read the pen screen-size fields.
+/// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
+/// accepts a null advanced setting for static output; replay and empty stamp
+/// streams use generic rendering. `SavedV2` accepts empty or `2;` settings.
+/// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
+/// parity and arbitrary output transforms remain unverified. Stamp angles use
+/// pinned Rust libm, so Android sincosf parity is not claimed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
     /// Empty or `2;` saved setting selecting native AirBrush GLV2.
     SavedV2,
+    /// Null saved setting selecting native AirBrush GLV1; static output only.
+    SavedV1,
 }
 
 /// Opt into the experimental SimpleBrush vector approximation based on one
@@ -317,7 +320,7 @@ pub struct RenderOptions {
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
-    /// Explicit opt-in to a bounded saved AirBrush GLV2 intrinsic-texture route.
+    /// Explicit opt-in to a bounded saved AirBrush intrinsic-texture route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub airbrush_profile: Option<AirBrushRenderProfile>,
     /// Experimental SimpleBrush host-capture approximation; replay uses generic paint.
@@ -3779,6 +3782,14 @@ fn render_stroke(
         if pencil3::render_slice(svg, &ink, context, replay_index, page_y_range) {
             return;
         }
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && airbrush_profile == Some(AirBrushRenderProfile::SavedV1)
+        && let Some(paint) = airbrush::prepare_source(stroke, theme, viewport, true)
+        && airbrush::render(svg, &paint, None)
+    {
+        return;
     }
     if native_allowed
         && airbrush_profile == Some(AirBrushRenderProfile::SavedV2)
@@ -11829,6 +11840,149 @@ mod tests {
         page.objects = vec![stroke.into()];
         document.metadata.dark_mode_compatibility = Some(false);
         document
+    }
+
+    #[test]
+    fn saved_v1_profile_keeps_unsupported_and_replay_fallbacks() {
+        let mut document = public_airbrush_v2_document();
+        document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = None;
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV1),
+            ..RenderOptions::default()
+        };
+        let default = RenderOptions::default();
+        let svg =
+            |doc: &Document, opts: &RenderOptions| render_document_svg(doc, opts).remove(0).svg;
+        assert!(svg(&document, &options).contains("data:image/png;base64,"));
+        let layout = layout_document(&document);
+        let replay = render_layout_page_replay_svg(&document, &layout, 0, &options).unwrap();
+        let generic_replay =
+            render_layout_page_replay_svg(&document, &layout, 0, &default).unwrap();
+        assert_eq!(replay.svg, generic_replay.svg);
+
+        for setting in ["", "2;", "1;"] {
+            document.pages[0]
+                .strokes_mut()
+                .next()
+                .unwrap()
+                .rendering
+                .as_mut()
+                .unwrap()
+                .advanced_settings = Some(setting.into());
+            assert_eq!(
+                svg(&document, &options),
+                svg(&document, &default),
+                "setting {setting:?}"
+            );
+        }
+
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        stroke.points = vec![
+            Point {
+                x: 128.453125,
+                y: 128.515625
+            };
+            5
+        ];
+        stroke.pressures = vec![0.3; 5];
+        stroke.tilts = vec![0.12; 5];
+        stroke.orientations = vec![0.2; 5];
+        stroke.timestamps = vec![300, 315, 330, 345, 360];
+        assert_eq!(
+            svg(&document, &options),
+            svg(&document, &default),
+            "zero-stamp fallback"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v1_public_short_stroke_matches_native_frame() {
+        use sha2::{Digest, Sha256};
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-short-v1-v2-native.json"
+        ))
+        .unwrap();
+        let case = &evidence["cases"][0];
+        assert_eq!(case["selected_drawable_profile_version"], 1);
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = [128.453125, 128.484375, 128.515625, 128.546875, 128.578125]
+            .into_iter()
+            .map(|x| Point { x, y: 128.515625 })
+            .collect();
+        stroke.pressures = vec![0.3; 5];
+        stroke.tilts = vec![0.12; 5];
+        stroke.orientations = vec![0.2; 5];
+        stroke.timestamps = vec![300, 315, 330, 345, 360];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.style.color_argb = Some(0xff44aaee);
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        for (x, y, rgba) in [
+            (127, 126, [0, 1, 1, 1]),
+            (128, 126, [6, 16, 22, 23]),
+            (129, 126, [0, 1, 1, 1]),
+            (127, 127, [6, 14, 20, 22]),
+            (128, 127, [14, 34, 48, 52]),
+            (129, 127, [3, 8, 11, 12]),
+            (127, 128, [0, 1, 1, 1]),
+            (128, 128, [4, 9, 13, 14]),
+            (129, 128, [0, 1, 1, 1]),
+        ] {
+            let offset = (y * 256 + x) * 4;
+            expected[offset..offset + 4].copy_from_slice(&rgba);
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&expected)),
+            case["post_rgba8_sha256"].as_str().unwrap()
+        );
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV1),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let rendered = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        let tree =
+            resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let flipped: Vec<u8> = expected
+            .as_chunks::<{ 256 * 4 }>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(pixmap.data())),
+            format!("{:x}", Sha256::digest(&flipped)),
+            "public V1 SVG versus native host frame"
+        );
     }
 
     #[cfg(feature = "pdf")]
