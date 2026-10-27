@@ -226,12 +226,21 @@ Fresh selectors distinguish empty/`4;` (V3) from `3;` (V1). V3 preparation has
 source/output budgets and native size clamps. Public SVG/PDF reuse the original
 brush and paper textures with vector stamp geometry; these are intrinsic image
 assets, not rendered-stroke bitmaps. Matching sampler controls improve on the
-generic fallback across five consumers; PDF residuals remain. Supplied-paper
+generic fallback across five consumers; PDF residuals remain. A fresh 1×
+[host-control comparison](../conformance/pencil3-finite-plane-host-comparison.json)
+of the current finite-plane route measured RGB mean
+absolute error of 1.53 in resvg 0.45.1 and 20.38 in MuPDF 1.28.2 for clamp, versus 65.64 and
+56.95 for generic fallback on each renderer's shared support region. The two
+regions differ; these are not device or cross-renderer parity claims. Supplied-paper
 sampling is producer-owned, while built-in paper repeats. Context defaults,
 real-document/device validation remain integration gaps. Profile-aware replay
 uses source-event particle cutoffs; viewport-aware metadata checks the same
 canvas, particle and paper-plane eligibility as paint. A later image allocation
 or encoding failure can still make rendering fall back after metadata preparation.
+Slice rendering culls off-slice particles while retaining their original replay
+indices; a same-viewport resvg control matches the unculled scene. In a
+separate full-page versus one-unit-slice control, resvg produced channel
+differences up to 186, so cross-viewport texture sampling remains unresolved.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp

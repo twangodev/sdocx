@@ -1,0 +1,120 @@
+{
+  "schema": "sdocx-pencil3-finite-plane-host-comparison-v1",
+  "scope": "Current public profile and generic SVG/PDF vs retained 1x synthetic native host Mesa captures; not a device or saved-note parity claim. Each renderer uses its own common five-way support ROI and background baseline.",
+  "native": {
+    "clamp": {
+      "path": "tmp/conformance-cleanup/native-capture-a241793/tmp/vector-parity-plan/pencil3-topdown-x60-screen2560x1440-clamp.json",
+      "fixture_sha256": "ed22139153b58b069b215aac2bb77542c3469200a76a9e319f994e356914c5ae",
+      "raw_gl_rgba_sha256": "232cdeee1be0ca589e5c3c8cecd802df58a481ac63ea110349907135c14689a0",
+      "topdown_rgba_sha256": "bf5b15fcaf02470520e7cbc72d0ea4a0caedf7681b27268b678445bfe82538d2",
+      "native_stream_sha256": "f5d7ece4ff8260805d3ccdf45d89afbe22c16764855f4ed8b0221b96bf7b09f0"
+    },
+    "repeat": {
+      "path": "tmp/conformance-cleanup/native-capture-a241793/tmp/vector-parity-plan/pencil3-topdown-x60-screen2560x1440-repeat.json",
+      "fixture_sha256": "ed28928876b624e76661f7ebc433eb3f9a974a94345fe8d8f7101654b36870df",
+      "raw_gl_rgba_sha256": "27baed5aaf3be57bbfa6358a6a14c774c2d6df03dd95dd3b91dca9f0d58186a9",
+      "topdown_rgba_sha256": "c770dc824723e5b48e671c64cd4c32991f8c79672c4b493b31a107bb7ad41b50",
+      "native_stream_sha256": "f5d7ece4ff8260805d3ccdf45d89afbe22c16764855f4ed8b0221b96bf7b09f0"
+    }
+  },
+  "document_path_at_capture": "tmp/vector-parity-plan/pencil-intrinsic-image-prototype/seam-x60/public-document.json",
+  "document_sha256": "cfee49d7492226ba4e7109ef415468a0ae2f2a4824907a419a96e56c8285061f",
+  "export_source_sha256": "7ac61e7215bbd51b3a86c909862d9ef95dbfcd9f3cf4836c6683df9b6e0465bf",
+  "pencil3_render_source_sha256": "3f356e5facbf67f4b9522e555d9e879a11ffc1d5d73b89d0a351dafe37b3f882",
+  "render_source_sha256": "66d4d27ffd76ce66322e3de2742475deb3580958d6c4fa3907bc8e8be04ac011",
+  "engines": [
+    {
+      "engine": "MuPDF",
+      "version": "1.28.2",
+      "roi_pixels": 537,
+      "input_sha256": {
+        "clamp": "cfe831783923317334d236e75e10a1c139ed51996a7f2156a290dd4ae5d719d5",
+        "repeat": "bb090b823b215a811eb84e6626900ffa3c980f3fb2e6061d112267e7ffd530a0",
+        "fallback": "62196e50f26e38dbc9b85a4ecdf4c2d164ae3565ff52ecdf45496a8e5c2f96da"
+      },
+      "comparison": {
+        "clamp": {
+          "clamp": {
+            "support_iou": 0.8183520599250936,
+            "intersection": 437,
+            "union": 534,
+            "rgb_mae": 20.38112973308504,
+            "absolute_error_sum": 32834
+          },
+          "fallback": {
+            "support_iou": 0.31543624161073824,
+            "intersection": 141,
+            "union": 447,
+            "rgb_mae": 56.94599627560521,
+            "absolute_error_sum": 91740
+          }
+        },
+        "repeat": {
+          "repeat": {
+            "support_iou": 0.8049242424242424,
+            "intersection": 425,
+            "union": 528,
+            "rgb_mae": 17.837988826815643,
+            "absolute_error_sum": 28737
+          },
+          "fallback": {
+            "support_iou": 0.32634032634032634,
+            "intersection": 140,
+            "union": 429,
+            "rgb_mae": 48.03600248292986,
+            "absolute_error_sum": 77386
+          }
+        }
+      }
+    },
+    {
+      "engine": "resvg",
+      "version": "0.45.1",
+      "roi_pixels": 474,
+      "input_sha256": {
+        "clamp": "5e744daac7e89e4072d11545836ed9736d87439e201f07b51f6a39f528fa4944",
+        "repeat": "8a3ab0412e2b2af80be570659f813d82b4e8a42886ba98d737abb73df6991780",
+        "fallback": "f250fd121c1e8b16a2bac248914186594e4ab9a11db3c47d3ca235672928da23"
+      },
+      "comparison": {
+        "clamp": {
+          "clamp": {
+            "support_iou": 0.9487179487179487,
+            "intersection": 444,
+            "union": 468,
+            "rgb_mae": 1.529535864978903,
+            "absolute_error_sum": 2175
+          },
+          "fallback": {
+            "support_iou": 0.31767337807606266,
+            "intersection": 142,
+            "union": 447,
+            "rgb_mae": 65.63502109704642,
+            "absolute_error_sum": 93333
+          }
+        },
+        "repeat": {
+          "repeat": {
+            "support_iou": 0.9202586206896551,
+            "intersection": 427,
+            "union": 464,
+            "rgb_mae": 1.6350210970464134,
+            "absolute_error_sum": 2325
+          },
+          "fallback": {
+            "support_iou": 0.32867132867132864,
+            "intersection": 141,
+            "union": 429,
+            "rgb_mae": 55.55696202531646,
+            "absolute_error_sum": 79002
+          }
+        }
+      }
+    }
+  ],
+  "unavailable": [
+    "PDFium Python binding",
+    "CairoSVG"
+  ],
+  "limitations": "Native fixtures and exporter were retained under tmp at capture; this receipt does not itself contain the inputs, outputs or comparison program. The captured paint uses host adapters and explicit screen/paper contexts. SVG and PDF are independently rasterized at 1x. The render.rs source hash identifies the capture-time checkout before a subsequent test-only lint cleanup; the public rendering code was unchanged."
+}
