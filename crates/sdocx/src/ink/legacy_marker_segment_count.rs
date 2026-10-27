@@ -304,3 +304,55 @@ fn move_filter_matches_native_axis_threshold_and_repeated_points() {
         }
     }
 }
+
+#[test]
+fn finished_prefix_controls_preserve_native_paint_boundaries() {
+    use sha2::{Digest, Sha256};
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-finished-prefix-native.json"
+    ))
+    .unwrap();
+    let sparse =
+        include_bytes!("../../../../conformance/legacy-marker-finished-prefix-sparse-rgba8.bin");
+    let cases = receipt["cases"].as_array().unwrap();
+    for (case, (expected_queue, expected_draws)) in cases.iter().zip([
+        (8, &[8, 12, 12, 6][..]),
+        (8, &[8, 12, 12, 6][..]),
+        (9, &[32, 6, 40, 40, 6][..]),
+        (10, &[40, 6, 48, 48, 6][..]),
+    ]) {
+        assert_eq!(case["queue_count"], expected_queue);
+        let draws: Vec<u64> = case["draw_counts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_u64().unwrap())
+            .collect();
+        assert_eq!(draws, expected_draws);
+        let offset = case["sparse_offset"].as_u64().unwrap() as usize;
+        let len = case["sparse_bytes"].as_u64().unwrap() as usize;
+        let bytes = &sparse[offset..offset + len];
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            case["sparse_sha256"].as_str().unwrap()
+        );
+        let (records, rem) = bytes.as_chunks::<8>();
+        assert!(rem.is_empty());
+        let mut pixels = vec![0u8; 1920 * 1080 * 4];
+        for record in records {
+            let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
+            pixels[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&pixels)),
+            case["frame_sha256"].as_str().unwrap()
+        );
+        assert_eq!(
+            pixels.iter().filter(|&&v| v != 0).count() as u64,
+            case["nonzero_channel_bytes"].as_u64().unwrap()
+        );
+    }
+    assert_eq!(cases[0]["move_returns"][0]["return_w0"], "0x0");
+    assert_eq!(cases[0]["move_returns"][1]["return_w0"], "0x0");
+    assert_ne!(cases[2]["frame_sha256"], cases[3]["frame_sha256"]);
+}

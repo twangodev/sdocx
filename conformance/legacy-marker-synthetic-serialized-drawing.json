@@ -107,5 +107,25 @@
     "fixture_boundary": "One modified source stroke object and original string table retained. Other 76 strokes, 5 shapes, 1 line, second page and media removed; layer trailer replaced by zeros, original manifest hashes are not refreshed. This reduced archive is a Rust parser fixture, not a validated Samsung-loadable note; source UUIDs, timestamps and target handwritten stroke remain."
   },
   "source_attribution": "Adapted from 02-shapes-and-dot-calibration in SDOCX Compatibility Corpus by the SDOCX Compatibility Corpus contributors, CC BY 4.0: https://huggingface.co/datasets/twangodev/sdocx-compatibility. Pen-name table and setting were changed and the parser fixture was reduced to one stroke.",
-  "unseeded_capture_sha256": "15ac076ecc8ae470d0f67dfa408e32b267bd2d424babc09e15f7f948f030167c"
+  "unseeded_capture_sha256": "15ac076ecc8ae470d0f67dfa408e32b267bd2d424babc09e15f7f948f030167c",
+  "comparison_after_marker_default_recovery": {
+    "scope": "Same isolated parsed stroke and white-background PyMuPDF RGB L1 as original comparison; test SVG raster separately checks the source native sparse frame.",
+    "svg": {
+      "support": 691,
+      "intersection": 584,
+      "union": 699,
+      "rgb_l1": 72066
+    },
+    "pdf": {
+      "support": 694,
+      "intersection": 585,
+      "union": 701,
+      "rgb_l1": 72190
+    },
+    "before_svg_rgb_l1": 290682,
+    "before_pdf_rgb_l1": 289413,
+    "export_source": "tmp/marker-absent-alpha-export/src/main.rs",
+    "export_source_sha256": "f15d9ebf70cbc934b8822c163dfed3ac39d256117590900ca3fe5d0c34689640",
+    "limitations": "Synthetic reduced archive, native Model/Drawing host capture and host rasterizers; not a complete Samsung loader or device output."
+  }
 }

@@ -5254,6 +5254,7 @@ fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
     stroke.color.or_else(|| {
         chinesebrush_source_color(stroke)
             .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
+            .or_else(|| crate::ink::saved_legacy_marker_argb(stroke).map(argb_rgb))
             .or_else(|| crate::ink::saved_airbrush_argb(stroke).map(argb_rgb))
             .or_else(|| crate::ink::pencil_source::saved_pencil3_v3_argb(stroke).map(argb_rgb))
             .or_else(|| saved_textured_pen_argb(stroke).map(argb_rgb))

@@ -552,6 +552,14 @@ the skipped control, and 475/602 and 475/607 for the multi-turn control. These
 are 1× MuPDF comparisons of synthetic strokes with the explicit host matrix,
 not native PDF or Android-device parity.
 
+Four [finished-stroke host controls](../../conformance/legacy-marker-finished-prefix-native.json)
+cover stationary input, two- and three-point prefixes and a repeated final point.
+Stationary input rejects both intermediate moves but paints 70 host pixels.
+A repeated final point changes the completed frame and native draw geometry
+relative to the three-point prefix. These are completed redraws, not captures of
+native progressive replay; replay cutoff semantics and device appearance remain
+unverified.
+
 ### Quadratic subdivision controls
 
 Two synthetic native Model/Drawing controls exercise GLV1 and RTV1 with straight
@@ -768,3 +776,22 @@ two-point guarded paint completed with four draws. These are prefix controls,
 not an observed incremental replay session; the generated-centerline model does
 not yet reconstruct the no-MovePen case or replay cutoffs. Their queue and
 capture provenance is retained in the move-filter receipt.
+
+For the reduced synthetic serialized Marker fixture, native Model returns
+opaque black when ARGB is absent, while the parser preserves the absence. The
+bounded Marker fallback now recovers that default, applies the captured
+quantized width, and preserves an explicitly supplied public color. On the
+isolated 204-point stroke, white-background PyMuPDF RGB L1 decreased from
+290682 to 72066 for SVG and from 289413 to 72190 for PDF. The tracked regression
+checks the parsed missing field, opaque width and RGB, SVG versus the host
+native frame, and a valid public PDF export. This is a host comparison on a
+reduced synthetic archive, not complete-note or Android-device parity.
+
+In the pinned Drawing library, `ObjectDrawing::drawObjectStroke` at RVAs
+`0x8238c`–`0x823f4` reads two resolution values through the drawing context's
+profile vtable and passes them to the selected pen's `SetScreenResolution`.
+The host control supplies those callback values explicitly. The retained
+serialized fixture does not establish the original device resolution, and a
+page's dimensions do not determine it; an experimental centerline profile would
+need an explicit source for the PenData resolution rather than infer it from
+page export size.

@@ -812,9 +812,9 @@ pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
     Some(rendering.style.color_argb.unwrap_or(0xff00_0000))
 }
 
-// The captured nonzero Marker alpha controls use the saved ARGB alpha; the
-// generic stroke geometry remains an approximation of the native mesh.
-fn saved_legacy_marker_argb(stroke: &Stroke) -> Option<u32> {
+// The captured Marker controls use saved ARGB alpha; absent color resolves to
+// the native Model's opaque-black default. Geometry remains approximate.
+pub(crate) fn saved_legacy_marker_argb(stroke: &Stroke) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker")
@@ -836,7 +836,7 @@ fn saved_legacy_marker_argb(stroke: &Stroke) -> Option<u32> {
     {
         return None;
     }
-    rendering.style.color_argb
+    Some(rendering.style.color_argb.unwrap_or(0xff00_0000))
 }
 
 // V1 and V4 use RTV1's MAX coverage pass followed by one source-color
@@ -1193,8 +1193,24 @@ mod tests {
             input.rendering.as_mut().unwrap().style.pen_size = Some(size);
             assert!(prepare_stroke(&input, false).segment_widths.is_some());
         }
-        input.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+        input.rendering.as_mut().unwrap().style.pen_size = Some(12.75);
+        input.rendering.as_mut().unwrap().style.color_argb = None;
+        let defaulted = prepare_stroke(&input, false);
+        assert_eq!(defaulted.opacity, 1.0);
+        assert_eq!(defaulted.width, 12.0);
+        assert!(defaulted.segment_widths.is_none());
+        assert_eq!(defaulted.color, "#000000");
+        input.color = Some(crate::Color {
+            r: 12,
+            g: 34,
+            b: 56,
+        });
+        assert_eq!(prepare_stroke(&input, false).color, "#0c2238");
+        input.color = None;
         input.rendering.as_mut().unwrap().advanced_settings = Some("unknown".into());
+        assert!(prepare_stroke(&input, false).segment_widths.is_some());
+        input.rendering.as_mut().unwrap().advanced_settings = None;
+        input.rendering.as_mut().unwrap().pen_name = Some("unrecognized".into());
         assert!(prepare_stroke(&input, false).segment_widths.is_some());
     }
 
