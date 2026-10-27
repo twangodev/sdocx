@@ -177,12 +177,12 @@ fn read_f32(bytes: &[u8], offset: usize) -> f32 {
     )
 }
 
-fn source_vertex(draw: Draw, row: usize) -> Vertex {
+fn source_vertex(draw: Draw, row: usize, vbo: &[u8]) -> Vertex {
     let stride = draw.lanes * 4;
     let offset = draw.offset + row * stride;
     let mut v = [0.0; 4];
     for (lane, out) in v.iter_mut().enumerate().take(draw.lanes) {
-        *out = read_f32(VBO, offset + lane * 4);
+        *out = read_f32(vbo, offset + lane * 4);
     }
     let x = v[0];
     let y = v[1];
@@ -216,7 +216,7 @@ fn top_left(a: Vertex, b: Vertex) -> bool {
     dy > 0.0 || (dy == 0.0 && dx < 0.0)
 }
 
-fn triangle_vertices(draw: Draw, triangle: usize) -> [Vertex; 3] {
+fn triangle_vertices(draw: Draw, triangle: usize, vbo: &[u8]) -> [Vertex; 3] {
     let i = triangle;
     let indexes = match draw.mode {
         4 => [3 * i, 3 * i + 1, 3 * i + 2],            // GL_TRIANGLES
@@ -224,7 +224,7 @@ fn triangle_vertices(draw: Draw, triangle: usize) -> [Vertex; 3] {
         5 => [i + 1, i, i + 2],
         _ => unreachable!("pinned primitive mode"),
     };
-    indexes.map(|row| source_vertex(draw, row))
+    indexes.map(|row| source_vertex(draw, row, vbo))
 }
 
 fn sample(tri: [Vertex; 3], px: f64, py: f64) -> Option<[f32; 4]> {
@@ -379,7 +379,7 @@ fn render_and_compare() -> Vec<PrefixStats> {
             _ => unreachable!(),
         };
         for triangle_index in 0..triangle_count {
-            let tri = triangle_vertices(draw, triangle_index);
+            let tri = triangle_vertices(draw, triangle_index, VBO);
             let signed_area = orient(tri[0], tri[1], f64::from(tri[2].x), f64::from(tri[2].y));
             if signed_area.abs() <= 1.0e-12 {
                 continue;
@@ -485,5 +485,174 @@ mod tests {
             // boundary by one. No output color is copied or corrected.
             assert!(row.max_channel_error <= 1, "prefix {draw}: {row:?}");
         }
+    }
+}
+
+#[test]
+fn generated_mesh_paint_matches_native_source_controls() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-source-geometry-controls.json"
+    ))
+    .unwrap();
+    for (case, revert, native_bytes, expected_hash) in [
+        (
+            "straight",
+            0.0,
+            include_bytes!(
+                "../../../../conformance/legacy-marker-source-straight-sparse-rgba8.bin"
+            )
+            .as_slice(),
+            "7266a5a2d494b566f7e5643c013bfd1f30a5c417c348d03115f5863586d920fd",
+        ),
+        (
+            "bend",
+            1.0,
+            include_bytes!("../../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
+                .as_slice(),
+            "62f15c9c6302de5dcae527b1b463e5cc65c695a37c4dcd9cc521f6006407cc36",
+        ),
+    ] {
+        let native = &fixture["cases"][case];
+        let hex = native["input"]["source_arrays_hex"]["points"]
+            .as_str()
+            .unwrap();
+        let bytes: Vec<u8> = hex
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| u8::from_str_radix(std::str::from_utf8(p).unwrap(), 16).unwrap())
+            .collect();
+        let points: Vec<f32> = bytes
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes(*b))
+            .collect();
+        let points: [[f32; 2]; 4] = points.as_chunks::<2>().0.try_into().unwrap();
+        let size = f32::from_bits(
+            u32::from_str_radix(native["input"]["size_f32_bits"].as_str().unwrap(), 16).unwrap(),
+        );
+        let mesh = super::legacy_marker_mesh::generate(points, size).unwrap();
+        let mut vbo = Vec::new();
+        let mut draws = DRAWS;
+        let sources: [Vec<f32>; 5] = [
+            mesh.body.iter().flatten().copied().collect(),
+            mesh.caps[0].iter().flatten().copied().collect(),
+            mesh.fringe[0].iter().flatten().copied().collect(),
+            mesh.fringe[1].iter().flatten().copied().collect(),
+            mesh.caps[1].iter().flatten().copied().collect(),
+        ];
+        draws[4].revert = revert;
+        for (draw, source) in draws.iter_mut().zip(sources) {
+            draw.offset = vbo.len();
+            draw.count = source.len() / draw.lanes;
+            for value in source {
+                vbo.extend(value.to_le_bytes());
+            }
+        }
+        let mut color = vec![[0_u8; 4]; PIXELS];
+        let mut depth = vec![1.0_f64; PIXELS]; // glClearDepthf(1.0), GL_DEPTH24_STENCIL8
+
+        for (draw_index, draw) in draws.into_iter().enumerate() {
+            let z_clip = PROJECTION[10] * -draw.z;
+            let depth_value = q_depth((z_clip + 1.0) * 0.5);
+            let depth_enabled = draw_index < 4; // captured GL_DEPTH_TEST toggles
+            let triangle_count = match draw.mode {
+                4 => draw.count / 3,
+                5 => draw.count - 2,
+                _ => unreachable!(),
+            };
+            for triangle_index in 0..triangle_count {
+                let tri = triangle_vertices(draw, triangle_index, &vbo);
+                let signed_area = orient(tri[0], tri[1], f64::from(tri[2].x), f64::from(tri[2].y));
+                if signed_area.abs() <= 1.0e-12 {
+                    continue;
+                }
+                let min_x = tri
+                    .iter()
+                    .map(|v| v.x)
+                    .fold(f32::INFINITY, f32::min)
+                    .floor()
+                    .max(0.0) as usize;
+                let max_x = tri
+                    .iter()
+                    .map(|v| v.x)
+                    .fold(f32::NEG_INFINITY, f32::max)
+                    .ceil()
+                    .min(WIDTH as f32) as usize;
+                let min_y = tri
+                    .iter()
+                    .map(|v| v.y)
+                    .fold(f32::INFINITY, f32::min)
+                    .floor()
+                    .max(0.0) as usize;
+                let max_y = tri
+                    .iter()
+                    .map(|v| v.y)
+                    .fold(f32::NEG_INFINITY, f32::max)
+                    .ceil()
+                    .min(HEIGHT as f32) as usize;
+                for y in min_y..max_y {
+                    for x in min_x..max_x {
+                        let Some(varying) = sample(tri, x as f64 + 0.5, y as f64 + 0.5) else {
+                            continue;
+                        };
+                        let index = y * WIDTH + x;
+                        if depth_enabled && depth_value >= depth[index] {
+                            continue;
+                        }
+                        if depth_enabled {
+                            depth[index] = depth_value;
+                        }
+                        let alpha = match draw.program {
+                            4 => COLOR[3],
+                            5 => COLOR[3] - COLOR[3] * varying[2],
+                            6 => {
+                                if cap_alpha(
+                                    draw.texture.unwrap(),
+                                    draw.revert,
+                                    varying[2],
+                                    varying[3],
+                                ) == 0
+                                {
+                                    0.0
+                                } else {
+                                    (COLOR[3] + varying[2].abs() * (CAP_W as f32 / 255.0))
+                                        .clamp(0.0, 1.0)
+                                }
+                            }
+                            _ => unreachable!(),
+                        };
+                        color[index] = blend_over(alpha, color[index]);
+                    }
+                }
+            }
+        }
+        let expected = decode_expected(native_bytes, expected_hash);
+        let mut full_frame = vec![0_u8; PIXELS * 4];
+        for (&index, rgba) in &expected {
+            full_frame[index * 4..index * 4 + 4].copy_from_slice(rgba);
+        }
+        assert_eq!(
+            sha256(&full_frame),
+            native["final_frame_sha256"].as_str().unwrap()
+        );
+        let mut diff = 0;
+        let mut max = 0;
+        for (i, pixel) in color.iter().enumerate() {
+            let native = expected.get(&i).copied().unwrap_or([0; 4]);
+            if *pixel != native {
+                diff += 1;
+            }
+            for c in 0..4 {
+                max = max.max(pixel[c].abs_diff(native[c]));
+            }
+        }
+        eprintln!(
+            "{case}: native support={}, different pixels={diff}, max channel error={max}",
+            expected.len()
+        );
+        assert!(diff <= 12 && max <= 1, "{case}: {diff} pixels, max {max}");
     }
 }

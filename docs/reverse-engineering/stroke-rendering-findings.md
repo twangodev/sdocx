@@ -588,6 +588,15 @@ controls. The shared Rust SmPath quadratic reproduces both within 0.00001 page
 units. Short or empty paths and the initial-EndPen branch remain open; these
 synthetic host observations do not establish device or saved-note parity.
 
+In two synthetic curve-disabled Drawing controls, `calcPathNoCurve` uses two
+edge points for aligned normals and 23 for turns. Its native branch uses 23
+when the normals' dot product is negative or the difference between their
+length product and absolute dot is at least the stored f32 0.08; it then calls
+`makeCircleInternal`. All six observed edge-vector counts match the test-only
+model. These host controls do not establish threshold-edge, device or full
+no-curve mesh parity. The existing subdivision receipt retains state and vector
+hashes; temporary scripts retain the full captures.
+
 ### Legacy Marker subdivision edges and fringe
 
 The [edge test](../../crates/sdocx/tests/legacy_marker_edges.rs) joins the
@@ -607,3 +616,19 @@ checks all 30 captured merge and cap calls, including each accumulated output
 vector, against the original return bytes. These checks cover only the captured
 nondegenerate subdivision branch and cap calls; they do not establish behavior
 for tiny tangents, other branches, arbitrary saved strokes, or device output.
+
+A test-only four-point reconstruction now produces all five body, fringe and
+cap vertex streams from the source coordinates and size; both host controls
+match the native streams within 0.00005 coordinate units. Feeding those streams
+through the test-only native-paint model, including cap textures and depth,
+differs from the final native frames at 12 straight and 11 bent pixels, with
+maximum channel error one byte. The sparse retained frames have SHA-256
+`7266a5a2d494b566f7e5643c013bfd1f30a5c417c348d03115f5863586d920fd`
+and `62f15c9c6302de5dcae527b1b463e5cc65c695a37c4dcd9cc521f6006407cc36`;
+the test reconstructs and verifies their full-frame hashes against the source
+geometry receipt. A diagnostic SVG union with solid caps and no fringe differs
+from native at 180 and 174 pixels in resvg (maximum channel error 83). Its public
+SVG-to-PDF exports rasterized with PyMuPDF differ from native at 180 and 177
+pixels. This simplified vector prototype does not reproduce cap masking, depth
+ownership or fringe interpolation and does not justify public admission. Its
+reproduction is retained in `scratch/legacy-marker-vector-prototype.rs`.

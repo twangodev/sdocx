@@ -180,3 +180,40 @@ fn end_pen_terminal_sample_uses_shared_quadratic_path() {
         );
     }
 }
+
+#[test]
+fn no_curve_edge_count_matches_native_straight_and_bent_controls() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-subdivision-controls.json"
+    ))
+    .unwrap();
+    for case in receipt["no_curve_controls"].as_array().unwrap() {
+        let rows = case["rows"].as_array().unwrap();
+        assert_eq!(rows.len(), 3);
+        for row in rows {
+            let hex = row["rt_644_716_hex"].as_str().unwrap();
+            let (pairs, remainder) = hex.as_bytes().as_chunks::<2>();
+            assert!(remainder.is_empty());
+            let bytes: Vec<u8> = pairs
+                .iter()
+                .map(|p| u8::from_str_radix(std::str::from_utf8(p).unwrap(), 16).unwrap())
+                .collect();
+            let field = |offset: usize| {
+                f32::from_le_bytes(bytes[offset - 644..offset - 640].try_into().unwrap())
+            };
+            let (ax, ay, bx, by) = (field(692), field(696), field(700), field(704));
+            let dot = bx.mul_add(ax, by * ay);
+            let a = ax.mul_add(ax, ay * ay).sqrt();
+            let b = bx.mul_add(bx, by * by).sqrt();
+            let circular = dot < 0.0 || ((a * b).abs() - dot.abs()).abs() >= 0.08_f32;
+            let predicted = if circular { 23 } else { 2 };
+            assert_eq!(
+                row["edge_input_count"].as_u64().unwrap(),
+                predicted,
+                "{} {}",
+                case["name"],
+                row["phase"]
+            );
+        }
+    }
+}
