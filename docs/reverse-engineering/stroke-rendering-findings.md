@@ -1060,3 +1060,13 @@ The retained diagnostic is `scratch/legacy-marker-direct-pdf-probe.py`, with
 `scratch/legacy-marker-direct-pdf-compare.py` for paired readers. The PDFium
 check used the local pypdfium2 installation under the temporary verification
 virtual environment.
+
+A checked Rust scratch writer consumes a bounded direct-PDF plan and emits the
+same ordered path and cap-mask structure. On source-generated long and 2× bend
+controls, MuPDF/PDFium RGB L1 was 4951/4249 and 11410/10018, with 86 and 48 KB
+PDFs. Its probe bounds plan bytes, items, path commands, object count and staged
+stream bytes; an oversized plan rejected without leaving a PDF. These bounds do
+not prove the PDF library's internal allocation bound, and the writer's color
+and reader behavior still needs validation before integration. The retained
+probes are `tmp/marker-owner-boolean/src/bin/direct_pdf_checked.rs` and
+`scratch/legacy-marker-direct-plan.py`.
