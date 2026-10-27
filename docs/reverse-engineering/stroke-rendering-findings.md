@@ -1020,3 +1020,14 @@ page budgets. No production route is admitted. Retained probes are
 `tmp/marker-owner-boolean/src/bin/rational_checked.rs`,
 `scratch/legacy-marker-ordered-checked.py`, and
 `scratch/legacy-marker-checked-clip-stress.py`.
+
+A finer 100,000-unit grid admits the blue control under the checked clipper's
+existing per-stroke limits, with resvg/PDF RGB L1 5821/10041 and a 242 KB PDF;
+the 1,000,000-unit grid rejects under its combined failure condition. A scratch
+page harness preflights grid collapse, retries at the finer grid and charges
+both attempts to a shared operation budget. Under a 500,000-operation limit,
+eight blue strokes admit two and fall back for six, with 12,282 admitted fringe
+vertices. This does not yet budget source mesh generation or expanded SVG/PDF
+work and is not integrated into production. The probes are
+`tmp/marker-owner-boolean/src/bin/rational_page.rs` and
+`scratch/legacy-marker-ordered-checked.py`.
