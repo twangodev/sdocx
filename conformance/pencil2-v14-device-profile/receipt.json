@@ -70,5 +70,18 @@
       "crop_method": "Read RGBA from /tmp/pencil2-black.rgba and /tmp/pencil2-color.rgba, reverse their 192 rows from bottom-origin to top-origin, and extract alpha in the specified crop."
     },
     "limitations": "Alpha-only comparisons on five controlled host-Mesa frames do not prove source quantization, exact interpolation, RGB, PDF, saved-note or device behavior."
+  },
+  "quantized_raster_export_control": {
+    "scope": "Fixed 192x192 output with white paper. Scalar-model alpha is encoded as black RGBA PNG, embedded in a hand-built SVG, and exported using public render_svg_pages_pdf at 72 DPI. This does not exercise the public Stroke renderer. Size2 color control tests its alpha as black; it does not test RGB.",
+    "controls": {
+      "baseline": {"png_svg_pdf_bytes":[407,800,2159],"resvg":[2,7,4],"mupdf":[15,20,4],"pdfium":[2,7,4]},
+      "translate6": {"png_svg_pdf_bytes":[404,796,2166],"resvg":[2,6,5],"mupdf":[15,19,5],"pdfium":[2,6,5]},
+      "scale2": {"png_svg_pdf_bytes":[729,1228,2341],"resvg":[2,2,1],"mupdf":[65,66,2],"pdfium":[2,2,1]},
+      "size2-black": {"png_svg_pdf_bytes":[428,828,2175],"resvg":[3,3,1],"mupdf":[7,9,2],"pdfium":[3,3,1]},
+      "size2-color-alpha": {"png_svg_pdf_bytes":[406,800,2145],"resvg":[0,0,0],"mupdf":[0,0,0],"pdfium":[0,0,0]}
+    },
+    "metrics": "Each error tuple is differing pixels, sum of absolute channel error, maximum channel error against 255 minus the native transparent-frame alpha. Outside retained crop the native frame is assumed empty based on capture support checks.",
+    "reproduction_scripts": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-quantized-export-control/",
+    "limitations": "Resolution- and device-coordinate-specific, requires rerendering at each output transform and size; no scalable vector correction, public stroke pipeline, colored RGB, native white-paper paint, Android, saved note, or device parity established. File size is a single tiny synthetic stroke in a mostly empty frame, not a document-wide cost estimate."
   }
 }
