@@ -923,6 +923,25 @@ mod tests {
         assert_eq!(native_geometry.len(), 164 * 44);
         assert_eq!(sha256(native_geometry), fixture["geometry"]["sha256"]);
         let stroke = manual_native_caller_stroke(&fixture);
+        let context = super::super::SavedBrushPenNativeContext {
+            gl_version: 10,
+            screen_resolution: [1920, 1080],
+            constructor_profile: super::super::SAVED_GLV10_CONSTRUCTOR_PROFILE,
+            fixed_width: 0.0,
+            fixed_width_enabled: false,
+            fixed_opacity_enabled: false,
+        };
+        let sampled =
+            super::super::sample_native_stroke_with_size(&stroke, context, 12.0_f32.to_bits())
+                .expect("explicit size-12 native caller");
+        let generated_geometry: Vec<_> = sampled
+            .output
+            .instances
+            .iter()
+            .flat_map(|instance| instance.values)
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(generated_geometry, native_geometry);
         let document = crate::Document {
             pages: vec![crate::Page {
                 uuid: "brushpen-long-native".into(),
@@ -959,7 +978,7 @@ mod tests {
         let mut native_support = 0;
         let mut intersection = 0;
         let mut union = 0;
-        for (i, native) in crop.chunks_exact(4).enumerate() {
+        for (i, native) in crop.as_chunks::<4>().0.iter().enumerate() {
             let x = i % 133 + 28;
             let y = i / 133 + 38;
             let offset = (y * 321 + x) * 4;

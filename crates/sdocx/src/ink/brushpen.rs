@@ -892,12 +892,17 @@ fn sample_saved_native_stroke(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
 ) -> Option<SavedBrushPenSamples> {
+    sample_native_stroke_with_size(stroke, context, 0x4049_374c)
+}
+
+fn sample_native_stroke_with_size(
+    stroke: &crate::Stroke,
+    context: SavedBrushPenNativeContext,
+    expected_size_bits: u32,
+) -> Option<SavedBrushPenSamples> {
     const NATIVE_PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.BrushPen";
     const NATIVE_ADVANCED_SETTING: &str = "";
     const NATIVE_ARGB: u32 = 0xff6c_dd8f;
-    // The fixture stores the four float bytes in little-endian order as
-    // "4c374940"; interpreted as a host u32 bit pattern this is 0x4049374c.
-    const NATIVE_SIZE_BITS: u32 = 0x4049_374c;
 
     if context.gl_version != GL_VERSION
         || context.screen_resolution != [1920, 1080]
@@ -937,7 +942,7 @@ fn sample_saved_native_stroke(
         return None;
     }
     let size = style.pen_size?;
-    if size.to_bits() != NATIVE_SIZE_BITS || stroke.pen_width.to_bits() != NATIVE_SIZE_BITS {
+    if size.to_bits() != expected_size_bits || stroke.pen_width.to_bits() != expected_size_bits {
         return None;
     }
     let argb = style.color_argb?;
