@@ -195,7 +195,7 @@ fn profile_accepts_six_points_across_captured_sizes() {
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
         assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     }
-    for i in 6..128 {
+    for i in 6..192 {
         source.points.push(Point {
             x: 60.0 + (i as f64) * 8.0,
             y: 42.0,

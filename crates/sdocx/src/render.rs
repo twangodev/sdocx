@@ -7161,6 +7161,98 @@ mod tests {
     }
 
     #[test]
+    fn defaultpen_threshold_equality_matches_native_svg_and_reaches_pdf() {
+        let points = [(0., 0.), (10., 0.), (60., 0.), (100., 25.), (110., 30.)];
+        let stroke = Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into()),
+                advanced_settings: None,
+                tool_type_raw: 1,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0x0033_6699),
+                    pen_size: Some(10.),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+            pressures: vec![0.5; 5],
+            timestamps: vec![0, 1, 2, 3, 4],
+            tilts: vec![0.; 5],
+            orientations: vec![0.; 5],
+            color: Some(Color {
+                r: 0x33,
+                g: 0x66,
+                b: 0x99,
+            }),
+            pen_width: 10.,
+        };
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let source = document(page);
+        let svg = render_document_svg(&source, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let circles: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("circle"))
+            .collect();
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-threshold-native.json"
+        ))
+        .unwrap();
+        let expected = native["cases"]["tool1_equal"]["add_points"]
+            .as_array()
+            .unwrap();
+        assert_eq!(circles.len(), expected.len());
+        for (circle, point) in circles.iter().zip(expected) {
+            for (index, attribute) in ["cx", "cy", "r"].iter().enumerate() {
+                let actual: f32 = circle.attribute(*attribute).unwrap().parse().unwrap();
+                let expected =
+                    point[index].as_f64().unwrap() as f32 + if index == 2 { 0.5 } else { 0.0 };
+                assert!((actual - expected).abs() < 0.0001);
+            }
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let options = crate::PdfOptions::default();
+            let bytes =
+                crate::render_document_pdf(&source, &RenderOptions::default(), &options).unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let page_id = *pdf.get_pages().values().next().unwrap();
+            let content = pdf.get_page_content(page_id).unwrap();
+            let mut blank = page_with_uncolored_stroke();
+            blank.objects.clear();
+            let bytes =
+                crate::render_document_pdf(&document(blank), &RenderOptions::default(), &options)
+                    .unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let page_id = *pdf.get_pages().values().next().unwrap();
+            assert_ne!(content, pdf.get_page_content(page_id).unwrap());
+        }
+    }
+
+    #[test]
     fn defaultpen_terminal_only_cases_replay_at_the_terminal_event() {
         for (points, terminal_part) in [
             (vec![(0., 0.), (10., 0.)], 2),

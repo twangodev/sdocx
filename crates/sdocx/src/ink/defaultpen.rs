@@ -262,7 +262,7 @@ pub(super) fn saved_with_boundaries(
             continue;
         }
         let distance = delta.len();
-        let accepted = if distance > threshold {
+        let accepted = if distance >= threshold {
             alternate = true;
             true
         } else {
@@ -366,31 +366,36 @@ mod tests {
 
     #[test]
     fn gradual_movement_uses_native_initial_position_gate() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/defaultpen-gradual-native.json"
-        ))
-        .unwrap();
-        for (name, case) in fixture["cases"].as_object().unwrap() {
-            let points: Vec<Point> = case["points"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|p| Point {
-                    x: p[0].as_f64().unwrap(),
-                    y: p[1].as_f64().unwrap(),
-                })
-                .collect();
-            let actual = saved(&points, 10.0, 1, 0).unwrap();
-            let expected = case["add_points"].as_array().unwrap();
-            assert_eq!(actual.len(), expected.len(), "{name}");
-            for (actual, expected) in actual.iter().zip(expected) {
-                for component in 0..3 {
-                    let bias = if component == 2 { 0.5 } else { 0.0 };
-                    let expected = expected[component].as_f64().unwrap() as f32 + bias;
-                    assert!(
-                        (actual[component] - expected).abs() < 0.00001,
-                        "{name}: {actual:?}"
-                    );
+        for fixture in [
+            include_str!("../../../../conformance/defaultpen-gradual-native.json"),
+            include_str!("../../../../conformance/defaultpen-threshold-native.json"),
+            include_str!("../../../../conformance/defaultpen-multistage-native.json"),
+        ] {
+            let fixture: Value = serde_json::from_str(fixture).unwrap();
+            for (name, case) in fixture["cases"].as_object().unwrap() {
+                let points: Vec<Point> = case["points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| Point {
+                        x: p[0].as_f64().unwrap(),
+                        y: p[1].as_f64().unwrap(),
+                    })
+                    .collect();
+                let width = case["width"].as_f64().unwrap() as f32;
+                let tool = case["tool"].as_u64().unwrap_or(1) as u32;
+                let actual = saved(&points, width, tool, 0).unwrap();
+                let expected = case["add_points"].as_array().unwrap();
+                assert_eq!(actual.len(), expected.len(), "{name}");
+                for (actual, expected) in actual.iter().zip(expected) {
+                    for component in 0..3 {
+                        let bias = if component == 2 { 0.5 } else { 0.0 };
+                        let expected = expected[component].as_f64().unwrap() as f32 + bias;
+                        assert!(
+                            (actual[component] - expected).abs() < 0.00001,
+                            "{name}: {actual:?} expected {expected}"
+                        );
+                    }
                 }
             }
         }
