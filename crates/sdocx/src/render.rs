@@ -4203,6 +4203,38 @@ const MAX_INKPEN2_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const INKPEN2_MARKUP_BUDGET_PER_RECORD: usize = 1024;
 const INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES: usize = 4096;
 
+// Test-only admission for paired native experiments. Thread-local scope prevents
+// unrelated tests from observing it; the guard restores even during unwinding.
+#[cfg(test)]
+thread_local! {
+    static INKPEN2_EXPERIMENTAL_AA_RAINBOW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+struct InkPen2ExperimentalAaGuard(bool);
+
+#[cfg(test)]
+impl InkPen2ExperimentalAaGuard {
+    fn enter() -> Self {
+        Self(INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.replace(true)))
+    }
+}
+
+#[cfg(test)]
+impl Drop for InkPen2ExperimentalAaGuard {
+    fn drop(&mut self) {
+        INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.set(self.0));
+    }
+}
+
+fn inkpen2_reject_active_rainbow_aa(enabled: bool) -> bool {
+    #[cfg(test)]
+    if INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.get()) {
+        return false;
+    }
+    enabled
+}
+
 /// Prepare exact V9 records for the explicitly configured fresh-draw host profile.
 fn prepare_inkpen2_v9(
     stroke: &Stroke,
@@ -4272,7 +4304,7 @@ fn prepare_inkpen2_v9(
     }
     let argb = rendering.style.color_argb?;
     let rainbow = if active_rainbow {
-        if profile.enhanced_antialias
+        if inkpen2_reject_active_rainbow_aa(profile.enhanced_antialias)
             || profile.screen_width.min(profile.screen_height) != 1080
             || rendering.style.color_type_raw != Some(1)
             || rendering.style.first_unparsed_field.is_some()
@@ -9842,6 +9874,159 @@ mod tests {
         })
         .resolve(&mut stroke);
         stroke
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    #[ignore = "writes public-dispatch experimental AA rainbow artifacts"]
+    fn write_public_inkpen2_gradient_aa_artifacts() {
+        use serde_json::{Value, json};
+        use std::path::PathBuf;
+
+        let output = PathBuf::from(
+            std::env::var_os("SDOCX_INKPEN2_PUBLIC_AA_DIR")
+                .expect("set SDOCX_INKPEN2_PUBLIC_AA_DIR to a fresh directory"),
+        );
+        std::fs::create_dir_all(&output).unwrap();
+        assert!(
+            std::fs::read_dir(&output).unwrap().next().is_none(),
+            "output directory must be empty"
+        );
+        let captures = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../..")
+                    .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
+            });
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: true,
+        };
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let mut cases = Vec::new();
+        let _guard = super::InkPen2ExperimentalAaGuard::enter();
+        for scale in [1, 2, 4] {
+            for alpha in [128_u8, 255] {
+                let id = format!("scale{scale}_aa1_alpha{alpha}");
+                let capture_bytes = std::fs::read(captures.join(format!("{id}.json"))).unwrap();
+                let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
+                let producer = &capture["joined_native_paint"]["producer"];
+                let native = decode_hex(
+                    producer["native_AddPoint_vector_bytes_hex"]
+                        .as_str()
+                        .unwrap(),
+                );
+                let expected = "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987";
+                assert_eq!(native.len(), 25 * 9 * 4);
+                assert_eq!(sha256_hex(&native), expected);
+                assert_eq!(producer["sha256"].as_str(), Some(expected));
+                assert_eq!(
+                    capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
+                    u64::from(alpha)
+                );
+                let stages =
+                    capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
+                        .as_array()
+                        .unwrap();
+                assert_eq!(stages.len(), 3);
+                let mut stroke = inkpen2_active_rainbow_hybrid_stroke();
+                stroke.rendering.as_mut().unwrap().style.color_argb = Some(
+                    u32::try_from(capture["input"]["color_argb_u32"].as_u64().unwrap()).unwrap(),
+                );
+                let prepared =
+                    prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                        .unwrap();
+                assert!(prepared.enhanced_antialias && prepared.per_stamp_rgb);
+                assert_eq!(record_bytes(&prepared.records), native);
+                let mut page = page_with_uncolored_stroke();
+                page.width = 128;
+                page.height = 96;
+                page.objects = vec![stroke.into()];
+                let doc = document(page);
+                let layout = layout_document(&doc);
+                assert_eq!(layout.pages.len(), 1);
+                let mut cache = super::DocumentTextCache::default();
+                let mut scene = cache
+                    .render_layout_page_scenes(
+                        &doc,
+                        &[&layout.pages[0]],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0);
+                assert_eq!(scene.ink.len(), 1, "public dispatch must retain native ink");
+                assert!(scene.text_error.is_none());
+                let source = &scene.page.svg;
+                assert!(
+                    source.contains("<mask") && source.contains(r#"mask=""#),
+                    "active mask required"
+                );
+                assert!(
+                    source.contains("<filter") && source.contains(r#"filter=""#),
+                    "active filter required"
+                );
+                // The public scene is in document coordinates. Apply the capture
+                // chart after the background, while keeping the sidecar intact;
+                // the PDF renderer associates its retained ink with the SVG node.
+                let open_end = source.find('>').unwrap() + 1;
+                let close_start = source.rfind("</svg>").unwrap();
+                let body = &source[open_end..close_start];
+                let (background, content) = if let Some(start) = body.find("<rect") {
+                    let end = start + body[start..].find("/>").unwrap() + 2;
+                    (&body[..end], &body[end..])
+                } else {
+                    ("", body)
+                };
+                let svg = format!(
+                    r#"{}{}<g transform="matrix({scale},0,0,-{scale},0,96)">{}</g></svg>"#,
+                    &source[..open_end],
+                    background,
+                    content
+                );
+                scene.page.svg = svg.clone();
+                let pdf = crate::pdf::render_native_scene_pdf_for_test(
+                    &scene,
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap();
+                let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+                assert_eq!(parsed.get_pages().len(), 1);
+                assert!(
+                    !parsed
+                        .objects
+                        .values()
+                        .any(|object| object.as_stream().is_ok_and(|stream| stream
+                            .dict
+                            .get(b"Subtype")
+                            .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))))
+                );
+                write_new_artifact(&output.join(format!("{id}.svg")), svg.as_bytes());
+                write_new_artifact(&output.join(format!("{id}.pdf")), &pdf);
+                cases.push(json!({
+                    "case_id": id, "scale": scale, "alpha": alpha,
+                    "native_capture_sha256": sha256_hex(&capture_bytes), "native_vbo_sha256": expected,
+                    "native_stage_sha256": stages.iter().map(|stage| stage["rgba_sha256"].as_str().unwrap()).collect::<Vec<_>>(),
+                    "native_draw_matrix": capture["joined_native_paint"]["paint"]["readback"]["draw_matrix_f32_row_major"],
+                    "comparison_transform": [scale, 0, 0, -scale, 0, 96],
+                    "svg_sha256": sha256_hex(svg.as_bytes()), "pdf_sha256": sha256_hex(&pdf)
+                }));
+            }
+        }
+        let manifest = json!({
+            "schema": "sdocx-inkpen2-public-aa-gradient-v1", "admission_changed": false,
+            "coordinate_note": "The public retained page scene is transformed by [scale, 0, 0, -scale, 0, 96] after the background, preserving its native ink registry for PDF. Compare 128x96 outputs after reversing native GL rows once. The chart follows the existing reflection experiment; parity is not established by this writer.",
+            "cases": cases
+        });
+        write_new_artifact(
+            &output.join("manifest.json"),
+            &serde_json::to_vec_pretty(&manifest).unwrap(),
+        );
     }
 
     #[test]

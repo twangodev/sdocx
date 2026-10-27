@@ -323,6 +323,11 @@ captures at 1×/2×/4×; this isolates that experiment's loss to SVG rasterizati
 and compositing rather than its analytic MAX field.
 Enhanced active-gradient admission remains off: transform-aware integration,
 fractional consumer zoom, PDF appearance and real-document evidence remain open.
+An experimental parsed-hybrid public dispatch reproduces the captured VBO and
+retains the PDF ink sidecar. On the six [paired host controls](../../conformance/inkpen2-public-gradient-aa-host.json), the reflected resvg
+output has disjoint visible support from the native frame; MuPDF support IoU is
+0.87–0.959, with 4.95–38.62 RGB-byte MAE over shared support union. The
+comparison uses a test-only admission override and a source-derived page chart.
 Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
 The public active-gradient route is limited to explicit AA-off profiles with
 minimum screen dimension 1080, type 1, positive distance, nonnegative offset,

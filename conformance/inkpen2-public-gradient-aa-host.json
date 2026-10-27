@@ -1,0 +1,157 @@
+{
+  "schema": "sdocx.inkpen2.public-gradient-aa-host.v1",
+  "scope": "Test-only enhanced-AA active rainbow admission through parsed synthetic hybrid and retained public page dispatch; not enabled in production or verified on Android or a saved note. Native GL rows flipped once; page chart [scale,0,0,-scale,0,96] applied after #fcfcfc background, preserving PDF ink sidecar.",
+  "metric": "RGB byte errors over union of native/output pixels differing from #fcfcfc by more than one in any channel; native premultiplied RGBA composited on that background.",
+  "render_rs_sha256": "c9c898fd237ef54838b3c0be3fe8a290ab665e25eaa2f87866e9754d3b49b56b",
+  "native_vbo_sha256": "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987",
+  "resvg_runner_sha256": "9d8ae4ea9f44889bc4c10791b147770b74e6df62f756fa747da89ca20938e30a",
+  "resvg_version": "0.47.0",
+  "pymupdf_version": "1.28.2",
+  "mupdf_version": "1.28.2",
+  "cases": [
+    {
+      "case": "scale1_aa1_alpha128",
+      "capture_sha256": "bf0a36dad5ae7dfbed8bf087cfe5b7dfcecb990c6e76dba3b94b2a43d324b76c",
+      "native_rgba_sha256": "eb2fc653d5d30a6489c9600d42abfd121518971a762d1f6e69a5a5b31519ab55",
+      "svg_sha256": "e26950b724a7bdbe5bb78841a9b02146262d42530e4a124fea52fb32bd9b77db",
+      "resvg_rgba_sha256": "cab9fffa02abaed63d0b2629e36612fe9d2f3391716d05f4d2531fad2fbd5161",
+      "pdf_sha256": "722e066bf4ebc1205b5cf9775f96e5e54260e5f3a941aa14203a9c1ad910dc87",
+      "resvg": {
+        "native_support": 93,
+        "output_support": 14,
+        "union": 107,
+        "support_iou": 0.0,
+        "rgb_mae_union": 76.11838,
+        "rgb_max_union": 126
+      },
+      "mupdf": {
+        "native_support": 93,
+        "output_support": 94,
+        "union": 100,
+        "support_iou": 0.87,
+        "rgb_mae_union": 18.113333,
+        "rgb_max_union": 82
+      }
+    },
+    {
+      "case": "scale1_aa1_alpha255",
+      "capture_sha256": "647bd42f946a100dc134d480b842854cbe421d30d076f1c52985f8c50c763033",
+      "native_rgba_sha256": "555dbea31846e5dbe2ddb1798d03e617e25aa5c2634fd14be26c3333e8389df5",
+      "svg_sha256": "93c8fa0707341b475fe960707a31c228765e1f28da4fd8506687a4b7607aba54",
+      "resvg_rgba_sha256": "4e56f39de0203e5d202fd6a11df1e4a8117986014b804fcbdaf6bd242a698cd5",
+      "pdf_sha256": "ab63a8e113109e76f10a3a4b102449bb3cfbe633da46eb86603a4fec9bc8d512",
+      "resvg": {
+        "native_support": 93,
+        "output_support": 14,
+        "union": 107,
+        "support_iou": 0.0,
+        "rgb_mae_union": 152.205607,
+        "rgb_max_union": 252
+      },
+      "mupdf": {
+        "native_support": 93,
+        "output_support": 94,
+        "union": 100,
+        "support_iou": 0.87,
+        "rgb_mae_union": 38.613333,
+        "rgb_max_union": 161
+      }
+    },
+    {
+      "case": "scale2_aa1_alpha128",
+      "capture_sha256": "170de3b525509980ead2f38885dad9a95db72c924fe0dcfead35b1511affc1ae",
+      "native_rgba_sha256": "a0365a47f8d019d82f0ce3d4cd654a79f6781300b648d9bfa726d8d6b02cfcac",
+      "svg_sha256": "01364d161c1b0dc4a85976bf561d429966ceb30904b9a3d7f9bde8761e66ade9",
+      "resvg_rgba_sha256": "c9f9f686bcd02be78eb8febf0525161c4cb9822430047cc7d5df174d78c03046",
+      "pdf_sha256": "7ccfdf0680b431a51cface12e30b60b2dbc663dd4f44d6229da9c2e405dd0b42",
+      "resvg": {
+        "native_support": 406,
+        "output_support": 66,
+        "union": 472,
+        "support_iou": 0.0,
+        "rgb_mae_union": 68.998588,
+        "rgb_max_union": 126
+      },
+      "mupdf": {
+        "native_support": 406,
+        "output_support": 371,
+        "union": 410,
+        "support_iou": 0.895122,
+        "rgb_mae_union": 8.961789,
+        "rgb_max_union": 43
+      }
+    },
+    {
+      "case": "scale2_aa1_alpha255",
+      "capture_sha256": "9244a7742051c5f947e887f3a62a5c62c0cefa0ffebe619a65cd5061cccc9490",
+      "native_rgba_sha256": "23e1003f6d1af4a2d91091694491cac60e3ceb0cb141d21bbeb3a6d43d7aaf7e",
+      "svg_sha256": "3fe891f18609a13b16bf5539917f76101fecfd67d2f4da24c00c4fc7e0583849",
+      "resvg_rgba_sha256": "9c6e3764bcc6e411dae32c21a63f134f50716d14b5dfe8e212baf52b4ab9ba4c",
+      "pdf_sha256": "5c2cf32d0e005d9e009f2e481679f3519ebcd177427d6e5cdba0540d1a10d830",
+      "resvg": {
+        "native_support": 406,
+        "output_support": 68,
+        "union": 474,
+        "support_iou": 0.0,
+        "rgb_mae_union": 137.379747,
+        "rgb_max_union": 252
+      },
+      "mupdf": {
+        "native_support": 406,
+        "output_support": 373,
+        "union": 410,
+        "support_iou": 0.9,
+        "rgb_mae_union": 18.71626,
+        "rgb_max_union": 85
+      }
+    },
+    {
+      "case": "scale4_aa1_alpha128",
+      "capture_sha256": "4544b4d049b97c6d493ef2826d721ef22feee748333836f5c82303294ef28a80",
+      "native_rgba_sha256": "d0bdd62310f83029ba3ab642e76fffd273e54e9750ddb7d906ed51e9188ca21a",
+      "svg_sha256": "5a29843828bd408d717911fac6976ca50dc9308889cf3f9af228c505e2f4cfdb",
+      "resvg_rgba_sha256": "6108b84954bc91640f33d343d25086a1ba387ada79fcebc55c406604f3f520a2",
+      "pdf_sha256": "3e58a32fe625cb2728aa1b3b38f3ba410c9a04387310ec32c73eb5c70becf9bb",
+      "resvg": {
+        "native_support": 1601,
+        "output_support": 0,
+        "union": 1601,
+        "support_iou": 0.0,
+        "rgb_mae_union": 66.368728,
+        "rgb_max_union": 126
+      },
+      "mupdf": {
+        "native_support": 1601,
+        "output_support": 1553,
+        "union": 1610,
+        "support_iou": 0.959006,
+        "rgb_mae_union": 4.948033,
+        "rgb_max_union": 23
+      }
+    },
+    {
+      "case": "scale4_aa1_alpha255",
+      "capture_sha256": "786d5c79084416fc11983982103e4302865ecf7812fdf7be0339cba76037a141",
+      "native_rgba_sha256": "632b308c7dc7dbeb628051e72b8d7375d0dca2ff4cdd096b09e04bf4223cb9c5",
+      "svg_sha256": "2814d4a6f1b08bda467f705ffdf3c542cb6c33e9f6c44cce33a54627bfa50222",
+      "resvg_rgba_sha256": "6108b84954bc91640f33d343d25086a1ba387ada79fcebc55c406604f3f520a2",
+      "pdf_sha256": "66b217459781f3033611ffdcf5fa68ff9389b800cba264d17d560db02864361c",
+      "resvg": {
+        "native_support": 1604,
+        "output_support": 0,
+        "union": 1604,
+        "support_iou": 0.0,
+        "rgb_mae_union": 132.499792,
+        "rgb_max_union": 252
+      },
+      "mupdf": {
+        "native_support": 1604,
+        "output_support": 1558,
+        "union": 1614,
+        "support_iou": 0.959108,
+        "rgb_mae_union": 9.375052,
+        "rgb_max_union": 47
+      }
+    }
+  ]
+}
