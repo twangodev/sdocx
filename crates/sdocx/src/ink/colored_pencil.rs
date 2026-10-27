@@ -333,6 +333,176 @@ mod tests {
     const FIXTURE: &str = include_str!("../../../../conformance/colored-pencil-native.json");
     const NATIVE: &[u8] = include_bytes!("../../../../conformance/colored-pencil-native.bin");
 
+    // The selected PenData and host RNG are external to the public Stroke.
+    // Metadata and unused channels below are synthetic adapter inputs, not
+    // evidence of fields in a serialized note or a production admission rule.
+    #[derive(Clone, Copy)]
+    struct PublicStrokeContext {
+        gl_version: u32,
+        host_glibc_type3: bool,
+        pen: PenData,
+    }
+
+    fn sample_public_stroke(
+        stroke: &crate::Stroke,
+        context: PublicStrokeContext,
+    ) -> Result<super::Sampled, &'static str> {
+        let rendering = stroke
+            .rendering
+            .as_ref()
+            .ok_or("missing rendering metadata")?;
+        let style = &rendering.style;
+        let properties = rendering.properties;
+        let size = style.pen_size.ok_or("missing pen size")?;
+        if context.gl_version != 4
+            || !context.host_glibc_type3
+            || context.pen.width != 1920
+            || context.pen.height != 1080
+            || context.pen.spacing_extra != 0
+            || context.pen.size.to_bits() != size.to_bits()
+            || ![8.0_f32.to_bits(), 16.0_f32.to_bits()].contains(&size.to_bits())
+            || stroke.pen_width.to_bits() != size.to_bits()
+            || rendering.pen_name.as_deref()
+                != Some("com.samsung.android.sdk.pen.pen.preload.ColoredPencil")
+            || rendering.advanced_settings.as_deref() != Some("4;")
+            || rendering.tool_type_raw != 2
+            || !properties.compressed
+            || !properties.stylus_channels
+            || properties.replay_only
+            || properties.eraser
+            || properties.fixed_width
+            || properties.millisecond_timestamps
+            || properties.top_layer_pen
+            || properties.alpha_lock
+            || properties.binary_added
+            || properties.generated
+            || properties.fixed_opacity
+            || properties.rainbow_effect
+            || properties.straighten
+            || properties.reveal_mode
+            || style.size_level != Some(0)
+            || style.stroke_type_raw != Some(0)
+            || style.color_type_raw != Some(0)
+            || style.color_argb != Some(0x8044_aaee)
+            || stroke.color
+                != Some(crate::Color {
+                    r: 0x44,
+                    g: 0xaa,
+                    b: 0xee,
+                })
+        {
+            return Err("stroke or context outside captured ColoredPencil GLV4 profile");
+        }
+        let n = stroke.points.len();
+        if stroke.pressures.len() != n
+            || stroke.timestamps.len() != n
+            || stroke.tilts.len() != n
+            || stroke.orientations.len() != n
+        {
+            return Err("public stroke channels must align");
+        }
+        fn exact(value: f64) -> Result<f32, &'static str> {
+            let narrowed = value as f32;
+            if !value.is_finite() || f64::from(narrowed) != value {
+                return Err("channel is not exactly representable as finite f32");
+            }
+            Ok(narrowed)
+        }
+        let points = stroke
+            .points
+            .iter()
+            .map(|p| {
+                Ok(P {
+                    x: exact(p.x)?,
+                    y: exact(p.y)?,
+                })
+            })
+            .collect::<Result<Vec<_>, &'static str>>()?;
+        let tilts = stroke
+            .tilts
+            .iter()
+            .copied()
+            .map(exact)
+            .collect::<Result<Vec<_>, _>>()?;
+        let orientations = stroke
+            .orientations
+            .iter()
+            .copied()
+            .map(exact)
+            .collect::<Result<Vec<_>, _>>()?;
+        for &pressure in &stroke.pressures {
+            exact(pressure)?;
+        }
+        for &timestamp in &stroke.timestamps {
+            i32::try_from(timestamp).map_err(|_| "timestamp outside i32 range")?;
+        }
+        sample(
+            &StrokeInput {
+                points,
+                tilts,
+                orientations,
+                size,
+                curve_enabled: properties.compressed,
+                tool_type: i32::from(rendering.tool_type_raw),
+            },
+            context.pen,
+        )
+    }
+
+    fn public_stroke(input: &StrokeInput) -> crate::Stroke {
+        crate::Stroke {
+            rendering: Some(crate::StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.ColoredPencil".into()),
+                advanced_settings: Some("4;".into()),
+                tool_type_raw: 2,
+                properties: crate::StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: false,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: crate::StrokeStyle {
+                    pen_size: Some(input.size),
+                    color_argb: Some(0x8044_aaee),
+                    size_level: Some(0),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..Default::default()
+                },
+            }),
+            bbox: crate::BoundingBox::default(),
+            points: input
+                .points
+                .iter()
+                .map(|p| crate::Point {
+                    x: f64::from(p.x),
+                    y: f64::from(p.y),
+                })
+                .collect(),
+            pressures: vec![0.5; input.points.len()],
+            timestamps: vec![0; input.points.len()],
+            tilts: input.tilts.iter().copied().map(f64::from).collect(),
+            orientations: input.orientations.iter().copied().map(f64::from).collect(),
+            color: Some(crate::Color {
+                r: 0x44,
+                g: 0xaa,
+                b: 0xee,
+            }),
+            pen_width: input.size,
+        }
+    }
+
     fn hex_bytes(value: &str) -> Vec<u8> {
         assert_eq!(value.len() % 2, 0);
         (0..value.len())
@@ -437,7 +607,22 @@ mod tests {
                 height: case["pen_data"]["height"].as_i64().unwrap() as i32,
                 spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
             };
-            let result = sample(&input, pen).unwrap();
+            let stroke = public_stroke(&input);
+            let context = PublicStrokeContext {
+                gl_version: 4,
+                host_glibc_type3: true,
+                pen,
+            };
+            let result = sample_public_stroke(&stroke, context).unwrap();
+            let mut wrong_context = context;
+            wrong_context.host_glibc_type3 = false;
+            assert!(sample_public_stroke(&stroke, wrong_context).is_err());
+            let mut lossy = stroke.clone();
+            lossy.points[0].x = 0.1;
+            assert!(sample_public_stroke(&lossy, context).is_err());
+            let mut incomplete = stroke.clone();
+            incomplete.tilts.pop();
+            assert!(sample_public_stroke(&incomplete, context).is_err());
 
             let expected_paths = case["native_path_samples"].as_array().unwrap();
             assert_eq!(
@@ -571,7 +756,7 @@ mod tests {
 
     #[cfg(all(feature = "render", feature = "serde"))]
     mod paint_conformance {
-        use super::{PenData, StrokeInput, f32_bits, sample, sha256};
+        use super::{PenData, StrokeInput, f32_bits, sha256};
         use base64::Engine as _;
         use serde_json::Value;
         use std::fmt::Write as _;
@@ -678,36 +863,7 @@ mod tests {
             svg
         }
 
-        #[test]
-        fn colored_pencil_public_argb_controls_match_native_rgba8_frames() {
-            let fixture: Value = serde_json::from_str(PAINT_FIXTURE).unwrap();
-            assert_eq!(
-                fixture["schema"],
-                "sdocx-colored-pencil-v4-paint-native-sparse-v1"
-            );
-            assert_eq!(
-                POINT_R8.len(),
-                fixture["binary"]["point_atlas"]["length"].as_u64().unwrap() as usize
-            );
-            assert_eq!(
-                sha256(POINT_R8),
-                fixture["binary"]["point_atlas"]["sha256"].as_str().unwrap()
-            );
-            let expanded_rgba: Vec<u8> = POINT_R8
-                .iter()
-                .flat_map(|value| [*value, 0, 0, 0])
-                .collect();
-            assert_eq!(
-                sha256(&expanded_rgba),
-                fixture["binary"]["point_atlas"]["native_RGBA8_expanded_sha256"]
-                    .as_str()
-                    .unwrap()
-            );
-            assert_eq!(
-                sha256(SPARSE),
-                fixture["binary"]["sha256"].as_str().unwrap()
-            );
-
+        fn sampled_native_stream(fixture: &Value) -> Vec<u8> {
             let geometry_fixture: Value = serde_json::from_str(super::FIXTURE).unwrap();
             let case = &geometry_fixture["cases"][0];
             let source = &case["input"];
@@ -743,7 +899,15 @@ mod tests {
                 height: case["pen_data"]["height"].as_i64().unwrap() as i32,
                 spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
             };
-            let sampled = sample(&input, pen).unwrap();
+            let sampled = super::sample_public_stroke(
+                &super::public_stroke(&input),
+                super::PublicStrokeContext {
+                    gl_version: 4,
+                    host_glibc_type3: true,
+                    pen,
+                },
+            )
+            .unwrap();
             let stream_meta = &case["native_stream"];
             let geometry_offset = stream_meta["offset"].as_u64().unwrap() as usize;
             let geometry_len = stream_meta["length"].as_u64().unwrap() as usize;
@@ -759,10 +923,73 @@ mod tests {
             );
             assert_eq!(sampled.stream.len(), 80);
 
+            sampled.stream
+        }
+
+        // Experimental reader fixtures only; this does not admit production rendering.
+        #[cfg(feature = "pdf")]
+        #[test]
+        #[ignore = "writes experimental SVG/PDF artifacts to SDOCX_COLORED_PENCIL_EXPORT_DIR"]
+        fn export_colored_pencil_native_controls() {
+            let output = std::path::PathBuf::from(
+                std::env::var_os("SDOCX_COLORED_PENCIL_EXPORT_DIR")
+                    .expect("set SDOCX_COLORED_PENCIL_EXPORT_DIR to a fresh directory"),
+            );
+            std::fs::create_dir(&output).expect("output directory must not already exist");
+            let fixture: Value = serde_json::from_str(PAINT_FIXTURE).unwrap();
+            let stream = sampled_native_stream(&fixture);
+            for color_case in fixture["cases"].as_array().unwrap() {
+                let color = color_case["argb"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x");
+                let argb = u32::from_str_radix(color, 16).unwrap();
+                let svg = source_svg(&stream, POINT_R8, argb);
+                let page = crate::RenderedPage::new(0, 256, 256, svg.clone());
+                let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                    .expect("experimental SVG must lower to PDF");
+                std::fs::write(output.join(format!("{color}.svg")), svg).unwrap();
+                std::fs::write(output.join(format!("{color}.pdf")), pdf).unwrap();
+            }
+            std::fs::write(output.join("provenance.json"), PAINT_FIXTURE).unwrap();
+        }
+
+        #[test]
+        fn colored_pencil_public_argb_controls_match_native_rgba8_frames() {
+            let fixture: Value = serde_json::from_str(PAINT_FIXTURE).unwrap();
+            assert_eq!(
+                fixture["schema"],
+                "sdocx-colored-pencil-v4-paint-native-sparse-v1"
+            );
+            assert_eq!(
+                POINT_R8.len(),
+                fixture["binary"]["point_atlas"]["length"].as_u64().unwrap() as usize
+            );
+            assert_eq!(
+                sha256(POINT_R8),
+                fixture["binary"]["point_atlas"]["sha256"].as_str().unwrap()
+            );
+            let expanded_rgba: Vec<u8> = POINT_R8
+                .iter()
+                .flat_map(|value| [*value, 0, 0, 0])
+                .collect();
+            assert_eq!(
+                sha256(&expanded_rgba),
+                fixture["binary"]["point_atlas"]["native_RGBA8_expanded_sha256"]
+                    .as_str()
+                    .unwrap()
+            );
+            assert_eq!(
+                sha256(SPARSE),
+                fixture["binary"]["sha256"].as_str().unwrap()
+            );
+
+            let stream = sampled_native_stream(&fixture);
+
             for color_case in fixture["cases"].as_array().unwrap() {
                 assert_eq!(
                     color_case["geometry_stream_sha256"].as_str().unwrap(),
-                    sha256(&sampled.stream)
+                    sha256(&stream)
                 );
                 let argb = u32::from_str_radix(
                     color_case["argb"]
@@ -772,7 +999,7 @@ mod tests {
                     16,
                 )
                 .unwrap();
-                let svg = source_svg(&sampled.stream, POINT_R8, argb);
+                let svg = source_svg(&stream, POINT_R8, argb);
                 let tree =
                     resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
                 let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();

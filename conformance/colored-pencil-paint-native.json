@@ -244,5 +244,106 @@
     "cargo_run_here": false,
     "expected_values_are_native_sparse_capture_bytes": true,
     "no_tolerance_or_pixel_fit": true
+  },
+  "pdf_host_comparison": {
+    "scope": "Synthetic public Stroke adapter with pinned glibc host RNG/context produces four captured native points. SVG generated from embedded point atlas and exported through render_svg_pages_pdf; transparent 256x256 outputs compared with host Mesa RGBA8 frames. PDF uses an image atlas and does not establish vector-only or Android parity.",
+    "source_sha256": "09a098cad288cc568ba25c13daf7c59d9f7d884d61528fff90b7e80f9e017df6",
+    "reader_versions": {
+      "pymupdf": "1.28.2",
+      "mupdf": "1.28.2",
+      "pypdfium2": "4.30.0",
+      "pdfium": "126.0.6462.0"
+    },
+    "metric": "Premultiplied RGBA8 on union of alpha-nonzero native and reader pixels. PDFium straight RGB converted by (rgb*alpha+127)//255; no phase adjustment.",
+    "cases": [
+      {
+        "argb": "0x8044aaee",
+        "svg_sha256": "2e145c45c48542aca70be030e8fd88ad17d14a2bf9d211d86156f58d7d500fea",
+        "pdf_sha256": "4f6c4112774e9253a6e3bdb60f6952981674099980e736b3ff9c898e1f85eaa1",
+        "mupdf_image_objects": 1,
+        "mupdf": {
+          "native_support": 133,
+          "output_support": 164,
+          "support_iou": 0.810976,
+          "premul_rgba_mae_union": 7.234756,
+          "max_channel_error": 54,
+          "differing_pixels": 162
+        },
+        "pdfium": {
+          "native_support": 133,
+          "output_support": 170,
+          "support_iou": 0.782353,
+          "premul_rgba_mae_union": 6.977941,
+          "max_channel_error": 58,
+          "differing_pixels": 164
+        }
+      },
+      {
+        "argb": "0xff44aaee",
+        "svg_sha256": "29f48e0c111f3c88e99911f0c88a03112ac038a54a1aa80696f34076f682c1c9",
+        "pdf_sha256": "64e5b94bc75f7c258cb11a11da54e048a710576d69f3a9f2bafcca9570c88803",
+        "mupdf_image_objects": 1,
+        "mupdf": {
+          "native_support": 134,
+          "output_support": 170,
+          "support_iou": 0.788235,
+          "premul_rgba_mae_union": 12.864706,
+          "max_channel_error": 102,
+          "differing_pixels": 169
+        },
+        "pdfium": {
+          "native_support": 134,
+          "output_support": 172,
+          "support_iou": 0.77907,
+          "premul_rgba_mae_union": 12.790698,
+          "max_channel_error": 105,
+          "differing_pixels": 168
+        }
+      },
+      {
+        "argb": "0x0044aaee",
+        "svg_sha256": "3ea2955dfa4bee1276c1de06a6a138042d63054244287f8db7f9111941dcec38",
+        "pdf_sha256": "93375cde0008c86156d992d84bae9aa0479e34983278030cead9fc8341cca7ee",
+        "mupdf_image_objects": 1,
+        "mupdf": {
+          "native_support": 0,
+          "output_support": 0,
+          "support_iou": 1,
+          "premul_rgba_mae_union": 0,
+          "max_channel_error": 0,
+          "differing_pixels": 0
+        },
+        "pdfium": {
+          "native_support": 0,
+          "output_support": 0,
+          "support_iou": 1,
+          "premul_rgba_mae_union": 0,
+          "max_channel_error": 0,
+          "differing_pixels": 0
+        }
+      },
+      {
+        "argb": "0x80c04020",
+        "svg_sha256": "2b8535279d01079b022db11323a13e576f26a43f508f922b9fe3075fe43ba8ec",
+        "pdf_sha256": "f5211760133fc008a477d93d03bed8fef0fb36032cee91d66f7832e1e1974d52",
+        "mupdf_image_objects": 1,
+        "mupdf": {
+          "native_support": 133,
+          "output_support": 164,
+          "support_iou": 0.810976,
+          "premul_rgba_mae_union": 5.618902,
+          "max_channel_error": 54,
+          "differing_pixels": 161
+        },
+        "pdfium": {
+          "native_support": 133,
+          "output_support": 170,
+          "support_iou": 0.782353,
+          "premul_rgba_mae_union": 5.341176,
+          "max_channel_error": 58,
+          "differing_pixels": 164
+        }
+      }
+    ]
   }
 }
