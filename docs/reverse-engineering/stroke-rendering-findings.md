@@ -1076,7 +1076,12 @@ A scratch unit-square Form variant normalizes the direct geometry to explicit
 stroke bounds and reapplies the corresponding page transform. For the long and
 2× bend controls its MuPDF/PDFium RGB L1 was 4951/4249 and 11410/10019,
 with PDFs of about 86 and 48 KB. This tests the coordinate strategy for the
-existing retained-ink marker transform; it does not execute Krilla marker
-replacement. The retained prototype is
-`tmp/marker-owner-boolean/src/bin/direct_pdf_form.rs`. No Marker production
-dispatch is enabled.
+existing retained-ink marker transform. A temporary test-only payload then
+ran actual Krilla marker emission and replacement; the imported form needed a
+unit-space vertical flip. Long and 2× bend MuPDF/PDFium RGB L1 was 4951/4249
+and 11410/10019, with 107 and 59 KB PDFs. This test imports a capped scratch
+PDF graph, not a production form compiler or cumulative page budget. The
+retained prototype and temporary test patch are
+`tmp/marker-owner-boolean/src/bin/direct_pdf_form.rs` and
+`scratch/legacy-marker-krilla-replacement.patch`. No Marker production dispatch
+is enabled.
