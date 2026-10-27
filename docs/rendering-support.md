@@ -98,7 +98,8 @@ curve-enabled strokes without saved stylus channels, with three or four points
 and sizes 8 or 12; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
-output pixel for its fringe. It is not validated for general saved notes,
+output pixel for its fringe. Each scene has a shared stamp budget, and sliced
+exports omit off-slice stamps while retaining boundary intersections. It is not validated for general saved notes,
 other scales, device rendering, or replay parity.
 For one clipped synthetic SimpleBrush host-Mesa control, the profile's SVG has
 137/137 native support overlap,
@@ -191,6 +192,10 @@ a chosen paper sampler; canvas dimensions must match the page. Paper sampling
 uses a bounded intrinsic texel plane to preserve nearest repeat/clamp coverage
 across fractional tile seams; stroke geometry remains vector. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
+Remaining pencil work: reconstruct and validate production texture and paint
+for Pencil, Pencil2 and ColoredPencil; establish Pencil3's saved-note runtime
+context and compare its SVG/PDF output against native device and real-note
+exports. Then evaluate a better default where the required context is known.
 The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
 The [V3 particle kernel](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-v3-native.json)
