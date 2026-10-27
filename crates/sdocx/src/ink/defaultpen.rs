@@ -217,18 +217,27 @@ pub(super) fn saved_with_boundaries(
             terminal_start: 0,
         });
     }
-    // When every pre-terminal historical move is below the native 1.5-unit
-    // axis gate, the wrapper leaves the start flag set and endPen emits one dot.
-    let history_is_stationary = input[..input.len() - 1].windows(2).all(|pair| {
-        let delta = pair[1].sub(pair[0]);
-        delta.x.abs() < 1.5 && delta.y.abs() < 1.5
-    });
-    if history_is_stationary {
+    // The start gate compares each historical event with the original down
+    // position, so small movements can accumulate before the first accepted
+    // event seeds the control point.
+    let first_move = input[1..input.len() - 1]
+        .iter()
+        .position(|point| {
+            let delta = point.sub(input[0]);
+            delta.x.abs() >= 1.5 || delta.y.abs() >= 1.5
+        })
+        .map(|index| index + 1);
+    let Some(first_move) = first_move else {
         return Some(DefaultInk {
             points: vec![[input[0].x, input[0].y, radius]],
             redraw_ends: vec![0; redraw_count],
             terminal_start: 0,
         });
+    };
+    // Delayed start changes native terminal state; retain generic rendering
+    // until that transition is reconstructed.
+    if first_move > 1 {
+        return None;
     }
     let threshold = if tool == 1 || (tool == 2 && source == 0x1002) {
         50.0_f32
@@ -239,18 +248,18 @@ pub(super) fn saved_with_boundaries(
     let mut redraw_ends = Vec::with_capacity(redraw_count);
     let mut alternate = true;
     let mut start = input[0];
-    let mut control = input[1];
-    let mut retained = input[1];
-    let mut endpoint = input[1];
+    let mut control = input[first_move];
+    let mut retained = input[first_move];
+    let mut endpoint = input[first_move];
     let mut cubic_end = false;
     // RedrawPen calls redrawLine once for the initial historical event. The
     // captured six-point caller emits no AddPoint at that first return.
-    redraw_ends.push(0);
+    redraw_ends.resize(first_move, 0);
 
     // RedrawPen visits all but the terminal event as history. The first
     // historical event seeds the drawable; later accepted events emit a
     // midpoint quadratic and advance its retained start/control state.
-    for &next in &input[2..input.len() - 1] {
+    for &next in &input[first_move + 1..input.len() - 1] {
         let previous = endpoint;
         let distance = next.sub(previous).len();
         let accepted = if distance > threshold {
@@ -353,6 +362,43 @@ mod tests {
             "../../../../conformance/defaultpen-saved-native.json"
         ))
         .unwrap()
+    }
+
+    #[test]
+    fn gradual_movement_uses_native_initial_position_gate() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/defaultpen-gradual-native.json"
+        ))
+        .unwrap();
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let points: Vec<Point> = case["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap(),
+                    y: p[1].as_f64().unwrap(),
+                })
+                .collect();
+            let actual = saved(&points, 10.0, 1, 0);
+            if name != "stationary" {
+                assert!(actual.is_none(), "{name} must retain generic geometry");
+                continue;
+            }
+            let actual = actual.unwrap();
+            let expected = case["add_points"].as_array().unwrap();
+            assert_eq!(actual.len(), expected.len(), "{name}");
+            for (actual, expected) in actual.iter().zip(expected) {
+                for component in 0..3 {
+                    let bias = if component == 2 { 0.5 } else { 0.0 };
+                    let expected = expected[component].as_f64().unwrap() as f32 + bias;
+                    assert!(
+                        (actual[component] - expected).abs() < 0.00001,
+                        "{name}: {actual:?}"
+                    );
+                }
+            }
+        }
     }
 
     #[test]

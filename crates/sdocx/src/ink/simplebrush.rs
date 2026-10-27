@@ -368,7 +368,7 @@ pub(crate) fn prepare_stroke(
     let rendering = stroke.rendering.as_ref().ok_or("missing stroke metadata")?;
     let p = rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Brush")
-        || rendering.advanced_settings.is_some()
+        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
         || rendering.tool_type_raw != 2
         || !p.compressed
         || p.replay_only

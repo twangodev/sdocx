@@ -238,6 +238,19 @@ fn opted_in_paint_uses_explicit_color_and_unsupported_setting_falls_back() {
     assert_ne!(profiled, baseline);
     assert!(profiled.contains("#123456"));
     source.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+    let empty_setting = document(source.clone());
+    assert_eq!(
+        render_document_svg(&empty_setting, &options())
+            .remove(0)
+            .svg,
+        profiled
+    );
+    #[cfg(feature = "pdf")]
+    assert_eq!(
+        crate::render_document_pdf(&empty_setting, &options(), &Default::default()).unwrap(),
+        crate::render_document_pdf(&doc, &options(), &Default::default()).unwrap()
+    );
+    source.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
     let unsupported = document(source);
     assert_eq!(
         render_document_svg(&unsupported, &options()).remove(0).svg,

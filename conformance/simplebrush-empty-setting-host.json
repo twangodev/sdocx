@@ -1,0 +1,192 @@
+{
+  "schema": "sdocx-simplebrush-empty-setting-paired-host-v1",
+  "scope": "Synthetic ObjectStroke setters and emulated native Drawing with explicit queue and host Mesa GLES. Null baseline receipts were captured separately. Not serialized-note or device evidence. Existing HostV25 input restrictions still apply.",
+  "execution": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 <paint-capture> --advanced-setting empty --pen-size <size> followed by --dispatch-task-seq 0 through 7. Three-point control uses simplebrush-paint-capture.py; four-point uses simplebrush-four-paint-capture.py.",
+  "harnesses": [
+    {
+      "path": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-paint-capture.py",
+      "sha256": "62109356fa2120aa7d1318a6f23667558e3d4a183fc0f40d36ff3a42de94c936"
+    },
+    {
+      "path": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-source-capture.py",
+      "sha256": "86afe686345ccc650c01ad2f51d5a79728f2a0d7aec39462605c7d302205fdea"
+    },
+    {
+      "path": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-four-paint-capture.py",
+      "sha256": "baee73c26a356f47214d66fdf5a7f8668b7ac42f3444910fc38fd77f6059f32e"
+    },
+    {
+      "path": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-four-source-capture.py",
+      "sha256": "db5faa5ebb16d1d78ae181c200199fe9faf6a2ea9c7504cc5c8ae7840f4dabb6"
+    }
+  ],
+  "controls": [
+    {
+      "name": "three_size8",
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000041",
+        "pen_size_requested_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000803e",
+          "0000403f"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19
+        ],
+        "tool_type": 2
+      },
+      "baseline_receipt": "conformance/simplebrush-paint-v25.json",
+      "geometry_sha256": "498063f7e145bf52f54dfd893061c7f3dd293d35d43c0cfce7c31bb2e88e1530",
+      "frame_sha256": "87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e",
+      "paint_clean": true
+    },
+    {
+      "name": "three_size12",
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00004041",
+        "pen_size_requested_f32_bits": "00004041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000803e",
+          "0000403f"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19
+        ],
+        "tool_type": 2
+      },
+      "baseline_receipt": "conformance/simplebrush-paint-v25-size12.json",
+      "geometry_sha256": "57073332f2cfb20e88ad2febe5d8b0357f9f4ecf4ad8803158446f7b8ea9b723",
+      "frame_sha256": "a86fc42c1c7ead175fdd2ee7664cbed8c3bda7f4dbee88125c1a27d285cc6120",
+      "paint_clean": true
+    },
+    {
+      "name": "four_size4",
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00008040",
+        "pen_size_requested_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "0000a040"
+          ],
+          [
+            "0000e841",
+            "00003041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000003f",
+          "0000803e",
+          "0000403f",
+          "cdcccc3e"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          30
+        ],
+        "tool_type": 2
+      },
+      "baseline_receipt": "conformance/simplebrush-paint-v25-four-size4.json",
+      "geometry_sha256": "ac24fcac4f7c5aaccc6ecdc258ddb5f02b13721fd494d57d07bdfb4aa0699f3f",
+      "frame_sha256": "1b8cdedbaabff38dadb16636ad6b8e44381b75ca3cf422d7137cf0fa1b1948ca",
+      "paint_clean": true
+    }
+  ]
+}
