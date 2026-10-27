@@ -210,23 +210,18 @@ mod tests {
     struct PublicStrokeContext {
         native_coordinates: bool,
         model_matrix: [f32; 9],
-        curve_enabled: bool,
     }
 
     const CAPTURE_CONTEXT: PublicStrokeContext = PublicStrokeContext {
         native_coordinates: true,
         model_matrix: [1., 0., 0., 0., 1., 0., 0., 0., 1.],
-        curve_enabled: true,
     };
 
     fn sample_public_stroke(
         stroke: &Stroke,
         context: PublicStrokeContext,
     ) -> Result<Vec<[f32; 3]>, &'static str> {
-        if !context.native_coordinates
-            || context.model_matrix != CAPTURE_CONTEXT.model_matrix
-            || !context.curve_enabled
-        {
+        if !context.native_coordinates || context.model_matrix != CAPTURE_CONTEXT.model_matrix {
             return Err("unsupported SimpleBrush coordinate context");
         }
         let rendering = stroke.rendering.as_ref().ok_or("missing stroke metadata")?;
@@ -288,7 +283,7 @@ mod tests {
             &pressures,
             size,
             i32::from(rendering.tool_type_raw),
-            context.curve_enabled,
+            p.compressed,
         )
     }
 
@@ -303,7 +298,7 @@ mod tests {
                 advanced_settings: Some(String::new()),
                 tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
                 properties: StrokeProperties {
-                    // Synthetic serialization metadata, not the native curve flag.
+                    // Synthetic saved property bit 0, also the native curve flag.
                     compressed: true,
                     replay_only: false,
                     stylus_channels: false,
@@ -361,9 +356,6 @@ mod tests {
         assert!(sample_public_stroke(&stroke, context).is_err());
         context = CAPTURE_CONTEXT;
         context.model_matrix[0] = 2.;
-        assert!(sample_public_stroke(&stroke, context).is_err());
-        context = CAPTURE_CONTEXT;
-        context.curve_enabled = false;
         assert!(sample_public_stroke(&stroke, context).is_err());
         let mut changed = stroke.clone();
         changed.rendering.as_mut().unwrap().properties.compressed = false;

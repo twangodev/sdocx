@@ -102,8 +102,9 @@ ignores input alpha; the generic Brush route also uses whole-stroke opacity 1
 for this control. This single 1× transparent-background comparison does not
 establish saved-note admission, general PDF behavior, other scales or device parity.
 Four captured geometry streams also pass through a test-only public `Stroke`
-adapter with an explicit identity coordinate context and curve mode; its
-serialization flags and settings are synthetic, not native saved-note evidence.
+adapter with an explicit identity coordinate context. Its synthetic saved curve
+flag uses property bit 0, which native controls identify as `IsCurveEnabled`;
+the remaining synthetic settings are not native saved-note evidence.
 Parsing normally populates public RGB from saved ARGB. For eligible null-setting
 SimpleBrush strokes whose public color was subsequently cleared, the generic
 route recovers explicit saved RGB. The single native color control supports this
