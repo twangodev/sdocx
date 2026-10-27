@@ -78,8 +78,7 @@ unsupported diagnostic. A [synthetic native nine-color control](../conformance/n
 compares source-sized preprocessing and fractional placement against public exports.
 The nine-patch SVG reduces total RGB error from 57,589 to 8,135 compared with
 ordinary image placement, but misses 20 native edge-support pixels; the PDF
-reduces error from 77,804 to 42,475. Sampling and seam differences remain, and
-native pixel parity is unverified.
+reduces error from 77,804 to 42,475. A [translucent native control](../conformance/nine-patch-translucent-native-control.json), using the same direct helper and placement with alpha values from 0 to 255, gives SVG error 4,515 versus 45,141 without nine-patch and PDF error 28,008 versus 53,302. These are single synthetic controls with directly supplied q, not saved-note or device tests. Sampling and seam differences remain, and native pixel parity is unverified.
 
 ## Ink
 

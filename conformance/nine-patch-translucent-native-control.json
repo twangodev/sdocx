@@ -1,0 +1,275 @@
+{
+  "native": {
+    "sha256": "8437f1578b499b877e98ac5c638e81ea184e383b6c9701aacb41477648db96e3",
+    "width": 48,
+    "height": 32,
+    "format": "premultiplied RGBA, composited on RGB 252",
+    "q": 0.75,
+    "cuts": [
+      128,
+      64,
+      384,
+      192
+    ],
+    "placement": [
+      8.25,
+      8.5,
+      40.5,
+      24.25
+    ]
+  },
+  "outputs": {
+    "svg-resvg": {
+      "sha256": "5acb0f043567a5c2f178df8331595bc619525d23c2defc385229d9e54ef74546",
+      "format": "rgba",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 105,
+          "rgb_abs_error": 4515,
+          "max_channel_error": 77
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 88,
+          "rgb_abs_error": 4438,
+          "max_channel_error": 77
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 17,
+          "rgb_abs_error": 77,
+          "max_channel_error": 18
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 38,
+          "rgb_abs_error": 1773,
+          "max_channel_error": 77
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 70,
+          "rgb_abs_error": 3865,
+          "max_channel_error": 77
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 543,
+        "output_pixels": 533,
+        "intersection": 533,
+        "native_only": 10,
+        "output_only": 0
+      }
+    },
+    "baseline-resvg": {
+      "sha256": "a3a019d76d5ce87a0f142e9945e7bef0ee34845cb608002b9d11f37f35a62bed",
+      "format": "rgba",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 181,
+          "rgb_abs_error": 45141,
+          "max_channel_error": 255
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 125,
+          "rgb_abs_error": 43679,
+          "max_channel_error": 255
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 56,
+          "rgb_abs_error": 1462,
+          "max_channel_error": 142
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 54,
+          "rgb_abs_error": 18050,
+          "max_channel_error": 255
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 62,
+          "rgb_abs_error": 16759,
+          "max_channel_error": 255
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 543,
+        "output_pixels": 522,
+        "intersection": 522,
+        "native_only": 21,
+        "output_only": 0
+      }
+    },
+    "pdf-mupdf": {
+      "sha256": "c357f14d80f3be29c0c4da3619a14541f4ad0ed678e2ff20e389d84d800622f3",
+      "format": "rgb",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 1346,
+          "rgb_abs_error": 28008,
+          "max_channel_error": 220
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 275,
+          "rgb_abs_error": 12013,
+          "max_channel_error": 199
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 96,
+          "rgb_abs_error": 14045,
+          "max_channel_error": 220
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 61,
+          "rgb_abs_error": 4762,
+          "max_channel_error": 199
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 156,
+          "rgb_abs_error": 10149,
+          "max_channel_error": 199
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 543,
+        "output_pixels": 469,
+        "intersection": 469,
+        "native_only": 74,
+        "output_only": 0
+      }
+    },
+    "baseline-mupdf": {
+      "sha256": "bd55752a058c06625fed7ec73ab6a023933d354db49fd3a0576e8dc7806b5a22",
+      "format": "rgb",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 1413,
+          "rgb_abs_error": 53302,
+          "max_channel_error": 254
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 342,
+          "rgb_abs_error": 37322,
+          "max_channel_error": 254
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 96,
+          "rgb_abs_error": 14030,
+          "max_channel_error": 253
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 84,
+          "rgb_abs_error": 17847,
+          "max_channel_error": 254
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 168,
+          "rgb_abs_error": 20031,
+          "max_channel_error": 254
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 543,
+        "output_pixels": 473,
+        "intersection": 473,
+        "native_only": 70,
+        "output_only": 0
+      }
+    }
+  },
+  "schema": "sdocx.nine-patch-translucent-native-control.v1",
+  "scope": "Synthetic nine-color alpha control; direct native helper with supplied q then native bitmap placement; ARM64 emulation. Public exports composite over page RGB 252. Disabled nine-patch baseline uses same source and placement. Not a saved-note, model-getter, or device test.",
+  "source": {
+    "straight_rgba_by_region": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        255,
+        0,
+        64
+      ],
+      [
+        0,
+        0,
+        255,
+        128
+      ],
+      [
+        255,
+        255,
+        0,
+        192
+      ],
+      [
+        255,
+        0,
+        255,
+        255
+      ],
+      [
+        0,
+        255,
+        255,
+        128
+      ],
+      [
+        255,
+        0,
+        0,
+        64
+      ],
+      [
+        0,
+        255,
+        0,
+        192
+      ],
+      [
+        0,
+        0,
+        255,
+        255
+      ]
+    ],
+    "native_injected_format": "premultiplied RGBA",
+    "input_sha256": "18452f618b91c67fb5c4cc0800b6764f7889d7de18524855d694ef5619ccef58",
+    "prepared_sha256": "c283f3cefd255fd5ed30e84c742e1f731e0d8458414c06f446db395700035989",
+    "png_sha256": "c71ddf1e907b348b26c04e75025f73698abeddcc7aa85db8dff39bc74e4fd00a"
+  },
+  "public": {
+    "commit": "3550570",
+    "svg_sha256": "e0e4395dd16859a57a61fd9af010a4405c5a58ccaa36ca289c10980765b723b3",
+    "pdf_sha256": "512b2e50f312d15f1caca4a5b3d7ff8df4277672ea750a23ca70bccb2fbd3571",
+    "svg_rasterizer": "resvg 0.45.1",
+    "pdf_rasterizer": "PyMuPDF 1.28.2 at 96 dpi"
+  },
+  "limitations": [
+    "One synthetic source and placement; no native pixel parity established.",
+    "Native support is alpha > 0; output support is a color threshold, so support sets are not equivalent measurements.",
+    "Native source is injected as premultiplied pixels; public PNG stores corresponding straight RGBA."
+  ]
+}
