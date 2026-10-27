@@ -187,7 +187,7 @@ The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles default to the generic pressure approximation. An explicit
 `Pencil3RenderProfile` admits bounded V3 intrinsic-texture paint for ordinary
-curve-enabled tool-1, tool-2 and tool-3 strokes with empty/`4;` settings, supplied screen/canvas dimensions and
+tool-1, tool-2 and tool-3 strokes with either curve flag, empty/`4;` settings, supplied screen/canvas dimensions and
 a chosen paper sampler; canvas dimensions must match the page. Paper sampling
 uses a bounded intrinsic texel plane to preserve nearest repeat/clamp coverage
 across fractional tile seams; stroke geometry remains vector. A test-only

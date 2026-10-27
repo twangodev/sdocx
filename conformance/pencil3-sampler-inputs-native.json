@@ -1712,6 +1712,7 @@
     },
     "tool1_straight_4pt": {
       "input_profile": {
+        "curve_enabled": false,
         "height": 1080,
         "orientation": [
           0.0,

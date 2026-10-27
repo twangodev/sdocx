@@ -33,7 +33,6 @@ fn saved_pencil3_v3_inputs(stroke: &Stroke) -> Option<(u32, f32)> {
             Some("") | Some("4;")
         )
         || !matches!(rendering.tool_type_raw, 1..=3)
-        || !rendering.properties.compressed
         || rendering.properties.replay_only
         || rendering.properties.eraser
         || rendering.properties.fixed_width
@@ -361,6 +360,54 @@ mod tests {
     }
 
     #[test]
+    fn curve_disabled_adapter_matches_native_controls() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-sampler-inputs-native.json"
+        ))
+        .unwrap();
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-no-curve-native.json"
+        ))
+        .unwrap();
+        let tool1 = &fixture["cases"]["tool1_straight_4pt"];
+        assert_eq!(tool1["input_profile"]["curve_enabled"], false);
+        let mut stroke = fixture_stroke(&tool1["input_profile"]);
+        stroke.rendering.as_mut().unwrap().properties.compressed = false;
+        let prepared = prepare_pencil3_v3_source(&stroke, 1920, 1080).unwrap();
+        let actual = prepared
+            .records
+            .iter()
+            .flatten()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>();
+        let native = tool1["routes"]["v3"]["phases"]["draw_object_stroke"]
+            ["native_packed_stream_f32_bits_le"].as_array().unwrap()
+            .iter().map(little_word).collect::<Vec<_>>();
+        assert_eq!(
+            actual, native,
+            "tool1 curve-disabled complete native stream"
+        );
+
+        for name in ["baseline_tool2_curve", "tool3_curve_4pt"] {
+            let case = &fixture["cases"][name];
+            let mut stroke = fixture_stroke(&case["input_profile"]);
+            stroke.rendering.as_mut().unwrap().properties.compressed = false;
+            let prepared = prepare_pencil3_v3_source(&stroke, 1920, 1080).unwrap();
+            let bytes = prepared
+                .records
+                .iter()
+                .flatten()
+                .flat_map(|value| value.to_le_bytes())
+                .collect::<Vec<_>>();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                receipt["cases"][name]["stream_sha256"].as_str().unwrap(),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
     fn tool1_curve_adapter_matches_complete_native_stream() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/pencil3-v3-tool1-curve-native.json"
@@ -465,8 +512,8 @@ mod tests {
         assert!(saved_pencil3_v3_transparent(&stroke));
         assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_some());
         stroke.rendering.as_mut().unwrap().properties.compressed = false;
-        assert!(!saved_pencil3_v3_transparent(&stroke));
-        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
+        assert!(saved_pencil3_v3_transparent(&stroke));
+        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_some());
     }
 
     #[test]
@@ -477,10 +524,6 @@ mod tests {
         .unwrap();
         let profile = &fixture["cases"]["baseline_tool2_curve"]["input_profile"];
         let original = fixture_stroke(profile);
-
-        let mut stroke = original.clone();
-        stroke.rendering.as_mut().unwrap().properties.compressed = false;
-        assert!(prepare_pencil3_v3_source(&stroke, 1920, 1080).is_none());
 
         let mut stroke = original.clone();
         stroke

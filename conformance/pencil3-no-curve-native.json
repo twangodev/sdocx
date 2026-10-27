@@ -1,0 +1,26 @@
+{
+  "boundary": "Synthetic native Model and Drawing execution under Unicorn with host adapters; no device framebuffer or serialized-note claim.",
+  "cases": {
+    "baseline_tool2_curve": {
+      "curve_enabled": false,
+      "drawing_and_saved_redraw_match": true,
+      "native_model_curve_getter_false": true,
+      "packed_word_count": 240,
+      "same_as_curve_enabled_fixture": true,
+      "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+      "stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52"
+    },
+    "tool3_curve_4pt": {
+      "curve_enabled": false,
+      "drawing_and_saved_redraw_match": true,
+      "native_model_curve_getter_false": true,
+      "packed_word_count": 165,
+      "same_as_curve_enabled_fixture": true,
+      "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+      "stream_sha256": "71264bdab6d126c14cd797c128ceabab6b9335713e2e0dac47c7c69692490dc9"
+    }
+  },
+  "pencil3_sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+  "saved_caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+  "schema": "pencil3-no-curve-native-v1"
+}

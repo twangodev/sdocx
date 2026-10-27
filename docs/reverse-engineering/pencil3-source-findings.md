@@ -177,6 +177,7 @@ partial stream or caller RNG changes on rejection. Admission requires exact
 Pencil3 empty/`4;` settings, tools 1, 2 or 3, complete finite channels, explicit
 ARGB and supported style defaults. Explicit-profile replay reveals the same
 saved-redraw particle stream using source-event cutoffs.
+A [curve-disabled native control](../../conformance/pencil3-no-curve-native.json) matches the complete tool 2 and tool 3 curve-enabled streams; the retained tool 1 curve-disabled and curve-enabled captures also match all 77 records. The V3 profile therefore admits either saved curve flag. These controls use synthetic Model setters and host adapters.
 A [curve-enabled tool 1 capture](../../conformance/pencil3-v3-tool1-curve-native.json) verifies the complete 77-record V3 stream through the native Drawing route; Rust matches every packed word. The earlier tool 1 fixture used a straight input and did not establish this admitted route.
 Native `Pen::SetSize` at PenCommon `0x45fdc` clamps to [0.4,800]. Drawing forwards
 omitted size as zero, yielding 0.4; explicit 0/0.1 and 800/900 controls match
