@@ -387,3 +387,21 @@ upload. Public SVG active-union RGB MAE is 0.55–0.87 for half alpha; MuPDF is
 4.21–12.30, improving over the direct route but leaving substantial sampling error.
 Opaque SVG also improves; opaque PDF regresses at 1×/2× and improves at 4×.
 All alpha-zero controls match blank; exported PDFs contain no image objects.
+
+## Null-setting V1 saved-redraw callback boundaries
+
+The [six synthetic controls](../../conformance/inkpen2-v1-saved-callback-boundaries-native.json)
+trace the selected V1 saved `RedrawPen` under the same host profile as the
+[geometry controls](../../conformance/inkpen2-null-v1-controls-native.json).
+A native initial `drawPoint` has emitted one record before the first movement
+or terminal call. Each `drawLine` entry records the preceding callback count;
+`endPen` starts the terminal suffix. For the baseline, the counts are 1, 5,
+and 13 at the two movement entries and terminal entry, followed by 25 records
+in total. The duplicate and short controls emit only the initial record; the
+other controls exercise two-point, turning, and reversing paths. Tests compare
+these boundaries and the complete captured geometry with the Rust model.
+
+These are saved-redraw calls, not a capture of the native replay controller or
+of progressive device frames. In particular, they do not establish whether an
+initial saved sample should expose that first record in replay. The current
+V1 replay route remains gated while that event timing is unresolved.

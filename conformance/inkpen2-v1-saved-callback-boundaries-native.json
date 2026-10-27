@@ -1,0 +1,102 @@
+{
+  "schema": "sdocx-inkpen2-v1-saved-callback-boundaries-v1",
+  "scope": "Synthetic native saved redraw, method entry and AddPoint return counts; this is not a native replay-controller capture.",
+  "cases": {
+    "baseline": {
+      "calls": [
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "drawLine",
+          "count": 5
+        },
+        {
+          "method": "endPen",
+          "count": 13
+        }
+      ],
+      "total": 25
+    },
+    "duplicate": {
+      "calls": [
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "endPen",
+          "count": 1
+        }
+      ],
+      "total": 1
+    },
+    "short": {
+      "calls": [
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "endPen",
+          "count": 1
+        }
+      ],
+      "total": 1
+    },
+    "two_points": {
+      "calls": [
+        {
+          "method": "endPen",
+          "count": 1
+        }
+      ],
+      "total": 6
+    },
+    "turn": {
+      "calls": [
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "drawLine",
+          "count": 5
+        },
+        {
+          "method": "endPen",
+          "count": 11
+        }
+      ],
+      "total": 21
+    },
+    "reverse": {
+      "calls": [
+        {
+          "method": "drawLine",
+          "count": 1
+        },
+        {
+          "method": "drawLine",
+          "count": 5
+        },
+        {
+          "method": "endPen",
+          "count": 9
+        }
+      ],
+      "total": 21
+    }
+  },
+  "capture_script": "conformance/inkpen2_v1_replay_boundaries_capture.py",
+  "source_controls": "conformance/inkpen2-null-v1-controls-native.json"
+}

@@ -667,6 +667,10 @@ mod tests {
             "../../../../conformance/inkpen2-null-v1-controls-native.json"
         ))
         .unwrap();
+        let boundaries: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-v1-saved-callback-boundaries-native.json"
+        ))
+        .unwrap();
         assert_eq!(receipt["cases"].as_object().unwrap().len(), 14);
         // Drawing did not create a pen for the one-point setter input, so
         // that observation does not validate direct V1 RedrawPen geometry.
@@ -731,6 +735,36 @@ mod tests {
                 .collect();
             let expected = hex_bytes(case["stream_hex"].as_str().unwrap());
             assert_eq!(actual, expected, "{name}");
+            if let Some(native) = boundaries["cases"].get(name) {
+                let calls = native["calls"].as_array().unwrap();
+                assert_eq!(calls.len(), points.len() - 1, "{name}");
+                assert_eq!(calls[0]["count"], 1, "{name}: initial stamp");
+                for (index, call) in calls.iter().enumerate() {
+                    let expected_method = if index + 1 == calls.len() {
+                        "endPen"
+                    } else {
+                        "drawLine"
+                    };
+                    assert_eq!(call["method"], expected_method, "{name}");
+                    if index > 0 {
+                        assert_eq!(
+                            out.sample_ends[index],
+                            call["count"].as_u64().unwrap() as usize,
+                            "{name}: movement boundary {index}"
+                        );
+                    }
+                }
+                assert_eq!(
+                    out.terminal.start,
+                    calls.last().unwrap()["count"].as_u64().unwrap() as usize,
+                    "{name}: terminal boundary"
+                );
+                assert_eq!(
+                    out.vertices.len(),
+                    native["total"].as_u64().unwrap() as usize,
+                    "{name}: final count"
+                );
+            }
         }
     }
 
