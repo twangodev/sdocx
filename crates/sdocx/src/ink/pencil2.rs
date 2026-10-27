@@ -697,6 +697,160 @@ mod tests {
         }
     }
 
+    // Context is captured externally: these values are not serialized Stroke fields.
+    fn public_adapter(
+        stroke: &crate::Stroke,
+        alpha: AlphaState,
+    ) -> Result<Vec<SampledRecord>, SamplerError> {
+        let rendering = stroke
+            .rendering
+            .as_ref()
+            .ok_or(SamplerError::Invalid("rendering"))?;
+        let style = &rendering.style;
+        let props = rendering.properties;
+        let size = style.pen_size.ok_or(SamplerError::Invalid("size"))?;
+        if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Pencil2")
+            || rendering.advanced_settings.as_deref() != Some("14;")
+            || rendering.tool_type_raw != 2
+            || !props.compressed
+            || !props.stylus_channels
+            || props.replay_only
+            || props.eraser
+            || props.fixed_width
+            || props.millisecond_timestamps
+            || props.top_layer_pen
+            || props.alpha_lock
+            || props.binary_added
+            || props.generated
+            || props.fixed_opacity
+            || props.rainbow_effect
+            || props.straighten
+            || props.reveal_mode
+            || style.size_level != Some(0)
+            || style.stroke_type_raw != Some(0)
+            || style.color_type_raw != Some(0)
+            || style.color_argb != Some(0xff000000)
+            || stroke.color != Some(crate::Color { r: 0, g: 0, b: 0 })
+            || stroke.pen_width.to_bits() != size.to_bits()
+        {
+            return Err(SamplerError::Unsupported("public stroke profile"));
+        }
+        fn exact(x: f64) -> Result<f32, SamplerError> {
+            let y = x as f32;
+            if !x.is_finite() || f64::from(y) != x {
+                return Err(SamplerError::Invalid("lossy channel"));
+            }
+            Ok(y)
+        }
+        let points = stroke
+            .points
+            .iter()
+            .map(|p| {
+                Ok(P {
+                    x: exact(p.x)?,
+                    y: exact(p.y)?,
+                })
+            })
+            .collect::<Result<Vec<_>, SamplerError>>()?;
+        let convert = |v: &[f64]| v.iter().copied().map(exact).collect::<Result<Vec<_>, _>>();
+        if stroke.timestamps.iter().any(|&t| i32::try_from(t).is_err()) {
+            return Err(SamplerError::Invalid("timestamp"));
+        }
+        sample(
+            &SavedInput {
+                advanced_version: 14,
+                tool_type: 2,
+                source: 0,
+                stroke_type: 0,
+                curve_enabled: true,
+                color_argb: 0xff000000,
+                size,
+                effective_size: alpha.base,
+                points,
+                pressure: convert(&stroke.pressures)?,
+                tilt: convert(&stroke.tilts)?,
+                orientation: convert(&stroke.orientations)?,
+                timestamps: stroke.timestamps.clone(),
+            },
+            alpha,
+        )
+    }
+
+    #[test]
+    fn public_stroke_adapter_matches_captured_geometry_with_explicit_native_state() {
+        for case in fixture()["cases"].as_array().unwrap() {
+            let input = saved_input(case).unwrap();
+            let stroke = crate::Stroke {
+                bbox: crate::BoundingBox::default(),
+                points: input
+                    .points
+                    .iter()
+                    .map(|p| crate::Point {
+                        x: f64::from(p.x),
+                        y: f64::from(p.y),
+                    })
+                    .collect(),
+                pressures: input.pressure.iter().copied().map(f64::from).collect(),
+                tilts: input.tilt.iter().copied().map(f64::from).collect(),
+                orientations: input.orientation.iter().copied().map(f64::from).collect(),
+                timestamps: input.timestamps.clone(),
+                color: Some(crate::Color { r: 0, g: 0, b: 0 }),
+                pen_width: input.size,
+                rendering: Some(crate::StrokeRendering {
+                    metadata: None,
+                    pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Pencil2".into()),
+                    advanced_settings: Some("14;".into()),
+                    tool_type_raw: 2,
+                    properties: crate::StrokeProperties {
+                        compressed: true,
+                        stylus_channels: true,
+                        replay_only: false,
+                        eraser: false,
+                        fixed_width: false,
+                        millisecond_timestamps: false,
+                        top_layer_pen: false,
+                        alpha_lock: false,
+                        binary_added: false,
+                        generated: false,
+                        fixed_opacity: false,
+                        rainbow_effect: false,
+                        straighten: false,
+                        reveal_mode: false,
+                    },
+                    style: crate::StrokeStyle {
+                        pen_size: Some(input.size),
+                        color_argb: Some(0xff000000),
+                        size_level: Some(0),
+                        stroke_type_raw: Some(0),
+                        color_type_raw: Some(0),
+                        ..Default::default()
+                    },
+                }),
+            };
+            let alpha = native_alpha_state(case).unwrap();
+            let records = public_adapter(&stroke, alpha).unwrap();
+            let bytes: Vec<u8> = records
+                .iter()
+                .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            let desc = &case["expected_stream"];
+            let offset = desc["offset"].as_u64().unwrap() as usize;
+            let length = desc["length"].as_u64().unwrap() as usize;
+            assert_eq!(
+                bytes,
+                NATIVE_RECORDS[offset..offset + length],
+                "{}",
+                case["id"]
+            );
+            let mut bad = stroke.clone();
+            bad.rendering.as_mut().unwrap().advanced_settings = None;
+            assert!(public_adapter(&bad, alpha).is_err());
+            bad = stroke.clone();
+            bad.pressures.pop();
+            assert!(public_adapter(&bad, alpha).is_err());
+        }
+    }
+
     #[test]
     fn native_v14_streams_match_all_fourteen_lanes() {
         let f = fixture();
