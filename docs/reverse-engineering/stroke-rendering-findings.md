@@ -1047,3 +1047,16 @@ production route. Reproduction uses `tmp/marker-owner-boolean/src/bin/source_to_
 `tmp/marker-owner-boolean/src/bin/rational_page.rs`,
 `scratch/legacy-marker-source-page-driver.py` and
 `scratch/legacy-marker-ordered-source-page.py` with the comparison harness above.
+
+A direct PDF scratch exporter paints the ordered clipped geometry with axial
+luminosity masks and a separate start-cap ownership mask. Against the long and
+2× bend native controls, white MuPDF/PDFium RGB L1 was 4425/3974 and
+10157/9357; the existing SVG-to-PDF path was 4978/4250 and 11691/10019. The
+direct PDFs were 93 and 50 KB versus 184 and 100 KB. A source-size, path-command,
+object-count and staged-byte guard rejects oversized scratch inputs before
+saving; an oversized-source check left no PDF. These controls do not establish
+general reader parity, production allocator limits or atomic page fallback.
+The retained diagnostic is `scratch/legacy-marker-direct-pdf-probe.py`, with
+`scratch/legacy-marker-direct-pdf-compare.py` for paired readers. The PDFium
+check used the local pypdfium2 installation under the temporary verification
+virtual environment.
