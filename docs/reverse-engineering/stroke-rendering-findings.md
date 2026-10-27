@@ -981,3 +981,21 @@ The budget diagnostic compiles for wasm32 but uses unchecked casts and panic
 on guard failure; deterministic intermediate allocations, atomic page budget,
 browser runtime and general native parity are not established. No production
 mesh-paint route is admitted.
+
+A separate ordered scratch experiment unions the constant-alpha body triangles,
+then subtracts prior ownership from each fringe triangle on a 10,000-unit-per-page-unit
+integer grid and paints its visible polygon with an affine gradient. It retains
+start-cap depth masking and the final cap's source-over order. On white at the
+captured host resolution, resvg/public PDF RGB L1 was 2195/4830 for straight,
+1934/3663 for bend, 2259/4931 for a long turn, 2786/7057 for self-overlap,
+5821/9941 for a blue varied stroke, and 5455/11684 for the 2× bend. The
+corresponding PDFs were approximately 34, 71, 121, 374, 176 and 72 KB per
+stroke. These are captured meshes previously checked against the source model;
+they do not establish device or arbitrary-transform parity. The experiment has
+no enforceable overlay intermediate-allocation or cumulative page budget and
+is not admitted to production. Reproduction is retained in
+`scratch/legacy-marker-ordered-visible-gradient.py`,
+`scratch/legacy-marker-ordered-visible-controls.py`,
+`scratch/legacy-marker-ordered-visible-compare.py`, and
+`tmp/marker-owner-boolean/src/bin/visible_gradient.rs`, using the existing
+`tmp/marker-ordered-prototype/harness` for resvg and public PDF export.
