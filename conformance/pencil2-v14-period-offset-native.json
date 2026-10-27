@@ -1,0 +1,16 @@
+{
+  "schema": "sdocx-pencil2-v14-period-offset-native-v1",
+  "scope": "Controlled native Pencil2 RTV4 host Mesa replay of the pinned 84 records on a 192x192 target, translated +75 pixels in the draw matrix, with host GL adapter overriding grainOffset.x. Aligned alpha is compared with the untranslated zero-offset baseline. Not full Drawing, saved-note, Android, PDF, or production output.",
+  "capture_source": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/capture_candidate.py",
+  "capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "reproduction_script": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_period_offset_capture.py",
+  "reproduction_script_sha256": "35cdb45e7f816788f40a2f98d24a54b0168045e77a7767c863230ea6a9608aed",
+  "command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_period_offset_capture.py",
+  "baseline_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "controls": [
+    {"grain_offset_x": -0.001, "frame_sha256": "a9784c517b67c358e11b44a97b3b6d7b1d309e4ac380e95055f13db1f83c1172", "nonzero_union": 52, "changed_alpha_pixels": 2, "absolute_difference": 20, "max_difference": 14},
+    {"grain_offset_x": 0, "frame_sha256": "fd225164e4189cdabafd8aa9b1eec9c4b55247381be94db52e17ba35f4813b90", "nonzero_union": 52, "changed_alpha_pixels": 14, "absolute_difference": 226, "max_difference": 45},
+    {"grain_offset_x": 0.001, "frame_sha256": "edf64f303af6c5e8c53c54e6f0b291faaecdf9644fd141ac28e6fc8c33c88635", "nonzero_union": 52, "changed_alpha_pixels": 34, "absolute_difference": 434, "max_difference": 50}
+  ],
+  "interpretation": "The negative epsilon reduces the translated mismatch to the same aggregate error as the untranslated negative-epsilon control. This supports sampling-boundary sensitivity as a contributor but does not prove the exact cause or justify a production bias."
+}
