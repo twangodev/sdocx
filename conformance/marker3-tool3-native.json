@@ -105,6 +105,107 @@
         "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
         "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
       }
+    },
+    {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0x803f7d29",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00005041",
+        "points_f32_bits": [
+          [
+            "00002041",
+            "00004041"
+          ],
+          [
+            "0000c041",
+            "00000041"
+          ],
+          [
+            "00001842",
+            "0000c841"
+          ],
+          [
+            "00005c42",
+            "00008841"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "9a99193e",
+          "6666663f",
+          "3333b33e",
+          "0000403f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          13,
+          26,
+          80,
+          151
+        ],
+        "tool_type": 3
+      },
+      "native_calls": {
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 4,
+            "data_hex": "00000000000000000000000000000000",
+            "element_size": 4
+          },
+          "points": {
+            "count": 4,
+            "data_hex": "00002041000040410000c04100000041000018420000c84100005c4200008841",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 4,
+            "data_hex": "9a99193e6666663f3333b33e0000403f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 4,
+            "data_hex": "00000000000000000000000000000000",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 4,
+            "data_hex": "0d0000001a0000005000000097000000",
+            "element_size": 4
+          }
+        },
+        "route": {
+          "advanced_setting": "5;",
+          "drawing_selected_drawable_version": "5",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "5"
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "sha256": "2a6ae9e7d54015293c80e42731b625db1738d0c62b4621615f23de61b7ac40b6",
+          "vector_bytes": "0000204100004041cb732841c6953d41e1df3d41e47637417b6849414b2b3441fbd156414a563041621c6641e4f72b41af47774118102741f1298541e49e214124bb8d413e2a1d4126b19541d1af1a4128a79d41f8e719412290a541d4cf1a41fa45ad41c44e1d41d4fbb4415b652141aeb1bc41991327410ed4c3414cc02d41d687ca417c4335419e3bd141b2fa3d4166efd741eee547414432de415940524134c7e341ce5d5c41245ce941e750674112f1ee41a51973410286f44108b87f41510bfa41696886412eb7ff417b608c4145e0024249be9141b2130642d2819641df75094217ab9a413f000d4242349e41429010421109a1419e4a14422152a341532f1842720fa541613e1c420241a641c8772042d3e6a6411e5824420105a741d00f2842f7bea64122e42b42721aa64116d52f427417a541abe23342fbb5a341e10c384208f6a141b8533c429bd79f413dd73f42dcdf9d41c863434249b19b41650247421247994115b34a4237a19641d8754e42b8bf9341ad4a524296a2904196315642cf498d41902a5a4266b5894100005c4200008841",
+          "vector_count": 51
+        },
+        "saved_redraw": {
+          "sha256": "2a6ae9e7d54015293c80e42731b625db1738d0c62b4621615f23de61b7ac40b6",
+          "vector_bytes": "0000204100004041cb732841c6953d41e1df3d41e47637417b6849414b2b3441fbd156414a563041621c6641e4f72b41af47774118102741f1298541e49e214124bb8d413e2a1d4126b19541d1af1a4128a79d41f8e719412290a541d4cf1a41fa45ad41c44e1d41d4fbb4415b652141aeb1bc41991327410ed4c3414cc02d41d687ca417c4335419e3bd141b2fa3d4166efd741eee547414432de415940524134c7e341ce5d5c41245ce941e750674112f1ee41a51973410286f44108b87f41510bfa41696886412eb7ff417b608c4145e0024249be9141b2130642d2819641df75094217ab9a413f000d4242349e41429010421109a1419e4a14422152a341532f1842720fa541613e1c420241a641c8772042d3e6a6411e5824420105a741d00f2842f7bea64122e42b42721aa64116d52f427417a541abe23342fbb5a341e10c384208f6a141b8533c429bd79f413dd73f42dcdf9d41c863434249b19b41650247421247994115b34a4237a19641d8754e42b8bf9341ad4a524296a2904196315642cf498d41902a5a4266b5894100005c4200008841",
+          "vector_count": 51
+        }
+      }
     }
   ],
   "paint_control": {
@@ -203,6 +304,68 @@
       "tmp/vector-parity-plan/marker3-tool3/alpha2/caller.py": "2b111267d1238fa09d65a31e4aad4ef0cc443e04958e67640e76f84201e8a7d7",
       "tmp/vector-parity-plan/marker3-tool3/alpha3/join.py": "2e111e4e9db9471ef29ffb8e3bb0dcfc2fa93f3dfaa8cc63640eb89483657a6a",
       "tmp/vector-parity-plan/marker3-tool3/alpha3/caller.py": "2a7389f11cee2846dbfaaefd2917ccf4bc8d86c45f3328417d61a515104b82d9"
+    },
+    "curved_control": {
+      "scope": "Synthetic native ObjectStroke and Drawing-selected V5/RTV1 on host Mesa; same-object RT vector bridge as the straight control. No device or saved-note export claim.",
+      "input": {
+        "points": [
+          [
+            10,
+            12
+          ],
+          [
+            24,
+            8
+          ],
+          [
+            38,
+            25
+          ],
+          [
+            55,
+            17
+          ]
+        ],
+        "pressures": [
+          0.15,
+          0.9,
+          0.35,
+          0.75
+        ],
+        "size": 13,
+        "timestamps": [
+          13,
+          26,
+          80,
+          151
+        ],
+        "color": "0x803f7d29",
+        "setting": "5;"
+      },
+      "tools": [
+        2,
+        3
+      ],
+      "vector_sha256": "2a6ae9e7d54015293c80e42731b625db1738d0c62b4621615f23de61b7ac40b6",
+      "rgba_sha256": "326dc5c61518b58b63edb3b048f01c616fb368ad17fcfde4634a3a69729bdb7a",
+      "vector_count": 51,
+      "nonzero_pixels": 851,
+      "bbox": [
+        3,
+        3,
+        61,
+        27
+      ],
+      "receipts": [
+        "tmp/vector-parity-plan/marker3-tool3/broaden/paint2.json",
+        "tmp/vector-parity-plan/marker3-tool3/broaden/drawing-paint-positive.json"
+      ],
+      "scripts": {
+        "tmp/vector-parity-plan/marker3-tool3/broaden/caller2.py": "36e86067a4d2d15049730dadb040141a9e9af0df00dbb801c4da64b46feb35c0",
+        "tmp/vector-parity-plan/marker3-tool3/broaden/caller3.py": "1e75448278ced5506da27abc99e0f7995ef08e2b4694f1efea88dfc176e42402",
+        "tmp/vector-parity-plan/marker3-tool3/broaden/join2.py": "35ec0ef2cd57a6491e2eaec688d6fd3e8121ace9863ee6f2d7db0c1d56d8d63a",
+        "tmp/vector-parity-plan/marker3-tool3/broaden/join3.py": "758f96a397769b063b66d3a3bb38965d84dc5519bd133cb306b4d9ad0a34ddbf"
+      }
     }
   }
 }

@@ -369,17 +369,18 @@ mod tests {
             "../../../../conformance/marker3-tool3-native.json"
         ))
         .unwrap();
-        let case = &fixture["cases"][0];
-        let stroke = caller_stroke(case);
-        assert_eq!(stroke.rendering.as_ref().unwrap().tool_type_raw, 3);
-        let ink = prepare_for_page(&stroke).unwrap();
-        assert_caller_xy_matches(&ink, case);
-        let mut alias = stroke.clone();
-        alias.rendering.as_mut().unwrap().pen_name = Some(STRAIGHT_PEN.to_owned());
-        let alias_ink = prepare_for_page(&alias).unwrap();
-        assert_eq!(ink.points, alias_ink.points);
-        assert_eq!(ink.radii, alias_ink.radii);
-        assert_eq!(ink.opacity, alias_ink.opacity);
+        for case in fixture["cases"].as_array().unwrap() {
+            let stroke = caller_stroke(case);
+            assert_eq!(stroke.rendering.as_ref().unwrap().tool_type_raw, 3);
+            let ink = prepare_for_page(&stroke).unwrap();
+            assert_caller_xy_matches(&ink, case);
+            let mut alias = stroke.clone();
+            alias.rendering.as_mut().unwrap().pen_name = Some(STRAIGHT_PEN.to_owned());
+            let alias_ink = prepare_for_page(&alias).unwrap();
+            assert_eq!(ink.points, alias_ink.points);
+            assert_eq!(ink.radii, alias_ink.radii);
+            assert_eq!(ink.opacity, alias_ink.opacity);
+        }
     }
 
     #[test]

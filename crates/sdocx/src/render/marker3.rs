@@ -237,16 +237,24 @@ mod tests {
         for samples in [
             vec![[0.0, 0.0], [20.0, 0.0]],
             vec![[0.0, 0.0], [10.0, 0.0], [20.0, 10.0]],
+            vec![[10.0, 12.0], [24.0, 8.0], [38.0, 25.0], [55.0, 17.0]],
         ] {
             let input = Input {
-                pressures: Some(vec![0.05; samples.len()]),
-                samples,
-                width: 8.0,
+                pressures: Some(if samples.len() == 4 {
+                    vec![0.15, 0.9, 0.35, 0.75]
+                } else {
+                    vec![0.05; samples.len()]
+                }),
+                samples: samples.clone(),
+                width: if samples.len() == 4 { 13.0 } else { 8.0 },
                 tool_type_raw: 2,
                 fixed_width: false,
             };
             let render = |tool, name: &str| {
                 let mut stroke = marker3_stroke(&input);
+                if input.samples.len() == 4 {
+                    stroke.timestamps = vec![13, 26, 80, 151];
+                }
                 for point in &mut stroke.points {
                     point.x += 24.0;
                     point.y += 16.0;
@@ -303,7 +311,12 @@ mod tests {
                 .descendants()
                 .find(|n| n.has_tag_name("path"))
                 .unwrap();
-            assert!(path.attribute("d").unwrap().contains("a4.5,4.5"));
+            let radius = if input.width == 13.0 {
+                "a7,7"
+            } else {
+                "a4.5,4.5"
+            };
+            assert!(path.attribute("d").unwrap().contains(radius));
             assert!(
                 (path
                     .attribute("fill-opacity")
