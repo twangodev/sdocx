@@ -4625,9 +4625,6 @@ fn prepare_inkpen2_internal(
             // An unresolved table reference is not evidence of a native null setting.
             || (rendering.advanced_settings.is_none()
                 && rendering.style.advanced_pen_setting_id.is_some())
-            || (rendering.advanced_settings.as_deref() == Some("1;")
-                && rendering.pen_name.as_deref()
-                    != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2"))
             || active_rainbow
             || rendering.style.color_type_raw.unwrap_or(0) != 0
             || rendering.style.color_argb.is_none());
@@ -18202,7 +18199,7 @@ mod tests {
         use sha2::{Digest, Sha256};
         use std::io::Read;
         let receipt: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/inkpen2-literal-v1-paired-paint-native.json"
+            "../../../conformance/straightinkpen2-literal-v1-paired-paint-native.json"
         ))
         .unwrap();
         for (name, case) in receipt["cases"].as_object().unwrap() {
@@ -18260,8 +18257,14 @@ mod tests {
                 ..Default::default()
             };
             let mut results = Vec::new();
-            for setting in [None, Some("1;")] {
+            for (pen, setting) in [
+                ("InkPen2", None),
+                ("InkPen2", Some("1;")),
+                ("StraightInkPen2", None),
+                ("StraightInkPen2", Some("1;")),
+            ] {
                 let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.pen_name = Some(format!("com.samsung.android.sdk.pen.pen.preload.{pen}"));
                 rendering.advanced_settings = setting.map(str::to_owned);
                 rendering.style.advanced_pen_setting_id = setting.map(|_| 1);
                 let prepared = super::prepare_inkpen2_v1(
@@ -18323,8 +18326,13 @@ mod tests {
                     crate::render_document_pdf(&doc, &options, &Default::default()).unwrap();
                 results.push((svg, pdf, document_pdf));
             }
-            assert_eq!(results[0], results[1], "{name}");
-            assert_eq!(case["selected_versions"], serde_json::json!(["1", "1"]));
+            for result in &results[1..] {
+                assert_eq!(&results[0], result, "{name}");
+            }
+            assert_eq!(
+                case["selected_versions"],
+                serde_json::json!(["1", "1", "1", "1"])
+            );
             let theme = RenderTheme::for_canvas(false);
             let mut rejected = stroke.clone();
             rejected.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
