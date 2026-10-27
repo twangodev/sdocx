@@ -1,0 +1,181 @@
+{
+  "scope": "Synthetic saved ObjectStroke native Drawing and selected RedrawPen under explicit host profile; geometry only, no device or paint parity. Last short segment remains unsupported.",
+  "cases": [
+    {
+      "case": "duplicate",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "0000e841",
+          "00003041"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000003f",
+        "0000803e",
+        "0000403f",
+        "cdcccc3e"
+      ],
+      "geometry_hex": "0000000000000000cdcc7c406685c53f00000000cdcc7c40a693414000000000cdcc7c40f8ff9f4000000000cdcc7c400000a04000000000cdcc7c404082e8405aee713e63c97b40ccb11e415aee713ff9c57a40e57a45410b5eee3f8fc2794031db68413d1d374025bf7840c68387411b5c8240bbbb7740fcff9b41f8ffaf4051b8764000009c410000b04050b8764064c585417e0b794020227640fb4d92412c8c9940f08b75409d3faa411cffd040c0f574405aaabb419b54f940905f7440cf3fd041c77f144160c97340f8ffe741f8ff2f4130337340",
+      "geometry_sha256": "f8a4aab126cf909142f963b3d31f9176e30b378678e3fcc651789ca2052f25ad",
+      "geometry_count": 18
+    },
+    {
+      "case": "near",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "00003041",
+          "0000803f"
+        ],
+        [
+          "0000e841",
+          "00003041"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000003f",
+        "0000803e",
+        "0000403f",
+        "cdcccc3e"
+      ],
+      "geometry_hex": "0000000000000000cdcc7c406685c53f00000000cdcc7c40a693414000000000cdcc7c40f8ff9f4000000000cdcc7c400000a04000000000cdcc7c404082e8405aee713e63c97b40ccb11e415aee713ff9c57a40e57a45410b5eee3f8fc2794031db68413d1d374025bf7840c68387411b5c8240bbbb7740fcff9b41f8ffaf4051b8764000009c410000b04050b8764064c585417e0b794020227640fb4d92412c8c9940f08b75409d3faa411cffd040c0f574405aaabb419b54f940905f7440cf3fd041c77f144160c97340f8ffe741f8ff2f4130337340",
+      "geometry_sha256": "f8a4aab126cf909142f963b3d31f9176e30b378678e3fcc651789ca2052f25ad",
+      "geometry_count": 18
+    },
+    {
+      "case": "first",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "0000803f",
+          "0000803f"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "0000e841",
+          "00003041"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000003f",
+        "0000803e",
+        "0000403f",
+        "cdcccc3e"
+      ],
+      "geometry_hex": "00000000000000009a9981406685c53f000000009a998140a6934140000000009a998140f8ff9f40000000009a9981400000a040000000009a9981404082e8405aee713ec6928140ccb11e415aee713ff28b8140e57a45410b5eee3f1f85814031db68413d1d37404c7e8140c68387411b5c824078778140fcff9b41f8ffaf40a470814000009c410000b040a470814064c585417e0b7940629e8040fb4d92412c8c99403d987f409d3faa411cffd040b7f37d405aaabb419b54f940314f7c40cf3fd041c77f1441abaa7a40f8ffe741f8ff2f4125067940",
+      "geometry_sha256": "3dec597513d772b9976bd14900ae741f8d3aec82d94ec4b25e5ddb8193038c6b",
+      "geometry_count": 18
+    },
+    {
+      "case": "repeat",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "00003041",
+          "0000803f"
+        ],
+        [
+          "00002841",
+          "0000003f"
+        ],
+        [
+          "0000e841",
+          "00003041"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000003f",
+        "0000803e",
+        "0000403f",
+        "6666663f",
+        "cdcccc3e"
+      ],
+      "geometry_hex": "0000000000000000cdcc7c406685c53f00000000cdcc7c40a693414000000000cdcc7c40f8ff9f4000000000cdcc7c400000a04000000000cdcc7c404082e8405aee713e63c97b40ccb11e415aee713ff9c57a40e57a45410b5eee3f8fc2794031db68413d1d374025bf7840c68387411b5c8240bbbb7740fcff9b41f8ffaf4051b8764000009c410000b04050b8764064c585417e0b794020227640fb4d92412c8c9940f08b75409d3faa411cffd040c0f574405aaabb419b54f940905f7440cf3fd041c77f144160c97340f8ffe741f8ff2f4130337340",
+      "geometry_sha256": "f8a4aab126cf909142f963b3d31f9176e30b378678e3fcc651789ca2052f25ad",
+      "geometry_count": 18
+    },
+    {
+      "case": "last",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00002041",
+          "00000000"
+        ],
+        [
+          "0000a041",
+          "0000a040"
+        ],
+        [
+          "0000a841",
+          "0000c040"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000003f",
+        "0000803e",
+        "0000403f",
+        "cdcccc3e"
+      ],
+      "geometry_hex": "0000000000000000cdcc7c406685c53f00000000cdcc7c40a693414000000000cdcc7c40f8ff9f4000000000cdcc7c400000a04000000000cdcc7c403963f24060b1293e52b87c40c34022418723293fd7a37c40602049412f65b73f5c8f7c40fcff6f41f8ff1f40e17a7c400000704100002040e07a7c406aa96241c82c0e40b19d7b409df8834149df614082c07a4046fd9341043a944053e37940fcffa741f7ffbf4024067940",
+      "geometry_sha256": "7327867474abe569c1bc33785b0683f6ff897ec5526b133c72ad18c984ea9e44",
+      "geometry_count": 14
+    }
+  ],
+  "libraries": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "capture_basis": "Derived from existing simplebrush-four-source-capture.py with only listed point/channel inputs changed; Drawing and direct saved redraw streams agree.",
+  "capture_scripts": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-duplicate-source-capture.py": "a956e6a379c15a0329866285b9c47480dd2d8d793f8c5a20c304ad26a7fbaaef",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-near-source-capture.py": "956b2e9afcf1208d4b85fc09d0e7f67551750664016379aba024311ae865e3bd",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-first-source-capture.py": "c80481166229c2a4041bae86e7b0396fa4e1024d46fa9012fcc28ac0f7a5631c",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-repeat-source-capture.py": "2753cb3590f16db3e6004aeb830b6f1d8e20907a36e44d1b97dcce24cbeb8310",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-last-source-capture.py": "0fb3b5d75fec1ca6497e187022098b2dbdae310d34d205586b9c43de74146341"
+  }
+}
