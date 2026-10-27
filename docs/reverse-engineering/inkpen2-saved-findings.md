@@ -328,6 +328,10 @@ retains the PDF ink sidecar. On the six [paired host controls](../../conformance
 output has disjoint visible support from the native frame; MuPDF support IoU is
 0.87–0.959, with 4.95–38.62 RGB-byte MAE over shared support union. The
 comparison uses a test-only admission override and a source-derived page chart.
+Reflecting records before public atlas and PDF sidecar creation, with the
+conjugated chart, raises resvg support IoU to 0.989–1 and reduces its RGB-byte
+MAE to 0.39–1.98 in these controls. MuPDF residuals remain similar; neither
+production integration nor arbitrary transforms are established.
 Audit artifacts stay in ignored `tmp/vector-parity-plan/`.
 The public active-gradient route is limited to explicit AA-off profiles with
 minimum screen dimension 1080, type 1, positive distance, nonnegative offset,

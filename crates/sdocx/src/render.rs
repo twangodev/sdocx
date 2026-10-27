@@ -4227,6 +4227,28 @@ impl Drop for InkPen2ExperimentalAaGuard {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    static INKPEN2_POSITIVE_Y_CHART: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+struct InkPen2PositiveYChartGuard(bool);
+
+#[cfg(test)]
+impl InkPen2PositiveYChartGuard {
+    fn enter() -> Self {
+        Self(INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.replace(true)))
+    }
+}
+
+#[cfg(test)]
+impl Drop for InkPen2PositiveYChartGuard {
+    fn drop(&mut self) {
+        INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.set(self.0));
+    }
+}
+
 fn inkpen2_reject_active_rainbow_aa(enabled: bool) -> bool {
     #[cfg(test)]
     if INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.get()) {
@@ -4371,7 +4393,8 @@ fn prepare_inkpen2_v9(
     } else {
         MAX_INKPEN2_OUTPUT_RECORDS
     };
-    let output = crate::ink::inkpen2::redraw_bounded(input, output_budget)?;
+    #[allow(unused_mut)]
+    let mut output = crate::ink::inkpen2::redraw_bounded(input, output_budget)?;
     let output_bytes = output.vertices.len().checked_mul(36);
     let markup_bytes = output
         .vertices
@@ -4406,6 +4429,12 @@ fn prepare_inkpen2_v9(
     }
     if output.vertices.is_empty() {
         return None;
+    }
+    #[cfg(test)]
+    if INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.get()) {
+        for record in &mut output.vertices {
+            record[1] = 96.0 - record[1];
+        }
     }
     let mut sample_ends = output.sample_ends;
     *sample_ends.last_mut()? = output.terminal.end;
@@ -9946,81 +9975,136 @@ mod tests {
                 let mut page = page_with_uncolored_stroke();
                 page.width = 128;
                 page.height = 96;
-                page.objects = vec![stroke.into()];
+                page.objects = vec![stroke.clone().into()];
                 let doc = document(page);
                 let layout = layout_document(&doc);
                 assert_eq!(layout.pages.len(), 1);
-                let mut cache = super::DocumentTextCache::default();
-                let mut scene = cache
-                    .render_layout_page_scenes(
-                        &doc,
-                        &[&layout.pages[0]],
-                        &options,
-                        &super::fonts::FontBook::default(),
-                        &mut |_| {},
+                for positive_chart in [false, true] {
+                    let _chart_guard =
+                        positive_chart.then(super::InkPen2PositiveYChartGuard::enter);
+                    let chart_prepared =
+                        prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                            .unwrap();
+                    let expected_chart = if positive_chart {
+                        inkpen2_reflected_chart(&prepared, 96.0)
+                    } else {
+                        prepared.clone()
+                    };
+                    assert_eq!(chart_prepared.records, expected_chart.records);
+                    assert_eq!(chart_prepared.sample_ends, prepared.sample_ends);
+                    assert_eq!(chart_prepared.bounds, expected_chart.bounds);
+                    if positive_chart {
+                        let s = f64::from(scale);
+                        assert!(
+                            inkpen2_chart_geometry_max_delta(
+                                &prepared.records,
+                                &chart_prepared.records,
+                                [s, 0.0, 0.0, -s, 0.0, 96.0],
+                                [s, 0.0, 0.0, s, 0.0, 96.0 - 96.0 * s],
+                            ) <= 1e-4,
+                            "{id}: chart changed physical stamp geometry"
+                        );
+                    }
+                    let mut cache = super::DocumentTextCache::default();
+                    let mut scene = cache
+                        .render_layout_page_scenes(
+                            &doc,
+                            &[&layout.pages[0]],
+                            &options,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0);
+                    assert_eq!(scene.ink.len(), 1, "public dispatch must retain native ink");
+                    assert!(scene.text_error.is_none());
+                    let (native_id, retained) = scene.ink.iter().next().unwrap();
+                    assert_eq!(retained.bounds, chart_prepared.bounds);
+                    match &retained.payload {
+                        super::NativeInkPayload::Radial {
+                            records,
+                            enhanced_antialias,
+                            ..
+                        } => {
+                            assert_eq!(records, &chart_prepared.records);
+                            assert!(*enhanced_antialias);
+                        }
+                        _ => panic!("expected retained radial atlas"),
+                    }
+                    let source = &scene.page.svg;
+                    assert!(
+                        source.contains(&native_id.svg_id()),
+                        "native atlas marker required"
+                    );
+                    assert!(
+                        source.contains("<mask") && source.contains(r#"mask=""#),
+                        "active mask required"
+                    );
+                    assert!(
+                        source.contains("<filter") && source.contains(r#"filter=""#),
+                        "active filter required"
+                    );
+                    // The public scene is in document coordinates. Apply the capture
+                    // chart after the background, while keeping the sidecar intact;
+                    // the PDF renderer associates its retained ink with the SVG node.
+                    let open_end = source.find('>').unwrap() + 1;
+                    let close_start = source.rfind("</svg>").unwrap();
+                    let body = &source[open_end..close_start];
+                    let (background, content) = if let Some(start) = body.find("<rect") {
+                        let end = start + body[start..].find("/>").unwrap() + 2;
+                        (&body[..end], &body[end..])
+                    } else {
+                        ("", body)
+                    };
+                    let transform = if positive_chart {
+                        format!("matrix({scale},0,0,{scale},0,{})", 96 - 96 * scale)
+                    } else {
+                        format!("matrix({scale},0,0,-{scale},0,96)")
+                    };
+                    let svg = format!(
+                        r#"{}{}<g transform="{transform}">{}</g></svg>"#,
+                        &source[..open_end],
+                        background,
+                        content
+                    );
+                    scene.page.svg = svg.clone();
+                    let pdf = crate::pdf::render_native_scene_pdf_for_test(
+                        &scene,
+                        &crate::PdfOptions::default(),
                     )
-                    .remove(0);
-                assert_eq!(scene.ink.len(), 1, "public dispatch must retain native ink");
-                assert!(scene.text_error.is_none());
-                let source = &scene.page.svg;
-                assert!(
-                    source.contains("<mask") && source.contains(r#"mask=""#),
-                    "active mask required"
-                );
-                assert!(
-                    source.contains("<filter") && source.contains(r#"filter=""#),
-                    "active filter required"
-                );
-                // The public scene is in document coordinates. Apply the capture
-                // chart after the background, while keeping the sidecar intact;
-                // the PDF renderer associates its retained ink with the SVG node.
-                let open_end = source.find('>').unwrap() + 1;
-                let close_start = source.rfind("</svg>").unwrap();
-                let body = &source[open_end..close_start];
-                let (background, content) = if let Some(start) = body.find("<rect") {
-                    let end = start + body[start..].find("/>").unwrap() + 2;
-                    (&body[..end], &body[end..])
-                } else {
-                    ("", body)
-                };
-                let svg = format!(
-                    r#"{}{}<g transform="matrix({scale},0,0,-{scale},0,96)">{}</g></svg>"#,
-                    &source[..open_end],
-                    background,
-                    content
-                );
-                scene.page.svg = svg.clone();
-                let pdf = crate::pdf::render_native_scene_pdf_for_test(
-                    &scene,
-                    &crate::PdfOptions::default(),
-                )
-                .unwrap();
-                let parsed = lopdf::Document::load_mem(&pdf).unwrap();
-                assert_eq!(parsed.get_pages().len(), 1);
-                assert!(
-                    !parsed
-                        .objects
-                        .values()
-                        .any(|object| object.as_stream().is_ok_and(|stream| stream
-                            .dict
-                            .get(b"Subtype")
-                            .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))))
-                );
-                write_new_artifact(&output.join(format!("{id}.svg")), svg.as_bytes());
-                write_new_artifact(&output.join(format!("{id}.pdf")), &pdf);
-                cases.push(json!({
-                    "case_id": id, "scale": scale, "alpha": alpha,
+                    .unwrap();
+                    let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+                    assert_eq!(parsed.get_pages().len(), 1);
+                    assert!(
+                        !parsed
+                            .objects
+                            .values()
+                            .any(|object| object
+                                .as_stream()
+                                .is_ok_and(|stream| stream.dict.get(b"Subtype").is_ok_and(|v| v
+                                    .as_name()
+                                    .is_ok_and(|name| name == b"Image"))))
+                    );
+                    let artifact_id = if positive_chart {
+                        format!("{id}_positive_y")
+                    } else {
+                        id.clone()
+                    };
+                    write_new_artifact(&output.join(format!("{artifact_id}.svg")), svg.as_bytes());
+                    write_new_artifact(&output.join(format!("{artifact_id}.pdf")), &pdf);
+                    cases.push(json!({
+                    "case_id": artifact_id, "scale": scale, "alpha": alpha, "positive_y_chart": positive_chart,
                     "native_capture_sha256": sha256_hex(&capture_bytes), "native_vbo_sha256": expected,
                     "native_stage_sha256": stages.iter().map(|stage| stage["rgba_sha256"].as_str().unwrap()).collect::<Vec<_>>(),
                     "native_draw_matrix": capture["joined_native_paint"]["paint"]["readback"]["draw_matrix_f32_row_major"],
-                    "comparison_transform": [scale, 0, 0, -scale, 0, 96],
+                    "comparison_transform": if positive_chart { [scale, 0, 0, scale, 0, 96 - 96 * scale] } else { [scale, 0, 0, -scale, 0, 96] },
                     "svg_sha256": sha256_hex(svg.as_bytes()), "pdf_sha256": sha256_hex(&pdf)
                 }));
+                }
             }
         }
         let manifest = json!({
             "schema": "sdocx-inkpen2-public-aa-gradient-v1", "admission_changed": false,
-            "coordinate_note": "The public retained page scene is transformed by [scale, 0, 0, -scale, 0, 96] after the background, preserving its native ink registry for PDF. Compare 128x96 outputs after reversing native GL rows once. The chart follows the existing reflection experiment; parity is not established by this writer.",
+            "coordinate_note": "The original chart uses [scale, 0, 0, -scale, 0, 96]. The positive-Y chart reflects records before atlas and sidecar registration and uses [scale, 0, 0, scale, 0, 96-96*scale]. Compare 128x96 outputs after reversing native GL rows once. Parity is not established by this writer.",
             "cases": cases
         });
         write_new_artifact(

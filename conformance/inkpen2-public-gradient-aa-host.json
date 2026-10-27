@@ -31,6 +31,27 @@
         "support_iou": 0.87,
         "rgb_mae_union": 18.113333,
         "rgb_max_union": 82
+      },
+      "positive_y": {
+        "svg_sha256": "cd738231f8436ca236823c2393b0dfb192dbb2d2d51526226228ad3cd6a7bd80",
+        "resvg_rgba_sha256": "347165ae1c7cf95408f1b8255b2db0469cde3790a6b0eed6139e31bf90350d7d",
+        "pdf_sha256": "94f34a92cb0333ea2c3f4bc976d5bcf6368c43d3bc074d8238882950926e0246",
+        "resvg": {
+          "native_support": 93,
+          "output_support": 92,
+          "union": 93,
+          "support_iou": 0.989247,
+          "rgb_mae_union": 0.899642,
+          "rgb_max_union": 10
+        },
+        "mupdf": {
+          "native_support": 93,
+          "output_support": 94,
+          "union": 100,
+          "support_iou": 0.87,
+          "rgb_mae_union": 18.066667,
+          "rgb_max_union": 84
+        }
       }
     },
     {
@@ -55,6 +76,27 @@
         "support_iou": 0.87,
         "rgb_mae_union": 38.613333,
         "rgb_max_union": 161
+      },
+      "positive_y": {
+        "svg_sha256": "dbe8d69eb0c187bd1d27250944e9fbc8a66d4995528bafbbc1120032436cce4f",
+        "resvg_rgba_sha256": "4faf93dbfc3b984bf536a708b6892227dbd18b9234c3d5a3934c2c3d6962b21d",
+        "pdf_sha256": "b0041e5e56ca0c84b65558200521b2aab65ef81a49c8f6cba9337257bc744d9e",
+        "resvg": {
+          "native_support": 93,
+          "output_support": 93,
+          "union": 93,
+          "support_iou": 1.0,
+          "rgb_mae_union": 1.97491,
+          "rgb_max_union": 19
+        },
+        "mupdf": {
+          "native_support": 93,
+          "output_support": 94,
+          "union": 100,
+          "support_iou": 0.87,
+          "rgb_mae_union": 38.493333,
+          "rgb_max_union": 164
+        }
       }
     },
     {
@@ -79,6 +121,27 @@
         "support_iou": 0.895122,
         "rgb_mae_union": 8.961789,
         "rgb_max_union": 43
+      },
+      "positive_y": {
+        "svg_sha256": "8cc4bcdecf6ad899d6c5b44732efacc692d0d029ef419d69198c1f8073b85dfa",
+        "resvg_rgba_sha256": "84e8fc9f796db487ed739bd64010695569092b03b9ed2dffd94e03d2700c19f0",
+        "pdf_sha256": "a2007a1d70e4c7a7007a6282457157c9194b7beb24195a3fbf78345b45580b50",
+        "resvg": {
+          "native_support": 406,
+          "output_support": 404,
+          "union": 406,
+          "support_iou": 0.995074,
+          "rgb_mae_union": 0.66913,
+          "rgb_max_union": 6
+        },
+        "mupdf": {
+          "native_support": 406,
+          "output_support": 372,
+          "union": 410,
+          "support_iou": 0.897561,
+          "rgb_mae_union": 8.92439,
+          "rgb_max_union": 43
+        }
       }
     },
     {
@@ -103,6 +166,27 @@
         "support_iou": 0.9,
         "rgb_mae_union": 18.71626,
         "rgb_max_union": 85
+      },
+      "positive_y": {
+        "svg_sha256": "e0f737e160e5bd358583b9279a4063d83e51ed8a7ba18e432ee2cfdf92a6bdcf",
+        "resvg_rgba_sha256": "f20591b79105e8eff4a872b984f2f2bce6b89b21e722363962e45880384fdadd",
+        "pdf_sha256": "9c294d443842817f3236fd1d90dd7a6e4987204f77965e5d37db6d98fef8a014",
+        "resvg": {
+          "native_support": 406,
+          "output_support": 406,
+          "union": 406,
+          "support_iou": 1.0,
+          "rgb_mae_union": 0.995074,
+          "rgb_max_union": 10
+        },
+        "mupdf": {
+          "native_support": 406,
+          "output_support": 373,
+          "union": 410,
+          "support_iou": 0.9,
+          "rgb_mae_union": 18.664228,
+          "rgb_max_union": 84
+        }
       }
     },
     {
@@ -127,6 +211,27 @@
         "support_iou": 0.959006,
         "rgb_mae_union": 4.948033,
         "rgb_max_union": 23
+      },
+      "positive_y": {
+        "svg_sha256": "971580884aaafa5b19deab755aa6077b63e1cd52d4294cd653c8d598befc0e1e",
+        "resvg_rgba_sha256": "be71d54d3184f81387608f508ee297b5d8f74f808f7e866141578e4fab1e1d33",
+        "pdf_sha256": "ba5dd2dba497c9dcccb848cefb74081de83cb2ceb4b316d097d3a8c411410352",
+        "resvg": {
+          "native_support": 1601,
+          "output_support": 1594,
+          "union": 1601,
+          "support_iou": 0.995628,
+          "rgb_mae_union": 0.392047,
+          "rgb_max_union": 4
+        },
+        "mupdf": {
+          "native_support": 1601,
+          "output_support": 1556,
+          "union": 1612,
+          "support_iou": 0.958437,
+          "rgb_mae_union": 4.932382,
+          "rgb_max_union": 23
+        }
       }
     },
     {
@@ -151,7 +256,33 @@
         "support_iou": 0.959108,
         "rgb_mae_union": 9.375052,
         "rgb_max_union": 47
+      },
+      "positive_y": {
+        "svg_sha256": "d151c7d725eb27c85907729cf88a867a7cf584f8b4a6ae9b93daabb8a1c37055",
+        "resvg_rgba_sha256": "284abae8306df7127c5474c6de7ab1eb235020b3353f9ece57132e8d80000f44",
+        "pdf_sha256": "d542b736e596879d8d1a473a2915d61806b11f344b9e087f2b64a5d70ba98a22",
+        "resvg": {
+          "native_support": 1604,
+          "output_support": 1601,
+          "union": 1604,
+          "support_iou": 0.99813,
+          "rgb_mae_union": 0.457398,
+          "rgb_max_union": 5
+        },
+        "mupdf": {
+          "native_support": 1604,
+          "output_support": 1561,
+          "union": 1615,
+          "support_iou": 0.959752,
+          "rgb_mae_union": 9.369866,
+          "rgb_max_union": 47
+        }
       }
     }
-  ]
+  ],
+  "positive_y_chart": {
+    "scope": "Test-only public preparation reflects f32 record centers as 96-y before constructing atlas and retained PDF field; outer matrix [scale,0,0,scale,0,96-96*scale] preserves the baseline physical geometry to 1e-4 for these records. This is not production admission, device parity, or a general transform claim.",
+    "render_rs_sha256": "f5385eb081b8491516d1291d4400c23e4468d4bc4045794cd5ff6b5992129ab7",
+    "reader_versions": "same pinned resvg 0.47.0 and MuPDF 1.28.2 as baseline"
+  }
 }
