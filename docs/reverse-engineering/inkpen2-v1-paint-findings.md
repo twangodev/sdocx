@@ -67,3 +67,6 @@ serialized notes, device output, or full application composition. The Rust test
 set `SDOCX_V1_SHAPE_PDF_CAPTURE` to an existing empty directory to write the profile
 and fallback PDF controls there for independent rasterization. Existing files are
 never overwritten.
+
+A [rectangle-clip comparison](../../conformance/inkpen2-null-v1-rectangle-clip-comparison.json)
+worsened PDF alpha error for all six shapes, so the vector renderer retains circle clips.

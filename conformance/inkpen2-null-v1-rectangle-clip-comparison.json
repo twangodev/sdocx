@@ -1,0 +1,14 @@
+{
+  "schema": "sdocx-inkpen2-null-v1-rectangle-clip-comparison-v1",
+  "scope": "Six synthetic 128x96 transparent host-Mesa frames from inkpen2-null-v1-shapes-paint-native.json. Public SVG through resvg and public SVG-to-PDF through PyMuPDF 1.28.2 at 96 DPI. Alpha absolute-error sums; lower is better. This is not a device or application-canvas comparison.",
+  "candidate": "Replace each direct radial-gradient circle clip with a rectangle spanning the normalized gradient bounds. No other geometry or paint changes.",
+  "result": "Rejected: PDF error increased in all six controls and SVG error increased in four. Existing circle clipping remains unchanged.",
+  "cases": {
+    "short": {"svg_circle": 488, "svg_rectangle": 512, "pdf_circle": 1064, "pdf_rectangle": 1168},
+    "stationary": {"svg_circle": 56, "svg_rectangle": 32, "pdf_circle": 846, "pdf_rectangle": 942},
+    "turn": {"svg_circle": 862, "svg_rectangle": 952, "pdf_circle": 4404, "pdf_rectangle": 5160},
+    "reverse": {"svg_circle": 554, "svg_rectangle": 556, "pdf_circle": 3688, "pdf_rectangle": 4605},
+    "large": {"svg_circle": 900, "svg_rectangle": 1076, "pdf_circle": 7211, "pdf_rectangle": 9019},
+    "small": {"svg_circle": 1012, "svg_rectangle": 992, "pdf_circle": 5139, "pdf_rectangle": 6489}
+  }
+}
