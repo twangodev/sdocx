@@ -709,3 +709,81 @@ mod paper_sampling_tests {
         assert!(!svg.contains("<pattern"));
     }
 }
+
+#[cfg(all(test, feature = "pdf"))]
+mod pencil3_transport_probe {
+    use super::*;
+
+    // Artifact generator only: deliberately ignored in ordinary test runs.
+    // SDOCX_PENCIL3_PROBE_DIR must be an existing scratch directory.
+    #[test]
+    #[ignore]
+    fn write_single_dab_mask_controls() {
+        let out = std::path::PathBuf::from(std::env::var_os("SDOCX_PENCIL3_PROBE_DIR").unwrap());
+        assert!(out.is_dir());
+        let context = Pencil3PaintContext {
+            canvas_width: 64,
+            canvas_height: 64,
+            background_scale: 1.0,
+            paper_sampler: Pencil3PaperSampler::Repeat,
+            y_up: false,
+        };
+        for (name, phase) in [("integer", 0.0_f32), ("quarter", 0.25), ("half", 0.5)] {
+            let x = 32.0 + phase;
+            let y = 32.0 + phase;
+            let half = 12.0_f32;
+            let source = PreparedPencil3V3 {
+                records: vec![[x, y, half, 0.0, 0.0]],
+                sample_ends: vec![1],
+                bounds: BoundingBox {
+                    x_min: f64::from(x - half),
+                    y_min: f64::from(y - half),
+                    x_max: f64::from(x + half),
+                    y_max: f64::from(y + half),
+                },
+                color: crate::Color { r: 0, g: 0, b: 0 },
+                opacity: 0.0,
+            };
+            let mut scene = Scene::new(
+                Svg::new()
+                    .width(64)
+                    .height(64)
+                    .view_box(ViewBox::unrounded(0.0, 0.0, 64.0, 64.0)),
+            );
+            assert!(render(&mut scene, &source, context, None));
+            let svg = scene.finish();
+            let id = |prefix: &str| {
+                let start = svg.find(prefix).unwrap() + 4;
+                svg[start..].split('"').next().unwrap().to_owned()
+            };
+            let paper = id("id=\"sdocx-pencil3-paper-mask-");
+            let brush = id("id=\"sdocx-pencil3-brush-sdocx-def-");
+            let end = svg.rfind("</svg>").unwrap();
+            // Omission of a mask means constant 1. Both masks control preserves
+            // production ordering; these are not native paint comparisons.
+            for (kind, outer, inner) in [
+                ("brush", "".to_owned(), format!(" mask=\"url(#{brush})\"")),
+                ("paper", format!(" mask=\"url(#{paper})\""), "".to_owned()),
+                (
+                    "both",
+                    format!(" mask=\"url(#{paper})\""),
+                    format!(" mask=\"url(#{brush})\""),
+                ),
+                ("solid", "".to_owned(), "".to_owned()),
+            ] {
+                let overlay = format!(
+                    "<g{outer}><rect x=\"{}\" y=\"{}\" width=\"24\" height=\"24\" fill=\"black\"{inner}/></g></svg>",
+                    x - half,
+                    y - half
+                );
+                let artifact = format!("{}{}", &svg[..end], overlay);
+                let stem = format!("{kind}-{name}");
+                std::fs::write(out.join(format!("{stem}.svg")), &artifact).unwrap();
+                let page = crate::RenderedPage::new(0, 64, 64, artifact);
+                let pdf =
+                    crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default()).unwrap();
+                std::fs::write(out.join(format!("{stem}.pdf")), pdf).unwrap();
+            }
+        }
+    }
+}
