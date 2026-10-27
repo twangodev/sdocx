@@ -314,7 +314,7 @@ pub(crate) fn prepare_stroke(
     if !(3.0..=24.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
-    if !(3..=128).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
+    if !(2..=128).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -730,6 +730,15 @@ mod tests {
             (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
         );
         let native: &[u8] = match (four, size) {
+            (_, 4) if probe == 2 => {
+                include_bytes!("../../../../conformance/simplebrush-two-4-crop.rgba")
+            }
+            (_, 8) if probe == 2 => {
+                include_bytes!("../../../../conformance/simplebrush-two-8-crop.rgba")
+            }
+            (_, 16) if probe == 2 => {
+                include_bytes!("../../../../conformance/simplebrush-two-16-crop.rgba")
+            }
             (_, 3) if probe == 7 => {
                 include_bytes!("../../../../conformance/simplebrush-edge-7-3-crop.rgba")
             }
@@ -801,6 +810,11 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            (_, 4) if probe == 2 => include_str!("../../../../conformance/simplebrush-two-4.json"),
+            (_, 8) if probe == 2 => include_str!("../../../../conformance/simplebrush-two-8.json"),
+            (_, 16) if probe == 2 => {
+                include_str!("../../../../conformance/simplebrush-two-16.json")
+            }
             (_, 3) if probe == 7 => {
                 include_str!("../../../../conformance/simplebrush-edge-7-3.json")
             }
@@ -868,7 +882,13 @@ mod tests {
             .map(|i| [(i * 8) as f32, (4 + (i % 3) * 4) as f32])
             .collect();
         let probe_pressures: Vec<f32> = (0..probe)
-            .map(|i| [0.25, 0.5, 0.75, 0.375][i % 4])
+            .map(|i| {
+                if probe == 2 && size != 8 {
+                    0.75
+                } else {
+                    [0.25, 0.5, 0.75, 0.375][i % 4]
+                }
+            })
             .collect();
         let points: &[[f32; 2]] = if probe != 0 {
             &probe_points
@@ -898,6 +918,9 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            (_, 4) if probe == 2 => 60,
+            (_, 8) if probe == 2 => 85,
+            (_, 16) if probe == 2 => 223,
             (_, 3) if probe == 7 => 202,
             (_, 3) if probe == 16 => 502,
             (_, 24) if probe == 7 => 958,
@@ -968,6 +991,15 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                (4.0, 2) => {
+                    include_bytes!("../../../../conformance/simplebrush-two-4-geometry.bin")
+                }
+                (8.0, 2) => {
+                    include_bytes!("../../../../conformance/simplebrush-two-8-geometry.bin")
+                }
+                (16.0, 2) => {
+                    include_bytes!("../../../../conformance/simplebrush-two-16-geometry.bin")
+                }
                 (3.0, 7) => {
                     include_bytes!("../../../../conformance/simplebrush-edge-7-3-geometry.bin")
                 }
@@ -1219,7 +1251,7 @@ mod tests {
                 .count(),
             expected_support
         );
-        if !extra && probe <= 16 {
+        if !extra && probe <= 16 && probe != 2 {
             assert_eq!(
                 candidate_metrics.2,
                 expected_support
@@ -1235,6 +1267,14 @@ mod tests {
         assert!(profiled_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * profiled_metrics.1);
         assert!(profiled_metrics.3 < fallback_metrics.3);
         assert!(profiled_metrics.4 < fallback_metrics.4);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn two_point_public_paint_controls() {
+        for size in [4, 8, 16] {
+            v25_paint_control(size, false, false, false, 2);
+        }
     }
 
     #[cfg(feature = "pdf")]

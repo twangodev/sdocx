@@ -106,13 +106,15 @@ dispatch, not complete version coverage or visual parity.
 
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null settings, tool 2,
-curve-enabled strokes without saved stylus channels, with three through 128 points and finite sizes from 3 through 24; unsupported
+curve-enabled strokes without saved stylus channels, with two through 128 points and finite sizes from 3 through 24; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
 output pixel for its fringe. Each scene has a shared stamp budget, and sliced
 exports omit off-slice stamps while retaining boundary intersections. It is not validated for general saved notes,
 other scales, device rendering, or replay parity.
 Four synthetic controls at sizes 3 and 24 with seven and sixteen points also match native geometry; their SVG and PDF comparisons improve on generic paint. Admission between controls is extrapolated.
+Two-point host controls at [size 4](../conformance/simplebrush-two-4.json), [8](../conformance/simplebrush-two-8.json), and [16](../conformance/simplebrush-two-16.json) match native geometry and improve SVG/PDF comparisons over generic paint; other directions and combinations remain unverified.
+
 Three intermediate-size synthetic host controls—[three points at 10](../conformance/simplebrush-size-3-10.json), [seven at 5.5](../conformance/simplebrush-size-7-55.json), and [sixteen at 20](../conformance/simplebrush-size-16-20.json)—match native geometry byte for byte. Profile SVG overlaps 167/167, 312/312, and 2008/2009 support-union pixels versus 50/167, 144/312, and 931/2008 for generic paint. MuPDF PDF overlaps 141/167, 270/327, and 1916/2016 versus 50/167, 144/312, and 967/2008. Both outputs reduce alpha error in each control. Admission of other sizes in the interval and other size/point combinations extrapolates from these captures; device, saved-note, and general PDF parity remain unverified.
 Additional five-, seven-, and sixteen-point host controls at sizes 8, 12, and 8 respectively match native geometry byte for byte. Their SVG support intersects all native painted pixels, with at most two extra edge pixels; the corresponding PDF overlaps 241/273, 529/574, and 895/985 native pixels, compared with 123/273, 254/574, and 483/985 for generic paint. Admission for intermediate combinations is an extrapolation from these controls.
 Synthetic size-8 [17-point](../conformance/simplebrush-17-8.json), [32-point](../conformance/simplebrush-32-8.json), and [64-point](../conformance/simplebrush-64-8.json) controls also match native geometry byte for byte. Profile SVG overlaps all native painted pixels; MuPDF PDF overlaps 938/1068, 1821/2063, and 3703/4191 of the respective union pixels versus 504/1036, 984/1993, and 2007/4045 for generic paint. Both outputs have lower alpha error than generic paint. Other point-count and size combinations are extrapolations; device and saved-note parity remain unverified.

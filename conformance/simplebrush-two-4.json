@@ -1,0 +1,76 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points": [
+    [
+      0,
+      4
+    ],
+    [
+      8,
+      8
+    ]
+  ],
+  "pressures": [
+    0.75,
+    0.75
+  ],
+  "size": 4,
+  "geometry_count": 9,
+  "geometry_sha256": "ac501d476fa0cd3e308985014b2830ce8fe0b31273f6de8fbfe31b29991c042c",
+  "full_frame_sha256": "66e80199361d83ac77e4b3085ad3cbbc682c1b3724452476edd935ca35c306c4",
+  "crop": {
+    "dimensions": [
+      144,
+      32
+    ],
+    "sha256": "8215cfa842441b7a7646c8500576edae2b66b2f159583a3ac888d76aec51d6d1",
+    "nonzero_alpha_pixels": 60
+  },
+  "paint_clean": true,
+  "capture_scripts": [
+    "scratch/simplebrush-two-point-control/simplebrush-5-source-capture.py",
+    "scratch/simplebrush-two-point-control/simplebrush-5-paint-capture.py"
+  ],
+  "capture_script_sha256": {
+    "scratch/simplebrush-two-point-control/simplebrush-5-source-capture.py": "c11f3ecae0a1ed714934b90623cbc056c5d56c6463a1c0ee977a22464967fdfc",
+    "scratch/simplebrush-two-point-control/simplebrush-5-paint-capture.py": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4"
+  },
+  "public_output_comparison": {
+    "metrics_order": [
+      "support_intersection",
+      "support_union",
+      "output_support",
+      "absolute_alpha_error",
+      "absolute_rgba_error"
+    ],
+    "pdf_renderer": "PyMuPDF at 4/3 scale, 1920x1080",
+    "svg_profiled": [
+      60,
+      60,
+      60,
+      453,
+      1350
+    ],
+    "svg_fallback": [
+      26,
+      60,
+      26,
+      8802,
+      25202
+    ],
+    "pdf_profiled": [
+      51,
+      61,
+      52,
+      2107,
+      6042
+    ],
+    "pdf_fallback": [
+      26,
+      60,
+      26,
+      8980,
+      25728
+    ]
+  }
+}
