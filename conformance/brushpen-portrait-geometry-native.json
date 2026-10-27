@@ -1,0 +1,93 @@
+{
+  "input": {
+    "advanced_setting_ascii": "",
+    "color_argb_u32": "0x806e42d1",
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "",
+      "color_argb_u32": "0x806e42d1",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+      "size": 7.0,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+    "point_count": 8,
+    "size_f32_bits": "0000e040",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 8,
+        "data_hex": "cdcc4c3e0000803e9a99993e3333b33ecdcccc3e6666e63e0000003fcdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 8,
+        "data_hex": "0000fa420000f0410000ec42000030420000d04200006c420000ae42000084420000904200006c4200007c4200002c4200008c420000e8410000ac420000b841",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 8,
+        "data_hex": "0000803ecdcccc3ecdcc0c3f3333333f9a99593f0000403f0000003f9a99993e",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 8,
+        "data_hex": "8fc2f53d9a99193ecdcc4c3e0000803e9a99993e295c8f3eae47613e9a99193e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 8,
+        "data_hex": "2c0100003b0100004a0100005901000068010000770100008601000095010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_helper_sha256": {
+    "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "producer": {
+    "buffer_bytes": 9724,
+    "buffer_sha256": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+    "callback_count": 221
+  },
+  "profile": {
+    "canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "height": 1920,
+    "width": 1080
+  },
+  "runner": "tmp/vector-parity-plan/brushpen-same-drawing-queue/second_geometry_capture.py",
+  "runner_sha256": "baa57b9d06d630206a6e7931bc3d0b6b5def294dfde0dad163890ba2939d9cb9",
+  "schema": "brushpen-portrait-geometry-native-v1",
+  "scope": "Synthetic Model ObjectStroke and Drawing host adapter; geometry only, not parsed saved notes, paint, or device output.",
+  "screen_resolution_calls": [
+    {
+      "height": 1920,
+      "width": 1080
+    }
+  ]
+}

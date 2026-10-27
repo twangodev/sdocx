@@ -952,6 +952,31 @@ mod tests {
             .flat_map(f32::to_le_bytes)
             .collect();
         assert_eq!(geometry, native_geometry);
+        let portrait: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-portrait-geometry-native.json"
+        ))
+        .unwrap();
+        let portrait_geometry: Vec<_> = super::super::sample_native_stroke_with_size(
+            &stroke,
+            super::super::SavedBrushPenNativeContext {
+                screen_resolution: [1080, 1920],
+                ..context
+            },
+            7.0_f32.to_bits(),
+            0x806e_42d1,
+        )
+        .unwrap()
+        .output
+        .instances
+        .iter()
+        .flat_map(|instance| instance.values)
+        .flat_map(f32::to_le_bytes)
+        .collect();
+        assert_eq!(
+            sha256(&portrait_geometry),
+            portrait["producer"]["buffer_sha256"]
+        );
+        assert_eq!(portrait_geometry, native_geometry);
         let imports = fixture["paint"]["draw_time_uniform_imports"]["imports"]
             .as_array()
             .unwrap();

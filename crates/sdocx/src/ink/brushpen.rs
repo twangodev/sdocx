@@ -905,7 +905,7 @@ fn sample_native_stroke_with_size(
     const NATIVE_ADVANCED_SETTING: &str = "";
 
     if context.gl_version != GL_VERSION
-        || context.screen_resolution != [1920, 1080]
+        || !matches!(context.screen_resolution, [1920, 1080] | [1080, 1920])
         || context.constructor_profile != SAVED_GLV10_CONSTRUCTOR_PROFILE
         || context.fixed_width.to_bits() != 0.0_f32.to_bits()
         || context.fixed_width_enabled
