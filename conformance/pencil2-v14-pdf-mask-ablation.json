@@ -1,0 +1,27 @@
+{
+  "scope": "The prior pinned 84-stamp host-Mesa frame and V8 SVG prototype, compared at 192x192 and 72 dpi with the same exporter and readers. Ablations change the SVG and are diagnostic, not native-parity candidates.",
+  "scripts": ["conformance/pencil2_v14_pdf_mask_ablation.py", "conformance/pencil2_pdf_radial_mask_control.py"],
+  "paired_support_resvg_mupdf_pdfium": {
+    "original": [52, 32, 32],
+    "no_filter": [51, 21, 22],
+    "no_point": [52, 32, 33],
+    "no_width": [53, 106, 102],
+    "no_direction": [52, 32, 32],
+    "no_perpendicular": [52, 32, 32],
+    "no_grain": [52, 32, 32]
+  },
+  "native_alpha_sum_abs_resvg_mupdf_pdfium": {"original": [93, 2436, 3318], "no_filter": [2980, 3753, 3814], "no_width": [4108, 6486, 6730]},
+  "minimal_vector_mask": {
+    "shape": "black 2x2 rectangle at (40,40), objectBoundingBox radial alpha mask, center opacity 1 and edge 0",
+    "alpha_2x2_resvg": [[75, 75], [75, 75]],
+    "alpha_2x2_mupdf": [[0, 0], [0, 255]],
+    "alpha_2x2_pdfium": [[1, 1], [1, 255]],
+    "max_abs_vs_resvg_at_sizes_2_8_32_64": {"mupdf": [180, 48, 14, 8], "pdfium": [180, 46, 13, 8]}
+  },
+  "interpretation": "The width mask materially changes the mismatch and a reduced vector-only mask exhibits strong size-dependent reader differences consistent with different shading sampling. This does not prove the internal reader algorithm or establish that all discrepancy comes from sampling. Per-stamp alpha-transfer filters are separately rasterized by the exporter; removing them does not eliminate the mismatch. A fixed pixel shift is not a scale-independent SVG/PDF conversion.",
+  "limitations": [
+    "Retained prototype and native capture inputs are required; scripts and prior receipt document runner and Python dependencies.",
+    "Synthetic ablations are not native parity or production output.",
+    "No device, other readers, arbitrary scale, color, or saved-note claim."
+  ]
+}
