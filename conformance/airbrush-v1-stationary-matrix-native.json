@@ -1,0 +1,169 @@
+{
+  "schema": "sdocx.airbrush-v1-stationary-matrix-native.v1",
+  "scope": "Synthetic Model ObjectStroke setters and host callbacks, native Drawing and AirBrush, synchronous host queue. No framebuffer readback, Android GPU, or deserialized note.",
+  "runner_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/stationary-matrix-capture.py",
+  "runner_sha256": "52f8a18cefeb2bef365384a23b9e49d7783c5fed7e0ea08716d9a9d36e2f2180",
+  "native_libraries_sha256": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "cases": [
+    {
+      "count": 2,
+      "size": 3.1440000534057617,
+      "points_f32_le": "00740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 0,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "857c5aae17d54ff6200fa488f6ebdb9d2b92ee16f2a67b90ee03cfd638c3dfbd"
+    },
+    {
+      "count": 3,
+      "size": 3.1440000534057617,
+      "points_f32_le": "007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 1,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "1ea0da7cd5f6403fa812b66f4d47276f51f1d1d0dd7980f2e499eebb57a8d75e"
+    },
+    {
+      "count": 4,
+      "size": 3.1440000534057617,
+      "points_f32_le": "0074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 2,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "99c6cc831e5aa022d116f72a9f7c5af91fe0a7cc99f58742aff82c06fd97e567"
+    },
+    {
+      "count": 5,
+      "size": 3.1440000534057617,
+      "points_f32_le": "00740043008400430074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "",
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 3,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "1e05e950aac183f17827122cc75cc93a3b2f9e88db4878bf4a1829d1ed5f4292"
+    },
+    {
+      "count": 6,
+      "size": 3.1440000534057617,
+      "points_f32_le": "007400430084004300740043008400430074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "",
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 4,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "6e728ec2a92d4f3852991795c6349d35b6585d36b4179e173205b319781f581d"
+    },
+    {
+      "count": 2,
+      "size": 8.0,
+      "points_f32_le": "00740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 0,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "bb3d475a7b198f25ef4175a95a3ad1bca5c8a4616dbefaf883336b5803725f7d"
+    },
+    {
+      "count": 3,
+      "size": 8.0,
+      "points_f32_le": "007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 1,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "00b06c339be1e075fbe1f5fc5a27830c2bf2a6ac222ba8e675f22b7e732ad41a"
+    },
+    {
+      "count": 4,
+      "size": 8.0,
+      "points_f32_le": "0074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "0074004300840043000000000000803f",
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 2,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "14a363b52e05d15786909c7e1d8254d1fea22e556c835b45c62246e37151fdfe"
+    },
+    {
+      "count": 5,
+      "size": 8.0,
+      "points_f32_le": "00740043008400430074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "",
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 3,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "3d815d49c0304ea92e9e8722c92539e5e4da47950a19ac90d6127912a8a3534b"
+    },
+    {
+      "count": 6,
+      "size": 8.0,
+      "points_f32_le": "007400430084004300740043008400430074004300840043007400430084004300740043008400430074004300840043",
+      "rows_f32_le": "",
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 4,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      },
+      "capture_sha256": "2240ee7c4abf78ae7ff1c4694b176b91bc515c1e71b8314fce6f6d33f030b63b"
+    }
+  ],
+  "command": "AB_N=<2..6> PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin:tmp/conformance-cleanup/native-capture-a241793/conformance LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu python3 tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/stationary-matrix-capture.py --single-case --print-capture --advanced-mode unset --width 256 --height 256 --source-size <size>"
+}

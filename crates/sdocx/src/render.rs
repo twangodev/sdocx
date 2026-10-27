@@ -11895,6 +11895,16 @@ mod tests {
             svg(&document, &default),
             "zero-stamp fallback"
         );
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points.truncate(3);
+        stroke.pressures.truncate(3);
+        stroke.tilts.truncate(3);
+        stroke.orientations.truncate(3);
+        stroke.timestamps.truncate(3);
+        assert!(
+            svg(&document, &options).contains("data:image/png;base64,"),
+            "native three-point stationary stroke emits one stamp"
+        );
     }
 
     #[test]

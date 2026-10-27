@@ -59,23 +59,6 @@ fn midpoint(a: P, b: P) -> P {
 /// sampling state. V1 and V2 differ in PenData writeback; this output models
 /// only their observed AddPoint stream, not those side effects.
 pub(super) fn saved_redraw(input: Input<'_>) -> Option<Output> {
-    let first = *input.history.first()?;
-    if (2..=MAX_POINTS).contains(&input.history.len())
-        && v2_spacing(input.size).is_some()
-        && first.x.is_finite()
-        && first.y.is_finite()
-        && input.endpoint.x == first.x
-        && input.endpoint.y == first.y
-        && input
-            .history
-            .iter()
-            .all(|p| p.x == first.x && p.y == first.y)
-    {
-        return Some(Output {
-            history_ends: vec![0; input.history.len().saturating_sub(1)],
-            ..Output::default()
-        });
-    }
     let result = saved_redraw_v2(V2Input {
         history: input.history,
         endpoint: input.endpoint,
@@ -902,6 +885,51 @@ mod tests {
                 .collect();
             assert_eq!(actual, expected, "native V1 boundary: {case}");
             assert_eq!(case["v2_matches_v1"], true);
+        }
+    }
+
+    #[test]
+    fn saved_v1_stationary_stream_matches_native_drawing_matrix() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-v1-stationary-matrix-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let point_hex = case["points_f32_le"].as_str().unwrap();
+            let points: Vec<P> = point_hex
+                .as_bytes()
+                .as_chunks::<16>()
+                .0
+                .iter()
+                .map(|point| P {
+                    x: little_endian_f32(std::str::from_utf8(&point[..8]).unwrap()),
+                    y: little_endian_f32(std::str::from_utf8(&point[8..]).unwrap()),
+                })
+                .collect();
+            let size = case["size"].as_f64().unwrap() as f32;
+            let output = saved_redraw(Input {
+                history: &points[..points.len() - 1],
+                endpoint: *points.last().unwrap(),
+                size,
+                tool_type: 2,
+                source: 0,
+                runtime: Runtime { counter_seed: 0 },
+            })
+            .unwrap();
+            let expected = case["rows_f32_le"].as_str().unwrap();
+            let actual: String = output
+                .stamps
+                .iter()
+                .flat_map(|stamp| stamp.values)
+                .flat_map(f32::to_le_bytes)
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            assert_eq!(
+                actual,
+                expected,
+                "native stationary count {} size {size}",
+                points.len()
+            );
         }
     }
 
