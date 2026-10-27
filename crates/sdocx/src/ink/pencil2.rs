@@ -1009,3 +1009,6 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod device_profile_tests;
