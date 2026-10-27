@@ -124,11 +124,12 @@ fn append_path(
         .map_err(|_| "SimpleBrush sample allocation failed")?;
     let distance_step = curve.length / repeat as f32;
     let width_step = (end_width - start_width) / repeat as f32;
-    let (mut distance, mut width) = (0.0_f32, start_width);
+    // Native drawPath and endPen add 1 before accumulating the width step.
+    let (mut distance, mut width_plus_one) = (0.0_f32, start_width + 1.0);
 
     for _ in 0..=repeat {
         let point = curve.at(distance);
-        let radius = (width + 1.0) * 0.5;
+        let radius = width_plus_one * 0.5;
         // RT AddPoint stores radius + 0.5 in its third float lane.
         let radius_plus_half = radius + 0.5;
         if !point.x.is_finite()
@@ -140,7 +141,7 @@ fn append_path(
         }
         out.push([point.x, point.y, radius_plus_half]);
         distance += distance_step;
-        width += width_step;
+        width_plus_one += width_step;
     }
     Ok(())
 }
@@ -310,12 +311,15 @@ pub(crate) fn prepare_stroke(
         return Err("unsupported SimpleBrush stroke metadata or channels");
     }
     let size = rendering.style.pen_size.ok_or("missing pen size")?;
-    if !matches!(size.to_bits(), 0x4100_0000 | 0x4140_0000)
+    if !matches!(size.to_bits(), 0x4080_0000 | 0x4100_0000 | 0x4140_0000)
         || stroke.pen_width.to_bits() != size.to_bits()
     {
         return Err("unsupported SimpleBrush size");
     }
-    if !matches!(stroke.points.len(), 3 | 4) || stroke.pressures.len() != stroke.points.len() {
+    if !matches!(stroke.points.len(), 3 | 4)
+        || (size == 4.0 && stroke.points.len() != 3)
+        || stroke.pressures.len() != stroke.points.len()
+    {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -466,7 +470,7 @@ mod tests {
             return Err("unsupported SimpleBrush stroke metadata or channels");
         }
         let size = rendering.style.pen_size.ok_or("missing pen size")?;
-        if !matches!(size.to_bits(), 0x4100_0000 | 0x4140_0000)
+        if !matches!(size.to_bits(), 0x4080_0000 | 0x4100_0000 | 0x4140_0000)
             || stroke.pen_width.to_bits() != size.to_bits()
         {
             return Err("unsupported SimpleBrush size");
@@ -489,6 +493,7 @@ mod tests {
             .map(|&p| exact_float(p))
             .collect::<Result<Vec<_>, _>>()?;
         if !matches!(points.len(), 3 | 4)
+            || (size == 4.0 && points.len() != 3)
             || pressures.len() != points.len()
             || pressures.iter().any(|p| !(0.0..=1.0).contains(p))
         {
@@ -589,6 +594,13 @@ mod tests {
         );
         stroke.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(4.0);
+        stroke.pen_width = 4.0;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.points.push(crate::Point { x: 29.0, y: 11.0 });
+        stroke.pressures.push(0.4);
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
     }
 
     #[test]
@@ -681,7 +693,7 @@ mod tests {
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    fn v25_paint_control(size12: bool, four: bool) {
+    fn v25_paint_control(size: u32, four: bool) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -691,31 +703,37 @@ mod tests {
         // OpenGL bottom-up rows, cropped at x=0..crop_width, y=0..crop_height. Full-frame
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
-        let native: &[u8] = match (four, size12) {
-            (false, false) => {
+        let native: &[u8] = match (four, size) {
+            (false, 4) => {
+                include_bytes!("../../../../conformance/simplebrush-paint-v25-size4-crop.rgba")
+            }
+            (false, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
             }
-            (false, true) => {
+            (false, 12) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
             }
-            (true, false) => {
+            (true, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")
             }
-            (true, true) => include_bytes!(
+            (true, 12) => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size12-crop.rgba"
             ),
+            _ => unreachable!(),
         };
-        let receipt: Value = serde_json::from_str(match (four, size12) {
-            (false, false) => include_str!("../../../../conformance/simplebrush-paint-v25.json"),
-            (false, true) => {
+        let receipt: Value = serde_json::from_str(match (four, size) {
+            (false, 4) => include_str!("../../../../conformance/simplebrush-paint-v25-size4.json"),
+            (false, 8) => include_str!("../../../../conformance/simplebrush-paint-v25.json"),
+            (false, 12) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
             }
-            (true, false) => {
+            (true, 8) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four.json")
             }
-            (true, true) => {
+            (true, 12) => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four-size12.json")
             }
+            _ => unreachable!(),
         })
         .unwrap();
         assert_eq!(
@@ -734,16 +752,27 @@ mod tests {
         } else {
             &[0.5, 0.25, 0.75]
         };
-        let size = if size12 { 12. } else { 8. };
-        let expected_support = match (four, size12) {
-            (false, false) => 137,
-            (false, true) => 185,
-            (true, false) => 214,
-            (true, true) => 295,
+        let expected_support = match (four, size) {
+            (false, 4) => 80,
+            (false, 8) => 137,
+            (false, 12) => 185,
+            (true, 8) => 214,
+            (true, 12) => 295,
+            _ => unreachable!(),
         };
+        let size = size as f32;
         let (crop_width, crop_height) = if four { (40, 20) } else { (32, 16) };
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
-        assert_eq!(samples.len(), if four { 18 } else { 14 });
+        assert_eq!(
+            samples.len(),
+            if four {
+                18
+            } else if size == 4.0 {
+                17
+            } else {
+                14
+            }
+        );
         let geometry: Vec<u8> = samples
             .iter()
             .flatten()
@@ -955,7 +984,7 @@ mod tests {
         );
         assert_eq!(
             candidate_metrics.2,
-            expected_support + usize::from(four && size12) * 2,
+            expected_support + usize::from(four && size == 12.0) * 2,
             "retained source-derived candidate support"
         );
         assert!(
@@ -969,7 +998,7 @@ mod tests {
     }
 
     #[test]
-    fn size4_candidate_geometry_differs_from_native() {
+    fn size4_candidate_geometry_matches_native() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/simplebrush-paint-v25-size4.json"
         ))
@@ -990,29 +1019,31 @@ mod tests {
             .collect();
         assert_eq!(
             format!("{:x}", Sha256::digest(&geometry)),
-            "b8401c08c1e02ed648b366d1054838ad36649ad5af21bae298cb36790008fed2"
-        );
-        assert_ne!(
-            format!("{:x}", Sha256::digest(&geometry)),
             receipt["input"]["geometry_vector_sha256"].as_str().unwrap()
         );
     }
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn v25_size4_paint_control() {
+        v25_paint_control(4, false);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(false, false);
+        v25_paint_control(8, false);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(true, false);
+        v25_paint_control(12, false);
     }
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_four_point_paint_control() {
-        v25_paint_control(false, true);
-        v25_paint_control(true, true);
+        v25_paint_control(8, true);
+        v25_paint_control(12, true);
     }
 }

@@ -78,10 +78,19 @@ fn options() -> RenderOptions {
 }
 
 #[test]
-fn size_four_falls_back_to_generic_paint() {
+fn size_four_requires_three_points() {
     let mut source = stroke();
     source.pen_width = 4.0;
     source.rendering.as_mut().unwrap().style.pen_size = Some(4.0);
+    let doc = document(source.clone());
+    assert_ne!(
+        render_document_svg(&doc, &options()).remove(0).svg,
+        render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg
+    );
+    source.points.push(Point { x: 39.0, y: 31.0 });
+    source.pressures.push(0.4);
     let doc = document(source);
     assert_eq!(
         render_document_svg(&doc, &options()).remove(0).svg,

@@ -107,7 +107,7 @@ dispatch, not complete version coverage or visual parity.
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null settings, tool 2,
 curve-enabled strokes without saved stylus channels, with three or four points
-and sizes 8 or 12; unsupported
+and sizes 8 or 12, or three points at size 4; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
 output pixel for its fringe. Each scene has a shared stamp budget, and sliced
@@ -130,7 +130,7 @@ the profile SVG overlaps 214/214 native pixels versus 87/214 for fallback;
 at size 12 it overlaps 295/297 versus 119/295, with two additional fringe
 pixels. MuPDF rasterization of the size-12 PDF overlaps 275/297 versus 119/295
 for fallback. These remain synthetic host controls.
-At size 4, the reconstructed terminal radii differ from a [native control](../conformance/simplebrush-paint-v25-size4.json) by one float32 ULP; that size retains generic rendering.
+For the three-point [size-4 control](../conformance/simplebrush-paint-v25-size4.json), geometry matches the native vector. Profile SVG overlaps 80/80 native pixels versus 31/80 for fallback, with alpha error 761 versus 13,579. A 1× MuPDF PDF raster overlaps 68/83 versus 31/80, with alpha error 3,154 versus 13,210. These remain synthetic host controls.
 Four captured geometry streams also pass through a test-only public `Stroke`
 adapter with an explicit identity coordinate context. Its synthetic saved curve
 flag uses property bit 0, which native controls identify as `IsCurveEnabled`;
