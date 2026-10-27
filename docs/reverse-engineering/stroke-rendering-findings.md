@@ -722,7 +722,7 @@ Other curves, subpixel alignments, size values and device output remain outside
 the comparisons; the integer threshold at 2 follows native quantization but the
 fallback is not a native rendering of the thin bucket.
 
-The test-only four-point source-centerline model reconstructs the observed
+The source-centerline model reconstructs the observed
 quadratic subdivision and exact-reversal circle centers from source points,
 including the terminal `SmPath` sample. The reversal's interior edge-pair
 midpoints agree within 0.00001 units with the center selected by `makeCircle`
@@ -736,8 +736,7 @@ rejects non-monotonic or multiple-root cases and many stroke shapes. A diagnosti
 round-polyline through captured native centers reduced
 resvg absolute RGBA error on bend, turn and reversal from 48998/21527/11923 to
 39207/17138/4571; source-generated centers reproduce those diagnostic metrics
-on the four controls. Other branch and paint coverage remain insufficient for production
-admission.
+on the four controls. Other branch and paint coverage remain insufficient for native paint parity.
 
 Before the first accepted move, GLV1 compares each coordinate delta to
 `0.4 * size` and queues a move only when either absolute delta is strictly
@@ -753,11 +752,12 @@ controls reject 4.5 and accept 4.6. Static code selects a factor of 10 instead
 of 1.5 when the bool argument is true; that branch has not been runtime-tested.
 A separate [guarded dispatch receipt](../../conformance/legacy-marker-skipped-center-control.json)
 confirms the complete native output for one skipped move; replacing it with a
-repeated point produced identical native mesh and frame hashes. The test-only
+repeated point produced identical native mesh and frame hashes. The
 source-centerline model takes the PenData dimensions explicitly,
 follows the observed bool-false filter and matches the retained center samples.
-The true-bool branch, repeated final points, missing moves, other root
-configurations and arbitrary-length state remain outside the verified boundary.
+The true-bool branch, repeated final points, missing moves and other root
+configurations remain outside the verified boundary. Longer captured paths are
+covered by the same model; unsupported cases fall back.
 
 The mirrored sharp-turn sector is now included in the sector receipt and passes
 the test-only source-centerline comparison. On that control, generated-center
@@ -795,3 +795,16 @@ serialized fixture does not establish the original device resolution, and a
 page's dimensions do not determine it; an experimental centerline profile would
 need an explicit source for the PenData resolution rather than infer it from
 page export size.
+
+An explicit `LegacyMarkerCenterlineProfile` now lets a caller provide the
+PenData screen dimensions for an experimental vector approximation. It uses
+the recovered centerline only for guarded legacy Marker metadata and supported
+geometry; unsupported cases and replay use the existing fallback. Round caps,
+fringe and overlap are approximations, not the native textured paint. On seven
+synthetic host controls, public SVG/PDF white-background RGB L1 against native
+was no worse than fallback: bend changed from 17658/18448 to 14405/15085,
+reversal from 5061/5761 to 2600/3231, and a longer multi-turn stroke from
+21333/22676 to 15406/16540. The 204-point synthetic serialized control changed
+from 72066/72190 to 35973/36092. These comparisons use explicitly supplied
+1920 by 1080 host dimensions and do not establish saved-device or full-note
+parity.

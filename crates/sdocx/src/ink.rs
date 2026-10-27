@@ -49,8 +49,7 @@ mod marker2;
 pub(crate) mod marker3;
 mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
-#[cfg(test)]
-mod legacy_marker_mesh;
+pub(crate) mod legacy_marker_mesh;
 #[cfg(test)]
 mod legacy_marker_paint;
 #[cfg(test)]

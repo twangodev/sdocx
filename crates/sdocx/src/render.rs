@@ -303,6 +303,20 @@ impl PartialEq for FountainV14OutputScaleProfile {
 }
 impl Eq for FountainV14OutputScaleProfile {}
 
+/// Experimental Marker centerline approximation with explicit native PenData resolution.
+///
+/// Use only for fresh saved-stroke drawing in identity page coordinates. The
+/// round polyline approximates the captured centerline; native textured caps,
+/// depth, fringe and replay are not reconstructed. Unsupported inputs fall back.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LegacyMarkerCenterlineProfile {
+    /// Width supplied to native Pen::SetScreenResolution.
+    pub screen_width: u32,
+    /// Height supplied to native Pen::SetScreenResolution.
+    pub screen_height: u32,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -351,6 +365,9 @@ pub struct RenderOptions {
     /// Experimental SimpleBrush host-capture approximation; replay uses generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    /// Opt into the experimental saved Marker centerline approximation.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -838,6 +855,7 @@ impl DocumentTextCache {
             options.pencil3_profile,
             options.airbrush_profile,
             options.simplebrush_profile,
+            options.legacy_marker_centerline_profile,
             slice,
             observer,
         );
@@ -1278,6 +1296,7 @@ fn render_page_contents_svg(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
@@ -1348,6 +1367,7 @@ fn render_page_contents_svg(
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
+        legacy_marker_centerline_profile,
         simplebrush_remaining_stamps: Cell::new(32_768),
         slice,
     };
@@ -1393,6 +1413,7 @@ struct CompositionContext<'a> {
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     // Shared across all passes in this composition; each scene gets its own budget.
     simplebrush_remaining_stamps: Cell<usize>,
     slice: Option<PageSlice>,
@@ -1468,6 +1489,7 @@ fn render_object(
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
+                context.legacy_marker_centerline_profile,
                 &context.simplebrush_remaining_stamps,
                 context.slice,
             );
@@ -3874,6 +3896,7 @@ fn render_stroke(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     simplebrush_remaining_stamps: &Cell<usize>,
     slice: Option<PageSlice>,
 ) {
@@ -4108,6 +4131,17 @@ fn render_stroke(
     } else {
         crate::prepare_stroke(stroke, false)
     };
+    if native_allowed
+        && replay_index.is_none()
+        && let Some(profile) = legacy_marker_centerline_profile
+        && let Some(points) = crate::ink::legacy_marker_mesh::prepare(
+            stroke,
+            [profile.screen_width, profile.screen_height],
+        )
+    {
+        paint.points = Cow::Owned(points);
+        paint.sample_ends = None;
+    }
     if native_allowed
         && paint.profile == Some("FountainPen")
         && paint.dot_directions.is_some()

@@ -2856,6 +2856,7 @@ mod tests {
                 None,
                 None,
                 None,
+                None,
                 &std::cell::Cell::new(32_768),
                 None,
             );

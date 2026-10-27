@@ -1,7 +1,8 @@
-//! Bounded reconstruction of two four-point curved legacy Marker controls.
+//! Bounded saved Marker centerline approximation.
 use super::path::{P, Quad};
 
 type Point = [f32; 2];
+#[cfg(test)]
 #[derive(Default)]
 pub(super) struct Mesh {
     pub(super) body: Vec<Point>,
@@ -24,6 +25,7 @@ fn normal(a: Point) -> Option<(Point, f32)> {
     let length = a[0].hypot(a[1]);
     (length > 0.000001).then(|| ([a[1] / length, -a[0] / length], length))
 }
+#[cfg(test)]
 fn subdivide(
     p: [Point; 3],
     lo: usize,
@@ -47,6 +49,7 @@ fn subdivide(
     subdivide([a, mid(a, b), center], lo, m, radius, edge)?;
     subdivide([center, mid(b, c), c], m, hi, radius, edge)
 }
+#[cfg(test)]
 fn cap(mesh: &mut Mesh, index: usize, corners: [Point; 4], outward: [Point; 2]) {
     mesh.caps[index] = [
         (0, 0., 0.),
@@ -66,6 +69,7 @@ fn cap(mesh: &mut Mesh, index: usize, corners: [Point; 4], outward: [Point; 2]) 
         }
     }
 }
+#[cfg(test)]
 pub(super) fn generate(points: [Point; 4], size: f32) -> Option<Mesh> {
     if !size.is_finite() || size <= 1.0 || points.iter().flatten().any(|x| !x.is_finite()) {
         return None;
@@ -272,8 +276,8 @@ fn centerline_subdivision(points: [Point; 3], lo: usize, hi: usize, samples: &mu
     centerline_subdivision([center, mid(b, c), c], k, hi, samples);
 }
 
-// Monotonic cubic and tangent-angle reconstruction, bounded to controls with
-// one in-range root. This is test-only and does not cover all native roots.
+// Monotonic cubic and tangent-angle reconstruction for one in-range root.
+// Other native roots are unsupported and use the fallback.
 fn sector_centerline(points: [Point; 3], count: usize) -> Option<Vec<Point>> {
     let [a, b, c] = points.map(|p| [f64::from(p[0]), f64::from(p[1])]);
     let d = [b[0] - a[0], b[1] - a[1]];
@@ -330,8 +334,8 @@ fn sector_centerline(points: [Point; 3], count: usize) -> Option<Vec<Point>> {
     Some(samples)
 }
 
-// The observed size-based GLV1 move filter and RT curve state.
-// The display-dependent filter and degenerate event sequences are unsupported.
+// The observed GLV1 move filter and RT curve state for explicit screen dimensions.
+// Degenerate event sequences use the fallback.
 fn source_centerline(
     points: &[Point],
     size: f32,
@@ -415,6 +419,9 @@ fn source_centerline(
     let mut output = Vec::new();
     for i in 0..curves.len() {
         let dot = normals[i][0][0] * normals[i][1][0] + normals[i][0][1] * normals[i][1][1];
+        if !dot.is_finite() || !(-1.004..=1.004).contains(&dot) {
+            return None;
+        }
         let circle = dot <= -0.7 && normal(sub(curves[i][0], curves[i][1]))?.1 > 0.6;
         let exact_reversal = circle && (-1.004..=-0.996).contains(&dot);
         let count = if exact_reversal {
@@ -652,4 +659,55 @@ fn sector_dividing_parameter_matches_native_cubic_entry_and_return() {
     }
     let bits = u32::from_str_radix(row["return_s0_bits"].as_str().unwrap(), 16).unwrap();
     assert!(((lo + hi) * 0.5 - f64::from(f32::from_bits(bits))).abs() < 0.000001);
+}
+
+/// Approximate a canonical-page Marker using caller-supplied native PenData dimensions.
+pub(crate) fn prepare(stroke: &crate::Stroke, screen: [u32; 2]) -> Option<Vec<crate::Point>> {
+    if screen.contains(&0)
+        || screen.iter().any(|&x| x > i32::MAX as u32)
+        || stroke.points.len() < 3
+        || stroke.points.len() > 16_384
+        || stroke.points.iter().any(|p| {
+            !p.x.is_finite()
+                || !p.y.is_finite()
+                || p.x.abs() > 10_000_000.0
+                || p.y.abs() > 10_000_000.0
+        })
+        || super::saved_legacy_marker_argb(stroke).is_none()
+    {
+        return None;
+    }
+    let r = stroke.rendering.as_ref()?;
+    if r.metadata
+        .as_ref()
+        .and_then(|m| m.rotation_degrees)
+        .is_some_and(|degrees| degrees != 0.0)
+    {
+        return None;
+    }
+    let size = r.style.pen_size?;
+    if !size.is_finite() || size.clamp(0.4, 800.0).trunc() < 2.0 {
+        return None;
+    }
+    let points: Vec<Point> = stroke
+        .points
+        .iter()
+        .map(|p| [p.x as f32, p.y as f32])
+        .collect();
+    let centers = source_centerline(&points, size, screen)?;
+    if centers
+        .iter()
+        .flatten()
+        .any(|v| !v.is_finite() || v.abs() > 10_000_000.0)
+    {
+        return None;
+    }
+    let mut result = Vec::with_capacity(centers.len() + 2);
+    result.push(stroke.points[0]);
+    result.extend(centers.into_iter().map(|p| crate::Point {
+        x: f64::from(p[0]),
+        y: f64::from(p[1]),
+    }));
+    result.push(*stroke.points.last()?);
+    Some(result)
 }

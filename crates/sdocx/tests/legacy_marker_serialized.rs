@@ -159,3 +159,93 @@ fn serialized_marker_without_argb_uses_native_opaque_default_width() {
         1
     );
 }
+
+#[cfg(feature = "pdf")]
+#[test]
+fn opt_in_marker_centerline_improves_serialized_host_control_and_preserves_replay() {
+    let doc = sdocx::parse_bytes(include_bytes!(
+        "assets/legacy-marker/synthetic-serialized.sdocx"
+    ))
+    .unwrap();
+    let mut page = doc.pages[0].clone();
+    page.width = 1920;
+    page.height = 1080;
+    page.template = None;
+    page.background = Default::default();
+    page.background_color = None;
+    let isolated = sdocx::Document {
+        pages: vec![page],
+        metadata: sdocx::DocumentMetadata::default(),
+    };
+    let baseline = sdocx::RenderOptions::default();
+    let mut profiled = baseline.clone();
+    profiled.legacy_marker_centerline_profile = Some(sdocx::LegacyMarkerCenterlineProfile {
+        screen_width: 1920,
+        screen_height: 1080,
+    });
+    let old = sdocx::render_document_svg(&isolated, &baseline).remove(0);
+    let new = sdocx::render_document_svg(&isolated, &profiled).remove(0);
+    assert_ne!(old.svg, new.svg);
+    let sparse =
+        include_bytes!("../../../conformance/legacy-marker-serialized-host-sparse-rgba8.bin");
+    let mut native = vec![[0_u8; 4]; 1920 * 1080];
+    for row in sparse.as_chunks::<8>().0 {
+        let i = u32::from_le_bytes(row[..4].try_into().unwrap()) as usize;
+        native[i].copy_from_slice(&row[4..]);
+    }
+    let error = |svg: &str| {
+        let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
+        let mut pix = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pix.as_mut(),
+        );
+        let mut sum = 0u64;
+        for (actual, expected) in pix.data().as_chunks::<4>().0.iter().zip(&native) {
+            let a = std::array::from_fn::<_, 3, _>(|i| {
+                (u16::from(actual[i]) + u16::from(255 - actual[3])).min(255)
+            });
+            let b = std::array::from_fn::<_, 3, _>(|i| {
+                (u16::from(expected[i]) + u16::from(255 - expected[3])).min(255)
+            });
+            if a.iter().chain(&b).any(|&x| x < 250) {
+                for (a, b) in a.iter().zip(b) {
+                    sum += u64::from(a.abs_diff(b));
+                }
+            }
+        }
+        sum
+    };
+    let old_error = error(&old.svg);
+    let new_error = error(&new.svg);
+    assert!(
+        new_error < old_error,
+        "profile error {new_error}, fallback error {old_error}"
+    );
+    let pdf_options = sdocx::PdfOptions::default();
+    let old_pdf = sdocx::render_document_pdf(&isolated, &baseline, &pdf_options).unwrap();
+    let new_pdf = sdocx::render_document_pdf(&isolated, &profiled, &pdf_options).unwrap();
+    assert_ne!(old_pdf, new_pdf);
+    assert_eq!(
+        lopdf::Document::load_mem(&new_pdf)
+            .unwrap()
+            .get_pages()
+            .len(),
+        1
+    );
+    let layout = sdocx::layout_document(&isolated);
+    let old_replay =
+        sdocx::render_layout_page_replay_svg(&isolated, &layout, 0, &baseline).unwrap();
+    let new_replay =
+        sdocx::render_layout_page_replay_svg(&isolated, &layout, 0, &profiled).unwrap();
+    assert_eq!(old_replay.svg, new_replay.svg);
+    profiled.legacy_marker_centerline_profile = Some(sdocx::LegacyMarkerCenterlineProfile {
+        screen_width: 0,
+        screen_height: 1080,
+    });
+    assert_eq!(
+        sdocx::render_document_svg(&isolated, &profiled)[0].svg,
+        old.svg
+    );
+}
