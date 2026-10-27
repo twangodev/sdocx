@@ -1,0 +1,12 @@
+{
+  "scope": "Alpha-byte absolute-error sums against 1440x2560 host Mesa frames; transparent PDF rasterized at 4/3 pixels per point. Synthetic inputs only.",
+  "pymupdf_version": "1.28.2",
+  "cases": {
+    "short": {"high": 1064, "generic": 1190},
+    "stationary": {"high": 846, "generic": 2076},
+    "turn": {"high": 4404, "generic": 17235},
+    "reverse": {"high": 3732, "generic": 12043},
+    "large": {"high": 7211, "generic": 67203},
+    "small": {"high": 5139, "generic": 14846}
+  }
+}

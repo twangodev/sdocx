@@ -24,7 +24,7 @@ def capture(job):
             '--input-json', str(path), '--width', str(width), '--height', str(height)],
             cwd=root, env=env))
         return name, width, height, {key: result[key] for key in (
-            'geometry_sha256', 'rgba_sha256', 'rgba_zlib_base64', 'output_size', 'nonzero_pixels')}
+            'geometry_hex', 'geometry_sha256', 'rgba_sha256', 'rgba_zlib_base64', 'output_size', 'nonzero_pixels')}
 jobs = [(name, width, height) for name in baseline for width, height in ((1080, 1920), (1440, 2560))]
 with ThreadPoolExecutor(max_workers=3) as pool:
     results = list(pool.map(capture, jobs))

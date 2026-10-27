@@ -714,6 +714,68 @@ mod tests {
     }
 
     #[test]
+    fn null_v1_screen_shapes_match_candidate_geometry() {
+        let shapes: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-null-v1-shapes-paint-native.json"
+        ))
+        .unwrap();
+        let screens: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+        ))
+        .unwrap();
+        for (name, case) in shapes["cases"].as_object().unwrap() {
+            let input = &case["input"];
+            let points: Vec<P> = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: number(&p[0]),
+                    y: number(&p[1]),
+                })
+                .collect();
+            for (screen, native) in screens["cases"][name].as_object().unwrap() {
+                let (width, height) = screen.split_once('x').unwrap();
+                let resolution_min = width.parse::<i32>().unwrap().min(height.parse().unwrap());
+                let output = super::redraw_v1_bounded(
+                    Input {
+                        points: &points,
+                        times: &[0, 10, 20, 30],
+                        pressures: &[0.2, 0.4, 0.6, 0.8],
+                        tools: &[2; 4],
+                        rgb: [0; 3],
+                        rainbow: None,
+                        size: number(&input["size"]),
+                        curve_enabled: true,
+                        is_shape: false,
+                        runtime: Runtime {
+                            inverse_scale: [1.; 2],
+                            spacing: 1.,
+                            tolerance: 2.,
+                            tool_threshold: 20.,
+                            resolution_min,
+                            initial_alternation: false,
+                            initial_time: 0,
+                        },
+                    },
+                    10000,
+                )
+                .unwrap();
+                let actual: Vec<u8> = output
+                    .vertices
+                    .iter()
+                    .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                    .collect();
+                assert_eq!(
+                    actual,
+                    hex_bytes(native["geometry_hex"].as_str().unwrap()),
+                    "{name} {screen}"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn null_v1_controls_match_candidate_geometry() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen2-null-v1-controls-native.json"

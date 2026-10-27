@@ -70,3 +70,5 @@ never overwritten.
 
 A [rectangle-clip comparison](../../conformance/inkpen2-null-v1-rectangle-clip-comparison.json)
 worsened PDF alpha error for all six shapes, so the vector renderer retains circle clips.
+
+At 1440 × 2560, the six-shape [host capture](../../conformance/inkpen2-v1-screen-paint-native.json) retains complete vertex streams. The resolution-dependent model matches all six byte for byte, including the reverse stroke whose geometry and frame differ from 1920 × 1080. The public 1× SVG and [PDF comparison](../../conformance/inkpen2-v1-high-pdf-comparison.json) have lower alpha error than generic output in all six cases. This is host-Mesa evidence, not device or application-canvas parity; other scales remain untested for this profile.

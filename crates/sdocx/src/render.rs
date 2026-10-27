@@ -4610,7 +4610,9 @@ fn prepare_inkpen2_internal(
         && (!matches!(
             (profile.screen_width, profile.screen_height),
             (1920, 1080) | (1080, 1920)
-        ) || profile.enhanced_antialias
+        ) && !((profile.screen_width, profile.screen_height) == (1440, 2560)
+            && matches!(v1_scale, Some(InkPen2V1OutputScale::One)))
+            || profile.enhanced_antialias
             || !matches!(
                 rendering.pen_name.as_deref(),
                 Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
@@ -17741,7 +17743,25 @@ mod tests {
             screen_height: 2560,
             enhanced_antialias: false,
         });
-        assert!(super::prepare_inkpen2_v1(&admitted, unverified_profile, theme, scale).is_none());
+        assert!(super::prepare_inkpen2_v1(&admitted, unverified_profile, theme, scale).is_some());
+        assert!(
+            super::prepare_inkpen2_v1(
+                &admitted,
+                unverified_profile,
+                theme,
+                super::InkPen2V1OutputScale::Half
+            )
+            .is_none()
+        );
+        assert!(
+            super::prepare_inkpen2_v1(
+                &admitted,
+                unverified_profile,
+                theme,
+                super::InkPen2V1OutputScale::Double
+            )
+            .is_none()
+        );
         let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options)
             .unwrap()
             .svg;
@@ -18194,10 +18214,23 @@ mod tests {
                 .unwrap()
             };
             assert_eq!(pdf(actual.clone()), pdf(portrait), "{name}: public PDF");
+            let mut high_options = options.clone();
+            high_options.inkpen2_profile.as_mut().unwrap().screen_width = 1440;
+            high_options.inkpen2_profile.as_mut().unwrap().screen_height = 2560;
+            let high = render(&mut cache, &high_options);
+            let high_capture = &profiles["cases"][name]["1440x2560"];
+            let high_compressed = base64::engine::general_purpose::STANDARD
+                .decode(high_capture["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut high_native = Vec::new();
+            flate2::read::ZlibDecoder::new(high_compressed.as_slice())
+                .read_to_end(&mut high_native)
+                .unwrap();
             let generic = render(&mut cache, &RenderOptions::default());
             if let Some(directory) = std::env::var_os("SDOCX_V1_SHAPE_PDF_CAPTURE") {
                 let directory = std::path::Path::new(&directory);
-                for (kind, source) in [("profile", &actual), ("generic", &generic)] {
+                for (kind, source) in [("profile", &actual), ("high", &high), ("generic", &generic)]
+                {
                     let pdf = crate::render_svg_pages_pdf(
                         &[crate::RenderedPage::new(0, 128, 96, source.clone())],
                         &Default::default(),
@@ -18240,6 +18273,27 @@ mod tests {
             let g = error(&generic);
             eprintln!("{name}: public={a}, generic={g}");
             assert!(a <= g, "{name}: public={a}, generic={g}");
+            let high_error = |source: &str| {
+                let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 96).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                pixmap
+                    .data()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(high_native.as_chunks::<4>().0.iter())
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let h = high_error(&high);
+            let hg = high_error(&generic);
+            eprintln!("{name} 1440x2560: public={h}, generic={hg}");
+            assert!(h <= hg, "{name}: public={h}, generic={hg}");
         }
     }
 }
