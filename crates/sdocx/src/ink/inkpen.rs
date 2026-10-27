@@ -2188,6 +2188,33 @@ mod tests {
     }
 
     #[test]
+    fn inkpen2_null_v1_is_not_the_inkpen_v1_geometry() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-null-v1-geometry-native.json"
+        ))
+        .unwrap();
+        let mut input = native_caller_stroke(&fixture["input"]);
+        // Compare the existing InkPen model on the same channels, without
+        // admitting the InkPen2 name to that model.
+        input.rendering.as_mut().unwrap().pen_name = Some(PEN.to_string());
+        let ink = prepare_v1(
+            &input,
+            RuntimeContext {
+                curve_enabled: true,
+                screen_width: fixture["profile"]["width"].as_u64().unwrap() as u32,
+                screen_height: fixture["profile"]["height"].as_u64().unwrap() as u32,
+            },
+        )
+        .unwrap();
+        let native = decode_hex_bytes(fixture["stream_hex"].as_str().unwrap());
+        assert_eq!(native.len(), 25 * 12);
+        let native_first_radius = f32::from_le_bytes(native[8..12].try_into().unwrap());
+        assert_eq!(native_first_radius.to_bits(), 0x4005_5556);
+        assert_eq!(ink.radii[0], 1.5);
+        assert_ne!(ink.radii[0].to_bits(), native_first_radius.to_bits());
+    }
+
+    #[test]
     fn curved_tool3_and_tool4_use_native_vectors_and_argb() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v1-boundaries-native.json"
