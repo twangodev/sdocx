@@ -4142,7 +4142,7 @@ fn render_stroke(
         paint.points = Cow::Owned(points);
         paint.sample_ends = None;
         if let Some((argb, size)) = stroke.rendering.as_ref().and_then(|r| {
-            if r.advanced_settings.as_deref() == Some("") {
+            if matches!(r.advanced_settings.as_deref(), Some("" | "1;")) {
                 Some((r.style.color_argb.unwrap_or(0xff00_0000), r.style.pen_size?))
             } else {
                 None

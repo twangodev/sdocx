@@ -821,12 +821,15 @@ pub(crate) fn legacy_marker_profile_argb(stroke: &Stroke) -> Option<u32> {
     legacy_marker_argb(stroke, true)
 }
 
-fn legacy_marker_argb(stroke: &Stroke, allow_explicit_empty: bool) -> Option<u32> {
+fn legacy_marker_argb(stroke: &Stroke, allow_profile_settings: bool) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker")
-        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
-        || (rendering.advanced_settings.is_some() && !allow_explicit_empty)
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("" | "1;")
+        )
+        || (rendering.advanced_settings.is_some() && !allow_profile_settings)
         || rendering.tool_type_raw != 2
         || !properties.compressed
         || properties.replay_only

@@ -826,7 +826,12 @@ returns opaque black, and their host frames match explicit-black controls at
 every draw prefix. Public SVG/PDF errors improve over generic fallback on
 straight and bent 1× and bent 2× controls. The default generic route is
 unchanged; other settings retain fallback. These are synthetic host-Mesa
-controls, not native PDF, Android zoom or device parity.
+controls, not native PDF, Android zoom or device parity. Literal `1;` also
+selects GLV1 and matches those null/empty host controls in five straight, bent,
+long, color/alpha and 1×/2× pairs, including all draw-prefix and upload hashes.
+One omitted-color `1;` control returns opaque black and matches the corresponding
+empty-setting frame. Public SVG/PDF comparisons have the same error metrics as
+the empty-setting opt-in controls. Other literal settings remain fallback.
 
 An explicit `LegacyMarkerCenterlineProfile` now lets a caller provide the
 PenData screen dimensions for an experimental vector approximation. It uses
@@ -881,3 +886,20 @@ scale behavior remain unresolved. Reproduction uses
 `scratch/legacy-marker-long-generated-mesh.rs` and
 `scratch/legacy-marker-triangle-grouped-probe.py` with the temporary export
 harness in `tmp/marker-triangle-export`.
+
+The scratch general-length mesh also reconstructs original and mirrored sector
+edges within 0.000029 units. Grouped two-band paint reduces white-background
+resvg RGB L1 from 5847/5867 to 3425/3306 and public PDF L1 from 6514/6541 to
+4052/3923 (original/mirrored), but produces roughly 56 KB SVG and 15 KB PDF per
+stroke. It uses the pinned cap texture; scale and arbitrary cubic roots remain
+unverified.
+
+A six-point closed self-overlap control exposes an ownership error: grouped paint
+worsens resvg RGB L1 from 11401 to 16874 and PDF L1 from 13119 to 18130, even
+though generated geometry matches native within 0.00005. The retained
+`tmp/legacy-marker-source-controls/self-overlap.py` capture script has SHA-256
+`1ebe79c76474f7bede40b006fcc800a62a4002e787d17a4dc4d0c16402f8448b`; its
+`self-overlap-confirmed.json` capture has SHA-256
+`63135813951f5a4821430cdbe7628ebec3befd5aadd96154df9d06b82cbd5aba`.
+The existing scratch mesh and grouped-paint probes reproduce the comparison.
+This route requires correct overlap ownership and output budgets before admission.

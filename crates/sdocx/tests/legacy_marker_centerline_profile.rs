@@ -563,6 +563,21 @@ fn empty_setting_missing_color_uses_native_black_only_in_opt_in_profile() {
                 .len(),
             1
         );
+        let mut literal_one = isolated.clone();
+        let literal_stroke = match &mut literal_one.pages[0].objects[0].content {
+            sdocx::PageObjectContent::Stroke(s) => s,
+            _ => unreachable!(),
+        };
+        literal_stroke.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+        assert_eq!(
+            sdocx::render_document_svg(&literal_one, &profile)[0].svg,
+            new.svg
+        );
+        assert_eq!(
+            sdocx::render_document_pdf(&literal_one, &profile, &sdocx::PdfOptions::default())
+                .unwrap(),
+            new_pdf
+        );
         let mut override_doc = isolated.clone();
         let override_stroke = match &mut override_doc.pages[0].objects[0].content {
             sdocx::PageObjectContent::Stroke(s) => s,
@@ -591,5 +606,99 @@ fn empty_setting_missing_color_uses_native_black_only_in_opt_in_profile() {
             sdocx::render_document_svg(&override_doc, &fallback)[0].svg,
             sdocx::render_document_svg(&override_doc, &profile)[0].svg
         );
+    }
+}
+
+#[test]
+fn literal_one_setting_matches_empty_opt_in_without_changing_generic() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/legacy-marker-empty-setting-host-pairs.json"
+    ))
+    .unwrap();
+    let doc = sdocx::parse_bytes(include_bytes!(
+        "assets/legacy-marker/synthetic-serialized.sdocx"
+    ))
+    .unwrap();
+    let original = doc.pages[0].strokes().next().unwrap();
+    let fallback = sdocx::RenderOptions::default();
+    let mut profile = fallback.clone();
+    profile.legacy_marker_centerline_profile = Some(sdocx::LegacyMarkerCenterlineProfile {
+        screen_width: 1920,
+        screen_height: 1080,
+    });
+    for case in receipt["pairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|x| x["name"] != "bend-scale2")
+    {
+        let mut stroke = original.clone();
+        stroke.points = points(
+            case["input"]["source_arrays_hex"]["points"]
+                .as_str()
+                .unwrap(),
+        );
+        stroke.pressures = vec![0.5; stroke.points.len()];
+        stroke.pen_width = 12.0;
+        let argb = u32::from_str_radix(
+            case["input"]["color_argb"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        stroke.color = Some(sdocx::Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        });
+        let r = stroke.rendering.as_mut().unwrap();
+        r.advanced_settings = Some("1;".into());
+        r.style.pen_size = Some(12.0);
+        r.style.color_argb = Some(argb);
+        let generic = sdocx::prepare_stroke(&stroke, false);
+        assert_eq!(generic.opacity, 1.0);
+        assert!((generic.width - 4.8).abs() < 1e-12);
+        let mut page = doc.pages[0].clone();
+        page.objects = vec![sdocx::PageObject::from(stroke)];
+        page.width = 1920;
+        page.height = 1080;
+        page.template = None;
+        page.background = Default::default();
+        page.background_color = None;
+        let literal = sdocx::Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let mut empty = literal.clone();
+        let stroke = match &mut empty.pages[0].objects[0].content {
+            sdocx::PageObjectContent::Stroke(s) => s,
+            _ => unreachable!(),
+        };
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        let literal_svg = sdocx::render_document_svg(&literal, &profile).remove(0);
+        let empty_svg = sdocx::render_document_svg(&empty, &profile).remove(0);
+        assert_eq!(literal_svg.svg, empty_svg.svg);
+        assert_ne!(
+            literal_svg.svg,
+            sdocx::render_document_svg(&literal, &fallback)[0].svg
+        );
+        assert_eq!(
+            sdocx::render_document_pdf(&literal, &profile, &sdocx::PdfOptions::default()).unwrap(),
+            sdocx::render_document_pdf(&empty, &profile, &sdocx::PdfOptions::default()).unwrap()
+        );
+        for setting in ["2;", "01;", "1;extra"] {
+            let mut rejected = literal.clone();
+            let s = match &mut rejected.pages[0].objects[0].content {
+                sdocx::PageObjectContent::Stroke(s) => s,
+                _ => unreachable!(),
+            };
+            s.rendering.as_mut().unwrap().advanced_settings = Some(setting.into());
+            assert_eq!(
+                sdocx::render_document_svg(&rejected, &fallback)[0].svg,
+                sdocx::render_document_svg(&rejected, &profile)[0].svg
+            );
+        }
     }
 }
