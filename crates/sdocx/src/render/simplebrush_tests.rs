@@ -77,6 +77,20 @@ fn options() -> RenderOptions {
     }
 }
 
+#[test]
+fn size_four_falls_back_to_generic_paint() {
+    let mut source = stroke();
+    source.pen_width = 4.0;
+    source.rendering.as_mut().unwrap().style.pen_size = Some(4.0);
+    let doc = document(source);
+    assert_eq!(
+        render_document_svg(&doc, &options()).remove(0).svg,
+        render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg
+    );
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn options_default_for_legacy_data_and_roundtrip_profile() {

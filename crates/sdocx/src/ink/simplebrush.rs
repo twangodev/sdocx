@@ -968,6 +968,36 @@ mod tests {
         assert!(profiled_metrics.4 < fallback_metrics.4);
     }
 
+    #[test]
+    fn size4_candidate_geometry_differs_from_native() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-paint-v25-size4.json"
+        ))
+        .unwrap();
+        let samples = reconstruct(
+            &[[0., 0.], [10., 0.], [20., 5.]],
+            &[0.5, 0.25, 0.75],
+            4.,
+            2,
+            true,
+        )
+        .unwrap();
+        assert_eq!(samples.len(), 17);
+        let geometry: Vec<u8> = samples
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&geometry)),
+            "b8401c08c1e02ed648b366d1054838ad36649ad5af21bae298cb36790008fed2"
+        );
+        assert_ne!(
+            format!("{:x}", Sha256::digest(&geometry)),
+            receipt["input"]["geometry_vector_sha256"].as_str().unwrap()
+        );
+    }
+
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
