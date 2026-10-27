@@ -31,3 +31,18 @@ Compare `geometry_sha256`, `rgba_sha256`, `draw_matrix`, and the complete
 compressed RGBA readbacks with the corresponding receipt fields. The current
 production vector renderer remains V9-specific; V1 vector paint and paired PDF
 comparison remain open.
+
+The [style capture](../../conformance/inkpen2-null-v1-style-native.json)
+adds three synthetic type-0 Drawing controls with the same points and size 4,
+using ARGB `ff336699`, `80336699`, and `00336699`. Native ObjectStroke
+returns each supplied color and Drawing forwards it unchanged to `Pen::SetColor`
+and `PenDrawableRT::SetPenData`, including the alpha byte. The saved redraw
+callback stream has the same SHA-256 in all three controls, so these cases
+show color-independent geometry, not the effect of alpha on painted pixels.
+The capture uses the same identity canvas and synthetic setter boundary as the
+geometry controls; it does not deserialize a saved page or establish device
+appearance. An attempted type-1 stroke hit an unmapped read in this host
+harness, so it does not establish whether native Drawing admits that style.
+Recapture with `python3 conformance/inkpen2_v1_style_capture.py`; the adapter
+requires the same local native and runtime research trees as the geometry
+capture.

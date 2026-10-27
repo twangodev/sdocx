@@ -1,0 +1,206 @@
+{
+  "schema": "sdocx-inkpen2-null-v1-style-native-v1",
+  "scope": "Synthetic ObjectStroke setters through native Drawing and direct saved redraw; no deserialization, paint readback or device execution.",
+  "capture_script": "conformance/inkpen2_v1_style_capture.py",
+  "source_harness_sha256": "4029c24aa69849941b124df47dff9bed117c413eebd66903b3414d7fffd35c1a",
+  "cases": {
+    "opaque": {
+      "input": {
+        "points": [[0, 0], [8, 0], [16, 3], [24, 3]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0],
+        "color_argb": 4281558681
+      },
+      "factory_count": 1,
+      "route": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "drawing_selected_drawable_version": "1",
+        "saved_redraw_invoked_version": "1"
+      },
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002eb70"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0xff336699",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0xff336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        },
+        {
+          "argb_u32": "0xff336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        }
+      ],
+      "source_color_getter": 4281558681,
+      "stream_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "pen_size_bits": "00008040"
+    },
+    "half_alpha": {
+      "input": {
+        "points": [[0, 0], [8, 0], [16, 3], [24, 3]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0],
+        "color_argb": 2150852249
+      },
+      "factory_count": 1,
+      "route": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "drawing_selected_drawable_version": "1",
+        "saved_redraw_invoked_version": "1"
+      },
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002eb70"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0x80336699",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0x80336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        },
+        {
+          "argb_u32": "0x80336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        }
+      ],
+      "source_color_getter": 2150852249,
+      "stream_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "pen_size_bits": "00008040"
+    },
+    "zero_alpha": {
+      "input": {
+        "points": [[0, 0], [8, 0], [16, 3], [24, 3]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0],
+        "color_argb": 3368601
+      },
+      "factory_count": 1,
+      "route": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting": null,
+        "advanced_setting_state": "null",
+        "drawing_selected_drawable_version": "1",
+        "saved_redraw_invoked_version": "1"
+      },
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002eb70"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0x336699",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100364f0"
+        },
+        {
+          "argb_u32": "0x336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        },
+        {
+          "argb_u32": "0x336699",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x40800000",
+          "this": "0x10037810"
+        }
+      ],
+      "source_color_getter": 3368601,
+      "stream_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "pen_size_bits": "00008040"
+    }
+  }
+}
