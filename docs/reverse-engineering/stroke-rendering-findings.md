@@ -862,6 +862,20 @@ not admitted to production. The ignored scratch scripts
 requires temporarily including the scratch Rust test in the mesh module; remove
 that include after running it. Render comparisons do not establish device parity.
 
+A separate ordered-paint scratch prototype consumes the pinned five-draw VBO
+and cap textures, retaining sequential depth ownership, affine fringe and cap
+alpha, and the final cap's source-over operation. On the captured 1920 by 1080
+host control composited on white at one pixel per page unit, its SVG/PDF RGB L1
+errors were 9452/11195, with maximum channel error 82. This is not evidence for
+production admission or device parity. Replacing repeated ownership paths with
+nested shared SVG definitions reduced source size from 1,100,452 to 103,136
+bytes while producing byte-identical rendered PNG and PDF. The PDF remained
+471,778 bytes after the export pipeline expanded the definitions; budgets must
+therefore account for expanded work and page totals, not just SVG bytes. Masks
+were bounded to the 39 by 20 stroke region. The ignored
+`tmp/marker-ordered-prototype/` retains both scripts, the export harness and
+comparators; its limits are experimental per-stroke limits, not a page budget.
+
 The direct MuPDF SVG black pixels were traced to its handling of SVG linear
 gradients: a standalone gradient also rendered black. A gradient-free scratch
 variant subdivides fringe triangles and cap UV into constant-opacity bands.

@@ -47,5 +47,21 @@
       "meaning": "ClearAllRT: next instruction"
     }
   ],
-  "boundary": "Static instruction check combined with historical callback registers; binary load base and callback destination are inferred from the historical mapping. Does not reproduce the lost harness or validate the callback state, completed export, or device parity."
+  "boundary": "Static instruction check combined with historical callback registers; binary load base and callback destination are inferred from the historical mapping. Does not reproduce the lost harness or validate the callback state, completed export, or device parity.",
+  "historical_owner_observation": {
+    "callback_receiver": "0x129b48a0",
+    "receiver_owner_generation": 2,
+    "receiver_owner_fbo_id": 2,
+    "receiver_owner_phase": "attached_complete",
+    "prior_clear_owner": "0x129b0c30",
+    "prior_owner_phase": "deactivated",
+    "receiver_texture_join": {
+      "texture_object": "0x129b44e0",
+      "texture_id": 2,
+      "texture_generation": 2,
+      "offscreen_generation": 2,
+      "host_is_texture": true
+    },
+    "source": "v88 journal texture_fbo_owner_join and v71_callback_entry_raw; snapshot, not a live context or binding check"
+  }
 }

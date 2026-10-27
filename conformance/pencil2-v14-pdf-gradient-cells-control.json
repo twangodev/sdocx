@@ -1,0 +1,147 @@
+{
+  "schema": "sdocx-pencil2-pdf-gradient-cells-control-v1",
+  "scope": "Replace shared width radial gradient in captured-record SVG with a 4x4 or 8x8 grid of constant-opacity vector rectangles, sampled at cell centers from max(0,1-2*distance(center)). Compare exported PDFs against pinned host-Mesa alpha in a 192x192 target for baseline, translate6 and scale2.",
+  "scripts": [
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_cells.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_cells_full.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_extra_scales_capture.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_cells_extra.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_cells_size.py"
+  ],
+  "reader_order": [
+    "MuPDF",
+    "PDFium"
+  ],
+  "absolute_alpha_error_sum": {
+    "baseline": {
+      "original": [
+        2436,
+        3318
+      ],
+      "4x4": [
+        1854,
+        2388
+      ],
+      "8x8": [
+        2147,
+        3886
+      ]
+    },
+    "translate6": {
+      "original": [
+        2393,
+        3204
+      ],
+      "4x4": [
+        1771,
+        2305
+      ],
+      "8x8": [
+        2097,
+        3781
+      ]
+    },
+    "scale2": {
+      "original": [
+        4818,
+        7225
+      ],
+      "4x4": [
+        3889,
+        2030
+      ],
+      "8x8": [
+        4950,
+        9343
+      ]
+    },
+    "scalehalf": {
+      "original": [
+        544,
+        1119
+      ],
+      "4x4": [
+        696,
+        1586
+      ],
+      "8x8": [
+        803,
+        1972
+      ]
+    },
+    "scale4": {
+      "original": [
+        10774,
+        15502
+      ],
+      "4x4": [
+        11036,
+        9131
+      ],
+      "8x8": [
+        11254,
+        5626
+      ]
+    },
+    "translate3": {
+      "original": [
+        2336,
+        3172
+      ],
+      "4x4": [
+        1745,
+        2438
+      ],
+      "8x8": [
+        2042,
+        3925
+      ]
+    }
+  },
+  "interpretation": "4x4 improves aggregate error in both readers at baseline and translations and scale2, but worsens both at scalehalf and MuPDF at scale4. Reduced masks vary with scale and alignment. 8x8 worsens PDFium in several controls. It does not establish scalable or cross-reader accurate paint.",
+  "limitations": [
+    "Host replay of captured records, not full Drawing, device, saved-note or production parity.",
+    "A cell midpoint is a sample, not an exact area average; individual rectangles can interact with antialiasing and compositing. No arbitrary transforms, other readers, or RGB evidence. Inputs and dependencies follow pencil2-v14-svg-pdf-control.json."
+  ],
+  "extra_native_rgba_sha256": {
+    "scalehalf": "0797e246b8b0e2bf1ee3762ac96e4de46ebdd5a8199525c0e33614ae45dee3b7",
+    "scale4": "6dd8c5f5911072ca6b7d0e2f3c9f21b111d2b7b05b874010c5957d987cf1aa52",
+    "translate3": "9e9e28403173087e511b8b332dc4ddda7e452a13ac7dea13691489235e2563ba"
+  },
+  "size_translate3": {
+    "units": "bytes",
+    "svg_pdf_original": [
+      1826255,
+      344018
+    ],
+    "svg_pdf_4x4": [
+      1827362,
+      340707
+    ],
+    "svg_pdf_8x8": [
+      1831486,
+      381186
+    ],
+    "pdf_objects_original": [
+      1916,
+      160,
+      637
+    ],
+    "pdf_objects_4x4": [
+      1826,
+      160,
+      636
+    ],
+    "pdf_objects_8x8": [
+      1831,
+      160,
+      636
+    ],
+    "object_order": [
+      "all",
+      "images",
+      "forms"
+    ],
+    "caveat": "SVG embeds repeated base64 image references. The exporter rasterizes alpha-transfer filters; measured PDF is not entirely vector and does not represent an optimized implementation."
+  }
+}
