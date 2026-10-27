@@ -12100,6 +12100,34 @@ mod tests {
             differences.len(),
             differences.iter().take(8).collect::<Vec<_>>()
         );
+
+        // Compare the generic fallback on this synthetic tool-2, source-zero,
+        // empty-setting control and transparent 1x canvas.
+        let fallback = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &RenderOptions::default(),
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page;
+        let fallback_tree =
+            resvg::usvg::Tree::from_str(&fallback.svg, &resvg::usvg::Options::default()).unwrap();
+        let mut fallback_pixels = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &fallback_tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut fallback_pixels.as_mut(),
+        );
+        let fallback_error: u64 = fallback_pixels
+            .data()
+            .iter()
+            .zip(&expected)
+            .map(|(actual, native)| u64::from(actual.abs_diff(*native)))
+            .sum();
+        assert_eq!(fallback_error, 2634, "generic fallback absolute RGBA error");
     }
 
     #[cfg(feature = "pdf")]
