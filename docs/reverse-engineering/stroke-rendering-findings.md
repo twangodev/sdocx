@@ -522,3 +522,40 @@ counts. Run from the repository root with `PYTHONPATH=scratch/apk-analysis-runti
 then `python3 tmp/legacy-marker-source-controls/straight.py --capture --advanced-setting null --output <new-json> --texture-payload-output <new-bin> --quiet-json`;
 substitute `bend.py` for the second control. Output paths must be new. The scripts
 require the pinned local native inputs and helpers checked by their preflight.
+
+### Quadratic subdivision controls
+
+Two synthetic native Model/Drawing controls exercise GLV1 and RTV1 with straight
+and bent four-point strokes. The [entry trace](../../conformance/legacy-marker-subdivision-controls.json)
+records each `calcBezierPath` and `subdivideBezierPath` control-point tuple,
+index interval and relevant RTV1 state bytes. These are host Unicorn/Mesa runs,
+not serialized-note or Samsung-device controls.
+
+In the pinned Marker library (SHA-256
+`f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6`),
+`subdivideBezierPath` at RVA `0x34868` stops when `end - start < 2` and
+otherwise uses the integer midpoint `(start + end) / 2`, writes the midpoint
+pair to two RT vectors, then recurses left and right. Its float operations form
+quadratic half subdivisions. A separate test script in
+`tmp/legacy-marker-source-controls/check_subdivision.py` recursively computes
+quadratic de Casteljau midpoints from the captured root tuples and checks all
+native entry intervals and points. All 15 straight and 47 bent recursive entries
+match the interval order; the maximum point difference is 0 and 0.00000190735
+page units respectively. The small bent difference reflects operation order;
+this test does not prove bit-identical arithmetic or validate generated edge
+normals and full meshes.
+
+The initial interval comes from `calcSegmentsNumber` at RVA `0x34138`, whose
+branch depends on RT byte offset 716 and other state. In the non-circle branch,
+the code truncates the average of floats at offsets 708 and 712, multiplies it
+by `abs(input - 1)`, truncates, adds three and caps the result at 20. The other
+branch uses an angle-derived count. These are static instruction observations;
+the meaning and initialization of all operands and the circular branch remain
+unresolved. The traced tuples expose the next reconstruction boundary: recover
+those state values, exact edge normals and mesh joining before considering a
+saved-stroke rendering route.
+
+The trace scripts `straight-trace.py` and `bend-trace.py` in
+`tmp/legacy-marker-source-controls/` extend the earlier capture scripts with
+read-only entry snapshots. They require the pinned native inputs and preflight
+of the V31 runner. The trace receipt hashes each full capture and script.
