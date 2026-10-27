@@ -1,0 +1,74 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points_count": 7,
+  "size": 3,
+  "geometry_count": 40,
+  "geometry_sha256": "18601b4695fca63b4010d3f89d0e461fb5317fbada29d94828e5393118582c98",
+  "full_frame_sha256": "83eaf60072acf8bc6373a7dca3998eb9caa4cd904c19f4cdbbd4855977d7d960",
+  "crop": {
+    "path": "simplebrush-edge-7-3-crop.rgba",
+    "dimensions": [
+      144,
+      32
+    ],
+    "sha256": "2bdfa8c587b6deec50a491410929d4551cfc7adbada7db002fe584d4098d8c35",
+    "nonzero_alpha_pixels": 202
+  },
+  "native_gl_error_verdict": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  },
+  "capture_scripts": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-7-source-capture.py": "276545f2e775f99777e3ef997110c3f2546c2a4ddcf4cd781533c8c7c0efc0b8",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-7-paint-capture.py": "e8ebfa5ac3beb615f7e9326903e857be56dbc1a2fba01559055c101cb8a5fd7e"
+  },
+  "execution_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-7-paint-capture.py --pen-size 3 --dispatch-task-seq 0 --dispatch-task-seq 1 --dispatch-task-seq 2 --dispatch-task-seq 3 --dispatch-task-seq 4 --dispatch-task-seq 5 --dispatch-task-seq 6 --dispatch-task-seq 7",
+  "public_output_comparison": {
+    "metrics_order": [
+      "support_intersection",
+      "support_union",
+      "output_support",
+      "absolute_alpha_error",
+      "absolute_rgba_error"
+    ],
+    "pdf_renderer": "PyMuPDF at 4/3 scale to 1920x1080",
+    "pdf_profiled": [
+      171,
+      222,
+      191,
+      11401,
+      32658
+    ],
+    "pdf_fallback": [
+      111,
+      205,
+      114,
+      29045,
+      83303
+    ],
+    "svg_profiled": [
+      202,
+      202,
+      202,
+      2822,
+      8274
+    ],
+    "svg_fallback": [
+      81,
+      205,
+      84,
+      31094,
+      89119
+    ]
+  }
+}

@@ -311,10 +311,10 @@ pub(crate) fn prepare_stroke(
         return Err("unsupported SimpleBrush stroke metadata or channels");
     }
     let size = rendering.style.pen_size.ok_or("missing pen size")?;
-    if !(4.0..=20.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
+    if !(3.0..=24.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
-    if !(3..=64).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
+    if !(3..=128).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -605,11 +605,13 @@ mod tests {
         stroke.rendering.as_mut().unwrap().advanced_settings = None;
         stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x80402010);
         for (size, accepted) in [
-            (3.99, false),
+            (2.99, false),
+            (3.0, true),
             (4.0, true),
             (5.5, true),
             (20.0, true),
-            (20.01, false),
+            (24.0, true),
+            (24.01, false),
             (f32::NAN, false),
             (f32::INFINITY, false),
         ] {
@@ -723,8 +725,23 @@ mod tests {
         // OpenGL bottom-up rows, cropped at x=0..crop_width, y=0..crop_height. Full-frame
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
-        let extra = matches!((size, probe), (10, 0) | (55, 7) | (20, 16));
+        let extra = matches!(
+            (size, probe),
+            (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
+        );
         let native: &[u8] = match (four, size) {
+            (_, 3) if probe == 7 => {
+                include_bytes!("../../../../conformance/simplebrush-edge-7-3-crop.rgba")
+            }
+            (_, 3) if probe == 16 => {
+                include_bytes!("../../../../conformance/simplebrush-edge-16-3-crop.rgba")
+            }
+            (_, 24) if probe == 7 => {
+                include_bytes!("../../../../conformance/simplebrush-edge-7-24-crop.rgba")
+            }
+            (_, 24) if probe == 16 => {
+                include_bytes!("../../../../conformance/simplebrush-edge-16-24-crop.rgba")
+            }
             (_, 10) => include_bytes!("../../../../conformance/simplebrush-size-3-10-crop.rgba"),
             (_, 55) => include_bytes!("../../../../conformance/simplebrush-size-7-55-crop.rgba"),
             (_, 20) => include_bytes!("../../../../conformance/simplebrush-size-16-20-crop.rgba"),
@@ -738,6 +755,9 @@ mod tests {
             }
             _ if probe == 64 => {
                 include_bytes!("../../../../conformance/simplebrush-64-8-crop.rgba")
+            }
+            _ if probe == 128 => {
+                include_bytes!("../../../../conformance/simplebrush-128-8-crop.rgba")
             }
             _ if probe == 16 => {
                 include_bytes!("../../../../conformance/simplebrush-16-8-crop.rgba")
@@ -781,6 +801,18 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            (_, 3) if probe == 7 => {
+                include_str!("../../../../conformance/simplebrush-edge-7-3.json")
+            }
+            (_, 3) if probe == 16 => {
+                include_str!("../../../../conformance/simplebrush-edge-16-3.json")
+            }
+            (_, 24) if probe == 7 => {
+                include_str!("../../../../conformance/simplebrush-edge-7-24.json")
+            }
+            (_, 24) if probe == 16 => {
+                include_str!("../../../../conformance/simplebrush-edge-16-24.json")
+            }
             (_, 10) => include_str!("../../../../conformance/simplebrush-size-3-10.json"),
             (_, 55) => include_str!("../../../../conformance/simplebrush-size-7-55.json"),
             (_, 20) => include_str!("../../../../conformance/simplebrush-size-16-20.json"),
@@ -789,6 +821,7 @@ mod tests {
             _ if probe == 17 => include_str!("../../../../conformance/simplebrush-17-8.json"),
             _ if probe == 32 => include_str!("../../../../conformance/simplebrush-32-8.json"),
             _ if probe == 64 => include_str!("../../../../conformance/simplebrush-64-8.json"),
+            _ if probe == 128 => include_str!("../../../../conformance/simplebrush-128-8.json"),
             _ if probe == 16 => include_str!("../../../../conformance/simplebrush-16-8.json"),
             (_, 4) if six => include_str!("../../../../conformance/simplebrush-six-size4.json"),
             (_, 16) if six => include_str!("../../../../conformance/simplebrush-six-size16.json"),
@@ -865,6 +898,10 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            (_, 3) if probe == 7 => 202,
+            (_, 3) if probe == 16 => 502,
+            (_, 24) if probe == 7 => 958,
+            (_, 24) if probe == 16 => 2266,
             (_, 10) => 167,
             (_, 55) => 312,
             (_, 20) => 2008,
@@ -874,6 +911,7 @@ mod tests {
             _ if probe == 17 => 1036,
             _ if probe == 32 => 1993,
             _ if probe == 64 => 4045,
+            _ if probe == 128 => 8113,
             (_, 4) if six => 211,
             (_, 16) if six => 623,
             (false, 4) => 80,
@@ -930,6 +968,18 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                (3.0, 7) => {
+                    include_bytes!("../../../../conformance/simplebrush-edge-7-3-geometry.bin")
+                }
+                (3.0, 16) => {
+                    include_bytes!("../../../../conformance/simplebrush-edge-16-3-geometry.bin")
+                }
+                (24.0, 7) => {
+                    include_bytes!("../../../../conformance/simplebrush-edge-7-24-geometry.bin")
+                }
+                (24.0, 16) => {
+                    include_bytes!("../../../../conformance/simplebrush-edge-16-24-geometry.bin")
+                }
                 (10.0, 0) => {
                     include_bytes!("../../../../conformance/simplebrush-size-3-10-geometry.bin")
                 }
@@ -944,6 +994,9 @@ mod tests {
                 (_, 17) => include_bytes!("../../../../conformance/simplebrush-17-8-geometry.bin"),
                 (_, 32) => include_bytes!("../../../../conformance/simplebrush-32-8-geometry.bin"),
                 (_, 64) => include_bytes!("../../../../conformance/simplebrush-64-8-geometry.bin"),
+                (_, 128) => {
+                    include_bytes!("../../../../conformance/simplebrush-128-8-geometry.bin")
+                }
                 (_, 16) => include_bytes!("../../../../conformance/simplebrush-16-8-geometry.bin"),
                 _ => unreachable!(),
             };
@@ -1186,6 +1239,16 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn size_edge_public_paint_controls() {
+        for size in [3, 24] {
+            for probe in [7, 16] {
+                v25_paint_control(size, false, false, false, probe);
+            }
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn intermediate_size_public_paint_controls() {
         v25_paint_control(10, false, false, false, 0);
         v25_paint_control(55, false, false, false, 7);
@@ -1208,6 +1271,7 @@ mod tests {
         v25_paint_control(8, false, false, false, 17);
         v25_paint_control(8, false, false, false, 32);
         v25_paint_control(8, false, false, false, 64);
+        v25_paint_control(8, false, false, false, 128);
     }
 
     #[test]
