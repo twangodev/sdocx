@@ -257,6 +257,9 @@ rendered pixels remain unverified. Pencil2 remains generic in
 production pending geometry reconstruction, texture/shader validation and
 output transport checks. Compact capture receipts and the pinned candidate are
 retained under the ignored `tmp/vector-parity-plan/pen-family-audit/` workspace.
+In a matched-context resvg 0.47 control, rows 78–79 yield alpha 37 at (28, 182) both alone and within all 84 rows, so the earlier alpha 39 came from a differently defined pair; isolate the definition differences before attributing the residual to compositing (receipt: `pencil2-v14-svg-paint-v8-context-subset-audit/matched-render-receipt.json` under that workspace).
+
+An ordered native RTV4 host-Mesa prefix replay yields alpha 0, 12, 38 and 38 at (28, 182) after 78, 79, 80 and 84 records respectively; the full-prefix frame matches the earlier capture. The isolated native rows yield 12 and 27, consistent with rounded source-over, while the matched SVG rows yield 10 and 28 and compose to 37. The per-stamp difference therefore suffices to explain this pixel, but does not establish general blend parity. The reproducible wrapper and compact receipt are retained in `tmp/vector-parity-plan/pen-family-audit/pencil2-v14-prefix-probe/`. This is a controlled host replay, not Android, saved-document, PDF or production rendering evidence.
 
 ## Literal StraightMarker control
 
