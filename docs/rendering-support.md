@@ -776,8 +776,10 @@ modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
 PDF export now preserves source PDF paper for a bounded continuous-note class:
 one authoritative source PDF with contiguous, top-aligned, full-width integer
-paper records and consecutive source-page indices. Source CropBox origins and
-quarter-turn rotations are preserved; UserUnit must be 1. The note must use the
+paper records. Source-page indices may repeat or appear in a different order;
+the native segment selector starts a new group when indices are not consecutive,
+and the SDK imports the selected source pages in record order. Source CropBox
+origins and quarter-turn rotations are preserved; UserUnit must be 1. The note must use the
 native-default background and supported saved unrotated strokes.
 Native-derived query bands select whole strokes;
 source pages retain their physical boxes, while continuation pages use the

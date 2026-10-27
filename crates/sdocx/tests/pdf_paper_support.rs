@@ -1220,16 +1220,36 @@ fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_b
     assert!(page_invokes_crossing_stroke_form(&offset_pdf, 1));
     assert!(page_invokes_crossing_stroke_form(&offset_pdf, 2));
 
-    for bad_index in [0, 2, 7] {
-        // Duplicate, reversed and nonconsecutive source indexes are unsupported.
-        let mut bad = records;
-        bad[1][1] = bad_index;
-        let invalid = document_with_records(true, None, 0, 1, true, &bad, &sizes);
-        assert!(matches!(
-            export(&invalid, &[0], 96.0),
-            Err(PdfError::UnsupportedPdfPaper { .. })
-        ));
+    for indices in [[0, 0, 2], [2, 1, 0], [2, 0, 2]] {
+        let reordered = std::array::from_fn::<_, 3, _>(|index| {
+            let mut record = records[index];
+            record[1] = indices[index];
+            record
+        });
+        let document = document_with_records(true, None, 0, 1, true, &reordered, &sizes);
+        let output = export(&document, &[0], 96.0).unwrap();
+        let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+        assert_eq!(pdf.get_pages().len(), 11);
+        for (index, source_index) in indices.into_iter().enumerate() {
+            let [width, height] = sizes[source_index as usize];
+            assert_eq!(
+                page_box(&pdf, index as u32 + 1),
+                [0.0, 0.0, f64::from(width), f64::from(height)]
+            );
+        }
+        assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+        assert!(page_invokes_crossing_stroke_form(&pdf, 2));
+        let page_ids = pdf.get_pages();
+        assert_ne!(page_ids[&1], page_ids[&2]);
+        assert_ne!(page_ids[&1], page_ids[&3]);
     }
+    let mut out_of_range = records;
+    out_of_range[1][1] = 7;
+    let invalid = document_with_records(true, None, 0, 1, true, &out_of_range, &sizes);
+    assert!(matches!(
+        export(&invalid, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
     let mut gap = records;
     gap[1][3] += 1;
     let invalid = document_with_records(true, None, 0, 1, true, &gap, &sizes);

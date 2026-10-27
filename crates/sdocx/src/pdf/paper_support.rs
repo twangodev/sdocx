@@ -697,7 +697,6 @@ pub(super) fn plan_singlex_pdf_paper(
     let record_validation_height_i32 = i32::try_from(record_validation_height)
         .map_err(|_| reject(0, "source note height exceeds native range"))?;
     let mut expected_y = 0_i32;
-    let mut previous_source_index = None;
     for (record_index, record) in records.iter().enumerate() {
         let PdfPaperRectangle::Integer([0, top, right, bottom]) = record.rectangle else {
             return Err(reject(
@@ -715,17 +714,13 @@ pub(super) fn plan_singlex_pdf_paper(
                 "PDF-paper records must be contiguous, top-aligned, full-width, and within the note",
             ));
         }
-        if record.page_index < 0
-            || previous_source_index
-                .is_some_and(|previous: i32| previous.checked_add(1) != Some(record.page_index))
-        {
+        if record.page_index < 0 {
             return Err(reject(
                 record_index,
-                "PDF-paper source page indexes must be nonnegative and consecutive",
+                "PDF-paper source page indexes must be nonnegative",
             ));
         }
         expected_y = bottom;
-        previous_source_index = Some(record.page_index);
     }
 
     let prepared = prepare_pdf_paper_records(&document.metadata, records)?;
