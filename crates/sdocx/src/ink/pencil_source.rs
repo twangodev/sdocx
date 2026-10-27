@@ -365,6 +365,32 @@ mod tests {
     }
 
     #[test]
+    fn stationary_strokes_match_native_particles() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-stationary-native.json"
+        ))
+        .unwrap();
+        for (pressure, case) in fixture["cases"].as_object().unwrap() {
+            let prepared =
+                prepare_pencil3_v3_source(&fixture_stroke(&case["input_profile"]), 1920, 1080)
+                    .unwrap_or_else(|| panic!("stationary pressure {pressure} rejected"));
+            let actual = prepared
+                .records
+                .iter()
+                .flatten()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>();
+            let expected = case["packed_words_le"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(little_word)
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected, "stationary pressure {pressure}");
+        }
+    }
+
+    #[test]
     fn curve_disabled_adapter_matches_native_controls() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/pencil3-sampler-inputs-native.json"

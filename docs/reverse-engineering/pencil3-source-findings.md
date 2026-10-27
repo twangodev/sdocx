@@ -189,6 +189,12 @@ complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted
 optional axes remain distinct. The strict ordinary-style gate does not establish
 native behavior for the rejected effects or all property combinations.
 
+Four identical saved points produce seven particles at each tested constant
+pressure (0, 0.5 and 1), rather than an empty stream. The complete native
+Drawing and saved-redraw streams match each other and the Rust adapter in the
+[stationary controls](../../conformance/pencil3-stationary-native.json). These
+are synthetic Model inputs under the same host adapters, not device frames.
+
 Single-stamp transport probes also separate source sampling from export
 rasterization. Nearest texel selection matched all 25/100 tested fragment
 centers at 1×/2×, but vectorizing one brush row required 4,354 source-texel
