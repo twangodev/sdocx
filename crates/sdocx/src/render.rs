@@ -128,8 +128,9 @@ pub struct InkPen2RenderProfile {
 /// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
 /// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
-/// accepts a null advanced setting for static output; replay and empty stamp
-/// streams use generic rendering. `SavedV2` accepts empty or `2;` settings.
+/// accepts a null advanced setting; empty stamp streams use generic rendering.
+/// `SavedV2` accepts empty or `2;` settings. V1 replay groups follow synthetic
+/// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
 /// parity and arbitrary output transforms remain unverified. Stamp angles use
 /// pinned Rust libm, so Android sincosf parity is not claimed.
@@ -138,7 +139,7 @@ pub struct InkPen2RenderProfile {
 pub enum AirBrushRenderProfile {
     /// Empty or `2;` saved setting selecting native AirBrush GLV2.
     SavedV2,
-    /// Null saved setting selecting native AirBrush GLV1; static output only.
+    /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
 }
 
@@ -3784,10 +3785,9 @@ fn render_stroke(
         }
     }
     if native_allowed
-        && replay_index.is_none()
         && airbrush_profile == Some(AirBrushRenderProfile::SavedV1)
         && let Some(paint) = airbrush::prepare_source(stroke, theme, viewport, true)
-        && airbrush::render(svg, &paint, None)
+        && airbrush::render(svg, &paint, replay_index)
     {
         return;
     }
@@ -11843,7 +11843,7 @@ mod tests {
     }
 
     #[test]
-    fn saved_v1_profile_keeps_unsupported_and_replay_fallbacks() {
+    fn saved_v1_profile_keeps_unsupported_fallbacks() {
         let mut document = public_airbrush_v2_document();
         document.pages[0]
             .strokes_mut()
@@ -11861,12 +11861,6 @@ mod tests {
         let svg =
             |doc: &Document, opts: &RenderOptions| render_document_svg(doc, opts).remove(0).svg;
         assert!(svg(&document, &options).contains("data:image/png;base64,"));
-        let layout = layout_document(&document);
-        let replay = render_layout_page_replay_svg(&document, &layout, 0, &options).unwrap();
-        let generic_replay =
-            render_layout_page_replay_svg(&document, &layout, 0, &default).unwrap();
-        assert_eq!(replay.svg, generic_replay.svg);
-
         for setting in ["", "2;", "1;"] {
             document.pages[0]
                 .strokes_mut()
@@ -11901,6 +11895,56 @@ mod tests {
             svg(&document, &default),
             "zero-stamp fallback"
         );
+    }
+
+    #[test]
+    fn saved_v1_public_replay_uses_native_curve_boundaries() {
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = [(0., 0.), (8., 5.), (16., 0.), (24., -5.), (32., 0.)]
+            .map(|(x, y)| Point { x, y })
+            .into();
+        stroke.pressures = vec![0.3; 5];
+        stroke.tilts = vec![0.12; 5];
+        stroke.orientations = vec![0.2; 5];
+        stroke.timestamps = vec![300, 315, 330, 345, 360];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.style.pen_size = Some(10.0);
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV1),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let replay = render_layout_page_replay_svg(&document, &layout, 0, &options).unwrap();
+        let xml = roxmltree::Document::parse(&replay.svg).unwrap();
+        let mut parts = std::collections::BTreeMap::new();
+        for part in xml
+            .descendants()
+            .filter_map(|node| node.attribute("data-replay-part"))
+        {
+            *parts.entry(part.parse::<usize>().unwrap()).or_insert(0) += 1;
+        }
+        // Each native stamp is rendered as two triangle images. Native drawLine
+        // exits are 4, 4, 20 and the terminal endPen exit is 32.
+        assert_eq!(parts, [(2, 8), (4, 32), (5, 24)].into());
+
+        document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some(String::new());
+        let v2_options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let v2_layout = layout_document(&document);
+        let v2_replay =
+            render_layout_page_replay_svg(&document, &v2_layout, 0, &v2_options).unwrap();
+        assert_eq!(replay.svg, v2_replay.svg);
     }
 
     #[cfg(feature = "pdf")]
