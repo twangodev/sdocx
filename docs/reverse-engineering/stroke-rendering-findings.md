@@ -922,3 +922,22 @@ hash to `6ff9a01bc5de4480eccece2e974b9199ed10765df86822f8fdf04f5002ae495d`
 and `c940623a8cb4dccb87c963db2dc2c58526867e441b9468873e11862a48c19f0e`.
 The retained `bend-null-scale2.json` capture hashes to
 `d739615d3cd7e3a9d677b03cfe14677e85cbf8bf0775d0f65ab7d46c2fdcdab0`.
+
+A scratch Boolean prototype subtracts already owned triangle regions and unions
+visible fringe by opacity band. On white, native RGB L1 for resvg/public PDF
+was 5107/6829 for self-overlap, 4340/5003 for a long turn, 8717/8750 for a
+blue stroke and 8536/11195 for the verified 2× bend; the existing profile gave
+11401/13119, 13568/14240, 12646/13146 and 55870/57691 respectively. PDFs were
+7–15 KB per stroke. These use captured meshes separately checked against the
+source model; first-fragment coverage and arbitrary transforms remain unverified.
+
+A checked fixed-scale variant changed the long comparison by at most five RGB
+L1 units. A shared local origin stabilized its geometry under a ±10-million-unit
+translation, but this does not establish native translated parity: converting
+that mesh to native f32 loses up to 0.5 units. Experimental pair/vertex limits
+accepted straight, bend, long and one sector control but rejected the mirrored
+sector, blue and overlap cases. Stress tests and a wasm32 compile did not prove
+worst-case allocations or browser runtime behavior. No production route is
+admitted without safe intermediate-allocation and page-output budgets. The
+retained probes are `tmp/marker-owner-boolean/src/main.rs`, its `src/bin/checked_local.rs`
+and `pair_budget*.rs`, and `scratch/legacy-marker-triangle-boolean-grouped-probe.py`.
