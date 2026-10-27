@@ -697,11 +697,11 @@ mod tests {
         }
     }
 
-    // Context is captured externally: these values are not serialized Stroke fields.
-    fn public_adapter(
-        stroke: &crate::Stroke,
-        alpha: AlphaState,
-    ) -> Result<Vec<SampledRecord>, SamplerError> {
+    // Fresh controlled Model/Drawing context with fixed opacity disabled. This
+    // does not establish parsed-note admission or device rendering. State producer
+    // evidence: Pencil2 constructor 0x59960, GLV14 constructor 0x70928, saved
+    // redraw 0x73dc0, and Pen::SetSize 0x45fdc in the pinned native DSOs.
+    fn public_adapter(stroke: &crate::Stroke) -> Result<Vec<SampledRecord>, SamplerError> {
         let rendering = stroke
             .rendering
             .as_ref()
@@ -710,7 +710,7 @@ mod tests {
         let props = rendering.properties;
         let size = style.pen_size.ok_or(SamplerError::Invalid("size"))?;
         if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Pencil2")
-            || rendering.advanced_settings.as_deref() != Some("14;")
+            || !matches!(rendering.advanced_settings.as_deref(), Some("" | "14;"))
             || rendering.tool_type_raw != 2
             || !props.compressed
             || !props.stylus_channels
@@ -735,6 +735,19 @@ mod tests {
         {
             return Err(SamplerError::Unsupported("public stroke profile"));
         }
+        // Pen::SetSize clamps finite sizes to [0.4, 800]. Pencil2Data's
+        // constructor clears fixed opacity, and GLV14 initializes level 1;
+        // redraw recalculates the level only when fixed opacity is enabled.
+        // The caller profile above excludes that branch and non-opaque color.
+        if !size.is_finite() {
+            return Err(SamplerError::Invalid("finite size"));
+        }
+        let alpha = AlphaState {
+            alpha_byte: (style.color_argb.unwrap() >> 24) as u8,
+            square_pressure_flag: u8::from(props.fixed_opacity),
+            base: size.clamp(0.4, 800.0),
+            size_level: 1,
+        };
         fn exact(x: f64) -> Result<f32, SamplerError> {
             let y = x as f32;
             if !x.is_finite() || f64::from(y) != x {
@@ -777,7 +790,7 @@ mod tests {
     }
 
     #[test]
-    fn public_stroke_adapter_matches_captured_geometry_with_explicit_native_state() {
+    fn public_stroke_adapter_derives_controlled_state_and_matches_native_geometry() {
         for case in fixture()["cases"].as_array().unwrap() {
             let input = saved_input(case).unwrap();
             let stroke = crate::Stroke {
@@ -828,7 +841,11 @@ mod tests {
                 }),
             };
             let alpha = native_alpha_state(case).unwrap();
-            let records = public_adapter(&stroke, alpha).unwrap();
+            assert_eq!(alpha.alpha_byte, (input.color_argb >> 24) as u8);
+            assert_eq!(alpha.square_pressure_flag, 0);
+            assert_eq!(alpha.base.to_bits(), input.size.clamp(0.4, 800.0).to_bits());
+            assert_eq!(alpha.size_level, 1);
+            let records = public_adapter(&stroke).unwrap();
             let bytes: Vec<u8> = records
                 .iter()
                 .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
@@ -842,12 +859,36 @@ mod tests {
                 "{}",
                 case["id"]
             );
+            if case["id"] == "v5_exact_combined" {
+                // The paired native empty-setting capture has the same full
+                // 4,704-byte Drawing stream as the explicit-14 capture.
+                let receipt: serde_json::Value = serde_json::from_str(include_str!(
+                    "../../../../conformance/pencil2-v14-empty-setting-native.json"
+                ))
+                .unwrap();
+                for (key, value) in receipt["common_input"].as_object().unwrap() {
+                    assert_eq!(&case["input"][key], value, "paired input {key}");
+                }
+                assert_eq!(sha256(&bytes), receipt["stream_sha256"].as_str().unwrap());
+                assert_eq!(
+                    bytes.len(),
+                    receipt["stream_bytes"].as_u64().unwrap() as usize
+                );
+                let mut empty = stroke.clone();
+                empty.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+                let empty_bytes: Vec<u8> = public_adapter(&empty)
+                    .unwrap()
+                    .iter()
+                    .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
+                    .collect();
+                assert_eq!(empty_bytes, bytes);
+            }
             let mut bad = stroke.clone();
             bad.rendering.as_mut().unwrap().advanced_settings = None;
-            assert!(public_adapter(&bad, alpha).is_err());
+            assert!(public_adapter(&bad).is_err());
             bad = stroke.clone();
             bad.pressures.pop();
-            assert!(public_adapter(&bad, alpha).is_err());
+            assert!(public_adapter(&bad).is_err());
         }
     }
 

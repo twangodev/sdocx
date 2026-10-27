@@ -1,0 +1,68 @@
+{
+  "scope": "Synthetic paired native Drawing controls; not serialized-note or device paint evidence. Inputs agree apart from advanced setting.",
+  "source_capture_sha256": {
+    "empty": "13854641d4e21f9dd51dfb0525b50f2b23a031f0dcb8bcc720d17e88c2a4d305",
+    "explicit14": "c6de7ba461a39ef083a178bc81185571e8b2674a7fcf8d7452137929869a63f9"
+  },
+  "common_input": {
+    "object_stroke_size_f32_bits": "d578693e",
+    "object_stroke_color_argb": "0xff000000",
+    "tool_type": 2,
+    "stroke_type": 0,
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        30.0,
+        10.0
+      ]
+    ],
+    "pressure": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "tilt": [
+      0.0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "orientation": [
+      0.0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "timestamps": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "size_level_native_getter": 0
+  },
+  "settings": [
+    "",
+    "14;"
+  ],
+  "selected_drawable_class": "SPen::Pencil2StrokeDrawableGLV14",
+  "selected_rt_class": "Pencil2StrokeDrawableRTV4",
+  "stream_sha256": "770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe",
+  "stream_bytes": 4704,
+  "capture_probe_source_sha256": {
+    "empty": "54f6edd7d3f75bd78f54bbfd1acd7be54a283ee5775f87d0b7c4cdae3ce8810c",
+    "explicit14": "75f6923bfad8f9771d231798619df2456facf824e7312a5da8ea7271a22a61af"
+  }
+}
