@@ -575,5 +575,94 @@
     "native_center_alpha": 52,
     "mixed_native_3x3_alpha_absolute_error": 82,
     "interpretation": "Clips changed first-stamp coverage but did not restore the missing center opacity in this comparison; the native receipt does not isolate either stamp."
+  },
+  "sampling_experiment": {
+    "scope": "PyMuPDF 1.28.2 only; captured saved-v1 PDF and synthetic host Mesa native 3x3 alpha control. At each scale the sample is pixel floor(scale/2) in each 96-dpi target pixel; for even scales it is adjacent to the exact geometric center. Unmasked control draws both original image forms without triangle masks at 96 dpi.",
+    "probe": "conformance/probe_airbrush_v1_pdf_sampling.py",
+    "input_pdf_sha256": "c4cae99811523ed338c094262db172e7ceb044455f87b0660fbbfbe452c4873a",
+    "native_alpha": [
+      1,
+      14,
+      1,
+      22,
+      52,
+      12,
+      1,
+      23,
+      1
+    ],
+    "center_samples": {
+      "1": {
+        "alpha": [
+          12,
+          11,
+          0,
+          19,
+          22,
+          0,
+          3,
+          4,
+          1
+        ],
+        "absolute_error": 81
+      },
+      "2": {
+        "alpha": [
+          14,
+          21,
+          0,
+          23,
+          30,
+          1,
+          1,
+          2,
+          0
+        ],
+        "absolute_error": 77
+      },
+      "4": {
+        "alpha": [
+          6,
+          18,
+          0,
+          16,
+          42,
+          5,
+          1,
+          7,
+          0
+        ],
+        "absolute_error": 50
+      },
+      "8": {
+        "alpha": [
+          3,
+          17,
+          0,
+          12,
+          47,
+          6,
+          2,
+          15,
+          0
+        ],
+        "absolute_error": 37
+      }
+    },
+    "unmasked_1x": {
+      "alpha": [
+        12,
+        10,
+        2,
+        18,
+        22,
+        4,
+        3,
+        3,
+        1
+      ],
+      "absolute_error": 80
+    },
+    "interpretation": "Resolution-dependent image sampling and mask coverage are possible causes; this experiment does not isolate them or establish a general PDF or device result."
   }
 }
