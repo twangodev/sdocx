@@ -953,6 +953,16 @@ model. The grid choice is an approximation, not native precision evidence.
 `tmp/marker-owner-boolean/src/bin/integer_grid.rs` and `integer_budget.rs` hash
 to `688d56d07ecf054662c73591ff3ce0c38805ed67425928ee6130885cd3c65ce7` and
 `cacaef78c0a6748f45d7578b54c721c7d449dac2ebc2a9c4ad6f5a215fec8169`.
+
+The experimental pair check bounds only the edges supplied to each overlay,
+not the library's internal work. In the locally installed `i_overlay` 9.1.0,
+`split/solver_list.rs` can repeat intersection scans after splitting rounded
+intersections and switch to the tree solver as the segment list grows;
+`split/solver.rs` reserves and appends split segments within the overlay call.
+The caller cannot enforce its input pair limit on those intermediate segments.
+This source inspection does not quantify a worst case, so admission still needs
+an enforceable internal work/allocation limit or a proved geometry restriction,
+as well as a cumulative per-page output and work budget.
 The budget diagnostic compiles for wasm32 but uses unchecked casts and panic
 on guard failure; deterministic intermediate allocations, atomic page budget,
 browser runtime and general native parity are not established. No production

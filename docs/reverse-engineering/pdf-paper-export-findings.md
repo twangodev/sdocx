@@ -613,6 +613,19 @@ PDF output. This verifies native page import in the host harness, not ink export
 or final appearance (receipt SHA-256
 `26da043153a62af7d44f2b2d19a7fdf9aecce0991147a550d2f37833f0c2e075`).
 
+A later archived v88 attempt advanced beyond that earlier FountainPen stop. Its
+[compact receipt](../../conformance/pdf-paper-singlex-v88-boundary.json),
+extracted from the hash-checked event journal, records a non-null
+PDFium document, successful import return, all 56 FountainPen initialization
+entries and the exact exported factory lookup. After 7,323,017 guest instructions,
+the host Unicorn/Mesa run stopped at renderer `0x55248` with LR `0x40afee4`:
+the harness rejected a return address that differed from its pinned ClearRT
+virtual-call expectation. The original v88 harness is unavailable in the retained
+attempt; the journal alone does not prove whether the guard or its caller model
+is wrong. The capture did not reach its return sentinel or establish completed
+PDF output, ink appearance, or device parity. Reconstructing that caller and
+retaining the executable harness are prerequisites to advancing this route.
+
 A published mutation archive (SHA-256
 `1f16a027df8f767ecb7387edeb290905e06b44248b4fb78b5fc4f8d200742ffb`)
 also completes a fresh-cache native `ConstructLoad` at explicit fixed axis 1812.

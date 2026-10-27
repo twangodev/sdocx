@@ -1,0 +1,89 @@
+{
+  "schema": "sdocx.pdf-paper-singlex-v88-boundary.v1",
+  "journal_sha256": "b0bcbd5d36957d4bebc779c5b00ba0488063aa276da83d683e8e1ad8ae4eb936",
+  "events": [
+    {
+      "event": "v22_critical_pdfium_import_observation",
+      "label": "FPDF_LoadDocument return; x0=FPDF_DOCUMENT",
+      "rva": "0x7a3a0",
+      "x": [
+        "0x12893e40",
+        "0x0",
+        "0x5",
+        "0x1289a5d0",
+        "0x200ef6bf",
+        "0x0",
+        "0x23dc1cbd49bd8e6c",
+        "0x0"
+      ]
+    },
+    {
+      "event": "v22_critical_pdfium_import_observation",
+      "label": "PdfiumExportHandler::importPages return; x0=return",
+      "rva": "0x7a404",
+      "x": [
+        "0x0",
+        "0x1289b428",
+        "0x6",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x200efd64",
+        "0x0"
+      ]
+    },
+    {
+      "event": "v22_critical_pdfium_import_observation",
+      "label": "PdfiumEngine::Import return; x0=result",
+      "rva": "0x71ab4",
+      "x": [
+        "0x0",
+        "0x200efd88",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x200efd64",
+        "0x0"
+      ]
+    },
+    {
+      "event": "v25_fountainpen_loaded",
+      "init_slots": 56,
+      "init_executed": 56,
+      "init_entries_skipped": 0,
+      "factory_is_exact_elf_export": true
+    },
+    {
+      "event": "v71_callback_entry_raw",
+      "hook_rva": "0x55248",
+      "sequence": 24,
+      "registers": {
+        "lr": "0x40afee4",
+        "pc": "0x5055248",
+        "sp": "0x200efa30",
+        "x0": "0x129b48a0",
+        "x1": "0x5055248",
+        "x19": "0x5072870",
+        "x2": "0x200ef920",
+        "x20": "0x200efa98",
+        "x21": "0x0",
+        "x22": "0x129b43c0",
+        "x23": "0x0",
+        "x29": "0x200efa50",
+        "x3": "0x2",
+        "x30": "0x40afee4",
+        "x8": "0x506a510"
+      }
+    },
+    {
+      "event": "v15_export_call_terminal",
+      "error": "RuntimeError('V71 Offscreen ClearColorRT LR differs from the pinned ClearRT vcall return')",
+      "observed_guest_instruction_count": 7323017,
+      "terminal_pc": "0x5055248",
+      "terminal_lr": "0x40afee4",
+      "sentinel_reached": false
+    }
+  ],
+  "boundary": "Historical host Unicorn and Mesa event journal; original v88 harness unavailable. No completed PDF or device parity is established."
+}
