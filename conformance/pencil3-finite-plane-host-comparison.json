@@ -112,10 +112,7 @@
       }
     }
   ],
-  "unavailable": [
-    "PDFium Python binding",
-    "CairoSVG"
-  ],
+  "unavailable": ["PDFium Python binding", "CairoSVG"],
   "limitations": "Native fixtures and exporter were retained under tmp at capture; this receipt does not itself contain the inputs, outputs or comparison program. The captured paint uses host adapters and explicit screen/paper contexts. SVG and PDF are independently rasterized at 1x. The render.rs source hash identifies the capture-time checkout before a subsequent test-only lint cleanup; the public rendering code was unchanged.",
   "native_draw_boundary": "First readback after Drawing draw_object_stroke. The retained harness then explicitly invokes saved_redraw on the same stroke and target as a second replay control; that second readback includes accumulated paint and is not used here.",
   "metric_definition": "RGB source-over composite on #fcfcfc; support is per-pixel maximum RGB deviation greater than 1 from the native background or the renderer-specific empty-page baseline. Each renderer uses the union of both native and all three public supports as its common ROI. RGB MAE divides absolute channel error by three times the ROI pixel count.",
@@ -124,5 +121,115 @@
     "path": "/tmp/sdocx-pencil3-current-compare.py",
     "sha256": "421f3337c5fb6a35e3cb4e416adff294042838d84801c6da77a99ee720007c3f",
     "retained": "temporary exploratory script, not a portable conformance test"
+  },
+  "isolated_transport_controls": {
+    "scope": "Synthetic one-dab SVG versus generated PDF, not a native-device or native-host comparison. Omitted masks act as constant one.",
+    "generator": "crates/sdocx/src/render/pencil3.rs::pencil3_transport_probe::write_single_dab_mask_controls",
+    "generator_source_sha256": "3edd9d08726a2ec72a9fd8781f9ace0c9616cec9f58f55fd17ed356cda5a00e0",
+    "renderers": {
+      "svg": "resvg 0.45.1",
+      "pdf": "MuPDF 1.28.2"
+    },
+    "composite": "opaque white",
+    "geometry": "64x64 page; 24x24 dab centered at (32+phase,32+phase); black; two source-unit interior inset",
+    "columns": ["mask", "phase", "scale", "interior_rgb_mae", "interior_max", "boundary_rgb_mae", "boundary_max"],
+    "rows": [
+      ["solid", "integer", 1, 0.0, 0, 0.0, 0],
+      ["solid", "integer", 2, 0.0, 0, 0.0, 0],
+      ["solid", "quarter", 1, 0.0, 0, 2.159, 13],
+      ["solid", "quarter", 2, 0.0, 0, 1.218, 9],
+      ["solid", "half", 1, 0.0, 0, 2.778, 9],
+      ["solid", "half", 2, 0.0, 0, 0.0, 0],
+      ["brush", "integer", 1, 10.037, 67, 1.477, 47],
+      ["brush", "integer", 2, 4.523, 41, 0.56, 28],
+      ["brush", "quarter", 1, 29.5, 153, 2.54, 128],
+      ["brush", "quarter", 2, 10.754, 78, 0.607, 24],
+      ["brush", "half", 1, 19.576, 110, 0.881, 21],
+      ["brush", "half", 2, 4.523, 41, 0.56, 28],
+      ["paper", "integer", 1, 1.23, 2, 1.33, 2],
+      ["paper", "integer", 2, 12.907, 52, 13.622, 48],
+      ["paper", "quarter", 1, 1.23, 2, 1.648, 8],
+      ["paper", "quarter", 2, 12.879, 52, 12.632, 48],
+      ["paper", "half", 1, 1.247, 2, 1.726, 6],
+      ["paper", "half", 2, 12.919, 52, 13.655, 48],
+      ["both", "integer", 1, 4.655, 44, 0.557, 21],
+      ["both", "integer", 2, 4.907, 39, 0.287, 7],
+      ["both", "quarter", 1, 12.682, 102, 0.972, 46],
+      ["both", "quarter", 2, 6.465, 49, 0.274, 6],
+      ["both", "half", 1, 8.408, 76, 0.37, 7],
+      ["both", "half", 2, 5.115, 44, 0.301, 8]
+    ],
+    "artifact_sha256": {
+      "solid-integer": {
+        "svg": "0bdb02d166d7279227c95f88829cb66a8c6d73888b3a2363dae7aa7c28ed92ce",
+        "pdf": "1254f57f6a0598a5b0f064cbae4df5ed16097a8a34507c99773a480fec385b6d"
+      },
+      "solid-quarter": {
+        "svg": "d3994db2fbbe36cef4314923ce5bc069d2c4b69b03821f0618aa7383a5fabfc4",
+        "pdf": "83eecf7a8d2d06a7ef6a8c686ab08ecf3bcd7165a8ace19f845fe229eefb9bab"
+      },
+      "solid-half": {
+        "svg": "0000c38d4543c1191ade2192c7f4e1a286643f1d093d23113b4bb691f63cd5ec",
+        "pdf": "375520ab320f2fc554a07dca96981eda5559c3dda6511f834c242cecbe3fcf52"
+      },
+      "brush-integer": {
+        "svg": "1b382331f51ef57297a67e4c3be43ab9b9b7e30089bcbe42557cc5c5d405434c",
+        "pdf": "323360ecb69ca5bfc02f58650b40b2f730162dd1c93a50b4cecbe3a97ac81b63"
+      },
+      "brush-quarter": {
+        "svg": "65a6e15d8c6f5edef81e31a50ef3269b4acf1f43f4be674cfa16aee4a8849b48",
+        "pdf": "e6faba9d0a3b26aae97dafe48f810de7f6959cd9f04751a2ba860d0acf60d605"
+      },
+      "brush-half": {
+        "svg": "82708f0dd10d1c26ba2b5e4296a69b0b218875de8ac845eab0dc9c0481f0cb91",
+        "pdf": "4f5784e0eeb2af9920b8edf5ed7fb52ff617732c45e85172bcf54af71dea50c2"
+      },
+      "paper-integer": {
+        "svg": "b4c76b9a0fd896bbfe7469386ecd00436aa1b17c608df4a5d91f66224f9b9931",
+        "pdf": "ff93709706883c5de21a736017760ace7b13c2c309336ca7b6e6f378c47b61ab"
+      },
+      "paper-quarter": {
+        "svg": "b98e29dc2e79b8aedd7011311cd6caa1fb72123c8aa019f6d4a40c92441d582a",
+        "pdf": "a13ca21eac1e16d2345e70884450be7da82fb3e66b6b1432c35e6d58a7a1074a"
+      },
+      "paper-half": {
+        "svg": "2a4f6dfff63a990c1908b1930ab98c9a6e17981532d8bacd57da35248feda39f",
+        "pdf": "582ea74708b83ea47bbe8295d5ee1140eb1e5ed2072ccd1bab3e3d46821cd0d5"
+      },
+      "both-integer": {
+        "svg": "edd68e46bf30616e71f6fbcac0ab626b0c11923ae4234a5cdef9dc8599fa399c",
+        "pdf": "b20d33346f9edf429b142d7a0ac61107dddcf21fbfd9d045fe267b56f224bbc2"
+      },
+      "both-quarter": {
+        "svg": "09be310d99e7b1deea33db761fd4ea845f99965ea01dfaec91c6d1a49075b9c8",
+        "pdf": "62d3c5d378be506147bf6f64c9a98ac3083e0a69623dbbba68dd00f2b1224e8c"
+      },
+      "both-half": {
+        "svg": "e2255544d499695ff49fdae35aed16f0f5946e575b4610aadb6797ffca16e668",
+        "pdf": "f673534e2bb91505ef64bb2eb9c066171f2d9c3bc065dfce26d9c2e7e30c930e"
+      }
+    },
+    "limits": "Inputs and temporary comparison output existed under /tmp/sdocx-pencil3-transport-probe; retained Rust ignored test regenerates the SVG/PDF controls. The measurement is consumer-specific and does not identify which renderer matches native."
+  },
+  "mask_rearrangement_control": {
+    "scope": "Synthetic rewrite of the existing 48-dab clamp SVG; no native comparison.",
+    "resvg_version": "0.45.1",
+    "candidate_script_path_at_capture": "/tmp/pencil3_combined_mask.py",
+    "candidate_script_sha256": "9fb53ab59a853a3292359142118ebeb98f4cb6fd9593683e1dbd68cde23b897f",
+    "original_svg_sha256": "5e744daac7e89e4072d11545836ed9736d87439e201f07b51f6a39f528fa4944",
+    "rewritten_svg_sha256": "ceea7339f27fd0c298836d69fcc89e99bcbac4c4d9bb9473fdc21c6eb15ab7cd",
+    "full_page_original_vs_rewritten": {
+      "different_channels": 432,
+      "max_difference": 3
+    },
+    "slice_vs_matching_full_row_original": {
+      "different_channels": 111,
+      "max_difference": 186
+    },
+    "slice_vs_matching_full_row_rewritten": {
+      "different_channels": 111,
+      "max_difference": 186
+    },
+    "conclusion": "The tested per-dab mask rearrangement did not improve the slice residual and changed full-page output."
   }
 }
