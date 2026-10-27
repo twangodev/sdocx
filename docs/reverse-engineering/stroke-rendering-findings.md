@@ -999,3 +999,19 @@ is not admitted to production. Reproduction is retained in
 `scratch/legacy-marker-ordered-visible-compare.py`, and
 `tmp/marker-owner-boolean/src/bin/visible_gradient.rs`, using the existing
 `tmp/marker-ordered-prototype/harness` for resvg and public PDF export.
+
+A separate convex-subtraction scratch probe replaces the overlay library with
+explicit half-plane clipping and rejects work exceeding limits on input and
+output vertices, intermediate pieces, polygon vertices, or charged operations.
+For the long, self-overlap, blue varied and 2× bend captures it used
+66,090/174,071/66,314/32,316 charged operations and emitted
+2121/6244/3354/1113 vertices; white resvg/PDF RGB L1 was
+2260/4950, 2786/7061, 5821/10055 and 5456/11684, respectively.
+A deliberately tiny operation limit rejected without producing output. Translating
+the 2× mesh by ±10,000 and ±900,000 page units changed fragment counts even
+though summed visible area changed by less than 1e-9 after translating back.
+This is not a robust-topology or transformed-native parity proof, and the Python
+diagnostic does not enforce production or per-page limits. The retained scripts
+are `scratch/legacy-marker-bounded-clip.py` and
+`scratch/legacy-marker-ordered-bounded.py`; the latter uses the comparison
+harness described above. No production route is admitted.
