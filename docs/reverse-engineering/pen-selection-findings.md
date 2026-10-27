@@ -252,14 +252,16 @@ record file is 14,112 bytes. Portable `libm` math matches these host captures.
 The native V14 path uses its own 150×150 grain and three 100×100 point masks;
 it cannot inherit Pencil3's atlas or record layout. Direct native texture
 methods reproduce the embedded grain and point arrays as 90,000- and
-120,000-byte uploads under synthetic GL callbacks; Init, GPU sampling and
-rendered pixels remain unverified. Pencil2 remains generic in
-production pending geometry reconstruction, texture/shader validation and
-output transport checks. Compact capture receipts and the pinned candidate are
+120,000-byte uploads under synthetic GL callbacks. A separate controlled RTV4
+replay runs native Init and Draw with host Mesa sampling and framebuffer
+readback; it does not establish Android device output. Pencil2 remains generic
+in production pending output transport and broader validation. Compact capture receipts and the pinned candidate are
 retained under the ignored `tmp/vector-parity-plan/pen-family-audit/` workspace.
 In a matched-context resvg 0.47 control, rows 78–79 yield alpha 37 at (28, 182) both alone and within all 84 rows, so the earlier alpha 39 came from a differently defined pair; isolate the definition differences before attributing the residual to compositing (receipt: `pencil2-v14-svg-paint-v8-context-subset-audit/matched-render-receipt.json` under that workspace).
 
 An ordered native RTV4 host-Mesa prefix replay yields alpha 0, 12, 38 and 38 at (28, 182) after 78, 79, 80 and 84 records respectively; the full-prefix frame matches the earlier capture. The isolated native rows yield 12 and 27, consistent with rounded source-over, while the matched SVG rows yield 10 and 28 and compose to 37. The per-stamp difference therefore suffices to explain this pixel, but does not establish general blend parity. The reproducible wrapper and compact receipt are retained in `tmp/vector-parity-plan/pen-family-audit/pencil2-v14-prefix-probe/`. This is a controlled host replay, not Android, saved-document, PDF or production rendering evidence.
+
+A resolution-specific scalar model evaluates the shader and rounded source-over for every potentially covered pixel of that 192×192 frame. It differs from the native alpha at 22 pixels, with maximum error 4 and absolute error sum 29; the V8 SVG differs at 32 pixels, with maximum 19 and sum 93. A precomposed PNG alpha mask embedded in SVG renders the modeled alpha exactly with resvg 0.45.1 at that size and retains those 22 differences from native. The synthetic black-stroke SVG is 1,214 bytes, including its 589-byte PNG. This is a resolution-specific raster mask, not resolution-independent vector paint. It covers one scale and stroke; the mask needs recomputation at each output resolution and does not establish device, PDF reader, arbitrary-color or production parity. The reproducible scripts and compact receipts are in `tmp/vector-parity-plan/pen-family-audit/pencil2-v14-full-frame-scalar-model/`.
 
 ## Literal StraightMarker control
 
