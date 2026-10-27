@@ -1,0 +1,36 @@
+{
+  "schema": "sdocx-pencil2-v14-raster-paper-control-v1",
+  "scope": "One 192x192 synthetic host-Mesa RTV4 black-stroke control; analytical precomposed RGBA PNG on opaque white, compared against source-over composition inferred from the native transparent alpha capture.",
+  "native_frame_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "rgb_red_channel_vs_native_white": {
+    "resvg": {
+      "different": 22,
+      "sum_abs": 29,
+      "max_abs": 4,
+      "support": 52
+    },
+    "mupdf_1_28_2": {
+      "different": 26,
+      "sum_abs": 34,
+      "max_abs": 4,
+      "support": 52
+    },
+    "pdfium_156": {
+      "different": 22,
+      "sum_abs": 29,
+      "max_abs": 4,
+      "support": 52
+    }
+  },
+  "script": "conformance/pencil2_v14_raster_paper_control.py",
+  "reproduction_command": "PYTHONPATH=/home/jding/.cache/uv/archive-v0/4VQ8fPp5Pb2XimZ9eh7Km .venv/bin/python conformance/pencil2_v14_raster_paper_control.py",
+  "limitations": [
+    "Resolution-specific raster, not scalable vector paint; model must be recomputed for each output resolution and device coordinate context.",
+    "White paper comparison is calculated from transparent native output, not a separately captured native white framebuffer.",
+    "One scale, black stroke and host control only; no generic-path comparison, arbitrary color, saved-note, Android, or production parity.",
+    "Dependent on retained temporary source evidence and the shared target runner described in pencil2-v14-svg-pdf-control.json."
+  ],
+  "independent_reproduction": "Resvg, MuPDF 1.28.2 and pypdfium2 4.30.0 reproduced all reported metrics.",
+  "script_sha256": "e28b54f58798df789a44fc78a26f1dd245a138017e3f3076c66bb590d204ba92",
+  "scalar_source_sha256": "6fa587a9f6469b4f8948dab66a40cfb20b51eecac8435977c2c36dfc1231a48c"
+}
