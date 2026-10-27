@@ -1,4 +1,4 @@
-//! Test-only SimpleBrush saved-ObjectStroke geometry reconstruction.
+//! Bounded SimpleBrush saved-ObjectStroke geometry reconstruction.
 //!
 //! This is a numeric geometry oracle only. It does not model the shader,
 //! color upload, blending, GPU pixels, or SVG/PDF rendering.
@@ -65,7 +65,7 @@ fn edge_pair_width(pair: EdgePair) -> f32 {
     dx.mul_add(dx, dy * dy).sqrt()
 }
 
-fn get_repeat(length: f32, width: f32) -> u32 {
+fn get_repeat(length: f32, width: f32) -> Result<u32, &'static str> {
     let scaled = if width <= 5.0 {
         length * 0.5
     } else if width <= 10.0 {
@@ -83,11 +83,45 @@ fn get_repeat(length: f32, width: f32) -> u32 {
     } else {
         length / 10.0
     };
-    (scaled as u32).max(2) + 1
+    if !scaled.is_finite() || scaled < 0.0 || scaled >= u32::MAX as f32 {
+        return Err("invalid SimpleBrush path length");
+    }
+    (scaled as u32)
+        .max(2)
+        .checked_add(1)
+        .ok_or("SimpleBrush repeat overflow")
 }
 
-fn append_path(curve: &Quad, start_width: f32, end_width: f32, out: &mut Vec<[f32; 3]>) {
-    let repeat = get_repeat(curve.length, start_width.min(end_width));
+fn append_path(
+    curve: &Quad,
+    start_width: f32,
+    end_width: f32,
+    out: &mut Vec<[f32; 3]>,
+    max_samples: usize,
+) -> Result<(), &'static str> {
+    if !curve.length.is_finite()
+        || curve.length <= 0.0
+        || !start_width.is_finite()
+        || !end_width.is_finite()
+        || start_width <= 0.0
+        || end_width <= 0.0
+    {
+        return Err("invalid SimpleBrush path geometry");
+    }
+    let repeat = get_repeat(curve.length, start_width.min(end_width))?;
+    let count = usize::try_from(repeat)
+        .map_err(|_| "SimpleBrush repeat overflow")?
+        .checked_add(1)
+        .ok_or("SimpleBrush repeat overflow")?;
+    let total = out
+        .len()
+        .checked_add(count)
+        .ok_or("SimpleBrush sample overflow")?;
+    if total > max_samples {
+        return Err("SimpleBrush sample budget exceeded");
+    }
+    out.try_reserve(count)
+        .map_err(|_| "SimpleBrush sample allocation failed")?;
     let distance_step = curve.length / repeat as f32;
     let width_step = (end_width - start_width) / repeat as f32;
     let (mut distance, mut width) = (0.0_f32, start_width);
@@ -96,21 +130,55 @@ fn append_path(curve: &Quad, start_width: f32, end_width: f32, out: &mut Vec<[f3
         let point = curve.at(distance);
         let radius = (width + 1.0) * 0.5;
         // RT AddPoint stores radius + 0.5 in its third float lane.
-        out.push([point.x, point.y, radius + 0.5]);
+        let radius_plus_half = radius + 0.5;
+        if !point.x.is_finite()
+            || !point.y.is_finite()
+            || !radius_plus_half.is_finite()
+            || radius_plus_half <= 0.0
+        {
+            return Err("invalid SimpleBrush sample geometry");
+        }
+        out.push([point.x, point.y, radius_plus_half]);
         distance += distance_step;
         width += width_step;
     }
+    Ok(())
 }
 
-fn reconstruct(
-    points: &[[f32; 2]],
-    pressures: &[f32],
-    size: f32,
-    tool_type: i32,
-    curve_enabled: bool,
-) -> Result<Vec<[f32; 3]>, &'static str> {
+/// Inputs must already be in the native geometry space. This routine does not
+/// derive coordinates, curve flags, or tool types from serialized metadata.
+pub(crate) struct NativeInput<'a> {
+    pub(crate) points: &'a [[f32; 2]],
+    pub(crate) pressures: &'a [f32],
+    pub(crate) size: f32,
+    pub(crate) tool_type: i32,
+    pub(crate) curve_enabled: bool,
+    pub(crate) max_samples: usize,
+}
+
+pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static str> {
+    let NativeInput {
+        points,
+        pressures,
+        size,
+        tool_type,
+        curve_enabled,
+        max_samples,
+    } = input;
     if !curve_enabled || points.len() < 2 || points.len() != pressures.len() {
         return Err("unsupported SimpleBrush input shape");
+    }
+    // Each accepted input segment emits samples. Bound source work before
+    // allocating or measuring curves, even if the caller supplies no budget.
+    if points.len() > max_samples.saturating_add(1) {
+        return Err("SimpleBrush sample budget exceeded");
+    }
+    if points.iter().flatten().any(|v| !v.is_finite())
+        || pressures
+            .iter()
+            .any(|p| !p.is_finite() || !(0.0..=1.0).contains(p))
+    {
+        return Err("invalid SimpleBrush points or pressures");
     }
     if !size.is_finite() || size <= 0.0 {
         return Err("invalid pen size");
@@ -162,7 +230,7 @@ fn reconstruct(
                 .map(edge_pair_width)
                 .ok_or("missing source-derived cross-section")?
         };
-        append_path(&curve, start_width, mean_width, &mut samples);
+        append_path(&curve, start_width, mean_width, &mut samples, max_samples)?;
 
         edge_pair = Some(set_value_edges(
             previous,
@@ -189,18 +257,69 @@ fn reconstruct(
         y: points[last][1],
     };
     let curve = Quad::new(midpoint(a, b), a, b);
-    append_path(&curve, terminal_start_width, terminal_width, &mut samples);
+    append_path(
+        &curve,
+        terminal_start_width,
+        terminal_width,
+        &mut samples,
+        max_samples,
+    )?;
     Ok(samples)
 }
 
 #[cfg(test)]
+fn reconstruct(
+    points: &[[f32; 2]],
+    pressures: &[f32],
+    size: f32,
+    tool_type: i32,
+    curve_enabled: bool,
+) -> Result<Vec<[f32; 3]>, &'static str> {
+    generate(NativeInput {
+        points,
+        pressures,
+        size,
+        tool_type,
+        curve_enabled,
+        max_samples: 1_000_000,
+    })
+}
+
+#[cfg(all(test, feature = "serde"))]
 mod tests {
-    use super::reconstruct;
+    use super::{NativeInput, generate, reconstruct};
     use serde_json::Value;
     use sha2::{Digest, Sha256};
 
     const FIXTURE: &str = include_str!("../../../../conformance/simplebrush-native.json");
     const ORACLE: &[u8] = include_bytes!("../../../../conformance/simplebrush-native.bin");
+
+    #[test]
+    fn bounded_generator_rejects_exhausted_and_invalid_inputs() {
+        let points = [[0., 0.], [10., 0.], [20., 5.]];
+        let pressures = [0.5, 0.25, 0.75];
+        let input = |budget| NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: 8.,
+            tool_type: 2,
+            curve_enabled: true,
+            max_samples: budget,
+        };
+        assert!(generate(input(13)).is_err());
+        assert_eq!(generate(input(14)).unwrap().len(), 14);
+        let mut invalid = input(14);
+        invalid.size = f32::NAN;
+        assert!(generate(invalid).is_err());
+        let invalid_points = [[0., 0.], [f32::INFINITY, 0.], [20., 5.]];
+        let mut invalid = input(14);
+        invalid.points = &invalid_points;
+        assert!(generate(invalid).is_err());
+        let huge_points = [[0., 0.], [f32::MAX, 0.], [20., 5.]];
+        let mut invalid = input(14);
+        invalid.points = &huge_points;
+        assert!(generate(invalid).is_err());
+    }
 
     use crate::{BoundingBox, Point, Stroke, StrokeProperties, StrokeRendering, StrokeStyle};
 
