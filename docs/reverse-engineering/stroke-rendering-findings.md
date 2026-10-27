@@ -542,8 +542,7 @@ quadratic de Casteljau midpoints from the captured root tuples and checks all
 native entry intervals and points. All 15 straight and 47 bent recursive entries
 match the interval order. A Rust reconstruction follows the native weighted-term
 operation order and matches the captured coordinates bit for bit in all 62
-recursive entries. These controls do not validate generated edge normals or
-full meshes.
+recursive entries. Full source-to-mesh generation remains unverified.
 
 The initial interval comes from `calcSegmentsNumber` at RVA `0x34138`, whose
 branch depends on RT byte offset 716 and other state. In the non-circle branch,
@@ -565,3 +564,23 @@ The captured straight control has direction dots 1, 1, 1 and lengths 8/0,
 lengths 8/0, 8/8, 8/8, yielding counts 3, 11, 11. The [test-only Rust model](../../crates/sdocx/src/ink/legacy_marker_segment_count.rs)
 checks all six against the native intervals. These are finite synthetic host
 controls; branch selection, circular counts and initialization remain unverified.
+
+### Legacy Marker subdivision edges and fringe
+
+The [edge test](../../crates/sdocx/tests/legacy_marker_edges.rs) joins the
+subdivision-entry controls to the existing mesh-input receipt. For the two
+captured strokes, each interior subdivision sample is the quadratic midpoint,
+offset on each side by the normal perpendicular to the vector from the local
+start to end, scaled by the radius at RT offset 644. The first and last sample
+instead use the saved normals at offsets 700 and 692 respectively. The test
+checks every captured sample within 0.00003 coordinate units; that tolerance
+covers float evaluation-order differences and is not a pixel-parity claim.
+
+Native instructions at RVA `0x34aa8`–`0x34ae4` construct the fringe from the
+pair of body edges: `delta = (first - second) / (2 * radius)`, then
+`first_outer = first + delta` and `second_outer = second - delta`. The observed
+radius is 5.5 in both controls. The [merge and cap test](../../crates/sdocx/tests/legacy_marker_mesh.rs)
+checks all 30 captured merge and cap calls, including each accumulated output
+vector, against the original return bytes. These checks cover only the captured
+nondegenerate subdivision branch and cap calls; they do not establish behavior
+for tiny tangents, other branches, arbitrary saved strokes, or device output.
