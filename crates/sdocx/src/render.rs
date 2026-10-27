@@ -2352,12 +2352,17 @@ fn render_placed_image_content(
 }
 
 fn render_placed_image_body(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
-    let original = image.crop_rect.and_then(|crop| {
-        image.original_bbox.or_else(|| {
-            let asset = media_assets.get(image.media_index?)?;
-            image_crop::crop_only_placement(&asset.data, crop, image.bbox)
-        })
-    });
+    // Drawing treats zero-area and inverted crop rectangles as empty, even
+    // when original-placement metadata is present.
+    let original = image
+        .crop_rect
+        .filter(|[l, t, r, b]| l < r && t < b)
+        .and_then(|crop| {
+            image.original_bbox.or_else(|| {
+                let asset = media_assets.get(image.media_index?)?;
+                image_crop::crop_only_placement(&asset.data, crop, image.bbox)
+            })
+        });
     if let Some(original) = original {
         let bbox = image.bbox;
         let width = bbox.x_max - bbox.x_min;
@@ -5603,6 +5608,23 @@ mod tests {
                 .unwrap();
             assert_eq!(image.attribute("width"), Some("4"));
             assert_eq!(image.attribute("height"), Some("3"));
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn empty_crop_ignores_original_placement() {
+        for rotation in [None, Some(15.0)] {
+            let mut image = simple_original_crop(rotation);
+            image.crop_rect = None;
+            let expected = render_test_placed_image(image.clone(), test_rgb_png());
+            for crop in [[1, 1, 1, 2], [1, 2, 3, 2], [3, 1, 1, 2], [1, 2, 3, 1]] {
+                image.crop_rect = Some(crop);
+                assert_eq!(
+                    render_test_placed_image(image.clone(), test_rgb_png()),
+                    expected
+                );
+            }
         }
     }
 
