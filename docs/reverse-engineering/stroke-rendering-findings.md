@@ -1031,3 +1031,19 @@ vertices. This does not yet budget source mesh generation or expanded SVG/PDF
 work and is not integrated into production. The probes are
 `tmp/marker-owner-boolean/src/bin/rational_page.rs` and
 `scratch/legacy-marker-ordered-checked.py`.
+
+An end-to-end scratch harness feeds the recovered source-point mesh into the
+checked adaptive clipper. For long and 2× bend controls, all five generated
+vertex streams differ from captured mesh by at most 0.000020 and 0.000040 page
+units, respectively. White resvg/PDF RGB L1 is 2260/4978 and 5455/11691;
+the PDFs are about 184 and 100 KB. Source-generated blue still falls back
+because nonzero triangles collapse even on the finer grid, and self-overlap
+exceeds the piece limit. A page with a degenerate stroke and eight long strokes
+falls back for the degenerate stroke, admits three long strokes, then reaches
+the 500,000-operation limit and falls back for the rest. The scratch generator
+also limits cumulative source points and mesh vertices. SVG/PDF expansion and
+intermediate allocation are not fully page-budgeted, and this is not a
+production route. Reproduction uses `tmp/marker-owner-boolean/src/bin/source_to_mesh.rs`,
+`tmp/marker-owner-boolean/src/bin/rational_page.rs`,
+`scratch/legacy-marker-source-page-driver.py` and
+`scratch/legacy-marker-ordered-source-page.py` with the comparison harness above.
