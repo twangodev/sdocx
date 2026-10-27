@@ -902,7 +902,6 @@ fn sample_native_stroke_with_size(
     expected_argb: u32,
 ) -> Option<SavedBrushPenSamples> {
     const NATIVE_PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.BrushPen";
-    const NATIVE_ADVANCED_SETTING: &str = "";
 
     if context.gl_version != GL_VERSION
         || !matches!(context.screen_resolution, [1920, 1080] | [1080, 1920])
@@ -918,7 +917,7 @@ fn sample_native_stroke_with_size(
     let style = &rendering.style;
     let properties = rendering.properties;
     if rendering.pen_name.as_deref() != Some(NATIVE_PEN_NAME)
-        || rendering.advanced_settings.as_deref() != Some(NATIVE_ADVANCED_SETTING)
+        || !matches!(rendering.advanced_settings.as_deref(), Some("" | "10;"))
         || rendering.tool_type_raw != 2
         || !properties.compressed
         || !properties.stylus_channels

@@ -952,6 +952,32 @@ mod tests {
             .flat_map(f32::to_le_bytes)
             .collect();
         assert_eq!(geometry, native_geometry);
+        let literal_receipt: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-literal-setting-native.json"
+        ))
+        .unwrap();
+        assert_eq!(literal_receipt["selected_version"], 10);
+        assert_eq!(literal_receipt["input"]["advanced_setting_ascii"], "10;");
+        assert_eq!(
+            literal_receipt["buffer_sha256"],
+            fixture["geometry"]["sha256"]
+        );
+        let mut literal_stroke = stroke.clone();
+        literal_stroke.rendering.as_mut().unwrap().advanced_settings = Some("10;".into());
+        let literal_geometry: Vec<_> = super::super::sample_native_stroke_with_size(
+            &literal_stroke,
+            context,
+            7.0_f32.to_bits(),
+            0x806e_42d1,
+        )
+        .unwrap()
+        .output
+        .instances
+        .iter()
+        .flat_map(|instance| instance.values)
+        .flat_map(f32::to_le_bytes)
+        .collect();
+        assert_eq!(literal_geometry, native_geometry);
         let portrait: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-portrait-geometry-native.json"
         ))
