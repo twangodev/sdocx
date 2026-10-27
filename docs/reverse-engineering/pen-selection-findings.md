@@ -267,6 +267,8 @@ A controlled host-Mesa RTV4 replay translates the same 84 records by six pixels 
 
 A separate host-Mesa control holds the geometry and matrix fixed and overrides only the grain-offset uniform from (0, 0) to (75, 0). Despite the nominal one-period shift, 11 alpha pixels change (absolute difference sum 127, maximum 34). This isolates the difference from translated geometry; finite-precision texture coordinates are a possible explanation, not an observed cause. The [receipt](../../conformance/pencil2-v14-grain-offset-native.json) pins the capture and reproduction script. This host adapter control does not establish saved-note or device behavior.
 
+Four additional host-Mesa controls override that same uniform to -0.001, 0.001, 74.999 and 75.001 pixels. The frames at -0.001 and 74.999 have identical RGBA hashes, as do the frames at 0.001 and 75.001. Relative to zero offset, the negative and positive controls change 2 and 34 alpha pixels, respectively. The result is consistent with sensitivity near grain texture sampling boundaries, but does not establish the exact GPU arithmetic, other scales, or device behavior. The [receipt](../../conformance/pencil2-v14-grain-offset-epsilon-native.json) retains the controls and reproduction command.
+
 ## Literal StraightMarker control
 
 Six native Drawing controls request the literal Marker3 and StraightMarker names
