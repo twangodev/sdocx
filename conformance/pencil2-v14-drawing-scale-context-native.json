@@ -1,0 +1,141 @@
+{
+  "schema": "sdocx-pencil2-v14-drawing-scale-context-v1",
+  "capture_wrapper_sha256": "bcea423cf28e2d236c4198631becd8274200169856300567b09e7473876f2859",
+  "scope": "Native Drawing applies matrix to actual Graphics canvas, then actual Pencil2 GLV14 getInverseScale queries that canvas. Drawable selection, canvas factory and unsupported object paint use host stubs. Composer PDF matrix setup is actual native code. No real note, device, or full Drawing stroke capture.",
+  "source_sha256": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+  "pencil2_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+  "results": [
+    {
+      "id": "identity",
+      "source": "explicit_matrix",
+      "supplied_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "model_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "inverse_scale_f32_bits": [
+        "0000803f",
+        "0000803f"
+      ],
+      "drawing_set_matrix_calls": 2,
+      "explicit_get_model_matrix_calls": 1,
+      "pencil2_get_model_matrix_calls": 1
+    },
+    {
+      "id": "pdf_translation",
+      "source": "native_pdf_export_translation",
+      "supplied_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000f0c2",
+        "000096c2",
+        "0000803f"
+      ],
+      "model_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "0000f0c2",
+        "000096c2",
+        "0000803f"
+      ],
+      "inverse_scale_f32_bits": [
+        "0000803f",
+        "0000803f"
+      ],
+      "drawing_set_matrix_calls": 2,
+      "explicit_get_model_matrix_calls": 1,
+      "pencil2_get_model_matrix_calls": 1
+    },
+    {
+      "id": "uniform_scale_2",
+      "source": "explicit_matrix",
+      "supplied_matrix_f32_bits": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "model_matrix_f32_bits": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "inverse_scale_f32_bits": [
+        "0000003f",
+        "0000003f"
+      ],
+      "drawing_set_matrix_calls": 2,
+      "explicit_get_model_matrix_calls": 1,
+      "pencil2_get_model_matrix_calls": 1
+    },
+    {
+      "id": "nonuniform_scale_2_4",
+      "source": "explicit_matrix",
+      "supplied_matrix_f32_bits": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "model_matrix_f32_bits": [
+        "00000040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00008040",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "inverse_scale_f32_bits": [
+        "0000003f",
+        "0000803e"
+      ],
+      "drawing_set_matrix_calls": 2,
+      "explicit_get_model_matrix_calls": 1,
+      "pencil2_get_model_matrix_calls": 1
+    }
+  ]
+}
