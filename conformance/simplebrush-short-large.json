@@ -1,0 +1,57 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points": [
+    [
+      4,
+      4
+    ],
+    [
+      14,
+      4
+    ],
+    [
+      14.2,
+      4
+    ]
+  ],
+  "pressures": [
+    0.25,
+    0.5,
+    0.75
+  ],
+  "size": 8,
+  "geometry_count": 8,
+  "geometry_sha256": "502f07847e67010dfb4dd7e39f11750bb3e22359b6934766eb1adf9c3a1bec09",
+  "full_frame_sha256": "9080a44ccc31aa4b2f7dc1e9cd1aaee1b0557d94b8e722202794ef5015c4c238",
+  "crop": {
+    "dimensions": [
+      144,
+      32
+    ],
+    "sha256": "ae12a944d28bc98f64510fca3b355da8d2aa32fc92b6744102c27fa687292c08",
+    "nonzero_alpha_pixels": 108
+  },
+  "paint_clean": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  },
+  "capture_scripts": [
+    "scratch/simplebrush-two-variation/simplebrush-5-source-capture.py",
+    "scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py"
+  ],
+  "capture_script_sha256": {
+    "scratch/simplebrush-two-variation/simplebrush-5-source-capture.py": "ccdf93b6199498245fb2e5a6228122a2b15c5fe47b1cfaa11cf91c35f09e5df4",
+    "scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4"
+  },
+  "execution_command": "See simplebrush-short-sequences.json for capture command and input."
+}

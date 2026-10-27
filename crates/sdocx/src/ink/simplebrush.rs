@@ -196,8 +196,12 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
             let current = points[index];
             if (current[0] - previous[0]).abs() < 1.5 && (current[1] - previous[1]).abs() < 1.5 {
                 if index == points.len() - 1 {
-                    if accepted_points.len() < 3 {
-                        return Err("unsupported SimpleBrush short movement sequence");
+                    if accepted_points.len() == 1 {
+                        if max_samples == 0 {
+                            return Err("SimpleBrush sample budget exceeded");
+                        }
+                        let width = half_width(size, accepted_pressures[0]).max(1.0);
+                        return Ok(vec![[points[0][0], points[0][1], width * 0.5 + 0.5]]);
                     }
                     return generate_with_terminal(
                         &accepted_points,
@@ -215,9 +219,6 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
             }
         }
         if skipped {
-            if accepted_points.len() < 3 {
-                return Err("unsupported SimpleBrush short movement sequence");
-            }
             return generate(NativeInput {
                 points: &accepted_points,
                 pressures: &accepted_pressures,
@@ -467,6 +468,41 @@ mod tests {
 
     const FIXTURE: &str = include_str!("../../../../conformance/simplebrush-native.json");
     const ORACLE: &[u8] = include_bytes!("../../../../conformance/simplebrush-native.bin");
+
+    #[test]
+    fn short_sequences_match_native_geometry() {
+        let cases: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-short-sequences.json"
+        ))
+        .unwrap();
+        let value =
+            |v: &Value| f32::from_le_bytes(decode_hex(v.as_str().unwrap()).try_into().unwrap());
+        for case in cases["cases"].as_array().unwrap() {
+            let points: Vec<[f32; 2]> = case["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| [value(&p[0]), value(&p[1])])
+                .collect();
+            let pressures: Vec<f32> = case["pressures"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(value)
+                .collect();
+            let actual = reconstruct(&points, &pressures, 8.0, 2, true).unwrap();
+            let expected = decode_hex(case["geometry_hex"].as_str().unwrap());
+            let expected = expected
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes(*b));
+            assert_eq!(actual.len() * 12, expected.len() * 4, "{}", case["case"]);
+            for (a, b) in actual.iter().flatten().zip(expected) {
+                assert!((a - b).abs() < 0.0001, "{}: {a} != {b}", case["case"]);
+            }
+        }
+    }
 
     #[test]
     fn short_terminal_geometry_matches_native() {
@@ -984,6 +1020,12 @@ mod tests {
             (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
         );
         let native: &[u8] = match (four, size) {
+            _ if probe == 210 => {
+                include_bytes!("../../../../conformance/simplebrush-short-large-crop.rgba")
+            }
+            _ if probe == 209 => {
+                include_bytes!("../../../../conformance/simplebrush-two-short-crop.rgba")
+            }
             _ if probe == 208 => {
                 include_bytes!("../../../../conformance/simplebrush-terminal-vertical-crop.rgba")
             }
@@ -1089,6 +1131,10 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 210 => {
+                include_str!("../../../../conformance/simplebrush-short-large.json")
+            }
+            _ if probe == 209 => include_str!("../../../../conformance/simplebrush-two-short.json"),
             _ if probe == 208 => {
                 include_str!("../../../../conformance/simplebrush-terminal-vertical.json")
             }
@@ -1188,7 +1234,11 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if probe == 208 {
+        let points: &[[f32; 2]] = if probe == 210 {
+            &[[4., 4.], [14., 4.], [14.2, 4.]]
+        } else if probe == 209 {
+            &[[4., 4.], [4.1, 4.], [4.2, 4.]]
+        } else if probe == 208 {
             &[[0., 0.], [0., 10.], [5., 20.], [6., 21.]]
         } else if probe == 207 {
             &[[0., 0.], [10., 0.], [20., 5.], [21., 6.]]
@@ -1222,7 +1272,9 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if probe == 208 {
+        let pressures: &[f32] = if matches!(probe, 209 | 210) {
+            &[0.25, 0.5, 0.75]
+        } else if probe == 208 {
             &[1., 1., 1., 1.]
         } else if matches!(probe, 205 | 207) {
             &[0.5, 0.25, 0.75, 0.4]
@@ -1238,6 +1290,8 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 210 => 108,
+            _ if probe == 209 => 32,
             _ if probe == 208 => 350,
             _ if probe == 207 => 86,
             _ if probe == 205 => 223,
@@ -1324,6 +1378,12 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if probe == 210 => {
+                    include_bytes!("../../../../conformance/simplebrush-short-large-geometry.bin")
+                }
+                _ if probe == 209 => {
+                    include_bytes!("../../../../conformance/simplebrush-two-short-geometry.bin")
+                }
                 _ if probe == 208 => include_bytes!(
                     "../../../../conformance/simplebrush-terminal-vertical-geometry.bin"
                 ),
@@ -1630,6 +1690,9 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn skipped_segment_public_paint_controls() {
+        for probe in [209, 210] {
+            v25_paint_control(8, false, false, false, probe);
+        }
         for probe in [205, 206] {
             v25_paint_control(8, false, false, false, probe);
         }
