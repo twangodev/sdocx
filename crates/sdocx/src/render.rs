@@ -3800,7 +3800,7 @@ fn render_stroke(
             replay_index.is_some(),
         )
     {
-        let color = theme.foreground(stroke_source_color(stroke));
+        let color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
         let opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
         let draw = |svg: &mut Scene| {
             svg.scope(Group::new().opacity(opacity), |svg| {
@@ -4575,7 +4575,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
         prepared.coverage_mesh = None;
         prepared.segment_widths = None;
         prepared.bounds = Some(ink.bounds);
-        prepared.color = theme.foreground(stroke_source_color(stroke));
+        prepared.color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
         prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
         prepared.top_layer = false;
         prepared.profile = Some("InkPen");
@@ -4630,7 +4630,7 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
             rendering.pen_name.as_deref() == Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
                 && matches!(
                     rendering.advanced_settings.as_deref(),
-                    Some("") | Some("4;")
+                    Some("") | Some("4;") | Some("18;0;100;")
                 )
         })
     {

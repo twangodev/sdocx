@@ -253,7 +253,9 @@ the context-free preparer remains unchanged. Ordinary V1 and V4
 (empty or `4;` settings) use saved RGB when the public stroke color is absent,
 and apply saved ARGB alpha once per stroke in SVG/PDF. An explicit
 `InkPenRenderProfile` now selects bounded V4 geometry for ordinary strokes with
-saved ARGB and a caller-supplied display size; the default remains generic.
+saved ARGB and a caller-supplied display size; the default remains generic. The
+exact `18;0;100;` setting also admits the native opaque-black default when ARGB
+is absent, as observed in a synthetic serialized-frame derivative.
 Its contour approximates native coverage, and V4 replay event boundaries and
 other output scales remain unverified.
 The numeric core matches twenty-one
@@ -274,7 +276,7 @@ A [reuse capture](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f00
 strokes and a distinct-object control on the same pen, drawable and RT; every
 target stream matches the fresh 312 bytes. Direct redraw of the distinct object
 returns without callbacks after Drawing clears its cache-dirty flag. Broader
-reuse states and vector edge coverage remain open before V4 production admission.
+reuse states and vector edge coverage remain open under the opt-in V4 profile.
 The [property helper oracle](../conformance/object-stroke-curve-native.json)
 executes native property read/write and getter/setter controls, confirming
 serialized bit 0 selects curve state; full-record deserialization is not exercised.

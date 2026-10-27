@@ -667,7 +667,10 @@ pub(super) fn prepare_bounded(
     if context.screen_width > i32::MAX as u32
         || context.screen_height > i32::MAX as u32
         || r.pen_name.as_deref() != Some(PEN)
-        || !matches!(r.advanced_settings.as_deref(), Some("") | Some("4;"))
+        || !matches!(
+            r.advanced_settings.as_deref(),
+            Some("") | Some("4;") | Some("18;0;100;")
+        )
         || r.tool_type_raw > 4
         || r.properties.eraser
         || (r.properties.fixed_width

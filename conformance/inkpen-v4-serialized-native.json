@@ -1,0 +1,17 @@
+{
+  "schema": "sdocx.inkpen-v4.serialized-host.v1",
+  "scope": "Synthetic Fountain-derived serialized frame renamed to InkPen; native Model attachment and Drawing select V4. Reuses source arrays from tracked V1 synthetic serialized fixture; no device or real InkPen note parity claim.",
+  "source_capture_sha256": "2b3839bb43cf2d5de495d7ed096cb127c21051fe007c33111426d26a7f511cde",
+  "source_frame_sha256": "9c49a31bc2f3c2d7ae4749f18db88ae14ae7db5f77b2f855814ea483e0b13628",
+  "source_arrays_match_v1_case": true,
+  "saved_advanced_setting": "18;0;100;",
+  "native_color_argb": "0xff000000",
+  "display": [
+    1920,
+    1080
+  ],
+  "callback_count": 75,
+  "callback_bytes": 900,
+  "callback_sha256": "ba210c31db12c036facbc682ce85fe69643ed28ee575da0fcc169b443043e934",
+  "event_boundaries_observed": false
+}

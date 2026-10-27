@@ -271,7 +271,9 @@ pub(crate) fn prepare_inkpen_v4_for_page(
 ) -> Option<PreparedInkPenV1> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
-    let argb = rendering.style.color_argb?;
+    let argb = rendering.style.color_argb.or_else(|| {
+        (rendering.advanced_settings.as_deref() == Some("18;0;100;")).then_some(0xff00_0000)
+    })?;
     if screen_width == 0
         || screen_height == 0
         || screen_width > i32::MAX as u32
@@ -280,7 +282,7 @@ pub(crate) fn prepare_inkpen_v4_for_page(
         || rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
         || !matches!(
             rendering.advanced_settings.as_deref(),
-            Some("") | Some("4;")
+            Some("") | Some("4;") | Some("18;0;100;")
         )
         || rendering.tool_type_raw > 4
         || properties.replay_only
@@ -2481,7 +2483,13 @@ mod tests {
             single.points.truncate(1);
             assert!(prepare_inkpen_v4_for_page(&single, 1920, 1080).is_none());
         }
-        for setting in [None, Some("1;"), Some("4;extra")] {
+        for setting in [
+            None,
+            Some("1;"),
+            Some("4;extra"),
+            Some("18;0;101;"),
+            Some("18;0;100;extra"),
+        ] {
             let input = inkpen_v1_stroke_for_default_color_test(setting, Some(0xff00_0000));
             assert!(prepare_inkpen_v4_for_page(&input, 1920, 1080).is_none());
         }
@@ -2541,7 +2549,7 @@ mod tests {
     }
 
     #[test]
-    fn serialized_inkpen_v1_missing_argb_preparer_matches_native_drawing() {
+    fn serialized_inkpen_missing_argb_preparers_match_native_drawing() {
         use base64::Engine as _;
         fn decode_hex(value: &str) -> Vec<u8> {
             (0..value.len())
@@ -2685,6 +2693,75 @@ mod tests {
         }
         assert_eq!(prepared.terminal.start, 64);
         assert_eq!(prepared.terminal.end, 68);
+
+        // The controlled V4 derivative uses the same native source arrays,
+        // with a different saved setting and absent ARGB. Its compact receipt
+        // pins the native 75-record callback and default black.
+        let v4: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen-v4-serialized-native.json"
+        ))
+        .unwrap();
+        assert_eq!(v4["saved_advanced_setting"], "18;0;100;");
+        assert_eq!(v4["source_arrays_match_v1_case"], true);
+        assert_eq!(v4["native_color_argb"], "0xff000000");
+        assert_eq!(input.rendering.as_ref().unwrap().style.color_argb, None);
+        let mut v4_input = input.clone();
+        v4_input.rendering.as_mut().unwrap().advanced_settings = Some("18;0;100;".into());
+        let actual = prepare_inkpen_v4_for_page(&v4_input, 1920, 1080)
+            .expect("the captured V4 setting and black default must be admitted");
+        assert_eq!(actual.argb, 0xff00_0000);
+        assert_eq!(v4["callback_count"], 75);
+        assert_eq!(actual.points.len(), 75);
+        let mut actual_bytes = Vec::new();
+        for (point, radius) in actual.points.iter().zip(&actual.radii) {
+            actual_bytes.extend_from_slice(&(point.x as f32).to_bits().to_le_bytes());
+            actual_bytes.extend_from_slice(&(point.y as f32).to_bits().to_le_bytes());
+            actual_bytes.extend_from_slice(&radius.to_bits().to_le_bytes());
+        }
+        assert_eq!(
+            actual_bytes.as_slice(),
+            include_bytes!("../../../conformance/inkpen-v4-serialized-native.bin"),
+            "all V4 numeric callback bytes against retained synthetic native case"
+        );
+        use sha2::Digest as _;
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(&actual_bytes)),
+            v4["callback_sha256"].as_str().unwrap()
+        );
+        let options = crate::RenderOptions {
+            inkpen_profile: Some(crate::InkPenRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..crate::RenderOptions::default()
+        };
+        let page = crate::Page {
+            uuid: "inkpen-v4-native-control".into(),
+            width: 1920,
+            height: 1080,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![v4_input.clone().into()],
+        };
+        let theme = crate::RenderTheme::resolve(
+            &page,
+            &crate::DocumentMetadata::default(),
+            crate::RenderColorMode::Light,
+        );
+        let rendered = crate::prepare_stroke_for_page_with_theme(&v4_input, theme, &options);
+        assert_eq!(rendered.points.as_ref(), actual.points.as_slice());
+        assert_eq!(rendered.color, "#000000");
+        assert_eq!(rendered.opacity, 1.0);
+        let document = crate::Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let svg = crate::render_document_svg(&document, &options)
+            .remove(0)
+            .svg;
+        assert!(svg.contains("<path ") && svg.contains("fill=\"#000000\""));
     }
 
     #[test]
