@@ -1,0 +1,67 @@
+{
+  "schema": "sdocx.airbrush-short-v1-v2-native.v1",
+  "scope": "Synthetic native Model and Drawing with host callbacks and Mesa GLES; not a deserialized note or Android GPU. Matching these cases does not establish general profile equivalence.",
+  "runner_base": "tmp/vector-parity-plan/pen-family-audit/airbrush-pageflip-drawing-scene-v32/conformance/capture_candidate.py",
+  "cases": [
+    {
+      "profile": "v1",
+      "capture_sha256": "ed1be277d6fea1aee3f93bda43bd4e1221bdf5a4d4bbf12b54a80de60063a560",
+      "runner_sha256": "8091ec2a1cdb2aa15b6b36b52d0d5d1a0d4ff01e88603c5eaf6c2b86386d3db5",
+      "input": {
+        "points_f32_le": "0074004300840043007c0043008400430084004300840043008c0043008400430094004300840043",
+        "size_f32_le": "4c374940",
+        "advanced_setting_mode": "unset",
+        "tool_type": 2
+      },
+      "selected_drawable_profile_version": 1,
+      "producer": {
+        "callback_count": 2,
+        "buffer_hex": "00740043c25b0043000000000000803f008000433eac004371972e3f003a3bbf",
+        "buffer_bytes": 32,
+        "buffer_sha256": "d93f7d39eb516b402b20d03513e7916a4d057eaded0e301bf91ef8206b633f10"
+      },
+      "post_rgba8_sha256": "dd50aeb5c8567281db6ebd52783a66db12838630e17a946ba2a3fd8822051e53",
+      "native_libraries_sha256": {
+        "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      }
+    },
+    {
+      "profile": "v2",
+      "capture_sha256": "197703b3772a430eacc3733e406610e42e75ebdb737adbe766662f3b321bd04a",
+      "runner_sha256": "3a9ed2cbce13ad6279f8f87ba69e99bb4b1791ba9db04eec295f29e9fb9a06c7",
+      "input": {
+        "points_f32_le": "0074004300840043007c0043008400430084004300840043008c0043008400430094004300840043",
+        "size_f32_le": "4c374940",
+        "advanced_setting_mode": "explicit-empty",
+        "tool_type": 2
+      },
+      "selected_drawable_profile_version": 2,
+      "producer": {
+        "callback_count": 2,
+        "buffer_hex": "00740043c25b0043000000000000803f008000433eac004371972e3f003a3bbf",
+        "buffer_bytes": 32,
+        "buffer_sha256": "d93f7d39eb516b402b20d03513e7916a4d057eaded0e301bf91ef8206b633f10"
+      },
+      "post_rgba8_sha256": "dd50aeb5c8567281db6ebd52783a66db12838630e17a946ba2a3fd8822051e53",
+      "native_libraries_sha256": {
+        "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      }
+    }
+  ]
+}

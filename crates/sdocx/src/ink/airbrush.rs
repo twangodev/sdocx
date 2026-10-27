@@ -828,6 +828,79 @@ mod tests {
     }
 
     #[test]
+    fn short_saved_v1_native_stream_exposes_legacy_sampler_gap() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-short-v1-v2-native.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_array().unwrap();
+        let first = &cases[0];
+        assert_eq!(first["profile"], "v1");
+        assert_eq!(first["selected_drawable_profile_version"], 1);
+        assert_eq!(cases[1]["selected_drawable_profile_version"], 2);
+        assert_eq!(
+            first["producer"]["buffer_hex"],
+            cases[1]["producer"]["buffer_hex"]
+        );
+        let point_hex = first["input"]["points_f32_le"].as_str().unwrap();
+        let points: Vec<P> = point_hex
+            .as_bytes()
+            .as_chunks::<16>()
+            .0
+            .iter()
+            .map(|point| P {
+                x: little_endian_f32(std::str::from_utf8(&point[..8]).unwrap()),
+                y: little_endian_f32(std::str::from_utf8(&point[8..]).unwrap()),
+            })
+            .collect();
+        let size = little_endian_f32(first["input"]["size_f32_le"].as_str().unwrap());
+        let history = &points[..points.len() - 1];
+        let endpoint = *points.last().unwrap();
+        let expected_hex = first["producer"]["buffer_hex"].as_str().unwrap();
+        let expected: Vec<[u32; 4]> = expected_hex
+            .as_bytes()
+            .as_chunks::<32>()
+            .0
+            .iter()
+            .map(|row| {
+                std::array::from_fn(|i| {
+                    little_endian_f32(std::str::from_utf8(&row[i * 8..i * 8 + 8]).unwrap())
+                        .to_bits()
+                })
+            })
+            .collect();
+        let v2 = saved_redraw_v2(V2Input {
+            history,
+            endpoint,
+            initial_position: points[0],
+            size,
+            tolerance: size / 20.0,
+            tool_type: 2,
+            source: 0,
+            counter_seed: 0,
+        })
+        .unwrap();
+        let v2_rows: Vec<_> = v2
+            .stamps
+            .iter()
+            .map(|s| s.values.map(f32::to_bits))
+            .collect();
+        assert_eq!(v2_rows, expected, "V2 model versus paired native captures");
+        let legacy = saved_redraw(Input {
+            history,
+            endpoint,
+            size,
+            runtime: Runtime { counter_seed: 0 },
+        })
+        .unwrap();
+        assert!(
+            legacy.stamps.is_empty(),
+            "legacy V1 model does not handle short moves"
+        );
+        assert_eq!(expected.len(), 2, "native V1 emits short-move stamps");
+    }
+
+    #[test]
     fn saved_caller_records_match_from_model_points_and_drawable_size() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/airbrush-saved-caller-native.json"
