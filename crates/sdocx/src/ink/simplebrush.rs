@@ -202,6 +202,189 @@ mod tests {
     const FIXTURE: &str = include_str!("../../../../conformance/simplebrush-native.json");
     const ORACLE: &[u8] = include_bytes!("../../../../conformance/simplebrush-native.bin");
 
+    use crate::{BoundingBox, Point, Stroke, StrokeProperties, StrokeRendering, StrokeStyle};
+
+    // Coordinates supplied here are already in the native geometry space. The
+    // capture does not establish a general page-to-native transform.
+    #[derive(Clone, Copy)]
+    struct PublicStrokeContext {
+        native_coordinates: bool,
+        model_matrix: [f32; 9],
+        curve_enabled: bool,
+    }
+
+    const CAPTURE_CONTEXT: PublicStrokeContext = PublicStrokeContext {
+        native_coordinates: true,
+        model_matrix: [1., 0., 0., 0., 1., 0., 0., 0., 1.],
+        curve_enabled: true,
+    };
+
+    fn sample_public_stroke(
+        stroke: &Stroke,
+        context: PublicStrokeContext,
+    ) -> Result<Vec<[f32; 3]>, &'static str> {
+        if !context.native_coordinates
+            || context.model_matrix != CAPTURE_CONTEXT.model_matrix
+            || !context.curve_enabled
+        {
+            return Err("unsupported SimpleBrush coordinate context");
+        }
+        let rendering = stroke.rendering.as_ref().ok_or("missing stroke metadata")?;
+        let p = rendering.properties;
+        if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Brush")
+            || rendering.advanced_settings.as_deref() != Some("")
+            || rendering.tool_type_raw != 2
+            || !p.compressed
+            || p.replay_only
+            || p.stylus_channels
+            || p.eraser
+            || p.fixed_width
+            || p.millisecond_timestamps
+            || p.top_layer_pen
+            || p.alpha_lock
+            || p.generated
+            || p.fixed_opacity
+            || p.rainbow_effect
+            || p.straighten
+            || p.reveal_mode
+            || !p.binary_added
+            || !stroke.timestamps.is_empty()
+            || !stroke.tilts.is_empty()
+            || !stroke.orientations.is_empty()
+        {
+            return Err("unsupported SimpleBrush stroke metadata or channels");
+        }
+        let size = rendering.style.pen_size.ok_or("missing pen size")?;
+        if !matches!(size.to_bits(), 0x4100_0000 | 0x4140_0000)
+            || stroke.pen_width.to_bits() != size.to_bits()
+        {
+            return Err("unsupported SimpleBrush size");
+        }
+        let exact_float = |v: f64| -> Result<f32, &'static str> {
+            let f = v as f32;
+            if !v.is_finite() || f64::from(f) != v {
+                return Err("sample is not a finite exact f32");
+            }
+            Ok(f)
+        };
+        let points = stroke
+            .points
+            .iter()
+            .map(|p| Ok([exact_float(p.x)?, exact_float(p.y)?]))
+            .collect::<Result<Vec<_>, &'static str>>()?;
+        let pressures = stroke
+            .pressures
+            .iter()
+            .map(|&p| exact_float(p))
+            .collect::<Result<Vec<_>, _>>()?;
+        if !matches!(points.len(), 3 | 4)
+            || pressures.len() != points.len()
+            || pressures.iter().any(|p| !(0.0..=1.0).contains(p))
+        {
+            return Err("unsupported SimpleBrush sample shape");
+        }
+        reconstruct(
+            &points,
+            &pressures,
+            size,
+            i32::from(rendering.tool_type_raw),
+            context.curve_enabled,
+        )
+    }
+
+    fn fixture_stroke(input: &Value) -> Stroke {
+        let size = float_from_bits(&input["pen_size_f32_bits"]);
+        // The native fixture does not record serialization flags or advanced
+        // settings. These synthetic public fields only exercise the adapter.
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Brush".into()),
+                advanced_settings: Some(String::new()),
+                tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                properties: StrokeProperties {
+                    // Synthetic serialization metadata, not the native curve flag.
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    pen_size: Some(size),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| {
+                    let xy = point.as_array().unwrap();
+                    Point {
+                        x: f64::from(float_from_bits(&xy[0])),
+                        y: f64::from(float_from_bits(&xy[1])),
+                    }
+                })
+                .collect(),
+            pressures: input["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| f64::from(float_from_bits(v)))
+                .collect(),
+            timestamps: vec![],
+            tilts: vec![],
+            orientations: vec![],
+            color: None,
+            pen_width: size,
+        }
+    }
+
+    #[test]
+    fn public_stroke_adapter_rejects_unsupported_inputs() {
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let stroke = fixture_stroke(&fixture["cases"][0]["input"]);
+        assert!(sample_public_stroke(&stroke, CAPTURE_CONTEXT).is_ok());
+        let mut context = CAPTURE_CONTEXT;
+        context.native_coordinates = false;
+        assert!(sample_public_stroke(&stroke, context).is_err());
+        context = CAPTURE_CONTEXT;
+        context.model_matrix[0] = 2.;
+        assert!(sample_public_stroke(&stroke, context).is_err());
+        context = CAPTURE_CONTEXT;
+        context.curve_enabled = false;
+        assert!(sample_public_stroke(&stroke, context).is_err());
+        let mut changed = stroke.clone();
+        changed.rendering.as_mut().unwrap().properties.compressed = false;
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+        changed = stroke.clone();
+        changed.rendering.as_mut().unwrap().pen_name = None;
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+        changed = stroke.clone();
+        changed.pressures.pop();
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+        changed = stroke.clone();
+        changed.points[0].x = f64::NAN;
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+        changed = stroke.clone();
+        changed.pen_width = 9.;
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+        changed = stroke;
+        changed.tilts.push(0.);
+        assert!(sample_public_stroke(&changed, CAPTURE_CONTEXT).is_err());
+    }
+
     fn decode_hex(text: &str) -> Vec<u8> {
         assert_eq!(text.len() % 2, 0);
         (0..text.len())
@@ -227,31 +410,10 @@ mod tests {
 
         for case in cases {
             let input = &case["input"];
-            let points: Vec<[f32; 2]> = input["points_f32_bits"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|point| {
-                    let xy = point.as_array().unwrap();
-                    [float_from_bits(&xy[0]), float_from_bits(&xy[1])]
-                })
-                .collect();
-            let pressures: Vec<f32> = input["pressure_f32_bits"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(float_from_bits)
-                .collect();
-            let size = float_from_bits(&input["pen_size_f32_bits"]);
-            let tool_type = input["tool_type"].as_i64().unwrap() as i32;
-            let samples = reconstruct(
-                &points,
-                &pressures,
-                size,
-                tool_type,
-                input["curve_enabled"].as_bool().unwrap(),
-            )
-            .unwrap_or_else(|error| panic!("{}: {error}", case["id"].as_str().unwrap()));
+            assert_eq!(input["curve_enabled"].as_bool(), Some(true));
+            let stroke = fixture_stroke(input);
+            let samples = sample_public_stroke(&stroke, CAPTURE_CONTEXT)
+                .unwrap_or_else(|error| panic!("{}: {error}", case["id"].as_str().unwrap()));
 
             let mut bytes = Vec::with_capacity(samples.len() * 12);
             for [x, y, radius_plus_half] in samples {

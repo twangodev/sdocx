@@ -101,10 +101,14 @@ input, a MuPDF 1.28.2 rasterization of the generated PDFs gives 115/137 versus
 ignores input alpha; the generic Brush route also uses whole-stroke opacity 1
 for this control. This single 1× transparent-background comparison does not
 establish saved-note admission, general PDF behavior, other scales or device parity.
-For ordinary parsed SimpleBrush strokes with null settings, the generic route
-retains explicit saved RGB when public color is absent. The single native color
-control supports this mapping; forwarding other colors is inferred from the
-shader and remains unverified end to end.
+Four captured geometry streams also pass through a test-only public `Stroke`
+adapter with an explicit identity coordinate context and curve mode; its
+serialization flags and settings are synthetic, not native saved-note evidence.
+Parsing normally populates public RGB from saved ARGB. For eligible null-setting
+SimpleBrush strokes whose public color was subsequently cleared, the generic
+route recovers explicit saved RGB. The single native color control supports this
+mapping; forwarding other colors is inferred from the shader and remains
+unverified end to end.
 
 The SDK chooser also lists TriangleMosaicPen, which is absent from the pinned
 native registry; that entry does not establish a loadable or rendered plugin.
