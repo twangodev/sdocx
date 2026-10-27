@@ -1022,6 +1022,12 @@ mod tests {
             (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
         );
         let native: &[u8] = match (four, size) {
+            _ if probe == 215 => {
+                include_bytes!("../../../../conformance/simplebrush-fractional-crop.rgba")
+            }
+            _ if probe == 214 => {
+                include_bytes!("../../../../conformance/simplebrush-manyskip-crop.rgba")
+            }
             _ if probe == 211 => {
                 include_bytes!("../../../../conformance/simplebrush-threshold-below-crop.rgba")
             }
@@ -1142,6 +1148,10 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 215 => {
+                include_str!("../../../../conformance/simplebrush-fractional.json")
+            }
+            _ if probe == 214 => include_str!("../../../../conformance/simplebrush-manyskip.json"),
             _ if probe == 211 => {
                 include_str!("../../../../conformance/simplebrush-threshold-below.json")
             }
@@ -1254,7 +1264,37 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if probe == 211 {
+        let points: &[[f32; 2]] = if probe == 215 {
+            &[
+                [0., 0.],
+                [10., 0.],
+                [10.5, 0.5],
+                [11., 1.],
+                [9.5, 0.3],
+                [10.2, -0.3],
+                [22., 7.],
+                [22.3, 7.1],
+                [22.6, 7.3],
+                [22.1, 7.2],
+                [32., 3.],
+                [32.4, 3.2],
+            ]
+        } else if probe == 214 {
+            &[
+                [0., 0.],
+                [10., 0.],
+                [10.5, 0.5],
+                [11., 1.],
+                [9.5, 0.25],
+                [10.25, -0.25],
+                [22., 7.],
+                [22.25, 7.25],
+                [22.5, 7.25],
+                [22.25, 7.5],
+                [32., 3.],
+                [32.5, 3.25],
+            ]
+        } else if probe == 211 {
             &[[4., 4.], [5.499, 4.], [5.6, 4.]]
         } else if probe == 212 {
             &[[4., 4.], [5.5, 4.], [5.6, 4.]]
@@ -1298,7 +1338,11 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if matches!(probe, 211..=213) {
+        let pressures: &[f32] = if matches!(probe, 214 | 215) {
+            &[
+                0.1, 0.9, 0.05, 0.95, 0.2, 0.8, 0.15, 1.0, 0.0, 0.85, 0.3, 0.9,
+            ]
+        } else if matches!(probe, 211..=213) {
             &[0.25, 0.75, 0.5]
         } else if matches!(probe, 209 | 210) {
             &[0.25, 0.5, 0.75]
@@ -1318,6 +1362,8 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 215 => 192,
+            _ if probe == 214 => 194,
             _ if matches!(probe, 211..=213) => 48,
             _ if probe == 210 => 108,
             _ if probe == 209 => 32,
@@ -1407,6 +1453,12 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if probe == 215 => {
+                    include_bytes!("../../../../conformance/simplebrush-fractional-geometry.bin")
+                }
+                _ if probe == 214 => {
+                    include_bytes!("../../../../conformance/simplebrush-manyskip-geometry.bin")
+                }
                 _ if probe == 211 => include_bytes!(
                     "../../../../conformance/simplebrush-threshold-below-geometry.bin"
                 ),
@@ -1552,7 +1604,13 @@ mod tests {
                 .iter()
                 .map(|p| Point {
                     x: f64::from(p[0]),
-                    y: 1080. - f64::from(p[1]),
+                    // Probe 215 evaluates a rounded candidate; the production guard
+                    // still rejects the unrounded flipped coordinate.
+                    y: if probe == 215 {
+                        f64::from((1080. - f64::from(p[1])) as f32)
+                    } else {
+                        1080. - f64::from(p[1])
+                    },
                 })
                 .collect(),
             pressures: pressures.iter().copied().map(f64::from).collect(),
@@ -1728,7 +1786,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn skipped_segment_public_paint_controls() {
-        for probe in [209, 210, 211, 212, 213] {
+        for probe in [209, 210, 211, 212, 213, 214, 215] {
             v25_paint_control(8, false, false, false, probe);
         }
         for probe in [205, 206] {

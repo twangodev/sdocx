@@ -1,0 +1,65 @@
+{
+  "scope": "Synthetic native Drawing and host Mesa GLES capture; not device parity",
+  "geometry_count": 24,
+  "geometry_sha256": "af2be6c8a0f3a3e341b30b77dfef9ce9139ddef3d6ddeb9a722608bc307bb247",
+  "crop": {
+    "sha256": "9c46dc8f203842ce1fd82153b3fe690dafc20cffd55a89b1668f3582b1b48d96",
+    "dimensions": [
+      144,
+      32
+    ],
+    "nonzero_alpha_pixels": 192
+  },
+  "full_frame_sha256": "2d6b7b36d804b21c0cd363f757942b1e7f729f9de09eba3bdf9a04344a12995b",
+  "paint_clean": true,
+  "source_capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-fractional-source-capture.py",
+  "paint_capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-fractional-paint-capture.py",
+  "source_capture_sha256": "27c49c00a3c5f667d8573ad83e07f2af56fbd8b2038da9f68c4ea2187ff5dd0a",
+  "paint_capture_sha256": "6c430aedfb84f2ad0a51b06952da4cd6d5f122f0460c890df173368d4217b61f",
+  "svg_comparison": {
+    "rasterizer": "resvg 1x, transparent; profile is public export",
+    "metrics_order": [
+      "intersection",
+      "union",
+      "support",
+      "absolute_alpha_error",
+      "absolute_rgba_error"
+    ],
+    "profiled": [
+      192,
+      192,
+      192,
+      994,
+      3020
+    ],
+    "fallback": [
+      109,
+      192,
+      109,
+      22194,
+      63605
+    ]
+  },
+  "pdf_comparison": {
+    "rasterizer": "PyMuPDF 1.28.2, 4/3 scale, alpha",
+    "metrics_order": [
+      "intersection",
+      "union",
+      "support",
+      "absolute_alpha_error"
+    ],
+    "profiled": [
+      171,
+      198,
+      177,
+      6453
+    ],
+    "fallback": [
+      114,
+      192,
+      114,
+      22200
+    ]
+  },
+  "comparison_input_note": "Public scene y coordinates were rounded to f32 after vertical flip to exercise a candidate; original non-exact f64 inputs are rejected by the existing production guard."
+}
