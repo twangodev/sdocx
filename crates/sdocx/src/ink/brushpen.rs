@@ -892,17 +892,17 @@ fn sample_saved_native_stroke(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
 ) -> Option<SavedBrushPenSamples> {
-    sample_native_stroke_with_size(stroke, context, 0x4049_374c)
+    sample_native_stroke_with_size(stroke, context, 0x4049_374c, 0xff6c_dd8f)
 }
 
 fn sample_native_stroke_with_size(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
     expected_size_bits: u32,
+    expected_argb: u32,
 ) -> Option<SavedBrushPenSamples> {
     const NATIVE_PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.BrushPen";
     const NATIVE_ADVANCED_SETTING: &str = "";
-    const NATIVE_ARGB: u32 = 0xff6c_dd8f;
 
     if context.gl_version != GL_VERSION
         || context.screen_resolution != [1920, 1080]
@@ -937,7 +937,7 @@ fn sample_native_stroke_with_size(
         || style.fixed_width.is_some()
         || style.size_level != Some(30)
         || style.stroke_type_raw != Some(0)
-        || style.color_argb != Some(NATIVE_ARGB)
+        || style.color_argb != Some(expected_argb)
     {
         return None;
     }

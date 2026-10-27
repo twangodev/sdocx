@@ -1,0 +1,165 @@
+{
+  "capture": {
+    "geometry_runner": "tmp/vector-parity-plan/brushpen-same-drawing-queue/second_geometry_capture.py",
+    "geometry_runner_sha256": "baa57b9d06d630206a6e7931bc3d0b6b5def294dfde0dad163890ba2939d9cb9",
+    "paint_runner": "tmp/vector-parity-plan/brushpen-same-drawing-queue/second_mapdraw.py",
+    "probe": "tmp/vector-parity-plan/brushpen-same-drawing-queue/long_probe.py",
+    "replay_note": "Scripts are retained in ignored tmp and depend on project-local tmp/conformance-cleanup helpers and scratch native inputs. Run geometry runner --print-capture to /tmp/brushpen-second-geometry.json first. Host Python math and queue/canvas/GLES adapters are explicit.",
+    "runner_sha256": "2679513acc120bb6f013b3ce3dfa469942694b4ba2e81619bf220dc0d7287811"
+  },
+  "geometry": {
+    "record_count": 221,
+    "sha256": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d"
+  },
+  "host_boundary": "Synthetic native Model and Drawing through BrushPen GLV10/RTV1; Unicorn ARM64 with host queue/canvas adapters and Mesa GLES. No Samsung device or saved-note capture.",
+  "input": {
+    "advanced_setting_ascii": "",
+    "color_argb_u32": "0x806e42d1",
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "",
+      "color_argb_u32": "0x806e42d1",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+      "size": 7.0,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+    "point_count": 8,
+    "size_f32_bits": "0000e040",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 8,
+        "data_hex": "cdcc4c3e0000803e9a99993e3333b33ecdcccc3e6666e63e0000003fcdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 8,
+        "data_hex": "0000fa420000f0410000ec42000030420000d04200006c420000ae42000084420000904200006c4200007c4200002c4200008c420000e8410000ac420000b841",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 8,
+        "data_hex": "0000803ecdcccc3ecdcc0c3f3333333f9a99593f0000403f0000003f9a99993e",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 8,
+        "data_hex": "8fc2f53d9a99193ecdcc4c3e0000803e9a99993e295c8f3eae47613e9a99193e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 8,
+        "data_hex": "2c0100003b0100004a0100005901000068010000770100008601000095010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "paint": {
+    "color": [
+      0.4313725531101227,
+      0.25882354378700256,
+      0.8196078538894653,
+      0.501960813999176
+    ],
+    "draw_time_uniform_imports": {
+      "imports": [
+        {
+          "count": 1,
+          "location": 0,
+          "transpose": 0,
+          "values": [
+            0.006230529397726059,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.008771929889917374,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "count": 1,
+          "phase": "native PenGLRenderMsg task2",
+          "raw_f32_le": "dddcdc3e8584843ed2d1513f8180003f",
+          "uniform4fv_location": 4,
+          "values": [
+            0.4313725531101227,
+            0.25882354378700256,
+            0.8196078538894653,
+            0.501960813999176
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            321.0,
+            228.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            124.99999237060547,
+            30.000001907348633
+          ]
+        },
+        {
+          "uniform1f_location": 1,
+          "value": 3.0
+        },
+        {
+          "uniform1i_location": 2,
+          "value": 0
+        },
+        {
+          "uniform1i_location": 3,
+          "value": 1
+        }
+      ]
+    },
+    "framebuffer_status": [
+      {
+        "bound_draw_framebuffer": 2,
+        "is_framebuffer_complete": true,
+        "phase": "native PenGLRenderMsg task2",
+        "status_enum": 36053,
+        "status_hex": "0x8cd5",
+        "target_enum": 36160
+      }
+    ],
+    "full_rgba_sha256": "39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2",
+    "nonzero_alpha_pixels": 539,
+    "returned": true,
+    "target_dimensions": [
+      321,
+      228
+    ]
+  },
+  "schema": "brushpen-second-native-control-v1"
+}

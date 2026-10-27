@@ -414,7 +414,15 @@ mod tests {
             .iter()
             .map(|word| i32::from_le_bytes(*word) as i64)
             .collect();
-        let argb = 0xff6c_dd8f;
+        let argb = u32::from_str_radix(
+            input["color_argb_u32"]
+                .as_str()
+                .unwrap_or("0xff6cdd8f")
+                .strip_prefix("0x")
+                .unwrap(),
+            16,
+        )
+        .unwrap();
         let size = f32::from_le_bytes(
             hex_bytes(input["size_f32_bits"].as_str().unwrap())
                 .try_into()
@@ -913,6 +921,87 @@ mod tests {
         );
     }
     #[test]
+    fn second_native_control_compares_geometry_and_paint() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-second-native/receipt.json"
+        ))
+        .unwrap();
+        let native_geometry =
+            include_bytes!("../../../../../conformance/brushpen-second-native/geometry-221x44.bin");
+        let stroke = manual_native_caller_stroke(&fixture);
+        let context = super::super::SavedBrushPenNativeContext {
+            gl_version: 10,
+            screen_resolution: [1920, 1080],
+            constructor_profile: super::super::SAVED_GLV10_CONSTRUCTOR_PROFILE,
+            fixed_width: 0.0,
+            fixed_width_enabled: false,
+            fixed_opacity_enabled: false,
+        };
+        let sampled = super::super::sample_native_stroke_with_size(
+            &stroke,
+            context,
+            7.0_f32.to_bits(),
+            0x806e_42d1,
+        )
+        .unwrap();
+        let geometry: Vec<_> = sampled
+            .output
+            .instances
+            .iter()
+            .flat_map(|instance| instance.values)
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(geometry, native_geometry);
+        let imports = fixture["paint"]["draw_time_uniform_imports"]["imports"]
+            .as_array()
+            .unwrap();
+        let values = |key: &str, location: u64| -> Vec<f32> {
+            imports.iter().find(|row| row[key] == location).unwrap()["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect()
+        };
+        let color = values("uniform4fv_location", 4);
+        let (atlas_rgba, grain_rgba) = source_textures();
+        let mut painted = vec![0; 321 * 228 * 4];
+        let records: Vec<_> = sampled
+            .output
+            .instances
+            .iter()
+            .map(|instance| instance.values)
+            .collect();
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas_rgba,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain_rgba,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: values("location", 0).try_into().unwrap(),
+                rgb: color[..3].try_into().unwrap(),
+                grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+                grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                num_tiles: 3.0,
+            },
+            &mut painted,
+        )
+        .unwrap();
+        let mut native = Vec::new();
+        ZlibDecoder::new(&include_bytes!("../../../../../conformance/brushpen-second-native/frame-rgba8.zlib")[..]).read_to_end(&mut native).unwrap();
+        assert_eq!(sha256(&native), fixture["paint"]["full_rgba_sha256"]);
+        assert_eq!(painted, native);
+    }
+    #[test]
     fn long_native_control_public_svg_overlaps_native_paint() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-long-native/receipt.json"
@@ -931,9 +1020,13 @@ mod tests {
             fixed_width_enabled: false,
             fixed_opacity_enabled: false,
         };
-        let sampled =
-            super::super::sample_native_stroke_with_size(&stroke, context, 12.0_f32.to_bits())
-                .expect("explicit size-12 native caller");
+        let sampled = super::super::sample_native_stroke_with_size(
+            &stroke,
+            context,
+            12.0_f32.to_bits(),
+            0xff6c_dd8f,
+        )
+        .expect("explicit size-12 native caller");
         let generated_geometry: Vec<_> = sampled
             .output
             .instances
