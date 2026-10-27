@@ -1061,12 +1061,22 @@ The retained diagnostic is `scratch/legacy-marker-direct-pdf-probe.py`, with
 check used the local pypdfium2 installation under the temporary verification
 virtual environment.
 
-A checked Rust scratch writer consumes a bounded direct-PDF plan and emits the
-same ordered path and cap-mask structure. On source-generated long and 2× bend
+A checked Rust scratch writer consumes a typed, bounded direct-PDF page plan and
+emits the same ordered path and cap-mask structure. On source-generated long and 2× bend
 controls, MuPDF/PDFium RGB L1 was 4951/4249 and 11410/10018, with 86 and 48 KB
 PDFs. Its probe bounds plan bytes, items, path commands, object count and staged
-stream bytes; an oversized plan rejected without leaving a PDF. These bounds do
+stream bytes, plus serialized output during writing. An oversized plan was
+rejected while preserving the existing output. These bounds do
 not prove the PDF library's internal allocation bound, and the writer's color
 and reader behavior still needs validation before integration. The retained
 probes are `tmp/marker-owner-boolean/src/bin/direct_pdf_checked.rs` and
 `scratch/legacy-marker-direct-plan.py`.
+
+A scratch unit-square Form variant normalizes the direct geometry to explicit
+stroke bounds and reapplies the corresponding page transform. For the long and
+2× bend controls its MuPDF/PDFium RGB L1 was 4951/4249 and 11410/10019,
+with PDFs of about 86 and 48 KB. This tests the coordinate strategy for the
+existing retained-ink marker transform; it does not execute Krilla marker
+replacement. The retained prototype is
+`tmp/marker-owner-boolean/src/bin/direct_pdf_form.rs`. No Marker production
+dispatch is enabled.
