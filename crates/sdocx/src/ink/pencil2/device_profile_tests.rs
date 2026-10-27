@@ -17,9 +17,9 @@ fn sample(tex: &[u8], width: usize, height: usize, u: f32, v: f32, clamp: bool) 
     tex[axis(v, height) * width + axis(u, width)]
 }
 
-fn render(scale: f32, translation_x: f32) -> Vec<u8> {
+fn render(stream: &[u8], scale: f32, translation_x: f32) -> Vec<u8> {
     let mut image = vec![0u8; 192 * 192];
-    for row in NATIVE_STREAMS[9408..14112].as_chunks::<56>().0 {
+    for row in stream.as_chunks::<56>().0 {
         let mut r = [0f32; 14];
         for (i, value) in r.iter_mut().enumerate() {
             *value = f32::from_le_bytes(row[i * 4..i * 4 + 4].try_into().unwrap());
@@ -68,6 +68,9 @@ fn render(scale: f32, translation_x: f32) -> Vec<u8> {
                     continue;
                 }
                 alpha = alpha.clamp(0., 1.);
+                // This host control is consistent with quantizing each source alpha
+                // before source-over, rather than only quantizing the final pixel.
+                alpha = (alpha * 255.).round() / 255.;
                 let i = y * 192 + x;
                 image[i] = ((alpha + (image[i] as f32 / 255.) * (1. - alpha)) * 255.)
                     .round()
@@ -80,15 +83,13 @@ fn render(scale: f32, translation_x: f32) -> Vec<u8> {
 
 #[test]
 fn device_profile_matches_bounded_host_controls() {
-    type DeviceCase<'a> = (f32, f32, &'a [u8], usize, u32, u8);
+    type DeviceCase<'a> = (f32, f32, &'a [u8], &'a [(usize, usize, u8, u8)]);
     let cases: [DeviceCase<'_>; 3] = [
         (
             1.,
             0.,
             include_bytes!("../../../../../conformance/pencil2-v14-device-profile/baseline.alpha"),
-            22,
-            29,
-            4,
+            &[(3, 191, 30, 33), (8, 191, 63, 67)],
         ),
         (
             1.,
@@ -96,36 +97,78 @@ fn device_profile_matches_bounded_host_controls() {
             include_bytes!(
                 "../../../../../conformance/pencil2-v14-device-profile/translate6.alpha"
             ),
-            28,
-            36,
-            6,
+            &[(9, 191, 14, 15), (14, 191, 60, 65)],
         ),
         (
             2.,
             0.,
             include_bytes!("../../../../../conformance/pencil2-v14-device-profile/scale2.alpha"),
-            65,
-            68,
-            2,
+            &[(43, 186, 133, 132), (1, 190, 1, 0)],
         ),
     ];
     assert_eq!(NATIVE_STREAMS[9408..14112].len(), 84 * 56);
-    for (scale, tx, native, expected_count, expected_sum, expected_max) in cases {
+    for (scale, tx, native, expected_differences) in cases {
         assert_eq!(native.len(), 62 * 22);
-        let image = render(scale, tx);
-        let mut count = 0;
-        let mut sum = 0u32;
-        let mut max = 0u8;
+        let image = render(&NATIVE_STREAMS[9408..14112], scale, tx);
+        let mut differences = Vec::new();
         for y in 170..192 {
             for x in 0..62 {
                 let error = image[y * 192 + x].abs_diff(native[(y - 170) * 62 + x]);
-                count += usize::from(error != 0);
-                sum += u32::from(error);
-                max = max.max(error);
+                if error != 0 {
+                    differences.push((x, y, image[y * 192 + x], native[(y - 170) * 62 + x]));
+                }
             }
         }
+        assert_eq!(differences, expected_differences);
+        assert!(
+            image
+                .iter()
+                .enumerate()
+                .all(|(i, &a)| a == 0 || (i % 192 < 62 && i / 192 >= 170))
+        );
+    }
+}
+
+#[test]
+fn source_alpha_rounding_hypothesis_matches_size2_color_controls() {
+    let color = include_bytes!("../../../../../conformance/pencil2-v14-color-80336699-native.bin");
+    type ColorCase<'a> = (&'a [u8], &'a [u8], usize, u32, u8);
+    let cases: [ColorCase<'_>; 2] = [
+        (
+            &NATIVE_STREAMS[..4704],
+            include_bytes!(
+                "../../../../../conformance/pencil2-v14-device-profile/size2-black.alpha"
+            ),
+            3,
+            3,
+            1,
+        ),
+        (
+            &color[..4704],
+            include_bytes!(
+                "../../../../../conformance/pencil2-v14-device-profile/size2-color.alpha"
+            ),
+            0,
+            0,
+            0,
+        ),
+    ];
+    for (stream, native, expected_count, expected_sum, expected_max) in cases {
+        let image = render(stream, 1., 0.);
+        let errors: Vec<_> = (170..192)
+            .flat_map(|y| {
+                (0..62).map({
+                    let image = &image;
+                    move |x| image[y * 192 + x].abs_diff(native[(y - 170) * 62 + x])
+                })
+            })
+            .collect();
         assert_eq!(
-            (count, sum, max),
+            (
+                errors.iter().filter(|&&e| e != 0).count(),
+                errors.iter().map(|&e| u32::from(e)).sum::<u32>(),
+                *errors.iter().max().unwrap()
+            ),
             (expected_count, expected_sum, expected_max)
         );
         assert!(

@@ -2,14 +2,73 @@
   "schema": "sdocx-pencil2-v14-device-profile-native-v1",
   "scope": "Controlled Pencil2 RTV4 host-Mesa replay of the same captured 84 records. The draw matrix is varied by a host adapter. This is not native Drawing, saved-note, Android, or public SVG/PDF rendering.",
   "frame": {"width": 192, "height": 192, "crop_top_origin": [0, 170, 62, 22], "crop_encoding": "row-major alpha bytes"},
-  "inputs": {"records_sha256": "770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe", "grain_sha256": "dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9", "point_sha256": "475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f"},
+  "inputs": {
+    "records_sha256": "770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe",
+    "grain_sha256": "dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9",
+    "point_sha256": "475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f"
+  },
   "cases": [
-    {"name": "baseline", "scale": 1, "translation_x": 0, "grain_period": [75,75], "full_rgba_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd", "crop_sha256": "fcfee743a623d8c4885088ff6b647fd814903788d8a82c43f1b974807065922b", "scalar_alpha_error": {"count": 22, "sum": 29, "max": 4}},
-    {"name": "translate6", "scale": 1, "translation_x": 6, "grain_period": [75,75], "full_rgba_sha256": "a12c58b452789cb4bb9394f39033117384370c949deb76bfbab728eec022cd3c", "crop_sha256": "2e0290ddfd8b2a39f22d7fdb1600dd091c35a2cf2e04e988fb43970b1c9d3200", "scalar_alpha_error": {"count": 28, "sum": 36, "max": 6}},
-    {"name": "scale2", "scale": 2, "translation_x": 0, "grain_period": [150,150], "full_rgba_sha256": "1df543b31da78bb794955e572ca80c781eaeb4ce4ac2384eb95aaa1ed6bfeccd", "crop_sha256": "e063a063cd9c238ac54883f823f9d7a680711f8d40db304f55b6d8b8e16758b4", "scalar_alpha_error": {"count": 65, "sum": 68, "max": 2}}
+    {
+      "name": "baseline",
+      "scale": 1,
+      "translation_x": 0,
+      "grain_period": [75, 75],
+      "full_rgba_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+      "crop_sha256": "fcfee743a623d8c4885088ff6b647fd814903788d8a82c43f1b974807065922b",
+      "scalar_alpha_error": {"count": 22, "sum": 29, "max": 4}
+    },
+    {
+      "name": "translate6",
+      "scale": 1,
+      "translation_x": 6,
+      "grain_period": [75, 75],
+      "full_rgba_sha256": "a12c58b452789cb4bb9394f39033117384370c949deb76bfbab728eec022cd3c",
+      "crop_sha256": "2e0290ddfd8b2a39f22d7fdb1600dd091c35a2cf2e04e988fb43970b1c9d3200",
+      "scalar_alpha_error": {"count": 28, "sum": 36, "max": 6}
+    },
+    {
+      "name": "scale2",
+      "scale": 2,
+      "translation_x": 0,
+      "grain_period": [150, 150],
+      "full_rgba_sha256": "1df543b31da78bb794955e572ca80c781eaeb4ce4ac2384eb95aaa1ed6bfeccd",
+      "crop_sha256": "e063a063cd9c238ac54883f823f9d7a680711f8d40db304f55b6d8b8e16758b4",
+      "scalar_alpha_error": {"count": 65, "sum": 68, "max": 2}
+    }
   ],
   "capture_script": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-transform-probe/device-profile-capture.py",
   "capture_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-transform-probe/device-profile-capture.py",
   "model": "crates/sdocx/src/ink/pencil2/device_profile_tests.rs",
-  "limitations": ["The scalar implementation is an approximation of host fragment interpolation and blend rounding, not a capture of fragment values.", "Only the stated crop is retained. The source frame support was checked within this crop.", "Scale 2 changes only the draw matrix on the same stream, not the Drawing sampler inverse-scale state. Other transforms, framebuffer sizes, color, readers and device behavior remain unverified."]
+  "limitations": [
+    "The scalar implementation is an approximation of host fragment interpolation and blend rounding, not a capture of fragment values.",
+    "Only the stated crop is retained. The source frame support was checked within this crop.",
+    "Scale 2 changes only the draw matrix on the same stream, not the Drawing sampler inverse-scale state. Other transforms, framebuffer sizes, color, readers and device behavior remain unverified."
+  ],
+  "source_alpha_rounding_hypothesis": {
+    "law": "round source alpha to the nearest 8-bit normalized value before each source-over blend; quantize the destination after every blend",
+    "status": "host arithmetic hypothesis, not an observed internal GPU step",
+    "baseline_error": {"count": 2, "sum": 7, "max": 4},
+    "translate6_error": {"count": 2, "sum": 6, "max": 5},
+    "scale2_error": {"count": 2, "sum": 2, "max": 1},
+    "size2_controls": {
+      "source": "conformance/pencil2-v14-color-paint-native.json",
+      "black": {
+        "crop": "size2-black.alpha",
+        "crop_sha256": "34ac9f63d8eed49322dd113769d479977badb44aa7ab74ca150b75daf3498a6b",
+        "unquantized_error": [30, 33, 2],
+        "quantized_error": [3, 3, 1]
+      },
+      "color_80336699": {
+        "crop": "size2-color.alpha",
+        "crop_sha256": "d21d96658fe54f77f79b6ad41ba13814ff7b20161d65714ec1297d8fa54cd919",
+        "unquantized_error": [25, 31, 2],
+        "quantized_error": [0, 0, 0]
+      },
+      "crop": "top-origin [0,170,62,22]",
+      "capture_script": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_color_alpha_capture.py",
+      "capture_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/pencil2_v14_color_alpha_capture.py",
+      "crop_method": "Read RGBA from /tmp/pencil2-black.rgba and /tmp/pencil2-color.rgba, reverse their 192 rows from bottom-origin to top-origin, and extract alpha in the specified crop."
+    },
+    "limitations": "Alpha-only comparisons on five controlled host-Mesa frames do not prove source quantization, exact interpolation, RGB, PDF, saved-note or device behavior."
+  }
 }
