@@ -143,7 +143,6 @@ struct Core<'a> {
     bounds: [f32; 4],
     rainbow_offset: f32,
     current_rgb: [f32; 3],
-    #[cfg(test)]
     v1_callback: bool,
 }
 
@@ -151,7 +150,6 @@ impl<'a> Core<'a> {
     fn add_point(&mut self, p: P, radius: f32, rgb: [f32; 3]) -> Option<()> {
         // RTV1 clamps the drawable radius before AddPoint adds 0.75. This
         // branch is restricted to native geometry controls, not paint.
-        #[cfg(test)]
         if self.v1_callback {
             if self.output.vertices.len() >= self.max_emissions {
                 return None;
@@ -282,14 +280,11 @@ impl<'a> Core<'a> {
 
     fn finish(mut self) -> Option<Output> {
         let n = self.input.points.len();
-        #[cfg(test)]
         let movement_end = if self.v1_callback {
             n.saturating_sub(1)
         } else {
             n
         };
-        #[cfg(not(test))]
-        let movement_end = n;
         for i in 1..movement_end {
             let p = self.input.points[i];
             let dx = p.x - self.control.x;
@@ -329,7 +324,6 @@ impl<'a> Core<'a> {
         let start = self.output.vertices.len();
         // V1 endPen uses the last sample as the quadratic endpoint and
         // tapers to 0.6 times the last movement radius.
-        #[cfg(test)]
         if self.v1_callback {
             let endpoint = *self.input.points.last()?;
             let terminal = Quad::new(self.last, self.control, endpoint);
@@ -430,6 +424,10 @@ pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<O
     redraw_with_mode(input, max_emissions, false)
 }
 
+pub(crate) fn redraw_v1_bounded(input: Input<'_>, max_emissions: usize) -> Option<Output> {
+    redraw_with_mode(input, max_emissions, true)
+}
+
 fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<Output> {
     let n = input.points.len();
     let rt = input.runtime;
@@ -483,16 +481,12 @@ fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<
         ],
         rainbow_offset: input.rainbow.map_or(0.0, |rainbow| rainbow.offset),
         current_rgb: input.rgb.map(|channel| f32::from(channel) / 255.0),
-        #[cfg(test)]
         v1_callback: v1,
     };
     core.output.sample_ends.push(0);
-    #[cfg(test)]
     if v1 {
         core.add_point(first, input.size / 3., [0.; 3])?;
     }
-    #[cfg(not(test))]
-    let _ = v1;
     core.finish()
 }
 

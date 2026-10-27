@@ -26,6 +26,7 @@ if hashlib.sha256(source.read_bytes()).hexdigest() != '22d16b75d3324b36606b66cc3
     raise SystemExit(f'changed joined capture harness: {source}')
 code = source.read_text()
 code = code.replace("choices=('empty','9'),default='9'", "choices=('null',),default='null'")
+code = code.replace("choices=(1.0,2.0,4.0)", "choices=(0.5,1.0,2.0,4.0)")
 code = code.replace("default=1440)", "default=1920)").replace("default=2560)", "default=1080)")
 code = code.replace("('line0_curve_short_history_color',1440,2560)", "('line0_curve_short_history_color',1920,1080)")
 code = code.replace('InkPen2StrokeDrawableRTV3::', 'InkPen2StrokeDrawableRTV1::')

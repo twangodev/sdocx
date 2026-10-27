@@ -125,6 +125,25 @@ pub struct InkPen2RenderProfile {
     pub enhanced_antialias: bool,
 }
 
+/// Explicit output scale for the experimental null-setting InkPen2 V1 vector approximation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum InkPen2V1OutputScale {
+    Half,
+    One,
+    Double,
+}
+
+impl InkPen2V1OutputScale {
+    fn value(self) -> f32 {
+        match self {
+            Self::Half => 0.5,
+            Self::One => 1.0,
+            Self::Double => 2.0,
+        }
+    }
+}
+
 /// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
 /// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
@@ -295,6 +314,9 @@ pub struct RenderOptions {
     /// explicitly selects its enhanced-antialiasing paint route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen2_profile: Option<InkPen2RenderProfile>,
+    /// Opt into the bounded V1 approximation at a known output scale.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     /// Opt into bounded, approximate ChineseBrush V1–V3 vector paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -804,6 +826,7 @@ impl DocumentTextCache {
             retain_text,
             options.inkpen_profile,
             options.inkpen2_profile,
+            options.inkpen2_v1_output_scale,
             options.chinesebrush_profile,
             options.chinesebrush_fwidth_output_profile,
             options.fountain_v17_rainbow_profile.as_ref(),
@@ -1243,6 +1266,7 @@ fn render_page_contents_svg(
     retain_text: bool,
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
@@ -1312,6 +1336,7 @@ fn render_page_contents_svg(
         body_text,
         inkpen_profile,
         inkpen2_profile,
+        inkpen2_v1_output_scale,
         chinesebrush_profile,
         chinesebrush_fwidth_output_profile,
         fountain_v17_rainbow_profile,
@@ -1356,6 +1381,7 @@ struct CompositionContext<'a> {
     body_text: Option<&'a PreparedBodyText>,
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
@@ -1430,6 +1456,7 @@ fn render_object(
                 [context.page.width, context.page.height],
                 context.inkpen_profile,
                 context.inkpen2_profile,
+                context.inkpen2_v1_output_scale,
                 context.chinesebrush_profile,
                 context.chinesebrush_fwidth_output_profile,
                 context.fountain_v17_rainbow_profile,
@@ -3835,6 +3862,7 @@ fn render_stroke(
     viewport: [u32; 2],
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
+    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
@@ -3984,6 +4012,14 @@ fn render_stroke(
         )
     {
         simplebrush_remaining_stamps.set(simplebrush_remaining_stamps.get() - paint.samples.len());
+        return;
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && let Some(scale) = inkpen2_v1_output_scale
+        && let Some(ink) = prepare_inkpen2_v1(stroke, inkpen2_profile, theme, scale)
+    {
+        render_inkpen2_v9(svg, &ink, None);
         return;
     }
     if native_allowed && let Some(ink) = prepare_inkpen2_v9(stroke, inkpen2_profile, theme) {
@@ -4517,11 +4553,30 @@ fn inkpen2_reject_active_rainbow_aa(enabled: bool) -> bool {
     enabled
 }
 
-/// Prepare exact V9 records for the explicitly configured fresh-draw host profile.
+/// Prepare the bounded V1 vector approximation for an explicitly selected output scale.
+fn prepare_inkpen2_v1(
+    stroke: &Stroke,
+    profile: Option<InkPen2RenderProfile>,
+    theme: RenderTheme,
+    scale: InkPen2V1OutputScale,
+) -> Option<crate::ink::PreparedInkPen2V9> {
+    prepare_inkpen2_internal(stroke, profile, theme, Some(scale))
+}
+
+/// Prepare V9 records for the explicitly configured fresh-draw host profile.
 fn prepare_inkpen2_v9(
     stroke: &Stroke,
     profile: Option<InkPen2RenderProfile>,
     theme: RenderTheme,
+) -> Option<crate::ink::PreparedInkPen2V9> {
+    prepare_inkpen2_internal(stroke, profile, theme, None)
+}
+
+fn prepare_inkpen2_internal(
+    stroke: &Stroke,
+    profile: Option<InkPen2RenderProfile>,
+    theme: RenderTheme,
+    v1_scale: Option<InkPen2V1OutputScale>,
 ) -> Option<crate::ink::PreparedInkPen2V9> {
     let profile = profile?;
     if profile.screen_width == 0
@@ -4546,12 +4601,27 @@ fn prepare_inkpen2_v9(
         _ => false,
     };
     let supported_setting = match rendering.advanced_settings.as_deref() {
+        None if v1_scale.is_some() => true,
         Some("9;") => true,
         // Native Drawing selects V9 for a non-null empty setting in both names.
         Some("") => !active_rainbow && rendering.style.color_type_raw.unwrap_or(0) == 0,
         _ => false,
     };
-    if !supported_name
+    let unsupported_v1 = v1_scale.is_some()
+        && (profile.screen_width != 1920
+            || profile.screen_height != 1080
+            || profile.enhanced_antialias
+            || rendering.pen_name.as_deref()
+                != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
+            || rendering.advanced_settings.is_some()
+            || active_rainbow
+            || rendering.style.color_type_raw.unwrap_or(0) != 0
+            || rendering
+                .style
+                .color_argb
+                .is_none_or(|argb| argb >> 24 != 255));
+    if unsupported_v1
+        || !supported_name
         || !supported_setting
         || rendering.tool_type_raw != 2
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
@@ -4601,6 +4671,12 @@ fn prepare_inkpen2_v9(
         return None;
     }
     let argb = rendering.style.color_argb?;
+    if v1_scale.is_some()
+        && (!(0.2..=12.0).contains(&size)
+            || stroke.color.is_some_and(|color| color != argb_color(argb)))
+    {
+        return None;
+    }
     let rainbow = if active_rainbow {
         if inkpen2_reject_active_rainbow_aa(profile.enhanced_antialias)
             || profile.screen_width.min(profile.screen_height) != 1080
@@ -4651,13 +4727,17 @@ fn prepare_inkpen2_v9(
         pressures: &pressures,
         rgb: [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8],
         rainbow,
-        size: size.clamp(0.4, 800.0),
-        curve_enabled: rendering.properties.compressed,
+        size: if v1_scale.is_some() {
+            size
+        } else {
+            size.clamp(0.4, 800.0)
+        },
+        curve_enabled: v1_scale.is_some() || rendering.properties.compressed,
         is_shape: false,
         runtime: crate::ink::inkpen2::Runtime {
             inverse_scale: [1.0, 1.0],
             spacing: 1.0,
-            tolerance,
+            tolerance: if v1_scale.is_some() { 2.0 } else { tolerance },
             tool_threshold: 20.0,
             resolution_min: profile.screen_width.min(profile.screen_height) as i32,
             initial_alternation: false,
@@ -4670,7 +4750,22 @@ fn prepare_inkpen2_v9(
         MAX_INKPEN2_OUTPUT_RECORDS
     };
     #[allow(unused_mut)]
-    let mut output = crate::ink::inkpen2::redraw_bounded(input, output_budget)?;
+    let mut output = if let Some(scale) = v1_scale {
+        let mut output = crate::ink::inkpen2::redraw_v1_bounded(input, output_budget)?;
+        output.sample_ends.push(output.terminal.start);
+        for record in &mut output.vertices {
+            let r = record[2];
+            if !r.is_finite() || r <= 0.0 {
+                return None;
+            }
+            record[3] = r;
+            record[4] = ((r - 1.0 / scale.value()).max(0.0) / r) / 2.0;
+            record[5] = 1.0;
+        }
+        output
+    } else {
+        crate::ink::inkpen2::redraw_bounded(input, output_budget)?
+    };
     let output_bytes = output.vertices.len().checked_mul(36);
     let markup_bytes = output
         .vertices
@@ -17416,6 +17511,303 @@ mod tests {
                 assert_eq!((p.red(), p.green(), p.blue()), (255, 246, 127));
             }
             assert_eq!(pixmap.pixel(50, 5).unwrap().blue(), 255);
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_null_v1_candidate_beats_generic_at_native_scale() {
+        use super::vector::{Scene, Svg};
+        let v: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-paint-native.json"
+        ))
+        .unwrap();
+        let h = v["geometry_hex"].as_str().unwrap().as_bytes();
+        let bytes: Vec<u8> = h
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|x| u8::from_str_radix(std::str::from_utf8(x).unwrap(), 16).unwrap())
+            .collect();
+        let records: Vec<[f32; 9]> = bytes
+            .as_chunks::<12>()
+            .0
+            .iter()
+            .map(|c| {
+                let f = |i| f32::from_le_bytes(c[i..i + 4].try_into().unwrap());
+                let r = f(8);
+                [
+                    f(0) + 32.,
+                    f(4) + 32.,
+                    r,
+                    r,
+                    ((r - 1.).max(0.) / r) / 2.,
+                    1.,
+                    0.2,
+                    0.4,
+                    0.6,
+                ]
+            })
+            .collect();
+        let ink = crate::PreparedInkPen2V9 {
+            records,
+            sample_ends: vec![25],
+            color: Color {
+                r: 51,
+                g: 102,
+                b: 153,
+            },
+            opacity: 1.,
+            enhanced_antialias: false,
+            per_stamp_rgb: false,
+            bounds: BoundingBox {
+                x_min: 0.,
+                y_min: 0.,
+                x_max: 128.,
+                y_max: 96.,
+            },
+        };
+        let mut scene = Scene::new(Svg::new().width(128).height(96));
+        super::inkpen2_vector::render(&mut scene, &ink, None);
+        let svg = scene.finish();
+        let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        stroke.points = vec![
+            Point { x: 32., y: 32. },
+            Point { x: 40., y: 32. },
+            Point { x: 48., y: 35. },
+            Point { x: 56., y: 35. },
+        ];
+        stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        stroke.timestamps = vec![0, 10, 20, 30];
+        stroke.tilts = vec![0.; 4];
+        stroke.orientations = vec![0.; 4];
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        let admitted = stroke.clone();
+        page.objects = vec![stroke.into()];
+        let doc = document(page);
+        let layout = layout_document(&doc);
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+        let mut cache = super::DocumentTextCache::default();
+        let generic = cache
+            .render_layout_page_scene_requests(
+                &doc,
+                &[request],
+                &RenderOptions::default(),
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg;
+        let options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+                enhanced_antialias: false,
+            }),
+            inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+            ..RenderOptions::default()
+        };
+        let profile = options.inkpen2_profile;
+        let theme = RenderTheme::for_canvas(false);
+        let scale = super::InkPen2V1OutputScale::One;
+        assert!(super::prepare_inkpen2_v1(&admitted, profile, theme, scale).is_some());
+        let mut rejected = admitted.clone();
+        rejected.rendering.as_mut().unwrap().style.color_argb = Some(0x8033_6699);
+        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        rejected = admitted.clone();
+        rejected.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        rejected = admitted.clone();
+        rejected.points.truncate(1);
+        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        rejected = admitted.clone();
+        rejected.color = Some(Color { r: 255, g: 0, b: 0 });
+        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        rejected = admitted.clone();
+        rejected.pen_width = 0.2;
+        rejected.rendering.as_mut().unwrap().style.pen_size = Some(0.2);
+        for point in &mut rejected.points {
+            point.x -= 32.0;
+            point.y -= 32.0;
+        }
+        let small = super::prepare_inkpen2_v1(&rejected, profile, theme, scale).unwrap();
+        let controls: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-controls-native.json"
+        ))
+        .unwrap();
+        let hex = controls["cases"]["small_size"]["stream_hex"]
+            .as_str()
+            .unwrap()
+            .as_bytes();
+        let expected: Vec<u8> = hex
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let actual: Vec<u8> = small
+            .records
+            .iter()
+            .flat_map(|r| r[..3].iter().flat_map(|f| f.to_le_bytes()))
+            .collect();
+        assert_eq!(actual, expected, "small V1 must retain native 0.2 size");
+        rejected.pen_width = 0.19;
+        rejected.rendering.as_mut().unwrap().style.pen_size = Some(0.19);
+        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        assert!(super::prepare_inkpen2_v1(&admitted, None, theme, scale).is_none());
+        let wrong_profile = Some(InkPen2RenderProfile {
+            screen_width: 0,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        });
+        assert!(super::prepare_inkpen2_v1(&admitted, wrong_profile, theme, scale).is_none());
+        let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options)
+            .unwrap()
+            .svg;
+        let generic_replay =
+            render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg;
+        assert_eq!(replay, generic_replay);
+        let actual = cache
+            .render_layout_page_scene_requests(
+                &doc,
+                &[request],
+                &options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg;
+        use base64::Engine as _;
+        use std::io::Read;
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(
+                v["translated_control"]["rgba_zlib_base64"]
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut native)
+            .unwrap();
+        let alpha_error = |source: &str| {
+            let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 96).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap
+                .data()
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(native.as_chunks::<4>().0.iter())
+                .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                .sum::<u64>()
+        };
+        let actual_error = alpha_error(&actual);
+        assert!(
+            actual_error <= 1200,
+            "public candidate alpha L1: {actual_error}"
+        );
+        let candidate_error = alpha_error(&svg);
+        let generic_error = alpha_error(&generic);
+        assert!(
+            candidate_error <= 1000,
+            "candidate alpha L1: {candidate_error}"
+        );
+        assert!(
+            generic_error > candidate_error * 10,
+            "generic alpha L1: {generic_error}"
+        );
+        let scaled: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-paint-scales-native.json"
+        ))
+        .unwrap();
+        for (name, factor, scale, max_error) in [
+            ("half", 0.5_f32, super::InkPen2V1OutputScale::Half, 700_u64),
+            (
+                "double",
+                2.0_f32,
+                super::InkPen2V1OutputScale::Double,
+                2500_u64,
+            ),
+        ] {
+            let capture = &scaled["cases"][name];
+            let encoded = capture["rgba_zlib_base64"].as_str().unwrap();
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .unwrap();
+            let mut expected = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut expected)
+                .unwrap();
+            let mut options = options.clone();
+            options.inkpen2_v1_output_scale = Some(scale);
+            let public = cache
+                .render_layout_page_scene_requests(
+                    &doc,
+                    &[request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0)
+                .page
+                .svg;
+            let error = |source: &str| {
+                let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+                let width = capture["output_size"][0].as_u64().unwrap() as u32;
+                let height = capture["output_size"][1].as_u64().unwrap() as u32;
+                let mut pixels = resvg::tiny_skia::Pixmap::new(width, height).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::from_scale(factor, factor),
+                    &mut pixels.as_mut(),
+                );
+                pixels
+                    .data()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(expected.as_chunks::<4>().0.iter())
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let public_error = error(&public);
+            let fallback_error = error(&generic);
+            assert!(
+                public_error <= max_error && public_error < fallback_error,
+                "{name}: public={public_error}, fallback={fallback_error}"
+            );
+            let pdf = crate::render_svg_pages_pdf(
+                &[crate::RenderedPage::new(0, 128, 96, public)],
+                &Default::default(),
+            )
+            .unwrap();
+            assert_eq!(
+                lopdf::Document::load_mem(&pdf).unwrap().get_pages().len(),
+                1
+            );
+        }
+        #[cfg(feature = "serde")]
+        for malformed in ["\"0.5\"", "0.5", "\"bogus\""] {
+            assert!(serde_json::from_str::<super::InkPen2V1OutputScale>(malformed).is_err());
+        }
+        for source in [actual, svg, generic] {
+            let page = crate::RenderedPage::new(0, 128, 96, source);
+            let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
+            let parsed = lopdf::Document::load_mem(&pdf).unwrap();
+            assert_eq!(parsed.get_pages().len(), 1);
         }
     }
 }

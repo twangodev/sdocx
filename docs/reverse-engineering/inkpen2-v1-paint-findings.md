@@ -28,9 +28,7 @@ python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-translat
 ```
 
 Compare `geometry_sha256`, `rgba_sha256`, `draw_matrix`, and the complete
-compressed RGBA readbacks with the corresponding receipt fields. The current
-production vector renderer remains V9-specific; V1 vector paint and paired PDF
-comparison remain open.
+compressed RGBA readbacks with the corresponding receipt fields. A bounded opt-in V1 vector approximation and paired SVG/PDF measurements at 0.5×, 1×, and 2× are described in [rendering support](../rendering-support.md). The [scale receipt](../../conformance/inkpen2-null-v1-paint-scales-native.json) retains the native frames and comparison measurements.
 
 The [style capture](../../conformance/inkpen2-null-v1-style-native.json)
 adds three synthetic type-0 Drawing controls with the same points and size 4,

@@ -1,0 +1,131 @@
+{
+  "schema": "inkpen2-null-v1-host-paint-scales-v1",
+  "scope": "Synthetic Drawing-selected RTV1, host Mesa RGBA; paired output scale controls, not device or application composition.",
+  "cases": {
+    "half": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "output_size": [
+        64,
+        48
+      ],
+      "draw_matrix": [
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        16.0,
+        16.0,
+        0,
+        1
+      ],
+      "rgba_zlib_base64": "eNrt1LsKQQEcx/Fz3EpEGUQxSAx03M7iCY5LGS1OSuQMFsMZjDaHMkgGvIXJ7BW8gHIpo0GZdFwewGbh+6l///n3q/9fEAAAAAAAwCeeUEKRaoNdqmbs0/XxWVJHp1i5uw5mir2/yq8ah0xjcsk2p1dZW5hye26+93Oihc4qICm6w+0LCaJo+fVOvOFkKV7RN7L26mBp5rT5Pdua3SR1eExU+1uXP5L/tzux2OxOUbTa+BgAAAAAAAAAAAAA8D0PLwMuhg==",
+      "rgba_sha256": "206772dffcf2b7ee8e2cc56405aaafd4e64c83730b0ccab98df43ed10bf2a43d",
+      "nonzero_pixels": 31
+    },
+    "double": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "output_size": [
+        256,
+        192
+      ],
+      "draw_matrix": [
+        2.0,
+        0,
+        0,
+        0,
+        0,
+        2.0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        64.0,
+        64.0,
+        0,
+        1
+      ],
+      "rgba_zlib_base64": "eNrt22to1WUcB3BzatYma6G2Leam284u7ebOQFjOTSFj9+Ulm6y5lWenESpe8kK1LMTCDCYVno0o63VQb4IFYhchk4IgonchvRGrF5HQG6nZmVlsa+fsTCY7wecDD+f6h8Pz8H3O73mec+bNAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASlbEquHXF2s43i1oPfFbSceRioHX/p4HWfZ8UNu4eKWzZd67kkSNflW569uvi9oMXAs17z+at730vp3bbqYyV1ZvTMvNrF9yZeq9ehP+XZaXr+seyHQwPXQ/23Wzj7/dFxt2f/Fq0hW7cjq5+4vXfy7e//GP+xv4Ps4LNA4szskr0LiRz9uv7g6E4+Q7/m++/54Gpsx9twxOfj763eufpa5VdJy6vXN/7bnpOWaPehuRxT25lezT7o1PndyYtkWsj1yu6T/4UaNl7Nrpe2KL3YW5lB1uP3nrmI3GyPxx7rXCjZoiMVu0Y/DUvWhdE56A2IwHJmv/IxByHZ6MWmNgqu0/+XNxx+MvlZRt2pWUV1qUsuivd6EAy1P+R2I9DtzIPDP/3+tDEeaWqZ/C3iq5XrwRa9p3LrX/8raWl68JpmQVrjRjMrmn3/ybnODQU/3GitUAo1vwy6frwuP3EvuhcFTr959gZQ9mjR78vaNz10YoHO9/Irmk/tuyBhqdTl69cY0RhpnPANOd/oX/ymkBtH55ijRBOcD8hFKPeCI+fT2J/htKtL3yXXdP2khGFmYv3+59A24HPS7Y8/21Z5/FLFV0nLq/uGbxa/eTpaxPzGInxfR5JfG8gPLl2mPl+wlhNYzTh9kpZuHhJ6rK8mvsqNu7Pa+g9U/7YsR+qek9djb8muP0tr37HO0YH5kZ6TlnT2G+DK7tf+yUYivwx/Tp/KPG6IJxQ/t82CjD3lmQXbwg07Rmp7D55ZfbODCPT1f9P6XlIHnfMT1mYnlPenFO7bbBk83PflG8/fmlC9sOJ5Hw47rnBzf2/F/U2JL/5CxalLrw7PXPsvwFLi+p2ZgVbBnLruobyH+7/oLBxz8dFbc+cL+44dKG44/DF4rZDXxS1HTxf2LL3bEHT7pFVD4Xfz2voOXP/mk2vZFU3Dzj/AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIFn9Bc4iCzk=",
+      "rgba_sha256": "e38d83067769b4d2cbffcaad61ad21fff5413d9b24dc38464d510ccbd3e726f7",
+      "nonzero_pixels": 520
+    },
+    "alpha": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "output_size": [
+        128,
+        96
+      ],
+      "draw_matrix": [
+        1.0,
+        0,
+        0,
+        0,
+        0,
+        1.0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        32.0,
+        32.0,
+        0,
+        1
+      ],
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "nonzero_pixels": 137
+    }
+  },
+  "comparison": {
+    "metric": "sum of absolute alpha byte differences against native frame; production SVG rasterized with resvg, production PDF with PyMuPDF at matching pixel dimensions",
+    "candidate_is_explicit_scale_edge": "max(radius - 1 / output_scale, 0) / radius; ordered source-over radial gradients",
+    "results": {
+      "0.5": {
+        "native_alpha_sum": 5411,
+        "candidate_svg": 453,
+        "candidate_pdf": 2575,
+        "generic_svg": 3802,
+        "generic_pdf": 4011
+      },
+      "1": {
+        "native_alpha_sum": 26963,
+        "candidate_svg": 886,
+        "candidate_pdf": 5736,
+        "generic_svg": 21194,
+        "generic_pdf": 20972
+      },
+      "2": {
+        "native_alpha_sum": 120429,
+        "candidate_svg": 1790,
+        "candidate_pdf": 12397,
+        "generic_svg": 95087,
+        "generic_pdf": 96270
+      }
+    },
+    "scope": "single synthetic stroke, solid color 0xff336699, translated identity transform scaled uniformly; PDF and SVG rasterizers have distinct edge behavior"
+  },
+  "capture_context": "Drawing-selected RTV1; 1920x1080 host Mesa RGBA8, identical geometry and shader as inkpen2-null-v1-paint-native.json. Alpha control uses 0x80336699 and matches translated opaque frame.",
+  "capture_adapter": "conformance/inkpen2_v1_paint_native.py",
+  "capture_adapter_sha256": "340046ebaf5e43c23fb156c995c64d5d3ed7a9c3fefb626da8cd194776c7b835",
+  "recapture": {
+    "working_directory": "project root",
+    "environment": "PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin",
+    "commands": {
+      "half": "python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-scale 0.5 --matrix-translate-x 16 --matrix-translate-y 16 --output-width 64 --output-height 48",
+      "one": "python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-translate-x 32 --matrix-translate-y 32",
+      "double": "python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-scale 2 --matrix-translate-x 64 --matrix-translate-y 64 --output-width 256 --output-height 192",
+      "alpha": "python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-translate-x 32 --matrix-translate-y 32 --color-argb 0x80336699"
+    },
+    "one_reference": "conformance/inkpen2-null-v1-paint-native.json translated_control; original adapter hash remains historical"
+  }
+}
