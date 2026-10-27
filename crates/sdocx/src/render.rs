@@ -7838,6 +7838,52 @@ mod tests {
     }
 
     #[test]
+    fn inkpen_v4_serialized_setting_fallback_preserves_saved_paint() {
+        let mut stroke = inkpen_v1_stroke();
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("18;0;100;".into());
+        let theme = RenderTheme::for_canvas(false);
+        let valid = RenderOptions {
+            inkpen_profile: Some(super::InkPenRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        let invalid = RenderOptions {
+            inkpen_profile: Some(super::InkPenRenderProfile {
+                screen_width: 0,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        let missing = RenderOptions::default();
+        for (options, viewport) in [
+            (&missing, [100, 100]),
+            (&invalid, [100, 100]),
+            (&valid, [0, 100]),
+        ] {
+            let paint =
+                super::prepare_stroke_for_viewport_with_theme(&stroke, theme, options, viewport);
+            assert_eq!(paint.color, "#336699");
+            assert_eq!(paint.opacity, 128.0 / 255.0);
+            assert_eq!(paint.support, crate::InkSupport::Approximate);
+        }
+
+        stroke.rendering.as_mut().unwrap().style.color_argb = None;
+        for (options, viewport) in [
+            (&missing, [100, 100]),
+            (&invalid, [100, 100]),
+            (&valid, [0, 100]),
+        ] {
+            let paint =
+                super::prepare_stroke_for_viewport_with_theme(&stroke, theme, options, viewport);
+            assert_eq!(paint.color, "#000000");
+            assert_eq!(paint.opacity, 1.0);
+            assert_eq!(paint.support, crate::InkSupport::Approximate);
+        }
+    }
+
+    #[test]
     fn inkpen_v4_opt_in_matches_replay_and_preserves_fallback() {
         let mut stroke = inkpen_v1_stroke();
         stroke.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());

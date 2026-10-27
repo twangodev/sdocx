@@ -801,7 +801,7 @@ pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
         || !matches!(
             rendering.advanced_settings.as_deref(),
-            None | Some("") | Some("4;")
+            None | Some("") | Some("4;") | Some("18;0;100;")
         )
         || rendering.tool_type_raw > 4
         || properties.replay_only
@@ -824,10 +824,13 @@ pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     {
         return None;
     }
-    rendering
-        .style
-        .color_argb
-        .or_else(|| rendering.advanced_settings.is_none().then_some(0xff00_0000))
+    rendering.style.color_argb.or_else(|| {
+        matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("18;0;100;")
+        )
+        .then_some(0xff00_0000)
+    })
 }
 
 struct PreparedObliqueInk {
@@ -2510,6 +2513,14 @@ mod tests {
         assert!(count > 0);
         assert!(inkpen::prepare_bounded(&input, context(), count - 1).is_none());
         assert!(inkpen::prepare_bounded(&input, context(), 0).is_none());
+    }
+
+    #[test]
+    fn serialized_v4_setting_retains_saved_fallback_color() {
+        let colored = inkpen_v1_stroke_for_default_color_test(Some("18;0;100;"), Some(0x8033_6699));
+        assert_eq!(saved_inkpen_argb(&colored), Some(0x8033_6699));
+        let missing = inkpen_v1_stroke_for_default_color_test(Some("18;0;100;"), None);
+        assert_eq!(saved_inkpen_argb(&missing), Some(0xff00_0000));
     }
 
     #[test]
