@@ -1,0 +1,84 @@
+{
+  "callback_events": 50,
+  "final_callback_buffer_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+  "finding": "Both literal names select V1 and yield identical callback event sequences for this synthetic control. Paint and general V1 behavior remain unverified.",
+  "harness": "scratch/straightinkpen2-alias/inkpen2_saved_caller_native.py",
+  "harness_sha256": "4029c24aa69849941b124df47dff9bed117c413eebd66903b3414d7fffd35c1a",
+  "input": {
+    "advanced_getter_object_hex": null,
+    "advanced_getter_pointer_nonnull": false,
+    "advanced_getter_utf8": null,
+    "advanced_setting": null,
+    "advanced_setting_state": "null",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+    "pen_size_f32_bits": "00008040",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00000000"
+      ],
+      [
+        "00000041",
+        "00000000"
+      ],
+      [
+        "00008041",
+        "00004040"
+      ],
+      [
+        "0000c041",
+        "00004040"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcc4c3e",
+      "cdcccc3e",
+      "9a99193f",
+      "cdcc4c3f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      10,
+      20,
+      30
+    ],
+    "tool_type": 2
+  },
+  "libraries": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "InkPen2": "61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "names": [
+    "InkPen2",
+    "StraightInkPen2"
+  ],
+  "normalization": "Exclude only rt and vector_object allocation addresses from each callback event; serialize sorted keys with compact JSON separators.",
+  "normalized_callback_events_sha256": "773e365a08bcb63fd25b1d5895a7d8f5d5f6a56820678dc8a93e2207e0a15d01",
+  "replay": "python3 conformance/straightinkpen2_null_alias_capture.py",
+  "schema": "sdocx-straightinkpen2-null-alias-native-v1",
+  "scope": "Synthetic ObjectStroke setters and native Drawing under an explicit host context; not deserialization, native device paint, or export.",
+  "selected_drawable_version": "1"
+}
