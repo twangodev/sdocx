@@ -614,6 +614,13 @@ fn prepare_stroke_inner<'a>(
         .or_else(|| marker3.map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity)));
     let rect = marker4::prepare(stroke);
     let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
+    let generic_opacity = || {
+        if pencil_source::saved_pencil3_v3_transparent(stroke) {
+            0.0
+        } else {
+            saved_inkpen_argb(stroke).map_or(1., |argb| f64::from((argb >> 24) as u8) / 255.)
+        }
+    };
     let (points, sample_ends, dot_radii, ordered_disk_replay, opacity) =
         if let Some(ink) = defaultpen.as_ref() {
             paint.segment_widths = None;
@@ -663,7 +670,7 @@ fn prepare_stroke_inner<'a>(
                 None,
                 None,
                 None,
-                saved_inkpen_argb(stroke).map_or(1., |argb| f64::from((argb >> 24) as u8) / 255.),
+                generic_opacity(),
             )
         };
     let profile = stroke

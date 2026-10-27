@@ -9733,6 +9733,83 @@ mod tests {
         stroke
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn pencil3_zero_saved_alpha_is_transparent_in_fallback_and_replay() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        page.objects.clear();
+        let empty = document(page.clone());
+        let raster = |svg: &str| {
+            let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+            let mut pixels = resvg::tiny_skia::Pixmap::new(320, 180).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixels.as_mut(),
+            );
+            pixels.data().to_vec()
+        };
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 321, // Force the canvas-dependent profile to fall back.
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        for color in [None, Some(Color { r: 255, g: 0, b: 0 })] {
+            let mut stroke = pencil3_native_profile_stroke();
+            stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x0012_3456);
+            stroke.color = color;
+            let mut page = page.clone();
+            page.objects = vec![stroke.clone().into()];
+            let doc = document(page);
+            for opts in [&RenderOptions::default(), &options] {
+                let prepared = super::prepare_stroke_for_viewport_with_theme(
+                    &stroke,
+                    RenderTheme::for_canvas(false),
+                    opts,
+                    [320, 180],
+                );
+                assert_eq!(prepared.opacity, 0.0);
+                let layout = layout_document(&doc);
+                let svg = render_document_svg(&doc, opts).remove(0).svg;
+                let replay = render_layout_page_replay_svg(&doc, &layout, 0, opts)
+                    .unwrap()
+                    .svg;
+                let background = render_document_svg(&empty, opts).remove(0).svg;
+                assert_eq!(raster(&svg), raster(&background));
+                assert_eq!(raster(&replay), raster(&background));
+            }
+        }
+
+        let mut unsupported = pencil3_native_profile_stroke();
+        unsupported.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
+        unsupported.rendering.as_mut().unwrap().style.color_argb = Some(0x0012_3456);
+        assert_eq!(crate::prepare_stroke(&unsupported, false).opacity, 1.0);
+        let mut partial = pencil3_native_profile_stroke();
+        partial.rendering.as_mut().unwrap().style.color_argb = Some(0x8012_3456);
+        assert_eq!(crate::prepare_stroke(&partial, false).opacity, 1.0);
+        page.objects = vec![unsupported.into()];
+        let doc = document(page);
+        let mut supported_canvas = options;
+        supported_canvas
+            .pencil3_profile
+            .as_mut()
+            .unwrap()
+            .canvas_width = 320;
+        assert_eq!(
+            render_document_svg(&doc, &supported_canvas).remove(0).svg,
+            render_document_svg(&doc, &RenderOptions::default())
+                .remove(0)
+                .svg,
+        );
+    }
+
     #[test]
     fn pencil3_public_profile_retains_native_particles_and_shared_intrinsic_assets() {
         use sha2::Digest;

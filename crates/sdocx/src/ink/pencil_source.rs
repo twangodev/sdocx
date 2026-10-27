@@ -22,17 +22,10 @@ pub(crate) struct PreparedPencil3V3 {
     pub(crate) opacity: f32,
 }
 
-/// Prepare an ordinary Pencil3 saved stroke for its V3 source path.
-///
-/// The caller supplies the native screen profile because it is part of the
-/// drawing context. Captures at 1920x1080 and 1280x720 produced identical
-/// source coordinates and packed records; dimensions are therefore validated
-/// here but do not rescale document-space points.
-pub(crate) fn prepare_pencil3_v3_source(
-    stroke: &Stroke,
-    screen_width: u32,
-    screen_height: u32,
-) -> Option<PreparedPencil3V3> {
+// Shared source admission stops before screen-dependent sampling and output budgets.
+// In particular, this keeps unsupported style/effect combinations on the
+// existing generic path even when their stored alpha is zero.
+fn saved_pencil3_v3_inputs(stroke: &Stroke) -> Option<(u32, f32)> {
     let rendering = stroke.rendering.as_ref()?;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Pencil3")
         || !matches!(
@@ -79,10 +72,6 @@ pub(crate) fn prepare_pencil3_v3_source(
         || rendering.style.rainbow_offset.is_some()
         || rendering.style.gradient_colors_argb.is_some()
         || rendering.style.color_argb.is_none()
-        || screen_width == 0
-        || screen_height == 0
-        || screen_width > i32::MAX as u32
-        || screen_height > i32::MAX as u32
         || stroke.points.len() < 2
         || stroke.points.len() > MAX_SOURCE_POINTS
         || stroke.points.len() != stroke.pressures.len()
@@ -144,6 +133,41 @@ pub(crate) fn prepare_pencil3_v3_source(
     {
         return None;
     }
+    Some((argb, raw_size))
+}
+
+/// Whether a supported saved Pencil3 V3 stroke has completely transparent paint.
+/// Partial alpha cannot be applied to generic whole-stroke geometry: native V3
+/// composites its particles individually.
+pub(crate) fn saved_pencil3_v3_transparent(stroke: &Stroke) -> bool {
+    saved_pencil3_v3_inputs(stroke).is_some_and(|(argb, _)| argb >> 24 == 0)
+}
+
+/// Prepare an ordinary Pencil3 saved stroke for its V3 source path.
+///
+/// The caller supplies the native screen profile because it is part of the
+/// drawing context. Captures at 1920x1080 and 1280x720 produced identical
+/// source coordinates and packed records; dimensions are therefore validated
+/// here but do not rescale document-space points.
+pub(crate) fn prepare_pencil3_v3_source(
+    stroke: &Stroke,
+    screen_width: u32,
+    screen_height: u32,
+) -> Option<PreparedPencil3V3> {
+    if screen_width == 0
+        || screen_height == 0
+        || screen_width > i32::MAX as u32
+        || screen_height > i32::MAX as u32
+    {
+        return None;
+    }
+    let (argb, raw_size) = saved_pencil3_v3_inputs(stroke)?;
+    let rendering = stroke.rendering.as_ref()?;
+    let (tilts, orientations) = if rendering.properties.stylus_channels {
+        (Some(&stroke.tilts), Some(&stroke.orientations))
+    } else {
+        (None, None)
+    };
     let size = raw_size.clamp(0.4, 800.0);
 
     let source = SavedStroke {
