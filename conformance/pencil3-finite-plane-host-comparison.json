@@ -384,5 +384,46 @@
       ["zero", "MuPDF", "cropped", 141, 282, 1, 0, 0],
       ["zero", "MuPDF", "fallback", 141, 66091, 227, 0, 141]
     ]
+  },
+  "partial_alpha_fallback_control": {
+    "scope": "Synthetic one-stroke, first-draw host Mesa control at saved alpha 128/255, black on #fcfcfc. Not device, general color, overlap, or native saved-note parity.",
+    "native_fixture_path_at_capture": "tmp/conformance-cleanup/native-capture-a241793/tmp/vector-parity-plan/pencil3-topdown-x60-argb80000000-clamp.json",
+    "native_fixture_sha256": "b59f9d09aeac26bbe5d54d97e325aff9446ba9dab3e8da903c5633c3b2f2aedd",
+    "native_readback_sha256": "708de2794f50408a72dad65d49d6377c4ffd4a0d767197689dc245b25d3008dc",
+    "consumer_versions": {
+      "resvg": "0.45.1",
+      "MuPDF": "1.28.2"
+    },
+    "candidates": "generic is existing opacity-1 fallback; group applies 128/255 once to the full generic stroke; per-line applies it independently to each segment; profile uses the opt-in textured route. Generic variants are exploratory SVG rewrites, not production changes.",
+    "columns": ["consumer", "candidate", "common_roi_pixels", "rgb_error_sum", "max_channel_error", "native_intersection_pixels", "support_union_pixels"],
+    "rows": [
+      ["resvg", "profile", 452, 2994, 9, 421, 452],
+      ["resvg", "generic", 452, 74220, 212, 142, 422],
+      ["resvg", "group", 452, 53931, 167, 142, 422],
+      ["resvg", "per-line", 452, 55005, 167, 142, 422],
+      ["MuPDF", "profile", 505, 21041, 74, 417, 505],
+      ["MuPDF", "generic", 505, 72016, 213, 141, 422],
+      ["MuPDF", "group", 505, 52969, 167, 141, 422],
+      ["MuPDF", "per-line", 505, 53915, 167, 141, 422]
+    ],
+    "artifact_sha256": {
+      "half-clamp": {
+        "svg": "fcf2ffef20dfca93cfa4a08eb29c45b689aa2f3ce85c2f8b9a49a55674b403cc",
+        "pdf": "df34e17380ddb420415921504acbdf93398792d9d82bb339f3dc310c540da5c9"
+      },
+      "half-fallback": {
+        "svg": "f250fd121c1e8b16a2bac248914186594e4ab9a11db3c47d3ca235672928da23",
+        "pdf": "62196e50f26e38dbc9b85a4ecdf4c2d164ae3565ff52ecdf45496a8e5c2f96da"
+      },
+      "half-fallback-group": {
+        "svg": "0e9c8f06dbb13f6ba1d32583e72891f10e282601cc3627378ace2c5d6dc18685",
+        "pdf": "0da5e7d7dc9552672db3bc25454150a5ee8b93e8a2365e1c2343e089746c512e"
+      },
+      "half-fallback-per-line": {
+        "svg": "e11d29431c1d5619616c6b9bb1cacb8c34534421fc9ec51eef727df7133ae4f7",
+        "pdf": "19d403139f08a504d467daaf549c5493e12e8dab9e64663df087d30c9d2a4a1f"
+      }
+    },
+    "conclusion": "Group and per-line opacity reduce color error in this one control but do not improve geometric support and do not reproduce native per-particle compositing. No default change is justified by this sample alone."
   }
 }
