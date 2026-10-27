@@ -1,0 +1,200 @@
+{
+  "scope": "Synthetic ObjectStroke setters, Drawing V4 and native RTV1 paint on host Mesa; width 6, curve enabled, tool 1, display 1920x1080; not device or serialized note parity.",
+  "input": {
+    "advanced_getter_object_hex": "d0bf0e0200000000d045031000000000f0bf0e02000000001000000000000000",
+    "advanced_getter_pointer_nonnull": true,
+    "advanced_getter_utf8": "",
+    "advanced_setting_state": "empty",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+    "pen_size_f32_bits": "00002041",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00000000"
+      ],
+      [
+        "00002041",
+        "00000000"
+      ],
+      [
+        "0000a041",
+        "00000000"
+      ],
+      [
+        "0000f041",
+        "00002041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "0000803e",
+      "0000003f",
+      "0000403f",
+      "0000803f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "tool_type": 1
+  },
+  "model_getters": [
+    {
+      "color_argb": 4278190080,
+      "curve_enabled": 1,
+      "fixed_width_bits": "0000c040",
+      "fixed_width_enabled": 1,
+      "label": "before_drawObjectStroke",
+      "line_type": 0,
+      "point_count": 4,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "00002041",
+      "stroke_type": 0,
+      "tool_type": 1
+    },
+    {
+      "color_argb": 4278190080,
+      "curve_enabled": 1,
+      "fixed_width_bits": "0000c040",
+      "fixed_width_enabled": 1,
+      "label": "before_saved_RedrawPen",
+      "line_type": 0,
+      "point_count": 4,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "00002041",
+      "stroke_type": 0,
+      "tool_type": 1
+    }
+  ],
+  "route": {
+    "drawing_return": 1,
+    "factory_symbol": "createPenInst",
+    "redraw_entry": "non-virtual thunk to SPen::InkPenStrokeDrawableGLV4::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+    "same_rt_id": "rt0",
+    "saved_redraw_return": 1,
+    "selected_drawable_class": "SPen::InkPenStrokeDrawableGLV4",
+    "selected_drawable_vtable_id": "v4",
+    "selected_rt_address": "0x10035c40"
+  },
+  "stream": {
+    "callback_count": 26,
+    "float_count": 78,
+    "sha256": "c4bbec2762635474ddca6be84171b3d720564e80641cb0483efef2c04155b2b0",
+    "values_f32_bits": [
+      "00000000",
+      "00000000",
+      "00006040",
+      "00000000",
+      "00000000",
+      "00006040",
+      "78fd9f3f",
+      "00000000",
+      "00006040",
+      "c0370e40",
+      "00000000",
+      "00006040",
+      "28385e40",
+      "00000000",
+      "00006040",
+      "0000a040",
+      "00000000",
+      "00006040",
+      "47f9c240",
+      "66115d3d",
+      "00006040",
+      "d466e940",
+      "66115d3e",
+      "00006040",
+      "53a40941",
+      "92b3f83e",
+      "00006040",
+      "5f4f2041",
+      "66115d3f",
+      "00006040",
+      "81243741",
+      "ea73a83f",
+      "00006040",
+      "e75e4841",
+      "b23bd93f",
+      "00006040",
+      "875f5a41",
+      "a41a0840",
+      "00006040",
+      "5e266d41",
+      "4eb02640",
+      "00006040",
+      "b7598041",
+      "e05e4840",
+      "00006040",
+      "5c838a41",
+      "56266d40",
+      "00006040",
+      "1d109541",
+      "56838a40",
+      "00006040",
+      "0000a041",
+      "0000a040",
+      "00006040",
+      "7cada941",
+      "f85ab340",
+      "00006040",
+      "a58ab241",
+      "4c15c540",
+      "00006040",
+      "c6b3ba41",
+      "8a67d540",
+      "00006040",
+      "674fc441",
+      "cd9ee840",
+      "00006040",
+      "1bb0cc41",
+      "3760f940",
+      "00006040",
+      "9358d741",
+      "93580741",
+      "00006040",
+      "ef3ce041",
+      "ef3c1041",
+      "00006040",
+      "1fc9e741",
+      "1fc91741",
+      "00006040"
+    ]
+  },
+  "rgba8_sha256": "2299e5c69896595638b71a3687288807913752176444afee37c32a238cbd3391",
+  "rgba8_zlib_base64": "eNrt1z8uRFEYxuFrBQr/MhMWoBcJa7EFhegUQiIaiUqpEQWJSjCSoVMpFRILEEtQGu8kp9AId2junedJfhv4zpd7zq2qalD9rZO0niYrmmjwT52n7TRlpI3ynN7SQ3pJ76WPEfegl3ZSx2gbayItpOXybT8eYQ8uyh7MGmcrLKa11E+vNfbgLu27F1plNR2lxxp7cJW23AutMp8O0mWNPbhJu6lrfK3RKXd9r8YenKYlo2uVufIPeP3LHegbWSsN3/x76f6H838yqlabLnf92Tfnf2hEY6Fb3ge3X85++GZcMZqxeydupo00YxwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANNUnlliabQ==",
+  "public_pdf_mupdf_comparison": {
+    "mapping": "128x64 SVG, 96x48 pt PDF rasterized to 128x64; transparent page; bottom-up native readback reversed",
+    "candidate_rgba_absolute_error": 1736,
+    "generic_rgba_absolute_error": 35790,
+    "limitation": "One synthetic host control; not device, saved-note, arbitrary-width, or output-scale parity."
+  },
+  "public_document_pdf_mupdf_comparison": {
+    "mapping": "Direct render_document_pdf with 252 gray background and 96x48 pt PDF rasterized to 128x64; native black alpha composited over same background",
+    "candidate_rgb_absolute_error": 21040,
+    "generic_rgb_absolute_error": 108406,
+    "limitation": "One synthetic host control; not device or serialized-note parity."
+  }
+}

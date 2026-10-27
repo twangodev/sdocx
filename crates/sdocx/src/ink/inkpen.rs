@@ -2662,4 +2662,147 @@ mod tests {
             }
         }
     }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn fixed_width_v4_matches_native_drawing_and_improves_svg() {
+        use base64::Engine;
+        use std::io::Read;
+        for (width, data) in [
+            (
+                3.0,
+                include_str!("../../../../conformance/inkpen-v4-fixed-width-3-native.json"),
+            ),
+            (
+                6.0,
+                include_str!("../../../../conformance/inkpen-v4-fixed-width-native.json"),
+            ),
+            (
+                12.0,
+                include_str!("../../../../conformance/inkpen-v4-fixed-width-12-native.json"),
+            ),
+            (
+                6.0,
+                include_str!("../../../../conformance/inkpen-v4-fixed-width-geometry-native.json"),
+            ),
+        ] {
+            let fixture: Value = serde_json::from_str(data).unwrap();
+            let mut input = native_caller_stroke(&fixture["input"]);
+            let r = input.rendering.as_mut().unwrap();
+            r.properties.fixed_width = true;
+            r.style.fixed_width = Some(width);
+            r.style.color_argb = Some(0xff00_0000);
+            assert!(crate::ink::prepare_inkpen_v4_for_page(&input, 1920, 1080).is_some());
+            let mut unsupported = input.clone();
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(2.0);
+            assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(13.0);
+            assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
+            let ink = prepare(
+                &input,
+                RuntimeContext {
+                    curve_enabled: true,
+                    screen_width: 1920,
+                    screen_height: 1080,
+                },
+            )
+            .unwrap();
+            let stream = fixture["stream"]["values_f32_bits"].as_array().unwrap();
+            assert_eq!(stream.len(), ink.points.len() * 3);
+            for (i, point) in ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[3 * i].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[3 * i + 1].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    ink.radii[i].to_bits(),
+                    native_f32(stream[3 * i + 2].as_str().unwrap()).to_bits()
+                );
+            }
+            let packed = base64::engine::general_purpose::STANDARD
+                .decode(fixture["rgba8_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut native = Vec::new();
+            flate2::read::ZlibDecoder::new(&packed[..])
+                .read_to_end(&mut native)
+                .unwrap();
+            let document = crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "inkpen-fixed".into(),
+                    width: 128,
+                    height: 64,
+                    content_bbox: BoundingBox::default(),
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: vec![input.into()],
+                }],
+                metadata: Default::default(),
+            };
+            let options = crate::RenderOptions {
+                inkpen_profile: Some(crate::InkPenRenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                }),
+                ..Default::default()
+            };
+            let candidate = crate::render_document_svg(&document, &options)
+                .remove(0)
+                .svg;
+            let generic = crate::render_document_svg(&document, &crate::RenderOptions::default())
+                .remove(0)
+                .svg;
+            if let Some(dir) = std::env::var_os("INKPEN_FIXED_EXPORT") {
+                for (name, opts) in [
+                    ("direct-candidate", options.clone()),
+                    ("direct-generic", crate::RenderOptions::default()),
+                ] {
+                    let pdf =
+                        crate::render_document_pdf(&document, &opts, &crate::PdfOptions::default())
+                            .unwrap();
+                    std::fs::write(std::path::Path::new(&dir).join(format!("{name}.pdf")), pdf)
+                        .unwrap();
+                }
+            }
+            let raster = |raw: &str| {
+                let start = raw.find('>').unwrap() + 1;
+                let end = raw.rfind("</svg>").unwrap();
+                let body = raw[start..end]
+                    .trim_start()
+                    .strip_prefix(
+                        "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>",
+                    )
+                    .unwrap();
+                let svg = format!(
+                    "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                    &raw[..start]
+                );
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 64).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                pixmap.data().to_vec()
+            };
+            let error = |pixels: &[u8]| {
+                native
+                    .as_chunks::<{ 128 * 4 }>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flatten()
+                    .zip(pixels)
+                    .map(|(a, b)| u64::from(a.abs_diff(*b)))
+                    .sum::<u64>()
+            };
+            let c = error(&raster(&candidate));
+            let g = error(&raster(&generic));
+            assert!(c < g, "candidate RGBA error {c}, generic {g}");
+        }
+    }
 }
