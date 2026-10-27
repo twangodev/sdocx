@@ -478,6 +478,68 @@ mod tests {
     use super::*;
 
     #[test]
+    fn one_hot_texel_boundary_control_reports_svg_coverage() {
+        // A 48-texel atlas tile, two output units per texel. Its origin
+        // puts the boundary between texels 0 and 1 exactly on a pixel
+        // center. Integer translations preserve that relation. The SVG
+        // rectangle is the source-derived extent of the one nonzero texel;
+        // it does not encode an empirically adjusted phase or edge rule.
+        const OUTPUT_WIDTH: u32 = 104;
+        const OUTPUT_HEIGHT: u32 = 6;
+        const TILE_TEXELS: usize = 48;
+        let mut observations = 0;
+        for translation in [0_u32, 1, 4] {
+            let origin = 2.5_f32 + translation as f32;
+            for hot in [0_usize, 1] {
+                let left = origin + hot as f32 * 2.0;
+                let svg = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="{OUTPUT_WIDTH}" height="{OUTPUT_HEIGHT}"><rect x="{left}" y="1" width="2" height="4" fill="black"/></svg>"#
+                );
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pixmap =
+                    resvg::tiny_skia::Pixmap::new(OUTPUT_WIDTH, OUTPUT_HEIGHT).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+
+                let boundary_x = 4 + translation;
+                let mut differences = Vec::new();
+                for x in 0..OUTPUT_WIDTH {
+                    let center = x as f32 + 0.5;
+                    let source_alpha = if center >= origin
+                        && center < origin + (TILE_TEXELS as f32 * 2.0)
+                        && nearest_texel((center - origin) / 96.0, TILE_TEXELS) == hot
+                    {
+                        255
+                    } else {
+                        0
+                    };
+                    let svg_alpha = pixmap.data()[((2 * OUTPUT_WIDTH + x) * 4 + 3) as usize];
+                    if source_alpha != svg_alpha {
+                        differences.push((x, source_alpha, svg_alpha));
+                    }
+                }
+                let boundary_texel =
+                    nearest_texel((boundary_x as f32 + 0.5 - origin) / 96.0, TILE_TEXELS);
+                assert_eq!(boundary_texel, 1, "source boundary ownership");
+                let svg_boundary_alpha =
+                    pixmap.data()[((2 * OUTPUT_WIDTH + boundary_x) * 4 + 3) as usize];
+                assert_eq!(svg_boundary_alpha, 128);
+                let left_pixel = 2 + translation + hot as u32 * 2;
+                assert_eq!(
+                    differences,
+                    [(left_pixel, 255, 128), (left_pixel + 2, 0, 128)],
+                    "SVG antialiasing splits exact one-hot texel edges"
+                );
+                observations += 1;
+            }
+        }
+        assert_eq!(observations, 6);
+    }
+
+    #[test]
     fn captured_source_profile_pins_actual_vbo_atlas_and_sparse_target() {
         assert_eq!(INSTANCE_VBO.len(), 752);
         assert_eq!(hash(INSTANCE_VBO), NATIVE_INSTANCE_SHA256);
