@@ -189,9 +189,9 @@ fn finite_input(input: &SavedInput) -> Result<(), SamplerError> {
             "channel counts must match at least two points",
         ));
     }
-    if input.color_argb != 0xff00_0000 {
+    if !matches!(input.color_argb, 0xff00_0000 | 0x8033_6699) {
         return Err(SamplerError::Unsupported(
-            "only opaque black RGB is captured",
+            "color is outside the captured profiles",
         ));
     }
     if !input.size.is_finite()
@@ -971,6 +971,25 @@ mod tests {
         for case in cases {
             compare_case(case);
         }
+    }
+
+    #[test]
+    fn translucent_color_matches_native_geometry() {
+        let f = fixture();
+        let case = &f["cases"][0];
+        let mut input = saved_input(case).unwrap();
+        input.color_argb = 0x8033_6699;
+        let mut alpha = native_alpha_state(case).unwrap();
+        alpha.alpha_byte = 0x80;
+        let bytes: Vec<u8> = sample(&input, alpha)
+            .unwrap()
+            .iter()
+            .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            bytes,
+            include_bytes!("../../../../conformance/pencil2-v14-color-80336699-native.bin")
+        );
     }
 
     #[test]

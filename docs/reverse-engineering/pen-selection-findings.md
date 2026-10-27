@@ -271,6 +271,8 @@ Four additional host-Mesa controls override that same uniform to -0.001, 0.001, 
 
 A controlled host-Mesa RTV4 replay of the same 84 black-stroke records changes only the preclear from transparent black to RGBA (64, 32, 96, 128). All 52 changed pixels agree within one byte per channel with source-over predictions from the transparent-target alpha; the observed blend calls use SRC_ALPHA and ONE_MINUS_SRC_ALPHA for RGB, and ONE and ONE_MINUS_SRC_ALPHA for alpha. The [compact receipt](../../conformance/pencil2-v14-background-native.json) records the control and reproduction command. This aggregate observation does not establish exact fragment arithmetic, full Drawing, saved-note, Android, device, or production behavior.
 
+The test-only geometry sampler also matches all 84 native Drawing records for a synthetic stroke with translucent color `0x80336699`, including its RGB lanes and pressure alpha. The [receipt](../../conformance/pencil2-v14-color-80336699-native.json) and binary retain that control. This extends the captured geometry profile only; it does not establish textured paint or arbitrary color parity.
+
 ## Literal StraightMarker control
 
 Six native Drawing controls request the literal Marker3 and StraightMarker names

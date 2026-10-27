@@ -1,0 +1,75 @@
+{
+  "schema": "sdocx-pencil2-v14-translucent-geometry-v1",
+  "scope": "Synthetic native Model/Drawing Pencil2 GLV14 and RTV4 geometry, with host stubs; not a parsed note, GPU paint, SVG, PDF, or device output.",
+  "capture_source": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py",
+  "capture_sha256": "dcc5a1adb8f35f06ce78bfe2501afc33e66c1ae189cc1774baf08cb7dc653dcb",
+  "input": {
+    "advanced_getter_object_hex": "d0bf0e02000000008067031000000000f0bf0e02000000001000000003000000",
+    "advanced_getter_pointer_nonnull": true,
+    "advanced_getter_utf8": "14;",
+    "advanced_setting_model_setter_argument": "14;",
+    "advanced_setting_state": "explicit literal 14; set on ObjectStroke",
+    "kind": "synthetic native Model ObjectStroke setter input; no serialized Samsung document",
+    "object_stroke_color_argb": "0x80336699",
+    "object_stroke_size_f32_bits": "00000040",
+    "orientation": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Pencil2",
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        30.0,
+        10.0
+      ]
+    ],
+    "pressure": [
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "size_level_native_getter": 0,
+    "stroke_type": 0,
+    "tilt": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "timestamps": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "tool_type": 2
+  },
+  "stream": {
+    "file": "pencil2-v14-color-80336699-native.bin",
+    "bytes": 4704,
+    "records": 84,
+    "sha256": "e5d265076c55dc7b0a4fce981993f48e867cbd71a102bd1c21ea40d8480d6130"
+  },
+  "alpha_state": {
+    "alpha_byte": 128,
+    "square_pressure_flag": 0,
+    "base": 2.0,
+    "size_level": 1
+  },
+  "pencil2_dso_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f"
+}
