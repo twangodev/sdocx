@@ -523,6 +523,22 @@ then `python3 tmp/legacy-marker-source-controls/straight.py --capture --advanced
 substitute `bend.py` for the second control. Output paths must be new. The scripts
 require the pinned local native inputs and helpers checked by their preflight.
 
+A [synthetic serialized control](../../conformance/legacy-marker-synthetic-serialized-drawing.json)
+replaces a FountainPen frame's pen-name table entry with Marker and omits its
+advanced setting. Native binary decoding and the Rust parser agree byte for
+byte on all five 204-point channels. The host supplies the implementation pointer,
+visibility and native table-resolved name: `OnAttach` alone did not resolve it in
+this harness. Native Drawing selects GLV1 and its 20 queued tasks produce a
+host-Mesa frame. Against that frame on white, generic SVG/PDF support IoUs at
+1× are 0.367/0.369 (threshold 250); native GL row indices map directly to page
+Y under the supplied host matrix. This is one synthetic frame, not a real Marker
+note, Android or unseeded native loader comparison. The reduced parser fixture
+retains only the selected handwritten stroke, source identifiers/timestamps and
+original string table; other objects, pages and media are removed. It adapts
+[SDOCX Compatibility Corpus](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
+by its contributors under CC BY 4.0. Its integrity trailers are not regenerated
+for Samsung loading.
+
 ### Quadratic subdivision controls
 
 Two synthetic native Model/Drawing controls exercise GLV1 and RTV1 with straight
@@ -632,3 +648,20 @@ SVG-to-PDF exports rasterized with PyMuPDF differ from native at 180 and 177
 pixels. This simplified vector prototype does not reproduce cap masking, depth
 ownership or fringe interpolation and does not justify public admission. Its
 reproduction is retained in `scratch/legacy-marker-vector-prototype.rs`.
+
+The generic Marker fallback now uses saved ARGB alpha for compressed tool-2
+strokes with null settings and supported metadata. For the captured 128-alpha straight
+and bent controls, resvg differing pixels fall from 386/341 to 328/288 and
+PyMuPDF PDF differences from 386/341 to 337/296. Captures at
+[1](../../conformance/legacy-marker-alpha01-control.json),
+[64](../../conformance/legacy-marker-alpha40-control.json) and
+[200](../../conformance/legacy-marker-alphac8-control.json) also improve absolute
+channel error in both outputs. The [zero-alpha capture](../../conformance/legacy-marker-alpha00-control.json)
+still has residual cap ink, omitted by whole-stroke zero opacity; its absolute
+error nonetheless falls from 77698 to 9672. Intermediate alpha values and the
+fallback geometry remain approximations, and device parity is unverified. Unknown
+metadata keeps the prior fallback. The original solid-union prototype also improves
+on the old opaque fallback for these controls but omits cap texture, fringe and
+depth behavior; it is not admitted. Reproduction is retained in
+`scratch/legacy-marker-fallback-prototype.rs` and
+`scratch/legacy-marker-vector-prototype.rs`.

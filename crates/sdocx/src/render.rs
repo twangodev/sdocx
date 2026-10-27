@@ -32,6 +32,8 @@ mod geometry;
 mod gradient;
 mod image_crop;
 mod inkpen2_vector;
+#[cfg(all(test, feature = "pdf"))]
+mod legacy_marker_alpha_tests;
 mod simplebrush;
 #[cfg(test)]
 mod simplebrush_tests;

@@ -1,0 +1,109 @@
+{
+  "schema": "sdocx-marker-synthetic-serialized-drawing-v1",
+  "scope": "Synthetic altered pen-name table and omitted advanced setting from FountainPen note; native ObjectStrokeImpl pointer, visibility and native table-resolved pen name are seeded by host; OnAttach alone did not resolve name. Native queued drawing and host Mesa paint execute with pinned adapters; no Android or full loader claim.",
+  "archive_sha256": "b0233b505f42a2a875e60ee3d2aee0d6e0f4e0db3ce8e5536a8f2b68e75d91e1",
+  "frame_sha256": "1f73dbfc32ae402fab7ff83b676d19f0e90f3af6ad8d211e6f859c7c89cfafac",
+  "table_sha256": "9fcf3c0e6a07a9ada5d734f172616b3e18f1557016996a3f68f36e4736a34d33",
+  "capture_script_sha256": "36b228390538b8c5f4f21b91a24b014e67e121495aca96e5933136f3cc8a2b49",
+  "native_model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "native_marker_sha256": "f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6",
+  "native_model": {
+    "consumed": 2510,
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker",
+    "advanced": null,
+    "point_count": 204,
+    "size_f32_bits": "4111de6a",
+    "color_argb": "0xff000000",
+    "tool_type": 2,
+    "curve_enabled": 1
+  },
+  "parser": {
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker",
+    "advanced": null,
+    "pen_size_f32_bits": "4111de6a",
+    "color_argb": null,
+    "tool_type": 2
+  },
+  "native_and_parser_arrays": {
+    "points": {
+      "elements": 204,
+      "native_and_rust_sha256": "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4"
+    },
+    "pressure": {
+      "elements": 204,
+      "native_and_rust_sha256": "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9"
+    },
+    "timestamps": {
+      "elements": 204,
+      "native_and_rust_sha256": "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a"
+    },
+    "tilt": {
+      "elements": 204,
+      "native_and_rust_sha256": "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6"
+    },
+    "orientation": {
+      "elements": 204,
+      "native_and_rust_sha256": "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+    }
+  },
+  "drawing": {
+    "return": 1,
+    "selected_version": "1",
+    "redraw_names": [
+      "non-virtual thunk to SPen::MarkerStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ],
+    "queue_count": 20
+  },
+  "host_paint": {
+    "capture_script_sha256": "b2354ca2dab7733b4f6011625d1c4c9bcd921c0712f6b8a1fc1c93e40756f365",
+    "full_capture_sha256": "f452f44d67c359147306494d594bdcceae9284b531516ee4aeec4d6c00b1d07e",
+    "size": [
+      1920,
+      1080
+    ],
+    "format": "RGBA8, GL lower-left row index maps directly to source page y under supplied host matrix",
+    "frame_sha256": "0964b53614b711946cc93d986a1591259b294afef92db769d5111f3d5f485625",
+    "sparse_format": "repeated little-endian u32 linear pixel index and four RGBA bytes; absent pixels zero",
+    "sparse_sha256": "8b820eb7f4d74f95776a4c6b0ce0b897953468c433133a002833a44ea9b4465d",
+    "sparse_pixels": 595,
+    "draw_vertex_counts": [
+      124,
+      6,
+      132,
+      132,
+      6
+    ],
+    "completed_queue_tasks": 20,
+    "no_gl_errors": true
+  },
+  "comparison": {
+    "scope": "PyMuPDF rasterization of one isolated parsed stroke on white, at 1 page unit per output pixel; native premultiplied RGBA composited on white. Support is any RGB channel <250; RGB L1 is summed over support union.",
+    "native_support": 592,
+    "svg": {
+      "support": 220,
+      "intersection": 218,
+      "union": 594,
+      "rgb_l1": 290682
+    },
+    "pdf": {
+      "support": 221,
+      "intersection": 219,
+      "union": 594,
+      "rgb_l1": 289413
+    },
+    "export_harness_sha256": "15be856383ac3a53298125144295cc4d77b9714d89d5301e0b4046efbd2e04fc",
+    "compare_script_sha256": "643a1ecf2fb0b225ae41b4e6ece87a0e90a8b9d08b9fba5765536ac024ae014b"
+  },
+  "reproducibility": {
+    "generator_path": "tmp/legacy-marker-source-controls/make_serialized_marker.py",
+    "generator_sha256": "d3733ac72f38a62bd3fb8ec74461789e109890771270a64ab032515396fc2d6c",
+    "native_drawing_script": "tmp/legacy-marker-source-controls/serialized-drawing.py",
+    "native_paint_script": "tmp/legacy-marker-source-controls/serialized-paint.py",
+    "export_source": "tmp/legacy-marker-source-controls/export/src/main.rs",
+    "comparison_script": "tmp/legacy-marker-source-controls/compare_serialized_paint.py",
+    "retained_parser_fixture": "crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx",
+    "fixture_sha256": "ec4476cba55a9e92e4d5c54eb5789e0842a223e120825009fffd004a952d7de5",
+    "fixture_boundary": "One modified source stroke object and original string table retained. Other 76 strokes, 5 shapes, 1 line, second page and media removed; layer trailer replaced by zeros, original manifest hashes are not refreshed. This reduced archive is a Rust parser fixture, not a validated Samsung-loadable note; source UUIDs, timestamps and target handwritten stroke remain."
+  },
+  "source_attribution": "Adapted from 02-shapes-and-dot-calibration in SDOCX Compatibility Corpus by the SDOCX Compatibility Corpus contributors, CC BY 4.0: https://huggingface.co/datasets/twangodev/sdocx-compatibility. Pen-name table and setting were changed and the parser fixture was reduced to one stroke."
+}

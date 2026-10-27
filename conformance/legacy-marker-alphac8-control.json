@@ -1,0 +1,12 @@
+{
+  "scope": "Synthetic straight four-point cold Drawing and RTV1 host Unicorn/Mesa control; not a saved note or device capture.",
+  "source_script": "tmp/legacy-marker-source-controls/alphac8.py",
+  "source_script_sha256": "abb2ec84c87c9b16394dcb89fd02e745fa206be7079467b0c09c5d37f0e004b5",
+  "capture_sha256": "3f497e7fc6fd6fca6c93856a3e39f89fbd7ab16d90a398c2dcb46ef7f08b0f9e",
+  "input": {"advanced_setting": {"object": null,"utf8": null},"color_argb": "0xc8ffcb30","curve_enabled": 1,"kind": "synthetic native Model ObjectStroke setter input; not serialized file","pen_name": {"bytes_hex": "636f6d2e73616d73756e672e616e64726f69642e73646b2e70656e2e70656e2e7072656c6f61642e4d61726b657200","object": "0x107fca10","size": 47,"utf8": "com.samsung.android.sdk.pen.pen.preload.Marker\u0000"},"point_count": 4,"size_f32_bits": "41400000","source_arrays_hex": {"orientation": "00000000cdcc4c3ecdcccc3e9a99193f","points": "000020410000a041000090410000a0410000d0410000a04100000c420000a041","pressure": "3333b33ecdcc0c3f0000403f6666263f","tilt": "cdcccc3d9a99193ecdcc4c3e0000803e","timestamps": "00000000080000001000000018000000"},"stroke_type": 0,"tool_type": 2},
+  "marker_sha256": "f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6",
+  "uniform4fv": [{"call": "glUniform4fv","event": {"call": "glUniform4fv","location": 2,"values": [1.0,0.7960784435272217,0.1882352977991104,0.7843137383460999]},"phase": "native_queue_run_sequence_11","program": 4},{"call": "glUniform4fv","event": {"call": "glUniform4fv","location": 3,"values": [1.0,0.7960784435272217,0.1882352977991104,0.7843137383460999]},"phase": "native_queue_run_sequence_11","program": 6},{"call": "glUniform4fv","event": {"call": "glUniform4fv","location": 2,"values": [1.0,0.7960784435272217,0.1882352977991104,0.7843137383460999]},"phase": "native_queue_run_sequence_11","program": 5},{"call": "glUniform4fv","event": {"call": "glUniform4fv","location": 2,"values": [1.0,0.7960784435272217,0.1882352977991104,0.7843137383460999]},"phase": "native_queue_run_sequence_11","program": 5},{"call": "glUniform4fv","event": {"call": "glUniform4fv","location": 3,"values": [1.0,0.7960784435272217,0.1882352977991104,0.7843137383460999]},"phase": "native_queue_run_sequence_11","program": 6}],
+  "final_frame_sha256": "2d6408162c1e34f67c246e310ff2a7614e49721210fadb3be2af31602b1dd939",
+  "sparse_sha256": "c9183aa2012a9cc9e453ccdc797de179d0afb132da3da2888681faf23ab06f06",
+  "sparse_path": "conformance/legacy-marker-alphac8-sparse-rgba8.bin"
+}

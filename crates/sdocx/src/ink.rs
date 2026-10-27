@@ -622,7 +622,9 @@ fn prepare_stroke_inner<'a>(
         if pencil_source::saved_pencil3_v3_transparent(stroke) {
             0.0
         } else {
-            saved_inkpen_argb(stroke).map_or(1., |argb| f64::from((argb >> 24) as u8) / 255.)
+            saved_inkpen_argb(stroke)
+                .or_else(|| saved_legacy_marker_argb(stroke))
+                .map_or(1., |argb| f64::from((argb >> 24) as u8) / 255.)
         }
     };
     let (points, sample_ends, dot_radii, ordered_disk_replay, opacity) =
@@ -800,6 +802,33 @@ pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
     // opaque-black default. This recovers RGB only; native alpha is transformed
     // per stamp and cannot be applied as opacity to the generic whole-stroke path.
     Some(rendering.style.color_argb.unwrap_or(0xff00_0000))
+}
+
+// The captured nonzero Marker alpha controls use the saved ARGB alpha; the
+// generic stroke geometry remains an approximation of the native mesh.
+fn saved_legacy_marker_argb(stroke: &Stroke) -> Option<u32> {
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker")
+        || rendering.advanced_settings.is_some()
+        || rendering.tool_type_raw != 2
+        || !properties.compressed
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || rendering
+            .style
+            .stroke_type_raw
+            .is_some_and(|value| value != 0)
+    {
+        return None;
+    }
+    rendering.style.color_argb
 }
 
 // V1 and V4 use RTV1's MAX coverage pass followed by one source-color
@@ -1109,6 +1138,34 @@ mod tests {
         });
         input
     }
+    #[test]
+    fn legacy_marker_fallback_uses_captured_argb_alpha_only_for_bounded_metadata() {
+        let mut input = oblique_stroke();
+        let rendering = input.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker".into());
+        rendering.tool_type_raw = 2;
+        rendering.advanced_settings = None;
+        rendering.properties.compressed = true;
+        for alpha in [0_u32, 1, 64, 96, 128, 200, 255] {
+            input.rendering.as_mut().unwrap().style.color_argb = Some((alpha << 24) | 0x00ff_cb30);
+            assert_eq!(
+                prepare_stroke(&input, false).opacity,
+                f64::from(alpha) / 255.0
+            );
+        }
+        input.rendering.as_mut().unwrap().style.color_argb = Some(0x80ff_cb30);
+        input.rendering.as_mut().unwrap().advanced_settings = Some("unknown".into());
+        assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
+        input.rendering.as_mut().unwrap().advanced_settings = None;
+        input.rendering.as_mut().unwrap().tool_type_raw = 99;
+        assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
+        input.rendering.as_mut().unwrap().tool_type_raw = 2;
+        input.rendering.as_mut().unwrap().properties.eraser = true;
+        assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
+        input.rendering = None;
+        assert_eq!(prepare_stroke(&input, false).opacity, 1.0);
+    }
+
     fn defaultpen_stroke() -> Stroke {
         let mut input = stroke(&[(0., 0.), (10., 0.), (20., 0.), (30., 10.)]);
         input.pen_width = 10.0;
