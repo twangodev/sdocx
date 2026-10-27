@@ -477,6 +477,73 @@ fn expected_native_sparse() -> Result<Vec<[u8; SPARSE_RECORD_BYTES]>, &'static s
 mod tests {
     use super::*;
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn nearest_image_one_hot_boundary_control() {
+        use base64::Engine as _;
+
+        let mut observations = Vec::new();
+        for translation in [0_u32, 1, 4] {
+            for hot in [0_usize, 1] {
+                let mut pixels = vec![0_u8; 48 * 4];
+                pixels[hot * 4 + 3] = 255;
+                let mut encoded = Vec::new();
+                {
+                    let mut encoder = png::Encoder::new(&mut encoded, 48, 1);
+                    encoder.set_color(png::ColorType::Rgba);
+                    encoder.set_depth(png::BitDepth::Eight);
+                    encoder
+                        .write_header()
+                        .unwrap()
+                        .write_image_data(&pixels)
+                        .unwrap();
+                }
+                let uri = base64::engine::general_purpose::STANDARD.encode(encoded);
+                let origin = 2.5_f32 + translation as f32;
+                let svg = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="104" height="6"><image x="{origin}" y="1" width="96" height="4" preserveAspectRatio="none" image-rendering="optimizeSpeed" href="data:image/png;base64,{uri}"/></svg>"#
+                );
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(104, 6).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                let mut differences = Vec::new();
+                for x in 0..104_u32 {
+                    let center = x as f32 + 0.5;
+                    let expected = if center >= origin
+                        && center < origin + 96.0
+                        && nearest_texel((center - origin) / 96.0, 48) == hot
+                    {
+                        255
+                    } else {
+                        0
+                    };
+                    let actual = pixmap.data()[((2 * 104 + x) * 4 + 3) as usize];
+                    if actual != expected {
+                        differences.push((x, expected, actual));
+                    }
+                }
+                observations.push(differences);
+            }
+        }
+        // The nearest sampler owns the internal boundary correctly, but the
+        // image's outer geometric edge is still antialiased by resvg.
+        assert_eq!(
+            observations,
+            [
+                vec![(2, 255, 128)],
+                vec![],
+                vec![(3, 255, 128)],
+                vec![],
+                vec![(6, 255, 128)],
+                vec![],
+            ]
+        );
+    }
+
     #[test]
     fn one_hot_texel_boundary_control_reports_svg_coverage() {
         // A 48-texel atlas tile, two output units per texel. Its origin
