@@ -912,4 +912,68 @@ mod tests {
             false
         );
     }
+    #[test]
+    fn long_native_control_public_svg_overlaps_native_paint() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-long-native/receipt.json"
+        ))
+        .unwrap();
+        let native_geometry =
+            include_bytes!("../../../../../conformance/brushpen-long-native/geometry-164x44.bin");
+        assert_eq!(native_geometry.len(), 164 * 44);
+        assert_eq!(sha256(native_geometry), fixture["geometry"]["sha256"]);
+        let stroke = manual_native_caller_stroke(&fixture);
+        let document = crate::Document {
+            pages: vec![crate::Page {
+                uuid: "brushpen-long-native".into(),
+                width: 321,
+                height: 228,
+                content_bbox: crate::BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let svg = crate::render_page_svg(&document, 0, &Default::default())
+            .unwrap()
+            .svg;
+        let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(321, 228).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let mut crop = Vec::new();
+        ZlibDecoder::new(
+            &include_bytes!(
+                "../../../../../conformance/brushpen-long-native/crop-133x49-rgba8.zlib"
+            )[..],
+        )
+        .read_to_end(&mut crop)
+        .unwrap();
+        assert_eq!(crop.len(), 133 * 49 * 4);
+        assert_eq!(sha256(&crop), fixture["paint"]["crop_rgba_sha256"]);
+        let mut native_support = 0;
+        let mut intersection = 0;
+        let mut union = 0;
+        for (i, native) in crop.chunks_exact(4).enumerate() {
+            let x = i % 133 + 28;
+            let y = i / 133 + 38;
+            let offset = (y * 321 + x) * 4;
+            let rendered = &pixmap.data()[offset..offset + 4];
+            let native_nonzero = native[3] != 0;
+            let fallback_nonzero = rendered[..3] != [252, 252, 252];
+            native_support += usize::from(native_nonzero);
+            intersection += usize::from(native_nonzero && fallback_nonzero);
+            union += usize::from(native_nonzero || fallback_nonzero);
+        }
+        assert_eq!(native_support, 1100);
+        assert!(
+            intersection * 100 > union * 40,
+            "public SVG no longer overlaps the native stroke"
+        );
+    }
 }

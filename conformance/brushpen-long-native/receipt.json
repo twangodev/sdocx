@@ -1,0 +1,162 @@
+{
+  "capture_runner_sha256": "4c2cd4079c1a808c51843bd5442946a1f1fdcedd6f3e755af55bc56d47f0ff21",
+  "geometry": {
+    "bytes": 7216,
+    "record_count": 164,
+    "sha256": "a3e92df3d96ad24fcbf6379109b0767a0b7157124209838c07c877273bbda598"
+  },
+  "input": {
+    "advanced_setting_ascii": "",
+    "color_argb_u32": "0xff6cdd8f",
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "",
+      "color_argb_u32": "0xff6cdd8f",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+      "size": 12.0,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+    "point_count": 8,
+    "size_f32_bits": "00004041",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 8,
+        "data_hex": "cdcc4c3e0000803e9a99993e3333b33ecdcccc3e6666e63e0000003fcdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 8,
+        "data_hex": "0000f04100002042000040420000304200008642000054420000aa42000086420000ce4200009c420000f4420000a44200000c430000984200001f4300007442",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 8,
+        "data_hex": "0000803ecdcccc3ecdcc0c3f3333333f9a99593f0000403f0000003f9a99993e",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 8,
+        "data_hex": "8fc2f53d9a99193ecdcc4c3e0000803e9a99993e295c8f3eae47613e9a99193e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 8,
+        "data_hex": "2c0100003b0100004a0100005901000068010000770100008601000095010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_helper_sha256": {
+    "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "paint": {
+    "cleanup_returned": true,
+    "color_join": {
+      "count": 1,
+      "location": 4,
+      "rt": "0x100e99b0",
+      "rt_plus44_bytes": "d9d8d83ededd5d3f908f0f3f0000803f",
+      "uniform_bytes": "d9d8d83ededd5d3f908f0f3f0000803f",
+      "values": [
+        0.42352941632270813,
+        0.8666666746139526,
+        0.5607843399047852,
+        1.0
+      ]
+    },
+    "crop_rgba_sha256": "e0d8d62933b8cf40b8b2c4c0f131644683a949f4ed39571446463aef06e84492",
+    "crop_xywh_gl_bottom_left": [
+      28,
+      38,
+      133,
+      49
+    ],
+    "draw_returned": true,
+    "fbo_status": [
+      {
+        "bound_draw_framebuffer": 2,
+        "is_framebuffer_complete": true,
+        "phase": "native PenGLRenderMsg task2",
+        "status_enum": 36053,
+        "status_hex": "0x8cd5",
+        "target_enum": 36160
+      }
+    ],
+    "full_rgba_sha256": "99a2e0946e494db4d1bd1c24dbf6f880a57cba7e5c9830a0103d510b93448964",
+    "nonzero_pixels": 1100,
+    "target_dimensions": [
+      321,
+      228
+    ]
+  },
+  "profile": {
+    "canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "height": 1080,
+    "width": 1920
+  },
+  "public_export_comparison": {
+    "native_rgba_sha256": "99a2e0946e494db4d1bd1c24dbf6f880a57cba7e5c9830a0103d510b93448964",
+    "pdf": {
+      "fallback_support": 696,
+      "max_channel_error": 144,
+      "native_support": 1100,
+      "support_iou": 0.5376712328767124,
+      "union_roi": [
+        28,
+        38,
+        161,
+        87
+      ],
+      "union_roi_rgb_mae": 7.346529589279321
+    },
+    "pdf_page_points": [
+      240.75,
+      171.0
+    ],
+    "pdf_sha256": "b0ecfacc555986b55a852189e627e7b191a915dee19186f47b2bc48f30b09a83",
+    "scope": "Exact synthetic source supplied to public sdocx render_page_svg and render_document_pdf. Native host RGBA composited over sdocx default #fcfcfc; source-coordinate mapping compares GL bottom-up rows to SVG top-down rows, equivalently mirroring both. SVG rendered with Chromium, PDF rendered with PDFium at 4/3 (96dpi); native synthetic host-Mesa, no device parity.",
+    "svg": {
+      "fallback_support": 671,
+      "max_channel_error": 144,
+      "native_support": 1100,
+      "support_iou": 0.5214776632302406,
+      "union_roi": [
+        28,
+        38,
+        161,
+        87
+      ],
+      "union_roi_rgb_mae": 7.4520484885683596
+    },
+    "svg_sha256": "11df58e60d33a158170eda4caeb1eac7b502f110d95851d0f766a993f5bc2c29"
+  },
+  "schema": "brushpen-long-native-control-v1",
+  "scope": "Synthetic ObjectStroke; native Model Drawing GLV10 and queued RTV1 on host Mesa with host queue/canvas adapters; not parsed notes or Samsung device parity. Native crop uses GL bottom-up rows."
+}
