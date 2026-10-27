@@ -51,6 +51,8 @@ mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
 #[cfg(test)]
 mod legacy_marker_paint;
+#[cfg(test)]
+mod legacy_marker_segment_count;
 mod oblique;
 mod oblique_v1;
 #[cfg(test)]

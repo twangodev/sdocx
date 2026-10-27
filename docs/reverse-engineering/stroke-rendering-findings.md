@@ -540,10 +540,10 @@ quadratic half subdivisions. A separate test script in
 `tmp/legacy-marker-source-controls/check_subdivision.py` recursively computes
 quadratic de Casteljau midpoints from the captured root tuples and checks all
 native entry intervals and points. All 15 straight and 47 bent recursive entries
-match the interval order; the maximum point difference is 0 and 0.00000190735
-page units respectively. The small bent difference reflects operation order;
-this test does not prove bit-identical arithmetic or validate generated edge
-normals and full meshes.
+match the interval order. A Rust reconstruction follows the native weighted-term
+operation order and matches the captured coordinates bit for bit in all 62
+recursive entries. These controls do not validate generated edge normals or
+full meshes.
 
 The initial interval comes from `calcSegmentsNumber` at RVA `0x34138`, whose
 branch depends on RT byte offset 716 and other state. In the non-circle branch,
@@ -559,3 +559,9 @@ The trace scripts `straight-trace.py` and `bend-trace.py` in
 `tmp/legacy-marker-source-controls/` extend the earlier capture scripts with
 read-only entry snapshots. They require the pinned native inputs and preflight
 of the V31 runner. The trace receipt hashes each full capture and script.
+
+The captured straight control has direction dots 1, 1, 1 and lengths 8/0,
+8/8, 9/8, yielding counts 3, 3, 3. The bent control has dots 1, 0, 0 and
+lengths 8/0, 8/8, 8/8, yielding counts 3, 11, 11. The [test-only Rust model](../../crates/sdocx/src/ink/legacy_marker_segment_count.rs)
+checks all six against the native intervals. These are finite synthetic host
+controls; branch selection, circular counts and initialization remain unverified.
