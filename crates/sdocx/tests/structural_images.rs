@@ -481,6 +481,46 @@ fn standard_rectangular_images_accept_inactive_outline_and_nine_patch_settings()
     }
 }
 
+#[cfg(feature = "pdf")]
+#[test]
+fn parsed_nine_patch_reaches_public_svg_and_pdf() {
+    let mut fill_data = fill(7);
+    for (index, value) in [1_i32, 1, 3, 3, 100].into_iter().enumerate() {
+        let offset = 42 + index * 4;
+        fill_data[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+    let payload = image_with_fill(2, &fill_data, 0, &[], &frame(3, 0, &[], &[]));
+    let png = uniform_rgba_png(4, 4, [10, 20, 30, 255]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "main.png")]),
+        &[("main.png", &png)],
+    ))
+    .unwrap();
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == DiagnosticCode::UnsupportedImageFeature)
+    );
+    let svg = sdocx::render_document_svg(&parsed.document, &Default::default())
+        .remove(0)
+        .svg;
+    assert_eq!(
+        roxmltree::Document::parse(&svg)
+            .unwrap()
+            .descendants()
+            .filter(|n| n.has_tag_name("use"))
+            .count(),
+        9
+    );
+    assert!(
+        sdocx::render_document_pdf(&parsed.document, &Default::default(), &Default::default())
+            .is_ok()
+    );
+}
+
 #[test]
 fn custom_image_paths_visible_outlines_and_active_fill_effects_still_warn() {
     let points = [[-10.0, 20.0], [90.0, 20.0], [90.0, 100.0], [-10.0, 100.0]];

@@ -199,6 +199,10 @@ pub struct PlacedImage {
     pub fill_effect_transparency: f32,
     pub crop_rect: Option<[i32; 4]>,
     pub original_bbox: Option<BoundingBox>,
+    /// Active source nine-patch cuts and reference page width for the bounded
+    /// ordinary-fill route. Other saved encodings remain in the raw object data.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub nine_patch: Option<([i32; 4], i32)>,
     /// Optional border asset ID, distinct from the main image.
     pub border_media_id: Option<u32>,
     /// Optional original asset ID, distinct from the displayed image.

@@ -158,9 +158,10 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     if shape.fields.contains(2) {
         fields.read_i32("shape pen name ID")?;
     }
-    let media_id = if shape.fields.contains(3) {
+    let geometry_supported = unsupported.is_empty();
+    let (media_id, nine_patch) = if shape.fields.contains(3) {
         unsupported.push("unknown field before the image fill");
-        None
+        (None, None)
     } else {
         if shape.fields.contains(4) {
             fields.read_i32("shape pen settings ID")?;
@@ -173,13 +174,14 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
                 parse_image_fill(fill, &mut unsupported)?
             } else {
                 unsupported.push("non-image fill effect");
-                None
+                (None, None)
             }
         } else {
-            None
+            (None, None)
         }
     };
-    if shape.fields.has_other_bits(0x35) || fields.remaining() != 0 {
+    let extra_shape_fields = shape.fields.has_other_bits(0x35) || fields.remaining() != 0;
+    if extra_shape_fields {
         unsupported.push("additional shape fields");
     }
     let mut image = PlacedImage {
@@ -192,6 +194,11 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         original_bbox: None,
         border_media_id: None,
         original_media_id: None,
+        nine_patch: if geometry_supported && !extra_shape_fields {
+            nine_patch
+        } else {
+            None
+        },
     };
     let mut fields = Reader::new(tail.flexible, "image settings");
     for bit in 0..=19 {
@@ -233,6 +240,13 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             _ => break,
         }
     }
+    if tail.fields.has_other_bits((1 << 1) | (1 << 7))
+        || tail.properties.has_other_bits(0)
+        || !tail.fixed.is_empty()
+        || fields.remaining() != 0
+    {
+        image.nine_patch = None;
+    }
     if tail.fields.has_other_bits((1 << 1) | (1 << 7) | (1 << 17))
         || (image.crop_rect.is_some() && image.original_bbox.is_none())
         || tail.properties.has_other_bits(0)
@@ -245,6 +259,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         while reader.remaining() != 0 {
             Frame::read(&mut reader)?;
         }
+        image.nine_patch = None;
         unsupported.push("additional image frames");
     }
     Ok(DecodedImage {
@@ -322,10 +337,12 @@ fn is_placement_rectangle(data: &[u8], bbox: BoundingBox, rotation: f64) -> Resu
     }))
 }
 
-fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<Option<u32>> {
+type ParsedImageFill = (Option<u32>, Option<([i32; 4], i32)>);
+
+fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<ParsedImageFill> {
     if data.len() > 62 {
         unsupported.push("alternate or extended image-fill encoding");
-        return Ok(None);
+        return Ok((None, None));
     }
     let mut reader = Reader::new(data, "image fill");
     let fill_type = reader.read_u8("image fill mode")?;
@@ -336,17 +353,21 @@ fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<
     }
     let rotatable = reader.read_u8("fill rotatable flag")?;
     let nine_patch = read_rect(&mut reader)?;
-    reader.read_i32("nine-patch width")?;
-    if fill_type != 0
+    let width = reader.read_i32("nine-patch width")?;
+    let unsupported_transform = fill_type != 0
         || settings[..6].iter().any(|value| *value != 0.0)
         || settings[6..8].iter().any(|value| *value != 100.0)
         || settings[8] != 0.0
-        || rotatable != 0
-        || nine_patch != [0; 4]
-    {
+        || rotatable != 0;
+    let [left, top, right, bottom] = nine_patch;
+    let active_nine_patch = left < right && top < bottom;
+    if unsupported_transform || active_nine_patch {
         unsupported.push("image fill transforms, tiling, transparency or nine-patch");
     }
-    Ok(media_id)
+    Ok((
+        media_id,
+        (!unsupported_transform && active_nine_patch).then_some((nine_patch, width)),
+    ))
 }
 
 fn read_media_id(reader: &mut Reader<'_>) -> Result<Option<u32>> {

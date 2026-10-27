@@ -44,6 +44,7 @@ fn image_span(input: &ImageSource) -> RichTextObjectSpan {
             original_bbox: None,
             border_media_id: None,
             original_media_id: None,
+            nine_patch: None,
             fill_effect_transparency: 0.0,
         }))),
         text_index_utf16: 2,

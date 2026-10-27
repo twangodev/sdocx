@@ -16,9 +16,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 use vector::{
     Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
-    Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle, ReplayPart,
-    ReplayPath, Scene, StrokeIndex, Styled, Svg, TSpan, Text, TextAnchor, TextDecoration,
-    Transform, ViewBox, color_hex, coordinate, decimal,
+    ImageId, Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle,
+    ReplayPart, ReplayPath, Scene, StrokeIndex, Styled, Svg, TSpan, Text, TextAnchor,
+    TextDecoration, Transform, Use, ViewBox, color_hex, coordinate, decimal,
 };
 
 mod airbrush;
@@ -1555,7 +1555,9 @@ fn render_element(
         PageElement::Image { bbox, media_index } => {
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
-        PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
+        PageElement::PlacedImage(image) => {
+            render_placed_image(svg, image, media_assets, Some(page.width))
+        }
         // Native fill-effect transparency is defined only for type-3 images.
         PageElement::FormulaImage(image) => render_placed_image_body(svg, image, media_assets),
         PageElement::TextBox(text_box) => render_text_box(
@@ -2148,17 +2150,22 @@ fn image_drawn_bbox(image: &PlacedImage) -> BoundingBox {
     }
 }
 
-fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
+fn render_placed_image(
+    svg: &mut Scene,
+    image: &PlacedImage,
+    media_assets: &[MediaAsset],
+    page_width: Option<u32>,
+) {
     let alpha = placed_image_alpha(image.fill_effect_transparency);
     if alpha == 0 {
         return;
     }
     if alpha < 255 {
         svg.scope(Group::new().opacity(f64::from(alpha) / 255.0), |svg| {
-            render_placed_image_content(svg, image, media_assets);
+            render_placed_image_content(svg, image, media_assets, page_width);
         });
     } else {
-        render_placed_image_content(svg, image, media_assets);
+        render_placed_image_content(svg, image, media_assets, page_width);
     }
 }
 
@@ -2173,7 +2180,142 @@ fn placed_image_alpha(transparency: f32) -> u8 {
     (scaled as i32).clamp(0, 255) as u8
 }
 
-fn render_placed_image_content(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
+// The source and destination cuts follow Drawing's f32 arithmetic. Restrict
+// this SVG route to positive, in-bounds patches; native also submits degenerate
+// and out-of-bounds patches, whose sampling behavior is not established here.
+fn render_nine_patch(
+    svg: &mut Scene,
+    image: &PlacedImage,
+    assets: &[MediaAsset],
+    page_width: Option<u32>,
+) -> bool {
+    if image.border_media_id.is_some()
+        || image.original_media_id.is_some()
+        || image.original_bbox.is_some()
+    {
+        return false;
+    }
+    if image.crop_rect.is_some_and(|[l, t, r, b]| l < r && t < b) {
+        return false;
+    }
+    let Some(([l, t, r, b], reference_width)) = image.nine_patch else {
+        return false;
+    };
+    let Some(asset) = image.media_index.and_then(|i| assets.get(i)) else {
+        return false;
+    };
+    let Ok(size) = imagesize::blob_size(&asset.data) else {
+        return false;
+    };
+    let (Ok(w), Ok(h)) = (i32::try_from(size.width), i32::try_from(size.height)) else {
+        return false;
+    };
+    if !(0 < l && l < r && r < w && 0 < t && t < b && b < h) {
+        return false;
+    }
+    let q = if reference_width == 0 {
+        1.0
+    } else if let Some(width) = page_width.and_then(|v| i32::try_from(v).ok()) {
+        (width as f32) / (reference_width as f32)
+    } else {
+        return false;
+    };
+    let bbox = image.bbox;
+    let [x0, y0, x3, y3] = [0.0_f32, 0.0, w as f32, h as f32];
+    let width = bbox.x_max - bbox.x_min;
+    let height = bbox.y_max - bbox.y_min;
+    if ![bbox.x_min, bbox.y_min, width, height]
+        .iter()
+        .all(|v| v.is_finite())
+        || width <= 0.0
+        || height <= 0.0
+        || !q.is_finite()
+    {
+        return false;
+    }
+    let (mut x1, mut x2) = ((l as f32).mul_add(q, x0), (-(w - r) as f32).mul_add(q, x3));
+    let (mut y1, mut y2) = ((t as f32).mul_add(q, y0), (-(h - b) as f32).mul_add(q, y3));
+    if x1 >= x2 || y1 >= y2 {
+        (x1, x2, y1, y2) = (x0 + l as f32, x0 + r as f32, y0 + t as f32, y0 + b as f32);
+    }
+    let dx = [x0, x1.ceil(), x2.floor(), x3];
+    let dy = [y0, y1.ceil(), y2.floor(), y3];
+    if dx.windows(2).any(|v| v[0] >= v[1]) || dy.windows(2).any(|v| v[0] >= v[1]) {
+        return false;
+    }
+    let sx = [0, l, r, w];
+    let sy = [0, t, b, h];
+    let angle = image.rotation_degrees.unwrap_or(0.0);
+    if !angle.is_finite() {
+        return false;
+    }
+    let source = svg.definition::<ImageId>();
+    svg.scope(Definitions::new(), |svg| {
+        svg.push(
+            Image::embedded(&asset.data, &asset.mime_type)
+                .id(&source.id_text())
+                .x(0)
+                .y(0)
+                .width(f64::from(w))
+                .height(f64::from(h))
+                .stretched(),
+        );
+    });
+    svg.scope(
+        Group::new().transformed(Transform::rotate_unrounded(
+            angle,
+            (bbox.x_min + bbox.x_max) / 2.0,
+            (bbox.y_min + bbox.y_max) / 2.0,
+        )),
+        |svg| {
+            svg.scope(
+                Svg::new()
+                    .x(bbox.x_min)
+                    .y(bbox.y_min)
+                    .width(width)
+                    .height(height)
+                    .view_box(ViewBox::unrounded(0.0, 0.0, f64::from(w), f64::from(h)))
+                    .preserve_aspect_none()
+                    .clipped_viewport(),
+                |svg| {
+                    for y in 0..3 {
+                        for x in 0..3 {
+                            svg.scope(
+                                Svg::new()
+                                    .x(f64::from(dx[x]))
+                                    .y(f64::from(dy[y]))
+                                    .width(f64::from(dx[x + 1] - dx[x]))
+                                    .height(f64::from(dy[y + 1] - dy[y]))
+                                    .view_box(ViewBox::unrounded(
+                                        f64::from(sx[x]),
+                                        f64::from(sy[y]),
+                                        f64::from(sx[x + 1] - sx[x]),
+                                        f64::from(sy[y + 1] - sy[y]),
+                                    ))
+                                    .preserve_aspect_none()
+                                    .clipped_viewport(),
+                                |svg| {
+                                    svg.push(Use::image(&source));
+                                },
+                            );
+                        }
+                    }
+                },
+            );
+        },
+    );
+    true
+}
+
+fn render_placed_image_content(
+    svg: &mut Scene,
+    image: &PlacedImage,
+    media_assets: &[MediaAsset],
+    page_width: Option<u32>,
+) {
+    if render_nine_patch(svg, image, media_assets, page_width) {
+        return;
+    }
     let simple_original_crop = image.original_bbox.is_none()
         || (image.border_media_id.is_none() && image.original_media_id.is_none());
     if simple_original_crop
@@ -3051,7 +3193,7 @@ fn render_embedded_object(
                     .object(ObjectKind::Image)
                     .transformed(Transform::translate(0., offset_y, 4)),
                 |svg| {
-                    render_placed_image(svg, image, media_assets);
+                    render_placed_image(svg, image, media_assets, None);
                 },
             );
             Some(drawn.y_max + offset_y)
@@ -5210,6 +5352,128 @@ mod tests {
             }),
             border_media_id: None,
             original_media_id: None,
+            nine_patch: None,
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn nine_patch_uses_page_width_and_crop_takes_precedence() {
+        let mut image = simple_original_crop(None);
+        image.bbox = BoundingBox {
+            x_min: 20.0,
+            y_min: 30.0,
+            x_max: 70.0,
+            y_max: 60.0,
+        };
+        image.crop_rect = None;
+        image.original_bbox = None;
+        image.nine_patch = Some(([1, 1, 3, 2], 500));
+        let svg = render_test_placed_image(image.clone(), test_rgb_png());
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let patches: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("svg") && n.attribute("viewBox").is_some())
+            .collect();
+        assert_eq!(patches.len(), 11); // page, processed bitmap, nine source views
+        assert_eq!(
+            xml.descendants()
+                .filter(|n| n.has_tag_name("image"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants().filter(|n| n.has_tag_name("use")).count(),
+            9
+        );
+        let middle = patches
+            .iter()
+            .find(|n| n.attribute("viewBox") == Some("1 1 2 1"))
+            .unwrap();
+        assert_eq!(middle.attribute("x"), Some("1"));
+        assert_eq!(middle.attribute("y"), Some("1"));
+        assert_eq!(middle.attribute("width"), Some("2"));
+        assert_eq!(middle.attribute("height"), Some("1"));
+        image.rotation_degrees = Some(30.0);
+        let rotated = render_test_placed_image(image.clone(), test_rgb_png());
+        assert!(rotated.contains("rotate(30 45 45)"));
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![PageElement::PlacedImage(image.clone()).into()];
+        let mut doc = document(page);
+        doc.metadata.media_assets = vec![MediaAsset {
+            name: "patch.png".into(),
+            archive_id: Some(0),
+            mime_type: "image/png".into(),
+            data: test_rgb_png(),
+        }];
+        assert!(
+            crate::render_document_pdf(
+                &doc,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default()
+            )
+            .is_ok()
+        );
+        image.rotation_degrees = None;
+        image.crop_rect = Some([1, 1, 3, 2]);
+        let svg = render_test_placed_image(image, test_rgb_png());
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|n| n.has_tag_name("image"))
+                .count(),
+            1
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn nine_patch_svg_raster_preserves_nine_colored_regions() {
+        let mut pixels = Vec::new();
+        for y in 0..9 {
+            for x in 0..9 {
+                pixels.extend_from_slice(&[(x / 3 * 100) as u8, (y / 3 * 100) as u8, 30]);
+            }
+        }
+        let mut data = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut data, 9, 9);
+            encoder.set_color(png::ColorType::Rgb);
+            encoder.set_depth(png::BitDepth::Eight);
+            encoder
+                .write_header()
+                .unwrap()
+                .write_image_data(&pixels)
+                .unwrap();
+        }
+        let mut image = simple_original_crop(None);
+        image.bbox = BoundingBox {
+            x_min: 20.0,
+            y_min: 30.0,
+            x_max: 70.0,
+            y_max: 60.0,
+        };
+        image.crop_rect = None;
+        image.original_bbox = None;
+        image.nine_patch = Some(([3, 3, 6, 6], 200));
+        let svg = render_test_placed_image(image, data);
+        let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(100, 100).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        for (row, y) in [31, 45, 58].into_iter().enumerate() {
+            for (col, x) in [21, 45, 68].into_iter().enumerate() {
+                let pixel = pixmap.pixel(x, y).unwrap();
+                for (actual, expected) in [pixel.red(), pixel.green(), pixel.blue(), pixel.alpha()]
+                    .into_iter()
+                    .zip([(col * 100) as u8, (row * 100) as u8, 30, 255])
+                {
+                    assert!(actual.abs_diff(expected) <= 1, "{actual} vs {expected}");
+                }
+            }
         }
     }
 
@@ -15219,6 +15483,7 @@ mod tests {
                     original_bbox: None,
                     border_media_id: None,
                     original_media_id: None,
+                    nine_patch: None,
                     fill_effect_transparency: 0.0,
                 }))),
                 text_index_utf16: anchor as i32,
@@ -15451,6 +15716,7 @@ mod tests {
                     original_bbox: None,
                     border_media_id: None,
                     original_media_id: None,
+                    nine_patch: None,
                     fill_effect_transparency: 0.0,
                 }))),
                 text_index_utf16: anchor,
@@ -15669,6 +15935,7 @@ mod tests {
                 original_bbox: None,
                 border_media_id: None,
                 original_media_id: None,
+                nine_patch: None,
                 fill_effect_transparency: 0.0,
             }))),
             text_index_utf16: 112,

@@ -26,7 +26,7 @@ that the object has semantic content or a renderer.
 | 0 | None | Stored/common metadata | No dedicated renderer |
 | 1 | Stroke | Sample channels, properties and pen resources | Page vectors; supported reconstructions or generic approximation |
 | 2 | TextBox | Rich text, styles, paragraphs and object spans | Page text and supported embedded content |
-| 3 | Image | Geometry, media references, supported crop fields and fill-effect transparency | Page and text-flow images with quantized fill alpha; native PNG decode/draw and crop-edge clamp controls verified; partial-source alpha rounding and other effects remain partial |
+| 3 | Image | Geometry, media references, supported crop fields and fill-effect transparency | Page and text-flow images with quantized fill alpha; bounded page-image nine-patch geometry; native PNG decode/draw and crop-edge clamp controls verified; partial-source alpha rounding and other effects remain partial |
 | 4 | Container | Common metadata and ordered children | Nested page objects; supported parent visibility and root selection |
 | 7 | Shape | Geometry, styles, saved paths, controls and embedded text | Supported page templates/paths, solid paint and bounded linear/radial fill/outline gradients; partial styling |
 | 8 | Line | Geometry, styles, controls and saved paths | Straight lines and supported paths; bounded linear/radial outlines, including descending two-stop linear gradients with partial alpha and radial endpoint projection using the first ten distinct attached stops; partial styling/routing |
@@ -67,6 +67,16 @@ The [formula](reverse-engineering/formula-findings.md),
 Native [formula drawing](reverse-engineering/formula-rendering-findings.md)
 has separate image/stroke selection rules; decoded expressions do not require
 or establish an SDK evaluator.
+
+Page images with an ordinary image fill can use nine-patch cuts when the source
+and destination patches are positive and in bounds. The saved reference width
+and page width determine native f32 cut positions in the source-sized processed
+bitmap; an active crop takes precedence. The vector reconstruction approximates
+that intermediate bitmap. Embedded images with a nonzero reference width,
+transformed fills, original/border metadata, and degenerate or out-of-bounds
+patches retain the existing fallback. Active nine-patch records retain an
+unsupported diagnostic. A synthetic nine-color control verifies SVG and
+PyMuPDF region-center transport; native nine-patch pixel parity is unverified.
 
 ## Ink
 
