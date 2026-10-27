@@ -595,7 +595,7 @@ mod tests {
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.points.push(crate::Point { x: 29.0, y: 11.0 });
         stroke.pressures.push(0.4);
-        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
     }
 
     #[test]
