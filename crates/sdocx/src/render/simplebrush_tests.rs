@@ -78,6 +78,64 @@ fn options() -> RenderOptions {
 }
 
 #[test]
+fn compressed_frame_reaches_opted_in_dispatch() {
+    // The base frame comes from the retained native channel capture. This
+    // three-point stroke frame and its resolved pen metadata are synthetic;
+    // they establish decoder-to-dispatch reachability, not saved-note parity.
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/object-stroke-channels-native.json"
+    ))
+    .unwrap();
+    let hex = fixture["source"]["payload_hex"].as_str().unwrap();
+    let source: Vec<u8> = hex
+        .as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect();
+    let offset = fixture["source"]["frame_offset"].as_u64().unwrap() as usize;
+    let mut fixed = Vec::new();
+    fixed.extend_from_slice(&3_u16.to_le_bytes());
+    fixed.extend_from_slice(&10_f64.to_le_bytes());
+    fixed.extend_from_slice(&20_f64.to_le_bytes());
+    for word in [320_u16, 0, 320, 160] {
+        fixed.extend_from_slice(&word.to_le_bytes());
+    }
+    fixed.extend_from_slice(&0.5_f32.to_le_bytes());
+    for word in [0x8400_u16, 0x0800] {
+        fixed.extend_from_slice(&word.to_le_bytes());
+    }
+    fixed.extend_from_slice(&0_i32.to_le_bytes());
+    for word in [1_u16, 1, 2] {
+        fixed.extend_from_slice(&word.to_le_bytes());
+    }
+    let size = 14 + fixed.len();
+    let mut payload = source[..offset].to_vec();
+    payload.extend_from_slice(&(size as u32).to_le_bytes());
+    payload.extend_from_slice(&1_i16.to_le_bytes());
+    payload.extend_from_slice(&0_u32.to_le_bytes());
+    payload.extend_from_slice(&[2, 1, 4, 0]);
+    payload.extend_from_slice(&fixed);
+    let mut decoded =
+        crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+    assert_eq!(decoded.points, stroke().points);
+    assert_eq!(decoded.pressures, stroke().pressures);
+    assert_eq!(decoded.timestamps, [0, 1, 2]);
+    let rendering = decoded.rendering.as_mut().unwrap();
+    rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Brush".into());
+    rendering.style.pen_size = Some(8.0);
+    rendering.style.color_argb = Some(0x8044_aaee);
+    decoded.pen_width = 8.0;
+    assert!(crate::ink::simplebrush::prepare_stroke(&decoded, true, 32_768).is_ok());
+    let doc = document(decoded);
+    assert_ne!(
+        render_document_svg(&doc, &options())[0].svg,
+        render_document_svg(&doc, &RenderOptions::default())[0].svg
+    );
+}
+
+#[test]
 fn size_four_admits_three_and_four_points() {
     let mut source = stroke();
     source.pen_width = 4.0;
