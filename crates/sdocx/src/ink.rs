@@ -290,12 +290,10 @@ pub(crate) fn prepare_inkpen_v4_for_page(
         || properties.replay_only
         || properties.eraser
         || (properties.fixed_width
-            && !(properties.compressed
-                && rendering.tool_type_raw == 1
-                && rendering
-                    .style
-                    .fixed_width
-                    .is_some_and(|width| (3.0..=12.0).contains(&width))))
+            && !rendering
+                .style
+                .fixed_width
+                .is_some_and(|width| (1.0..=20.0).contains(&width)))
         || properties.top_layer_pen
         || properties.alpha_lock
         || properties.fixed_opacity

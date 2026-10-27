@@ -2667,7 +2667,7 @@ mod tests {
     fn fixed_width_v4_matches_native_drawing_and_improves_svg() {
         use base64::Engine;
         use std::io::Read;
-        for (width, data) in [
+        let mut cases: Vec<(f32, Value)> = [
             (
                 3.0,
                 include_str!("../../../../conformance/inkpen-v4-fixed-width-3-native.json"),
@@ -2684,8 +2684,22 @@ mod tests {
                 6.0,
                 include_str!("../../../../conformance/inkpen-v4-fixed-width-geometry-native.json"),
             ),
-        ] {
-            let fixture: Value = serde_json::from_str(data).unwrap();
+        ]
+        .into_iter()
+        .map(|(width, data)| (width, serde_json::from_str(data).unwrap()))
+        .collect();
+        let matrix: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v4-fixed-width-matrix-native.json"
+        ))
+        .unwrap();
+        cases.extend(
+            matrix["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|case| (case["width"].as_f64().unwrap() as f32, case.clone())),
+        );
+        for (index, (width, fixture)) in cases.into_iter().enumerate() {
             let mut input = native_caller_stroke(&fixture["input"]);
             let r = input.rendering.as_mut().unwrap();
             r.properties.fixed_width = true;
@@ -2693,14 +2707,14 @@ mod tests {
             r.style.color_argb = Some(0xff00_0000);
             assert!(crate::ink::prepare_inkpen_v4_for_page(&input, 1920, 1080).is_some());
             let mut unsupported = input.clone();
-            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(2.0);
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(0.5);
             assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
-            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(13.0);
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(21.0);
             assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
             let ink = prepare(
                 &input,
                 RuntimeContext {
-                    curve_enabled: true,
+                    curve_enabled: fixture["input"]["curve_enabled"].as_bool().unwrap(),
                     screen_width: 1920,
                     screen_height: 1080,
                 },
@@ -2763,8 +2777,11 @@ mod tests {
                     let pdf =
                         crate::render_document_pdf(&document, &opts, &crate::PdfOptions::default())
                             .unwrap();
-                    std::fs::write(std::path::Path::new(&dir).join(format!("{name}.pdf")), pdf)
-                        .unwrap();
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{index}-{name}.pdf")),
+                        pdf,
+                    )
+                    .unwrap();
                 }
             }
             let raster = |raw: &str| {
