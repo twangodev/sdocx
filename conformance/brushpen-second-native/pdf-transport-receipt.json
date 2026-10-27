@@ -1,0 +1,63 @@
+{
+  "schema": "brushpen-pdf-transport-ablation-v1",
+  "scope": "Two synthetic host-Mesa controls; captured geometry prototype through public render_svg_pages_pdf. No public BrushPen production dispatch, device, or saved-note parity. Resvg SVG compared to PDFium and MuPDF at 1x, 2x and 4x; native comparison only 1x.",
+  "scripts": {
+    "build-bucket.py": "15d2c97626ea70eb817fa365d25dfed4c7cb7599fee84880922032c63a79a996",
+    "build-compact.py": "c25979f27483e308eb3532621299f69ce9c65f28ef6af1c8ee34893c24d555d6",
+    "pdf-phase-probe.py": "a6ba693fa95537b1ebdc24f7f408043ac148635256e13134637f0c3f3eb8a56b",
+    "pdf-mask-ablation.py": "b5f6d0debcfdf7ba3e600cc94733afe654c4b7466413971f575c004bb4a09f72",
+    "pdf-clip-probe.py": "5e13988c534d69ae6fc04db13f781df4b279abbf5072be6f084b53c74e7f527f",
+    "pdf-gradient-probe.py": "7ac57eca60f6387c43d3b93c1a017e6125bc09dc96160cb4dbe7ae0967e5a612"
+  },
+  "input_geometry_sha256": {
+    "long": "a3e92df3d96ad24fcbf6379109b0767a0b7157124209838c07c877273bbda598",
+    "second": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d"
+  },
+  "phase_results_sha256": "45f66495974cc72563eebcfd4f0f4acaa452a2e082cbc8ded59683ad0ec64776",
+  "clip_results_sha256": "86f21b817d518d23d8bf4c86115814511857078baf26418eb3db5982e9947e23",
+  "phase_support_definition": "RGB differs from normalized background by more than two in any channel. MuPDF background normalized to 252. MAE uses union support. Native frame is premultiplied RGBA composited on 252.",
+  "observations": {
+    "second_pdfium_resvg_iou_at_1_2_4x": [
+      0.827648,
+      0.920954,
+      0.96708
+    ],
+    "second_mupdf_resvg_iou_at_1_2_4x": [
+      0.879771,
+      0.935714,
+      0.971089
+    ],
+    "long_pdfium_resvg_iou_at_1_2_4x": [
+      0.929284,
+      0.972483,
+      0.986729
+    ],
+    "second_without_grain_filter_pdfium_iou_1x": 0.846435,
+    "second_mask_ablation_pdfium_exact_support_iou": {
+      "base": 0.83779,
+      "no_coverage": 0.864907,
+      "no_tile": 0.833628,
+      "no_shade": 0.838078,
+      "no_masks": 0.968134
+    },
+    "clip_native_pdfium_union_mae": {
+      "long": 15.086885,
+      "second": 24.879512
+    },
+    "clip_native_mupdf_union_mae": {
+      "long": 16.525693,
+      "second": 27.727273
+    },
+    "clip_pdf_bytes": {
+      "long": 222898,
+      "second": 187608
+    }
+  },
+  "limitations": [
+    "Mask ablations change image and do not isolate one exact conversion defect.",
+    "Replacing soft coverage with hard clip loses the fade and worsens native accuracy.",
+    "Moving fade into source before nonlinear filter triggered resvg 0.47.0 composite dimension assertion; not evaluated further.",
+    "A half-output-pixel global translation is renderer and scale dependent and is not an admitted fix.",
+    "Scripts and JSON results are under ignored tmp; scripts use existing local Python environment and shared prebuilt helper."
+  ]
+}
