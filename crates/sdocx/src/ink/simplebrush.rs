@@ -314,8 +314,7 @@ pub(crate) fn prepare_stroke(
     if !matches!(
         size.to_bits(),
         0x4080_0000 | 0x4100_0000 | 0x4140_0000 | 0x4180_0000
-    ) || (size == 16.0 && stroke.points.len() != 3)
-        || stroke.pen_width.to_bits() != size.to_bits()
+    ) || stroke.pen_width.to_bits() != size.to_bits()
     {
         return Err("unsupported SimpleBrush size");
     }
@@ -704,6 +703,12 @@ mod tests {
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
         let native: &[u8] = match (four, size) {
+            (true, 16) if alt => include_bytes!(
+                "../../../../conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba"
+            ),
+            (true, 16) => include_bytes!(
+                "../../../../conformance/simplebrush-paint-v25-four-size16-crop.rgba"
+            ),
             (true, 4) if alt => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba"
             ),
@@ -731,6 +736,12 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            (true, 16) if alt => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four-size16-alt.json")
+            }
+            (true, 16) => {
+                include_str!("../../../../conformance/simplebrush-paint-v25-four-size16.json")
+            }
             (true, 4) if alt => {
                 include_str!("../../../../conformance/simplebrush-paint-v25-four-size4-alt.json")
             }
@@ -777,6 +788,8 @@ mod tests {
             (false, 8) => 137,
             (false, 12) => 185,
             (false, 16) => 249,
+            (true, 16) if alt => 406,
+            (true, 16) => 384,
             (true, 4) if alt => 151,
             (true, 4) => 128,
             (true, 8) => 214,
@@ -792,7 +805,9 @@ mod tests {
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
         assert_eq!(
             samples.len(),
-            if alt {
+            if four && size == 16.0 {
+                16
+            } else if alt {
                 22
             } else if four && size == 4.0 {
                 24
@@ -1024,8 +1039,7 @@ mod tests {
         );
         assert_eq!(
             candidate_metrics.2,
-            expected_support + usize::from(four && size == 12.0) * 2,
-            "retained source-derived candidate support"
+            expected_support + usize::from(four && size == 12.0) * 2
         );
         assert!(
             candidate_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * candidate_metrics.1
@@ -1093,5 +1107,7 @@ mod tests {
         v25_paint_control(4, true, true);
         v25_paint_control(8, true, false);
         v25_paint_control(12, true, false);
+        v25_paint_control(16, true, false);
+        v25_paint_control(16, true, true);
     }
 }
