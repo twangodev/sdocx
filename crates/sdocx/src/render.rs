@@ -9987,6 +9987,42 @@ mod tests {
             pixmap
         };
         assert_eq!(raster(&unculled_slice).data(), raster(&sliced).data());
+
+        // Keep the slice SVG and transform fixed while changing only the
+        // target pixmap height. This isolates a resvg viewport-size effect
+        // from the particle culling above; it is not a native-device oracle.
+        let full_tree = resvg::usvg::Tree::from_str(&full, &Default::default()).unwrap();
+        let slice_tree = resvg::usvg::Tree::from_str(&unculled_slice, &Default::default()).unwrap();
+        let mut full_target = resvg::tiny_skia::Pixmap::new(320, 180).unwrap();
+        let mut large_slice_target = resvg::tiny_skia::Pixmap::new(320, 180).unwrap();
+        resvg::render(
+            &full_tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut full_target.as_mut(),
+        );
+        resvg::render(
+            &slice_tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut large_slice_target.as_mut(),
+        );
+        let row = &full_target.data()[y as usize * 320 * 4..(y as usize + 1) * 320 * 4];
+        let large_row = &large_slice_target.data()[..320 * 4];
+        assert!(
+            row == large_row,
+            "same slice in a full-height target must preserve this control"
+        );
+        let small_target = raster(&unculled_slice);
+        let max_difference = small_target
+            .data()
+            .iter()
+            .zip(large_row)
+            .map(|(small, large)| small.abs_diff(*large))
+            .max()
+            .unwrap_or(0);
+        assert!(
+            max_difference <= 186,
+            "one-row target exceeded the observed sampling residual: {max_difference}"
+        );
     }
 
     #[test]

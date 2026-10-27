@@ -116,5 +116,13 @@
     "PDFium Python binding",
     "CairoSVG"
   ],
-  "limitations": "Native fixtures and exporter were retained under tmp at capture; this receipt does not itself contain the inputs, outputs or comparison program. The captured paint uses host adapters and explicit screen/paper contexts. SVG and PDF are independently rasterized at 1x. The render.rs source hash identifies the capture-time checkout before a subsequent test-only lint cleanup; the public rendering code was unchanged."
+  "limitations": "Native fixtures and exporter were retained under tmp at capture; this receipt does not itself contain the inputs, outputs or comparison program. The captured paint uses host adapters and explicit screen/paper contexts. SVG and PDF are independently rasterized at 1x. The render.rs source hash identifies the capture-time checkout before a subsequent test-only lint cleanup; the public rendering code was unchanged.",
+  "native_draw_boundary": "First readback after Drawing draw_object_stroke. The retained harness then explicitly invokes saved_redraw on the same stroke and target as a second replay control; that second readback includes accumulated paint and is not used here.",
+  "metric_definition": "RGB source-over composite on #fcfcfc; support is per-pixel maximum RGB deviation greater than 1 from the native background or the renderer-specific empty-page baseline. Each renderer uses the union of both native and all three public supports as its common ROI. RGB MAE divides absolute channel error by three times the ROI pixel count.",
+  "color_limit": "Native RGB is black in these controls; the conversion used here does not establish alpha representation for colored native pixels.",
+  "comparison_script_at_capture": {
+    "path": "/tmp/sdocx-pencil3-current-compare.py",
+    "sha256": "421f3337c5fb6a35e3cb4e416adff294042838d84801c6da77a99ee720007c3f",
+    "retained": "temporary exploratory script, not a portable conformance test"
+  }
 }

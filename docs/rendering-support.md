@@ -228,7 +228,7 @@ brush and paper textures with vector stamp geometry; these are intrinsic image
 assets, not rendered-stroke bitmaps. Matching sampler controls improve on the
 generic fallback across five consumers; PDF residuals remain. A fresh 1×
 [host-control comparison](../conformance/pencil3-finite-plane-host-comparison.json)
-of the current finite-plane route measured RGB mean
+of the current finite-plane route against the first native Drawing invocation measured RGB mean
 absolute error of 1.53 in resvg 0.45.1 and 20.38 in MuPDF 1.28.2 for clamp, versus 65.64 and
 56.95 for generic fallback on each renderer's shared support region. The two
 regions differ; these are not device or cross-renderer parity claims. Supplied-paper
@@ -240,7 +240,9 @@ or encoding failure can still make rendering fall back after metadata preparatio
 Slice rendering culls off-slice particles while retaining their original replay
 indices; a same-viewport resvg control matches the unculled scene. In a
 separate full-page versus one-unit-slice control, resvg produced channel
-differences up to 186, so cross-viewport texture sampling remains unresolved.
+differences up to 186. Rendering the identical slice SVG into a full-height
+target restores the full-page row in that control; cross-viewport texture
+sampling remains unresolved.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
