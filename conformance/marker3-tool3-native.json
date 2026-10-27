@@ -1,0 +1,208 @@
+{
+  "schema": "marker3-tool3-native-control-v1",
+  "cases": [
+    {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803f",
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          16
+        ],
+        "tool_type": 3
+      },
+      "native_calls": {
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "000000000000000000002041000000000000a04100002041",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "0000803fcdcc4c3d0000803f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "000000000800000010000000",
+            "element_size": 4
+          }
+        },
+        "route": {
+          "advanced_setting": "5;",
+          "drawing_selected_drawable_version": "5",
+          "runner_mode": "selected",
+          "saved_redraw_invoked_version": "5"
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe",
+          "vector_bytes": "000000000000000090c94c3f00000000f463e63f00000000c0152c4000000000655a704000000000f8ff9f400000000013f8bc408c2c9a3dd758dc408c2c9a3e5409fd407ad5293f02b10b41443c843f568419417cfdbd3fa4fe2741331701404662364119662640b95b424104c24740a1b64e4193296c40fe725b4168ce8940d0906841d90d9f4056d975410175b5401674804117bcc840a31a86413ffcdc4053e08b417e35f24025c59141ea3304411bc997419fc90f4133ec9d41dfdb1b410000a04100002041",
+          "vector_count": 25
+        },
+        "saved_redraw": {
+          "sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe",
+          "vector_bytes": "000000000000000090c94c3f00000000f463e63f00000000c0152c4000000000655a704000000000f8ff9f400000000013f8bc408c2c9a3dd758dc408c2c9a3e5409fd407ad5293f02b10b41443c843f568419417cfdbd3fa4fe2741331701404662364119662640b95b424104c24740a1b64e4193296c40fe725b4168ce8940d0906841d90d9f4056d975410175b5401674804117bcc840a31a86413ffcdc4053e08b417e35f24025c59141ea3304411bc997419fc90f4133ec9d41dfdb1b410000a04100002041",
+          "vector_count": 25
+        }
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      }
+    }
+  ],
+  "paint_control": {
+    "scope": "Synthetic Model ObjectStroke, native Drawing-selected V5 and RTV1; explicit host canvas, color conversion and retained-vector bridge; Mesa llvmpipe GLES, not device pixels or saved-note export.",
+    "input": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "size": 8,
+      "setting": "5;",
+      "profile": [
+        1920,
+        1080
+      ],
+      "target": [
+        256,
+        256
+      ]
+    },
+    "cases": [
+      {
+        "pen": "Marker3",
+        "tool": 2,
+        "color": "0xff336699",
+        "selected_version": "5",
+        "vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+        "rgba_sha256": "626281623598a4bf5fb75cfaf509167af10051d19535c9acee8bc78dddfa1796",
+        "nonzero_pixels": 95,
+        "gl_error_checks": 239,
+        "receipt": "tmp/vector-parity-plan/marker3-drawing-paint/drawing-paint-positive.json"
+      },
+      {
+        "pen": "Marker3",
+        "tool": 3,
+        "color": "0xff336699",
+        "selected_version": "5",
+        "vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+        "rgba_sha256": "626281623598a4bf5fb75cfaf509167af10051d19535c9acee8bc78dddfa1796",
+        "nonzero_pixels": 95,
+        "gl_error_checks": 239,
+        "receipt": "tmp/vector-parity-plan/marker3-tool3/paint/drawing-paint-positive.json"
+      },
+      {
+        "pen": "StraightMarker",
+        "tool": 3,
+        "color": "0xff336699",
+        "selected_version": "5",
+        "vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+        "rgba_sha256": "626281623598a4bf5fb75cfaf509167af10051d19535c9acee8bc78dddfa1796",
+        "nonzero_pixels": 95,
+        "gl_error_checks": 239,
+        "receipt": "tmp/vector-parity-plan/marker3-tool3/alias/drawing-paint-positive.json"
+      },
+      {
+        "pen": "Marker3",
+        "tool": 2,
+        "color": "0x803f7d29",
+        "selected_version": "5",
+        "vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+        "rgba_sha256": "8513877b246c55d4fe75784e5db75f152f27e90c3f81c07ccf2d80b863a7a14f",
+        "nonzero_pixels": 95,
+        "gl_error_checks": 239,
+        "receipt": "tmp/vector-parity-plan/marker3-tool3/alpha2/drawing-paint-positive.json"
+      },
+      {
+        "pen": "Marker3",
+        "tool": 3,
+        "color": "0x803f7d29",
+        "selected_version": "5",
+        "vector_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+        "rgba_sha256": "8513877b246c55d4fe75784e5db75f152f27e90c3f81c07ccf2d80b863a7a14f",
+        "nonzero_pixels": 95,
+        "gl_error_checks": 239,
+        "receipt": "tmp/vector-parity-plan/marker3-tool3/alpha3/drawing-paint-positive.json"
+      }
+    ],
+    "scripts": {
+      "tmp/vector-parity-plan/marker3-tool3/geometry/probe.py": "0eb5bd2a2659dad90c01b5b19a106f34d479099f9aad8c190da281d53630d694",
+      "tmp/vector-parity-plan/marker3-tool3/geometry/tool2.py": "b2b9eda3938265269e757d4137b005002d497067c00c2698099bd1a7971cc32b",
+      "tmp/vector-parity-plan/marker3-tool3/paint/join.py": "63f93f07f76f55c76ff91f65d86d06fa8e693d3fe694f9fe8d2fb90114ead70a",
+      "tmp/vector-parity-plan/marker3-tool3/paint/caller.py": "a9e43fc015417a9870e17921696faf79450171c903fe440d78257db7bffd502d",
+      "tmp/vector-parity-plan/marker3-tool3/alias/join.py": "eb7d04ea195a2178d0b3d7cc02135305b13fa3035b45b06e90cd7c0ed8a3bb8b",
+      "tmp/vector-parity-plan/marker3-tool3/alias/caller.py": "e316997104a869a6d2d1ffc66f67b271d3523a20db5f5854d97a7b06b6d2cc2c",
+      "tmp/vector-parity-plan/marker3-tool3/alpha2/join.py": "1757cfb6bea2c2a445d7d326c238ccffda790c8d5acb82f548cea1eb3615c52b",
+      "tmp/vector-parity-plan/marker3-tool3/alpha2/caller.py": "2b111267d1238fa09d65a31e4aad4ef0cc443e04958e67640e76f84201e8a7d7",
+      "tmp/vector-parity-plan/marker3-tool3/alpha3/join.py": "2e111e4e9db9471ef29ffb8e3bb0dcfc2fa93f3dfaa8cc63640eb89483657a6a",
+      "tmp/vector-parity-plan/marker3-tool3/alpha3/caller.py": "2a7389f11cee2846dbfaaefd2917ccf4bc8d86c45f3328417d61a515104b82d9"
+    }
+  }
+}

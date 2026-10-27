@@ -292,7 +292,7 @@ rectangles; it is not selected as a rendering fix.
 An intrinsic cropped-row alternative reduced average error in the host control
 but added PDF support pixels in MuPDF, so the atlas transport remains unchanged.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
-tool-2 base-pen profile with explicit saved size/color and ordinary
+tool-2 and [tool-3](../conformance/marker3-tool3-native.json) base-pen profiles with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
 positions, radii and callback boundaries in ten
 [synthetic native cases](../conformance/marker3-saved-native.json).

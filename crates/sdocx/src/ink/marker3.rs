@@ -34,7 +34,7 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     let argb = style.color_argb?;
     if !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
-        || rendering.tool_type_raw != 2
+        || !matches!(rendering.tool_type_raw, 2 | 3)
         || properties.replay_only
         || properties.stylus_channels
         || properties.eraser
@@ -361,6 +361,25 @@ mod tests {
             alias.points.truncate(1);
             assert!(prepare_for_page(&alias).is_none());
         }
+    }
+
+    #[test]
+    fn tool_three_page_geometry_matches_native_drawing() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-tool3-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"][0];
+        let stroke = caller_stroke(case);
+        assert_eq!(stroke.rendering.as_ref().unwrap().tool_type_raw, 3);
+        let ink = prepare_for_page(&stroke).unwrap();
+        assert_caller_xy_matches(&ink, case);
+        let mut alias = stroke.clone();
+        alias.rendering.as_mut().unwrap().pen_name = Some(STRAIGHT_PEN.to_owned());
+        let alias_ink = prepare_for_page(&alias).unwrap();
+        assert_eq!(ink.points, alias_ink.points);
+        assert_eq!(ink.radii, alias_ink.radii);
+        assert_eq!(ink.opacity, alias_ink.opacity);
     }
 
     #[test]

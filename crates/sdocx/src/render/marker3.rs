@@ -233,6 +233,91 @@ mod tests {
     }
 
     #[test]
+    fn public_tool_three_exports_match_native_control_and_alias() {
+        for samples in [
+            vec![[0.0, 0.0], [20.0, 0.0]],
+            vec![[0.0, 0.0], [10.0, 0.0], [20.0, 10.0]],
+        ] {
+            let input = Input {
+                pressures: Some(vec![0.05; samples.len()]),
+                samples,
+                width: 8.0,
+                tool_type_raw: 2,
+                fixed_width: false,
+            };
+            let render = |tool, name: &str| {
+                let mut stroke = marker3_stroke(&input);
+                for point in &mut stroke.points {
+                    point.x += 24.0;
+                    point.y += 16.0;
+                }
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.tool_type_raw = tool;
+                rendering.pen_name =
+                    Some(format!("com.samsung.android.sdk.pen.pen.preload.{name}"));
+                rendering.style.color_argb = Some(0x803f_7d29);
+                stroke.color = Some(Color {
+                    r: 0x3f,
+                    g: 0x7d,
+                    b: 0x29,
+                });
+                let document = crate::Document {
+                    pages: vec![crate::Page {
+                        uuid: "marker3-control".into(),
+                        width: 128,
+                        height: 64,
+                        content_bbox: BoundingBox {
+                            x_min: 19.5,
+                            y_min: 11.5,
+                            x_max: 49.0,
+                            y_max: 31.0,
+                        },
+                        background_color: None,
+                        template: None,
+                        background: Default::default(),
+                        objects: vec![crate::PageObject::from(stroke)],
+                    }],
+                    metadata: Default::default(),
+                };
+                let options = crate::RenderOptions::default();
+                let pages = crate::render_document_svg(&document, &options);
+                #[cfg(feature = "pdf")]
+                let pdf =
+                    crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+                #[cfg(feature = "pdf")]
+                let svg_pdf = crate::render_svg_pages_pdf(&pages, &Default::default()).unwrap();
+                (
+                    pages[0].svg.clone(),
+                    #[cfg(feature = "pdf")]
+                    pdf,
+                    #[cfg(feature = "pdf")]
+                    svg_pdf,
+                )
+            };
+            let expected = render(2, "Marker3");
+            assert_eq!(render(3, "Marker3"), expected);
+            assert_eq!(render(3, "StraightMarker"), expected);
+            assert_ne!(render(1, "Marker3").0, expected.0);
+            let parsed = roxmltree::Document::parse(&expected.0).unwrap();
+            let path = parsed
+                .descendants()
+                .find(|n| n.has_tag_name("path"))
+                .unwrap();
+            assert!(path.attribute("d").unwrap().contains("a4.5,4.5"));
+            assert!(
+                (path
+                    .attribute("fill-opacity")
+                    .unwrap()
+                    .parse::<f64>()
+                    .unwrap()
+                    - 128.0 / 255.0)
+                    .abs()
+                    < 0.0001
+            );
+        }
+    }
+
+    #[test]
     fn native_saved_case_builds_compound_vector_coverage_and_sdk_pdf() {
         let fixture: Fixture = serde_json::from_str(include_str!(
             "../../../../conformance/marker3-saved-native.json"

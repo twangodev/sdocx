@@ -87,7 +87,7 @@ the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
 thin-edge shader is not ported. `Marker` stays on the pressure fallback.
 `Marker3` and `StraightMarker` use the bounded V5 page route with empty or `5;`
-settings; other settings remain generic. Marker4 and `StraightHighlighter`
+settings and tool types 2 or 3; other settings remain generic. Marker4 and `StraightHighlighter`
 settings `7;` and `8;` use rounded rectangular stamps; see [V7 findings](marker4-v7.md)
 and [V8 findings](marker4-rendering-findings.md). Other Marker4 settings remain
 on the fallback.
@@ -201,6 +201,8 @@ continuous-fringe candidate is about 700 times larger and worsens high-zoom
 error; it remains test-only. Neither transport reproduces fragment-quad
 derivatives or proves device parity. The audit is in ignored
 `tmp/vector-parity-plan/marker3-admission-next/`.
+
+A synthetic [tool-3 control](../../conformance/marker3-tool3-native.json) matches tool 2 in curved native geometry and joined host-Mesa paint for two colors. The StraightMarker alias also matches the opaque control, and public SVG/PDF exports agree across these inputs. These captures use an explicit host bridge and do not establish device or saved-note parity.
 
 On this Marker3 route, Drawing's `GetMorphable` call resolves to PenCommon's
 null-return stub (`0x46468`); the guard at Drawing `0x81ef0` skips the curve
