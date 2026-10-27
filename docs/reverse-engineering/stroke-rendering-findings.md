@@ -548,11 +548,8 @@ The initial interval comes from `calcSegmentsNumber` at RVA `0x34138`, whose
 branch depends on RT byte offset 716 and other state. In the non-circle branch,
 the code truncates the average of floats at offsets 708 and 712, multiplies it
 by `abs(input - 1)`, truncates, adds three and caps the result at 20. The other
-branch uses an angle-derived count. These are static instruction observations;
-the meaning and initialization of all operands and the circular branch remain
-unresolved. The traced tuples expose the next reconstruction boundary: recover
-those state values, exact edge normals and mesh joining before considering a
-saved-stroke rendering route.
+branch uses an angle-derived count. Initialization of the state and complete
+source-to-mesh generation remain unresolved.
 
 The trace scripts `straight-trace.py` and `bend-trace.py` in
 `tmp/legacy-marker-source-controls/` extend the earlier capture scripts with
@@ -563,7 +560,20 @@ The captured straight control has direction dots 1, 1, 1 and lengths 8/0,
 8/8, 9/8, yielding counts 3, 3, 3. The bent control has dots 1, 0, 0 and
 lengths 8/0, 8/8, 8/8, yielding counts 3, 11, 11. The [test-only Rust model](../../crates/sdocx/src/ink/legacy_marker_segment_count.rs)
 checks all six against the native intervals. These are finite synthetic host
-controls; branch selection, circular counts and initialization remain unverified.
+controls; general initialization remains unverified.
+
+For finite values, the native selector sets the circular flag when the direction
+normal dot is at most the double-precision constant -0.7 and the distance from
+the first to second control point exceeds the float constant 0.6. Its circular
+count uses 180 degrees when `abs(dot)` is between the stored f32 thresholds
+0.996 and 1.004; otherwise it computes `acosf(dot) * 180 / pi`, then returns
+twice the truncated result divided by 18. The same receipt adds two independent
+host controls: an exact reversal selects 20 segments, and an oblique reversal
+selects 16. The latter executes host glibc `acosf`, `cbrt` and `sincosf`
+callbacks in Unicorn; it does not establish Android libm behavior, boundary
+rounding or device rendering. The test-only model checks the selector and count
+for all six calls in those two controls. Capture scripts are `reverse-trace.py`
+and `turn-trace.py` in `tmp/legacy-marker-source-controls/`.
 
 ### Legacy Marker subdivision edges and fringe
 
