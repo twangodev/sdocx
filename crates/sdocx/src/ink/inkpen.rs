@@ -361,7 +361,12 @@ impl Pass {
     fn point(&mut self, p: P, radius: f32) -> bool {
         let radius = self.fixed_width_radius.unwrap_or(radius);
         let r = if radius < 1. { 1. } else { radius };
-        if !p.x.is_finite() || !p.y.is_finite() || !r.is_finite() || !(r + 0.5).is_finite() {
+        if self.points.len() >= self.max_generated_dots
+            || !p.x.is_finite()
+            || !p.y.is_finite()
+            || !r.is_finite()
+            || !(r + 0.5).is_finite()
+        {
             return false;
         }
         self.bounds.dot(p, r);
@@ -647,6 +652,14 @@ fn path_emission(
 /// Prepare one saved V4 stroke for explicit host context. This function does
 /// not select the Drawing caller's StrokeType branch or infer runtime state.
 pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
+    prepare_bounded(s, context, MAX_GENERATED_DOTS)
+}
+
+pub(super) fn prepare_bounded(
+    s: &Stroke,
+    context: RuntimeContext,
+    max_generated_dots: usize,
+) -> Option<InkPenInk> {
     let r = s.rendering.as_ref()?;
     // Model's missing size is zero; the native Pen setter supplies the clamp.
     let requested_size = r.style.pen_size.unwrap_or(0.);
@@ -708,7 +721,7 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
             .fixed_width
             .then(|| r.style.fixed_width.unwrap() * 0.5),
         alternate: false,
-        max_generated_dots: MAX_GENERATED_DOTS,
+        max_generated_dots: max_generated_dots.min(MAX_GENERATED_DOTS),
         points: Vec::new(),
         pre_add_radii: Vec::new(),
         radii: Vec::new(),
@@ -1544,18 +1557,6 @@ mod tests {
             assert_eq!(native.len(), 128 * 64 * 4);
             assert_eq!(hash(&native), entry["native_rgba_sha256"].as_str().unwrap());
             input.rendering.as_mut().unwrap().style.color_argb = Some(argb);
-            let rgb = format!("#{:06x}", argb & 0x00ff_ffff);
-            let candidate = crate::render::inkpen_v1_vector_candidate_svg(
-                &ink.points,
-                &ink.radii,
-                &ink.sample_ends,
-                ink.terminal.clone(),
-                &rgb,
-                f64::from((argb >> 24) as u8) / 255.0,
-                [128, 64],
-                false,
-            )
-            .unwrap();
             let page = crate::Page {
                 uuid: "inkpen-v4-capture".into(),
                 width: 128,
@@ -1573,7 +1574,34 @@ mod tests {
             let generic = crate::render_document_svg(&document, &crate::RenderOptions::default())
                 .remove(0)
                 .svg;
-            let candidate_pixels = render(&candidate.svg, false);
+            let options = crate::RenderOptions {
+                inkpen_profile: Some(crate::InkPenRenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                }),
+                ..crate::RenderOptions::default()
+            };
+            let candidate = crate::render_document_svg(&document, &options)
+                .remove(0)
+                .svg;
+            #[cfg(feature = "pdf")]
+            {
+                let bytes =
+                    crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
+                        .expect("profiled V4 page must export to PDF");
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                assert!(
+                    !pdf.objects
+                        .values()
+                        .any(|object| object.as_stream().is_ok_and(|stream| stream
+                            .dict
+                            .get(b"Subtype")
+                            .is_ok_and(|value| value
+                                .as_name()
+                                .is_ok_and(|name| name == b"Image"))))
+                );
+            }
+            let candidate_pixels = render(&candidate, true);
             let generic_pixels = render(&generic, true);
             let metrics = |pixels: &[u8]| {
                 let mut intersection = 0usize;
@@ -2452,6 +2480,18 @@ mod tests {
                 },
             )
             .unwrap_or_else(|| panic!("{name} V4 caller input must be admitted"));
+            let mut page_input = input.clone();
+            page_input.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
+            let page_ink = crate::ink::prepare_inkpen_v4_for_page(&page_input, width, height);
+            if width == 0 || height == 0 {
+                assert!(page_ink.is_none(), "{name}: zero display is unsupported");
+            } else {
+                let page_ink = page_ink.expect("captured nonzero display profile");
+                assert_eq!(page_ink.points, ink.points, "{name}: page points");
+                assert_eq!(page_ink.radii, ink.radii, "{name}: page radii");
+                assert_eq!(page_ink.sample_ends, ink.sample_ends, "{name}: page events");
+                assert_eq!(page_ink.terminal, ink.terminal, "{name}: page terminal");
+            }
             let drawing = &case["streams"]["draw_object_stroke"];
             let saved = &case["streams"]["saved_redraw"];
             let stream = drawing["values_f32_bits"].as_array().unwrap();

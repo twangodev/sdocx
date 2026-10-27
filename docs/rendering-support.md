@@ -83,7 +83,7 @@ dispatch, not complete version coverage or visual parity.
 
 | Pen family | Current saved-page rendering and missing work |
 | --- | --- |
-| Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 remains generic; InkPen2 V9 requires a profile. StraightInkPen2 remains generic. |
+| Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 and InkPen2 V9 require explicit display profiles. StraightInkPen2 remains generic. |
 | Fountain | Fountain V14 and saved AS18/V16 have bounded default routes; V17 rainbow is experimental and explicit. MontblancFountainPen remains generic, with test-only saved-path and expanded triangle-mesh checks for four GLV1 controls; painted output is unverified. |
 | Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. ColoredPencil V4 preserves explicit saved RGB for the observed normal stylus profile. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has grain and point atlases distinct from Pencil3. Test-only samplers match captured Pencil GLV1, Pencil2 V14, ColoredPencil V4 and Crayon2 V2 geometry, with explicit host RNG profiles where needed. Legacy Pencil GLV1 regenerates a captured 47-record stream from a synthetic public `Stroke`; its test-only paint model matches one native frame under all 12 explicit host arithmetic hypotheses. Native Model construction and top-level Drawing reproduce that stream, atlas and frame. Parsed-note admission, backend arithmetic and SVG paint remain unresolved. ColoredPencil V4 test-only intrinsic SVG paint matches four native host-Mesa color controls exactly. A test-only public Stroke adapter reproduces the controlled native streams with explicit glibc RNG/context; the exported image-atlas PDF has extra support in MuPDF and PDFium. Single-stamp controls show residual reader differences even without the clip, and toggling PDF interpolation does not change the four MuPDF outputs. Production and Android textured paint remain unverified. |
 | Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; StraightMarker reaches the bounded Marker3 V5 route after native literal-name controls matched. Marker remains generic; its test-only paint model reproduces coverage at all five native draw prefixes, with at most one channel level of color error under the captured host precision profile. |
@@ -251,8 +251,12 @@ source unit. Replay preserves source-event cutoffs and folds the terminal suffix
 into the final event. Unsupported inputs and exhausted budgets retain fallback;
 the context-free preparer remains unchanged. Ordinary V1 and V4
 (empty or `4;` settings) use saved RGB when the public stroke color is absent,
-and apply saved ARGB alpha once per stroke in SVG/PDF.
-A test-only numeric core matches twenty-one
+and apply saved ARGB alpha once per stroke in SVG/PDF. An explicit
+`InkPenRenderProfile` now selects bounded V4 geometry for ordinary strokes with
+saved ARGB and a caller-supplied display size; the default remains generic.
+Its contour approximates native coverage, and V4 replay event boundaries and
+other output scales remain unverified.
+The numeric core matches twenty-one
 configured-context native redraw cases and four setter cases, including both
 curve modes, fixed width and a degenerate curve. The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-saved-caller-native.json)
 captures null settings selecting V1 and empty settings selecting V4 under an
@@ -292,11 +296,10 @@ This is one host Mesa witness, not a universal device derivative contract.
 A [V1 scale replay](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-scale-native.json) checks fresh
 1×/2×/4× native Draw targets and separate identity-transform controls. Its
 pixel-dependent edge band prevents treating a fixed 1× contour as a general paint law.
-A [test-only V4 contour comparison](../conformance/inkpen-v4-vector-host.json)
+A [V4 contour comparison](../conformance/inkpen-v4-vector-host.json)
 improves alpha and color error over the generic route in resvg, MuPDF and
 PDFium for one synthetic stroke at opaque and partial alpha; zero alpha stays
-empty. Display-profile admission, replay integration and other scales remain
-unverified, so V4 production rendering is unchanged.
+empty. These controls do not establish device or general saved-note parity.
 A [V1 reuse oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/inkpen-v1-reuse-native.json) checks source-event
 and terminal vector prefixes, short/long preceding strokes and distinct source
 objects. Rust matches the complete first/target streams and their native boundaries.

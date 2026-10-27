@@ -263,6 +263,60 @@ pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkP
     })
 }
 
+/// Saved V4 geometry for a caller-supplied screen resolution.
+pub(crate) fn prepare_inkpen_v4_for_page(
+    stroke: &Stroke,
+    screen_width: u32,
+    screen_height: u32,
+) -> Option<PreparedInkPenV1> {
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = &rendering.properties;
+    let argb = rendering.style.color_argb?;
+    if screen_width == 0
+        || screen_height == 0
+        || screen_width > i32::MAX as u32
+        || screen_height > i32::MAX as u32
+        || stroke.points.len() < 2
+        || rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            Some("") | Some("4;")
+        )
+        || rendering.tool_type_raw > 4
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || !matches!(rendering.style.stroke_type_raw, None | Some(0))
+        || !matches!(rendering.style.color_type_raw, None | Some(0))
+    {
+        return None;
+    }
+    const MAX_EXPORT_DOTS: usize = 65_536;
+    let ink = inkpen::prepare_bounded(
+        stroke,
+        inkpen::RuntimeContext {
+            curve_enabled: properties.compressed,
+            screen_width,
+            screen_height,
+        },
+        MAX_EXPORT_DOTS,
+    )?;
+    Some(PreparedInkPenV1 {
+        points: ink.points,
+        radii: ink.radii,
+        sample_ends: ink.sample_ends,
+        terminal: ink.terminal,
+        argb,
+        bounds: ink.bounds,
+    })
+}
+
 /// Prepare native Oblique V1/V4 geometry only for canonical page export. The
 /// public context-free API remains approximate.
 pub(crate) fn prepare_stroke_for_context<'a>(
@@ -2403,6 +2457,51 @@ mod tests {
             },
         });
         input
+    }
+
+    #[test]
+    fn v4_page_preparation_requires_supported_context_and_effects() {
+        for setting in [Some(""), Some("4;")] {
+            let mut input = inkpen_v1_stroke_for_default_color_test(setting, Some(0x8033_6699));
+            input.pressures = vec![0.5; input.points.len()];
+            input.timestamps = vec![0, 10, 20, 30];
+            let prepared = prepare_inkpen_v4_for_page(&input, 1920, 1080).unwrap();
+            assert_eq!(prepared.argb, 0x8033_6699);
+            assert!(!prepared.points.is_empty());
+            for (width, height) in [(0, 1080), (1920, 0), (u32::MAX, 1080), (1920, u32::MAX)] {
+                assert!(prepare_inkpen_v4_for_page(&input, width, height).is_none());
+            }
+            let mut missing_color = input.clone();
+            missing_color.rendering.as_mut().unwrap().style.color_argb = None;
+            assert!(prepare_inkpen_v4_for_page(&missing_color, 1920, 1080).is_none());
+            let mut effect = input.clone();
+            effect.rendering.as_mut().unwrap().properties.fixed_width = true;
+            assert!(prepare_inkpen_v4_for_page(&effect, 1920, 1080).is_none());
+            let mut single = input.clone();
+            single.points.truncate(1);
+            assert!(prepare_inkpen_v4_for_page(&single, 1920, 1080).is_none());
+        }
+        for setting in [None, Some("1;"), Some("4;extra")] {
+            let input = inkpen_v1_stroke_for_default_color_test(setting, Some(0xff00_0000));
+            assert!(prepare_inkpen_v4_for_page(&input, 1920, 1080).is_none());
+        }
+    }
+
+    #[test]
+    fn v4_bounded_preparation_rejects_before_exceeding_budget() {
+        let mut input = inkpen_v1_stroke_for_default_color_test(Some("4;"), Some(0xff00_0000));
+        input.pressures = vec![0.5; input.points.len()];
+        input.timestamps = vec![0, 10, 20, 30];
+        let context = || inkpen::RuntimeContext {
+            curve_enabled: true,
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let full = inkpen::prepare_bounded(&input, context(), 65_536).unwrap();
+        let count = full.points.len();
+        assert!(count > 0);
+        assert!(inkpen::prepare_bounded(&input, context(), count - 1).is_none());
+        assert!(inkpen::prepare_bounded(&input, context(), 0).is_none());
     }
 
     #[test]

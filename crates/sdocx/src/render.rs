@@ -93,6 +93,17 @@ pub enum RenderColorMode {
     Dark,
 }
 
+/// Host display dimensions for the opt-in saved InkPen V4 reconstruction.
+/// This profile assumes fresh drawable state and an identity page transform.
+/// Its one-source-unit contour approximates native coverage; device and
+/// arbitrary output-scale parity are not established.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InkPenRenderProfile {
+    pub screen_width: u32,
+    pub screen_height: u32,
+}
+
 /// Explicit host policy for fresh-draw InkPen2 V9 vector reconstruction.
 ///
 /// Selecting this profile opts into the captured InkPen2 V9 paint route with
@@ -258,6 +269,9 @@ impl Eq for FountainV14OutputScaleProfile {}
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct RenderOptions {
+    /// Opt into saved InkPen V4 reconstruction with explicit display dimensions.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen_profile: Option<InkPenRenderProfile>,
     /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
     /// `Some` opts into fresh state and identity page transform; the profile
     /// explicitly selects its enhanced-antialiasing paint route.
@@ -767,6 +781,7 @@ impl DocumentTextCache {
             &text_renderer,
             body_text.as_ref(),
             retain_text,
+            options.inkpen_profile,
             options.inkpen2_profile,
             options.chinesebrush_profile,
             options.chinesebrush_fwidth_output_profile,
@@ -1204,6 +1219,7 @@ fn render_page_contents_svg(
     text_renderer: &TextRenderer<'_>,
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
+    inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
@@ -1269,6 +1285,7 @@ fn render_page_contents_svg(
         theme,
         replay,
         body_text,
+        inkpen_profile,
         inkpen2_profile,
         chinesebrush_profile,
         chinesebrush_fwidth_output_profile,
@@ -1310,6 +1327,7 @@ struct CompositionContext<'a> {
     theme: RenderTheme,
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
+    inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
@@ -1380,6 +1398,7 @@ fn render_object(
                 calligraphy_session,
                 native_allowed,
                 [context.page.width, context.page.height],
+                context.inkpen_profile,
                 context.inkpen2_profile,
                 context.chinesebrush_profile,
                 context.chinesebrush_fwidth_output_profile,
@@ -3624,6 +3643,7 @@ fn render_stroke(
     calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
     native_allowed: bool,
     viewport: [u32; 2],
+    inkpen_profile: Option<InkPenRenderProfile>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
@@ -3771,7 +3791,7 @@ fn render_stroke(
     }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
+        && let Some(ink) = prepare_page_inkpen(stroke, inkpen_profile)
         && let Some(vector) = inkpen_v1_vector_path(
             &ink.points,
             &ink.radii,
@@ -3948,6 +3968,21 @@ fn valid_fountain_v14_output_scale(scale: f32) -> bool {
     }
     let inverse = 1.0_f32 / scale;
     inverse.is_finite() && inverse > 0.0 && inverse <= 1_000_000.0
+}
+
+fn prepare_page_inkpen(
+    stroke: &Stroke,
+    profile: Option<InkPenRenderProfile>,
+) -> Option<crate::ink::PreparedInkPenV1> {
+    profile
+        .and_then(|profile| {
+            crate::ink::prepare_inkpen_v4_for_page(
+                stroke,
+                profile.screen_width,
+                profile.screen_height,
+            )
+        })
+        .or_else(|| crate::ink::prepare_inkpen_v1_for_page(stroke))
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -4505,8 +4540,8 @@ fn prepare_pencil3_v3(
     Some(ink)
 }
 
-/// Prepare replay metadata with a resolved theme and explicit InkPen2 screen
-/// profile. For canvas-dependent Pencil3 profiles, use
+/// Prepare replay metadata with a resolved theme and explicit InkPen or
+/// InkPen2 screen profile. For canvas-dependent Pencil3 profiles, use
 /// [`prepare_stroke_for_viewport_with_theme`] with the actual rendered page size.
 pub fn prepare_stroke_for_page_with_theme<'a>(
     stroke: &'a Stroke,
@@ -4515,6 +4550,37 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
 ) -> crate::PreparedStroke<'a> {
     if stroke.points.len() <= 1 {
         return empty_saved_stroke_paint(stroke, theme);
+    }
+    if let Some(profile) = options.inkpen_profile
+        && let Some(ink) = crate::ink::prepare_inkpen_v4_for_page(
+            stroke,
+            profile.screen_width,
+            profile.screen_height,
+        )
+        && let Some(vector) = inkpen_v1_vector_path(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal.clone(),
+            true,
+        )
+    {
+        let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
+        prepared.points = Cow::Owned(ink.points);
+        prepared.sample_ends = Some(vector.sample_ends);
+        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
+        prepared.ordered_disk_replay = None;
+        prepared.dot_directions = None;
+        prepared.rect_stamp = None;
+        prepared.coverage_mesh = None;
+        prepared.segment_widths = None;
+        prepared.bounds = Some(ink.bounds);
+        prepared.color = theme.foreground(stroke_source_color(stroke));
+        prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        prepared.top_layer = false;
+        prepared.profile = Some("InkPen");
+        prepared.support = crate::InkSupport::Reconstructed;
+        return prepared;
     }
     let Some(ink) = prepare_inkpen2_v9(stroke, options.inkpen2_profile, theme) else {
         return prepare_stroke_for_page(stroke, theme.is_dark());
@@ -4557,6 +4623,22 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
 ) -> crate::PreparedStroke<'a> {
     if stroke.points.len() <= 1 {
         return empty_saved_stroke_paint(stroke, theme);
+    }
+    if viewport.contains(&0)
+        && options.inkpen_profile.is_some()
+        && stroke.rendering.as_ref().is_some_and(|rendering| {
+            rendering.pen_name.as_deref() == Some("com.samsung.android.sdk.pen.pen.preload.InkPen")
+                && matches!(
+                    rendering.advanced_settings.as_deref(),
+                    Some("") | Some("4;")
+                )
+        })
+    {
+        return crate::ink::prepare_stroke_for_context(
+            stroke,
+            theme.is_dark(),
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
     }
     let Some(ink) = options
         .pencil3_profile
@@ -7753,6 +7835,104 @@ mod tests {
             assert!(!svg.contains("data-replay-lengths"));
             assert!(!svg.contains(r##"fill="#336699""##));
         }
+    }
+
+    #[test]
+    fn inkpen_v4_opt_in_matches_replay_and_preserves_fallback() {
+        let mut stroke = inkpen_v1_stroke();
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());
+        let profile = super::InkPenRenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+        };
+        let options = RenderOptions {
+            inkpen_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        assert!(super::prepare_page_inkpen(&stroke, None).is_none());
+        let ink = super::prepare_page_inkpen(&stroke, Some(profile)).unwrap();
+        let direct = crate::ink::prepare_inkpen_v4_for_page(&stroke, 1920, 1080).unwrap();
+        assert_eq!(ink.points, direct.points);
+        assert_eq!(ink.sample_ends, direct.sample_ends);
+        let theme = RenderTheme::for_canvas(false);
+        let replay_paint =
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [100, 100]);
+        let vector = super::inkpen_v1_vector_path(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal,
+            true,
+        )
+        .unwrap();
+        assert_eq!(
+            replay_paint.sample_ends.as_deref(),
+            Some(vector.sample_ends.as_slice())
+        );
+        assert_eq!(replay_paint.color, "#336699");
+        assert_eq!(replay_paint.opacity, 128.0 / 255.0);
+        let zero =
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [0, 100]);
+        let fallback = crate::ink::prepare_stroke_for_context(
+            &stroke,
+            false,
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert_eq!(zero.points, fallback.points);
+        assert_eq!(zero.profile, fallback.profile);
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.clone().into()];
+        let source = document(page);
+        let baseline = render_document_svg(&source, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let normal = render_document_svg(&source, &options)[0].svg.clone();
+        assert_ne!(normal, baseline);
+        assert!(normal.contains(r##"fill="#336699""##));
+        let replay =
+            super::render_layout_page_replay_svg(&source, &layout_document(&source), 0, &options)
+                .unwrap()
+                .svg;
+        assert!(replay.contains("data-replay-lengths"));
+        assert!(replay.contains(r##"fill="#336699""##));
+        stroke.rendering.as_mut().unwrap().properties.fixed_width = true;
+        assert!(super::prepare_page_inkpen(&stroke, Some(profile)).is_none());
+        let mut unsupported = source.clone();
+        unsupported.pages[0].objects = vec![stroke.into()];
+        assert_eq!(
+            render_document_svg(&unsupported, &options)[0].svg,
+            render_document_svg(&unsupported, &RenderOptions::default())[0].svg
+        );
+        assert!(
+            super::prepare_page_inkpen(
+                &inkpen_v1_stroke(),
+                Some(super::InkPenRenderProfile {
+                    screen_width: 0,
+                    ..profile
+                })
+            )
+            .is_some()
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn inkpen_profile_missing_from_legacy_options_defaults_to_none() {
+        let mut legacy = serde_json::to_value(RenderOptions::default()).unwrap();
+        legacy.as_object_mut().unwrap().remove("inkpen_profile");
+        let options: RenderOptions = serde_json::from_value(legacy).unwrap();
+        assert!(options.inkpen_profile.is_none());
+        let profiled = RenderOptions {
+            inkpen_profile: Some(super::InkPenRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        let roundtrip: RenderOptions =
+            serde_json::from_value(serde_json::to_value(profiled).unwrap()).unwrap();
+        assert_eq!(roundtrip.inkpen_profile.unwrap().screen_width, 1920);
+        assert_eq!(roundtrip.inkpen_profile.unwrap().screen_height, 1080);
     }
 
     #[test]
