@@ -166,8 +166,18 @@ fn rejected_vector_samples_do_not_mutate_scene_or_consume_definition_ids() {
     let mut expected = Scene::new(Svg::new());
     let mut actual = Scene::new(Svg::new());
     let valid = [[10.0, 20.0, 3.0]];
-    assert!(super::simplebrush::render(&mut expected, &valid, "#123456"));
-    assert!(super::simplebrush::render(&mut actual, &valid, "#123456"));
+    assert!(super::simplebrush::render(
+        &mut expected,
+        &valid,
+        "#123456",
+        None
+    ));
+    assert!(super::simplebrush::render(
+        &mut actual,
+        &valid,
+        "#123456",
+        None
+    ));
     for invalid in [
         vec![],
         vec![[f32::NAN, 20.0, 3.0]],
@@ -177,17 +187,107 @@ fn rejected_vector_samples_do_not_mutate_scene_or_consume_definition_ids() {
         assert!(!super::simplebrush::render(
             &mut actual,
             &invalid,
-            "#123456"
+            "#123456",
+            None
         ));
     }
     assert!(!super::simplebrush::render(
         &mut actual,
         &valid,
-        "invalid-color"
+        "invalid-color",
+        None
     ));
-    assert!(super::simplebrush::render(&mut expected, &valid, "#123456"));
-    assert!(super::simplebrush::render(&mut actual, &valid, "#123456"));
+    assert!(super::simplebrush::render(
+        &mut expected,
+        &valid,
+        "#123456",
+        None
+    ));
+    assert!(super::simplebrush::render(
+        &mut actual,
+        &valid,
+        "#123456",
+        None
+    ));
     assert_eq!(actual.finish(), expected.finish());
+}
+
+#[test]
+fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
+    use super::vector::{Scene, Svg};
+    use std::cell::Cell;
+
+    fn render_one(source: &Stroke, remaining: &Cell<usize>, profile: bool) -> String {
+        let doc = document(source.clone());
+        let theme = super::RenderTheme::resolve(
+            &doc.pages[0],
+            &doc.metadata,
+            RenderOptions::default().color_mode,
+        );
+        let mut scene = Scene::new(Svg::new());
+        let mut session = crate::ink::calligraphy::CalligraphySession::new();
+        super::render_stroke(
+            &mut scene,
+            source,
+            theme,
+            None,
+            &mut session,
+            true,
+            [100, 100],
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            profile.then_some(SimpleBrushRenderProfile::HostV25),
+            remaining,
+            None,
+        );
+        scene.finish()
+    }
+
+    let source = stroke();
+    let count = crate::ink::simplebrush::prepare_stroke(&source, true, 32_768)
+        .unwrap()
+        .samples
+        .len();
+    let mut small = source.clone();
+    small.points[1] = Point { x: 12.0, y: 20.0 };
+    small.points[2] = Point { x: 14.0, y: 20.0 };
+    let small_count = crate::ink::simplebrush::prepare_stroke(&small, true, 32_768)
+        .unwrap()
+        .samples
+        .len();
+    assert!(small_count < count);
+
+    let budget = Cell::new(count + small_count);
+    let native = render_one(&source, &budget, true);
+    assert_eq!(budget.get(), small_count);
+    let rejected = render_one(&source, &budget, true);
+    assert_eq!(
+        budget.get(),
+        small_count,
+        "rejection must not consume budget"
+    );
+    assert_eq!(
+        rejected,
+        render_one(&source, &Cell::new(0), false),
+        "an exhausted stroke must use the entire generic fallback"
+    );
+    assert_ne!(native, rejected);
+    let small_native = render_one(&small, &budget, true);
+    assert_eq!(budget.get(), 0);
+    assert_ne!(small_native, render_one(&small, &Cell::new(0), false));
+
+    // A new page composition starts with a fresh budget.
+    let fresh_page_budget = Cell::new(count + small_count);
+    assert_eq!(render_one(&source, &fresh_page_budget, true), native);
+    assert_eq!(fresh_page_budget.get(), small_count);
 }
 #[cfg(feature = "pdf")]
 #[test]
@@ -242,13 +342,39 @@ fn simplebrush_pdf_slice_scene_matches_full_page_across_stamp() {
         document
             .descendants()
             .filter(|node| node.has_tag_name("radialGradient") || node.has_tag_name("circle"))
-            .map(|node| svg[node.range()].to_owned())
+            .map(|node| {
+                let y = node.attribute("cy").unwrap().parse::<f64>().unwrap();
+                let radius = node.attribute("r").unwrap().parse::<f64>().unwrap();
+                let stops = node
+                    .children()
+                    .filter(|child| child.has_tag_name("stop"))
+                    .map(|stop| {
+                        format!(
+                            "{:?}:{:?}:{:?}",
+                            stop.attribute("offset"),
+                            stop.attribute("stop-color"),
+                            stop.attribute("stop-opacity")
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                let signature = format!(
+                    "{}:{:?}:{y}:{radius}:{stops:?}",
+                    node.tag_name().name(),
+                    node.attribute("cx")
+                );
+                (y, radius, signature)
+            })
             .collect::<Vec<_>>()
     };
     let expected_vectors = vector_elements(&scenes[0].page.svg);
     assert_eq!(expected_vectors.len(), paint.samples.len() * 2);
-    for scene in &scenes[1..] {
-        assert_eq!(vector_elements(&scene.page.svg), expected_vectors);
+    for (scene, (top, bottom)) in scenes[1..].iter().zip([(0.0, 50.0), (50.0, 100.0)]) {
+        let visible: Vec<_> = expected_vectors
+            .iter()
+            .filter(|(y, radius, _)| y + radius >= top && y - radius <= bottom)
+            .cloned()
+            .collect();
+        assert_eq!(vector_elements(&scene.page.svg), visible);
     }
     let full = raster(&scenes[0].page.svg, 100);
     let upper = raster(&scenes[1].page.svg, 50);

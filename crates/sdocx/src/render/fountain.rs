@@ -2852,6 +2852,7 @@ mod tests {
                 None,
                 None,
                 None,
+                &std::cell::Cell::new(32_768),
                 None,
             );
             let svg = svg.finish();

@@ -10,6 +10,7 @@ use crate::{
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -1314,6 +1315,7 @@ fn render_page_contents_svg(
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
+        simplebrush_remaining_stamps: Cell::new(32_768),
         slice,
     };
     let total = page.composed_objects().count();
@@ -1357,6 +1359,8 @@ struct CompositionContext<'a> {
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    // Shared across all passes in this composition; each scene gets its own budget.
+    simplebrush_remaining_stamps: Cell<usize>,
     slice: Option<PageSlice>,
 }
 
@@ -1429,6 +1433,7 @@ fn render_object(
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
+                &context.simplebrush_remaining_stamps,
                 context.slice,
             );
             *stroke_index += 1;
@@ -3675,6 +3680,7 @@ fn render_stroke(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    simplebrush_remaining_stamps: &Cell<usize>,
     slice: Option<PageSlice>,
 ) {
     // Saved ObjectDrawing admission requires at least two source points before
@@ -3789,9 +3795,22 @@ fn render_stroke(
         && replay_index.is_none()
         && simplebrush_profile == Some(SimpleBrushRenderProfile::HostV25)
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke(stroke, true, 32_768)
-        && simplebrush::render(svg, &paint.samples, &theme.foreground(Some(paint.color)))
+        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke(
+            stroke,
+            true,
+            simplebrush_remaining_stamps.get(),
+        )
+        && simplebrush::render(
+            svg,
+            &paint.samples,
+            &theme.foreground(Some(paint.color)),
+            slice.map(|slice| {
+                let top = f64::from(slice.y());
+                (top, top + f64::from(slice.height()))
+            }),
+        )
     {
+        simplebrush_remaining_stamps.set(simplebrush_remaining_stamps.get() - paint.samples.len());
         return;
     }
     if native_allowed && let Some(ink) = prepare_inkpen2_v9(stroke, inkpen2_profile, theme) {
