@@ -1,0 +1,49 @@
+{
+  "schema": "sdocx-pencil2-pdf-shading-antialias-control-v1",
+  "scope": "At 192x192 and 72 dpi, add /AntiAlias true to every shading dictionary of PDFs exported from the reduced SVG radial alpha masks and the 84-stamp SVG prototype. Compare alpha frames before and after in MuPDF and PDFium; compare to resvg for masks and pinned host-Mesa alpha for the stroke.",
+  "script": "tmp/vector-parity-plan/pen-family-audit/pencil2_v14_pdf_shading_antialias.py",
+  "reproduction": "PYTHONPATH=/home/jding/.cache/uv/archive-v0/4VQ8fPp5Pb2XimZ9eh7Km .venv/bin/python tmp/vector-parity-plan/pen-family-audit/pencil2_v14_pdf_shading_antialias.py",
+  "shading_counts": {
+    "reduced_each": 2,
+    "stroke": 6
+  },
+  "changed_alpha_pixels_mupdf_pdfium": {
+    "2px_aligned": [
+      0,
+      0
+    ],
+    "2px_fractional": [
+      0,
+      0
+    ],
+    "8px_aligned": [
+      0,
+      0
+    ],
+    "8px_fractional": [
+      0,
+      0
+    ],
+    "64px_aligned": [
+      0,
+      0
+    ],
+    "64px_fractional": [
+      0,
+      0
+    ],
+    "stroke": [
+      0,
+      0
+    ]
+  },
+  "stroke_absolute_error_sum_mupdf_pdfium": [
+    2436,
+    3318
+  ],
+  "limitations": [
+    "The prototype and runner inputs and dependencies follow pencil2-v14-svg-pdf-control.json; this postprocesses the exported PDF and is not a renderer change.",
+    "Only alpha at one resolution and the specified controls was compared. No claim about RGB, other readers, arbitrary transforms, saved notes, Android or production parity.",
+    "Identical pixels do not explain why the readers render the masks differently."
+  ]
+}

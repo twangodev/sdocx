@@ -1,0 +1,51 @@
+{
+  "schema": "sdocx.pdf-singlex-clear-caller.v1",
+  "graphics_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+  "historical_receipt": "pdf-paper-singlex-v88-boundary.json",
+  "assumed_graphics_base": "0x4000000",
+  "historical_lr": "0x40afee4",
+  "mapped_return_rva": "0xafee4",
+  "instructions": [
+    {
+      "rva": "0xafd90",
+      "word": "f9401d08",
+      "meaning": "ClearRT: load virtual slot +56"
+    },
+    {
+      "rva": "0xafd94",
+      "word": "d63f0100",
+      "meaning": "ClearRT: call virtual slot"
+    },
+    {
+      "rva": "0xafed0",
+      "word": "f9400008",
+      "meaning": "ClearAllRT: load target vtable"
+    },
+    {
+      "rva": "0xafed4",
+      "word": "2d400680",
+      "meaning": "ClearAllRT: load first two color floats"
+    },
+    {
+      "rva": "0xafed8",
+      "word": "2d410e82",
+      "meaning": "ClearAllRT: load last two color floats"
+    },
+    {
+      "rva": "0xafedc",
+      "word": "f9401d08",
+      "meaning": "ClearAllRT: load virtual slot +56"
+    },
+    {
+      "rva": "0xafee0",
+      "word": "d63f0100",
+      "meaning": "ClearAllRT: call virtual slot"
+    },
+    {
+      "rva": "0xafee4",
+      "word": "f94002c8",
+      "meaning": "ClearAllRT: next instruction"
+    }
+  ],
+  "boundary": "Static instruction check combined with historical callback registers; binary load base and callback destination are inferred from the historical mapping. Does not reproduce the lost harness or validate the callback state, completed export, or device parity."
+}

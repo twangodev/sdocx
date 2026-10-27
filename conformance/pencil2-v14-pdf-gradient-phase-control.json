@@ -1,0 +1,49 @@
+{
+  "schema": "sdocx-pencil2-pdf-gradient-phase-control-v1",
+  "scope": "Diagnostic shifts the objectBoundingBox radial width-mask gradient center from (0.5,0.5) to (0.3,0.3) before SVG-to-PDF export. Compares 84 captured records in a 192x192 target at baseline, translated 6 px with countershifted grain, and scale 2; native host-Mesa alpha uses corresponding pinned crops.",
+  "scripts": [
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_phase.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2_pdf_gradient_phase_full.py"
+  ],
+  "absolute_alpha_error_sum": {
+    "baseline": {
+      "original": [
+        2436,
+        3318
+      ],
+      "shifted": [
+        1958,
+        856
+      ]
+    },
+    "translate6": {
+      "original": [
+        2393,
+        3204
+      ],
+      "shifted": [
+        1938,
+        854
+      ]
+    },
+    "scale2": {
+      "original": [
+        4818,
+        7225
+      ],
+      "shifted": [
+        7733,
+        4556
+      ]
+    }
+  },
+  "reader_order": [
+    "MuPDF",
+    "PDFium"
+  ],
+  "interpretation": "A fixed normalized center shift improves the baseline and translation controls in both readers and scale2 in PDFium, but worsens scale2 in MuPDF. This changes the SVG paint and is not a portable vector correction.",
+  "limitations": [
+    "Synthetic host replay of captured records, not full Drawing, device, saved-note or production parity.",
+    "No arbitrary transforms, other readers, or RGB evidence. Inputs and dependencies follow pencil2-v14-svg-pdf-control.json."
+  ]
+}

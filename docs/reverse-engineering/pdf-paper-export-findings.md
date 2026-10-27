@@ -623,8 +623,18 @@ the harness rejected a return address that differed from its pinned ClearRT
 virtual-call expectation. The original v88 harness is unavailable in the retained
 attempt; the journal alone does not prove whether the guard or its caller model
 is wrong. The capture did not reach its return sentinel or establish completed
-PDF output, ink appearance, or device parity. Reconstructing that caller and
-retaining the executable harness are prerequisites to advancing this route.
+PDF output, ink appearance, or device parity. The [byte-checked caller receipt](../../conformance/pdf-singlex-clear-caller.json)
+identifies `0xafee0` in `SPPenCanvasImpl::ClearAllRT` as a virtual call through
+slot +56, with return at `0xafee4`; the older `ClearRT` slot call returns at
+`0xafd98`. This identifies a valid second call site under the historical
+`0x4000000` graphics mapping, but does not by itself validate a host callback.
+The original journal records the callback receiver as the attached complete
+second framebuffer owner, while the previous clear owner was deactivated. A
+safe reconstruction must check the current owner, context and call state rather
+than accept the return address alone. A subsequent v90 journal stops earlier
+at a separate sub-bitmap guard and does not demonstrate a completed export.
+Reconstructing and retaining the executable harness remain prerequisites to
+advancing this route.
 
 A published mutation archive (SHA-256
 `1f16a027df8f767ecb7387edeb290905e06b44248b4fb78b5fc4f8d200742ffb`)
