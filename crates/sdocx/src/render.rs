@@ -4622,6 +4622,8 @@ fn prepare_inkpen2_internal(
                     | Some("com.samsung.android.sdk.pen.pen.preload.StraightInkPen2")
             )
             || rendering.advanced_settings.is_some()
+            // An unresolved table reference is not evidence of a native null setting.
+            || rendering.style.advanced_pen_setting_id.is_some()
             || active_rainbow
             || rendering.style.color_type_raw.unwrap_or(0) != 0
             || rendering.style.color_argb.is_none());
@@ -17708,6 +17710,50 @@ mod tests {
         let theme = RenderTheme::for_canvas(false);
         let scale = super::InkPen2V1OutputScale::One;
         assert!(super::prepare_inkpen2_v1(&admitted, profile, theme, scale).is_some());
+        for id in [-1, 123456] {
+            let mut unresolved = admitted.clone();
+            unresolved
+                .rendering
+                .as_mut()
+                .unwrap()
+                .style
+                .advanced_pen_setting_id = Some(id);
+            assert!(super::prepare_inkpen2_v1(&unresolved, profile, theme, scale).is_none());
+            let mut page = page_with_uncolored_stroke();
+            page.width = 128;
+            page.height = 96;
+            page.objects = vec![unresolved.into()];
+            let doc = document(page);
+            let layout = layout_document(&doc);
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+            let render = |options: &RenderOptions| {
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            let fallback = render(&RenderOptions::default());
+            let selected = render(&options);
+            assert_eq!(selected, fallback, "unresolved setting ID {id}");
+            #[cfg(feature = "pdf")]
+            {
+                let pdf = |svg| {
+                    crate::render_svg_pages_pdf(
+                        &[crate::RenderedPage::new(0, 128, 96, svg)],
+                        &Default::default(),
+                    )
+                    .unwrap()
+                };
+                assert_eq!(pdf(selected), pdf(fallback), "unresolved setting ID {id}");
+            }
+        }
         let mut rejected = admitted.clone();
         rejected.rendering.as_mut().unwrap().style.color_argb = Some(0x8033_6699);
         assert_eq!(
