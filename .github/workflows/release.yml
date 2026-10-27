@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -17,9 +21,13 @@ jobs:
       pull-requests: write
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      sdocx--release_created: ${{ steps.release.outputs['crates/sdocx--release_created'] }}
+      sdocx--sha: ${{ steps.release.outputs['crates/sdocx--sha'] }}
       sdocx-cli--release_created: ${{ steps.release.outputs['crates/sdocx-cli--release_created'] }}
       sdocx-cli--tag_name: ${{ steps.release.outputs['crates/sdocx-cli--tag_name'] }}
+      sdocx-cli--sha: ${{ steps.release.outputs['crates/sdocx-cli--sha'] }}
       sdocx-wasm--release_created: ${{ steps.release.outputs['crates/sdocx-wasm--release_created'] }}
+      sdocx-wasm--sha: ${{ steps.release.outputs['crates/sdocx-wasm--sha'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -38,7 +46,7 @@ jobs:
   build:
     name: Build (${{ matrix.artifact }})
     needs: [release-please]
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: needs.release-please.outputs.sdocx-cli--release_created == 'true'
     runs-on: ${{ matrix.os }}
     permissions:
       id-token: write
@@ -59,7 +67,14 @@ jobs:
             artifact: sdocx-cli-x86_64-windows.exe
             bin: sdocx-cli.exe
     steps:
+      - name: Validate released CLI SHA
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sdocx-cli--sha }}
+        run: test -n "$RELEASE_SHA"
+        shell: bash
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.sdocx-cli--sha }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build release binary
         run: cargo build --release
@@ -87,7 +102,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -102,21 +116,40 @@ jobs:
   publish:
     name: Publish to crates.io
     needs: [release-please]
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: needs.release-please.outputs.sdocx--release_created == 'true' || needs.release-please.outputs.sdocx-cli--release_created == 'true'
     runs-on: ubuntu-latest
     environment: crates-io
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Authenticate with crates.io
         id: auth
         uses: rust-lang/crates-io-auth-action@v1
+      - name: Validate released SDK SHA
+        if: needs.release-please.outputs.sdocx--release_created == 'true'
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sdocx--sha }}
+        run: test -n "$RELEASE_SHA"
+      - uses: actions/checkout@v4
+        if: needs.release-please.outputs.sdocx--release_created == 'true'
+        with:
+          ref: ${{ needs.release-please.outputs.sdocx--sha }}
       - run: cargo publish -p sdocx
+        if: needs.release-please.outputs.sdocx--release_created == 'true'
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+      - name: Validate released CLI SHA
+        if: needs.release-please.outputs.sdocx-cli--release_created == 'true'
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sdocx-cli--sha }}
+        run: test -n "$RELEASE_SHA"
+      - uses: actions/checkout@v4
+        if: needs.release-please.outputs.sdocx-cli--release_created == 'true'
+        with:
+          ref: ${{ needs.release-please.outputs.sdocx-cli--sha }}
       - run: cargo publish -p sdocx-cli
+        if: needs.release-please.outputs.sdocx-cli--release_created == 'true'
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
@@ -129,7 +162,13 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - name: Validate released WASM SHA
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sdocx-wasm--sha }}
+        run: test -n "$RELEASE_SHA"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.sdocx-wasm--sha }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: actions/setup-node@v4
         with:
@@ -159,7 +198,13 @@ jobs:
     permissions:
       packages: write
     steps:
+      - name: Validate released CLI SHA
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sdocx-cli--sha }}
+        run: test -n "$RELEASE_SHA"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.sdocx-cli--sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
