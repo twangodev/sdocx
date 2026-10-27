@@ -4385,8 +4385,14 @@ fn prepare_inkpen2_v9(
         }
         _ => false,
     };
+    let supported_setting = match rendering.advanced_settings.as_deref() {
+        Some("9;") => true,
+        // Native Drawing selects V9 for a non-null empty setting in both names.
+        Some("") => !active_rainbow && rendering.style.color_type_raw.unwrap_or(0) == 0,
+        _ => false,
+    };
     if !supported_name
-        || rendering.advanced_settings.as_deref() != Some("9;")
+        || !supported_setting
         || rendering.tool_type_raw != 2
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
         || rendering.style.line_type_raw.unwrap_or(0) != 0
@@ -10426,10 +10432,53 @@ mod tests {
                 .inkpen2_v9
                 .is_none()
         );
-        for setting in [None, Some(""), Some("8;"), Some("10;")] {
+        for setting in [None, Some("8;"), Some("10;")] {
             let mut rejected = straight.clone();
             rejected.rendering.as_mut().unwrap().advanced_settings = setting.map(str::to_owned);
             assert!(prepare_inkpen2_v9(&rejected, Some(profile), theme).is_none());
+        }
+        let empty_receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-empty-setting-native.json"
+        ))
+        .unwrap();
+        let cases = empty_receipt["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 4);
+        for name in ["InkPen2", "StraightInkPen2"] {
+            for (setting, value) in [("empty", ""), ("9", "9;")] {
+                assert!(cases.iter().any(|case| {
+                    case["pen_name"] == name
+                        && case["advanced_setting"] == setting
+                        && case["advanced_getter_nonnull"] == true
+                        && case["advanced_getter_utf8"] == value
+                        && case["selected_drawable"] == "InkPen2StrokeDrawableGLV9"
+                }));
+            }
+        }
+        assert_eq!(empty_receipt["callback_comparison"]["events"], 50);
+        assert_eq!(
+            empty_receipt["callback_comparison"]["last_buffer_sha256"],
+            format!("{:x}", Sha256::digest(&bytes))
+        );
+        // Native Drawing captured both literal names with an empty setting and
+        // explicit 9;. Their complete callback streams match apart from addresses.
+        for name in ["InkPen2", "StraightInkPen2"] {
+            let mut empty = straight.clone();
+            let rendering = empty.rendering.as_mut().unwrap();
+            rendering.pen_name = Some(format!("com.samsung.android.sdk.pen.pen.preload.{name}"));
+            rendering.advanced_settings = Some(String::new());
+            let empty_ink = prepare_inkpen2_v9(&empty, Some(profile), theme).unwrap();
+            assert_eq!(empty_ink.records, base_ink.records);
+            let mut unsupported = empty.clone();
+            unsupported
+                .rendering
+                .as_mut()
+                .unwrap()
+                .properties
+                .rainbow_effect = true;
+            assert!(prepare_inkpen2_v9(&unsupported, Some(profile), theme).is_none());
+            unsupported = empty;
+            unsupported.rendering.as_mut().unwrap().style.color_type_raw = Some(1);
+            assert!(prepare_inkpen2_v9(&unsupported, Some(profile), theme).is_none());
         }
         let mut rainbow = straight.clone();
         rainbow
