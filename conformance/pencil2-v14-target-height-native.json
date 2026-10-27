@@ -1,0 +1,67 @@
+{
+  "schema": "sdocx-pencil2-v14-target-height-native-v1",
+  "scope": "Controlled native RTV4 host Mesa replay with the same 84 records, draw matrix and inverse scale, on 192x192 and 192x267 RGBA8 targets. Readback coordinates have OpenGL bottom-left origin. Not full Drawing, Android, PDF or device evidence.",
+  "command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil2_v14_target_height_capture.py",
+  "capture_source": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/capture_candidate.py",
+  "capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "baseline_rgba_sha256": "a062fad3bde64ecb689a3b8a75531ec0ad7af0471e5b104e94479741284a30dd",
+  "taller_rgba_sha256": "567153b413f0aebd8c14cd1b4a6c6cd205998852c766278e894e072eac171896",
+  "comparisons": [
+    {
+      "taller_y_offset": 0,
+      "nonzero_union": 52,
+      "alpha_mismatches": 1,
+      "alpha_absolute_difference_sum": 3,
+      "difference_examples": [[3, 0, 33, 30]]
+    },
+    {
+      "taller_y_offset": 75,
+      "nonzero_union": 52,
+      "alpha_mismatches": 52,
+      "alpha_absolute_difference_sum": 4082,
+      "difference_examples": [
+        [0, 0, 3, 0],
+        [1, 0, 15, 0],
+        [2, 0, 19, 0],
+        [3, 0, 33, 0],
+        [4, 0, 33, 0],
+        [5, 0, 50, 0],
+        [6, 0, 24, 0],
+        [7, 0, 63, 0],
+        [8, 0, 67, 0],
+        [9, 0, 34, 0]
+      ]
+    }
+  ],
+  "draw_uniform_events": [
+    {
+      "name": "glUniformMatrix4fv",
+      "location": 0,
+      "count": 1,
+      "values": [
+        0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00749063678085804,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {"name": "glUniform2fv", "location": 4, "count": 1, "values": [0.0, 0.0]},
+    {"name": "glUniform1f", "location": 1, "values": [3.0]},
+    {"name": "glUniform1i", "args": [2, 0], "result": null},
+    {"name": "glUniform1f", "location": 6, "values": [75.0]},
+    {"name": "glUniform1f", "location": 5, "values": [75.0]},
+    {"name": "glUniform1i", "args": [3, 1], "result": null}
+  ]
+}
