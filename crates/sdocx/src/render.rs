@@ -1300,11 +1300,13 @@ fn render_page_contents_svg(
         }
     }
 
+    let mut scene_text_renderer = text_renderer.clone();
+    scene_text_renderer.image_page_width = Some(page.width);
     let composition = CompositionContext {
         page,
         media_assets,
         flow_page_padding: metadata.flow_page_padding,
-        text_renderer,
+        text_renderer: &scene_text_renderer,
         theme,
         replay,
         body_text,
@@ -2269,14 +2271,14 @@ fn render_nine_patch(
         )),
         |svg| {
             svg.scope(
-                Svg::new()
-                    .x(bbox.x_min)
-                    .y(bbox.y_min)
-                    .width(width)
-                    .height(height)
-                    .view_box(ViewBox::unrounded(0.0, 0.0, f64::from(w), f64::from(h)))
-                    .preserve_aspect_none()
-                    .clipped_viewport(),
+                Group::new().transformed(Transform::matrix_unrounded([
+                    width / f64::from(w),
+                    0.0,
+                    0.0,
+                    height / f64::from(h),
+                    bbox.x_min,
+                    bbox.y_min,
+                ])),
                 |svg| {
                     for y in 0..3 {
                         for x in 0..3 {
@@ -3193,7 +3195,7 @@ fn render_embedded_object(
                     .object(ObjectKind::Image)
                     .transformed(Transform::translate(0., offset_y, 4)),
                 |svg| {
-                    render_placed_image(svg, image, media_assets, None);
+                    render_placed_image(svg, image, media_assets, renderer.image_page_width);
                 },
             );
             Some(drawn.y_max + offset_y)
@@ -5375,7 +5377,7 @@ mod tests {
             .descendants()
             .filter(|n| n.has_tag_name("svg") && n.attribute("viewBox").is_some())
             .collect();
-        assert_eq!(patches.len(), 11); // page, processed bitmap, nine source views
+        assert_eq!(patches.len(), 10); // page and nine source views
         assert_eq!(
             xml.descendants()
                 .filter(|n| n.has_tag_name("image"))
@@ -5428,6 +5430,56 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn embedded_nine_patch_uses_scene_page_width() {
+        let mut image = simple_original_crop(None);
+        image.crop_rect = None;
+        image.original_bbox = None;
+        image.nine_patch = Some(([1, 1, 3, 2], 500));
+        let mut body = theme_test_text();
+        body.bbox = BoundingBox::default();
+        body.text = "\u{fffc}".into();
+        body.object_spans = vec![RichTextObjectSpan {
+            object_type: ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::Image(Box::new(image))),
+            text_index_utf16: 0,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        }];
+        let mut page = page_with_uncolored_stroke();
+        page.width = 500;
+        page.height = 200;
+        page.objects.clear();
+        let mut doc = document(page);
+        doc.metadata.page_mode = Some(1);
+        doc.metadata.default_page_dimensions = Some((360, 1527));
+        doc.metadata.flow_dimensions = Some((500, 200));
+        doc.metadata.flow_page_padding = Some((0, 0));
+        doc.metadata.note_text = Some(body);
+        doc.metadata.media_assets = vec![MediaAsset {
+            name: "patch.png".into(),
+            archive_id: Some(0),
+            mime_type: "image/png".into(),
+            data: test_rgb_png(),
+        }];
+        let svg = render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert_eq!(
+            xml.descendants().filter(|n| n.has_tag_name("use")).count(),
+            9
+        );
+        let center = xml
+            .descendants()
+            .find(|n| n.attribute("viewBox") == Some("1 1 2 1"))
+            .unwrap();
+        assert_eq!(center.attribute("x"), Some("1"));
+        assert_eq!(center.attribute("width"), Some("2"));
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn nine_patch_svg_raster_preserves_nine_colored_regions() {
         let mut pixels = Vec::new();
         for y in 0..9 {
@@ -5474,6 +5526,12 @@ mod tests {
                     assert!(actual.abs_diff(expected) <= 1, "{actual} vs {expected}");
                 }
             }
+        }
+        // The nine source viewports must not leak beyond the placement, even
+        // without a second clip around the transformed group.
+        for (x, y) in [(19, 45), (70, 45), (45, 29), (45, 60)] {
+            let pixel = pixmap.pixel(x, y).unwrap();
+            assert_eq!([pixel.red(), pixel.green(), pixel.blue()], [252; 3]);
         }
     }
 

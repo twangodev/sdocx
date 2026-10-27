@@ -1,0 +1,321 @@
+{
+  "schema": "sdocx.nine-patch-native-control.v1",
+  "scope": "One synthetic opaque 512x256 nine-color source; direct native nine-patch helper with supplied q and native bitmap placement. Not a model-getter, saved-note, or Android-device test. Native framebuffer premultiplied RGBA composited over RGB 252. The native original crop was cleared with the native setter. Public SVG/PDF images include renderer page background. Native runtime is ARM64 emulation using project-local Unicorn and bundled ARM64 Skia libraries.",
+  "native": {
+    "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "capture_base_sha256": "7d2637ba8aef7bc744074ca6d433b650281ba6fc245f12969c3bfe663a6da616",
+    "input_rgba_sha256": "8a7f55fb92d8d57887a01d3f3fd411ec25c3633b0ee0ccfc4290c9f17c784a4e",
+    "prepared_rgba_sha256": "3c73c6b9f7adb1e345885192a2c5f6b4687680d00fc086877a59f530dcc45c16",
+    "framebuffer_rgba_sha256": "1ef7bc24111b0a617d8c8ea76f9484287664251fd4dad285ef9ce08c6e69d236",
+    "source_dimensions": [
+      512,
+      256
+    ],
+    "framebuffer_dimensions": [
+      48,
+      32
+    ],
+    "cuts": [
+      128,
+      64,
+      384,
+      192
+    ],
+    "q": 0.75,
+    "q_provenance": "direct helper argument; not queried from model",
+    "placement": [
+      8.25,
+      8.5,
+      40.5,
+      24.25
+    ]
+  },
+  "public": {
+    "commit": "f55053d",
+    "source_png_sha256": "a2964eccaaf6bd6182feee3034d4a70d845e8f18f18de4c457a97d079e7d8f09",
+    "svg_sha256": "275dba9686141d13288163413024423e8ece102328c5ea0cf1e641e41439e534",
+    "pdf_sha256": "314259399fd119d1f2c83328c2c479188573e8315e7ced2d6c339b1f3747b79a",
+    "baseline_svg_sha256": "4004a411bd6768e0f52fdc4f418a41cdb6d900589c89305690a394db4c66b06a",
+    "baseline_pdf_sha256": "98131897baa3bc59e1e493d834d3075d31bcee65f87359f98dff9f1dffed6797",
+    "baseline": "same image and placement with nine-patch disabled",
+    "svg_rasterizer": "resvg 0.45.1",
+    "pdf_rasterizer": "PyMuPDF 1.28.2 at 96 dpi",
+    "source_png_decodes_to_native_input_rgba": true,
+    "source_png_decode_check": "PNG IDAT decompressed rows all use filter 0; concatenated rows match native input byte-for-byte."
+  },
+  "comparison": {
+    "svg-resvg": {
+      "sha256": "c9d1590c1d047ed37293da7c8901687b269c597d3dbd4b5088d533c38fb44616",
+      "format": "rgba",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 184,
+          "rgb_abs_error": 22729,
+          "max_channel_error": 98
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 88,
+          "rgb_abs_error": 7889,
+          "max_channel_error": 80
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 96,
+          "rgb_abs_error": 14840,
+          "max_channel_error": 98
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 38,
+          "rgb_abs_error": 3263,
+          "max_channel_error": 80
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 70,
+          "rgb_abs_error": 6757,
+          "max_channel_error": 80
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 561,
+        "output_pixels": 520,
+        "intersection": 520,
+        "native_only": 41,
+        "output_only": 0
+      }
+    },
+    "baseline-resvg": {
+      "sha256": "c205928f761f7c1ab9344dee4d701a51d67024899acb6bdd566882452275917b",
+      "format": "rgba",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 156,
+          "rgb_abs_error": 57589,
+          "max_channel_error": 255
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 114,
+          "rgb_abs_error": 55483,
+          "max_channel_error": 255
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 42,
+          "rgb_abs_error": 2106,
+          "max_channel_error": 192
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 51,
+          "rgb_abs_error": 21426,
+          "max_channel_error": 255
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 51,
+          "rgb_abs_error": 23229,
+          "max_channel_error": 255
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 561,
+        "output_pixels": 561,
+        "intersection": 561,
+        "native_only": 0,
+        "output_only": 0
+      }
+    },
+    "pdf-mupdf": {
+      "sha256": "b2feeadd01193a9d4ae243a574490f217d341fbdcdc8f26ab5baf47f6be25b84",
+      "format": "rgb",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 1150,
+          "rgb_abs_error": 42475,
+          "max_channel_error": 220
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 79,
+          "rgb_abs_error": 12057,
+          "max_channel_error": 192
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 96,
+          "rgb_abs_error": 28468,
+          "max_channel_error": 220
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 29,
+          "rgb_abs_error": 4855,
+          "max_channel_error": 192
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 69,
+          "rgb_abs_error": 10125,
+          "max_channel_error": 192
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 561,
+        "output_pixels": 561,
+        "intersection": 561,
+        "native_only": 0,
+        "output_only": 0
+      }
+    },
+    "baseline-mupdf": {
+      "sha256": "2a140cd38fafc8360b60aad97d60769a7f45f118f6ea9222f59d7d90dec0377b",
+      "format": "rgb",
+      "metrics": {
+        "full": {
+          "pixels": 1536,
+          "changed_pixels": 1224,
+          "rgb_abs_error": 77804,
+          "max_channel_error": 255
+        },
+        "interior": {
+          "pixels": 465,
+          "changed_pixels": 153,
+          "rgb_abs_error": 45993,
+          "max_channel_error": 255
+        },
+        "outer_edge": {
+          "pixels": 96,
+          "changed_pixels": 96,
+          "rgb_abs_error": 29861,
+          "max_channel_error": 254
+        },
+        "vertical_seams": {
+          "pixels": 90,
+          "changed_pixels": 54,
+          "rgb_abs_error": 20856,
+          "max_channel_error": 255
+        },
+        "horizontal_seams": {
+          "pixels": 186,
+          "changed_pixels": 82,
+          "rgb_abs_error": 26280,
+          "max_channel_error": 255
+        }
+      },
+      "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+      "support": {
+        "native_pixels": 561,
+        "output_pixels": 561,
+        "intersection": 561,
+        "native_only": 0,
+        "output_only": 0
+      }
+    }
+  },
+  "limitations": [
+    "Single control; no native pixel parity established.",
+    "Support uses at least two RGB channels differing from 252 by more than one byte; it is a color threshold rather than alpha coverage.",
+    "Nine-patch was executed directly on a source-sized native canvas and then the resulting bitmap was drawn by native drawImage."
+  ],
+  "scratch_outer_group_probe": {
+    "sha256": "e2d8255253e3f62366abb86546d3c96b89d760030bd9a38ad409e7925f81c5fe",
+    "format": "rgba",
+    "metrics": {
+      "full": {
+        "pixels": 1536,
+        "changed_pixels": 184,
+        "rgb_abs_error": 18321,
+        "max_channel_error": 80
+      },
+      "interior": {
+        "pixels": 465,
+        "changed_pixels": 88,
+        "rgb_abs_error": 7887,
+        "max_channel_error": 80
+      },
+      "outer_edge": {
+        "pixels": 96,
+        "changed_pixels": 96,
+        "rgb_abs_error": 10434,
+        "max_channel_error": 68
+      },
+      "vertical_seams": {
+        "pixels": 90,
+        "changed_pixels": 38,
+        "rgb_abs_error": 3261,
+        "max_channel_error": 80
+      },
+      "horizontal_seams": {
+        "pixels": 186,
+        "changed_pixels": 70,
+        "rgb_abs_error": 6769,
+        "max_channel_error": 80
+      }
+    },
+    "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+    "support": {
+      "native_pixels": 561,
+      "output_pixels": 531,
+      "intersection": 531,
+      "native_only": 30,
+      "output_only": 0
+    },
+    "method": "Scratch-only SVG rewrite of control.svg outer viewport to group with translate(8.25 8.5) scale(0.06298828125 0.0615234375); inner nine clipped SVGs unchanged. Rasterized by resvg 0.45.1. Not a public renderer export.",
+    "svg_sha256": "ea4fe864846d0a1329599c4402de6f4b85fe822165c140a15f97afcc748ffd54"
+  },
+  "public_outer_group_candidate": {
+    "sha256": "e2d8255253e3f62366abb86546d3c96b89d760030bd9a38ad409e7925f81c5fe",
+    "format": "rgba",
+    "metrics": {
+      "full": {
+        "pixels": 1536,
+        "changed_pixels": 184,
+        "rgb_abs_error": 18321,
+        "max_channel_error": 80
+      },
+      "interior": {
+        "pixels": 465,
+        "changed_pixels": 88,
+        "rgb_abs_error": 7887,
+        "max_channel_error": 80
+      },
+      "outer_edge": {
+        "pixels": 96,
+        "changed_pixels": 96,
+        "rgb_abs_error": 10434,
+        "max_channel_error": 68
+      },
+      "vertical_seams": {
+        "pixels": 90,
+        "changed_pixels": 38,
+        "rgb_abs_error": 3261,
+        "max_channel_error": 80
+      },
+      "horizontal_seams": {
+        "pixels": 186,
+        "changed_pixels": 70,
+        "rgb_abs_error": 6769,
+        "max_channel_error": 80
+      }
+    },
+    "support_threshold": "at least two RGB channels differ from 252 by more than 1",
+    "support": {
+      "native_pixels": 561,
+      "output_pixels": 531,
+      "intersection": 531,
+      "native_only": 30,
+      "output_only": 0
+    },
+    "svg_sha256": "46972662b53dec44ae94f815e9c280a2978d12a876ba37cfd1080fa24cdf6ba1",
+    "scope": "Actual public renderer output after replacing the outer viewport with a matrix group; resvg 0.45.1 at 1x."
+  }
+}

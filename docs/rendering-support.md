@@ -68,15 +68,18 @@ Native [formula drawing](reverse-engineering/formula-rendering-findings.md)
 has separate image/stroke selection rules; decoded expressions do not require
 or establish an SDK evaluator.
 
-Page images with an ordinary image fill can use nine-patch cuts when the source
+Page and text-embedded images with an ordinary image fill can use nine-patch cuts when the source
 and destination patches are positive and in bounds. The saved reference width
 and page width determine native f32 cut positions in the source-sized processed
 bitmap; an active crop takes precedence. The vector reconstruction approximates
-that intermediate bitmap. Embedded images with a nonzero reference width,
-transformed fills, original/border metadata, and degenerate or out-of-bounds
+that intermediate bitmap. Transformed fills, original/border metadata, and degenerate or out-of-bounds
 patches retain the existing fallback. Active nine-patch records retain an
-unsupported diagnostic. A synthetic nine-color control verifies SVG and
-PyMuPDF region-center transport; native nine-patch pixel parity is unverified.
+unsupported diagnostic. A [synthetic native nine-color control](../conformance/nine-patch-native-control.json)
+compares source-sized preprocessing and fractional placement against public exports.
+The nine-patch SVG reduces total RGB error from 57,589 to 18,321 compared with
+ordinary image placement, but misses 30 native edge-support pixels; the PDF
+reduces error from 77,804 to 42,475. Sampling and seam differences remain, and
+native pixel parity is unverified.
 
 ## Ink
 
