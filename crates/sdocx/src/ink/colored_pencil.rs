@@ -826,8 +826,24 @@ mod tests {
 
         fn source_svg(stream: &[u8], point_r8: &[u8], argb: u32) -> String {
             assert_eq!(stream.len(), 4 * 20, "native four-record AddPoint stream");
-            let mut svg = String::from(
-                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\"><g transform=\"translate(0 256) scale(1 -1)\" color-interpolation=\"sRGB\" style=\"isolation:isolate\">",
+            source_svg_control(stream, point_r8, argb, true, 0.0)
+        }
+
+        fn source_svg_control(
+            stream: &[u8],
+            point_r8: &[u8],
+            argb: u32,
+            clip: bool,
+            dx: f32,
+        ) -> String {
+            assert!(!stream.is_empty() && stream.len().is_multiple_of(20));
+            let translation = if dx == 0.0 {
+                String::new()
+            } else {
+                format!(" translate({dx} 0)")
+            };
+            let mut svg = format!(
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\"><g transform=\"translate(0 256) scale(1 -1){translation}\" color-interpolation=\"sRGB\" style=\"isolation:isolate\">",
             );
             for (index, record) in stream.as_chunks::<20>().0.iter().enumerate() {
                 let lane = |offset: usize| {
@@ -851,13 +867,13 @@ mod tests {
                 let reflection = image_y + image_high;
                 let rect = |value: f64| value.to_string();
                 let uri = png_data_uri(&rgba_atlas(point_r8, argb, instance_alpha));
-                write!(
-                    svg,
-                    "<defs><clipPath id=\"cp-clip-{index}\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" shape-rendering=\"crispEdges\"/></clipPath></defs><g clip-path=\"url(#cp-clip-{index})\"><image x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\" href=\"{}\" transform=\"translate(0 {}) scale(1 -1)\"/></g>",
-                    rect(left), rect(bottom), rect(width), rect(width), rect(image_x),
-                    rect(image_y), rect(image_width), rect(image_height), uri, rect(reflection)
-                )
-                .unwrap();
+                if clip {
+                    write!(svg, "<defs><clipPath id=\"cp-clip-{index}\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" shape-rendering=\"crispEdges\"/></clipPath></defs><g clip-path=\"url(#cp-clip-{index})\">", rect(left), rect(bottom), rect(width), rect(width)).unwrap();
+                }
+                write!(svg, "<image x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\" href=\"{}\" transform=\"translate(0 {}) scale(1 -1)\"/>", rect(image_x), rect(image_y), rect(image_width), rect(image_height), uri, rect(reflection)).unwrap();
+                if clip {
+                    svg.push_str("</g>");
+                }
             }
             svg.push_str("</g></svg>");
             svg
@@ -950,6 +966,21 @@ mod tests {
                     .expect("experimental SVG must lower to PDF");
                 std::fs::write(output.join(format!("{color}.svg")), svg).unwrap();
                 std::fs::write(output.join(format!("{color}.pdf")), pdf).unwrap();
+                for (phase, dx) in [("original", 0.0), ("fractional-dx0.375", 0.375)] {
+                    for clip in [true, false] {
+                        let svg = source_svg_control(&stream[..20], POINT_R8, argb, clip, dx);
+                        let page = crate::RenderedPage::new(0, 256, 256, svg.clone());
+                        let pdf =
+                            crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                                .unwrap();
+                        let name = format!(
+                            "{color}-first-{phase}-{}",
+                            if clip { "clip" } else { "unclipped" }
+                        );
+                        std::fs::write(output.join(format!("{name}.svg")), svg).unwrap();
+                        std::fs::write(output.join(format!("{name}.pdf")), pdf).unwrap();
+                    }
+                }
             }
             std::fs::write(output.join("provenance.json"), PAINT_FIXTURE).unwrap();
         }

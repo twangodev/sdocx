@@ -345,5 +345,126 @@
         }
       }
     ]
+  },
+  "single_stamp_pdf_controls": {
+    "scope": "Test-only first native stamp, ARGB 0x8044aaee; clipped/unclipped pairs use byte-identical atlas image attributes at original and dx=0.375 placements. Unclipped padded atlas has extra coverage; these comparisons do not assert native parity or isolate only clip errors.",
+    "source_sha256": "be6a68daf064d33cf16ffbeb670c5d7aed9a5eb16a835cc4d3240df1a5a39e0f",
+    "resvg_runner_sha256": "9d8ae4ea9f44889bc4c10791b147770b74e6df62f756fa747da89ca20938e30a",
+    "metric": "Premultiplied RGBA8 error over union of SVG and PDF alpha-nonzero pixels; SVG is resvg 0.47.0. PDFium straight RGB converted by (rgb*alpha+127)//255.",
+    "cases": [
+      {
+        "phase": "original",
+        "clip": true,
+        "svg_sha256": "8233d6f287f0dbf35786b48637d478ea207cac8e4b85ff046c296416d80bf2e4",
+        "svg_rgba_sha256": "9b638f9a421cc6b0694635bceae0d1775dd6405ebbae90f1938b11ce3e9d31e1",
+        "pdf_sha256": "766ad9479ad495f1dff95ed97ae11707f02d1499c3345b582d8ffb2a9c9603fa",
+        "mupdf": {
+          "svg_support": 35,
+          "pdf_support": 41,
+          "support_iou": 0.853659,
+          "premul_rgba_mae_union": 4.286585,
+          "max_channel_error": 26
+        },
+        "pdfium": {
+          "svg_support": 35,
+          "pdf_support": 42,
+          "support_iou": 0.833333,
+          "premul_rgba_mae_union": 3.886905,
+          "max_channel_error": 27
+        }
+      },
+      {
+        "phase": "original",
+        "clip": false,
+        "svg_sha256": "6cce839d36c6001c899a174e67d0b21cf992609f22330822a0d2764fd3682b7d",
+        "svg_rgba_sha256": "4c5f2f14b815fde1ef909710a07240e112814c30b62b4ac6c406229da2270d19",
+        "pdf_sha256": "67f8afacdb6157bba9b78698d01a025136ec58f5fc64b10f304d4aad59850f3c",
+        "mupdf": {
+          "svg_support": 92,
+          "pdf_support": 101,
+          "support_iou": 0.910891,
+          "premul_rgba_mae_union": 3.522277,
+          "max_channel_error": 16
+        },
+        "pdfium": {
+          "svg_support": 92,
+          "pdf_support": 103,
+          "support_iou": 0.893204,
+          "premul_rgba_mae_union": 3.009709,
+          "max_channel_error": 16
+        }
+      },
+      {
+        "phase": "fractional-dx0.375",
+        "clip": true,
+        "svg_sha256": "570ab8952c94c299489341fcd29b8e5aa26d0c9e496899e76a45001f5d52d4bb",
+        "svg_rgba_sha256": "b65deee478b13fa31890df36f8d3a088f930859c12bf5e42802435a20add6577",
+        "pdf_sha256": "53e0d7559f0a01d79f31db9a09d2c66faf4b785adcf1630826162d4fbe25ce4f",
+        "mupdf": {
+          "svg_support": 42,
+          "pdf_support": 43,
+          "support_iou": 0.976744,
+          "premul_rgba_mae_union": 2.819767,
+          "max_channel_error": 12
+        },
+        "pdfium": {
+          "svg_support": 42,
+          "pdf_support": 44,
+          "support_iou": 0.954545,
+          "premul_rgba_mae_union": 2.551136,
+          "max_channel_error": 13
+        }
+      },
+      {
+        "phase": "fractional-dx0.375",
+        "clip": false,
+        "svg_sha256": "63666a6ff1913c7699cd475e02846d6a3737200958689a8241456852c29adda2",
+        "svg_rgba_sha256": "14a4d46af8dcefb4a37f0f430eca41a00639a7c4f1498856b4ee80c9749c4b06",
+        "pdf_sha256": "4ca53449ea19f98801f1dfd7aa66d4f6f562aa6ad1031f72b2b37e07efdc80be",
+        "mupdf": {
+          "svg_support": 99,
+          "pdf_support": 119,
+          "support_iou": 0.831933,
+          "premul_rgba_mae_union": 3.821429,
+          "max_channel_error": 22
+        },
+        "pdfium": {
+          "svg_support": 99,
+          "pdf_support": 121,
+          "support_iou": 0.818182,
+          "premul_rgba_mae_union": 3.617769,
+          "max_channel_error": 23
+        }
+      }
+    ],
+    "interpolation_control": {
+      "scope": "Set Interpolate true on both image and SMask in existing PDFs; MuPDF 1.28.2 returns byte-identical 256x256 RGBA for all four controls. This does not establish behavior in other readers.",
+      "cases": [
+        {
+          "argb": "0x8044aaee",
+          "input_pdf_sha256": "4f6c4112774e9253a6e3bdb60f6952981674099980e736b3ff9c898e1f85eaa1",
+          "interpolated_pdf_sha256": "28175d912b90b900089c570ebd908923f8048f42c1409e9a70c216554ca599ec",
+          "mupdf_rgba_sha256": "2239377b157becccc2bb4ab7e0cecdc60fe5a2501999a2bb65cb3f83bed49b17"
+        },
+        {
+          "argb": "0xff44aaee",
+          "input_pdf_sha256": "64e5b94bc75f7c258cb11a11da54e048a710576d69f3a9f2bafcca9570c88803",
+          "interpolated_pdf_sha256": "ab7abf9e3f16df8887687d19967f8969c7b5b2f36599044ba58eb433c194bdfa",
+          "mupdf_rgba_sha256": "c53322921fe16310441ac073045a9114875ec251c007294316208488d75dfcec"
+        },
+        {
+          "argb": "0x0044aaee",
+          "input_pdf_sha256": "93375cde0008c86156d992d84bae9aa0479e34983278030cead9fc8341cca7ee",
+          "interpolated_pdf_sha256": "a9551dabe8509c48d5fd1e6f248c8b0f85c99276457ef8de8b1f12b8e1625acd",
+          "mupdf_rgba_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+        },
+        {
+          "argb": "0x80c04020",
+          "input_pdf_sha256": "f5211760133fc008a477d93d03bed8fef0fb36032cee91d66f7832e1e1974d52",
+          "interpolated_pdf_sha256": "da0426a00229f393d5d3f25cfee1379cf32cfdc98737cb5e621582776aa82964",
+          "mupdf_rgba_sha256": "7ddcc92d25888a79b227ac59e5d3ddfece77a65875a892cd32adc872b1ca4527"
+        }
+      ]
+    }
   }
 }
