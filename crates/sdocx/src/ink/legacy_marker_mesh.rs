@@ -412,8 +412,19 @@ fn source_centerline(
     }
     let tail = q.at(q.length - 1.0);
     let final_point = *points.last()?;
-    let (end_normal, end_length) = normal(sub(final_point, current))?;
-    curves.push([[tail.x, tail.y], current, final_point]);
+    let tail_point = [tail.x, tail.y];
+    let (end_normal, end_length, end_control) = if final_point == current {
+        if points.len() < 4 {
+            return None;
+        }
+        // EndPen retains the previous normal for a zero-length final movement
+        // and uses the midpoint of its sampled tail and endpoint as control.
+        (previous_normal, 0.0, mid(tail_point, final_point))
+    } else {
+        let (normal, length) = normal(sub(final_point, current))?;
+        (normal, length, current)
+    };
+    curves.push([tail_point, end_control, final_point]);
     normals.push([previous_normal, end_normal]);
     lengths.push([previous_length, end_length]);
     let mut output = Vec::new();
@@ -710,4 +721,44 @@ pub(crate) fn prepare(stroke: &crate::Stroke, screen: [u32; 2]) -> Option<Vec<cr
     }));
     result.push(*stroke.points.last()?);
     Some(result)
+}
+
+#[test]
+fn repeated_final_centerline_matches_native_finished_stroke() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-finished-prefix-native.json"
+    ))
+    .unwrap();
+    let bend = receipt["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["name"] == "repeat-final")
+        .unwrap();
+    for (points, case) in [
+        (
+            [[10.0, 20.0], [10.0, 28.0], [18.0, 28.0], [18.0, 28.0]],
+            bend,
+        ),
+        (
+            [[10.0, 20.0], [18.0, 20.0], [26.0, 20.0], [26.0, 20.0]],
+            &receipt["repeat_straight_control"],
+        ),
+    ] {
+        let predicted = source_centerline(&points, 12.0, [1920, 1080]).unwrap();
+        let expected: Vec<[f32; 2]> = case["native_centerlines"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|curve| curve.as_array().unwrap())
+            .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+            .collect();
+        assert_eq!(predicted.len(), expected.len());
+        for (a, b) in predicted.iter().zip(expected) {
+            assert!(
+                (a[0] - b[0]).abs() < 0.00005 && (a[1] - b[1]).abs() < 0.00005,
+                "{a:?} vs {b:?}"
+            );
+        }
+    }
 }

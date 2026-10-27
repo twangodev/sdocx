@@ -1,0 +1,62 @@
+{
+  "scope": "Synthetic host Drawing control; no device parity claim. Sparse records are little-endian pixel index followed by premultiplied RGBA8.",
+  "script": "tmp/legacy-marker-source-controls/varied-screen.py",
+  "script_sha256": "a674c499281f8c4cf5bdcfb9af5286224a55c5def2e8f88f0ea01037a2f53241",
+  "capture": "tmp/legacy-marker-source-controls/varied-screen-confirmed.json",
+  "capture_sha256": "69b2f66e6305cfec4738aca152e023458a136d2a5379f0824c7ed0b5a919e346",
+  "frame_sha256": "3c6029a8ff6fa85e3ac815b1f26fd965e1aacdcec5e698cd0f8c823ecceff5ea",
+  "sparse_sha256": "43c23c7791cacd350539c5e8b9c7b3baaa2d962d4bcc67b33641107e0fd91497",
+  "screen": [
+    720,
+    480
+  ],
+  "size": 8,
+  "argb": "c84080f0",
+  "points": [
+    [
+      50,
+      50
+    ],
+    [
+      58,
+      56
+    ],
+    [
+      65,
+      49
+    ],
+    [
+      69,
+      58
+    ],
+    [
+      78,
+      61
+    ],
+    [
+      84,
+      53
+    ]
+  ],
+  "native_draw_counts": [
+    94,
+    6,
+    102,
+    102,
+    6
+  ],
+  "public_white_rgb_l1": {
+    "svg": [
+      25227,
+      13347
+    ],
+    "pdf": [
+      25973,
+      13974
+    ]
+  },
+  "export_source": "tmp/marker-varied-export/src/main.rs",
+  "export_source_sha256": "b167533ce13641b2b83c2a1c4ce0d7365a032ee7e7c334805dd52254fe8db277",
+  "comparison_script": "scratch/legacy-marker-public-compare.py",
+  "comparison_script_sha256": "d52b370027a26426c21b7d7d886eb6836cc34181cd8946715963430ac782343f"
+}

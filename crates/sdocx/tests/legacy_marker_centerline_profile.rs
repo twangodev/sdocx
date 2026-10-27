@@ -75,12 +75,28 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
         "../../../conformance/legacy-marker-long-native-controls.json"
     ))
     .unwrap();
+    let finished: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/legacy-marker-finished-prefix-native.json"
+    ))
+    .unwrap();
+    let repeated = &finished["cases"][3];
+    let sparse =
+        include_bytes!("../../../conformance/legacy-marker-finished-prefix-sparse-rgba8.bin");
+    let offset = repeated["sparse_offset"].as_u64().unwrap() as usize;
+    let length = repeated["sparse_bytes"].as_u64().unwrap() as usize;
     let doc = sdocx::parse_bytes(include_bytes!(
         "assets/legacy-marker/synthetic-serialized.sdocx"
     ))
     .unwrap();
     let original = doc.pages[0].strokes().next().unwrap();
     let cases = [
+        (
+            "repeat-final",
+            repeated["input"]["source_arrays_hex"]["points"]
+                .as_str()
+                .unwrap(),
+            &sparse[offset..offset + length],
+        ),
         (
             "straight",
             geometry["cases"]["straight"]["input"]["source_arrays_hex"]["points"]
@@ -296,4 +312,70 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
             );
         }
     }
+}
+
+#[test]
+fn profile_improves_varied_screen_native_control() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/legacy-marker-varied-screen-control.json"
+    ))
+    .unwrap();
+    let doc = sdocx::parse_bytes(include_bytes!(
+        "assets/legacy-marker/synthetic-serialized.sdocx"
+    ))
+    .unwrap();
+    let mut stroke = doc.pages[0].strokes().next().unwrap().clone();
+    stroke.points = receipt["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| sdocx::Point {
+            x: p[0].as_f64().unwrap(),
+            y: p[1].as_f64().unwrap(),
+        })
+        .collect();
+    stroke.pen_width = 8.0;
+    stroke.pressures = vec![0.5; stroke.points.len()];
+    stroke.color = Some(sdocx::Color {
+        r: 64,
+        g: 128,
+        b: 240,
+    });
+    let rendering = stroke.rendering.as_mut().unwrap();
+    rendering.style.pen_size = Some(8.0);
+    rendering.style.color_argb = Some(0xc84080f0);
+    let mut page = doc.pages[0].clone();
+    page.objects = vec![sdocx::PageObject::from(stroke)];
+    page.width = 1920;
+    page.height = 1080;
+    page.template = None;
+    page.background = Default::default();
+    page.background_color = None;
+    let isolated = sdocx::Document {
+        pages: vec![page],
+        metadata: sdocx::DocumentMetadata::default(),
+    };
+    let fallback = sdocx::RenderOptions::default();
+    let mut profile = fallback.clone();
+    profile.legacy_marker_centerline_profile = Some(sdocx::LegacyMarkerCenterlineProfile {
+        screen_width: 720,
+        screen_height: 480,
+    });
+    let native =
+        include_bytes!("../../../conformance/legacy-marker-varied-screen-sparse-rgba8.bin");
+    let old = sdocx::render_document_svg(&isolated, &fallback).remove(0);
+    let new = sdocx::render_document_svg(&isolated, &profile).remove(0);
+    assert!(native_error(&new.svg, native) < native_error(&old.svg, native));
+    let old_pdf =
+        sdocx::render_document_pdf(&isolated, &fallback, &sdocx::PdfOptions::default()).unwrap();
+    let new_pdf =
+        sdocx::render_document_pdf(&isolated, &profile, &sdocx::PdfOptions::default()).unwrap();
+    assert_ne!(old_pdf, new_pdf);
+    assert_eq!(
+        lopdf::Document::load_mem(&new_pdf)
+            .unwrap()
+            .get_pages()
+            .len(),
+        1
+    );
 }

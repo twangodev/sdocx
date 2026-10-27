@@ -556,9 +556,20 @@ Four [finished-stroke host controls](../../conformance/legacy-marker-finished-pr
 cover stationary input, two- and three-point prefixes and a repeated final point.
 Stationary input rejects both intermediate moves but paints 70 host pixels.
 A repeated final point changes the completed frame and native draw geometry
-relative to the three-point prefix. These are completed redraws, not captures of
+relative to the three-point prefix. For four-point bent and straight controls,
+the opt-in centerline model retains the previous normal, uses zero final length
+and sets the terminal control to the midpoint of the sampled tail and endpoint.
+Its centerlines match the native controls within 0.00005 page units. At 1× on
+MuPDF, the bent control's SVG/PDF RGB L1 error changes from 13776/14162 to
+13139/13456; the straight control is unchanged. The comparison is against the
+host frame on #fcfcfc, not native PDF output. These are completed redraws, not captures of
 native progressive replay; replay cutoff semantics and device appearance remain
 unverified.
+
+A separate [720 by 480 screen control](../../conformance/legacy-marker-varied-screen-control.json)
+uses a six-point stroke, size 8 and blue at alpha 200. Profiled SVG/PDF white
+RGB error falls from 25227/25973 to 13347/13974 against its host frame. This
+supports a second explicit context, not general screen or device parity.
 
 ### Quadratic subdivision controls
 
@@ -755,8 +766,8 @@ confirms the complete native output for one skipped move; replacing it with a
 repeated point produced identical native mesh and frame hashes. The
 source-centerline model takes the PenData dimensions explicitly,
 follows the observed bool-false filter and matches the retained center samples.
-The true-bool branch, repeated final points, missing moves and other root
-configurations remain outside the verified boundary. Longer captured paths are
+The true-bool branch, missing moves and other root configurations remain
+outside the verified boundary. Longer captured paths are
 covered by the same model; unsupported cases fall back.
 
 The mirrored sharp-turn sector is now included in the sector receipt and passes
