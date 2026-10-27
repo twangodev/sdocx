@@ -1,0 +1,812 @@
+{
+  "scope": "Size-4 synthetic four-point length sweep at 0.5x, 1440x2560: native host-Mesa transparent frames vs temporarily enabled V1 candidate and generic public SVG and PDF. SVG resvg; PDF PyMuPDF 1.28.2. Alpha-byte absolute-error sums; device, saved notes, other sizes and trajectories unverified.",
+  "cases": {
+    "0": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.0,
+            0
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0,
+            0.0
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "854c8141e8dae7ad6107e35383dec39d1fd48fafcf6bfb9caeca8395a7e7f17d",
+      "rgba_zlib_base64": "eNrtzzENADAIAEFmZtaKqH9zBAOsLHfJC/gIAAAAYJP1/uQfAAAAAAAAALjUnwYBsQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 4,
+      "svg_candidate": 82,
+      "svg_generic": 67,
+      "pdf_candidate": 300,
+      "pdf_generic": 196
+    },
+    "0.1": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.03333333333333333,
+            0
+          ],
+          [
+            0.06666666666666667,
+            0.03333333333333333
+          ],
+          [
+            0.1,
+            0.03333333333333333
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "854c8141e8dae7ad6107e35383dec39d1fd48fafcf6bfb9caeca8395a7e7f17d",
+      "rgba_zlib_base64": "eNrtzzENADAIAEFmZtaKqH9zBAOsLHfJC/gIAAAAYJP1/uQfAAAAAAAAALjUnwYBsQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 4,
+      "svg_candidate": 82,
+      "svg_generic": 56,
+      "pdf_candidate": 300,
+      "pdf_generic": 154
+    },
+    "0.3": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.09999999999999999,
+            0
+          ],
+          [
+            0.19999999999999998,
+            0.09999999999999999
+          ],
+          [
+            0.3,
+            0.09999999999999999
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "854c8141e8dae7ad6107e35383dec39d1fd48fafcf6bfb9caeca8395a7e7f17d",
+      "rgba_zlib_base64": "eNrtzzENADAIAEFmZtaKqH9zBAOsLHfJC/gIAAAAYJP1/uQfAAAAAAAAALjUnwYBsQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 4,
+      "svg_candidate": 82,
+      "svg_generic": 69,
+      "pdf_candidate": 300,
+      "pdf_generic": 136
+    },
+    "0.5": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.16666666666666666,
+            0
+          ],
+          [
+            0.3333333333333333,
+            0.16666666666666666
+          ],
+          [
+            0.5,
+            0.16666666666666666
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "854c8141e8dae7ad6107e35383dec39d1fd48fafcf6bfb9caeca8395a7e7f17d",
+      "rgba_zlib_base64": "eNrtzzENADAIAEFmZtaKqH9zBAOsLHfJC/gIAAAAYJP1/uQfAAAAAAAAALjUnwYBsQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 4,
+      "svg_candidate": 82,
+      "svg_generic": 88,
+      "pdf_candidate": 300,
+      "pdf_generic": 126
+    },
+    "1": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.3333333333333333,
+            0
+          ],
+          [
+            0.6666666666666666,
+            0.3333333333333333
+          ],
+          [
+            1,
+            0.3333333333333333
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "5901de313b27458d05165bcd6324f1b0c3eda2572283123a74a00ab1f789f02c",
+      "rgba_sha256": "c475d77ea92d0f2487f262918c83041c87fd04ca34c5e992f6b16f1b9ac1956c",
+      "rgba_zlib_base64": "eNrt0qEJgEAAQNFDREG4IJguqcUumMUFTHaHcRBXvQ2uGnxvgw8/BAAAAKAkpuVI2/lUddP9sb+f12vc77eNw+QGAAAAAAAAAPhOBm7IBCU=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 6,
+      "svg_candidate": 184,
+      "svg_generic": 214,
+      "pdf_candidate": 394,
+      "pdf_generic": 392
+    },
+    "2": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0.6666666666666666,
+            0
+          ],
+          [
+            1.3333333333333333,
+            0.6666666666666666
+          ],
+          [
+            2,
+            0.6666666666666666
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "c24db3bcc01e57ee1c607a9680314991bab15d56b87861e615b1955eb7dd4d71",
+      "rgba_sha256": "f3235f6a68fffcb6f81e3303812624dded72806d305f23a84896086436d96646",
+      "rgba_zlib_base64": "eNrt0rENQEAAQNFrNCoJFYnyCnoadlApJOqbQ2MGm1nHBlqF9zb4yQ8BAAAAeFPGcW+n7cryov5jf9XNqV+PuxmW0w0AAAAAAAAA8J0HdOwGNQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 6,
+      "svg_candidate": 184,
+      "svg_generic": 394,
+      "pdf_candidate": 574,
+      "pdf_generic": 568
+    },
+    "3": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1.0,
+            0
+          ],
+          [
+            2.0,
+            1.0
+          ],
+          [
+            3,
+            1.0
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "92636473d0cce66dfca53d72889ea56f4918fbf863c7eccc1895718567d40b35",
+      "rgba_sha256": "3168bac34d9fb88816092668fa9c8b5b25692a0a9b76e9cfc5bb79be6c5b018e",
+      "rgba_zlib_base64": "eNrt0zEKgmAAhmEJCUIbIgjBRYefdgOdmjxCq5NIRxLcvaWD3qC14X+eG7wffEkCAAAA/HItn33dj+utbj4x9t9DN7y+y95M83ZKz5cYN8geVZsX4e0NAAAAAAAAAPzTAaFECOk=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 9,
+      "svg_candidate": 156,
+      "svg_generic": 658,
+      "pdf_candidate": 531,
+      "pdf_generic": 833
+    },
+    "4": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1.3333333333333333,
+            0
+          ],
+          [
+            2.6666666666666665,
+            1.3333333333333333
+          ],
+          [
+            4,
+            1.3333333333333333
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "2fb3d15806d2c81a8d1dd3934213ccdcff07fc7d0f94d6fdb36cf6292a2077bd",
+      "rgba_sha256": "f6545dce7c30c828641f2a31fab9b71e1b915b9eb593475265ae8526c59d6a8f",
+      "rgba_zlib_base64": "eNrt0zEKgmAAhuEfQ2gpCBEKGv5FiSbBpcGhFnHsAg1BdgaPkmP3FOoGrQ0+zw3eD74QAAAAgF82sbrGy/293h/bOfbnh+ZRP8dP3b+mrDjd5rjBaleet1U3JIt06REAAAAAAAAA/MsX7u8KXA==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 10,
+      "svg_candidate": 213,
+      "svg_generic": 757,
+      "pdf_candidate": 633,
+      "pdf_generic": 923
+    },
+    "6": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            2.0,
+            0
+          ],
+          [
+            4.0,
+            2.0
+          ],
+          [
+            6,
+            2.0
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "7b5a3198d6ffbf9dbde9e7227e8f9e203e97817d27d774c9e1e7aa50f6014a85",
+      "rgba_sha256": "917d08f478e16f39acc54510d2c87f63d86e529527b440bbaae3dcf48cf4de7c",
+      "rgba_zlib_base64": "eNrt07ENglAARVEmYAITLCgMNkZ7YmUsbClNaKSiZAE3oDOEwiVcwClcgwFMICxAS/HP2eC+5EURAAAAsCTeZJd98fztbs031P5D2Q7Hx+t/qrpxey7fIe6QXuvP3J/k994rAAAAAAAAAFjDBJxuEZI=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 11,
+      "svg_candidate": 363,
+      "svg_generic": 1476,
+      "pdf_candidate": 1033,
+      "pdf_generic": 1623
+    },
+    "8": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            2.6666666666666665,
+            0
+          ],
+          [
+            5.333333333333333,
+            2.6666666666666665
+          ],
+          [
+            8,
+            2.6666666666666665
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "70ff0a5175410402dd8f79cf13c10999b43335d1e25879a4a7117bb71eed02d3",
+      "rgba_sha256": "ab62691a83115035bc7493116c2a92e6de198d75d61ec8063defa1bf55a5e424",
+      "rgba_zlib_base64": "eNrt0zEKggAABVCXBqHBXMulNQ3KtVsURIFTYMcQGpqaDQ/m0uDeFVqMLuDY4nvwD/Dh/yAAAAAAhkTLzT473bvVoWon09lijP3XxeO9vdSf/Nr06fH2GuMOkt35mZdN/0sYzzPPAAAAAAAAAODfvvb8E60=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 13,
+      "svg_candidate": 206,
+      "svg_generic": 1637,
+      "pdf_candidate": 1028,
+      "pdf_generic": 1728
+    },
+    "12": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            4.0,
+            0
+          ],
+          [
+            8.0,
+            4.0
+          ],
+          [
+            12,
+            4.0
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "a633b86b9a4bea810df04829493b0c0733f06ed11f5bd0fa44ff0b2ab328c309",
+      "rgba_sha256": "9f0f3775bf9a5a14d53961b4cfa61090e4f8a2fb0015d34eaa148d536d728a57",
+      "rgba_zlib_base64": "eNrt1D0OAWEUBdD5VqBRKCRoVAYJiegkWirdTEOIdUzlr1PqdLZFxAZsgCi0Ss13TnIXcF9ebpIAAAAAv5Sbw3kr21zb+f5R6U+KGPun2fbWXR6fvfXp9UmUjxBC+PZP8929MV5dYjxDqdaZ1keLc3UwO1gHAAAAAAAAgP96A5w4Ggs=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 17,
+      "svg_candidate": 309,
+      "svg_generic": 2223,
+      "pdf_candidate": 1760,
+      "pdf_generic": 2253
+    },
+    "16": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            5.333333333333333,
+            0
+          ],
+          [
+            10.666666666666666,
+            5.333333333333333
+          ],
+          [
+            16,
+            5.333333333333333
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "4944221d83696fa1ebdaa9a052c84dc25c8c58873a7d68414e2ec9add0eee646",
+      "rgba_sha256": "9f10524216b85982d6c2eb60f77b718c9703cd3cc924589b41161a6f88fd5d46",
+      "rgba_zlib_base64": "eNrt1LEKAQEAxvEToeSkRAbqTifD3ZGbbIpFDJYbHFHidqPVcEpkUucF5C3MnsB4ZVDKYDOeNzBa7v97g+/r6xMEAAAAAADwS6qodlXL8TRrfVd6i0taNsyg5dcGjqePtk/Ddn1jfvRLbfscxC1IrdnJmLt+fXr4VPrLa0zMSEHrIC5mFdVc3arj3as22b/14eaRyMmNoPUQCkeiyXy5mSqoHV4SAAAAAAAAAAAAwL98AZNLIvA=",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 25,
+      "svg_candidate": 390,
+      "svg_generic": 3014,
+      "pdf_candidate": 1797,
+      "pdf_generic": 2971
+    },
+    "24": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8.0,
+            0
+          ],
+          [
+            16.0,
+            8.0
+          ],
+          [
+            24,
+            8.0
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "2bd505597d8b77cfb1c159c2cd281b750d36fd36cb65681ded42cc1895a586c9",
+      "rgba_sha256": "93bd73260fc10624c8be70bf3be02844906a5079cb7c95570f5bd4e323925234",
+      "rgba_zlib_base64": "eNrt078KQXEYxnGjQTJJ0WHwX0f4bUhZDEdJSemQUg6LIrPJ4IwGEeVGKLfgFoQrUBaWI+xGy+/7qfcCnqfntdkAAAAAAMAvTl+8pOqzU1I3L6punmO1ydHhCWZly682zWu6s7inu6un6K0t0dtYMu7BFRT1d/b3Rcrjg6x/EdZGe9H/9uBOFAcydvDZgbGxMsbykerMbyFtuPMX2lu7yxOV6icCqapXVKZKvrVWco2FbPkBAAAAAAAAAACAf3oBGtY0BQ==",
+      "output_size": [
+        64,
+        48
+      ],
+      "nonzero_pixels": 33,
+      "svg_candidate": 643,
+      "svg_generic": 4517,
+      "pdf_candidate": 2930,
+      "pdf_generic": 4483
+    }
+  },
+  "capture_script": "tmp/vector-parity-plan/inkpen2_v1_half_length_capture.py"
+}
