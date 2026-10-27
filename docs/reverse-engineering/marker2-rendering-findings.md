@@ -254,3 +254,19 @@ The [touch-recording trace](stroke-recording-findings.md) distinguishes stored
 samples from stamps and identifies a live/replay source difference. The
 geometry checks do not establish device appearance for fractional widths,
 thin V2 edges, self-crossings or every input tool.
+
+An explicit empty setting is stateful: a fresh Marker2 manager selects V2,
+while a reused manager can retain V1. In two synthetic fresh-manager host-Mesa
+controls, empty and `2;` produced identical geometry, mask and composite
+frames. Reusing the `2;` approximation reduced RGB error against native from
+9637/9576 to 2269/2711 and from 21491/21188 to 2777/2788 in SVG/PDF. A third
+2× control improved from 56634/56311 to 18457/18607. These host comparisons do
+not establish cached V1 equivalence, device appearance or saved-document manager
+history, so empty settings remain on the generic route.
+
+Native capture runners and receipts are retained under
+`tmp/vector-parity-plan/marker2-{empty,explicit}-paint*`; public export and
+comparison scripts are in `tmp/vector-parity-plan/marker2-empty-exports/`.
+Runner manifests were repinned after capture to a retained pre-update witness;
+the receipts preserve capture-time hashes. Host adapters materialize native
+RT vectors, and the synthetic source is not archive deserialization.

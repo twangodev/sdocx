@@ -941,3 +941,19 @@ worst-case allocations or browser runtime behavior. No production route is
 admitted without safe intermediate-allocation and page-output budgets. The
 retained probes are `tmp/marker-owner-boolean/src/main.rs`, its `src/bin/checked_local.rs`
 and `pair_budget*.rs`, and `scratch/legacy-marker-triangle-boolean-grouped-probe.py`.
+
+A single local integer grid avoids repeated floating-point adapter recentering.
+At 10,000 grid units per page unit and the experimental 65,536 pair limit,
+the turn, mirrored turn, long, blue varied and bend controls pass; the
+self-overlap exceeds the body-triangle limit and falls back. Matched-white
+resvg/PDF RGB L1 is 2436/3072 and 2444/3056 for turn/mirrored, 4340/5001
+for long, 8717/8746 for blue, and 8537/11191 for the verified 2× bend. These
+paint diagnostics use captured mesh streams previously compared with the source
+model. The grid choice is an approximation, not native precision evidence.
+`tmp/marker-owner-boolean/src/bin/integer_grid.rs` and `integer_budget.rs` hash
+to `688d56d07ecf054662c73591ff3ce0c38805ed67425928ee6130885cd3c65ce7` and
+`cacaef78c0a6748f45d7578b54c721c7d449dac2ebc2a9c4ad6f5a215fec8169`.
+The budget diagnostic compiles for wasm32 but uses unchecked casts and panic
+on guard failure; deterministic intermediate allocations, atomic page budget,
+browser runtime and general native parity are not established. No production
+mesh-paint route is admitted.
