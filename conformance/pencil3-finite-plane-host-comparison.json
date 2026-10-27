@@ -311,5 +311,78 @@
       [2, "brush-integer-vector-crisp", 25.227, 95, 25.227, 93557]
     ],
     "conclusion": "This vector-row alternative increased PDF error against the existing source SVG in these controls; do not infer which renderer matches native without a native one-dab capture."
+  },
+  "zero_alpha_fallback_control": {
+    "scope": "Synthetic Pencil3 V3 native host-Mesa control; not device or general saved-note parity. Native Drawing plus explicit replay used host lifecycle and texture adapters.",
+    "native_fixture_path_at_capture": "tmp/conformance-cleanup/native-capture-a241793/tmp/vector-parity-plan/pencil3-topdown-x60-argb00000000-clamp.json",
+    "native_fixture_sha256": "756075909a0f38cf15d31da58166eca62971af392e920cff59b28eb55454797b",
+    "source_argb": "0x00000000",
+    "native_stream_sha256": "f5d7ece4ff8260805d3ccdf45d89afbe22c16764855f4ed8b0221b96bf7b09f0",
+    "native_readback_sha256": ["2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2", "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2"],
+    "native_nonzero_pixels": [0, 0],
+    "generic_fallback_before_fix": "Visible output in both tested consumers.",
+    "generic_fallback_after_fix": {
+      "svg_sha256": "9b3ceb009ae10e364604b1c36f03a22cf37e6d5c344ccd6d521b1fbdfafddab2",
+      "pdf_sha256": "be9f9bcd7cb1ec1be6f44b5270f89b6a072b39b8a370085c8d2530939f022fed",
+      "resvg_0_45_1_diff_channels_vs_empty": 0,
+      "mupdf_1_28_2_diff_channels_vs_empty": 0
+    },
+    "limits": "Only zero alpha was mapped to generic whole-stroke opacity. Partial alpha remains approximate because native applies opacity per particle."
+  },
+  "cropped_brush_rows_candidate": {
+    "scope": "Scratch-only exact intrinsic row transport; 48 dabs, one synthetic native host stroke, not device or broad document parity.",
+    "generator_path_at_capture": "/tmp/pencil3_crop_full.py",
+    "generator_sha256": "09289293ea885dbac91500be927c80746fba3f6fa240a5bf78f0b1233fabbc8c",
+    "original_output_sha256": {
+      "clamp": {
+        "svg": "5e744daac7e89e4072d11545836ed9736d87439e201f07b51f6a39f528fa4944",
+        "pdf": "cfe831783923317334d236e75e10a1c139ed51996a7f2156a290dd4ae5d719d5"
+      },
+      "repeat": {
+        "svg": "8a3ab0412e2b2af80be570659f813d82b4e8a42886ba98d737abb73df6991780",
+        "pdf": "bb090b823b215a811eb84e6626900ffa3c980f3fb2e6061d112267e7ffd530a0"
+      }
+    },
+    "candidate_output_sha256": {
+      "clamp": {
+        "svg": "c0015f96f5924148ca0cc487c44edabcb4c307bbcc60297aef042608baf056e0",
+        "pdf": "b8ee54a9c81f94cf5f1fa072bce0df4a462de872d625300be547a71074ea65bc"
+      },
+      "repeat": {
+        "svg": "f0888287a49981090a4a4529e955059d366ff61ffb575a8776685db1453467f0",
+        "pdf": "fe16024a2ca3e9da47222bdb79d6c222bdb85f3c6db7c8fee560b1d3fb7cc3d9"
+      }
+    },
+    "limits": "MuPDF support overlap fell despite modest RGB error reductions; PDFium and CairoSVG were unavailable. Candidate is not selected. Zero-alpha generic fallback numbers in the alpha-control comparison predate the zero-alpha fix.",
+    "common_roi_columns": ["consumer", "case", "roi_pixels", "rgb_error_sum", "max", "native_intersection", "support_union"],
+    "common_roi_rows": [
+      ["resvg", "clamp_original", 475, 2178, 17, 444, 468],
+      ["resvg", "clamp_cropped", 475, 1998, 11, 444, 467],
+      ["resvg", "repeat_original", 475, 2328, 20, 427, 464],
+      ["resvg", "repeat_cropped", 475, 2172, 8, 427, 464],
+      ["MuPDF", "clamp_original", 551, 32892, 135, 437, 534],
+      ["MuPDF", "clamp_cropped", 551, 32428, 103, 437, 538],
+      ["MuPDF", "repeat_original", 551, 28795, 112, 425, 528],
+      ["MuPDF", "repeat_cropped", 551, 28746, 103, 425, 533]
+    ],
+    "alpha_native_raw_sha256": {
+      "half": "708de2794f50408a72dad65d49d6377c4ffd4a0d767197689dc245b25d3008dc",
+      "zero": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2"
+    },
+    "alpha_columns": ["alpha", "consumer", "case", "roi_pixels", "rgb_error_sum", "max", "native_intersection", "support_union"],
+    "alpha_rows": [
+      ["half", "resvg", "original", 455, 2997, 9, 421, 452],
+      ["half", "resvg", "cropped", 455, 2931, 10, 421, 453],
+      ["half", "resvg", "fallback", 455, 74226, 212, 142, 422],
+      ["half", "MuPDF", "original", 522, 21101, 74, 417, 505],
+      ["half", "MuPDF", "cropped", 522, 20747, 71, 418, 516],
+      ["half", "MuPDF", "fallback", 522, 72048, 213, 141, 422],
+      ["zero", "resvg", "original", 142, 0, 0, 0, 0],
+      ["zero", "resvg", "cropped", 142, 0, 0, 0, 0],
+      ["zero", "resvg", "fallback", 142, 67209, 226, 0, 142],
+      ["zero", "MuPDF", "original", 141, 282, 1, 0, 0],
+      ["zero", "MuPDF", "cropped", 141, 282, 1, 0, 0],
+      ["zero", "MuPDF", "fallback", 141, 66091, 227, 0, 141]
+    ]
   }
 }

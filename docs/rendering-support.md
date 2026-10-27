@@ -196,6 +196,8 @@ Remaining pencil work: reconstruct and validate production texture and paint
 for Pencil, Pencil2 and ColoredPencil; establish Pencil3's saved-note runtime
 context and compare its SVG/PDF output against native device and real-note
 exports. Then evaluate a better default where the required context is known.
+For ordinary V3 strokes, a fully transparent saved color also remains invisible
+on the generic fallback; partial-opacity fallback is still approximate.
 The [Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
 The [V3 particle kernel](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/pencil3-v3-native.json)
@@ -252,6 +254,8 @@ images and their alpha masks produced identical MuPDF output at 1× and 2× in
 the clamp and repeat controls. A vectorized brush-row candidate increased PDF
 error against the existing source SVG in a one-dab control and required 6,043
 rectangles; it is not selected as a rendering fix.
+An intrinsic cropped-row alternative reduced average error in the host control
+but added PDF support pixels in MuPDF, so the atlas transport remains unchanged.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp
