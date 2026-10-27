@@ -11162,6 +11162,68 @@ mod tests {
     }
 
     #[test]
+    fn inkpen2_synthetic_null_setting_frame_admits_v1_profile() {
+        // Hybrid control only: the type-0 prefix is borrowed from a Fountain
+        // note and the type-1 frame is host-built. Removing field bit 1 and
+        // its ID models an absent setting; this is not a device InkPen2 note
+        // or evidence that native deserialization admits this mutation.
+        let decode = |hex: &str| -> Vec<u8> {
+            hex.as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let mut payload = decode(
+            "8900000000006900000002bf010400600400a00f0000240064313630613838652d623534642d313166312d613062392d396663373838333030663136f20edec9f25b06000000000001e55c40000000e0dbbc6940000000e05d9a604000000020769b6c400000000000be7635c6f25b060038070000350a000000000000000000000000000000000000",
+        );
+        let mut frame = decode(
+            "6a00000001005a000000020504040f000000040000000000000000000000000000000000000100800001600000010080cdcc4c3e330333033303000000000a000a000a00000000000000000000000000000000000000000002000000000001000000563412ff00008040",
+        );
+        frame[0..4].copy_from_slice(&102u32.to_le_bytes());
+        frame[14] &= !2;
+        frame.drain(94..98);
+        payload.extend(frame);
+        let mut stroke =
+            crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+        let style = &stroke.rendering.as_ref().unwrap().style;
+        assert_eq!(style.legacy_pen_name_id, Some(0));
+        assert_eq!(style.advanced_pen_setting_id, None);
+        assert_eq!(style.color_argb, Some(0xff123456));
+        assert_eq!(style.pen_size, Some(4.0));
+        crate::StrokeResources::new(&crate::NoteStringTable {
+            entries: vec![crate::NoteStringId {
+                id: 0,
+                text: "com.samsung.android.sdk.pen.pen.preload.InkPen2".into(),
+            }],
+            trailing_data: Vec::new(),
+        })
+        .resolve(&mut stroke);
+        assert_eq!(stroke.rendering.as_ref().unwrap().advanced_settings, None);
+        let options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+                enhanced_antialias: false,
+            }),
+            inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+            ..RenderOptions::default()
+        };
+        let theme = RenderTheme::for_canvas(false);
+        assert!(
+            super::prepare_inkpen2_v1(
+                &stroke,
+                options.inkpen2_profile,
+                theme,
+                options.inkpen2_v1_output_scale.unwrap()
+            )
+            .is_some()
+        );
+        assert!(super::prepare_inkpen2_v9(&stroke, options.inkpen2_profile, theme).is_none());
+    }
+
+    #[test]
     fn inkpen2_serialized_style_mapping_reaches_native_v9_records() {
         // Bounded hybrid source control: this type-0 base prefix is borrowed
         // from a Fountain note, while the type-1 style frame is host-built.
