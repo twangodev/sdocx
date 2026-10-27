@@ -1,0 +1,41 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points_count": 16,
+  "size": 20,
+  "geometry_count": 64,
+  "geometry_sha256": "faf0d51e7549671abd664b96880f11ab314d864fb83552db3e77dface1c70d5a",
+  "full_frame_sha256": "5b5ff9a5032ddc19d220b21112ba41d02eca2d7d0d699420645d19e9320eaa6b",
+  "crop": {
+    "path": "simplebrush-size-16-20-crop.rgba",
+    "dimensions": [144, 32],
+    "sha256": "12d7e54af53e233cb9ede9a676b9196d04f4793405ce5dd5858c4f680c72c85b",
+    "nonzero_alpha_pixels": 2008
+  },
+  "native_gl_error_verdict": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  },
+  "capture_scripts": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-16-source-capture.py": "9adc7d51fb121b3e185cc0a52b584a60e7f3dd4dc3a8fa7931d7d09b22b5d4a7",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-16-paint-capture.py": "e18a761106167efe84329859e09aa2cd0c80fb78a8f896b2ad3d4d7951055b0c"
+  },
+  "execution_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-16-paint-capture.py --pen-size 20 --dispatch-task-seq 0 --dispatch-task-seq 1 --dispatch-task-seq 2 --dispatch-task-seq 3 --dispatch-task-seq 4 --dispatch-task-seq 5 --dispatch-task-seq 6 --dispatch-task-seq 7",
+  "public_output_comparison": {
+    "metrics_order": ["support_intersection", "support_union", "output_support", "absolute_alpha_error", "absolute_rgba_error"],
+    "pdf_renderer": "PyMuPDF at 4/3 scale to 1920x1080",
+    "pdf_profiled": [1916, 2016, 1924, 20400, 58929],
+    "pdf_fallback": [967, 2008, 967, 288816, 828263],
+    "svg_profiled": [2008, 2009, 2009, 3950, 13021],
+    "svg_fallback": [931, 2008, 931, 287573, 824313]
+  }
+}

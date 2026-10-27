@@ -1,0 +1,63 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points": [
+    [0, 4],
+    [8, 8],
+    [16, 12],
+    [24, 4],
+    [32, 8],
+    [40, 12],
+    [48, 4],
+    [56, 8],
+    [64, 12],
+    [72, 4],
+    [80, 8],
+    [88, 12],
+    [96, 4],
+    [104, 8],
+    [112, 12],
+    [120, 4],
+    [128, 8],
+    [136, 12],
+    [144, 4],
+    [152, 8],
+    [160, 12],
+    [168, 4],
+    [176, 8],
+    [184, 12],
+    [192, 4],
+    [200, 8],
+    [208, 12],
+    [216, 4],
+    [224, 8],
+    [232, 12],
+    [240, 4],
+    [248, 8]
+  ],
+  "pressures": [0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375, 0.25, 0.5, 0.75, 0.375],
+  "size": 8,
+  "geometry_count": 128,
+  "geometry_sha256": "b4a36ce7d5c93b6496489ec1077a50fd4f3023718848d700eac6b2ad9cd362fb",
+  "full_frame_sha256": "10dd01c0ab9b8dbcf4e8ff522ae02d7d495d2b494aa58e18119c4f2790fb17e5",
+  "crop": {
+    "path": "simplebrush-32-8-crop.rgba",
+    "dimensions": [272, 32],
+    "sha256": "ca36e9ff431d27310aec9e7cd9b4ec953a7a890d7a7824a174876dd21e48ec21",
+    "nonzero_alpha_pixels": 1993
+  },
+  "paint_clean": true,
+  "capture_scripts": ["tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-32-source-capture.py", "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-32-paint-capture.py"],
+  "capture_script_sha256": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-32-source-capture.py": "8d7d35721d4c1e8d1a1155421ed647bb1103ef13c7f776e4c393149a181f006b",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-32-paint-capture.py": "dd8e3e474bd315d8f511173a1f679eeefd1be9279f64be46378c70881a6c07aa"
+  },
+  "public_output_comparison": {
+    "metrics_order": ["support_intersection", "support_union", "output_support", "absolute_alpha_error", "absolute_rgba_error"],
+    "native_crop": "272x32 bottom-left transparent RGBA",
+    "pdf_renderer": "PyMuPDF rasterized at 4/3 scale to 1920x1080",
+    "pdf_profiled": [1821, 2063, 1891, 53095, 152343],
+    "pdf_fallback": [984, 1993, 984, 280557, 804647],
+    "svg_profiled": [1993, 1995, 1995, 11212, 33368],
+    "svg_fallback": [923, 1993, 923, 278169, 797095]
+  }
+}
