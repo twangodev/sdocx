@@ -1116,10 +1116,13 @@ mod tests {
             v16_scene_with_output_scale(&[(32.25, 31.75, 2.0)], 1.0, false, None),
             v16_scene_with_output_scale(&[(32.25, 31.75, 2.0)], 1.0, false, Some(1.0))
         );
-        let thin_high_zoom = make_plan(Some(4.0), 0.25);
-        let thin_record = thin_high_zoom.radial_circle_records().unwrap()[0];
-        assert_eq!(thin_record[2].to_bits(), 0.25_f32.to_bits());
-        assert_eq!(thin_record[3].to_bits(), 0.25_f32.to_bits());
+        #[cfg(feature = "pdf")]
+        {
+            let thin_high_zoom = make_plan(Some(4.0), 0.25);
+            let thin_record = thin_high_zoom.radial_circle_records().unwrap()[0];
+            assert_eq!(thin_record[2].to_bits(), 0.25_f32.to_bits());
+            assert_eq!(thin_record[3].to_bits(), 0.25_f32.to_bits());
+        }
     }
 
     #[test]
