@@ -5333,12 +5333,13 @@ fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
     Some(argb_rgb(rendering.style.color_argb.unwrap_or(0xff00_0000)))
 }
 
-/// Recover explicit source RGB for the observed ColoredPencil V4,
+/// Recover explicit source RGB for the observed Pencil2 V14, ColoredPencil V4,
 /// WaterColorBrush V1/V2 and SimpleBrush null-setting routes. SimpleBrush has
 /// one native color control; other colors are inferred from the shader's RGB
 /// input. Their native paint is still outside the generic vector renderer; this does not
 /// transfer ARGB alpha to whole-stroke opacity.
 fn saved_textured_pen_argb(stroke: &Stroke) -> Option<u32> {
+    const PENCIL2: &str = "com.samsung.android.sdk.pen.pen.preload.Pencil2";
     const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
     const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
     const SIMPLE_BRUSH: &str = "com.samsung.android.sdk.pen.pen.preload.Brush";
@@ -5373,7 +5374,8 @@ fn saved_textured_pen_argb(stroke: &Stroke) -> Option<u32> {
             rendering.pen_name.as_deref(),
             rendering.advanced_settings.as_deref(),
         ),
-        (Some(COLORED_PENCIL), Some("4;"))
+        (Some(PENCIL2), Some("" | "14;"))
+            | (Some(COLORED_PENCIL), Some("4;"))
             | (Some(WATERCOLOR), None | Some(""))
             | (Some(SIMPLE_BRUSH), None)
     );
@@ -14304,6 +14306,7 @@ mod tests {
 
     #[test]
     fn saved_textured_brush_rgb_is_bounded_to_observed_profiles() {
+        const PENCIL2: &str = "com.samsung.android.sdk.pen.pen.preload.Pencil2";
         const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
         const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
         const SIMPLE_BRUSH: &str = "com.samsung.android.sdk.pen.pen.preload.Brush";
@@ -14340,6 +14343,8 @@ mod tests {
         // checks cover RGB selection only; they do not assert mask/texture
         // paint or whole-stroke alpha parity.
         for (pen_name, setting) in [
+            (PENCIL2, Some("")),
+            (PENCIL2, Some("14;")),
             (COLORED_PENCIL, Some("4;")),
             (WATERCOLOR, None),
             (WATERCOLOR, Some("")),
@@ -14379,6 +14384,85 @@ mod tests {
                 .svg
                 .contains(r##"stroke="#123456""##)
         );
+
+        let mut pencil = make_document(PENCIL2, Some("14;"));
+        pencil.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_argb = Some(0x8033_6699);
+        assert_eq!(
+            super::stroke_paint(pencil.pages[0].strokes().next().unwrap(), false).color,
+            "#336699"
+        );
+        let mut explicit = pencil.clone();
+        explicit.pages[0].strokes_mut().next().unwrap().color = Some(Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        });
+        assert_eq!(
+            render_document_svg(&pencil, &RenderOptions::default())[0].svg,
+            render_document_svg(&explicit, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        {
+            let pdf = |doc| {
+                crate::render_document_pdf(
+                    doc,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap()
+            };
+            assert_eq!(pdf(&pencil), pdf(&explicit));
+        }
+        let mut override_color = pencil.clone();
+        override_color.pages[0].strokes_mut().next().unwrap().color = Some(Color {
+            r: 0x12,
+            g: 0x34,
+            b: 0x56,
+        });
+        assert_eq!(
+            super::stroke_paint(override_color.pages[0].strokes().next().unwrap(), false).color,
+            "#123456"
+        );
+        for setting in [None, Some("1;"), Some("13;")] {
+            let unsupported = make_document(PENCIL2, setting);
+            assert_eq!(
+                super::stroke_paint(unsupported.pages[0].strokes().next().unwrap(), false).color,
+                "#1a1a1a"
+            );
+            let mut default_color = unsupported.clone();
+            default_color.pages[0].strokes_mut().next().unwrap().color = Some(Color {
+                r: 0x1a,
+                g: 0x1a,
+                b: 0x1a,
+            });
+            assert_eq!(
+                render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
+                render_document_svg(&default_color, &RenderOptions::default())[0].svg
+            );
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(
+                    &unsupported,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default()
+                )
+                .unwrap(),
+                crate::render_document_pdf(
+                    &default_color,
+                    &RenderOptions::default(),
+                    &crate::PdfOptions::default()
+                )
+                .unwrap()
+            );
+        }
 
         type RejectedCase = (&'static str, fn(&mut Stroke));
         let rejected: [RejectedCase; 16] = [
@@ -14432,8 +14516,12 @@ mod tests {
             }),
         ];
         for (reason, mutate) in rejected {
-            for pen in [WATERCOLOR, SIMPLE_BRUSH] {
-                let mut unsupported = make_document(pen, None);
+            for (pen, setting) in [
+                (WATERCOLOR, None),
+                (SIMPLE_BRUSH, None),
+                (PENCIL2, Some("14;")),
+            ] {
+                let mut unsupported = make_document(pen, setting);
                 let stroke = unsupported.pages[0].strokes_mut().next().unwrap();
                 mutate(stroke);
                 assert_eq!(

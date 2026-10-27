@@ -71,5 +71,40 @@
     "base": 2.0,
     "size_level": 1
   },
-  "pencil2_dso_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f"
+  "pencil2_dso_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+  "additional_color_controls": {
+    "scope": "Synthetic native Model/Drawing geometry with host stubs and host glibc math; no GPU paint for second color, parsed note, or device.",
+    "script": "tmp/pencil2-gradient-scalability/color_capture.py",
+    "script_sha256": "fdecb3fc74385594bdf26e5a9854a9cd6548c1dd1279ae1543ad3400a99207da",
+    "cases": [
+      {
+        "setting": "empty",
+        "color_argb": "0x80336699",
+        "drawable": "SPen::Pencil2StrokeDrawableGLV14",
+        "rt": "Pencil2StrokeDrawableRTV4",
+        "records": 84,
+        "drawing_and_saved_equal": true,
+        "stream_sha256": "e5d265076c55dc7b0a4fce981993f48e867cbd71a102bd1c21ea40d8480d6130",
+        "comparison": "byte-identical to explicit 14; color stream above",
+        "capture": "tmp/pencil2-gradient-scalability/captures/color_empty/capture.json",
+        "capture_sha256": "2790bdb26f0fae02bede5fbc8262d7fc9dc20dd6be7be0a226a1104da5164f90"
+      },
+      {
+        "setting": "14;",
+        "color_argb": "0xffdd4411",
+        "drawable": "SPen::Pencil2StrokeDrawableGLV14",
+        "rt": "Pencil2StrokeDrawableRTV4",
+        "records": 84,
+        "drawing_and_saved_equal": true,
+        "stream_sha256": "5a1a5c3a88b3b20d67043d76be1410878cb2093f4029a67635be2be50df29483",
+        "rgb_lanes": [
+          0.8666666746139526,
+          0.2666666805744171,
+          0.06666667014360428
+        ],
+        "capture": "tmp/pencil2-gradient-scalability/captures/color_second/capture.json",
+        "capture_sha256": "c9b26e979475f2b644eeb4756f792357be9c769c431a910beecf7fba99361189"
+      }
+    ]
+  }
 }

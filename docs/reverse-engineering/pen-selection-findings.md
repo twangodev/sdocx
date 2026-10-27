@@ -289,6 +289,8 @@ A controlled host-Mesa RTV4 replay of the same 84 black-stroke records changes o
 
 The test-only geometry sampler also matches all 84 native Drawing records for a synthetic stroke with translucent color `0x80336699`, including its RGB lanes and pressure alpha. The [receipt](../../conformance/pencil2-v14-color-80336699-native.json) and binary retain that control. This extends the captured geometry profile only; it does not establish textured paint or arbitrary color parity.
 
+Additional synthetic native Drawing controls select V14 for an empty setting with `0x80336699` and reproduce the explicit `14;` color stream byte for byte; a second color, `0xffdd4411` with `14;`, forwards its normalized RGB into all captured records. Both Drawing and saved-redraw streams agree. The linked receipt records the capture hashes and host limitations. The generic renderer now recovers saved RGB for the bounded normal Pencil2 V14 profile when public color is absent; this does not model source alpha or textured paint, and arbitrary colors are inferred from the captured RGB forwarding.
+
 ## Literal StraightMarker control
 
 Six native Drawing controls request the literal Marker3 and StraightMarker names
