@@ -293,7 +293,7 @@ pub(crate) fn prepare_inkpen_v4_for_page(
             && !rendering
                 .style
                 .fixed_width
-                .is_some_and(|width| (1.0..=20.0).contains(&width)))
+                .is_some_and(|width| (0.0..=200.0).contains(&width)))
         || properties.top_layer_pen
         || properties.alpha_lock
         || properties.fixed_opacity

@@ -2699,7 +2699,7 @@ mod tests {
                 .iter()
                 .map(|case| (case["width"].as_f64().unwrap() as f32, case.clone())),
         );
-        for (index, (width, fixture)) in cases.into_iter().enumerate() {
+        for (width, fixture) in cases {
             let mut input = native_caller_stroke(&fixture["input"]);
             let r = input.rendering.as_mut().unwrap();
             r.properties.fixed_width = true;
@@ -2707,9 +2707,9 @@ mod tests {
             r.style.color_argb = Some(0xff00_0000);
             assert!(crate::ink::prepare_inkpen_v4_for_page(&input, 1920, 1080).is_some());
             let mut unsupported = input.clone();
-            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(0.5);
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(-f32::MIN_POSITIVE);
             assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
-            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(21.0);
+            unsupported.rendering.as_mut().unwrap().style.fixed_width = Some(200.0_f32.next_up());
             assert!(crate::ink::prepare_inkpen_v4_for_page(&unsupported, 1920, 1080).is_none());
             let ink = prepare(
                 &input,
@@ -2769,21 +2769,6 @@ mod tests {
             let generic = crate::render_document_svg(&document, &crate::RenderOptions::default())
                 .remove(0)
                 .svg;
-            if let Some(dir) = std::env::var_os("INKPEN_FIXED_EXPORT") {
-                for (name, opts) in [
-                    ("direct-candidate", options.clone()),
-                    ("direct-generic", crate::RenderOptions::default()),
-                ] {
-                    let pdf =
-                        crate::render_document_pdf(&document, &opts, &crate::PdfOptions::default())
-                            .unwrap();
-                    std::fs::write(
-                        std::path::Path::new(&dir).join(format!("{index}-{name}.pdf")),
-                        pdf,
-                    )
-                    .unwrap();
-                }
-            }
             let raster = |raw: &str| {
                 let start = raw.find('>').unwrap() + 1;
                 let end = raw.rfind("</svg>").unwrap();
