@@ -422,7 +422,7 @@ pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Outp
 pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<SavedV2Output> {
     let rendering = stroke.rendering.as_ref()?;
     if !(if v1 {
-        rendering.advanced_settings.is_none()
+        matches!(rendering.advanced_settings.as_deref(), None | Some("1;"))
     } else {
         matches!(
             rendering.advanced_settings.as_deref(),

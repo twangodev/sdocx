@@ -149,7 +149,7 @@ impl InkPen2V1OutputScale {
 /// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
 /// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
-/// accepts a null advanced setting; admitted empty streams emit no paint.
+/// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
 /// `SavedV2` accepts empty or `2;` settings. V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
@@ -13035,7 +13035,7 @@ mod tests {
         let svg =
             |doc: &Document, opts: &RenderOptions| render_document_svg(doc, opts).remove(0).svg;
         assert!(svg(&document, &options).contains("data:image/png;base64,"));
-        for setting in ["", "2;", "1;"] {
+        for setting in ["", "2;", "3;"] {
             document.pages[0]
                 .strokes_mut()
                 .next()
@@ -13356,6 +13356,75 @@ mod tests {
             format!("{:x}", Sha256::digest(&flipped)),
             "public V1 SVG versus native host frame"
         );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v1_literal_one_matches_native_and_null_public_exports() {
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = [128.453125, 128.484375]
+            .into_iter()
+            .map(|x| Point { x, y: 128.515625 })
+            .collect();
+        stroke.pressures = vec![0.3; 2];
+        stroke.tilts = vec![0.12; 2];
+        stroke.orientations = vec![0.2; 2];
+        stroke.timestamps = vec![300, 315];
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff44aaee);
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV1),
+            ..RenderOptions::default()
+        };
+        let mut outputs = Vec::new();
+        for setting in [None, Some("1;")] {
+            document.pages[0]
+                .strokes_mut()
+                .next()
+                .unwrap()
+                .rendering
+                .as_mut()
+                .unwrap()
+                .advanced_settings = setting.map(str::to_owned);
+            let layout = layout_document(&document);
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let scene = super::DocumentTextCache::default()
+                .render_layout_page_scene_requests(
+                    &document,
+                    &[request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0);
+            let pdf =
+                crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
+                    .unwrap();
+            outputs.push((scene.page.svg, pdf));
+        }
+        assert_eq!(outputs[0], outputs[1]);
+        let tree =
+            resvg::usvg::Tree::from_str(&outputs[1].0, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let mut expected = vec![0_u8; 256 * 256 * 4];
+        for (x, y, rgba) in [
+            (127, 126, [2, 4, 6, 6]),
+            (128, 126, [1, 2, 3, 3]),
+            (127, 127, [1, 3, 5, 5]),
+            (128, 127, [6, 16, 22, 24]),
+            (129, 127, [1, 2, 3, 3]),
+            (127, 128, [1, 3, 4, 4]),
+            (128, 128, [4, 9, 13, 14]),
+        ] {
+            let offset = ((255 - y) * 256 + x) * 4;
+            expected[offset..offset + 4].copy_from_slice(&rgba);
+        }
+        assert_eq!(pixmap.data(), expected);
     }
 
     #[cfg(feature = "pdf")]
@@ -14536,7 +14605,7 @@ mod tests {
         type RejectedCase = (&'static str, fn(&mut Stroke));
         let rejected: [RejectedCase; 5] = [
             ("setting", |s| {
-                s.rendering.as_mut().unwrap().advanced_settings = Some("1;".into())
+                s.rendering.as_mut().unwrap().advanced_settings = Some("3;".into())
             }),
             ("tool", |s| s.rendering.as_mut().unwrap().tool_type_raw = 1),
             ("fixed opacity", |s| {

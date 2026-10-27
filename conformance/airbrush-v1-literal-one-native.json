@@ -1,0 +1,68 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing, synchronous host queue and Mesa GLES. Not saved-note or device evidence.",
+  "input": {
+    "points": [
+      [
+        128.453125,
+        128.515625
+      ],
+      [
+        128.484375,
+        128.515625
+      ]
+    ],
+    "pressure": [
+      0.3,
+      0.3
+    ],
+    "timestamps": [
+      300,
+      315
+    ],
+    "tilt": [
+      0.12,
+      0.12
+    ],
+    "orientation": [
+      0.2,
+      0.2
+    ],
+    "size": 3.144,
+    "color_argb": "0xff44aaee",
+    "tool_type": 2,
+    "viewport": [
+      256,
+      256
+    ]
+  },
+  "compared_settings": [
+    null,
+    "1;"
+  ],
+  "selected_version": [
+    1,
+    1
+  ],
+  "native_geometry_hex": "0074004300840043000000000000803f",
+  "native_frame_sha256": "e599cd574bf4c556ecf7118156508443b478e6752a0e0fa23261cf0f6e127b34",
+  "native_nonzero_pixels": 7,
+  "capture_script": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/literal-one-capture.py",
+  "capture_script_sha256": "27f79a9cc1db2b85687e3acb61315e8dd7fc2a4eb68cb5265a421f9b0e2e2df0",
+  "execution": "PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias python3 tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/literal-one-capture.py --single-case --print-capture --advanced-mode MODE --advanced-setting 1\\; --width 256 --height 256; MODE is unset or explicit-empty. The latter supplies the nonempty literal.",
+  "native_libraries_sha256": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "public_output_comparison": {
+    "svg": "null and literal outputs identical; each equals native RGBA frame",
+    "direct_pdf": "null and literal public render_document_pdf outputs byte-identical",
+    "scene_pdf_96_dpi": "identical paired scenes; PyMuPDF 1.28.2 yields absolute RGBA error 169, alpha error 59, nine differing pixels against native",
+    "scope": "One synthetic transparent host capture; not device or general PDF parity."
+  }
+}
