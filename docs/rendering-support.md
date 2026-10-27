@@ -76,14 +76,14 @@ drawing route. The [pen registry](../crates/sdocx/src/ink.rs) identifies names a
 libraries, not a renderer for every registered pen.
 
 Coverage is incomplete. The pinned APK registry has 44 names: 11 have bounded
-default page-rendering routes, 4 require explicit profiles, 14 bundled names
+default page-rendering routes, 5 require explicit profiles, 13 bundled names
 still use generic strokes, 11 refer to unbundled plugins, and 4 are editing or
 transient tools whose persistent paint is not established. These counts describe
 dispatch, not complete version coverage or visual parity.
 
 | Pen family | Current saved-page rendering and missing work |
 | --- | --- |
-| Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 and InkPen2 V9 require explicit display profiles. StraightInkPen2 remains generic. |
+| Ballpoint and ink | DefaultPen and InkPen V1 have bounded default routes. InkPen V4 and InkPen2 V9 require explicit display profiles; the latter admits the normal-color StraightInkPen2 `9;` alias. |
 | Fountain | Fountain V14 and saved AS18/V16 have bounded default routes; V17 rainbow is experimental and explicit. MontblancFountainPen remains generic, with test-only saved-path and expanded triangle-mesh checks for four GLV1 controls; painted output is unverified. |
 | Pencil and crayon | Pencil, Pencil2, ColoredPencil and Crayon2 remain generic. ColoredPencil V4 preserves explicit saved RGB for the observed normal stylus profile. Pencil3 V3 requires an explicit texture/context profile; its other versions remain generic. Pencil2 V14 has grain and point atlases distinct from Pencil3. Test-only samplers match captured Pencil GLV1, Pencil2 V14, ColoredPencil V4 and Crayon2 V2 geometry, with explicit host RNG profiles where needed. Legacy Pencil GLV1 regenerates a captured 47-record stream from a synthetic public `Stroke`; its test-only paint model matches one native frame under all 12 explicit host arithmetic hypotheses. Native Model construction and top-level Drawing reproduce that stream, atlas and frame. Parsed-note admission, backend arithmetic and SVG paint remain unresolved. ColoredPencil V4 test-only intrinsic SVG paint matches four native host-Mesa color controls exactly. A test-only public Stroke adapter reproduces the controlled native streams with explicit glibc RNG/context; the exported image-atlas PDF has extra support in MuPDF and PDFium. Single-stamp controls show residual reader differences even without the clip, and toggling PDF interpolation does not change the four MuPDF outputs. Production and Android textured paint remain unverified. |
 | Highlighters | Marker2, Marker3 V5 and Marker4 V7/V8 have bounded routes, with edge/scale and effect limits below. StraightHighlighter reaches Marker4; StraightMarker reaches the bounded Marker3 V5 route after native literal-name controls matched. Marker remains generic; its test-only paint model reproduces coverage at all five native draw prefixes, with at most one channel level of color error under the captured host precision profile. |
@@ -389,7 +389,12 @@ solid-color tool-2 strokes with `9;`, zero tolerance, and complete saved channel
 fresh per-stroke state and identity inverse scale. `enhanced_antialias` selects
 MAX coverage with one saved-alpha composite; false retains per-stamp source-over.
 It does not infer the app's display or antialias policy.
-Without that option, InkPen2 retains the generic approximation. The V9 core
+Without that option, InkPen2 and StraightInkPen2 retain the generic approximation.
+For normal-color StraightInkPen2 `9;` inputs the same opt-in profile is admitted.
+A [paired literal-name Drawing capture](../conformance/straightinkpen2-v9-alias-native.json)
+selects the same V9 drawable and matches all callback geometry for one synthetic
+control. Shared paint is inferred from the drawable; alias pixels, device output
+and other settings remain unverified. The V9 core
 matches every RTV3 float in three fresh, type-0 saved redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay

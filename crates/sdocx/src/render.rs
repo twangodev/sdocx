@@ -4375,7 +4375,17 @@ fn prepare_inkpen2_v9(
     let active_rainbow = rendering.properties.rainbow_effect;
     let n = stroke.points.len();
     let source_bytes = n.checked_mul(48);
-    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
+    let supported_name = match rendering.pen_name.as_deref() {
+        Some("com.samsung.android.sdk.pen.pen.preload.InkPen2") => true,
+        // Native Drawing selects the same V9 drawable and geometry for the
+        // literal straight alias under a normal-color control. Paint sharing
+        // follows from the shared drawable; pixels have not been compared.
+        Some("com.samsung.android.sdk.pen.pen.preload.StraightInkPen2") => {
+            !active_rainbow && rendering.style.color_type_raw.unwrap_or(0) == 0
+        }
+        _ => false,
+    };
+    if !supported_name
         || rendering.advanced_settings.as_deref() != Some("9;")
         || rendering.tool_type_raw != 2
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
@@ -10345,6 +10355,93 @@ mod tests {
                 .remove(0)
                 .svg
         );
+    }
+
+    #[test]
+    fn straight_inkpen2_v9_alias_matches_native_control_and_public_routes() {
+        use sha2::{Digest, Sha256};
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        let mut base = inkpen2_color_stroke(0xff00_0000, None);
+        base.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 16.0, y: 3.0 },
+            Point { x: 24.0, y: 3.0 },
+        ];
+        base.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        base.timestamps = vec![0, 10, 20, 30];
+        base.tilts = vec![0.0; 4];
+        base.orientations = vec![0.0; 4];
+        let mut straight = base.clone();
+        straight.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.StraightInkPen2".into());
+        let theme = RenderTheme::for_canvas(false);
+        let base_ink = prepare_inkpen2_v9(&base, Some(profile), theme).unwrap();
+        let ink = prepare_inkpen2_v9(&straight, Some(profile), theme).unwrap();
+        assert_eq!(ink.records, base_ink.records);
+        let bytes: Vec<u8> = ink
+            .records
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/straightinkpen2-v9-alias-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            bytes.len(),
+            receipt["last_callback_buffer_bytes"].as_u64().unwrap() as usize
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            receipt["last_callback_buffer_sha256"].as_str().unwrap()
+        );
+        let options = RenderOptions {
+            inkpen2_profile: Some(profile),
+            ..RenderOptions::default()
+        };
+        let docs = [base, straight.clone()].map(|stroke| {
+            document(Page {
+                objects: vec![stroke.into()],
+                ..page_with_uncolored_stroke()
+            })
+        });
+        assert_eq!(
+            render_document_svg(&docs[0], &options)[0].svg,
+            render_document_svg(&docs[1], &options)[0].svg
+        );
+        let replay = |doc: &Document| {
+            render_layout_page_replay_svg(doc, &layout_document(doc), 0, &options)
+                .unwrap()
+                .svg
+        };
+        assert_eq!(replay(&docs[0]), replay(&docs[1]));
+        assert!(
+            prepare_stroke_for_page_with_theme(&straight, theme, &RenderOptions::default())
+                .inkpen2_v9
+                .is_none()
+        );
+        for setting in [None, Some(""), Some("8;"), Some("10;")] {
+            let mut rejected = straight.clone();
+            rejected.rendering.as_mut().unwrap().advanced_settings = setting.map(str::to_owned);
+            assert!(prepare_inkpen2_v9(&rejected, Some(profile), theme).is_none());
+        }
+        let mut rainbow = straight.clone();
+        rainbow
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .rainbow_effect = true;
+        assert!(prepare_inkpen2_v9(&rainbow, Some(profile), theme).is_none());
+        let mut non_normal = straight.clone();
+        non_normal.rendering.as_mut().unwrap().style.color_type_raw = Some(1);
+        assert!(prepare_inkpen2_v9(&non_normal, Some(profile), theme).is_none());
     }
 
     #[test]
