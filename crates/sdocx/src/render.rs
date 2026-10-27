@@ -4611,7 +4611,10 @@ fn prepare_inkpen2_internal(
             (profile.screen_width, profile.screen_height),
             (1920, 1080) | (1080, 1920)
         ) && !((profile.screen_width, profile.screen_height) == (1440, 2560)
-            && matches!(v1_scale, Some(InkPen2V1OutputScale::One)))
+            && matches!(
+                v1_scale,
+                Some(InkPen2V1OutputScale::One | InkPen2V1OutputScale::Double)
+            ))
             || profile.enhanced_antialias
             || !matches!(
                 rendering.pen_name.as_deref(),
@@ -17760,7 +17763,7 @@ mod tests {
                 theme,
                 super::InkPen2V1OutputScale::Double
             )
-            .is_none()
+            .is_some()
         );
         let replay = render_layout_page_replay_svg(&doc, &layout, 0, &options)
             .unwrap()
@@ -18217,6 +18220,13 @@ mod tests {
             let mut high_options = options.clone();
             high_options.inkpen2_profile.as_mut().unwrap().screen_width = 1440;
             high_options.inkpen2_profile.as_mut().unwrap().screen_height = 2560;
+            high_options.inkpen2_v1_output_scale = Some(super::InkPen2V1OutputScale::Half);
+            assert_eq!(
+                render(&mut cache, &high_options),
+                render(&mut cache, &RenderOptions::default()),
+                "{name}: 0.5x fallback"
+            );
+            high_options.inkpen2_v1_output_scale = Some(super::InkPen2V1OutputScale::One);
             let high = render(&mut cache, &high_options);
             let high_capture = &profiles["cases"][name]["1440x2560"];
             let high_compressed = base64::engine::general_purpose::STANDARD
@@ -18294,6 +18304,64 @@ mod tests {
             let hg = high_error(&generic);
             eprintln!("{name} 1440x2560: public={h}, generic={hg}");
             assert!(h <= hg, "{name}: public={h}, generic={hg}");
+            let scales: serde_json::Value = serde_json::from_str(include_str!(
+                "../../../conformance/inkpen2-v1-high-scales-native.json"
+            ))
+            .unwrap();
+            for (scale, key, choice) in [(2.0, "2", super::InkPen2V1OutputScale::Double)] {
+                high_options.inkpen2_v1_output_scale = Some(choice);
+                let candidate = render(&mut cache, &high_options);
+                let capture = &scales["cases"][name][key];
+                let compressed = base64::engine::general_purpose::STANDARD
+                    .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+                    .unwrap();
+                let mut native = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .read_to_end(&mut native)
+                    .unwrap();
+                let error = |source: &str| {
+                    let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+                    let mut pixmap = resvg::tiny_skia::Pixmap::new(
+                        (128.0 * scale) as u32,
+                        (96.0 * scale) as u32,
+                    )
+                    .unwrap();
+                    resvg::render(
+                        &tree,
+                        resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                        &mut pixmap.as_mut(),
+                    );
+                    pixmap
+                        .data()
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .zip(native.as_chunks::<4>().0.iter())
+                        .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                        .sum::<u64>()
+                };
+                let (a, g) = (error(&candidate), error(&generic));
+                eprintln!("{name} 1440x2560 {key}x: public={a}, generic={g}");
+                assert!(a <= g, "{name} {key}: public={a}, generic={g}");
+                if let Some(directory) = std::env::var_os("SDOCX_V1_SHAPE_PDF_CAPTURE") {
+                    for (kind, source) in [("candidate", &candidate), ("generic", &generic)] {
+                        let pdf = crate::render_svg_pages_pdf(
+                            &[crate::RenderedPage::new(0, 128, 96, source.clone())],
+                            &Default::default(),
+                        )
+                        .unwrap();
+                        use std::io::Write as _;
+                        let path = std::path::Path::new(&directory)
+                            .join(format!("v1-{name}-{key}-{kind}.pdf"));
+                        let mut file = std::fs::OpenOptions::new()
+                            .write(true)
+                            .create_new(true)
+                            .open(path)
+                            .unwrap();
+                        file.write_all(&pdf).unwrap();
+                    }
+                }
+            }
         }
     }
 }

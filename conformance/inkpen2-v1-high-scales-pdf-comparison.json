@@ -1,0 +1,12 @@
+{
+  "scope": "Alpha-byte absolute-error sums against transparent 1440x2560 host Mesa frames. Synthetic controls only; 0.5x candidate was generated with admission temporarily enabled.",
+  "pymupdf_version": "1.28.2",
+  "cases": {
+    "short": {"0.5": {"candidate": 300, "generic": 136}, "2": {"candidate": 2244, "generic": 9058}},
+    "stationary": {"0.5": {"candidate": 83, "generic": 165}, "2": {"candidate": 2244, "generic": 10228}},
+    "turn": {"0.5": {"candidate": 2006, "generic": 3332}, "2": {"candidate": 9578, "generic": 80409}},
+    "reverse": {"0.5": {"candidate": 1726, "generic": 2250}, "2": {"candidate": 7914, "generic": 58966}},
+    "large": {"0.5": {"candidate": 3443, "generic": 15791}, "2": {"candidate": 14855, "generic": 282256}},
+    "small": {"0.5": {"candidate": 1964, "generic": 2394}, "2": {"candidate": 11129, "generic": 72179}}
+  }
+}
