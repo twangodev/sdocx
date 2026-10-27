@@ -44,3 +44,26 @@ harness, so it does not establish whether native Drawing admits that style.
 Recapture with `python3 conformance/inkpen2_v1_style_capture.py`; the adapter
 requires the same local native and runtime research trees as the geometry
 capture.
+
+The [color and alpha receipt](../../conformance/inkpen2-null-v1-color-alpha-native.json)
+adds zero-alpha blue and half/opaque red on transparent and host-cleared opaque
+white targets. Zero-alpha blue matches the existing opaque-blue frame byte for
+byte; half and opaque red match each other. On white, zero and opaque blue match,
+as do half and opaque red. These are controls for one synthetic stroke on host
+Mesa, not a general Android or application-canvas claim. The bounded V1 SVG/PDF
+route ignores the source alpha byte; public output tests check that zero, half,
+and opaque source alpha produce the same SVG and PDF for each of these two RGBs.
+
+A [six-shape host receipt](../../conformance/inkpen2-null-v1-shapes-paint-native.json)
+adds short, stationary, turn, reverse, and size 0.2 and 12 synthetic inputs at
+unit output scale. In each case the public SVG and PDF profile has a lower
+alpha-byte L1 error than the generic fallback against the transparent host frame.
+SVG profile/generic errors range from 56/1,590 (stationary) to 1,012/14,790
+(size 0.2); PDF ranges include 846/2,076 (stationary), 1,064/1,190 (short),
+and 7,211/67,203 (size 12). PDF was rasterized by PyMuPDF at 4/3 pixels per
+PDF point, SVG by resvg. These remain synthetic host-Mesa comparisons, not
+serialized notes, device output, or full application composition. The Rust test
+`inkpen2_v1_distinct_native_shapes_public_svg` validates the SVG comparisons;
+set `SDOCX_V1_SHAPE_PDF_CAPTURE` to an existing empty directory to write the profile
+and fallback PDF controls there for independent rasterization. Existing files are
+never overwritten.

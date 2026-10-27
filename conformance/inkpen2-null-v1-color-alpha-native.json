@@ -1,0 +1,65 @@
+{
+  "schema": "inkpen2-null-v1-color-alpha-host-v1",
+  "scope": "Synthetic Drawing-selected RTV1, host Mesa RGBA8, translated baseline geometry; opaque white is host-cleared prior to native draw. No device or application-canvas claim.",
+  "capture_adapter": "conformance/inkpen2_v1_paint_native.py",
+  "cases": {
+    "transparent_zero_blue": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": true
+    },
+    "transparent_half_red": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "751d28df1a87a5ee7037e4fecc256eaa64476680d67688a9588665da6bfa9092",
+      "rgba_zlib_base64": "eNrt1rEq73EYx/G3ctwAZZBJ2QzuwaTsprPbLLJIuQHDGaxkNCklpZTZZLO4AJtkEXF+plOnYzjnTP5erz7PDXyeb0/fAgAAAAAAAAAAAAAAAACAX74Nmaqp6ZqerMn5mp+pmfEa185o+zHkrd7+NK/1+lzPN3VzXufLtTxWY1obDd+H3Nf9R/v/6D1c1MV6rWvwa+3/93moh+u63qqtlVqZqAmtjs79/5t5vw2P9XhXd1d1dVZne7W3UzsLtaDpz/P/W6zFpVrarM3DOryt2/+5E+8zW7Oa/tzWhlzW5VM9vdSL/X9dc0NWa3WjNvZr/7iOT+v0pE6O6uigDnZrd7u23X8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7FT8jI0qc=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": true
+    },
+    "transparent_opaque_red": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "751d28df1a87a5ee7037e4fecc256eaa64476680d67688a9588665da6bfa9092",
+      "rgba_zlib_base64": "eNrt1rEq73EYx/G3ctwAZZBJ2QzuwaTsprPbLLJIuQHDGaxkNCklpZTZZLO4AJtkEXF+plOnYzjnTP5erz7PDXyeb0/fAgAAAAAAAAAAAAAAAACAX74Nmaqp6ZqerMn5mp+pmfEa185o+zHkrd7+NK/1+lzPN3VzXufLtTxWY1obDd+H3Nf9R/v/6D1c1MV6rWvwa+3/93moh+u63qqtlVqZqAmtjs79/5t5vw2P9XhXd1d1dVZne7W3UzsLtaDpz/P/W6zFpVrarM3DOryt2/+5E+8zW7Oa/tzWhlzW5VM9vdSL/X9dc0NWa3WjNvZr/7iOT+v0pE6O6uigDnZrd7u23X8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7FT8jI0qc=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": true
+    },
+    "white_zero_blue": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "011b99ef46dcd7094a701708a6b2cf254be383557d2018e66320f093ccdaef46",
+      "rgba_zlib_base64": "eNrt1s1LVHEUBuA/SqRN4aptizZtWpZWmAUugsCIIAIJ+iDCmZLRRUYfBNYUDkUilVAkJFIUbrJcGDXVoFSU9TZkjYQW0c7heeBw7+9yV+e8nHsTAAAAAAAAAAAAAAAAAABY9mXxa97Nf0y19iHvFz5l5lUtc28Xslh/TnPrPX83Le2FehXT0lH4eb9UrTuKP2pzz4XsOl7OvamZfNOyplEef5a2PaWlef+a/fbfM9DIRcdyJtqPXsvQrSkNbMb5r5qD4qrXDV2lbDl0OWfKExmbfJ7PvhdNtf9XnP9W9XfXd/ZnY/dgth6+ks4T13Pk3J30DT/M9GxVo9fQ/9/TF29y/8lsBkYepad/NJv2D6Wta+Dfs9DYEcXGea46r9Fr3KWxx9nWO5x1O8+mdcVu6PtDBsy/Gb18XUvlwXQGK5M5WBpN9+lKdp+8kb2nRrKvcDMHSrdz7OJ4ilcn7H8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7Ld/gCjZM=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": false
+    },
+    "white_opaque_blue": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "011b99ef46dcd7094a701708a6b2cf254be383557d2018e66320f093ccdaef46",
+      "rgba_zlib_base64": "eNrt1s1LVHEUBuA/SqRN4aptizZtWpZWmAUugsCIIAIJ+iDCmZLRRUYfBNYUDkUilVAkJFIUbrJcGDXVoFSU9TZkjYQW0c7heeBw7+9yV+e8nHsTAAAAAAAAAAAAAAAAAABY9mXxa97Nf0y19iHvFz5l5lUtc28Xslh/TnPrPX83Le2FehXT0lH4eb9UrTuKP2pzz4XsOl7OvamZfNOyplEef5a2PaWlef+a/fbfM9DIRcdyJtqPXsvQrSkNbMb5r5qD4qrXDV2lbDl0OWfKExmbfJ7PvhdNtf9XnP9W9XfXd/ZnY/dgth6+ks4T13Pk3J30DT/M9GxVo9fQ/9/TF29y/8lsBkYepad/NJv2D6Wta+Dfs9DYEcXGea46r9Fr3KWxx9nWO5x1O8+mdcVu6PtDBsy/Gb18XUvlwXQGK5M5WBpN9+lKdp+8kb2nRrKvcDMHSrdz7OJ4ilcn7H8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7Ld/gCjZM=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": false
+    },
+    "white_half_red": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "3c934aaa52327d7d43a0b4b9f4d12fb529988c642933742365bbc12e46b5de67",
+      "rgba_zlib_base64": "eNrt1rEqL3AcxmEii2RzARabyayUklImo1gNBjegZJHFZjfZlck9GGzKJIPiBlA+kuV0YnDO5O956r2B9/vr7VcAAAAAAAAAAAAAAAAAAPCH5+d6eKj7+3p8rOvrururlxfdDLrt7Roa+jzDwzUyUjMztbhY5+f1+qqzQXFyUpOTX9//s/cwOloLC3V0pL/fdv+/MzFRs7O1v19nZ/X0pNNB2v/v5H0bxsdraqrm5mppqba2ane3rq70/JP+f5eXdXFRBwe1vl7T0/+3E++5vdXzT3d8XPPzNTb28S90/9/r5qZOT+vwsDY3a3W1lpdrZaXW1mpjo3Z2am/P/gMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8E/eAF0QeHs=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": false
+    },
+    "white_opaque_red": {
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "3c934aaa52327d7d43a0b4b9f4d12fb529988c642933742365bbc12e46b5de67",
+      "rgba_zlib_base64": "eNrt1rEqL3AcxmEii2RzARabyayUklImo1gNBjegZJHFZjfZlck9GGzKJIPiBlA+kuV0YnDO5O956r2B9/vr7VcAAAAAAAAAAAAAAAAAAPCH5+d6eKj7+3p8rOvrururlxfdDLrt7Roa+jzDwzUyUjMztbhY5+f1+qqzQXFyUpOTX9//s/cwOloLC3V0pL/fdv+/MzFRs7O1v19nZ/X0pNNB2v/v5H0bxsdraqrm5mppqba2ane3rq70/JP+f5eXdXFRBwe1vl7T0/+3E++5vdXzT3d8XPPzNTb28S90/9/r5qZOT+vwsDY3a3W1lpdrZaXW1mpjo3Z2am/P/gMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8E/eAF0QeHs=",
+      "output_size": [128, 96],
+      "draw_matrix": [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1, 0, 32.0, 32.0, 0, 1],
+      "before_zero": false
+    }
+  },
+  "recapture": "PYTHONPATH=scratch/straightinkpen2-alias:scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-translate-x 32 --matrix-translate-y 32 --color-argb COLOR [--opaque-background]",
+  "capture_adapter_sha256": "1d0123f12d28442c992661b8025bdea9962dd76101443570d6042debf02994df"
+}

@@ -4616,10 +4616,7 @@ fn prepare_inkpen2_internal(
             || rendering.advanced_settings.is_some()
             || active_rainbow
             || rendering.style.color_type_raw.unwrap_or(0) != 0
-            || rendering
-                .style
-                .color_argb
-                .is_none_or(|argb| argb >> 24 != 255));
+            || rendering.style.color_argb.is_none());
     if unsupported_v1
         || !supported_name
         || !supported_setting
@@ -4841,7 +4838,11 @@ fn prepare_inkpen2_internal(
         records: output.vertices,
         sample_ends,
         color,
-        opacity: f64::from((argb >> 24) as u8 as f32 / 255.0),
+        opacity: if v1_scale.is_some() {
+            1.0
+        } else {
+            f64::from((argb >> 24) as u8 as f32 / 255.0)
+        },
         enhanced_antialias: profile.enhanced_antialias,
         bounds: bounds?,
     })
@@ -17617,7 +17618,12 @@ mod tests {
         assert!(super::prepare_inkpen2_v1(&admitted, profile, theme, scale).is_some());
         let mut rejected = admitted.clone();
         rejected.rendering.as_mut().unwrap().style.color_argb = Some(0x8033_6699);
-        assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
+        assert_eq!(
+            super::prepare_inkpen2_v1(&rejected, profile, theme, scale)
+                .unwrap()
+                .opacity,
+            1.0
+        );
         rejected = admitted.clone();
         rejected.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
         assert!(super::prepare_inkpen2_v1(&rejected, profile, theme, scale).is_none());
@@ -17684,6 +17690,64 @@ mod tests {
             .remove(0)
             .page
             .svg;
+        // Native RTV1 ignores the source alpha byte, even when it is zero.
+        // Exercise the public page path so an earlier cull cannot hide a stroke.
+        let color_capture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-color-alpha-native.json"
+        ))
+        .unwrap();
+        let colors = &color_capture["cases"];
+        assert_eq!(
+            colors["transparent_zero_blue"]["rgba_sha256"],
+            v["translated_control"]["rgba_sha256"]
+        );
+        assert_eq!(
+            colors["transparent_half_red"]["rgba_sha256"],
+            colors["transparent_opaque_red"]["rgba_sha256"]
+        );
+        assert_eq!(
+            colors["white_zero_blue"]["rgba_sha256"],
+            colors["white_opaque_blue"]["rgba_sha256"]
+        );
+        assert_eq!(
+            colors["white_half_red"]["rgba_sha256"],
+            colors["white_opaque_red"]["rgba_sha256"]
+        );
+        for rgb in [0x33_6699, 0xff_0000] {
+            let mut variants = Vec::new();
+            for alpha in [0_u32, 0x80, 0xff] {
+                let mut input = admitted.clone();
+                input.rendering.as_mut().unwrap().style.color_argb = Some((alpha << 24) | rgb);
+                let mut page = page_with_uncolored_stroke();
+                page.width = 128;
+                page.height = 96;
+                page.objects = vec![input.into()];
+                let doc = document(page);
+                let layout = layout_document(&doc);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                let svg = super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg;
+                let pdf = crate::render_svg_pages_pdf(
+                    &[crate::RenderedPage::new(0, 128, 96, svg.clone())],
+                    &Default::default(),
+                )
+                .unwrap();
+                variants.push((svg, pdf));
+            }
+            assert_eq!(variants[0], variants[2]);
+            assert_eq!(variants[1], variants[2]);
+            assert!(variants[0].0.contains("radialGradient"));
+        }
         use base64::Engine as _;
         use std::io::Read;
         let compressed = base64::engine::general_purpose::STANDARD
@@ -17808,6 +17872,114 @@ mod tests {
             let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
             let parsed = lopdf::Document::load_mem(&pdf).unwrap();
             assert_eq!(parsed.get_pages().len(), 1);
+        }
+    }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_distinct_native_shapes_public_svg() {
+        use base64::Engine as _;
+        use std::io::Read;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-null-v1-shapes-paint-native.json"
+        ))
+        .unwrap();
+        for (name, capture) in receipt["cases"].as_object().unwrap() {
+            let input = &capture["input"];
+            let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            let size = input["size"].as_f64().unwrap() as f32;
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap() + 32.,
+                    y: p[1].as_f64().unwrap() + 32.,
+                })
+                .collect();
+            stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            let mut page = page_with_uncolored_stroke();
+            page.width = 128;
+            page.height = 96;
+            page.objects = vec![stroke.into()];
+            let doc = document(page);
+            let layout = layout_document(&doc);
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+            let mut cache = super::DocumentTextCache::default();
+            let options = RenderOptions {
+                inkpen2_profile: Some(InkPen2RenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    enhanced_antialias: false,
+                }),
+                inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+                ..Default::default()
+            };
+            let render = |cache: &mut super::DocumentTextCache, options: &RenderOptions| {
+                cache
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            let actual = render(&mut cache, &options);
+            let generic = render(&mut cache, &RenderOptions::default());
+            if let Some(directory) = std::env::var_os("SDOCX_V1_SHAPE_PDF_CAPTURE") {
+                let directory = std::path::Path::new(&directory);
+                for (kind, source) in [("profile", &actual), ("generic", &generic)] {
+                    let pdf = crate::render_svg_pages_pdf(
+                        &[crate::RenderedPage::new(0, 128, 96, source.clone())],
+                        &Default::default(),
+                    )
+                    .unwrap();
+                    let path = directory.join(format!("v1-{name}-{kind}.pdf"));
+                    let mut file = std::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(path)
+                        .unwrap();
+                    std::io::Write::write_all(&mut file, &pdf).unwrap();
+                }
+            }
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut native = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut native)
+                .unwrap();
+            let error = |source: &str| {
+                let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 96).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                pixmap
+                    .data()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(native.as_chunks::<4>().0.iter())
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let a = error(&actual);
+            let g = error(&generic);
+            eprintln!("{name}: public={a}, generic={g}");
+            assert!(a <= g, "{name}: public={a}, generic={g}");
         }
     }
 }

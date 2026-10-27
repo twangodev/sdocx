@@ -1,0 +1,125 @@
+{
+  "schema": "sdocx-inkpen2-null-v1-shapes-paint-native-v1",
+  "scope": "Synthetic ObjectStroke native Drawing and RTV1 host Mesa, transparent 128x96 target; not device or app canvas.",
+  "capture_script": "conformance/inkpen2_v1_shapes_capture.py",
+  "cases": {
+    "short": {
+      "input": {
+        "points": [[0, 0], [0.1, 0], [0.2, 0.1], [0.3, 0.1]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "e1b3a4399754c6b2a583a0a37ecaa7ca9ed6f146ebc94ca2bca3edbc5bcf814b",
+      "rgba_sha256": "7703eed8da3019c44d56cc6d62d27f8559fa5e94abd2f96510ec76ff3354a9dd",
+      "rgba_zlib_base64": "eNrt1DENACAQA8BqQAMDCtDBjhEs4oqggoG7pAbazycAAAAAAAAAAAAAAAAAAABJqX3eaOLP7dtY+8YN2F8j/j8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADASwevfw0d",
+      "output_size": [128, 96],
+      "nonzero_pixels": 12,
+      "comparison_alpha_l1": {"svg_profile": 488, "svg_generic": 1063, "pdf_profile": 1064, "pdf_generic": 1190}
+    },
+    "stationary": {
+      "input": {
+        "points": [[3, 5], [3, 5], [3, 5], [3, 5]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "abc6fc66ed502521f7bb855dbb2e60fe1cd40ac40dbd387f324cae7e093d192a",
+      "rgba_sha256": "b0922d35edd8d62ee179e1e4bb05d452f75828f4c3d643f57315c5d86ab1f683",
+      "rgba_zlib_base64": "eNrt1AEJACAMBMDlsIaYwxYmsYRplbUQdgdf4H8sAgAAAAAAAAAAAAAAAAAAAACAytqYO6OJmtv3dW7GDdhfI/4/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPzgAQY7EdU=",
+      "output_size": [128, 96],
+      "nonzero_pixels": 12,
+      "comparison_alpha_l1": {"svg_profile": 56, "svg_generic": 1590, "pdf_profile": 846, "pdf_generic": 2076}
+    },
+    "turn": {
+      "input": {
+        "points": [[0, 0], [8, 0], [8, 8], [0, 8]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "dba295426f2bcdf542866796c6924d8dc754dba5844adb52cacf0a7bd4271963",
+      "rgba_sha256": "6cf3d8710851aade1f904e546dce02a4f0a6c5d3e835e92f30873fa5d767159b",
+      "rgba_zlib_base64": "eNrt1z9rU2EUB+AkbazV2gop0aqNUFssNmKbIsFSBRWC6BAVrKIi/kmiODg4VNCtOoiLUolN4ugu+CFU8AsI7u6CS0XMNYm2Mf0EcvM88HLuXX+He+55IxEAAAAAAAAAAAAAAAAAAGiLxnrivZsHhuP9gzsaNdHTt2V7rDfeL5nwG527uDxbqgazpVrjVII/z9UgU1z5NXnu4adk+sQ9KYVTYjx7bfr682+tnt+urvd+49mdPf9UWt3Y/7V5UAuGD8yXJNY987/jFKvBZH7xo7S6Y//bunMsO3Vh6fNa75uzYaZQXo1EozFpdYfB0ancvzMgU3j1s28oOSGZ7jAyc+ZRewdo/BuKK/VN2xJ7JRNuzXv/2PGbb6ZvLH/v2AELlbr5Hz5DqfTp1LGrr/fl7rw9dOXZ18yt8urG/S9TKP/YdTj/WFqh+8ef2n/2wYd2r2udd79ipVXHc3ffSSuk/c8vvm/f8yr1v7X1nl5Y+tL47p9IKtzzf8+RhRepuUsvU/OXy82aPHjy/sDIxFHpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/5vf+rPD0w==",
+      "output_size": [128, 96],
+      "nonzero_pixels": 119,
+      "comparison_alpha_l1": {"svg_profile": 862, "svg_generic": 17285, "pdf_profile": 4404, "pdf_generic": 17235}
+    },
+    "reverse": {
+      "input": {
+        "points": [[0, 0], [8, 0], [0, 0], [-8, 0]],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "a6eaaf639aded2e00c76e45699c69f028b7cc6c1b80fb2a47ca459a4e7645700",
+      "rgba_sha256": "8bc83f18cb923d805134b50cea53f3070e7a6cbb631b2ca79aae7901e2e720e3",
+      "rgba_zlib_base64": "eNrt1rFKQmEYBmDTAhs0WwQFUQThDEnJuQAhpwjEcBWEwtPaGN2Bi5PDsaWlxXvwCrwPt5qb6hQIHojWBuF54IOff3zfn48/kwEAAAAAAAAAAAAAAAAAgNRBNneUL5ZbhWrQK9Uv+vlSJThtdoaHx4WydPbbSe3sqtEdvzR70bJ1/bAKbh7X7dF0cz6evYf3i88wir/CaJFs5znZnSdx0rmbfzQub1+luL/dB4Onddrv74mTv7tP737eyZs9oH9p2v/4/wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB/+wYwzJBH",
+      "output_size": [128, 96],
+      "nonzero_pixels": 86,
+      "comparison_alpha_l1": {"svg_profile": 554, "svg_generic": 11899, "pdf_profile": 3688, "pdf_generic": 11735}
+    },
+    "large": {
+      "input": {
+        "points": [[0, 0], [8, 0], [16, 3], [24, 3]],
+        "size": 12,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "df13c57023d8a58232792f5c1c71b148b86bcfb22c54a32c76c39956417e9f9d",
+      "rgba_sha256": "9defd64ff87b5bad0264f0c153169e29b7695df3fdffb996d48edb69218fb02e",
+      "rgba_zlib_base64": "eNrt2c9r02AYwPGxH90m7Qa1rrChs0OpnaS1yUFkqGAreJm/QBGtFdq+DYIgehgeBPXk1KGwuTUN/gHu7r8w8OZB8A8YyEQPntxkLKnp6rAx6ToRIZHvB16ahLSH53mf503ednQAAAAAAAAAAAAAAAAAAAAAAAAAgF1vKDI2cvTCdPL6s5V0cW5VLlc2FFE1FKGZ1qcpi4qRFgvrqdzTlUPn772NJI6rnV09fUTO/8IHj+VT+ZnPVp5rSnlraDVF3TrWG+ebo+ke6/4jN158PXDm1pveYHiUSPpPJD5RkAsv12x5dQzt5xz4/Zrt3EzmZj4NxqRJouoPgWB4X/Lq9LIjl6pb/Tfq3Zl7/dd31Ma5XJxfi2XEYiC0ez9R9q6hZPaOvYZ1W2931vwfDNFYL+TC3Gri4v13Q+Mnb3YF+geJuneMZcRrR96b61xo2/T7VuuC3uLa5rF5+PKjD1Hp9F2i79H8q81zQNtBrWs11zm07bNCtTasTD4kA17r/1X3PvAPhpR78jE0HD9FFjz4/Ndy6C69Qm9zf+vfGz2Rf0UWPPj+p7qt/03X3fq7IP//x/6P1qaW9R2s8Tr932cc+7+ivv+rGY66duwBaG3eD9znE89//tGzayAatZ4V4+emltKl+e/197j2PcCZd7msmeOXHryPSpnbRNW/uvuCe2JZsShde7wslxbWrbwacv1/onL9v6KKoZQqG+ni7LdU/vmX+Nmppb0TV2YHRhLZzu5AP9EDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/6wfsZeK0",
+      "output_size": [128, 96],
+      "nonzero_pixels": 364,
+      "comparison_alpha_l1": {"svg_profile": 900, "svg_generic": 66663, "pdf_profile": 7211, "pdf_generic": 67203}
+    },
+    "small": {
+      "input": {
+        "points": [[0, 0], [8, 0], [16, 3], [24, 3]],
+        "size": 0.2,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [0.2, 0.4, 0.6, 0.8],
+        "timestamps": [0, 10, 20, 30],
+        "tilt": [0, 0, 0, 0],
+        "orientation": [0, 0, 0, 0]
+      },
+      "geometry_sha256": "7bef4ee9c5587ebabe8519003ec1da3f70008bf5afd4095afb212785a5addc39",
+      "rgba_sha256": "1f5ff8a42e9a8b2a6ff13823b7feb39630d47b8480ace022bb6f11e8e0aa22ce",
+      "rgba_zlib_base64": "eNrt189vy3EYB/D+mP3o2imrylq6lpSNdes6LCLBZMuIRMOJZNFZa1xcHLg5LcLBJGOJSSQOJC6O/gP+CombEyIRxC6qtSzh4uCmXq/kyef7/Ryf58k7328gAAAAAAAAAAAAAAAAAAAAEAi0RzdnNmYKJ+K50ploatfRSCJT6kkPTkaSufHwhs6YDrX27HMTc0/G5lfqY5dW6qXq8upIZfH92PyDevNutHr/W3F26dNA+frL3LHq0+ZeBMNt7TrXuvMvVhY//Hz/Q+WPX3mxtTB1NRiyC62Y//FssdybH59JHzh9KzdZe7aeB2v1sHl+L83d+1o4d/PN7vK1VzunLj/vP1J5lCqdvJEYOFTr2bZnuju542D3luz+rk2poUZmdOj0vy0YDIXj/SOnshOzj4dnbr8tVu5+HL2w9LmxB1+a2fFbRlxcf17bm6GzC691sLVE+/KH0/vKC83vguHzd96Vasurv87c/P8/ocYPQ1tXLNkRS+Q6432Dkd7txUb+75X/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8jR98/4x2",
+      "output_size": [128, 96],
+      "nonzero_pixels": 100,
+      "comparison_alpha_l1": {"svg_profile": 1012, "svg_generic": 14790, "pdf_profile": 5139, "pdf_generic": 14846}
+    }
+  },
+  "comparison_scope": "Public scene SVG via resvg and public PDF via PyMuPDF at 4/3 PDF point scale; transparent host native RGBA alpha, unweighted byte L1.",
+  "pdf_capture_command": "mkdir /tmp/inkpen2-v1-shapes-pdf && SDOCX_V1_SHAPE_PDF_CAPTURE=/tmp/inkpen2-v1-shapes-pdf CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --features pdf --lib inkpen2_v1_distinct_native_shapes_public_svg -- --nocapture",
+  "capture_adapter_sha256": "1d0123f12d28442c992661b8025bdea9962dd76101443570d6042debf02994df",
+  "capture_script_sha256": "8289d37475a9ac9a66dc03b24befdd57a22eaf3388ddf3dbd5c47690776514bd"
+}

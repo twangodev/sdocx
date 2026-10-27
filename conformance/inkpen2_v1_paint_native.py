@@ -5,6 +5,11 @@ V1 entry points and omit V3-only assertions; emitted observations are not device
 """
 from pathlib import Path
 import hashlib
+import sys
+
+opaque_background = '--opaque-background' in sys.argv
+if opaque_background:
+    sys.argv.remove('--opaque-background')
 
 root = Path(__file__).resolve().parents[1]
 support = root / 'tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance'
@@ -25,10 +30,14 @@ source = Path(__file__).resolve().parents[1] / 'scratch/straightinkpen2-alias/in
 if hashlib.sha256(source.read_bytes()).hexdigest() != '22d16b75d3324b36606b66cc380e37cd4d6c9f3df14c4d4849120ed0ae294b38':
     raise SystemExit(f'changed joined capture harness: {source}')
 code = source.read_text()
+code = code.replace("parser.add_argument('--case',", "parser.add_argument('--input-json'); parser.add_argument('--case',")
+code = code.replace('input_case=INPUT_CASES[args.case]', "input_case=json.loads(pathlib.Path(args.input_json).read_text()) if args.input_json else INPUT_CASES[args.case]")
 code = code.replace("choices=('empty','9'),default='9'", "choices=('null',),default='null'")
 code = code.replace("choices=(1.0,2.0,4.0)", "choices=(0.5,1.0,2.0,4.0)")
 code = code.replace("default=1440)", "default=1920)").replace("default=2560)", "default=1080)")
 code = code.replace("('line0_curve_short_history_color',1440,2560)", "('line0_curve_short_history_color',1920,1080)")
+if opaque_background:
+    code = code.replace("  before_draw_fbo=bp.C.c_int();", "  p.mesa.f['glClearColor'](1.0,1.0,1.0,1.0); p.mesa.f['glClear'](0x4000)\n  before_draw_fbo=bp.C.c_int();")
 code = code.replace('InkPen2StrokeDrawableRTV3::', 'InkPen2StrokeDrawableRTV1::')
 # RTV1 CreatePenCanvas stores its canvas at +200, as observed in native code.
 code = code.replace("join_rt+208,8", "join_rt+200,8").replace("join_rt+208,'Q'", "join_rt+200,'Q'")
@@ -39,11 +48,11 @@ code = code[:start] + code[end:]
 start = code.index("  descriptor232=next(row for row in descriptor_events")
 end = code.index('\n except Exception as join_error:', start)
 code = code[:start] + '''  jb,je,jc=struct.unpack('<3Q',p.u.mem_read(p.vector,24)); join_bytes=bytes(p.u.mem_read(jb,je-jb))
-  assert selected_drawable_version == '1' and len(join_bytes) == 300
+  assert selected_drawable_version == '1' and len(join_bytes) % 12 == 0
   assert any(row.get('data_hex') == join_bytes.hex() for row in p.graphics_buffer_uploads)
-  assert not any(rgba_before) and fbo_status == 0x8cd5 and attach_type.value == 0x1702
+  assert (not any(rgba_before) if not opaque_background else rgba_before == bytes([255])*len(rgba_before)) and fbo_status == 0x8cd5 and attach_type.value == 0x1702
   assert before_draw_fbo.value == before_read_fbo.value == after_draw_fbo.value == after_read_fbo.value
   print(json.dumps({'framebuffer':{'complete':fbo_status == 0x8cd5,'attachment_type':attach_type.value,'texture_level':texture_level,'draw_fbo':after_draw_fbo.value}, 'schema':'inkpen2-null-v1-host-paint-experimental-v1','source':'synthetic native ObjectStroke, Drawing-selected RTV1; host Mesa and host target', 'profile':[args.width,args.height], 'selected_version':selected_drawable_version, 'selected_rt':selected_rt_id, 'geometry_hex':join_bytes.hex(), 'geometry_sha256':hashlib.sha256(join_bytes).hexdigest(), 'output_size':[target_width,target_height], 'draw_matrix':list(matrix_values), 'before_zero':not any(rgba_before), 'rgba_zlib_base64':base64.b64encode(zlib.compress(rgba_draw,9)).decode(), 'rgba_sha256':hashlib.sha256(rgba_draw).hexdigest(), 'nonzero_pixels':len(drawn), 'draw_calls':p.graphics_draw_calls, 'uploads':p.graphics_buffer_uploads, 'gl_events':gl_events, 'shader_programs':{str(k):{'linked':v['linked'],'sources':[src for sh in v['shader_snapshots'] for src in sh['sources']]} for k,v in program_rows.items()}},default=str), _always=True)
   raise SystemExit(0)
 ''' + code[end:]
-exec(compile(code, str(source), 'exec'), {'__name__':'__main__','__file__':str(source)})
+exec(compile(code, str(source), 'exec'), {'__name__':'__main__','__file__':str(source), 'opaque_background': opaque_background})
