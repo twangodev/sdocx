@@ -679,10 +679,9 @@ mod tests {
     }
 
     // This compares a source-derived 1px radial fringe with the actual generic
-    // page renderer. It is a single host-Mesa control, not a parity claim.
+    // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    #[test]
-    fn v25_candidate_and_generic_fallback_against_host_paint() {
+    fn v25_paint_control(size12: bool) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -690,12 +689,18 @@ mod tests {
         use std::fmt::Write;
 
         // OpenGL bottom-up rows, cropped at x=0..32, y=0..16. Full-frame
-        // SHA-256 87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e;
+        // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
-        let native = include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba");
-        let receipt: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/simplebrush-paint-v25.json"
-        ))
+        let native: &[u8] = if size12 {
+            include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
+        } else {
+            include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
+        };
+        let receipt: Value = serde_json::from_str(if size12 {
+            include_str!("../../../../conformance/simplebrush-paint-v25-size12.json")
+        } else {
+            include_str!("../../../../conformance/simplebrush-paint-v25.json")
+        })
         .unwrap();
         assert_eq!(
             format!("{:x}", Sha256::digest(native)),
@@ -705,7 +710,9 @@ mod tests {
         );
         let points = [[0., 0.], [10., 0.], [20., 5.]];
         let pressures = [0.5, 0.25, 0.75];
-        let samples = reconstruct(&points, &pressures, 8., 2, true).unwrap();
+        let size = if size12 { 12. } else { 8. };
+        let expected_support = if size12 { 185 } else { 137 };
+        let samples = reconstruct(&points, &pressures, size, 2, true).unwrap();
         assert_eq!(samples.len(), 14);
         let geometry: Vec<u8> = samples
             .iter()
@@ -714,7 +721,7 @@ mod tests {
             .collect();
         assert_eq!(
             format!("{:x}", Sha256::digest(&geometry)),
-            "498063f7e145bf52f54dfd893061c7f3dd293d35d43c0cfce7c31bb2e88e1530"
+            receipt["input"]["geometry_vector_sha256"].as_str().unwrap()
         );
         let mut svg = String::from(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>"##,
@@ -759,7 +766,7 @@ mod tests {
                 },
                 style: StrokeStyle {
                     color_argb: Some(0x8044_aaee),
-                    pen_size: Some(8.),
+                    pen_size: Some(size),
                     ..StrokeStyle::default()
                 },
             }),
@@ -780,7 +787,7 @@ mod tests {
                 g: 0xaa,
                 b: 0xee,
             }),
-            pen_width: 8.,
+            pen_width: size,
         };
         // The native fragment shader ignores input alpha in this capture. The
         // generic Brush route also uses whole-stroke opacity 1, despite the
@@ -914,10 +921,10 @@ mod tests {
                 .iter()
                 .filter(|p| p[3] != 0)
                 .count(),
-            137
+            expected_support
         );
         assert_eq!(
-            candidate_metrics.2, 137,
+            candidate_metrics.2, expected_support,
             "retained source-derived candidate support"
         );
         assert!(
@@ -928,5 +935,17 @@ mod tests {
         assert!(profiled_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * profiled_metrics.1);
         assert!(profiled_metrics.3 < fallback_metrics.3);
         assert!(profiled_metrics.4 < fallback_metrics.4);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v25_candidate_and_generic_fallback_against_host_paint() {
+        v25_paint_control(false);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
+        v25_paint_control(true);
     }
 }
