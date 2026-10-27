@@ -4889,8 +4889,8 @@ pub struct StrokePaint {
 }
 
 fn stroke_source_color(stroke: &Stroke) -> Option<Color> {
-    // Preserve an explicit public color; recover saved RGB only for profiles
-    // whose source-color contract is established.
+    // Preserve an explicit public color; recover saved RGB for bounded profiles
+    // supported by native paint controls or source-derived color forwarding.
     stroke.color.or_else(|| {
         chinesebrush_source_color(stroke)
             .or_else(|| crate::ink::saved_inkpen_argb(stroke).map(argb_rgb))
@@ -4925,13 +4925,15 @@ fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
     Some(argb_rgb(rendering.style.color_argb.unwrap_or(0xff00_0000)))
 }
 
-/// Recover explicit source RGB for the observed ColoredPencil V4 and
-/// WaterColorBrush V1/V2 Drawing routes. Their native mask/texture paint is
-/// still outside the generic vector renderer; in particular this does not
+/// Recover explicit source RGB for the observed ColoredPencil V4,
+/// WaterColorBrush V1/V2 and SimpleBrush null-setting routes. SimpleBrush has
+/// one native color control; other colors are inferred from the shader's RGB
+/// input. Their native paint is still outside the generic vector renderer; this does not
 /// transfer ARGB alpha to whole-stroke opacity.
 fn saved_textured_pen_argb(stroke: &Stroke) -> Option<u32> {
     const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
     const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
+    const SIMPLE_BRUSH: &str = "com.samsung.android.sdk.pen.pen.preload.Brush";
 
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
@@ -4963,7 +4965,9 @@ fn saved_textured_pen_argb(stroke: &Stroke) -> Option<u32> {
             rendering.pen_name.as_deref(),
             rendering.advanced_settings.as_deref(),
         ),
-        (Some(COLORED_PENCIL), Some("4;")) | (Some(WATERCOLOR), None | Some(""))
+        (Some(COLORED_PENCIL), Some("4;"))
+            | (Some(WATERCOLOR), None | Some(""))
+            | (Some(SIMPLE_BRUSH), None)
     );
     observed_profile
         .then_some(rendering.style.color_argb)
@@ -12569,9 +12573,10 @@ mod tests {
     }
 
     #[test]
-    fn saved_colored_pencil_v4_and_watercolor_rgb_are_bounded_to_observed_profiles() {
+    fn saved_textured_brush_rgb_is_bounded_to_observed_profiles() {
         const COLORED_PENCIL: &str = "com.samsung.android.sdk.pen.pen.preload.ColoredPencil";
         const WATERCOLOR: &str = "com.samsung.android.sdk.pen.pen.preload.WaterColorBrush";
+        const SIMPLE_BRUSH: &str = "com.samsung.android.sdk.pen.pen.preload.Brush";
         let source = crate::parse_bytes(include_bytes!(
             "../tests/assets/chinesebrush/synthetic_v3.sdocx"
         ))
@@ -12599,14 +12604,16 @@ mod tests {
             document
         };
 
-        // Native Drawing captures reached PenDrawableRT::SetPenData with the
-        // same saved ARGB for these three selected factory routes. These SVG
+        // Native Drawing controls preserve saved RGB for the selected factory
+        // routes; the SimpleBrush color control is synthetic and uses an identity
+        // host conversion. These SVG
         // checks cover RGB selection only; they do not assert mask/texture
         // paint or whole-stroke alpha parity.
         for (pen_name, setting) in [
             (COLORED_PENCIL, Some("4;")),
             (WATERCOLOR, None),
             (WATERCOLOR, Some("")),
+            (SIMPLE_BRUSH, None),
         ] {
             let document = make_document(pen_name, setting);
             let stroke = document.pages[0].strokes().next().unwrap();
@@ -12629,7 +12636,7 @@ mod tests {
             );
         }
 
-        let mut public_override = make_document(COLORED_PENCIL, Some("4;"));
+        let mut public_override = make_document(SIMPLE_BRUSH, None);
         public_override.pages[0].strokes_mut().next().unwrap().color = Some(Color {
             r: 0x12,
             g: 0x34,
@@ -12695,15 +12702,23 @@ mod tests {
             }),
         ];
         for (reason, mutate) in rejected {
-            let mut unsupported = make_document(WATERCOLOR, None);
-            let stroke = unsupported.pages[0].strokes_mut().next().unwrap();
-            mutate(stroke);
-            assert_eq!(
-                super::stroke_paint(stroke, false).color,
-                "#1a1a1a",
-                "{reason}"
-            );
+            for pen in [WATERCOLOR, SIMPLE_BRUSH] {
+                let mut unsupported = make_document(pen, None);
+                let stroke = unsupported.pages[0].strokes_mut().next().unwrap();
+                mutate(stroke);
+                assert_eq!(
+                    super::stroke_paint(stroke, false).color,
+                    "#1a1a1a",
+                    "{pen}: {reason}"
+                );
+            }
         }
+
+        let unsupported = make_document(SIMPLE_BRUSH, Some(""));
+        assert_eq!(
+            super::stroke_paint(unsupported.pages[0].strokes().next().unwrap(), false).color,
+            "#1a1a1a"
+        );
 
         let unsupported = make_document(COLORED_PENCIL, Some("3;"));
         assert!(

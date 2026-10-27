@@ -294,9 +294,15 @@ mod tests {
         // SHA-256 87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
         let native = include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba");
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-paint-v25.json"
+        ))
+        .unwrap();
         assert_eq!(
             format!("{:x}", Sha256::digest(native)),
-            "a44b658a3df32e1bb4c457404368a4d26600341c56548730ea5ff7e18035425b"
+            receipt["paint_observation"]["crop"]["sha256"]
+                .as_str()
+                .unwrap()
         );
         let points = [[0., 0.], [10., 0.], [20., 5.]];
         let pressures = [0.5, 0.25, 0.75];

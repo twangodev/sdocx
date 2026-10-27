@@ -1,0 +1,49 @@
+{
+  "schema": "sdocx-simplebrush-paint-v25-compact-receipt-v1",
+  "scope": "One synthetic native ObjectStroke and host Mesa GLES Draw-target observation, not a saved SDocx input, Samsung device capture, production parity claim, or independently reproducible capture package.",
+  "input": {
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+    "advanced_setting": null,
+    "color_argb": "0x8044aaee",
+    "pen_size": 8.0,
+    "tool_type": 2,
+    "curve_enabled": true,
+    "points": [[0, 0], [10, 0], [20, 5]],
+    "pressures": [0.5, 0.25, 0.75],
+    "dimensions": [1920, 1080],
+    "geometry_vector_sha256": "498063f7e145bf52f54dfd893061c7f3dd293d35d43c0cfce7c31bb2e88e1530",
+    "geometry_vector_count": 14
+  },
+  "capture_boundaries": [
+    "Host callbacks supplied the screen profile, identity color conversion, flags and version; native ObjectStroke setters supplied the synthetic input.",
+    "The harness directly wrote ObjectStroke obj+32 to attach its separately constructed implementation and SimpleBrush pen+8 to attach a constructed PenGLDataManager with a host queue. Emulated context, vtables, stubs, loader and runtime support were also host-provided; this is not an unmodified device execution.",
+    "A host queue explicitly ran the constructor-posted clipping task before SetClipRect, then dispatched a bounded prefix of retained native tasks. Renderer callbacks, EGL context and Mesa GLES were host boundaries, not natural device worker scheduling.",
+    "At the real host GLES instanced-draw callback the harness identified the native draw target, checked the already-current complete FBO, attachment, viewport and color mask, explicitly cleared the target to transparent black and verified an all-zero readback, restored observer-visible clear/scissor state, forwarded the draw once and read RGBA. The source capture used an all-zero synthetic canvas."
+  ],
+  "paint_observation": {
+    "uniform_rgba": [0.2666666805744171, 0.6666666865348816, 0.9333333373069763, 0.501960813999176],
+    "fragment_shader_sha256": "4de49776d5739dceac73ec0513d386cd0e2eaeb33373fe4a082be6f0e220d0db",
+    "fragment_behavior": "The captured shader emits vec4(inputColor.xyz, 1.0) multiplied by its smooth edge alpha; inputColor.a is unused.",
+    "blend_equation_rgb_alpha": ["GL_FUNC_ADD", "GL_FUNC_ADD"],
+    "blend_factors_src_rgb_dst_rgb_src_alpha_dst_alpha": ["GL_ONE", "GL_ONE_MINUS_SRC_ALPHA", "GL_ONE", "GL_ONE_MINUS_SRC_ALPHA"],
+    "draw_arrays_instanced": {"mode": "GL_TRIANGLE_STRIP", "first": 0, "vertex_count": 4, "instance_count": 14},
+    "readback": "Raw host GLES glReadPixels RGBA; original receipt does not infer premultiplication.",
+    "full_frame_sha256": "87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e",
+    "full_frame_bytes": 8294400,
+    "crop": {"path": "simplebrush-paint-v25-crop.rgba", "sha256": "a44b658a3df32e1bb4c457404368a4d26600341c56548730ea5ff7e18035425b", "dimensions": [32, 16], "origin": "OpenGL bottom-left, x=0..31, y=0..15, contiguous RGBA rows", "bytes": 2048, "nonzero_alpha_pixels": 137, "all_frame_nonzero_alpha_within_crop": true}
+  },
+  "provenance": {
+    "ephemeral_receipt": {"path_at_capture": "/tmp/sdocx-simplebrush-native-paint-root-v25.log", "sha256": "88871c2265b988b3e9112db6532ec15bb818701b47add86e33641c281137cfcd"},
+    "ephemeral_capture_scripts": [
+      {"path_at_capture": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-paint-capture.py", "sha256": "62109356fa2120aa7d1318a6f23667558e3d4a183fc0f40d36ff3a42de94c936"},
+      {"path_at_capture": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-source-capture.py", "sha256": "86afe686345ccc650c01ad2f51d5a79728f2a0d7aec39462605c7d302205fdea"}
+    ],
+    "dso_sha256": {
+      "libSPenSimpleBrush.so": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+    },
+    "limitations": "The named scripts and original receipt are ephemeral, not retained by this compact receipt; helper scripts, binary inputs, adapter and host environment are also required. Hashes identify observed artifacts and do not establish a runnable reproduction."
+  }
+}
