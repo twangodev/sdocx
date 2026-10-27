@@ -278,4 +278,202 @@ mod tests {
             );
         }
     }
+
+    // This compares a source-derived 1px radial fringe with the actual generic
+    // page renderer. It is a single host-Mesa control, not a parity claim.
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v25_candidate_and_generic_fallback_against_host_paint() {
+        use crate::{
+            BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
+            StrokeStyle,
+        };
+        use std::fmt::Write;
+
+        // OpenGL bottom-up rows, cropped at x=0..32, y=0..16. Full-frame
+        // SHA-256 87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e;
+        // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
+        let native = include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(native)),
+            "a44b658a3df32e1bb4c457404368a4d26600341c56548730ea5ff7e18035425b"
+        );
+        let points = [[0., 0.], [10., 0.], [20., 5.]];
+        let pressures = [0.5, 0.25, 0.75];
+        let samples = reconstruct(&points, &pressures, 8., 2, true).unwrap();
+        assert_eq!(samples.len(), 14);
+        let geometry: Vec<u8> = samples
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&geometry)),
+            "498063f7e145bf52f54dfd893061c7f3dd293d35d43c0cfce7c31bb2e88e1530"
+        );
+        let mut svg = String::from(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>"##,
+        );
+        for (i, &[x, y, r]) in samples.iter().enumerate() {
+            let y = 1080.0 - f64::from(y);
+            let inner = (f64::from(r) - 1.0).max(0.0) / f64::from(r);
+            write!(svg, r##"<radialGradient id="g{i}" gradientUnits="userSpaceOnUse" cx="{x}" cy="{y}" r="{r}"><stop offset="0" stop-color="#44aaee"/><stop offset="{inner}" stop-color="#44aaee"/><stop offset="1" stop-color="#44aaee" stop-opacity="0"/></radialGradient>"##).unwrap();
+        }
+        svg.push_str("</defs>");
+        for (i, &[x, y, r]) in samples.iter().enumerate() {
+            let y = 1080.0 - f64::from(y);
+            write!(
+                svg,
+                r##"<circle cx="{x}" cy="{y}" r="{r}" fill="url(#g{i})"/>"##
+            )
+            .unwrap();
+        }
+        svg.push_str("</svg>");
+
+        let stroke = Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Brush".into()),
+                advanced_settings: None,
+                tool_type_raw: 2,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0x8044_aaee),
+                    pen_size: Some(8.),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: points
+                .iter()
+                .map(|p| Point {
+                    x: f64::from(p[0]),
+                    y: 1080. - f64::from(p[1]),
+                })
+                .collect(),
+            pressures: pressures.iter().copied().map(f64::from).collect(),
+            timestamps: vec![],
+            tilts: vec![],
+            orientations: vec![],
+            color: Some(Color {
+                r: 0x44,
+                g: 0xaa,
+                b: 0xee,
+            }),
+            pen_width: 8.,
+        };
+        let document = Document {
+            pages: vec![Page {
+                uuid: "simplebrush-v25".into(),
+                width: 1920,
+                height: 1080,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let layout = crate::layout_document(&document);
+        let request =
+            crate::render::PageSceneRequest::sliced(&layout.pages[0], 0, 1080, false).unwrap();
+        let mut cache = crate::render::DocumentTextCache::default();
+        let fallback = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &crate::RenderOptions::default(),
+                &crate::render::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg;
+        let raster = |source: &str| {
+            let tree =
+                resvg::usvg::Tree::from_str(source, &resvg::usvg::Options::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap
+        };
+        let candidate = raster(&svg);
+        let fallback = raster(&fallback);
+        // Both use the same transparent, bottom-up native reference. Count
+        // support intersection/union and absolute alpha error across the crop.
+        let metrics = |image: &resvg::tiny_skia::Pixmap| {
+            let mut intersection = 0usize;
+            let mut union = 0usize;
+            let mut alpha_error = 0u64;
+            let mut support = 0usize;
+            for y in 0..16 {
+                for x in 0..32 {
+                    let n = native[(y * 32 + x) * 4 + 3];
+                    let a = image.data()[((1079 - y) * 1920 + x) * 4 + 3];
+                    intersection += usize::from(n != 0 && a != 0);
+                    union += usize::from(n != 0 || a != 0);
+                    support += usize::from(a != 0);
+                    alpha_error += u64::from(n.abs_diff(a));
+                }
+            }
+            (intersection, union, support, alpha_error)
+        };
+        let candidate_metrics = metrics(&candidate);
+        let fallback_metrics = metrics(&fallback);
+        for (name, image, inside_support) in [
+            ("candidate", &candidate, candidate_metrics.2),
+            ("fallback", &fallback, fallback_metrics.2),
+        ] {
+            let full_support = image
+                .data()
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|p| p[3] != 0)
+                .count();
+            assert_eq!(
+                full_support, inside_support,
+                "{name} extends outside the crop"
+            );
+        }
+        eprintln!(
+            "v25 candidate (intersection, union, support, alpha error): {candidate_metrics:?}; fallback: {fallback_metrics:?}"
+        );
+        assert_eq!(
+            native
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|p| p[3] != 0)
+                .count(),
+            137
+        );
+        assert_eq!(
+            candidate_metrics.2, 137,
+            "retained source-derived candidate support"
+        );
+        assert!(
+            candidate_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * candidate_metrics.1
+        );
+        assert!(candidate_metrics.3 < fallback_metrics.3);
+    }
 }
