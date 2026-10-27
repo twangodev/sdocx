@@ -191,6 +191,21 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         pressures[0].min(1.0)
     };
     let mut previous_width = half_width(size, previous_pressure).max(1.0);
+    if points.len() == 2
+        && tool_type == 2
+        && (points[1][0] - points[0][0]).abs() < 1.5
+        && (points[1][1] - points[0][1]).abs() < 1.5
+    {
+        if max_samples == 0 {
+            return Err("SimpleBrush sample budget exceeded");
+        }
+        return Ok(vec![[
+            points[0][0],
+            points[0][1],
+            previous_width * 0.5 + 0.5,
+        ]]);
+    }
+
     let mut edge_pair = None;
     let mut samples = Vec::new();
 
@@ -712,6 +727,67 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn two_point_direction_and_distance_native_controls() {
+        for probe in 201..=204 {
+            v25_paint_control(8, false, false, false, probe);
+        }
+    }
+
+    #[test]
+    fn two_point_short_pressure_and_budget_match_native() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-two-short-pressure-geometry.json"
+        ))
+        .unwrap();
+        for case in receipt["cases"].as_array().unwrap() {
+            let points: Vec<[f32; 2]> = case["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+                .collect();
+            let pressures: Vec<f32> = case["pressures"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_f64().unwrap() as f32)
+                .collect();
+            let input = || NativeInput {
+                points: &points,
+                pressures: &pressures,
+                size: case["size"].as_f64().unwrap() as f32,
+                tool_type: 2,
+                curve_enabled: true,
+                max_samples: 1,
+            };
+            let bytes: Vec<u8> = generate(input())
+                .unwrap()
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .collect();
+            assert_eq!(
+                bytes,
+                decode_hex(case["geometry_hex"].as_str().unwrap()),
+                "{}",
+                case["id"]
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                case["geometry_sha256"].as_str().unwrap()
+            );
+            assert!(
+                generate(NativeInput {
+                    max_samples: 0,
+                    ..input()
+                })
+                .is_err()
+            );
+        }
+    }
+
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
@@ -730,6 +806,19 @@ mod tests {
             (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
         );
         let native: &[u8] = match (four, size) {
+            _ if probe == 201 => {
+                include_bytes!("../../../../conformance/simplebrush-two-vertical-crop.rgba")
+            }
+            _ if probe == 202 => {
+                include_bytes!("../../../../conformance/simplebrush-two-reversed-crop.rgba")
+            }
+            _ if probe == 203 => {
+                include_bytes!("../../../../conformance/simplebrush-two-short-crop.rgba")
+            }
+            _ if probe == 204 => {
+                include_bytes!("../../../../conformance/simplebrush-two-zero-crop.rgba")
+            }
+
             (_, 4) if probe == 2 => {
                 include_bytes!("../../../../conformance/simplebrush-two-4-crop.rgba")
             }
@@ -810,6 +899,15 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 201 => {
+                include_str!("../../../../conformance/simplebrush-two-vertical.json")
+            }
+            _ if probe == 202 => {
+                include_str!("../../../../conformance/simplebrush-two-reversed.json")
+            }
+            _ if probe == 203 => include_str!("../../../../conformance/simplebrush-two-short.json"),
+            _ if probe == 204 => include_str!("../../../../conformance/simplebrush-two-zero.json"),
+
             (_, 4) if probe == 2 => include_str!("../../../../conformance/simplebrush-two-4.json"),
             (_, 8) if probe == 2 => include_str!("../../../../conformance/simplebrush-two-8.json"),
             (_, 16) if probe == 2 => {
@@ -878,10 +976,10 @@ mod tests {
             .as_str()
             .unwrap()
         );
-        let probe_points: Vec<[f32; 2]> = (0..probe)
+        let probe_points: Vec<[f32; 2]> = (0..if probe >= 201 { 2 } else { probe })
             .map(|i| [(i * 8) as f32, (4 + (i % 3) * 4) as f32])
             .collect();
-        let probe_pressures: Vec<f32> = (0..probe)
+        let probe_pressures: Vec<f32> = (0..if probe >= 201 { 2 } else { probe })
             .map(|i| {
                 if probe == 2 && size != 8 {
                     0.75
@@ -890,7 +988,15 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if probe != 0 {
+        let points: &[[f32; 2]] = if probe == 201 {
+            &[[4., 0.], [4., 8.]]
+        } else if probe == 202 {
+            &[[8., 8.], [0., 4.]]
+        } else if probe == 203 {
+            &[[4., 4.], [4.01, 4.]]
+        } else if probe == 204 {
+            &[[4., 4.], [4., 4.]]
+        } else if probe != 0 {
             &probe_points
         } else if six {
             &[
@@ -918,6 +1024,8 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 201 || probe == 202 => 80,
+            _ if probe == 203 || probe == 204 => 32,
             (_, 4) if probe == 2 => 60,
             (_, 8) if probe == 2 => 85,
             (_, 16) if probe == 2 => 223,
@@ -951,7 +1059,14 @@ mod tests {
         };
         let size = if size == 55 { 5.5 } else { size as f32 };
         let (crop_width, crop_height) = if extra || probe != 0 {
-            (if probe > 16 { probe * 8 + 16 } else { 144 }, 32)
+            (
+                if probe > 16 && probe < 201 {
+                    probe * 8 + 16
+                } else {
+                    144
+                },
+                32,
+            )
         } else if six {
             (64, 32)
         } else if four || size == 16.0 {
@@ -991,6 +1106,19 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if probe == 201 => {
+                    include_bytes!("../../../../conformance/simplebrush-two-vertical-geometry.bin")
+                }
+                _ if probe == 202 => {
+                    include_bytes!("../../../../conformance/simplebrush-two-reversed-geometry.bin")
+                }
+                _ if probe == 203 => {
+                    include_bytes!("../../../../conformance/simplebrush-two-short-geometry.bin")
+                }
+                _ if probe == 204 => {
+                    include_bytes!("../../../../conformance/simplebrush-two-zero-geometry.bin")
+                }
+
                 (4.0, 2) => {
                     include_bytes!("../../../../conformance/simplebrush-two-4-geometry.bin")
                 }
