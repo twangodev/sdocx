@@ -267,6 +267,103 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
     Ok(samples)
 }
 
+/// Geometry in explicitly supplied native coordinates, with the source color.
+pub(crate) struct PreparedStroke {
+    pub(crate) samples: Vec<[f32; 3]>,
+    pub(crate) color: crate::Color,
+}
+
+/// Admit only the synthetic saved-stroke profile exercised by the geometry
+/// capture. The caller must establish that coordinates are already native;
+/// this function does not apply or infer a page/model transform. The captured
+/// vectors establish geometry, not shader, color, or compositing parity.
+pub(crate) fn prepare_stroke(
+    stroke: &crate::Stroke,
+    native_coordinates: bool,
+    max_samples: usize,
+) -> Result<PreparedStroke, &'static str> {
+    if !native_coordinates {
+        return Err("unsupported SimpleBrush coordinate context");
+    }
+    let rendering = stroke.rendering.as_ref().ok_or("missing stroke metadata")?;
+    let p = rendering.properties;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Brush")
+        || rendering.advanced_settings.is_some()
+        || rendering.tool_type_raw != 2
+        || !p.compressed
+        || p.replay_only
+        || p.stylus_channels
+        || p.eraser
+        || p.fixed_width
+        || p.millisecond_timestamps
+        || p.top_layer_pen
+        || p.alpha_lock
+        || p.generated
+        || p.fixed_opacity
+        || p.rainbow_effect
+        || p.straighten
+        || p.reveal_mode
+        || !p.binary_added
+        || !matches!(rendering.style.stroke_type_raw, None | Some(0))
+        || !matches!(rendering.style.color_type_raw, None | Some(0))
+    {
+        return Err("unsupported SimpleBrush stroke metadata or channels");
+    }
+    let size = rendering.style.pen_size.ok_or("missing pen size")?;
+    if !matches!(size.to_bits(), 0x4100_0000 | 0x4140_0000)
+        || stroke.pen_width.to_bits() != size.to_bits()
+    {
+        return Err("unsupported SimpleBrush size");
+    }
+    if !matches!(stroke.points.len(), 3 | 4) || stroke.pressures.len() != stroke.points.len() {
+        return Err("unsupported SimpleBrush sample shape");
+    }
+    let count = stroke.points.len();
+    if !(stroke.timestamps.is_empty() || stroke.timestamps.len() == count)
+        || !stroke.tilts.is_empty()
+        || !stroke.orientations.is_empty()
+    {
+        return Err("unsupported SimpleBrush channels");
+    }
+    let exact_float = |v: f64| -> Result<f32, &'static str> {
+        let f = v as f32;
+        if !v.is_finite() || f64::from(f) != v {
+            return Err("sample is not a finite exact f32");
+        }
+        Ok(f)
+    };
+    let points = stroke
+        .points
+        .iter()
+        .map(|p| Ok([exact_float(p.x)?, exact_float(p.y)?]))
+        .collect::<Result<Vec<_>, &'static str>>()?;
+    let pressures = stroke
+        .pressures
+        .iter()
+        .map(|&p| exact_float(p))
+        .collect::<Result<Vec<_>, _>>()?;
+    let stored_argb = rendering.style.color_argb;
+    let color = stroke
+        .color
+        .or_else(|| {
+            stored_argb.map(|argb| crate::Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            })
+        })
+        .ok_or("missing SimpleBrush color")?;
+    let samples = generate(NativeInput {
+        points: &points,
+        pressures: &pressures,
+        size,
+        tool_type: 2,
+        curve_enabled: true,
+        max_samples,
+    })?;
+    Ok(PreparedStroke { samples, color })
+}
+
 #[cfg(test)]
 fn reconstruct(
     points: &[[f32; 2]],
@@ -463,6 +560,35 @@ mod tests {
             color: None,
             pen_width: size,
         }
+    }
+
+    #[test]
+    fn production_adapter_enforces_profile_and_color() {
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let mut stroke = fixture_stroke(&fixture["cases"][0]["input"]);
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x80402010);
+        let prepared = super::prepare_stroke(&stroke, true, 1000).unwrap();
+        assert_eq!(
+            prepared.color,
+            crate::Color {
+                r: 0x40,
+                g: 0x20,
+                b: 0x10
+            }
+        );
+        assert_eq!(prepared.samples.len(), 14);
+        assert!(super::prepare_stroke(&stroke, false, 1000).is_err());
+        assert!(super::prepare_stroke(&stroke, true, 1).is_err());
+        stroke.color = Some(crate::Color { r: 1, g: 2, b: 3 });
+        stroke.rendering.as_mut().unwrap().style.color_argb = None;
+        assert_eq!(
+            super::prepare_stroke(&stroke, true, 1000).unwrap().color,
+            stroke.color.unwrap()
+        );
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
     }
 
     #[test]
@@ -688,10 +814,30 @@ mod tests {
             .remove(0)
             .page
             .svg;
+        let request =
+            crate::render::PageSceneRequest::sliced(&layout.pages[0], 0, 1080, false).unwrap();
+        let profiled = cache
+            .render_layout_page_scene_requests(
+                &document,
+                &[request],
+                &crate::RenderOptions {
+                    simplebrush_profile: Some(crate::SimpleBrushRenderProfile::HostV25),
+                    ..Default::default()
+                },
+                &crate::render::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg;
         if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_EXPORT_DIR") {
             let directory = std::path::Path::new(&directory);
             std::fs::create_dir_all(directory).unwrap();
-            for (name, source) in [("candidate", &svg), ("fallback", &fallback)] {
+            for (name, source) in [
+                ("candidate", &svg),
+                ("fallback", &fallback),
+                ("profiled", &profiled),
+            ] {
                 let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
                 let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
                 std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
@@ -709,6 +855,7 @@ mod tests {
             pixmap
         };
         let candidate = raster(&svg);
+        let profiled = raster(&profiled);
         let fallback = raster(&fallback);
         // Both use the same transparent, bottom-up native reference. Count
         // support intersection/union and absolute alpha error across the crop.
@@ -738,9 +885,11 @@ mod tests {
             (intersection, union, support, alpha_error, rgba_error)
         };
         let candidate_metrics = metrics(&candidate);
+        let profiled_metrics = metrics(&profiled);
         let fallback_metrics = metrics(&fallback);
         for (name, image, inside_support) in [
             ("candidate", &candidate, candidate_metrics.2),
+            ("profiled", &profiled, profiled_metrics.2),
             ("fallback", &fallback, fallback_metrics.2),
         ] {
             let full_support = image
@@ -756,7 +905,7 @@ mod tests {
             );
         }
         eprintln!(
-            "v25 candidate (intersection, union, support, alpha error, RGBA error): {candidate_metrics:?}; fallback: {fallback_metrics:?}"
+            "v25 candidate (intersection, union, support, alpha error, RGBA error): {candidate_metrics:?}; profiled: {profiled_metrics:?}; fallback: {fallback_metrics:?}"
         );
         assert_eq!(
             native
@@ -776,5 +925,8 @@ mod tests {
         );
         assert!(candidate_metrics.3 < fallback_metrics.3);
         assert!(candidate_metrics.4 < fallback_metrics.4);
+        assert!(profiled_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * profiled_metrics.1);
+        assert!(profiled_metrics.3 < fallback_metrics.3);
+        assert!(profiled_metrics.4 < fallback_metrics.4);
     }
 }

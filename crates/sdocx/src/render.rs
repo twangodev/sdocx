@@ -31,6 +31,9 @@ mod geometry;
 mod gradient;
 mod image_crop;
 mod inkpen2_vector;
+mod simplebrush;
+#[cfg(test)]
+mod simplebrush_tests;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 mod pencil3;
 pub use pencil3::Pencil3PaperSampler;
@@ -133,6 +136,16 @@ pub struct InkPen2RenderProfile {
 pub enum AirBrushRenderProfile {
     /// Empty or `2;` saved setting selecting native AirBrush GLV2.
     SavedV2,
+}
+
+/// Opt into the experimental SimpleBrush vector approximation based on one
+/// synthetic host-Mesa V25 capture. Saved-note, device, output-scale and PDF
+/// parity are not established; unsupported strokes retain generic paint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SimpleBrushRenderProfile {
+    /// Canonical page-unit approximation of the V25 capture.
+    HostV25,
 }
 
 /// Explicit canonical canvas policy for fresh Pencil3 V3 reconstruction.
@@ -306,6 +319,9 @@ pub struct RenderOptions {
     /// Explicit opt-in to a bounded saved AirBrush GLV2 intrinsic-texture route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub airbrush_profile: Option<AirBrushRenderProfile>,
+    /// Experimental SimpleBrush host-capture approximation; replay uses generic paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub simplebrush_profile: Option<SimpleBrushRenderProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -791,6 +807,7 @@ impl DocumentTextCache {
             options.fountain_v14_output_scale_profile,
             options.pencil3_profile,
             options.airbrush_profile,
+            options.simplebrush_profile,
             slice,
             observer,
         );
@@ -1229,6 +1246,7 @@ fn render_page_contents_svg(
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
+    simplebrush_profile: Option<SimpleBrushRenderProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
@@ -1295,6 +1313,7 @@ fn render_page_contents_svg(
         fountain_v14_output_scale_profile,
         pencil3_profile,
         airbrush_profile,
+        simplebrush_profile,
         slice,
     };
     let total = page.composed_objects().count();
@@ -1337,6 +1356,7 @@ struct CompositionContext<'a> {
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
+    simplebrush_profile: Option<SimpleBrushRenderProfile>,
     slice: Option<PageSlice>,
 }
 
@@ -1408,6 +1428,7 @@ fn render_object(
                 context.fountain_v14_output_scale_profile,
                 context.pencil3_profile,
                 context.airbrush_profile,
+                context.simplebrush_profile,
                 context.slice,
             );
             *stroke_index += 1;
@@ -3653,6 +3674,7 @@ fn render_stroke(
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
+    simplebrush_profile: Option<SimpleBrushRenderProfile>,
     slice: Option<PageSlice>,
 ) {
     // Saved ObjectDrawing admission requires at least two source points before
@@ -3758,6 +3780,17 @@ fn render_stroke(
         && airbrush_profile == Some(AirBrushRenderProfile::SavedV2)
         && let Some(paint) = airbrush::prepare(stroke, theme, viewport)
         && airbrush::render(svg, &paint, replay_index)
+    {
+        return;
+    }
+    // The experimental renderer is deliberately disabled for replay until it
+    // carries correct per-source-sample and terminal part boundaries.
+    if native_allowed
+        && replay_index.is_none()
+        && simplebrush_profile == Some(SimpleBrushRenderProfile::HostV25)
+        && viewport.iter().all(|dimension| *dimension > 0)
+        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke(stroke, true, 32_768)
+        && simplebrush::render(svg, &paint.samples, &theme.foreground(Some(paint.color)))
     {
         return;
     }

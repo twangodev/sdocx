@@ -17,8 +17,7 @@ mod montblanc;
 mod oilbrush3;
 #[cfg(all(test, feature = "serde"))]
 mod pencil2;
-#[cfg(all(test, feature = "serde"))]
-mod simplebrush;
+pub(crate) mod simplebrush;
 #[cfg(test)]
 mod smudge;
 #[cfg(all(test, feature = "serde"))]
