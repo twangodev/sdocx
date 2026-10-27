@@ -1,0 +1,24 @@
+{
+  "scope": "Diagnostic concentric opaque gray circles in a luminance mask approximate the radial alpha ramp, compared with the original radial mask rendered by resvg. Results are sum and maximum absolute alpha error against that original at 192x192 and 72 dpi; each pair is [sum, max].",
+  "script": "conformance/pencil2_pdf_radial_mask_rings.py",
+  "position_40_size_2": {
+    "original_shading_mupdf_max": 180,
+    "original_shading_pdfium_max": 180,
+    "four_rings_resvg": [32, 8],
+    "four_rings_mupdf": [33, 11],
+    "four_rings_pdfium": [28, 7],
+    "sixteen_rings_resvg": [204, 51],
+    "sixteen_rings_mupdf": [124, 35],
+    "sixteen_rings_pdfium": [193, 49]
+  },
+  "position_40_size_64": {
+    "four_rings_resvg": [46904, 29],
+    "four_rings_mupdf": [46658, 29],
+    "four_rings_pdfium": [46594, 28],
+    "sixteen_rings_resvg": [7784, 5],
+    "sixteen_rings_mupdf": [7400, 5],
+    "sixteen_rings_pdfium": [7406, 5]
+  },
+  "interpretation": "Four rings reduce the tiny aligned case error but visibly quantize the large ramp. More rings improve the large case yet compound small-scale antialiasing error. This approximation does not establish a scale-independent correction and is not used in production.",
+  "limitations": ["Synthetic mask control, not the full Pencil2 frame or native parity.", "Position and size affect results; run the script for the complete tested matrix.", "Uses the same exporter and dependencies as pencil2_pdf_radial_mask_control.py."]
+}
