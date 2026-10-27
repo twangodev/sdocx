@@ -54,8 +54,16 @@ pub(crate) struct Prepared {
     image_side: f64,
 }
 
+pub(crate) enum SourcePreparation {
+    Empty,
+    Paint(Box<Prepared>),
+}
+
 pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -> Option<Prepared> {
-    prepare_source(stroke, theme, viewport, false)
+    match prepare_source(stroke, theme, viewport, false)? {
+        SourcePreparation::Paint(paint) => Some(*paint),
+        SourcePreparation::Empty => None,
+    }
 }
 
 pub(crate) fn prepare_source(
@@ -63,7 +71,7 @@ pub(crate) fn prepare_source(
     theme: RenderTheme,
     viewport: [u32; 2],
     v1: bool,
-) -> Option<Prepared> {
+) -> Option<SourcePreparation> {
     if viewport.contains(&0) {
         return None;
     }
@@ -79,7 +87,12 @@ pub(crate) fn prepare_source(
         return None;
     }
     let source = airbrush::saved_from_stroke(stroke, v1)?;
-    if source.rows.is_empty() || source.rows.len() > MAX_STAMPS {
+    if source.rows.is_empty() {
+        // The native host-Mesa stationary controls leave the target unchanged.
+        // Applying this to other admitted empty V1 streams is an extrapolation.
+        return v1.then_some(SourcePreparation::Empty);
+    }
+    if source.rows.len() > MAX_STAMPS {
         return None;
     }
     if source.rows.iter().flatten().any(|lane| !lane.is_finite()) {
@@ -169,7 +182,7 @@ pub(crate) fn prepare_source(
         .iter()
         .map(|row| native_uv_source_to_page(*row, half, viewport, pad_texels))
         .collect::<Option<Vec<_>>>()?;
-    Some(Prepared {
+    Some(SourcePreparation::Paint(Box::new(Prepared {
         rows: source.rows,
         coverage,
         sample_ends: source.sample_ends,
@@ -181,7 +194,7 @@ pub(crate) fn prepare_source(
         image_y: 0.0,
         image_side,
         atlas_to_page,
-    })
+    })))
 }
 
 pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Option<usize>) -> bool {

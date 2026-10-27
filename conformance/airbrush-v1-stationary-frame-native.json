@@ -1,0 +1,294 @@
+{
+  "schema": "sdocx.airbrush-v1-stationary-frame-native.v1",
+  "scope": "Synthetic native Model setters and Drawing, synchronous host queue, host Mesa readback after Drawing returns. No Android device, deserialized saved note, or general transform parity claim.",
+  "runner_path": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py",
+  "runner_sha256": "d38a83f3cf71b228f58654c08a135d3f91d3bda0349df1d6014926752dc3b73e",
+  "source_size": 8,
+  "width": 256,
+  "height": 256,
+  "native_libraries_sha256": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "cases": [
+    {
+      "point_count": 2,
+      "initial_rgba": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "addpoint_count": 1,
+      "instanced_draw_observed": true,
+      "changed_pixels": 41,
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "b50e075ca353e27b6deb99e34558296b254dafb6d2f69b5083053217c9c76168",
+        "nonzero_pixels": 41,
+        "nonzero_channels": [
+          35,
+          41,
+          41,
+          41
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2EFugzAQBdAYbAMhBRKVqFWlqvc/ZTtJLtBFQpW+J1kIr/5mmBl2OwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+IWU0tYRgMdKqWlS07ZNrnXrLMAD/fT8qPvUlnI9OV+ub0/geeXhZarT69qd3j/KuBzL4XiKecAuAM8ven7b7cc8zsuwfn7VeT3H9yDet84G3FfM+VHreT/NUfttPx5iJmhqP2ydDbiz2P9L18epy/kt/gPGnf0f/onbrn/p+6Xrto4DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwN/0DRevBMM=",
+        "compressed_bytes": 428,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      },
+      "framebuffer": {
+        "draw_fbo": 1,
+        "read_fbo": 1,
+        "status": 36053,
+        "color_attachment": {
+          "attachment": "GL_COLOR_ATTACHMENT0",
+          "object_type": "0x1702",
+          "object_name": 1,
+          "level": 0,
+          "dimensions_source": "same-name actual glTexImage2D + Mesa glGetTexLevelParameteriv",
+          "width": 256,
+          "height": 256,
+          "storage": {
+            "target": 3553,
+            "level": 0,
+            "api_width": 256,
+            "api_height": 256,
+            "bound_texture_before_forward": 1,
+            "width": 256,
+            "height": 256,
+            "internal_format": 32856,
+            "upload_event_index": 0
+          }
+        }
+      },
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 0,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      }
+    },
+    {
+      "point_count": 2,
+      "initial_rgba": [
+        66,
+        104,
+        138,
+        255
+      ],
+      "addpoint_count": 1,
+      "instanced_draw_observed": true,
+      "changed_pixels": 41,
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "937211fd6b9bede98168f0bf45147cbc152e19d89aba25ec1bee5ba8254c0ed0",
+        "nonzero_pixels": 65536,
+        "nonzero_channels": [
+          65536,
+          65536,
+          65536,
+          65536
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2DsOglAQBdC9PTYjCuo6/BtMXO7zDUrsjA1K9BSngOo2l5khzTY5AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAu+oJZAA+bFu6X8z3E8gCfEzM/Oh9vXvq3+++nw0Y1+KYq7bLaXXJVXPOqS36fWAC2YBxxZxfHHJqTrlaX3NadvfvQXn+ejZgXNH/6Hoo3Y99oOdfAPy+4f4P0f/6sfu7/+E/DLe+uQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADACzegfiIW",
+        "compressed_bytes": 399,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      },
+      "framebuffer": {
+        "draw_fbo": 1,
+        "read_fbo": 1,
+        "status": 36053,
+        "color_attachment": {
+          "attachment": "GL_COLOR_ATTACHMENT0",
+          "object_type": "0x1702",
+          "object_name": 1,
+          "level": 0,
+          "dimensions_source": "same-name actual glTexImage2D + Mesa glGetTexLevelParameteriv",
+          "width": 256,
+          "height": 256,
+          "storage": {
+            "target": 3553,
+            "level": 0,
+            "api_width": 256,
+            "api_height": 256,
+            "bound_texture_before_forward": 1,
+            "width": 256,
+            "height": 256,
+            "internal_format": 32856,
+            "upload_event_index": 0
+          }
+        }
+      },
+      "native_path_entry_counts": {
+        "AddPoint(": 1,
+        "RedrawPen(": 3,
+        "drawLine(": 0,
+        "drawPoint(": 1,
+        "endPen(": 1,
+        "startPen(": 0
+      }
+    },
+    {
+      "point_count": 5,
+      "initial_rgba": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "addpoint_count": 0,
+      "instanced_draw_observed": false,
+      "changed_pixels": 0,
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "nonzero_pixels": 0,
+        "nonzero_channels": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJztwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ==",
+        "compressed_bytes": 277,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      },
+      "framebuffer": {
+        "draw_fbo": 1,
+        "read_fbo": 1,
+        "status": 36053,
+        "color_attachment": {
+          "attachment": "GL_COLOR_ATTACHMENT0",
+          "object_type": "0x1702",
+          "object_name": 1,
+          "level": 0,
+          "dimensions_source": "same-name actual glTexImage2D + Mesa glGetTexLevelParameteriv",
+          "width": 256,
+          "height": 256,
+          "storage": {
+            "target": 3553,
+            "level": 0,
+            "api_width": 256,
+            "api_height": 256,
+            "bound_texture_before_forward": 1,
+            "width": 256,
+            "height": 256,
+            "internal_format": 32856,
+            "upload_event_index": 0
+          }
+        }
+      },
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 3,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      }
+    },
+    {
+      "point_count": 5,
+      "initial_rgba": [
+        66,
+        104,
+        138,
+        255
+      ],
+      "addpoint_count": 0,
+      "instanced_draw_observed": false,
+      "changed_pixels": 0,
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "a699e1e1ab21e293fcc7ef5b97a432fc8b2e0f70680ccf4efbf9394a8190e24e",
+        "nonzero_pixels": 65536,
+        "nonzero_channels": [
+          65536,
+          65536,
+          65536,
+          65536
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJztwzENAAAIAzBvU4MWTI8XEW3SzDaqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqu8B3PIg/g==",
+        "compressed_bytes": 283,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      },
+      "framebuffer": {
+        "draw_fbo": 1,
+        "read_fbo": 1,
+        "status": 36053,
+        "color_attachment": {
+          "attachment": "GL_COLOR_ATTACHMENT0",
+          "object_type": "0x1702",
+          "object_name": 1,
+          "level": 0,
+          "dimensions_source": "same-name actual glTexImage2D + Mesa glGetTexLevelParameteriv",
+          "width": 256,
+          "height": 256,
+          "storage": {
+            "target": 3553,
+            "level": 0,
+            "api_width": 256,
+            "api_height": 256,
+            "bound_texture_before_forward": 1,
+            "width": 256,
+            "height": 256,
+            "internal_format": 32856,
+            "upload_event_index": 0
+          }
+        }
+      },
+      "native_path_entry_counts": {
+        "AddPoint(": 0,
+        "RedrawPen(": 3,
+        "drawLine(": 3,
+        "drawPoint(": 0,
+        "endPen(": 1,
+        "startPen(": 0
+      }
+    }
+  ],
+  "command": "AB_N=<2|5> PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin:tmp/conformance-cleanup/native-capture-a241793/conformance LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu python3 tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py --single-case --print-capture --advanced-mode unset --width 256 --height 256 --source-size 8 --initial-rgba <r,g,b,a>"
+}

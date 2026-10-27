@@ -128,7 +128,7 @@ pub struct InkPen2RenderProfile {
 /// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
 /// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
-/// accepts a null advanced setting; empty stamp streams use generic rendering.
+/// accepts a null advanced setting; admitted empty streams emit no paint.
 /// `SavedV2` accepts empty or `2;` settings. V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
@@ -3784,12 +3784,16 @@ fn render_stroke(
             return;
         }
     }
-    if native_allowed
-        && airbrush_profile == Some(AirBrushRenderProfile::SavedV1)
-        && let Some(paint) = airbrush::prepare_source(stroke, theme, viewport, true)
-        && airbrush::render(svg, &paint, replay_index)
-    {
-        return;
+    if native_allowed && airbrush_profile == Some(AirBrushRenderProfile::SavedV1) {
+        match airbrush::prepare_source(stroke, theme, viewport, true) {
+            Some(airbrush::SourcePreparation::Empty) => return,
+            Some(airbrush::SourcePreparation::Paint(paint))
+                if airbrush::render(svg, &paint, replay_index) =>
+            {
+                return;
+            }
+            _ => {}
+        }
     }
     if native_allowed
         && airbrush_profile == Some(AirBrushRenderProfile::SavedV2)
@@ -11915,11 +11919,42 @@ mod tests {
         stroke.tilts = vec![0.12; 5];
         stroke.orientations = vec![0.2; 5];
         stroke.timestamps = vec![300, 315, 330, 345, 360];
-        assert_eq!(
-            svg(&document, &options),
-            svg(&document, &default),
-            "zero-stamp fallback"
-        );
+        let mut empty = document.clone();
+        empty.pages[0].objects.clear();
+        for size in [3.144, 8.0] {
+            document.pages[0]
+                .strokes_mut()
+                .next()
+                .unwrap()
+                .rendering
+                .as_mut()
+                .unwrap()
+                .style
+                .pen_size = Some(size);
+            assert_eq!(svg(&document, &options), svg(&empty, &options));
+            assert_ne!(svg(&document, &options), svg(&document, &default));
+            let layout = layout_document(&document);
+            let replay = render_layout_page_replay_svg(&document, &layout, 0, &options).unwrap();
+            assert!(!replay.svg.contains("data-replay-part"));
+            assert!(!replay.svg.contains("data:image/png;base64,"));
+        }
+        document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some(String::new());
+        assert_eq!(svg(&document, &options), svg(&document, &default));
+        document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = None;
         let stroke = document.pages[0].strokes_mut().next().unwrap();
         stroke.points.truncate(3);
         stroke.pressures.truncate(3);
@@ -12031,7 +12066,7 @@ mod tests {
         let layout = layout_document(&document);
         let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
         let mut cache = super::DocumentTextCache::default();
-        let rendered = cache
+        let scene = cache
             .render_layout_page_scene_requests(
                 &document,
                 &[request],
@@ -12039,8 +12074,30 @@ mod tests {
                 &super::fonts::FontBook::default(),
                 &mut |_| {},
             )
-            .remove(0)
-            .page;
+            .remove(0);
+        if let Some(directory) = std::env::var_os("SDOCX_AIRBRUSH_PDF_CAPTURE_DIR") {
+            let generic_request =
+                super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let generic = cache
+                .render_layout_page_scene_requests(
+                    &document,
+                    &[generic_request],
+                    &RenderOptions::default(),
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0);
+            for (name, source) in [("saved-v1.pdf", &scene), ("generic.pdf", &generic)] {
+                let bytes = crate::pdf::render_scenes_pdf_with_progress(
+                    std::slice::from_ref(source),
+                    &crate::PdfOptions::default(),
+                    &mut |_| {},
+                )
+                .unwrap();
+                std::fs::write(std::path::Path::new(&directory).join(name), bytes).unwrap();
+            }
+        }
+        let rendered = scene.page;
         let tree =
             resvg::usvg::Tree::from_str(&rendered.svg, &resvg::usvg::Options::default()).unwrap();
         let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
