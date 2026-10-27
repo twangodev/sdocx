@@ -3772,7 +3772,11 @@ fn render_stroke(
         && let Some(ink) = prepare_pencil3_v3(stroke, profile, theme, viewport)
     {
         let context = pencil3_paint_context(profile);
-        if pencil3::render(svg, &ink, context, replay_index) {
+        let page_y_range = slice.map(|slice| {
+            let top = f64::from(slice.y());
+            (top, top + f64::from(slice.height()))
+        });
+        if pencil3::render_slice(svg, &ink, context, replay_index, page_y_range) {
             return;
         }
     }
@@ -9874,6 +9878,115 @@ mod tests {
             #[cfg(not(feature = "pdf"))]
             assert_eq!(normal.width, replay.width);
         }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn pencil3_profile_slice_preserves_crossing_particles_and_replay_indices() {
+        let stroke = pencil3_native_profile_stroke();
+        let ink =
+            crate::ink::pencil_source::prepare_pencil3_v3_source(&stroke, 2560, 1440).unwrap();
+        // Choose an integer boundary through a particle, with at least one
+        // other particle outside the one-unit slice.
+        let y = ink
+            .records
+            .iter()
+            .find_map(|record| {
+                let boundary = f64::from(record[1]).ceil();
+                let half = f64::from(record[2]);
+                (boundary > 0.0
+                    && boundary < 179.0
+                    && boundary > f64::from(record[1]) - half
+                    && boundary < f64::from(record[1]) + half
+                    && ink.records.iter().any(|r| {
+                        f64::from(r[1]) + f64::from(r[2]) < boundary
+                            || f64::from(r[1]) - f64::from(r[2]) > boundary + 1.0
+                    }))
+                .then_some(boundary as u32)
+            })
+            .expect("fixture contains a crossing particle and an off-slice particle");
+        let expected: Vec<String> = ink
+            .records
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| {
+                f64::from(r[1]) + f64::from(r[2]) >= f64::from(y)
+                    && f64::from(r[1]) - f64::from(r[2]) <= f64::from(y + 1)
+            })
+            .map(|(index, _)| (index + 1).to_string())
+            .collect();
+        let mut page = page_with_uncolored_stroke();
+        page.width = 320;
+        page.height = 180;
+        page.objects = vec![stroke.into()];
+        let doc = document(page);
+        let layout = layout_document(&doc);
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        let fonts = super::fonts::FontBook::default();
+        let mut cache = super::DocumentTextCache::default();
+        cache.bind(&doc, &options, &fonts);
+        let render = |cache: &mut super::DocumentTextCache, slice| {
+            let (_, scene) = cache.prepare_page(
+                &doc,
+                &layout.pages[0],
+                &options,
+                true,
+                &fonts,
+                false,
+                slice,
+                &mut |_| {},
+            );
+            scene.finish()
+        };
+        let full = render(&mut cache, None);
+        let slice = super::PageSlice::new_for_page(&layout.pages[0], y, 1, true).unwrap();
+        let sliced = render(&mut cache, Some(slice));
+        let xml = roxmltree::Document::parse(&sliced).unwrap();
+        let group = xml
+            .descendants()
+            .find(|n| n.attribute("data-replay-stroke") == Some("0"))
+            .unwrap();
+        let actual: Vec<_> = group
+            .descendants()
+            .filter_map(|n| n.attribute("data-replay-part"))
+            .map(str::to_owned)
+            .collect();
+        assert_eq!(actual, expected);
+        assert!(actual.len() < ink.records.len());
+        // Give the unculled full-page SVG the exact same root viewport as the
+        // slice. Comparing different viewports can introduce unrelated usvg
+        // rounding differences even when they map to the same document row.
+        let sliced_xml = roxmltree::Document::parse(&sliced).unwrap();
+        let slice_root = sliced_xml.root_element();
+        let mut unculled_slice = full.clone();
+        for attribute in ["viewBox", "height"] {
+            let value = slice_root.attribute(attribute).unwrap();
+            let root_end = unculled_slice.find('>').unwrap();
+            let prefix = format!("{attribute}=\"");
+            let start = unculled_slice[..root_end].find(&prefix).unwrap() + prefix.len();
+            let end = start + unculled_slice[start..root_end].find('"').unwrap();
+            unculled_slice.replace_range(start..end, value);
+        }
+        let raster = |svg: &str| {
+            let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(320, 1).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap
+        };
+        assert_eq!(raster(&unculled_slice).data(), raster(&sliced).data());
     }
 
     #[test]

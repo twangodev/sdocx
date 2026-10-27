@@ -45,16 +45,47 @@ pub(super) struct Pencil3PaintContext {
 
 /// Add one prepared stroke to a vector scene. Invalid dimensions, records, or
 /// work budgets return `false` before emitting any nodes.
+#[cfg(test)]
 pub(super) fn render(
     scene: &mut Scene,
     source: &PreparedPencil3V3,
     context: Pencil3PaintContext,
     replay_index: Option<usize>,
 ) -> bool {
+    render_slice(scene, source, context, replay_index, None)
+}
+
+/// Render only particles intersecting an optional page-space vertical range.
+/// Replay parts retain their original particle indices when particles are culled.
+pub(super) fn render_slice(
+    scene: &mut Scene,
+    source: &PreparedPencil3V3,
+    context: Pencil3PaintContext,
+    replay_index: Option<usize>,
+    page_y_range: Option<(f64, f64)>,
+) -> bool {
     let Some(plane) = preflight(source, context) else {
         return false;
     };
     let records = &source.records;
+    let visible = |record: &[f32; 5]| {
+        page_y_range.is_none_or(|(top, bottom)| {
+            // Invalid ranges cannot safely cull paint.
+            if !top.is_finite() || !bottom.is_finite() || top > bottom {
+                return true;
+            }
+            let y = if context.y_up {
+                f64::from(context.canvas_height) - f64::from(record[1])
+            } else {
+                f64::from(record[1])
+            };
+            let half = f64::from(record[2]);
+            y + half >= top && y - half <= bottom
+        })
+    };
+    if !records.iter().any(visible) {
+        return true;
+    }
     let PaperPlane {
         width,
         height,
@@ -130,7 +161,11 @@ pub(super) fn render(
     definitions =
         definitions.add(SvgMask::alpha(&paper_mask_id, 0.0, 0.0, width, height).add(paper_image));
 
-    for (index, record) in records.iter().enumerate() {
+    for (index, record) in records
+        .iter()
+        .enumerate()
+        .filter(|(_, record)| visible(record))
+    {
         let [x, y, half, row, _] = *record;
         let side = f64::from(half) * 2.0;
         let x = f64::from(x);
@@ -168,7 +203,11 @@ pub(super) fn render(
             geometry.transformed(Transform::matrix([1.0, 0.0, 0.0, -1.0, 0.0, height], 0, 0));
     }
     scene.scope(geometry, |scene| {
-        for (index, record) in records.iter().enumerate() {
+        for (index, record) in records
+            .iter()
+            .enumerate()
+            .filter(|(_, record)| visible(record))
+        {
             let [x, y, half, _, alpha] = *record;
             let half = f64::from(half);
             let amount = f64::from(alpha) * f64::from(source.opacity) * 1.5;
@@ -579,6 +618,64 @@ mod paper_sampling_tests {
         let mut fresh = new_scene();
         assert!(render(&mut fresh, &source, context, None));
         assert_eq!(scene.finish(), fresh.finish());
+    }
+
+    #[test]
+    fn slice_culls_in_page_coordinates_and_preserves_particle_indices() {
+        let mut source = transparent_source();
+        source.records = vec![[5.0, 10.0, 2.0, 0.0, 0.0], [5.0, 90.0, 2.0, 0.0, 0.0]];
+        let context = Pencil3PaintContext {
+            canvas_width: 100,
+            canvas_height: 100,
+            background_scale: 1.0,
+            paper_sampler: Pencil3PaperSampler::Repeat,
+            y_up: true,
+        };
+        let new_scene = || Scene::new(Svg::new().width(100).height(100));
+        let mut scene = new_scene();
+        assert!(render_slice(
+            &mut scene,
+            &source,
+            context,
+            Some(0),
+            Some((8.0, 12.0))
+        ));
+        let svg = scene.finish();
+        assert!(svg.contains("sdocx-pencil3-brush-sdocx-def-0-1"));
+        assert!(!svg.contains("sdocx-pencil3-brush-sdocx-def-0-0"));
+        let mut scene = new_scene();
+        assert!(render_slice(
+            &mut scene,
+            &source,
+            context,
+            Some(0),
+            Some((40.0, 60.0))
+        ));
+        assert_eq!(scene.finish(), new_scene().finish());
+        let mut scene = new_scene();
+        assert!(render_slice(
+            &mut scene,
+            &source,
+            Pencil3PaintContext {
+                y_up: false,
+                ..context
+            },
+            Some(0),
+            Some((8.0, 12.0))
+        ));
+        let svg = scene.finish();
+        assert!(svg.contains("sdocx-pencil3-brush-sdocx-def-0-0"));
+        assert!(!svg.contains("sdocx-pencil3-brush-sdocx-def-0-1"));
+        source.records[1][2] = f32::NAN;
+        let mut scene = new_scene();
+        assert!(!render_slice(
+            &mut scene,
+            &source,
+            context,
+            None,
+            Some((40.0, 60.0))
+        ));
+        assert_eq!(scene.finish(), new_scene().finish());
     }
 
     #[test]
