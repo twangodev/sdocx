@@ -262,6 +262,32 @@
       }
     },
     "pdf_api_limitation": "Candidate SVG converted with public render_svg_pages_pdf, not render_document_pdf dispatch; fallback used render_document_pdf. PDFium rendered at 4/3 scale.",
-    "generated_outputs": "Removed as reproducible intermediates; generator remains under ignored tmp."
+    "generated_outputs": "Removed as reproducible intermediates; generator remains under ignored tmp.",
+    "compact_prototype": {
+      "generator": "tmp/vector-parity-plan/brushpen-long-vector-prototype/build-compact.py",
+      "generator_sha256": "c25979f27483e308eb3532621299f69ce9c65f28ef6af1c8ee34893c24d555d6",
+      "candidate_svg_bytes": 609013,
+      "candidate_pdf_bytes": 721420,
+      "design": "One radial coverage gradient per stamp with 1.27 px fade width; six significant digit numeric serialization; shared grain and mask images. The angular derivative is approximated by a constant and is not scale-independent native fwidth.",
+      "chromium_svg": {
+        "support_iou": 0.98,
+        "union_roi_rgb_mae": 0.44139566395663954,
+        "support": 1078,
+        "max_channel_error": 88
+      },
+      "pdfium_pdf": {
+        "support_iou": 0.9434628975265018,
+        "union_roi_rgb_mae": 1.4035682023486902,
+        "support": 1100,
+        "max_channel_error": 110
+      },
+      "resvg": {
+        "support_iou": 0.9736363636363636,
+        "union_roi_rgb_mae": 0.4778681120144535,
+        "support": 1071,
+        "max_channel_error": 90
+      },
+      "limitations": "One synthetic host-Mesa control only; PDF via render_svg_pages_pdf, not render_document_pdf dispatch. Large per-stroke output and unverified transforms or device fidelity preclude production admission."
+    }
   }
 }
