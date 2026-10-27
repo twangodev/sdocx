@@ -1,0 +1,74 @@
+{
+  "framebuffer": {
+    "complete": true,
+    "attachment_type": 5890,
+    "texture_level": {"width": 128, "height": 96, "internal_format": 32856},
+    "draw_fbo": 2
+  },
+  "schema": "inkpen2-null-v1-host-paint-experimental-v1",
+  "source": "synthetic native ObjectStroke, Drawing-selected RTV1; host Mesa and host target",
+  "profile": [1920, 1080],
+  "selected_version": "1",
+  "selected_rt": "rt0",
+  "geometry_hex": "000000000000000056550540f4fb7f3f00000000175d2440678ce33f0000000074d1254086c6314000000000d1452740f4ff7f40000000002eba2840b0739f40a87ab93c8b2e2a4060e7be40a87ab93dbd7c2a40105bde40fea9503eefca2a40c0cefd40a87ab93e21192b4037a10e41d2e7103f53672b40105b1e41fea9503f85b52b40e7142e41e8018e3fb7032c40bfce3d41a87ab93fe9512c409b324b41e3e2de3f1da02c40b75759413c60ff3fa4782840b1b46841fd1a0e402c5124408b4979410cb21a40b4292040228b85414e7525403b021c40a01f8d4178c52c40c2da1740925f9441816932404ab31340dff29b4177133740d28b0f4089d9a3415ac33a4059640b408e13ac412c793d40e03c0740eea0b441ea343f4068150340aa81bd4195f63f40dfdbfd3f",
+  "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+  "output_size": [128, 96],
+  "before_zero": true,
+  "rgba_zlib_base64": "eNrt1L9L1GEcB3DP32Zo2kWn4g/0S6iUencODYIOgpYZOByIg4eFiqJOiSAhBI4i5HCdLoWjkyCIq7OTf4B/gJtIiyClhOYRBdLkyesFH9486/N5P098Yv1nfPJyMnP8Kn/Nxl+zY2zttDWxdFgVG/j4qL5tMJSXX5hD1rnZaTpj5xlduNWkf0TH1r63ja4cNw8tHgSv5/bqukZS1fG3n0oqa1645bsrlJtXkF/8MFxQUvb0Mh8/CNdFy2paeiMd/QsNPe82nw8vH0WTn09u34XrPm38PheWVtS66ewWbu2eevbmw370feosNv7l/I/3/48O2P99VFT+pKmiqXM40t4339Cd/Br0TW8Hr2Z3g/6Zncbeia36nuS32peJ1arY4JL/HwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP9xASu8q+U=",
+  "rgba_sha256": "67751e8c8b06383295df08c50358a94fa92894ef902c8f96977445223661ca40",
+  "nonzero_pixels": 98,
+  "draw_calls": [[5, 0, 4, 25]],
+  "uploads": [{"size": 300, "sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb"}],
+  "gl_events": [
+    {"name": "glBlendEquationSeparate", "args": [32774, 32774], "program": 0, "lr": "0x50514fc", "symbols": []},
+    {"name": "glBlendFuncSeparate", "args": [1, 771, 1, 771], "program": 0, "lr": "0x5051520", "symbols": []},
+    {"name": "glColorMask", "args": [1, 1, 1, 1], "program": 0, "lr": "0x7050784", "symbols": []},
+    {"name": "glDrawArraysInstanced", "args": [5, 0, 4, 25], "program": 5, "lr": "0x5052798", "symbols": []}
+  ],
+  "shader_programs": {
+    "5": {
+      "linked": true,
+      "sources": [
+        "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec3 aPointInfo; uniform mat4 uProjectionMatrix; out vec2 fragCoord; void main(void) { gl_Position = uProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.z, 0.0, 1.0); fragCoord = vec2(aRectPoint.z, aRectPoint.w); }",
+        "#version 300 es \n precision highp float; uniform vec4 uInputColor; in vec2 fragCoord; vec2 center = vec2(0.5, 0.5); const float radius = 0.5; out vec4 FragColor; void main(void) { float dist = distance(center, fragCoord.xy); float pixelDist = fwidth(dist) * 1.0; float smoothAlpha = 1.0 - clamp((dist - (radius - pixelDist)) / pixelDist, 0.0, 1.0); FragColor = vec4(uInputColor.xyz, 1.0) * smoothAlpha; }"
+      ]
+    }
+  },
+  "input": {
+    "advanced_getter_object_hex": null,
+    "advanced_getter_pointer_nonnull": false,
+    "advanced_getter_utf8": null,
+    "advanced_setting": null,
+    "advanced_setting_state": "null",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+    "pen_size_f32_bits": "00008040",
+    "points_f32_bits": [["00000000", "00000000"], ["00000041", "00000000"], ["00008041", "00004040"], ["0000c041", "00004040"]],
+    "pressure_f32_bits": ["cdcc4c3e", "cdcccc3e", "9a99193f", "cdcc4c3f"],
+    "stroke_type": 0,
+    "tilt_f32_bits": ["00000000", "00000000", "00000000", "00000000"],
+    "timestamps_i32": [0, 10, 20, 30],
+    "tool_type": 2
+  },
+  "capture_script": "conformance/inkpen2_v1_paint_native.py",
+  "harness_sha256": "22d16b75d3324b36606b66cc380e37cd4d6c9f3df14c4d4849120ed0ae294b38",
+  "capture_script_sha256": "eb6330f414defde56c2abf1dde2e79e742a47b0ca8965970db63cc9e9bdc5d21",
+  "scope": "Synthetic native Drawing-selected RTV1 with host-provided canvas and Mesa GLES; no serialized input, device pixels, final app composition, or SVG/PDF parity.",
+  "draw_matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+  "translated_control": {
+    "draw_matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 32, 32, 0, 1],
+    "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+    "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+    "nonzero_pixels": 137,
+    "bbox_xyxy": [30, 29, 57, 36],
+    "before_zero": true,
+    "framebuffer": {
+      "complete": true,
+      "attachment_type": 5890,
+      "texture_level": {"width": 128, "height": 96, "internal_format": 32856},
+      "draw_fbo": 2
+    }
+  }
+}
