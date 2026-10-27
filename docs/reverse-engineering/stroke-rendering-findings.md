@@ -497,3 +497,28 @@ not clamp each selected tile independently. This correction reduces the opaque
 source's maximum alpha error from 208/255 to 3/255; filter quantization and
 compositing remain unresolved. These measurements apply only to this captured
 host-Mesa scene and renderer, not arbitrary scale, PDF export or device output.
+
+## Legacy Marker source-to-mesh controls
+
+Two synthetic four-point native Model strokes, one straight and one bent, now
+exercise cold Drawing through GLV1 and the queued RTV1 producer. The
+[compact receipt](../../conformance/legacy-marker-source-geometry-controls.json)
+retains the source arrays, GL geometry calls, RTV1 mesh inputs and output bytes,
+GL upload hashes and final host-Mesa frame hashes. The five native draw vertex
+counts are 24/6/32/32/6 for the straight control and 56/6/64/64/6 for the bent
+control. Both completed the guarded queue and passive readbacks without GL errors.
+These are synthetic host controls, not serialized-note or device captures.
+
+The producer seam is `MarkerStrokeDrawableRTV1::calcBezierPath`, its recursive
+`subdivideBezierPath` and `calcSegmentsNumber`, followed by `MeshMathV1::mergePoints`
+and cap-mesh construction. The receipt records entry registers and mesh vectors;
+it does not recover the subdivision decision, intermediate control-point memory,
+or a source-to-mesh implementation. Consequently the native output cannot yet
+justify admitting arbitrary saved strokes into a vector renderer.
+
+The copied control scripts are in `tmp/legacy-marker-source-controls/`. Each
+retains the V31 preflight and pins its own four-point input and expected draw
+counts. Run from the repository root with `PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance`,
+then `python3 tmp/legacy-marker-source-controls/straight.py --capture --advanced-setting null --output <new-json> --texture-payload-output <new-bin> --quiet-json`;
+substitute `bend.py` for the second control. Output paths must be new. The scripts
+require the pinned local native inputs and helpers checked by their preflight.
