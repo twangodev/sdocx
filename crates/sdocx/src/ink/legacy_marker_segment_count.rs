@@ -103,3 +103,80 @@ fn circle_selector_and_count_match_reversal_controls() {
         }
     }
 }
+
+#[test]
+fn start_pen_initializes_point_history_and_normal_state() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-subdivision-controls.json"
+    ))
+    .unwrap();
+    for case in receipt["endpoint_controls"].as_array().unwrap() {
+        let row = &case["rows"][0];
+        assert_eq!(row["method"], "StartPen");
+        let decode = |text: &str| {
+            let (pairs, remainder) = text.as_bytes().as_chunks::<2>();
+            assert!(remainder.is_empty());
+            pairs
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect::<Vec<_>>()
+        };
+        let mut modeled = decode(row["before_hex"].as_str().unwrap());
+        let x = u32::from_str_radix(row["input_bits"][0].as_str().unwrap(), 16).unwrap();
+        let y = u32::from_str_radix(row["input_bits"][1].as_str().unwrap(), 16).unwrap();
+        for offset in (652..=684).step_by(8) {
+            modeled[offset - 644..offset - 640].copy_from_slice(&x.to_le_bytes());
+            modeled[offset - 640..offset - 636].copy_from_slice(&y.to_le_bytes());
+        }
+        modeled[692 - 644..716 - 644].fill(0);
+        modeled[717 - 644] = 1;
+        assert_eq!(
+            modeled,
+            decode(row["after_hex"].as_str().unwrap()),
+            "{}",
+            case["name"]
+        );
+    }
+}
+
+#[test]
+fn end_pen_terminal_sample_uses_shared_quadratic_path() {
+    use super::path::{P, Quad};
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-subdivision-controls.json"
+    ))
+    .unwrap();
+    for case in receipt["endpoint_controls"].as_array().unwrap() {
+        let row = &case["rows"][1];
+        assert_eq!(row["method"], "EndPen");
+        let decode = |text: &str| {
+            let (pairs, remainder) = text.as_bytes().as_chunks::<2>();
+            assert!(remainder.is_empty());
+            pairs
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect::<Vec<_>>()
+        };
+        let before = decode(row["before_hex"].as_str().unwrap());
+        let after = decode(row["after_hex"].as_str().unwrap());
+        let point = |data: &[u8], offset: usize| P {
+            x: f32::from_le_bytes(data[offset - 644..offset - 640].try_into().unwrap()),
+            y: f32::from_le_bytes(data[offset - 640..offset - 636].try_into().unwrap()),
+        };
+        let path = Quad::new(
+            point(&before, 684),
+            point(&before, 660),
+            point(&before, 676),
+        );
+        assert!(path.length > 1.0);
+        let predicted = path.at(path.length - 1.0);
+        let actual = point(&after, 684);
+        assert!(
+            (predicted.x - actual.x).abs() < 0.00001 && (predicted.y - actual.y).abs() < 0.00001,
+            "{}: {:?} vs {:?}",
+            case["name"],
+            predicted,
+            actual
+        );
+    }
+}

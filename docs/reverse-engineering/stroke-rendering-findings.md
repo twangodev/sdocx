@@ -575,6 +575,19 @@ rounding or device rendering. The test-only model checks the selector and count
 for all six calls in those two controls. Capture scripts are `reverse-trace.py`
 and `turn-trace.py` in `tmp/legacy-marker-source-controls/`.
 
+Two additional native straight and bent controls retain StartPen and EndPen
+entry state and the subsequent task-state deltas in the subdivision receipt.
+StartPen copies the initial point to all five position slots at RT offsets
+652–691, zeros offsets 692–715 and sets byte 717 to 1. A test-only model matches
+both complete captured 80-byte post-task slices. For a noninitial EndPen,
+RTV1 constructs an SmPath quadratic from the point at offset 684, control at
+660 and endpoint at 676, then replaces offset 684 with `getPosTan(length - 1)`
+before emitting the terminal curve. The observed sampled points are
+(20.8753967, 20) and (12.7874975, 27.9563293) for the straight and bent
+controls. The shared Rust SmPath quadratic reproduces both within 0.00001 page
+units. Short or empty paths and the initial-EndPen branch remain open; these
+synthetic host observations do not establish device or saved-note parity.
+
 ### Legacy Marker subdivision edges and fringe
 
 The [edge test](../../crates/sdocx/tests/legacy_marker_edges.rs) joins the
