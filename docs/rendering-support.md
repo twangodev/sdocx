@@ -247,7 +247,11 @@ An isolated single-dab SVG/PDF control points to texture sampling inside the
 dab: at 1× and integer alignment the solid control matched, while brush-only
 paint differed between resvg 0.45.1 and MuPDF 1.28.2. A per-dab mask
 rearrangement did not improve the tested slice residual. These controls compare
-consumers, not native pixels.
+consumers, not native pixels. Setting PDF image interpolation true for both
+images and their alpha masks produced identical MuPDF output at 1× and 2× in
+the clamp and repeat controls. A vectorized brush-row candidate increased PDF
+error against the existing source SVG in a one-dab control and required 6,043
+rectangles; it is not selected as a rendering fix.
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 base-pen profile with explicit saved size/color and ordinary
 style. Other profiles retain the approximation. The sampler checks stamp

@@ -231,5 +231,85 @@
       "max_difference": 186
     },
     "conclusion": "The tested per-dab mask rearrangement did not improve the slice residual and changed full-page output."
+  },
+  "pdf_interpolation_control": {
+    "scope": "Current 1x Pencil3 clamp/repeat PDF exports, MuPDF 1.28.2 only; no native or other-reader parity claim.",
+    "change": "Set Interpolate true on all four image XObjects including alpha soft-mask images, saving separate files; reopening verified all image keys true. Original PDFs omit the key.",
+    "input_comparisons": {
+      "clamp": {
+        "original_sha256": "cfe831783923317334d236e75e10a1c139ed51996a7f2156a290dd4ae5d719d5",
+        "modified_sha256": "7dc8286a0c23f300926b4148084f82bc1d973e2b05416871dc6fd0971a59d4ab",
+        "image_count": 4,
+        "scales": {
+          "1": {
+            "width": 320,
+            "height": 180,
+            "different_channels": 0,
+            "max_difference": 0
+          },
+          "2": {
+            "width": 640,
+            "height": 360,
+            "different_channels": 0,
+            "max_difference": 0
+          }
+        }
+      },
+      "repeat": {
+        "original_sha256": "bb090b823b215a811eb84e6626900ffa3c980f3fb2e6061d112267e7ffd530a0",
+        "modified_sha256": "219781eddcf1447f298414e46702a0cc4c4438a4a57216f3c1e6696ed2b521b9",
+        "image_count": 4,
+        "scales": {
+          "1": {
+            "width": 320,
+            "height": 180,
+            "different_channels": 0,
+            "max_difference": 0
+          },
+          "2": {
+            "width": 640,
+            "height": 360,
+            "different_channels": 0,
+            "max_difference": 0
+          }
+        }
+      }
+    },
+    "scratch_script_sha256": "2fc47e38fe0454b858e51c70fc24ba6cab3ed326da9c06e04d5f4bd56f0e499a",
+    "result": "MuPDF pixels were identical at 1x and 2x for both samplers. This rejects a simple Interpolate flag change in these controls only."
+  },
+  "vectorized_brush_row_control": {
+    "scope": "Synthetic one-dab SVG versus PDF consumer experiment; source SVG is a comparison baseline, not a native pixel oracle.",
+    "tools": {
+      "svg": "resvg 0.45.1",
+      "pdf": "MuPDF 1.28.2"
+    },
+    "generator_path_at_capture": "/tmp/sdocx-pencil3-transport-probe/vectorize-brush-row.py",
+    "generator_sha256": "7335bdf61843f5ab796a172e52d7061c1d187ccde3087c7c837296d88dcdf996",
+    "artifact_sha256": {
+      "brush-integer": {
+        "svg": "1b382331f51ef57297a67e4c3be43ab9b9b7e30089bcbe42557cc5c5d405434c",
+        "pdf": "323360ecb69ca5bfc02f58650b40b2f730162dd1c93a50b4cecbe3a97ac81b63"
+      },
+      "brush-integer-vector-row": {
+        "svg": "d53bbb490f43d174637ca998e90b159a0b7bdc1c0e13489d8fed3b93e345c25d",
+        "pdf": "468a61d3c686c6f4750b84436c869b9093006383a0a73c3e29d230ba4e3bc1e0"
+      },
+      "brush-integer-vector-crisp": {
+        "svg": "f86facb303cbdd235d729676ec69c48df984dc62b93682134f834f1da47d23f3",
+        "pdf": "468a61d3c686c6f4750b84436c869b9093006383a0a73c3e29d230ba4e3bc1e0"
+      }
+    },
+    "geometry": "One 24x24 dab on a 64x64 page, integer phase; white background; interior excludes two source units from each edge. 120x120 atlas row represented by 6043 horizontal opacity rectangles.",
+    "columns": ["scale", "variant", "svg_vs_pdf_interior_rgb_mae", "svg_vs_pdf_max", "pdf_vs_original_svg_interior_rgb_mae", "pdf_bytes"],
+    "results": [
+      [1, "brush-integer", 10.037, 67, 10.037, 74126],
+      [1, "brush-integer-vector-row", 17.188, 45, 34.013, 93557],
+      [1, "brush-integer-vector-crisp", 34.013, 111, 34.013, 93557],
+      [2, "brush-integer", 4.523, 41, 4.523, 74126],
+      [2, "brush-integer-vector-row", 7.482, 23, 25.227, 93557],
+      [2, "brush-integer-vector-crisp", 25.227, 95, 25.227, 93557]
+    ],
+    "conclusion": "This vector-row alternative increased PDF error against the existing source SVG in these controls; do not infer which renderer matches native without a native one-dab capture."
   }
 }
