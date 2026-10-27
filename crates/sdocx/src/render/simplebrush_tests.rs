@@ -101,7 +101,7 @@ fn size_four_admits_three_and_four_points() {
 }
 
 #[test]
-fn size_sixteen_admits_three_or_four_points() {
+fn size_sixteen_admits_five_points() {
     let mut source = stroke();
     source.pen_width = 16.0;
     source.rendering.as_mut().unwrap().style.pen_size = Some(16.0);
@@ -111,9 +111,9 @@ fn size_sixteen_admits_three_or_four_points() {
     assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     source.points.push(Point { x: 45.0, y: 35.0 });
     source.pressures.push(f64::from(0.4_f32));
-    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_err());
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     let doc = document(source);
-    assert_eq!(
+    assert_ne!(
         render_document_svg(&doc, &options()).remove(0).svg,
         render_document_svg(&doc, &RenderOptions::default())
             .remove(0)
@@ -122,7 +122,7 @@ fn size_sixteen_admits_three_or_four_points() {
 }
 
 #[test]
-fn six_point_admission_is_bounded_to_captured_sizes() {
+fn profile_accepts_six_points_across_captured_sizes() {
     let mut source = stroke();
     for point in [
         Point { x: 39.0, y: 31.0 },
@@ -135,12 +135,17 @@ fn six_point_admission_is_bounded_to_captured_sizes() {
     for size in [4.0, 8.0, 12.0, 16.0] {
         source.pen_width = size;
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
-        assert_eq!(
-            crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok(),
-            size == 4.0 || size == 16.0
-        );
+        assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     }
-    source.points.push(Point { x: 60.0, y: 42.0 });
+    for i in 6..16 {
+        source.points.push(Point {
+            x: 60.0 + (i as f64) * 8.0,
+            y: 42.0,
+        });
+        source.pressures.push(f64::from(0.4_f32));
+    }
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
+    source.points.push(Point { x: 200.0, y: 42.0 });
     source.pressures.push(f64::from(0.4_f32));
     assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_err());
 }

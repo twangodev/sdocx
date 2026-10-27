@@ -318,10 +318,7 @@ pub(crate) fn prepare_stroke(
     {
         return Err("unsupported SimpleBrush size");
     }
-    if !(matches!(stroke.points.len(), 3 | 4)
-        || (stroke.points.len() == 6 && matches!(size.to_bits(), 0x4080_0000 | 0x4180_0000)))
-        || stroke.pressures.len() != stroke.points.len()
-    {
+    if !(3..=16).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -695,7 +692,7 @@ mod tests {
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
     #[cfg(feature = "pdf")]
-    fn v25_paint_control(size: u32, four: bool, alt: bool, six: bool) {
+    fn v25_paint_control(size: u32, four: bool, alt: bool, six: bool, probe: usize) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -706,6 +703,11 @@ mod tests {
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
         let native: &[u8] = match (four, size) {
+            _ if probe == 5 => include_bytes!("../../../../conformance/simplebrush-5-8-crop.rgba"),
+            _ if probe == 7 => include_bytes!("../../../../conformance/simplebrush-7-12-crop.rgba"),
+            _ if probe == 16 => {
+                include_bytes!("../../../../conformance/simplebrush-16-8-crop.rgba")
+            }
             (_, 4) if six => {
                 include_bytes!("../../../../conformance/simplebrush-six-size4-crop.rgba")
             }
@@ -745,6 +747,9 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 5 => include_str!("../../../../conformance/simplebrush-5-8.json"),
+            _ if probe == 7 => include_str!("../../../../conformance/simplebrush-7-12.json"),
+            _ if probe == 16 => include_str!("../../../../conformance/simplebrush-16-8.json"),
             (_, 4) if six => include_str!("../../../../conformance/simplebrush-six-size4.json"),
             (_, 16) if six => include_str!("../../../../conformance/simplebrush-six-size16.json"),
             (true, 16) if alt => {
@@ -778,7 +783,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             format!("{:x}", Sha256::digest(native)),
-            (if six {
+            (if six || probe != 0 {
                 &receipt["crop"]["sha256"]
             } else {
                 &receipt["paint_observation"]["crop"]["sha256"]
@@ -786,7 +791,15 @@ mod tests {
             .as_str()
             .unwrap()
         );
-        let points: &[[f32; 2]] = if six {
+        let probe_points: Vec<[f32; 2]> = (0..probe)
+            .map(|i| [(i * 8) as f32, (4 + (i % 3) * 4) as f32])
+            .collect();
+        let probe_pressures: Vec<f32> = (0..probe)
+            .map(|i| [0.25, 0.5, 0.75, 0.375][i % 4])
+            .collect();
+        let points: &[[f32; 2]] = if probe != 0 {
+            &probe_points
+        } else if six {
             &[
                 [0., 0.],
                 [10., 0.],
@@ -802,7 +815,9 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if six {
+        let pressures: &[f32] = if probe != 0 {
+            &probe_pressures
+        } else if six {
             &[0.5, 0.25, 0.75, 0.4, 0.6, 0.3]
         } else if four {
             &[0.5, 0.25, 0.75, 0.4]
@@ -810,6 +825,9 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 5 => 273,
+            _ if probe == 7 => 574,
+            _ if probe == 16 => 985,
             (_, 4) if six => 211,
             (_, 16) if six => 623,
             (false, 4) => 80,
@@ -825,7 +843,9 @@ mod tests {
             _ => unreachable!(),
         };
         let size = size as f32;
-        let (crop_width, crop_height) = if six {
+        let (crop_width, crop_height) = if probe != 0 {
+            (144, 32)
+        } else if six {
             (64, 32)
         } else if four || size == 16.0 {
             (40, 20)
@@ -835,7 +855,9 @@ mod tests {
         let samples = reconstruct(points, pressures, size, 2, true).unwrap();
         assert_eq!(
             samples.len(),
-            if six && size == 4.0 {
+            if probe != 0 {
+                receipt["geometry_count"].as_u64().unwrap() as usize
+            } else if six && size == 4.0 {
                 36
             } else if six {
                 24
@@ -860,9 +882,18 @@ mod tests {
             .flatten()
             .flat_map(|value| value.to_le_bytes())
             .collect();
+        if probe != 0 {
+            let native_geometry: &[u8] = match probe {
+                5 => include_bytes!("../../../../conformance/simplebrush-5-8-geometry.bin"),
+                7 => include_bytes!("../../../../conformance/simplebrush-7-12-geometry.bin"),
+                16 => include_bytes!("../../../../conformance/simplebrush-16-8-geometry.bin"),
+                _ => unreachable!(),
+            };
+            assert_eq!(geometry, native_geometry);
+        }
         assert_eq!(
             format!("{:x}", Sha256::digest(&geometry)),
-            (if six {
+            (if six || probe != 0 {
                 &receipt["geometry_sha256"]
             } else {
                 &receipt["input"]["geometry_vector_sha256"]
@@ -995,7 +1026,7 @@ mod tests {
                 let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
                 let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
                 use std::io::Write as _;
-                let path = directory.join(format!("{name}-{size}-{four}-{alt}-{six}.pdf"));
+                let path = directory.join(format!("{name}-{size}-{four}-{alt}-{six}-{probe}.pdf"));
                 let mut file = std::fs::OpenOptions::new()
                     .write(true)
                     .create_new(true)
@@ -1079,7 +1110,9 @@ mod tests {
         );
         assert_eq!(
             candidate_metrics.2,
-            expected_support + usize::from(four && size == 12.0) * 2
+            expected_support
+                + usize::from((four && size == 12.0) || probe == 7) * 2
+                + usize::from(probe == 16)
         );
         assert!(
             candidate_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * candidate_metrics.1
@@ -1094,8 +1127,16 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn six_point_public_paint_controls() {
-        v25_paint_control(4, false, false, true);
-        v25_paint_control(16, false, false, true);
+        v25_paint_control(4, false, false, true, 0);
+        v25_paint_control(16, false, false, true, 0);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn longer_public_paint_controls() {
+        v25_paint_control(8, false, false, false, 5);
+        v25_paint_control(12, false, false, false, 7);
+        v25_paint_control(8, false, false, false, 16);
     }
 
     #[test]
@@ -1127,35 +1168,35 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size4_paint_control() {
-        v25_paint_control(4, false, false, false);
+        v25_paint_control(4, false, false, false, 0);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size16_paint_control() {
-        v25_paint_control(16, false, false, false);
+        v25_paint_control(16, false, false, false, 0);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(8, false, false, false);
+        v25_paint_control(8, false, false, false, 0);
     }
 
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_size12_candidate_and_generic_fallback_against_host_paint() {
-        v25_paint_control(12, false, false, false);
+        v25_paint_control(12, false, false, false, 0);
     }
     #[cfg(feature = "pdf")]
     #[test]
     fn v25_four_point_paint_control() {
-        v25_paint_control(4, true, false, false);
-        v25_paint_control(4, true, true, false);
-        v25_paint_control(8, true, false, false);
-        v25_paint_control(12, true, false, false);
-        v25_paint_control(16, true, false, false);
-        v25_paint_control(16, true, true, false);
+        v25_paint_control(4, true, false, false, 0);
+        v25_paint_control(4, true, true, false, 0);
+        v25_paint_control(8, true, false, false, 0);
+        v25_paint_control(12, true, false, false, 0);
+        v25_paint_control(16, true, false, false, 0);
+        v25_paint_control(16, true, true, false, 0);
     }
 }
 

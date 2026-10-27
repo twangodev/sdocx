@@ -1,0 +1,30 @@
+{
+  "scope": "Synthetic ObjectStroke, emulated native Drawing and explicit host queue, Mesa GLES; not device capture. Shared boundaries: simplebrush-paint-v25-size4.json.",
+  "points": [[0, 4], [8, 8], [16, 12], [24, 4], [32, 8]],
+  "pressures": [0.25, 0.5, 0.75, 0.375, 0.25],
+  "size": 8,
+  "geometry_count": 20,
+  "geometry_sha256": "f8ca8b3d98f3225d249727bfb28f6002f58e4a6d270b2e4ad0aaee2483a90e50",
+  "full_frame_sha256": "6db2c0458fcdaf017ea8371f01a00a9ee6a7980f41cf6fd59b1e6953a926188d",
+  "crop": {
+    "path": "simplebrush-5-8-crop.rgba",
+    "dimensions": [144, 32],
+    "sha256": "408857a3ecbd53f78fee79aff047a0d88b8ce0daa0bbf3ac56ee4c0517d61128",
+    "nonzero_alpha_pixels": 273
+  },
+  "paint_clean": true,
+  "capture_scripts": ["tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-5-source-capture.py", "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-5-paint-capture.py"],
+  "public_output_comparison": {
+    "metrics_order": ["support_intersection", "support_union", "output_support", "absolute_alpha_error", "absolute_rgba_error"],
+    "native_crop": "144x32 bottom-left transparent RGBA",
+    "pdf_renderer": "PyMuPDF rasterized at 4/3 scale to 1920x1080",
+    "svg_profiled": [273, 273, 273, 1881, 5572],
+    "svg_fallback": [116, 273, 116, 36634, 104958],
+    "pdf_profiled": [241, 278, 246, 7649, 21954],
+    "pdf_fallback": [123, 273, 123, 37051, 106233]
+  },
+  "capture_script_sha256": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-5-source-capture.py": "3f5b194b121f3a5038400f4582bcb09802a96388962e9204c337634dbe39e275",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-5-paint-capture.py": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4"
+  }
+}
