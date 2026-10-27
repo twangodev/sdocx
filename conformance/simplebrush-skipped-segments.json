@@ -1,5 +1,5 @@
 {
-  "scope": "Synthetic saved ObjectStroke native Drawing and selected RedrawPen under explicit host profile; geometry only, no device or paint parity. Last short segment remains unsupported.",
+  "scope": "Synthetic saved ObjectStroke native Drawing and selected RedrawPen under explicit host profile; geometry only, no device or paint parity.",
   "cases": [
     {
       "case": "duplicate",

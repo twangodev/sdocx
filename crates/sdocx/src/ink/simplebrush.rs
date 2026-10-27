@@ -196,7 +196,17 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
             let current = points[index];
             if (current[0] - previous[0]).abs() < 1.5 && (current[1] - previous[1]).abs() < 1.5 {
                 if index == points.len() - 1 {
-                    return Err("unsupported SimpleBrush short terminal movement");
+                    if accepted_points.len() < 3 {
+                        return Err("unsupported SimpleBrush short movement sequence");
+                    }
+                    return generate_with_terminal(
+                        &accepted_points,
+                        &accepted_pressures,
+                        size,
+                        tool_type,
+                        max_samples,
+                        Some((current, pressures[index])),
+                    );
                 }
                 skipped = true;
             } else {
@@ -219,6 +229,17 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         }
     }
 
+    generate_with_terminal(points, pressures, size, tool_type, max_samples, None)
+}
+
+fn generate_with_terminal(
+    points: &[[f32; 2]],
+    pressures: &[f32],
+    size: f32,
+    tool_type: i32,
+    max_samples: usize,
+    short_terminal: Option<([f32; 2], f32)>,
+) -> Result<Vec<[f32; 3]>, &'static str> {
     let mut previous_pressure = if tool_type == 1 {
         0.5
     } else {
@@ -293,7 +314,11 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
     }
 
     let last = points.len() - 1;
-    let terminal_pressure = pressure_step(previous_pressure, pressures[last], tool_type);
+    let terminal_pressure = pressure_step(
+        previous_pressure,
+        short_terminal.map_or(pressures[last], |(_, pressure)| pressure),
+        tool_type,
+    );
     let terminal_width = half_width(size, terminal_pressure);
     let terminal_start_width = edge_pair
         .map(edge_pair_width)
@@ -306,7 +331,11 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         x: points[last][0],
         y: points[last][1],
     };
-    let curve = Quad::new(midpoint(a, b), a, b);
+    let end = short_terminal.map_or(b, |(point, _)| P {
+        x: point[0],
+        y: point[1],
+    });
+    let curve = Quad::new(midpoint(a, b), a, end);
     append_path(
         &curve,
         terminal_start_width,
@@ -440,6 +469,31 @@ mod tests {
     const ORACLE: &[u8] = include_bytes!("../../../../conformance/simplebrush-native.bin");
 
     #[test]
+    fn short_terminal_geometry_matches_native() {
+        let cases: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-short-terminal-geometry.json"
+        ))
+        .unwrap();
+        for case in cases.as_array().unwrap() {
+            let points: Vec<[f32; 2]> = serde_json::from_value(case["points"].clone()).unwrap();
+            let pressures: Vec<f32> = serde_json::from_value(case["pressures"].clone()).unwrap();
+            let size = case["size"].as_f64().unwrap() as f32;
+            let actual = reconstruct(&points, &pressures, size, 2, true).unwrap();
+            let expected = decode_hex(case["geometry_hex"].as_str().unwrap());
+            let expected: Vec<f32> = expected
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|v| f32::from_le_bytes(*v))
+                .collect();
+            assert_eq!(actual.len() * 3, expected.len(), "{}", case["case"]);
+            for (a, b) in actual.iter().flatten().zip(expected) {
+                assert!((a - b).abs() < 0.0001, "{}: {a} != {b}", case["case"]);
+            }
+        }
+    }
+
+    #[test]
     fn skipped_interior_segments_match_native_geometry() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/simplebrush-skipped-segments.json"
@@ -470,9 +524,7 @@ mod tests {
                 curve_enabled: true,
                 max_samples: 1000,
             });
-            if case["case"] == "last" {
-                assert!(result.is_err());
-            } else {
+            {
                 let bytes: Vec<u8> = result
                     .unwrap()
                     .iter()
@@ -510,6 +562,18 @@ mod tests {
         let mut invalid = input(14);
         invalid.points = &invalid_points;
         assert!(generate(invalid).is_err());
+        let terminal_points = [[0., 0.], [10., 0.], [20., 5.], [21., 6.]];
+        let terminal_pressures = [0.5, 0.25, 0.75, 0.4];
+        let terminal = |budget| NativeInput {
+            points: &terminal_points,
+            pressures: &terminal_pressures,
+            size: 4.,
+            tool_type: 2,
+            curve_enabled: true,
+            max_samples: budget,
+        };
+        assert!(generate(terminal(17)).is_err());
+        assert_eq!(generate(terminal(18)).unwrap().len(), 18);
         let huge_points = [[0., 0.], [f32::MAX, 0.], [20., 5.]];
         let mut invalid = input(14);
         invalid.points = &huge_points;
@@ -920,6 +984,12 @@ mod tests {
             (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
         );
         let native: &[u8] = match (four, size) {
+            _ if probe == 208 => {
+                include_bytes!("../../../../conformance/simplebrush-terminal-vertical-crop.rgba")
+            }
+            _ if probe == 207 => {
+                include_bytes!("../../../../conformance/simplebrush-terminal-crop.rgba")
+            }
             _ if probe == 205 => {
                 include_bytes!("../../../../conformance/simplebrush-first-skip-crop.rgba")
             }
@@ -1019,6 +1089,10 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 208 => {
+                include_str!("../../../../conformance/simplebrush-terminal-vertical.json")
+            }
+            _ if probe == 207 => include_str!("../../../../conformance/simplebrush-terminal.json"),
             _ if probe == 205 => {
                 include_str!("../../../../conformance/simplebrush-first-skip.json")
             }
@@ -1114,7 +1188,11 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if probe == 205 {
+        let points: &[[f32; 2]] = if probe == 208 {
+            &[[0., 0.], [0., 10.], [5., 20.], [6., 21.]]
+        } else if probe == 207 {
+            &[[0., 0.], [10., 0.], [20., 5.], [21., 6.]]
+        } else if probe == 205 {
             &[[0., 0.], [1., 1.], [10., 0.], [29., 11.]]
         } else if probe == 206 {
             &[[0., 0.], [10., 0.], [11., 1.], [10.5, 0.5], [29., 11.]]
@@ -1144,7 +1222,9 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if probe == 205 {
+        let pressures: &[f32] = if probe == 208 {
+            &[1., 1., 1., 1.]
+        } else if matches!(probe, 205 | 207) {
             &[0.5, 0.25, 0.75, 0.4]
         } else if probe == 206 {
             &[0.5, 0.25, 0.75, 0.9, 0.4]
@@ -1158,6 +1238,8 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 208 => 350,
+            _ if probe == 207 => 86,
             _ if probe == 205 => 223,
             _ if probe == 206 => 215,
             _ if probe == 201 || probe == 202 => 80,
@@ -1242,6 +1324,12 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if probe == 208 => include_bytes!(
+                    "../../../../conformance/simplebrush-terminal-vertical-geometry.bin"
+                ),
+                _ if probe == 207 => {
+                    include_bytes!("../../../../conformance/simplebrush-terminal-geometry.bin")
+                }
                 _ if probe == 205 => {
                     include_bytes!("../../../../conformance/simplebrush-first-skip-geometry.bin")
                 }
@@ -1545,6 +1633,8 @@ mod tests {
         for probe in [205, 206] {
             v25_paint_control(8, false, false, false, probe);
         }
+        v25_paint_control(4, false, false, false, 207);
+        v25_paint_control(16, false, false, false, 208);
     }
 
     #[cfg(feature = "pdf")]

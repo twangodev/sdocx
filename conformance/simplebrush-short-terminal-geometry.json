@@ -1,0 +1,183 @@
+[
+  {
+    "case": "sdocx-terminal-path4.json",
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        5.0
+      ],
+      [
+        21.0,
+        6.0
+      ]
+    ],
+    "pressures": [
+      0.5,
+      0.25,
+      0.75,
+      0.4000000059604645
+    ],
+    "size": 4.0,
+    "geometry_hex": "000000000000000066661e406685c53f0000000066661e40a69341400000000066661e40f8ff9f400000000066661e400000a0400000000066661e40d0ecd6408fd6963d935f1e40d1ec06418fd6963ec0581e40c34022418723293fec511e402a2b3c417141923f184b1e409415564182bbe03f45441e40fcff6f41f8ff1f40723d1e400000704100002040723d1e407b7657412684e23fb7f31d40303d6c41c5042440fca91d409df8834149df614042601d4087358e41d486874088161d40ee369a4145dfa140cdcc1c40fcffa741f7ffbf4012831c40",
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-path-capture.py",
+    "capture_script_sha256": "13fb25061cf30bc4034cb69be38400adb48d466843bd617ca7ab2e3940a51f3c"
+  },
+  {
+    "case": "sdocx-terminal-path8.json",
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        5.0
+      ],
+      [
+        21.0,
+        6.0
+      ]
+    ],
+    "pressures": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": 8.0,
+    "geometry_hex": "0000000000000000000040406685c53f0000000000004040a69341400000000000004040f8ff9f4000000000000040400000a0400000000000004040d0ecd6408fd6963d00004040d1ec06418fd6963e00004040c34022418723293f000040402a2b3c417141923f000040409415564182bbe03f00004040fcff6f41f8ff1f40000040400000704100002040030040407b7657412684e23f02004040303d6c41c5042440020040409df8834149df61400200404087358e41d486874002004040ee369a4145dfa14002004040fcffa741f7ffbf4002004040",
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-path-capture.py",
+    "capture_script_sha256": "13fb25061cf30bc4034cb69be38400adb48d466843bd617ca7ab2e3940a51f3c"
+  },
+  {
+    "case": "sdocx-terminal-path16.json",
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -10.0,
+        0.0
+      ],
+      [
+        -20.0,
+        -5.0
+      ],
+      [
+        -21.0,
+        -6.0
+      ]
+    ],
+    "pressures": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "size": 16.0,
+    "geometry_hex": "0000000000000000000010416685c5bf0000000000001041a69341c00000000000001041f8ff9fc000000000000010410000a0c00000000000001041d1ec06c18fd696be000010412a2b3cc1714192bf00001041fcff6fc1f8ff1fc000001041000070c1000020c001001041303d6cc1c50424c00100104187358ec1d48687c001001041fcffa7c1f7ffbfc001001041",
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-reverse-path-capture.py",
+    "capture_script_sha256": "908bcceb50972385764b07e768925c73b9ce20dded70f426f053809ef27ca0b1"
+  },
+  {
+    "case": "sdocx-terminal-path-interior.json",
+    "points": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        10.5,
+        0.5
+      ],
+      [
+        20.0,
+        5.0
+      ],
+      [
+        21.0,
+        6.0
+      ]
+    ],
+    "pressures": [
+      0.5,
+      0.25,
+      0.8999999761581421,
+      0.75,
+      0.4000000059604645
+    ],
+    "size": 8.0,
+    "geometry_hex": "0000000000000000cdcc7c406685c53f00000000cdcc7c40a693414000000000cdcc7c40f8ff9f4000000000cdcc7c400000a04000000000cdcc7c403963f24060b1293e52b87c40c34022418723293fd7a37c40602049412f65b73f5c8f7c40fcff6f41f8ff1f40e17a7c400000704100002040e07a7c406aa96241c82c0e40b19d7b409df8834149df614082c07a4046fd9341043a944053e37940fcffa741f7ffbf4024067940",
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "capture_script": "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-interior-path-capture.py",
+    "capture_script_sha256": "ec462b44737f8633bff7bf534550604e4563ae10ab77747ae32f86272953f35a"
+  }
+]

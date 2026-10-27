@@ -1,0 +1,66 @@
+{
+  "scope": "Synthetic native Drawing and host Mesa GLES capture; not device parity",
+  "geometry_count": 18,
+  "geometry_sha256": "86e4c12ee82d8ad4f6cd2324dde8e0679eb7443c27cce1423bc5cdfc9e9b67be",
+  "crop": {
+    "sha256": "78761d5bd220080a438fe6b49bb5b604c563275c2716b111e405890f3ab4f7a1",
+    "dimensions": [
+      144,
+      32
+    ],
+    "nonzero_alpha_pixels": 86
+  },
+  "full_frame_sha256": "efbf2a01a90397547836d236d8927f92566bbb3f8f72e424c42ddf9a4ccf1bb3",
+  "paint_clean": true,
+  "svg_comparison": {
+    "metrics_order": [
+      "intersection",
+      "union",
+      "support",
+      "absolute_alpha_error",
+      "absolute_rgba_error"
+    ],
+    "profiled": [
+      86,
+      86,
+      86,
+      750,
+      2189
+    ],
+    "fallback": [
+      34,
+      86,
+      34,
+      14067,
+      40299
+    ]
+  },
+  "pdf_comparison": {
+    "rasterizer": "PyMuPDF 1.28.2, 4/3 scale, alpha",
+    "metrics_order": [
+      "intersection",
+      "union",
+      "support",
+      "absolute_alpha_error",
+      "absolute_rgba_error"
+    ],
+    "profiled": [
+      75,
+      87,
+      76,
+      3166,
+      9074
+    ],
+    "fallback": [
+      34,
+      86,
+      34,
+      13807,
+      39593
+    ]
+  },
+  "capture_scripts": {
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-path-capture.py": "13fb25061cf30bc4034cb69be38400adb48d466843bd617ca7ab2e3940a51f3c",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-terminal-paint-capture.py": "c7d46c58f349ad6437c6757a6b4aa090c7c6f8ce1af9baedda3b9711242a1d7f"
+  }
+}
