@@ -815,6 +815,16 @@ page's dimensions do not determine it; an experimental centerline profile would
 need an explicit source for the PenData resolution rather than infer it from
 page export size.
 
+The opt-in Marker centerline route also accepts explicit empty advanced settings
+when saved ARGB is present. In five [paired host controls](../../conformance/legacy-marker-empty-setting-host-pairs.json),
+null settings select native GLV1 and empty settings select GLV2; all draw-prefix
+frames and uploaded geometry buffers match between each pair. The controls cover
+straight, bent and longer strokes, multiple colors/alphas and a verified 2× host
+projection override. Public empty-setting SVG/PDF RGB L1 improves over fallback
+in all five comparisons. The default generic route is unchanged; absent-color
+empty settings and other settings retain fallback. These are synthetic host-Mesa
+controls, not native PDF, Android zoom or device parity.
+
 An explicit `LegacyMarkerCenterlineProfile` now lets a caller provide the
 PenData screen dimensions for an experimental vector approximation. It uses
 the recovered centerline only for guarded legacy Marker metadata and supported
@@ -843,3 +853,14 @@ not admitted to production. The ignored scratch scripts
 `tmp/marker-triangle-export`, retain the experiment. The generated-mesh export
 requires temporarily including the scratch Rust test in the mesh module; remove
 that include after running it. Render comparisons do not establish device parity.
+
+The direct MuPDF SVG black pixels were traced to its handling of SVG linear
+gradients: a standalone gradient also rendered black. A gradient-free scratch
+variant subdivides fringe triangles and cap UV into constant-opacity bands.
+At two bands, straight/bend white RGB L1 was 5495/4161 in resvg, 4071/3641
+in direct MuPDF SVG, and 6086/4679 in public PDF rasterization. Four and eight
+bands increased error on these controls, consistent with antialiased band seams.
+Even two bands produced 35/77 KB SVG and 82/186 KB PDF per stroke, and only
+the four-point mesh is source-generated. This remains a diagnostic, not a
+scalable general-stroke implementation. The ignored
+`scratch/legacy-marker-triangle-band-probe.py` retains the band experiment.

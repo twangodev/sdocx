@@ -4141,6 +4141,18 @@ fn render_stroke(
     {
         paint.points = Cow::Owned(points);
         paint.sample_ends = None;
+        if let Some((argb, size)) = stroke.rendering.as_ref().and_then(|r| {
+            if r.advanced_settings.as_deref() == Some("") {
+                Some((r.style.color_argb?, r.style.pen_size?))
+            } else {
+                None
+            }
+        }) {
+            paint.width = f64::from(size.clamp(0.4, 800.0).trunc());
+            paint.segment_widths = None;
+            paint.opacity = f64::from(argb >> 24) / 255.0;
+            paint.color = theme.foreground(stroke.color.or(Some(argb_rgb(argb))));
+        }
     }
     if native_allowed
         && paint.profile == Some("FountainPen")

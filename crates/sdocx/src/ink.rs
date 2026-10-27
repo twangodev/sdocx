@@ -814,10 +814,20 @@ pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
 // The captured Marker controls use saved ARGB alpha; absent color resolves to
 // the native Model's opaque-black default. Geometry remains approximate.
 pub(crate) fn saved_legacy_marker_argb(stroke: &Stroke) -> Option<u32> {
+    legacy_marker_argb(stroke, false)
+}
+
+pub(crate) fn legacy_marker_profile_argb(stroke: &Stroke) -> Option<u32> {
+    legacy_marker_argb(stroke, true)
+}
+
+fn legacy_marker_argb(stroke: &Stroke, allow_explicit_empty: bool) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Marker")
-        || rendering.advanced_settings.is_some()
+        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
+        || (rendering.advanced_settings.is_some()
+            && (!allow_explicit_empty || rendering.style.color_argb.is_none()))
         || rendering.tool_type_raw != 2
         || !properties.compressed
         || properties.replay_only

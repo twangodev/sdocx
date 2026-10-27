@@ -386,3 +386,111 @@ fn profile_improves_varied_screen_native_control() {
         1
     );
 }
+
+#[test]
+fn explicit_empty_setting_uses_only_opt_in_profile_for_observed_colors() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/legacy-marker-empty-setting-host-pairs.json"
+    ))
+    .unwrap();
+    let blob = include_bytes!("../../../conformance/legacy-marker-empty-setting-sparse-rgba8.bin");
+    let doc = sdocx::parse_bytes(include_bytes!(
+        "assets/legacy-marker/synthetic-serialized.sdocx"
+    ))
+    .unwrap();
+    let original = doc.pages[0].strokes().next().unwrap();
+    let fallback = sdocx::RenderOptions::default();
+    let mut profile = fallback.clone();
+    profile.legacy_marker_centerline_profile = Some(sdocx::LegacyMarkerCenterlineProfile {
+        screen_width: 1920,
+        screen_height: 1080,
+    });
+    for case in receipt["pairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["name"] != "bend-scale2")
+    {
+        assert_eq!(case["null_selected_version"], 1);
+        assert_eq!(case["empty_selected_version"], 2);
+        let mut stroke = original.clone();
+        stroke.points = points(
+            case["input"]["source_arrays_hex"]["points"]
+                .as_str()
+                .unwrap(),
+        );
+        stroke.pressures = vec![0.5; stroke.points.len()];
+        stroke.pen_width = 12.0;
+        let argb = u32::from_str_radix(
+            case["input"]["color_argb"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        stroke.color = Some(sdocx::Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        });
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = Some(String::new());
+        rendering.style.pen_size = Some(12.0);
+        rendering.style.color_argb = Some(argb);
+        // The default generic helper deliberately remains unchanged for empty settings.
+        let generic = sdocx::prepare_stroke(&stroke, false);
+        assert_eq!(generic.opacity, 1.0);
+        assert!((generic.width - 4.8).abs() < 1e-12);
+        let mut page = doc.pages[0].clone();
+        page.objects = vec![sdocx::PageObject::from(stroke)];
+        page.width = 1920;
+        page.height = 1080;
+        page.template = None;
+        page.background = Default::default();
+        page.background_color = None;
+        let isolated = sdocx::Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let old = sdocx::render_document_svg(&isolated, &fallback).remove(0);
+        let new = sdocx::render_document_svg(&isolated, &profile).remove(0);
+        let off = case["sparse_offset"].as_u64().unwrap() as usize;
+        let len = case["sparse_bytes"].as_u64().unwrap() as usize;
+        assert!(
+            native_error(&new.svg, &blob[off..off + len])
+                < native_error(&old.svg, &blob[off..off + len]),
+            "{}",
+            case["name"]
+        );
+        let old_pdf =
+            sdocx::render_document_pdf(&isolated, &fallback, &sdocx::PdfOptions::default())
+                .unwrap();
+        let new_pdf =
+            sdocx::render_document_pdf(&isolated, &profile, &sdocx::PdfOptions::default()).unwrap();
+        assert_ne!(old_pdf, new_pdf);
+        assert_eq!(
+            lopdf::Document::load_mem(&new_pdf)
+                .unwrap()
+                .get_pages()
+                .len(),
+            1
+        );
+        for setting in [None, Some("unknown")] {
+            let mut invalid = isolated.clone();
+            let stroke = match &mut invalid.pages[0].objects[0].content {
+                sdocx::PageObjectContent::Stroke(s) => s,
+                _ => unreachable!(),
+            };
+            if let Some(value) = setting {
+                stroke.rendering.as_mut().unwrap().advanced_settings = Some(value.into());
+            } else {
+                stroke.rendering.as_mut().unwrap().style.color_argb = None;
+            }
+            assert_eq!(
+                sdocx::render_document_svg(&invalid, &fallback)[0].svg,
+                sdocx::render_document_svg(&invalid, &profile)[0].svg
+            );
+        }
+    }
+}

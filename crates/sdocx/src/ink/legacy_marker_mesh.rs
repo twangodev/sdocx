@@ -684,7 +684,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke, screen: [u32; 2]) -> Option<Vec<cr
                 || p.x.abs() > 10_000_000.0
                 || p.y.abs() > 10_000_000.0
         })
-        || super::saved_legacy_marker_argb(stroke).is_none()
+        || super::legacy_marker_profile_argb(stroke).is_none()
     {
         return None;
     }
