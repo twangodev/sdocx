@@ -330,15 +330,39 @@ fn sector_centerline(points: [Point; 3], count: usize) -> Option<Vec<Point>> {
     Some(samples)
 }
 
-// Four-point host controls with the observed size-based GLV1 move filter.
+// The observed size-based GLV1 move filter and RT curve state.
 // The display-dependent filter and degenerate event sequences are unsupported.
-fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
-    let threshold = size * 0.4;
+fn source_centerline(
+    points: &[Point],
+    size: f32,
+    pen_data_dimensions: [u32; 2],
+) -> Option<Vec<Point>> {
+    if points.len() < 3 {
+        return None;
+    }
+    if !size.is_finite() {
+        return None;
+    }
+    let threshold = size.clamp(0.4, 800.0) * 0.4;
+    let cap_length = size.clamp(0.4, 800.0).trunc() * 0.4;
     let mut moves = Vec::new();
     let mut last = points[0];
-    for &point in &points[1..3] {
+    for &point in &points[1..points.len() - 1] {
         let delta = sub(point, last);
-        if delta[0].abs() > threshold || delta[1].abs() > threshold {
+        // This models the observed bool=false call path; dimensions come from
+        // PenData and must not be inferred from an arbitrary export viewport.
+        let short_side = pen_data_dimensions[0].min(pen_data_dimensions[1]);
+        let display_factor = if short_side == 0 {
+            1.0
+        } else {
+            short_side as f32 / 360.0
+        };
+        let move_threshold = if moves.is_empty() {
+            threshold
+        } else {
+            1.5 * display_factor
+        };
+        if delta[0].abs() > move_threshold || delta[1].abs() > move_threshold {
             moves.push(point);
             last = point;
         }
@@ -346,7 +370,7 @@ fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
     let first = *moves.first()?;
     let first_delta = sub(first, points[0]);
     let (mut previous_normal, mut previous_length) = normal(first_delta)?;
-    let start = add(points[0], scale(first_delta, threshold / previous_length));
+    let start = add(points[0], scale(first_delta, cap_length / previous_length));
     let mut curve_end = mid(start, first);
     let mut curves = vec![[start, mid(start, curve_end), curve_end]];
     let mut normals = vec![[previous_normal, previous_normal]];
@@ -383,8 +407,9 @@ fn source_centerline(points: [Point; 4], size: f32) -> Option<Vec<Point>> {
         return None;
     }
     let tail = q.at(q.length - 1.0);
-    let (end_normal, end_length) = normal(sub(points[3], current))?;
-    curves.push([[tail.x, tail.y], current, points[3]]);
+    let final_point = *points.last()?;
+    let (end_normal, end_length) = normal(sub(final_point, current))?;
+    curves.push([[tail.x, tail.y], current, final_point]);
     normals.push([previous_normal, end_normal]);
     lengths.push([previous_length, end_length]);
     let mut output = Vec::new();
@@ -447,15 +472,38 @@ fn source_centerline_matches_native_controls_including_skipped_move() {
         "../../../../conformance/legacy-marker-skipped-center-control.json"
     ))
     .unwrap();
-    for case in ["straight", "bend", "reverse", "turn", "skipped", "repeat"] {
+    let long: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-long-native-controls.json"
+    ))
+    .unwrap();
+    for case in [
+        "straight",
+        "bend",
+        "reverse",
+        "turn",
+        "mirrored",
+        "skipped",
+        "repeat",
+        "long-skipped",
+        "long-turns",
+    ] {
         let input = if case == "reverse" {
             &trace["circle_controls"][0]["source_arrays_hex"]["points"]
         } else if case == "turn" {
             &sector["input"]["source_arrays_hex"]["points"]
+        } else if case == "mirrored" {
+            &sector["mirrored"]["input"]["source_arrays_hex"]["points"]
         } else if case == "skipped" {
             &skipped["input"]["source_arrays_hex"]["points"]
         } else if case == "repeat" {
             &skipped["repeat_control"]["input"]["source_arrays_hex"]["points"]
+        } else if case.starts_with("long-") {
+            &long["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["name"] == case)
+                .unwrap()["input"]["source_arrays_hex"]["points"]
         } else {
             &geometry["cases"][case]["input"]["source_arrays_hex"]["points"]
         };
@@ -473,13 +521,49 @@ fn source_centerline_matches_native_controls_including_skipped_move() {
             .iter()
             .map(|b| f32::from_le_bytes(*b))
             .collect();
-        let points: [Point; 4] = floats.as_chunks::<2>().0.try_into().unwrap();
-        let predicted = source_centerline(points, 12.0).unwrap();
-        let expected = if matches!(case, "reverse" | "turn" | "skipped" | "repeat") {
+        let points = floats.as_chunks::<2>().0;
+        let predicted = source_centerline(points, 12.0, [1920, 1080]).unwrap();
+        let expected = if case.starts_with("long-") {
+            let row = long["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["name"] == case)
+                .unwrap()["native_mesh_vector_outputs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .rev()
+                .find(|r| {
+                    r["method"].as_str().unwrap().contains("::mergePoints(") && r["stride"] == 8
+                })
+                .unwrap();
+            let hex = row["after_hex"].as_str().unwrap();
+            let bytes: Vec<u8> = hex
+                .as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|v| u8::from_str_radix(std::str::from_utf8(v).unwrap(), 16).unwrap())
+                .collect();
+            let values: Vec<f32> = bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes(*b))
+                .collect();
+            values
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|p| [(p[0] + p[2]) * 0.5, (p[1] + p[3]) * 0.5])
+                .collect::<Vec<_>>()
+        } else if matches!(case, "reverse" | "turn" | "mirrored" | "skipped" | "repeat") {
             let mut pairs = Vec::new();
             let receipt = match case {
                 "reverse" => &circle,
                 "turn" => &sector,
+                "mirrored" => &sector["mirrored"],
                 _ => &skipped,
             };
             for row in receipt["mesh_pairs"].as_array().unwrap() {
@@ -494,7 +578,8 @@ fn source_centerline_matches_native_controls_including_skipped_move() {
             }
             pairs
         } else {
-            let calls = geometry["cases"][case]["mesh_vector_outputs"]
+            let reference_case = if case == "long-skipped" { "bend" } else { case };
+            let calls = geometry["cases"][reference_case]["mesh_vector_outputs"]
                 .as_array()
                 .unwrap();
             let mut pairs = Vec::new();

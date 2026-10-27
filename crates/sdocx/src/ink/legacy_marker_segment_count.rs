@@ -272,13 +272,21 @@ fn move_filter_matches_native_axis_threshold_and_repeated_points() {
             .iter()
             .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
             .collect();
-        let threshold = case["size_f32"].as_f64().unwrap() as f32 * 0.4;
+        let first_threshold = case["size_f32"].as_f64().unwrap() as f32 * 0.4;
+        let later_threshold = 1.5 * (1080.0_f32 / 360.0);
+        let mut first_move = true;
         let mut last = points[0];
         let mut expected = vec![("0x32b94", last)];
         for &point in &points[1..points.len() - 1] {
+            let threshold = if first_move {
+                first_threshold
+            } else {
+                later_threshold
+            };
             if (point[0] - last[0]).abs() > threshold || (point[1] - last[1]).abs() > threshold {
                 expected.push(("0x32bc8", point));
                 last = point;
+                first_move = false;
             }
         }
         expected.push(("0x331a0", *points.last().unwrap()));

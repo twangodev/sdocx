@@ -542,6 +542,16 @@ original string table; other objects, pages and media are removed. It adapts
 by its contributors under CC BY 4.0. Its integrity trailers are not regenerated
 for Samsung loading.
 
+Two [six-point synthetic controls](../../conformance/legacy-marker-long-native-controls.json)
+cover multiple turns and short rejected moves. Two 0.5-unit intermediate moves
+are rejected by native GLV1; the resulting native vectors and frame match the
+corresponding four-point bend. A separate multi-turn stroke completes 12 queued
+tasks and records 21 native mesh-vector outputs. On the paired host-Mesa frame,
+generic SVG/PDF support intersections over unions are 311/425 and 311/427 for
+the skipped control, and 475/602 and 475/607 for the multi-turn control. These
+are 1× MuPDF comparisons of synthetic strokes with the explicit host matrix,
+not native PDF or Android-device parity.
+
 ### Quadratic subdivision controls
 
 Two synthetic native Model/Drawing controls exercise GLV1 and RTV1 with straight
@@ -721,17 +731,40 @@ resvg absolute RGBA error on bend, turn and reversal from 48998/21527/11923 to
 on the four controls. Other branch and paint coverage remain insufficient for production
 admission.
 
-The size-based GLV1 move filter compares each coordinate delta to `0.4 * size`
-and queues a move only when either absolute delta is strictly greater than that
-threshold. In six [queue controls](../../conformance/legacy-marker-move-filter-controls.json),
+Before the first accepted move, GLV1 compares each coordinate delta to
+`0.4 * size` and queues a move only when either absolute delta is strictly
+greater than that threshold. After acceptance it clears its first-move flag and
+uses the display-dependent threshold instead. In six [queue controls](../../conformance/legacy-marker-move-filter-controls.json),
 size-12 deltas below or equal to 4.8 were skipped, a 4.9 delta was accepted,
 and a diagonal `(4,4)` was skipped despite exceeding 4.8 in Euclidean length.
-A repeated final point still queued EndPen. These are queue-acceptance observations;
-they do not by themselves establish execution of every rejected-guard task. A
-separate [guarded dispatch receipt](../../conformance/legacy-marker-skipped-center-control.json)
+A repeated final point still queued EndPen. These queue observations do not by
+themselves establish execution of every rejected-guard task. For the captured
+bool-false path with PenData dimensions 1920 by 1080, the
+later threshold is `1.5 * min(1920,1080) / 360 = 4.5`; post-first-move queue
+controls reject 4.5 and accept 4.6. Static code selects a factor of 10 instead
+of 1.5 when the bool argument is true; that branch has not been runtime-tested.
+A separate [guarded dispatch receipt](../../conformance/legacy-marker-skipped-center-control.json)
 confirms the complete native output for one skipped move; replacing it with a
 repeated point produced identical native mesh and frame hashes. The test-only
-source-centerline model now follows this filter for those four-point controls
-and matches their center samples. The alternate GLV1 branch uses a
-viewport-dependent threshold, and repeated final points, missing moves, other
-root configurations and general-length state remain outside this centerline model.
+source-centerline model takes the PenData dimensions explicitly,
+follows the observed bool-false filter and matches the retained center samples.
+The true-bool branch, repeated final points, missing moves, other root
+configurations and arbitrary-length state remain outside the verified boundary.
+
+The mirrored sharp-turn sector is now included in the sector receipt and passes
+the test-only source-centerline comparison. On that control, generated-center
+round-polyline error decreased from 21608 to 17205 absolute RGBA units in resvg
+and from 20958 to 16966 in the SVG-to-PDF/PyMuPDF comparison. These are host
+controls and do not resolve native cap or compositing differences. A separate
+context trace shows native Drawing invoking two host context callbacks returning
+1920 and 1080, then calling `Pen::SetScreenResolution(1920,1080)` before GLV1
+reads those values. The callbacks are explicit synthetic context inputs, not
+proof that exported page dimensions equal a real device screen resolution.
+
+Independent cold strokes made from the first two and first three source points
+queue different native event sequences: the two-point case has StartPen then
+EndPen with no MovePen; the three-point case has one MovePen before EndPen. The
+two-point guarded paint completed with four draws. These are prefix controls,
+not an observed incremental replay session; the generated-centerline model does
+not yet reconstruct the no-MovePen case or replay cutoffs. Their queue and
+capture provenance is retained in the move-filter receipt.
