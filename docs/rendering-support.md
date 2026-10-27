@@ -350,7 +350,7 @@ saved ARGB and a caller-supplied display size; the default remains generic. The
 exact `18;0;100;` setting also admits the native opaque-black default when ARGB
 is absent, as observed in a synthetic serialized-frame derivative; this color
 is retained when geometry falls back.
-For fixed-width V4 strokes, the opt-in additionally admits fixed widths 0 through 200 for tools 0–4 in either curve mode. Synthetic Drawing and Mesa controls cover widths 0, 0.25, 0.5, 1, 3, 6, 12, 20, 30, 50, 100, and 200 and two geometries; all tools and curve modes are covered at width 6. Their complete geometry streams match, and public SVG and direct PDF comparisons reduce pixel error against these host captures. Other fixed widths remain on fallback. Its contour approximates native coverage, and V4 replay event boundaries and
+For fixed-width V4 strokes, the opt-in additionally admits fixed widths 0 through 200 for tools 0–4 in either curve mode. Synthetic Drawing and Mesa controls cover widths 0, 0.25, 0.5, 1, 3, 6, 12, 20, 30, 50, 100, and 200 and two geometries; all tools and curve modes are covered at width 6. Their complete geometry streams match, and public SVG and direct PDF comparisons reduce pixel error against these host captures. Widths outside that interval remain on fallback; intermediate widths are admitted but have not been individually captured. Its contour approximates native coverage, and V4 replay event boundaries and
 other output scales remain unverified.
 The numeric core matches twenty-one
 configured-context native redraw cases and four setter cases, including both

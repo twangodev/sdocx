@@ -1110,3 +1110,6 @@ does not prove production page fallback or PDF-library allocation bounds.
 The retained pipeline is `tmp/marker-owner-boolean/src/bin/source_to_plan.rs`
 and `clip_typed.inc`, using the neighboring source mesh and prepared-form
 modules.
+The typed scratch preparation now returns a precompiled Form and namespaced SVG
+carrier together, reserving both only after successful preparation; a focused
+page-budget rollback test passed. The carrier is still raw SVG, not Scene nodes.
