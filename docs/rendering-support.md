@@ -393,8 +393,10 @@ Without that option, InkPen2 and StraightInkPen2 retain the generic approximatio
 For normal-color StraightInkPen2 `9;` inputs the same opt-in profile is admitted.
 A [paired literal-name Drawing capture](../conformance/straightinkpen2-v9-alias-native.json)
 selects the same V9 drawable and matches all callback geometry for one synthetic
-control. Shared paint is inferred from the drawable; alias pixels, device output
-and other settings remain unverified. The V9 core
+control. A [paired host-Mesa paint capture](../conformance/straightinkpen2-v9-paired-paint-native.json)
+also matches the full RGBA frame and uploaded records after native Drawing and
+saved redraw for one synthetic color control. The target and replay are host-managed;
+application canvas composition, device output and other settings remain unverified. The V9 core
 matches every RTV3 float in three fresh, type-0 saved redraw cases. The [Drawing caller capture](../conformance/inkpen2-saved-caller-native.json)
 checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay

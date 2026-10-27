@@ -10445,6 +10445,99 @@ mod tests {
     }
 
     #[test]
+    fn straight_inkpen2_paired_host_paint_receipt() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/straightinkpen2-v9-paired-paint-native.json"
+        ))
+        .unwrap();
+        let producer = &receipt["producer"];
+        let uploads = producer["paired_upload_bytes_hex"].as_array().unwrap();
+        let decode_hex = |text: &str| -> Vec<u8> {
+            text.as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let bytes = decode_hex(uploads[0].as_str().unwrap());
+        assert_eq!(bytes, decode_hex(uploads[1].as_str().unwrap()));
+        assert_eq!(bytes.len(), producer["bytes"].as_u64().unwrap() as usize);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            producer["sha256"].as_str().unwrap()
+        );
+        let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+        stroke.points = vec![
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 8.0, y: 0.0 },
+            Point { x: 16.0, y: 3.0 },
+            Point { x: 24.0, y: 3.0 },
+        ];
+        stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+        stroke.timestamps = vec![0, 10, 20, 30];
+        stroke.tilts = vec![0.0; 4];
+        stroke.orientations = vec![0.0; 4];
+        let profile = InkPen2RenderProfile {
+            screen_width: 1440,
+            screen_height: 2560,
+            enhanced_antialias: false,
+        };
+        for name in ["InkPen2", "StraightInkPen2"] {
+            stroke.rendering.as_mut().unwrap().pen_name =
+                Some(format!("com.samsung.android.sdk.pen.pen.preload.{name}"));
+            let actual: Vec<u8> =
+                prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
+                    .unwrap()
+                    .records
+                    .iter()
+                    .flatten()
+                    .flat_map(|v| v.to_le_bytes())
+                    .collect();
+            assert_eq!(actual, bytes);
+        }
+
+        let readback = &receipt["readback"];
+        let frames: Vec<Vec<u8>> = readback["paired_full_bytes_zlib_base64"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|encoded| {
+                let compressed = base64::engine::general_purpose::STANDARD
+                    .decode(encoded.as_str().unwrap())
+                    .unwrap();
+                let mut frame = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .read_to_end(&mut frame)
+                    .unwrap();
+                frame
+            })
+            .collect();
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0], frames[1]);
+        assert_eq!(frames[0].len(), 128 * 96 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frames[0])),
+            readback["sha256"].as_str().unwrap()
+        );
+        assert_eq!(
+            frames[0]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|pixel| pixel.iter().any(|&c| c != 0))
+                .count(),
+            93
+        );
+        assert_eq!(receipt["drawable_versions"], serde_json::json!(["9", "9"]));
+        assert_eq!(receipt["gl_error_after_draw"], serde_json::json!([0, 0]));
+    }
+
+    #[test]
     fn inkpen2_profile_matches_compact_native_caller_streams_and_rejects_single_point() {
         let profile = InkPen2RenderProfile {
             screen_width: 1920,

@@ -1,0 +1,142 @@
+{
+  "schema": "sdocx-straightinkpen2-v9-paired-host-paint-v1",
+  "scope": "Synthetic native ObjectStroke Drawing selects a V9 drawable; a host-managed native RTV3 paint replay draws its saved RedrawPen records into a transparent 128x96 native RGBA bitmap using host Mesa. This is not Android, full application canvas composition, deserialization, or SVG/PDF output.",
+  "input": {
+    "advanced_getter_object_hex": "d0bf0e02000000004031041000000000f0bf0e02000000001000000002000000",
+    "advanced_getter_pointer_nonnull": true,
+    "advanced_getter_utf8": "9;",
+    "advanced_setting": "9;",
+    "advanced_setting_state": "9",
+    "color_argb_u32": 4281558681,
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+    "pen_size_f32_bits": "00008040",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00000000"
+      ],
+      [
+        "00000041",
+        "00000000"
+      ],
+      [
+        "00008041",
+        "00004040"
+      ],
+      [
+        "0000c041",
+        "00004040"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcc4c3e",
+      "cdcccc3e",
+      "9a99193f",
+      "cdcc4c3f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      10,
+      20,
+      30
+    ],
+    "tool_type": 2
+  },
+  "profile": {
+    "canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "height": 2560,
+    "width": 1440
+  },
+  "pen_names": [
+    "com.samsung.android.sdk.pen.pen.preload.InkPen2",
+    "com.samsung.android.sdk.pen.pen.preload.StraightInkPen2"
+  ],
+  "libraries": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "InkPen2": "61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "capture_script": "scratch/straightinkpen2-alias/inkpen2_joined_paint_native.py",
+  "drawable_versions": [
+    "9",
+    "9"
+  ],
+  "producer": {
+    "bytes": 900,
+    "sha256": "80ead21b09828b444750eda94ed3bbf2fb7c5628fcce575afc4cb9bfd543e436",
+    "all_draw_calls": [
+      [
+        5,
+        0,
+        4,
+        25
+      ]
+    ],
+    "paired_upload_bytes_hex": [
+      "f4fb7f3f00000000175d1440175d14409191913e0000803fcdcc4c3ecdcccc3e9a99193f678ce33f0000000074d1154074d115400aa4923e0000803fcdcc4c3ecdcccc3e9a99193f86c6314000000000d1451740d14517403bb1933e0000803fcdcc4c3ecdcccc3e9a99193ff4ff7f40000000002eba18402eba18404bb9943e0000803fcdcc4c3ecdcccc3e9a99193fb0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803fcdcc4c3ecdcccc3e9a99193f60e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803fcdcc4c3ecdcccc3e9a99193f105bde40fea9503eefca1a40efca1a40bd27963e0000803fcdcc4c3ecdcccc3e9a99193fc0cefd40a87ab93e21191b4021191b401a5d963e0000803fcdcc4c3ecdcccc3e9a99193f37a10e41d2e7103f53671b4053671b404192963e0000803fcdcc4c3ecdcccc3e9a99193f105b1e41fea9503f85b51b4085b51b4033c7963e0000803fcdcc4c3ecdcccc3e9a99193fe7142e41e8018e3fb7031c40b7031c40f0fb963e0000803fcdcc4c3ecdcccc3e9a99193fbfce3d41a87ab93fe9511c40e9511c407830973e0000803fcdcc4c3ecdcccc3e9a99193f9a884d415474e63f1da01c401da01c40cd64973e0000803fcdcc4c3ecdcccc3e9a99193f72425d417cdf0640e0ef1c40e0ef1c40f799973e0000803fcdcc4c3ecdcccc3e9a99193f49fc6c41e39e1740a23f1d40a23f1d40ebce973e0000803fcdcc4c3ecdcccc3e9a99193f21b67c4160782540648f1d40648f1d40a903983e0000803fcdcc4c3ecdcccc3e9a99193ffc378641f26b304027df1d4027df1d403238983e0000803fcdcc4c3ecdcccc3e9a99193fe8148e419a793840ea2e1e40ea2e1e40876c983e0000803fcdcc4c3ecdcccc3e9a99193fd4f1954157a13d40ac7e1e40ac7e1e40a6a0983e0000803fcdcc4c3ecdcccc3e9a99193fc0ce9d4129e33f406ece1e406ece1e4091d4983e0000803fcdcc4c3ecdcccc3e9a99193fe63aa74100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193fbdb9af4100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f8171b64100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193fc760bf4100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f0000c04100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f",
+      "f4fb7f3f00000000175d1440175d14409191913e0000803fcdcc4c3ecdcccc3e9a99193f678ce33f0000000074d1154074d115400aa4923e0000803fcdcc4c3ecdcccc3e9a99193f86c6314000000000d1451740d14517403bb1933e0000803fcdcc4c3ecdcccc3e9a99193ff4ff7f40000000002eba18402eba18404bb9943e0000803fcdcc4c3ecdcccc3e9a99193fb0739f40a87ab93c8b2e1a408b2e1a4060bc953e0000803fcdcc4c3ecdcccc3e9a99193f60e7be40a87ab93dbd7c1a40bd7c1a402af2953e0000803fcdcc4c3ecdcccc3e9a99193f105bde40fea9503eefca1a40efca1a40bd27963e0000803fcdcc4c3ecdcccc3e9a99193fc0cefd40a87ab93e21191b4021191b401a5d963e0000803fcdcc4c3ecdcccc3e9a99193f37a10e41d2e7103f53671b4053671b404192963e0000803fcdcc4c3ecdcccc3e9a99193f105b1e41fea9503f85b51b4085b51b4033c7963e0000803fcdcc4c3ecdcccc3e9a99193fe7142e41e8018e3fb7031c40b7031c40f0fb963e0000803fcdcc4c3ecdcccc3e9a99193fbfce3d41a87ab93fe9511c40e9511c407830973e0000803fcdcc4c3ecdcccc3e9a99193f9a884d415474e63f1da01c401da01c40cd64973e0000803fcdcc4c3ecdcccc3e9a99193f72425d417cdf0640e0ef1c40e0ef1c40f799973e0000803fcdcc4c3ecdcccc3e9a99193f49fc6c41e39e1740a23f1d40a23f1d40ebce973e0000803fcdcc4c3ecdcccc3e9a99193f21b67c4160782540648f1d40648f1d40a903983e0000803fcdcc4c3ecdcccc3e9a99193ffc378641f26b304027df1d4027df1d403238983e0000803fcdcc4c3ecdcccc3e9a99193fe8148e419a793840ea2e1e40ea2e1e40876c983e0000803fcdcc4c3ecdcccc3e9a99193fd4f1954157a13d40ac7e1e40ac7e1e40a6a0983e0000803fcdcc4c3ecdcccc3e9a99193fc0ce9d4129e33f406ece1e406ece1e4091d4983e0000803fcdcc4c3ecdcccc3e9a99193fe63aa74100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193fbdb9af4100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f8171b64100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193fc760bf4100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f0000c04100004040321e1f40321e1f404908993e0000803fcdcc4c3ecdcccc3e9a99193f"
+    ]
+  },
+  "readback": {
+    "width": 128,
+    "height": 96,
+    "format": "RGBA8",
+    "uncompressed_byte_count": 49152,
+    "sha256": "14769dce183957ff03d8115412a83dabf226ffa5e9b315845d62277e34006d99",
+    "baseline_all_zero": true,
+    "nonzero_pixels": 93,
+    "nonzero_bbox_xyxy": [
+      0,
+      0,
+      25,
+      4
+    ],
+    "paired_full_bytes_zlib_base64": [
+      "eNrt1E0rhFEUAGDGJFMWlFlISpIyMsz7LmQzO1lYWIiV2QzvjLLzC2wHZTGYd/wGO2s/w08g2fsoBk1TlK+U1eh56nRP93Y355xOWKq/hF9F+ePdSeuMWvl0Yf9mbGHrLJ3Jl1L9g5kO2tLkys5FsH70EBQP73PF6m2wcfwYRPXnt75H38zH19H81whL8XMrj1+CqNYYnls9UOn2kuzpHegbmVkanS+fZgu7181efu53/MMsvL81Z0pF21tnois5NLtcyRb2rn63F/T/v0oku1Ppifzm+OL2+dRa5TK3Xr0Lo9pTGDX3fmz/AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8Gev1Di49Q==",
+      "eNrt1E0rhFEUAGDGJFMWlFlISpIyMsz7LmQzO1lYWIiV2QzvjLLzC2wHZTGYd/wGO2s/w08g2fsoBk1TlK+U1eh56nRP93Y355xOWKq/hF9F+ePdSeuMWvl0Yf9mbGHrLJ3Jl1L9g5kO2tLkys5FsH70EBQP73PF6m2wcfwYRPXnt75H38zH19H81whL8XMrj1+CqNYYnls9UOn2kuzpHegbmVkanS+fZgu7181efu53/MMsvL81Z0pF21tnois5NLtcyRb2rn63F/T/v0oku1Ppifzm+OL2+dRa5TK3Xr0Lo9pTGDX3fmz/AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8Gev1Di49Q=="
+    ]
+  },
+  "gl_error_after_draw": [
+    0,
+    0
+  ],
+  "gl_errors_recorded": [
+    [],
+    []
+  ],
+  "equality": "The two independently captured full RGBA byte buffers and native uploaded point records are identical."
+}
