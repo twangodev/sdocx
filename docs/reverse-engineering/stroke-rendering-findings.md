@@ -552,6 +552,14 @@ the skipped control, and 475/602 and 475/607 for the multi-turn control. These
 are 1× MuPDF comparisons of synthetic strokes with the explicit host matrix,
 not native PDF or Android-device parity.
 
+Four two-point native controls include vertical, horizontal, diagonal and
+reverse strokes. Native EndPen's initial-state branch adds the stored f32 `0.2`
+to the final X coordinate; a straight centerline candidate improves RGB L1 at
+1× in the captured controls. A [2× host projection override control](../../conformance/legacy-marker-two-point-controls.json),
+verified by uniform readback, worsens SVG/PDF L1 (50732/53759 versus
+50586/53588 for fallback). The profile therefore keeps two-point strokes on
+fallback. The override does not establish Android canvas zoom or device parity.
+
 Four [finished-stroke host controls](../../conformance/legacy-marker-finished-prefix-native.json)
 cover stationary input, two- and three-point prefixes and a repeated final point.
 Stationary input rejects both intermediate moves but paints 70 host pixels.
@@ -819,3 +827,19 @@ reversal from 5061/5761 to 2600/3231, and a longer multi-turn stroke from
 from 72066/72190 to 35973/36092. These comparisons use explicitly supplied
 1920 by 1080 host dimensions and do not establish saved-device or full-note
 parity.
+
+An experimental triangle-paint SVG uses the source-generated four-point mesh,
+the pinned native cap texture as a binary clip, per-triangle fringe gradients
+and ownership masks. Against the straight/bend native host frames on white,
+resvg RGB L1 was 3700/2939 and public SVG-to-PDF raster L1 was 6067/4505;
+the current centerline profile measured 13502/13401 and 14074/13715,
+respectively. Direct MuPDF SVG rendering instead painted mask regions black,
+raising error to 107323/102841. An alpha-mask variant did not fix this reader
+incompatibility. The prototype covers only the two four-point source controls,
+uses the pinned native texture and approximates native depth ownership; it is
+not admitted to production. The ignored scratch scripts
+`scratch/legacy-marker-generated-mesh-export.rs` and
+`scratch/legacy-marker-triangle-paint-probe.py`, together with
+`tmp/marker-triangle-export`, retain the experiment. The generated-mesh export
+requires temporarily including the scratch Rust test in the mesh module; remove
+that include after running it. Render comparisons do not establish device parity.

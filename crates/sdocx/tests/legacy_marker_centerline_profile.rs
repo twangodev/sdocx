@@ -259,6 +259,13 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
                     ],
                 ),
                 (
+                    "two-point output scale gap",
+                    vec![
+                        sdocx::Point { x: 10.0, y: 20.0 },
+                        sdocx::Point { x: 30.0, y: 20.0 },
+                    ],
+                ),
+                (
                     "degenerate terminal",
                     vec![
                         sdocx::Point { x: 10.0, y: 20.0 },
