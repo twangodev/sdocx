@@ -1240,6 +1240,52 @@ fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_b
 }
 
 #[test]
+fn public_pdf_paper_accepts_indirect_page_box_coordinates() {
+    let mut document = document(true, None, 90, 1);
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("test source PDF must be retained bytes");
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page_id = source.get_pages()[&1];
+    let coordinates = [20.into(), 35.0_f64.into(), 570.into(), 535.0_f64.into()]
+        .map(|value: Object| Object::Reference(source.add_object(value)));
+    let crop_id = source.add_object(Object::Array(coordinates.to_vec()));
+    source
+        .get_object_mut(page_id)
+        .unwrap()
+        .as_dict_mut()
+        .unwrap()
+        .set("CropBox", Object::Reference(crop_id));
+    let mut bytes = Vec::new();
+    source.save_to(&mut bytes).unwrap();
+    *data = bytes;
+
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(pdf.get_pages().len(), 11);
+    assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+    let page = pdf.get_dictionary(pdf.get_pages()[&1]).unwrap();
+    let crop = pdf
+        .dereference(page.get(b"CropBox").unwrap())
+        .unwrap()
+        .1
+        .as_array()
+        .unwrap();
+    let values = crop
+        .iter()
+        .map(|value| {
+            let value = pdf.dereference(value).unwrap().1;
+            value
+                .as_float()
+                .unwrap_or_else(|_| value.as_i64().unwrap() as f32)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(values, [20.0, 35.0, 570.0, 535.0]);
+}
+
+#[test]
 fn public_pdf_paper_uses_native_crop_and_quarter_turn_placement() {
     // Native AddPages/body-writer controls establish these source-to-display
     // inverse matrices. Object rotations remain a separate unsupported case.

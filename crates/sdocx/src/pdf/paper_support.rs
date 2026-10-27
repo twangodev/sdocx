@@ -79,6 +79,7 @@ fn rect_value(doc: &Document, value: &Object) -> Result<[f64; 4], String> {
     }
     let mut out = [0.0; 4];
     for (dst, value) in out.iter_mut().zip(arr) {
+        let value = deref(doc, value)?;
         *dst = value
             .as_float()
             .or_else(|_| value.as_i64().map(|v| v as f32))
