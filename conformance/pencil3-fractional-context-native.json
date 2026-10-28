@@ -1,0 +1,18 @@
+{
+  "schema": "sdocx-pencil3-fractional-context-native-v1",
+  "scope": "Pinned native Pencil3 RTV1 Draw executes under Unicorn with mocked renderer resources and matrix. This records uniform handoff, not GPU, saved-note, or device pixels.",
+  "capture_script": "tmp/vector-parity-plan/pencil-v3-native-paint-contract/draw_probe.py",
+  "capture_script_sha256": "e4779eaa5b52ca608f76bb2ed1de4168ee078f2007ff3fd0a74cc8d756584c9f",
+  "capture_arguments": ["--canvas", "321", "179", "--background-scale", "0.75"],
+  "capture_root": "tmp/conformance-cleanup/native-capture-a241793",
+  "reproduction_boundary": "The script and archived dependencies are local scratch inputs and are not a portable conformance harness.",
+  "full_capture_sha256": "5f0a346577a3ae1deaf603e228073ce7de7f87378aa3d93c50cab1e72ace2bec",
+  "native_library_sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+  "saved_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+  "particle_count": 48,
+  "canvas": [321, 179],
+  "background_scale": 0.75,
+  "paper_texture_dimensions": [150, 150],
+  "paper_scale_float32_bits": ["40369d04", "3fcba988"],
+  "projection_matrix": [1.25, 0.125, 0, 0, -0.25, 0.75, 0, 0, 0, 0, 1, 0, 13.5, -7.25, 0, 1]
+}

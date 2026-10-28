@@ -255,6 +255,16 @@ consumer sampling, real paper/projection inputs, broader source
 profiles and Samsung-device comparisons remain open. Scratch captures and
 cross-renderer reports stay outside maintained conformance files.
 
+A [fractional non-square handoff control](../../conformance/pencil3-fractional-context-native.json)
+captures native `uPaperScale` for a 321×179 canvas at paper scale 0.75. A
+production SVG paper-mask test uses those uniform bits to check selected
+nearest texels across the repeat seam. Renderer interfaces and the matrix are
+mocked; the capture does not establish native pixels or device behavior.
+The test assumes normalized canvas UVs, as used by the native shader; it does
+not reproduce the capture's nonidentity projection. The capture script and
+its archived dependencies are local scratch inputs, not a portable conformance
+harness.
+
 Saved-redraw attribution hooks identify seven initial `drawPoint` calls at
 Pencil3 RVA `0x10b430`, interior calls at `0x10bb24` with loop index W24,
 and terminal calls at `0x10ad84`. Baseline cumulative ends are [7,13,25,48];

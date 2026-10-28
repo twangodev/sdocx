@@ -508,11 +508,13 @@ mod paper_sampling_tests {
     }
 
     fn paper_pixels(context: Pencil3PaintContext) -> Vec<u8> {
+        let width = context.canvas_width;
+        let height = context.canvas_height;
         let mut scene = Scene::new(
             Svg::new()
-                .width(256)
-                .height(256)
-                .view_box(ViewBox::unrounded(0.0, 0.0, 256.0, 256.0)),
+                .width(width)
+                .height(height)
+                .view_box(ViewBox::unrounded(0.0, 0.0, width as f64, height as f64)),
         );
         let source = transparent_source();
         assert!(render(&mut scene, &source, context, None));
@@ -523,18 +525,62 @@ mod paper_sampling_tests {
         // Inspect the actual production paper mask, independently of the
         // brush texture and per-stamp opacity (the dummy dab is transparent).
         let overlay = format!(
-            "<rect width=\"256\" height=\"256\" fill=\"white\" mask=\"url(#{id})\"/></svg>"
+            "<rect width=\"{width}\" height=\"{height}\" fill=\"white\" mask=\"url(#{id})\"/></svg>"
         );
         let root_end = svg.rfind("</svg>").unwrap();
         let svg = format!("{}{}", &svg[..root_end], overlay);
         let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
-        let mut pixels = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(width, height).unwrap();
         resvg::render(
             &tree,
             resvg::tiny_skia::Transform::identity(),
             &mut pixels.as_mut(),
         );
         pixels.data().to_vec()
+    }
+
+    #[test]
+    fn paper_samples_follow_native_fractional_non_square_context() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-fractional-context-native.json"
+        ))
+        .unwrap();
+        let bits = receipt["paper_scale_float32_bits"].as_array().unwrap();
+        let native_scale: Vec<_> = bits
+            .iter()
+            .map(|value| f32::from_bits(u32::from_str_radix(value.as_str().unwrap(), 16).unwrap()))
+            .collect();
+        assert_eq!(receipt["canvas"], serde_json::json!([321, 179]));
+        assert_eq!(
+            receipt["paper_texture_dimensions"],
+            serde_json::json!([150, 150])
+        );
+        assert_eq!(receipt["background_scale"], 0.75);
+        let decoder = png::Decoder::new(std::io::Cursor::new(PAPER_PNG));
+        let mut reader = decoder.read_info().unwrap();
+        let mut paper = vec![0; reader.output_buffer_size().unwrap()];
+        reader.next_frame(&mut paper).unwrap();
+        let context = Pencil3PaintContext {
+            canvas_width: 321,
+            canvas_height: 179,
+            background_scale: 0.75,
+            paper_sampler: Pencil3PaperSampler::Repeat,
+            y_up: true,
+        };
+        let pixels = paper_pixels(context);
+        // The captured uniform is applied to normalized canvas UVs in the
+        // native shader; this test isolates paper sampling from projection.
+        for (x, y) in [(5, 8), (111, 23), (113, 23), (225, 41), (300, 170)] {
+            let source_x =
+                (((x as f32 + 0.5) / 321.0) * native_scale[0] * 150.0).floor() as usize % 150;
+            let source_y =
+                (((y as f32 + 0.5) / 179.0) * native_scale[1] * 150.0).floor() as usize % 150;
+            assert_eq!(
+                pixels[(y * 321 + x) * 4 + 3],
+                paper[(source_y * 150 + source_x) * 4 + 3],
+                "pixel=({x},{y})"
+            );
+        }
     }
 
     #[test]
