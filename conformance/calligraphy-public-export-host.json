@@ -1,0 +1,17 @@
+{
+  "schema": "sdocx-calligraphy-public-export-host-v1",
+  "scope": "One synthetic saved Calligraphy stroke, identity page coordinates, 128x64 at 96 dpi; Mesa llvmpipe GLES shader replay against public SVG and direct PDF exports. Not Samsung device parity.",
+  "inputs_sha256": {
+    "calligraphy-saved-native.json": "a5334ff76960bb997acba1b8fa0c8408b1999e0a11f5f90a7994439ef01e14c8",
+    "calligraphy-saved-caller-native.json": "831d6d5c12a1d1812e3ab63da0b485fdf520ecf4984caaffcc2f548060ede93d",
+    "libSPenMontblancCalligraphyPen.so": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42"
+  },
+  "native_rgba_sha256": "b695e545849e745510708ac2a11a0c47bca30732156508777c6cf5883877b1a5",
+  "svg_sha256": "b85fbcf83aa0d76742b40ed61df9f55ba8af1734644e26790d0d5a3e81e357a1",
+  "pdf_sha256": "3b62ed765335b7e5ac9b22e25fcf431795bc98204b39b9776ec9e1e3813423d7",
+  "svg_librsvg": {"different_pixels": 31, "rgba_absolute_error_sum": 1061, "max_channel_error": 41},
+  "pdf_pdfium": {"different_pixels": 47, "rgba_absolute_error_sum": 4026, "max_channel_error": 120},
+  "pdf_mupdf": {"different_pixels": 8142, "rgba_absolute_error_sum": 19062, "max_channel_error": 92, "note": "The reader changes blank-page RGB channels by one level, inflating full-frame error."},
+  "pdf_structure": {"image_objects": 0, "shading_objects": 196},
+  "limitations": "Host shader replay uses captured mesh, synthetic RGBA8 target and page background. The earlier tmp/vector-parity-plan/calligraphy-pdf-audit.md compared a two-stroke document to a one-stroke reference; its full-frame figures are invalid. The corrected harness selects the first source only."
+}

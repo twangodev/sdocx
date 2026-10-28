@@ -193,3 +193,12 @@ API has no Drawing lifetime. Native mesh paths request crisp SVG edges to avoid
 adding path antialiasing along internal tessellation edges; PDF rasterization
 and device pixels remain separate validation gaps. Original source bytes and
 channels remain authoritative, and generated geometry never replaces them.
+
+A [paired public-export host control](../../conformance/calligraphy-public-export-host.json)
+uses only the first saved caller stroke, matching the captured native mesh. At
+96 dpi, librsvg differs from Mesa shader replay at 31 of 8,192 pixels; PDFium
+at 47. The direct PDF contains 196 shading objects and no image objects. Both
+PDFium and MuPDF match all 27 native opaque interior pixels; edge coverage
+varies by reader. An earlier local audit used a two-stroke public document with
+a one-stroke native reference, so its full-frame figures are invalid. This
+synthetic host control does not establish device or general document parity.
