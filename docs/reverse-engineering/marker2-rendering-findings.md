@@ -273,3 +273,13 @@ comparison scripts are in `tmp/vector-parity-plan/marker2-empty-exports/`.
 Runner manifests were repinned after capture to a retained pre-update witness;
 the receipts preserve capture-time hashes. Host adapters materialize native
 RT vectors, and the synthetic source is not archive deserialization.
+
+A finite 2×2 screen-pixel derivative model, including quad clipping and MAX
+blending, matched nine captured host-Mesa V2 masks byte for byte: widths 1–3
+at 1× with translated phases and an opposite bend, plus width 2 at 0.5×, 2×
+and 4×. The [compact native mask fixture](../../conformance/marker2-finite-scale-mask.json)
+retains the inputs and expected masks; the experimental model check is in
+`scratch/marker2-thin-scale-control/`. A four-layer vector approximation reduced
+error at 1×–4× but regressed at 0.5× in the tested SVG and SVG-to-PDF renders.
+These controls do not establish native composite, direct PDF, Android device,
+or arbitrary viewer-scale parity; the finite model is not production paint.
