@@ -865,3 +865,12 @@ temporary harness uses the host libc digest recorded in the receipt.
 The independent MuPDF 1.28.2 and PDFium 5.9.0 reader comparison was performed
 manually on the generated public-export fixture. The timings above do not
 measure the 512-window worst case or peak memory.
+
+A separate synthetic page-tree probe compared omitted inheritable properties with
+direct null MediaBox, Rotate and Resources and indirect null CropBox. With omitted
+properties both PDFium 5.9.0 and MuPDF 1.27.2.3 reported 80 × 180 points at
+rotation 90. With null properties PDFium reported 612 × 792 at rotation 0 and
+MuPDF reported 792 × 612 at rotation 90. The PDF Reference 1.6 section 3.2.6
+specifies null dictionary entries as equivalent to absent entries, but these
+reader results do not establish Samsung Notes import behavior. The PDF paper
+planner continues to reject the tested null page geometry.
