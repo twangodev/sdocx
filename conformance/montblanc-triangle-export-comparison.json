@@ -1,0 +1,53 @@
+{
+  "scope": "Four controlled native Montblanc RTV1 host-Mesa RGBA8 frames compared with resvg 0.45.1 rasterization of source-ordered triangle SVG prototype. Native rows flipped from GL origin; 256x256 viewport assumed. This is not a public Stroke export, native PDF, or device comparison.",
+  "model": "Captured shader laws at four-subdivision patch vertices, analytic fwidth approximation and interpolated SVG gradients; fixed-function blend state remains unverified.",
+  "generator": "tools/montblanc/triangle_svg_prototype.py",
+  "generator_sha256": "e0e9bd69a4adf7d8bd94f45cdfa8656a126845ec79556e75a29554c8811b229d",
+  "capture_script": "tmp/vector-parity-plan/montblanc-rtv1-mesa-source-v12/capture_candidate.py",
+  "capture_script_sha256": "7378931c784f1be00527da5dd8d39dd48597b95a8c5bcc2c636fdf69d82a2fae",
+  "metrics": "[native support, SVG support, intersection, union, alpha L1] where support is alpha > 0 and L1 sums absolute alpha-byte differences over the full frame",
+  "cases": {
+    "baseline": {
+      "capture_sha256": "84b12c69f047527f5f3bea87ea82b89c356dd4e0007f72b0598f45f0529b03af",
+      "values": [
+        104,
+        119,
+        104,
+        119,
+        2546
+      ]
+    },
+    "pressure": {
+      "capture_sha256": "a66367bcce64d0ab6962668920f3b4e516d5213fdd74186906e4987bd7dd08aa",
+      "values": [
+        104,
+        119,
+        104,
+        119,
+        2621
+      ]
+    },
+    "size": {
+      "capture_sha256": "660fa05e91d87d39bce96d679a85b29c3360b2643780c37a13fd2b928c2b861b",
+      "values": [
+        94,
+        119,
+        94,
+        119,
+        2229
+      ]
+    },
+    "far_endpoint": {
+      "capture_sha256": "62ff0a279fcb6fa003382d20ff4bd2e9c9230838e29e4a74c94fd6fcf2563c67",
+      "values": [
+        146,
+        169,
+        146,
+        169,
+        3413
+      ]
+    }
+  },
+  "reproduction": "Run .venv/bin/python tools/montblanc/compare.py with Pillow and resvg 0.45.1 installed. It verifies capture and framebuffer hashes, regenerates SVG, rasterizes it, and compares alpha metrics. To recapture, run the pinned capture script with PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance, --case CASE --output a fresh JSON path. Native dependencies and capture script live in ignored scratch/tmp and are not guaranteed in a clean checkout.",
+  "retained_captures": "tools/montblanc/captures/{case}.json.gz; compressed complete native capture JSON, including VBOs and RGBA8 frame"
+}

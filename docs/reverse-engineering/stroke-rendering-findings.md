@@ -1217,3 +1217,13 @@ Chromium is a separate local browser experiment using
 capture JSON SHA-256 values are `32b65d65b372499e4a9a7452329ce06432e81190f35dc4172129ba9799a2c7d3`,
 `7e1ea5630edc1190de110089197939452badab38b1db40e1e981ecbb8b556976`, and
 `4b1429acf56d7b5b780423afffc58687698d44e28c74e50acdd3ed7c5fbe172c`.
+
+## Montblanc FountainPen paint experiment
+
+Four native RTV1 host-Mesa controls compared with source-derived triangle SVG
+gradient patches cover all native pixels but add 15–25 pixels and have mean alpha
+error 18.73–22.03 bytes over the support union. The
+[receipt](../../conformance/montblanc-triangle-export-comparison.json) records
+capture hashes and reproduction commands; the prototype approximates screen
+derivatives and assumes a 256×256 viewport, with native blend state unverified.
+This does not establish saved-note, PDF, or device parity or justify enabling it.
