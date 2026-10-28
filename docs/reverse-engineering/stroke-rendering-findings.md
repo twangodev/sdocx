@@ -1121,3 +1121,11 @@ confirmed one admitted Marker and one generic fallback under the shared budget.
 The hooks remain test-only in `scratch/legacy-marker-composition-hook.patch`
 and `scratch/legacy-marker-scene-probe.rs`; prepared PDF form registration is
 not yet connected to this composition experiment.
+A temporary full retained-composition probe now uses the existing saved-Marker
+metadata gate and explicit PenData dimensions, and checks budget and unsupported
+tool fallbacks. On the synthetic long control, matched-background public SVG,
+MuPDF and PDFium RGB L1 was 3085/4933/5342. The test remains synthetic and the
+form compiler, graph import and page budgets are scratch-only; no production
+route is admitted. Its temporary patch is
+`scratch/legacy-marker-full-retained.patch` and its test is
+`scratch/legacy-marker-scene-probe.rs`.
