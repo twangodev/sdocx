@@ -638,6 +638,7 @@ pub(super) fn prepare(input: ObliqueInput<'_>) -> Option<PreparedOblique> {
 mod tests {
     use super::*;
     use serde_json::Value;
+    use std::io::Read;
 
     fn bits(hex: &Value) -> u32 {
         let bytes = hex.as_str().unwrap();
@@ -867,6 +868,7 @@ mod tests {
         let fixture: Value =
             serde_json::from_str(include_str!("../../../../conformance/oblique-redraw.json"))
                 .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-oblique-v4-native-redraw-v2");
         for case in fixture["cases"].as_array().unwrap() {
             let id = case["id"].as_str().unwrap();
             let source: Vec<P> = case["points"]
@@ -926,30 +928,43 @@ mod tests {
                 native["terminal_end_vector3"].as_u64().unwrap() as usize,
                 "{id} terminal end"
             );
-            let expected = native["callback_triple_f32_bits"].as_array().unwrap();
+            let encoded = native["callback_triple_f32_bits_zlib_hex"]
+                .as_str()
+                .unwrap();
+            assert_eq!(encoded.len() % 2, 0);
+            let compressed: Vec<u8> = encoded
+                .as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            let mut expected = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut expected)
+                .unwrap();
             assert_eq!(
-                prepared.triangles.len() * 3,
                 expected.len(),
-                "{id} triangle count"
+                prepared.triangles.len() * 3 * 3 * 4,
+                "{id} triangle bytes"
             );
-            for (triangle_index, triangle) in prepared.triangles.iter().enumerate() {
-                for (vertex_index, vertex) in triangle.0.iter().enumerate() {
-                    let i = triangle_index * 3 + vertex_index;
-                    let expected_vertex = expected[i].as_array().unwrap();
-                    assert_eq!(expected_vertex.len(), 3);
-                    for (axis, (value, expected)) in
-                        [vertex.position.x, vertex.position.y, vertex.coverage]
-                            .into_iter()
-                            .zip(expected_vertex)
-                            .enumerate()
-                    {
-                        assert_eq!(
-                            value.to_bits(),
-                            bits(expected),
-                            "{id} vertex {i} axis {axis}"
-                        );
-                    }
-                }
+            for (i, (actual, bytes)) in prepared
+                .triangles
+                .iter()
+                .flat_map(|triangle| {
+                    triangle
+                        .0
+                        .iter()
+                        .flat_map(|vertex| [vertex.position.x, vertex.position.y, vertex.coverage])
+                })
+                .zip(expected.as_chunks::<4>().0)
+                .enumerate()
+            {
+                assert_eq!(
+                    actual.to_bits(),
+                    u32::from_le_bytes(*bytes),
+                    "{id} vertex component {i}"
+                );
             }
         }
     }
