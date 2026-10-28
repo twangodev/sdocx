@@ -13,6 +13,7 @@ import pymupdf
 parser = argparse.ArgumentParser()
 parser.add_argument('capture', type=Path)
 parser.add_argument('--capture-sha256', required=True, help='expected SHA-256 of the capture receipt')
+parser.add_argument('--factor', type=float, default=1)
 args = parser.parse_args()
 def read_verified(path, expected):
     data = path.read_bytes()
@@ -33,9 +34,13 @@ if hashlib.sha256(json.dumps(dots, separators=(',', ':')).encode()).hexdigest() 
 cx, cy = meta['frame_center_doc']
 scale = meta.get('scale', 1)
 phase_x, phase_y = meta.get('phase', [0, 0])
-native = Image.frombytes('RGBA', tuple(meta['target']), read_verified(args.capture.with_suffix('.rgba'), meta['rgba_sha256'])).transpose(Image.Transpose.FLIP_TOP_BOTTOM).getchannel('A').tobytes()
+width, height = meta['target']
+native_rgba = read_verified(args.capture.with_suffix('.rgba'), meta['rgba_sha256'])
+if len(native_rgba) != width * height * 4:
+    raise SystemExit('native RGBA byte length does not match target dimensions')
+native = Image.frombytes('RGBA', (width, height), native_rgba).transpose(Image.Transpose.FLIP_TOP_BOTTOM).getchannel('A').tobytes()
 diameter = 2 * (max(case['size'] / 2, 1) + .5)
-w, h = .77 * diameter * .99, diameter * .99
+w, h = .77 * diameter * .99 * args.factor, diameter * .99 * args.factor
 rx, ry = w * 25 / 99, h * 25 / 99
 a = dots[0][3]
 c, s = math.cos(a), math.sin(a)
@@ -50,11 +55,18 @@ with tempfile.TemporaryDirectory() as d:
     png = Path(d) / 'candidate.png'
     path.write_text(svg)
     subprocess.run(['resvg', str(path), str(png)], check=True)
-    candidate = Image.open(png).convert('RGBA').getchannel('A').tobytes()
+    candidate_image = Image.open(png).convert('RGBA')
+    if candidate_image.size != (width, height):
+        raise SystemExit('SVG raster dimensions do not match native target')
+    candidate = candidate_image.getchannel('A').tobytes()
     source = pymupdf.open(str(path))
     pdf = pymupdf.open('pdf', source.convert_to_pdf())
     pixmap = pdf[0].get_pixmap(alpha=True)
+    if (pixmap.width, pixmap.height) != (width, height):
+        raise SystemExit('PDF raster dimensions do not match native target')
     pdf_alpha = Image.frombytes('RGBA', (pixmap.width, pixmap.height), pixmap.samples).getchannel('A').tobytes()
     def metrics(data):
+        if len(data) != len(native):
+            raise SystemExit('comparison dimensions do not match native target')
         return {'support': sum(x > 0 for x in data), 'alpha_l1': sum(abs(x-y) for x,y in zip(native,data)), 'alpha_sum': sum(data)}
-    print(json.dumps({'case': meta['case'], 'scale': scale, 'phase': [phase_x, phase_y], 'native': metrics(native), 'resvg': metrics(candidate), 'mupdf': metrics(pdf_alpha)}))
+    print(json.dumps({'factor': args.factor, 'svg_bytes': len(svg.encode()), 'case': meta['case'], 'scale': scale, 'phase': [phase_x, phase_y], 'native': metrics(native), 'resvg': metrics(candidate), 'mupdf': metrics(pdf_alpha)}))

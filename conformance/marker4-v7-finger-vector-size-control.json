@@ -1,0 +1,234 @@
+{
+  "scope": "Synthetic Marker4 V7 finger host Unicorn/Mesa captures compared with standalone SVG and MuPDF SVG-to-PDF. Not public export, device, saved-note or direct PDF evidence.",
+  "capture_recipe": "PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/conformance-cleanup/native-capture-a241793/conformance:scratch/defaultpen-native .venv/bin/python tools/marker4_v7/mesa_capture.py --capture-output /tmp/NEW.json --case CASE --scale SCALE --phase-x 0.3 --phase-y 0.4",
+  "comparison_recipe": ".venv/bin/python tools/marker4_v7/vector_comparison.py /tmp/NEW.json --capture-sha256 SHA256 --factor FACTOR",
+  "geometry_sha256": "5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77",
+  "controls": [
+    {
+      "capture_sha256": "35b7cebe84bb1cec22903a8609b73cdf18e171e1a5564775a29862c3f3a9d1c7",
+      "rgba_sha256": "5fd3b77d6de935b55a2175162c68397bb5d351e214f547b32af00a9d2c432e72",
+      "comparisons": [
+        {
+          "factor": 1.0,
+          "svg_bytes": 9884,
+          "case": "diagonal-0.4",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 234,
+            "alpha_l1": 0,
+            "alpha_sum": 19053
+          },
+          "resvg": {
+            "support": 295,
+            "alpha_l1": 10835,
+            "alpha_sum": 29888
+          },
+          "mupdf": {
+            "support": 296,
+            "alpha_l1": 10532,
+            "alpha_sum": 29349
+          }
+        },
+        {
+          "factor": 0.95,
+          "svg_bytes": 9884,
+          "case": "diagonal-0.4",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 234,
+            "alpha_l1": 0,
+            "alpha_sum": 19053
+          },
+          "resvg": {
+            "support": 282,
+            "alpha_l1": 9283,
+            "alpha_sum": 28336
+          },
+          "mupdf": {
+            "support": 288,
+            "alpha_l1": 8980,
+            "alpha_sum": 27797
+          }
+        }
+      ]
+    },
+    {
+      "capture_sha256": "88ed60b89204df3cb19629e96f8f4192bd2a85b509920326fba8a1b95c27bafd",
+      "rgba_sha256": "fd51da8b9d2b1efb00370a5f4df3edc2480d0edca6ee283a03e3573cce315859",
+      "comparisons": [
+        {
+          "factor": 1.0,
+          "svg_bytes": 10088,
+          "case": "diagonal-35.50513458251953",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 4873,
+            "alpha_l1": 0,
+            "alpha_sum": 605893
+          },
+          "resvg": {
+            "support": 4962,
+            "alpha_l1": 13193,
+            "alpha_sum": 618000
+          },
+          "mupdf": {
+            "support": 4980,
+            "alpha_l1": 21752,
+            "alpha_sum": 608381
+          }
+        },
+        {
+          "factor": 0.95,
+          "svg_bytes": 10088,
+          "case": "diagonal-35.50513458251953",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 4873,
+            "alpha_l1": 0,
+            "alpha_sum": 605893
+          },
+          "resvg": {
+            "support": 4617,
+            "alpha_l1": 31885,
+            "alpha_sum": 574008
+          },
+          "mupdf": {
+            "support": 4640,
+            "alpha_l1": 40458,
+            "alpha_sum": 565435
+          }
+        }
+      ]
+    },
+    {
+      "capture_sha256": "de4a465ca93b40b980d174c4f735bcb890d2572e435b4ada545b002f3181f70e",
+      "rgba_sha256": "b942aa7218137f2b233d64a553c89a3b88d8fee62da114eb9b912bd5238bccd5",
+      "comparisons": [
+        {
+          "factor": 1.0,
+          "svg_bytes": 9919,
+          "case": "diagonal-9.5",
+          "scale": 0.75,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 239,
+            "alpha_l1": 0,
+            "alpha_sum": 24405
+          },
+          "resvg": {
+            "support": 276,
+            "alpha_l1": 5987,
+            "alpha_sum": 30392
+          },
+          "mupdf": {
+            "support": 279,
+            "alpha_l1": 6079,
+            "alpha_sum": 29904
+          }
+        },
+        {
+          "factor": 0.95,
+          "svg_bytes": 9919,
+          "case": "diagonal-9.5",
+          "scale": 0.75,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 239,
+            "alpha_l1": 0,
+            "alpha_sum": 24405
+          },
+          "resvg": {
+            "support": 260,
+            "alpha_l1": 4235,
+            "alpha_sum": 28640
+          },
+          "mupdf": {
+            "support": 262,
+            "alpha_l1": 4335,
+            "alpha_sum": 28160
+          }
+        }
+      ]
+    },
+    {
+      "capture_sha256": "a0172f9eaa87384d6cdfec473ad588ec6d9a1cf7f16d6df1d0b51fbbcb100149",
+      "rgba_sha256": "557806c4845f6d6f6975577fbc77a70939dd11fbb5699540de5f0e00982bb899",
+      "comparisons": [
+        {
+          "factor": 1.0,
+          "svg_bytes": 5641,
+          "case": "loop-9.5",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 391,
+            "alpha_l1": 0,
+            "alpha_sum": 44542
+          },
+          "resvg": {
+            "support": 423,
+            "alpha_l1": 5234,
+            "alpha_sum": 49720
+          },
+          "mupdf": {
+            "support": 425,
+            "alpha_l1": 5969,
+            "alpha_sum": 49237
+          }
+        },
+        {
+          "factor": 0.95,
+          "svg_bytes": 5641,
+          "case": "loop-9.5",
+          "scale": 1.5,
+          "phase": [
+            0.3,
+            0.4
+          ],
+          "native": {
+            "support": 391,
+            "alpha_l1": 0,
+            "alpha_sum": 44542
+          },
+          "resvg": {
+            "support": 409,
+            "alpha_l1": 2708,
+            "alpha_sum": 46584
+          },
+          "mupdf": {
+            "support": 413,
+            "alpha_l1": 3059,
+            "alpha_sum": 45747
+          }
+        }
+      ]
+    }
+  ],
+  "capture_script_sha256": "f1ff217a5d835c28078cf22d7fefd9bb1f0d0af1462094d9cbfce587ff402b5f",
+  "capture_hash_note": "Capture JSON hash identifies this run and can change with output path or runtime; calculate the new capture hash when reproducing."
+}
