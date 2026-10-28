@@ -20126,4 +20126,113 @@ mod tests {
             }
         }
     }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_pressure_and_diagonal_native_pixels() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/inkpen2-v1-pressure-paint-native.json"
+        ))
+        .unwrap();
+        for (name, capture) in receipt["cases"].as_object().unwrap() {
+            let input = &capture["input"];
+            let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            let size = input["size"].as_f64().unwrap() as f32;
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap() + 32.,
+                    y: p[1].as_f64().unwrap() + 32.,
+                })
+                .collect();
+            stroke.pressures = input["pressure"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap())
+                .collect();
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            let mut page = page_with_uncolored_stroke();
+            page.width = 128;
+            page.height = 96;
+            page.objects = vec![stroke.into()];
+            let doc = document(page);
+            let layout = layout_document(&doc);
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+            let mut cache = super::DocumentTextCache::default();
+            let options = RenderOptions {
+                inkpen2_profile: Some(InkPen2RenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    enhanced_antialias: false,
+                }),
+                inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+                ..Default::default()
+            };
+            let render = |cache: &mut super::DocumentTextCache, options: &RenderOptions| {
+                cache
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            let actual = render(&mut cache, &options);
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut native = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(
+                capture["output_size"],
+                serde_json::json!([128, 96]),
+                "{name}"
+            );
+            assert_eq!(native.len(), 128 * 96 * 4, "{name}");
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&native)),
+                capture["rgba_sha256"].as_str().unwrap(),
+                "{name}"
+            );
+            let error = |source: &str| {
+                let tree = resvg::usvg::Tree::from_str(source, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 96).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                pixmap
+                    .data()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(native.as_chunks::<4>().0.iter())
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let generic = render(&mut cache, &RenderOptions::default());
+            let a = error(&actual);
+            let g = error(&generic);
+            eprintln!("{name}: public={a}, generic={g}");
+            assert!(a <= 1_500, "{name}: public={a}");
+            assert!(a * 4 < g, "{name}: public={a}, generic={g}");
+        }
+    }
 }

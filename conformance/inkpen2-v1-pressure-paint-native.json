@@ -1,0 +1,284 @@
+{
+  "schema": "sdocx-inkpen2-null-v1-pressure-paint-native-v1",
+  "scope": "Synthetic ObjectStroke native Drawing and RTV1 host Mesa, transparent 128x96 target; not device or app canvas.",
+  "capture_script": "conformance/inkpen2_v1_pressure_paint_capture.py",
+  "cases": {
+    "zero": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            16,
+            3
+          ],
+          [
+            24,
+            3
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 137
+    },
+    "full": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            16,
+            3
+          ],
+          [
+            24,
+            3
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 137
+    },
+    "alternating": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            16,
+            3
+          ],
+          [
+            24,
+            3
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+      "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+      "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 137
+    },
+    "diagonal": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            16,
+            16
+          ],
+          [
+            24,
+            24
+          ]
+        ],
+        "size": 4,
+        "curve_enabled": true,
+        "tool_type": 2,
+        "stroke_type": 0,
+        "pressure": [
+          0.2,
+          0.4,
+          0.6,
+          0.8
+        ],
+        "timestamps": [
+          0,
+          10,
+          20,
+          30
+        ],
+        "tilt": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientation": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "geometry_sha256": "f5fddedcc312085f2c2ed36709ff64b5c2493c392dabc189c80fbc58e3b9f273",
+      "rgba_sha256": "a09a21e042b78545218149ace508ada03fffe6ca58e83578ad4759bae160f804",
+      "rgba_zlib_base64": "eNrt2j9LlWEYB+AzREE5hDVooCloVgTqKQhKJVwSS5BoKfunB3VyKCgCqaGhMYJET9LSUJ8g2mpoamnpA/QNoqkiSOzc2jm+5/QBGu7rggedf/d7/3xeXkslAAAAAAAAAAAAAAAAAACAUunQqalHveOV1/t7hqalkW/2Q7eefju58HyzPL/2u7M8+UAqecTex+yLp39i6a1kcojOj71vfQY6hyeXpZNDdH5j9vM7z0DfxNIb6eQQnd/UAYvbP7tHZ6rSSdIDtc4vzr5+jly88146OUTnt94F4vSMXl+XTg7R+U3z/3snGJi6+0E6OUTn78x+vXaqW7/3jF3TA0lE5293QLXpb8HR6fsfpZNDdH7xnbB+usduvJBOkh6odf6/d8L1zWOXlj9JJ4fo/J3ZrzWeg66zM6vSSfJeUOv87btgy7vhudmX0skhOr91/uWF6saBvtMz0skhOr94D9h6Biqrvw4OnJmVTpI7Ya3zY++beqCy8mNve9ewdHKIzo+9L3bB8Nyz720d/SPSySE6P/a+eC8cvPnk6649+9qlk0N0fux9sQdOXHn8RTJ5ROfH3jd6YL66cfzyw8+SySM6P/Y+Zt/434ELt99JJpfY+/p3o/Lcys/e8corqeQSex+zr/dAx+D5e1LJJfa+8b1w5KrvBAnF3sfsd7e1H5YGAAAAAAAAAAAAAAAAAAAAAAAAAP/bH/IjOGo=",
+      "output_size": [
+        128,
+        96
+      ],
+      "nonzero_pixels": 168
+    }
+  },
+  "comparison": {
+    "scope": "Public SVG resvg and PDF PyMuPDF 4/3 pixels per point, alpha-byte L1 against 128x96 host Mesa frame; profile versus generic.",
+    "cases": {
+      "zero": {
+        "svg": [
+          886,
+          16879
+        ],
+        "pdf": [
+          5737,
+          16591
+        ]
+      },
+      "full": {
+        "svg": [
+          886,
+          16658
+        ],
+        "pdf": [
+          5737,
+          16482
+        ]
+      },
+      "alternating": {
+        "svg": [
+          886,
+          20823
+        ],
+        "pdf": [
+          5737,
+          20758
+        ]
+      },
+      "diagonal": {
+        "svg": [
+          1157,
+          29246
+        ],
+        "pdf": [
+          6649,
+          28295
+        ]
+      }
+    }
+  }
+}
