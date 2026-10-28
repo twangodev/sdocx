@@ -126,6 +126,10 @@ fn unsupported_inputs_keep_generic_output() {
     s.pressures.push(0.5);
     s.points.push(Point { x: 180., y: 130. });
     s.pressures.push(0.5);
+    s.points.push(Point { x: 190., y: 130. });
+    s.pressures.push(0.5);
+    s.points.push(Point { x: 200., y: 130. });
+    s.pressures.push(0.5);
     cases.push(s);
     let mut s = base.clone();
     s.points[1].x = 1_000_001.;
@@ -383,4 +387,88 @@ fn older_render_options_deserialize_with_two_pixel_profile_disabled() {
         .remove("montblanc_two_pixels_per_page_unit");
     let options: RenderOptions = serde_json::from_value(value).unwrap();
     assert!(!options.montblanc_two_pixels_per_page_unit);
+}
+
+#[test]
+fn six_and_seven_point_profiles_and_boundaries() {
+    let points = [
+        [0., 0.],
+        [7., 3.],
+        [14., -2.],
+        [21., 4.],
+        [28., -1.],
+        [35., 3.],
+        [42., 0.],
+    ];
+    for n in [6, 7] {
+        let mut stroke = source(&points[..n], &vec![0.5; n]);
+        assert!(crate::ink::montblanc::prepare(&stroke).is_some());
+        let doc = document(stroke.clone());
+        let generic = render_document_svg(&doc, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        for opts in [
+            options(),
+            RenderOptions {
+                montblanc_two_pixels_per_page_unit: true,
+                ..Default::default()
+            },
+        ] {
+            assert_ne!(render_document_svg(&doc, &opts)[0].svg, generic);
+            let layout = crate::layout_document(&doc);
+            assert_eq!(
+                render_layout_page_replay_svg(&doc, &layout, 0, &opts)
+                    .unwrap()
+                    .svg,
+                render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                    .unwrap()
+                    .svg
+            );
+            let conflict = RenderOptions {
+                montblanc_profile: Some(MontblancRenderProfile::HostUnitScale),
+                montblanc_two_pixels_per_page_unit: true,
+                ..Default::default()
+            };
+            assert_eq!(render_document_svg(&doc, &conflict)[0].svg, generic);
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let layout = crate::layout_document(&doc);
+            let render = |opts: &RenderOptions| {
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        opts,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            assert_eq!(render(&options()), render(&RenderOptions::default()));
+            assert_eq!(
+                render(&RenderOptions {
+                    montblanc_two_pixels_per_page_unit: true,
+                    ..Default::default()
+                }),
+                render(&RenderOptions::default())
+            );
+        }
+        stroke.pen_width = 0.49;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.49);
+        assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+        stroke.pen_width = 2.;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(2.);
+        stroke.pressures[1] = f64::NAN;
+        assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+        stroke.pressures.pop();
+        assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+        stroke.pressures = vec![0.5; n];
+        stroke.points.fill(Point { x: 128., y: 128. });
+        assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+    }
 }

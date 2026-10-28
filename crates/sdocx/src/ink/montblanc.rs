@@ -978,9 +978,8 @@ mod four_point_tests;
 
 #[path = "montblanc_five_test.rs"]
 mod five_point_tests;
-#[cfg(test)]
-#[path = "montblanc_many_test.rs"]
-mod many_point_tests;
+#[path = "montblanc_many.rs"]
+mod many_point;
 
 pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], crate::Color)> {
     let rendering = stroke.rendering.as_ref()?;
@@ -1011,7 +1010,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         || !matches!(rendering.style.color_type_raw, None | Some(0))
         || !(0.1..=2.0).contains(&size)
         || stroke.pen_width.to_bits() != size.to_bits()
-        || !(3..=5).contains(&stroke.points.len())
+        || !(3..=7).contains(&stroke.points.len())
         || stroke.pressures.len() != stroke.points.len()
         || !(stroke.timestamps.is_empty() || stroke.timestamps.len() == stroke.points.len())
         || !stroke.tilts.is_empty()
@@ -1052,6 +1051,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         3 => sample(input),
         4 => four_point_tests::four_point(input),
         5 => five_point_tests::five_point(input),
+        6 | 7 if size >= 0.5 => many_point::many_point(input),
         _ => return None,
     }
     .ok()?;

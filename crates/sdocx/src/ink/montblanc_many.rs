@@ -156,15 +156,11 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         end.step,
         false,
     ));
-    let total = segments
-        .iter()
-        .try_fold(0_usize, |total, (_, count, _, _, _, _, redraw)| {
-            count
-                .checked_mul(if *redraw { 2 } else { 1 })
-                .and_then(|n| total.checked_add(n))
-        })
-        .filter(|&total| total <= 5 * MAX_RECORDS)
-        .ok_or(Error::RepeatCount)?;
+    let total = record_budget(
+        segments
+            .iter()
+            .map(|(_, count, _, _, _, _, redraw)| (*count, *redraw)),
+    )?;
     let mut records = Vec::with_capacity(total);
     for replay in [false, true] {
         for (seg_index, (q, count, initial_width, target_width, alpha_start, alpha_step, redraw)) in
@@ -215,6 +211,24 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         }
     }
     Ok(records)
+}
+
+fn record_budget(mut counts: impl Iterator<Item = (usize, bool)>) -> Result<usize, Error> {
+    counts
+        .try_fold(0_usize, |total, (count, redraw)| {
+            count
+                .checked_mul(if redraw { 2 } else { 1 })
+                .and_then(|n| total.checked_add(n))
+        })
+        .filter(|&total| total <= MAX_RECORDS)
+        .ok_or(Error::RepeatCount)
+}
+
+#[test]
+fn record_budget_rejects_aggregate_overflow() {
+    assert!(record_budget([(120, false), (120, false)].into_iter()).is_ok());
+    assert!(record_budget([(200, false), (60, false)].into_iter()).is_err());
+    assert!(record_budget([(130, true)].into_iter()).is_err());
 }
 
 #[test]
@@ -303,4 +317,24 @@ fn many_point_rejects_nonfinite_and_extreme_coordinates() {
             .is_err()
         );
     }
+}
+
+#[test]
+fn many_point_rejects_excessive_records() {
+    let points = [
+        [0., 0.],
+        [7., 3.],
+        [14., -2.],
+        [21., 4.],
+        [28., -1.],
+        [10000., 3.],
+    ];
+    assert!(
+        many_point(Input {
+            points: &points,
+            pressure: &[0.5; 6],
+            pen_size: 0.5
+        })
+        .is_err()
+    );
 }
