@@ -76,15 +76,15 @@ pub(crate) struct Prepared {
     fringe_masks: Vec<FringeMask>,
 }
 
-fn gl_version(setting: &str) -> Option<i32> {
+fn gl_version(setting: Option<&str>) -> Option<i32> {
     // The setting is the stored Pen getter. V4 is admitted only because the
     // pinned paired Drawing capture verifies getter 4 selecting the same
     // GLV3 drawable, AddPoint stream and complete host-Mesa frame as getter 3.
     match setting {
-        "1;" => Some(1),
-        "2;" => Some(2),
-        "" | "3;" => Some(3),
-        "4;" => Some(3),
+        None | Some("0;" | "1;") => Some(1),
+        Some("2;") => Some(2),
+        Some("" | "3;") => Some(3),
+        Some("4;") => Some(3),
         _ => None,
     }
 }
@@ -175,7 +175,7 @@ pub(crate) fn prepare(
     {
         return None;
     }
-    let version = gl_version(rendering.advanced_settings.as_deref()?)?;
+    let version = gl_version(rendering.advanced_settings.as_deref())?;
     let n = stroke.points.len();
     if !(2..=MAX_SOURCE_EVENTS).contains(&n)
         || n.checked_mul(48)

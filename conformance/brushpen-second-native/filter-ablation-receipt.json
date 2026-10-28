@@ -1,0 +1,34 @@
+{
+  "schema": "brushpen-filter-ablation-v1",
+  "scope": "Two synthetic host-Mesa controls, source-cell SVG prototype through public SVG-to-PDF transport; 321x228 at 1x. No production BrushPen dispatch or device parity.",
+  "source_sha256": {
+    "tmp/vector-parity-plan/brushpen-long-vector-prototype/native-pdf-filter-ablation.py": "e8b93d156c53f33a55c62862617c6bfc374ccf90d5ea22fae90860cde4fbda66",
+    "tmp/vector-parity-plan/brushpen-long-vector-prototype/build-bucket.py": "15d2c97626ea70eb817fa365d25dfed4c7cb7599fee84880922032c63a79a996",
+    "tmp/vector-parity-plan/brushpen-long-vector-prototype/build-compact.py": "c25979f27483e308eb3532621299f69ce9c65f28ef6af1c8ee34893c24d555d6",
+    "conformance/brushpen-long-native/geometry-164x44.bin": "a3e92df3d96ad24fcbf6379109b0767a0b7157124209838c07c877273bbda598",
+    "conformance/brushpen-long-native/crop-133x49-rgba8.zlib": "2c318390443c649483f08fd61f8a3bf31c94c0c1b1e3429cbf3f4e81f239562e",
+    "conformance/brushpen-second-native/geometry-221x44.bin": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+    "conformance/brushpen-second-native/frame-rgba8.zlib": "0f8fbcb1bed3036002ed2f6bde6163f1ff666e4bcf59b2cc1d8019b722ff406a",
+    "/tmp/sdocx-agent-target/debug/brushpen-source-cell-export": "44f52522308737458895352872c343dd6181cde843836137b36485847e4e46a4"
+  },
+  "metric": "Support is any RGB channel more than 2 away from background 252; IoU and RGB mean absolute error use union support. Native premultiplied RGBA is composited on 252. Long native is a crop with zero outside.",
+  "measurements_iou_mae": {
+    "long": {
+      "base": {"svg_pdf": [0.9293, 7.42], "native_svg": [0.9696, 2.58], "native_pdf": [0.9346, 7.46]},
+      "no_grain_filter": {"svg_pdf": [0.9336, 5.85], "native_svg": [0.9761, 2.91], "native_pdf": [0.9379, 6.97]},
+      "no_tile_mask": {"svg_pdf": [0.9361, 6.98], "native_svg": [0.9816, 4.30], "native_pdf": [0.9401, 8.68]},
+      "no_shade_mask": {"svg_pdf": [0.9351, 7.01], "native_svg": [0.9816, 4.24], "native_pdf": [0.9374, 9.07]}
+    },
+    "second": {
+      "base": {"svg_pdf": [0.8276, 20.20], "native_svg": [0.9623, 6.73], "native_pdf": [0.8339, 20.71]},
+      "no_grain_filter": {"svg_pdf": [0.8464, 17.55], "native_svg": [0.9680, 5.78], "native_pdf": [0.8505, 18.17]},
+      "no_tile_mask": {"svg_pdf": [0.8259, 20.63], "native_svg": [0.9755, 6.77], "native_pdf": [0.8295, 21.54]},
+      "no_shade_mask": {"svg_pdf": [0.8289, 20.70], "native_svg": [0.9736, 6.28], "native_pdf": [0.8310, 21.78]}
+    }
+  },
+  "limitations": [
+    "Removing coverage or all three masks while retaining the filter triggers resvg 0.47.0 composite dimension assertion in both controls; no measurements were produced for those variants.",
+    "Ablations alter the image and do not isolate a single transport defect; removing grain is not an admitted fix.",
+    "PDF rendering used PDFium through pypdfium2 at scale 4/3 for 1x pixel output. The script and builder are retained under ignored tmp and rely on local artifacts; the executable is an existing prebuilt helper, not a reproducible build receipt."
+  ]
+}

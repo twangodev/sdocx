@@ -5362,7 +5362,7 @@ fn chinesebrush_source_color(stroke: &Stroke) -> Option<Color> {
             != Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
         || !matches!(
             rendering.advanced_settings.as_deref(),
-            Some("1;" | "2;" | "3;" | "4;")
+            None | Some("0;" | "1;" | "2;" | "3;" | "4;")
         )
     {
         return None;
@@ -15037,6 +15037,53 @@ mod tests {
     }
 
     #[test]
+    fn chinesebrush_v1_saved_aliases_match_public_svg_and_pdf() {
+        let mut one = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let options = RenderOptions {
+            chinesebrush_profile: Some(ChineseBrushRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        for color in [None, Some(0xff12_3456)] {
+            let rendering = one.pages[0]
+                .strokes_mut()
+                .next()
+                .unwrap()
+                .rendering
+                .as_mut()
+                .unwrap();
+            rendering.advanced_settings = Some("1;".into());
+            rendering.style.color_argb = color;
+            let expected_svg = render_document_svg(&one, &options)[0].svg.clone();
+            #[cfg(feature = "pdf")]
+            let expected_pdf =
+                crate::render_document_pdf(&one, &options, &Default::default()).unwrap();
+            for setting in [None, Some("0;")] {
+                let mut alias = one.clone();
+                alias.pages[0]
+                    .strokes_mut()
+                    .next()
+                    .unwrap()
+                    .rendering
+                    .as_mut()
+                    .unwrap()
+                    .advanced_settings = setting.map(str::to_owned);
+                assert_eq!(render_document_svg(&alias, &options)[0].svg, expected_svg);
+                #[cfg(feature = "pdf")]
+                assert_eq!(
+                    crate::render_document_pdf(&alias, &options, &Default::default()).unwrap(),
+                    expected_pdf
+                );
+            }
+        }
+    }
+
+    #[test]
     fn opt_in_chinesebrush_paints_parsed_records_and_keeps_atomic_fallback() {
         let document = crate::parse_bytes(include_bytes!(
             "../tests/assets/chinesebrush/synthetic_v3.sdocx"
@@ -15181,11 +15228,14 @@ mod tests {
                 .remove(0)
                 .svg
         );
+        #[cfg(feature = "pdf")]
         let pdf_options = crate::PdfOptions::default();
+        #[cfg(feature = "pdf")]
         assert_eq!(
             crate::render_document_pdf(&empty_setting, &options, &pdf_options).unwrap(),
             crate::render_document_pdf(&document, &options, &pdf_options).unwrap()
         );
+        #[cfg(feature = "pdf")]
         assert_eq!(
             crate::render_document_pdf(&empty_setting, &RenderOptions::default(), &pdf_options)
                 .unwrap(),

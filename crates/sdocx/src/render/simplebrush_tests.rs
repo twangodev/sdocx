@@ -577,10 +577,18 @@ fn simplebrush_pdf_slice_scene_matches_full_page_across_stamp() {
 #[test]
 fn tool_zero_native_controls_reach_public_exports() {
     use std::fmt::Write;
-    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+    let mut receipt: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../conformance/simplebrush-tool0-native.json"
     ))
     .unwrap();
+    let large: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool0-large-native.json"
+    ))
+    .unwrap();
+    receipt["controls"]
+        .as_object_mut()
+        .unwrap()
+        .extend(large["controls"].as_object().unwrap().clone());
     let decode = |value: &serde_json::Value| {
         let hex = value.as_str().unwrap();
         let mut bytes = [0_u8; 4];
@@ -591,7 +599,7 @@ fn tool_zero_native_controls_reach_public_exports() {
     };
     for name in [
         "vertical", "reverse", "curve", "two-4", "two-12", "curve-4", "curve-12", "short", "seven",
-        "sixteen",
+        "sixteen", "two-20", "two-32",
     ] {
         let input = &receipt["controls"][name]["input"];
         let size = decode(&input["pen_size_f32_bits"]);

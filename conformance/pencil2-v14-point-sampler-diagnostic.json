@@ -1,0 +1,76 @@
+{
+  "schema": "sdocx.pencil2-v14-point-sampler-probe.v1",
+  "scope": "Host Mesa instrumented fragment shader and native 84-record geometry replay; no device or production SVG/PDF parity claim.",
+  "scripts": {
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/capture.py": "2277afb479fa37abb4e3476ceb3aee4dbf9143c7c4feacd05a4081799256bbf4",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/projected_model.py": "88584322f70b59e514f4de684fd9e951122357942b4add2522ac4d16d68a3c82"
+  },
+  "point_texture_sha256": "475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f",
+  "sample_commands": [
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/capture.py 11 sample",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/capture.py 23 sample"
+  ],
+  "instrumented_samples": [
+    {
+      "prefix": 11,
+      "xy_top": [
+        3,
+        191
+      ],
+      "rgba_sample_y_x_alpha": [
+        5,
+        174,
+        13,
+        255
+      ],
+      "frame_sha256": "a0070c904a545b09431b115316ccdb49083be8cc4f1c091df2847e766f718ae1"
+    },
+    {
+      "prefix": 23,
+      "xy_top": [
+        8,
+        191
+      ],
+      "rgba_sample_y_x_alpha": [
+        65,
+        174,
+        14,
+        255
+      ],
+      "frame_sha256": "6d023fff0637453a8700bcde13d9b8d189538e7f4bbcb2e244f47c4be3776bc8"
+    }
+  ],
+  "details": "At each target pixel the inserted diagnostic branch emits texture(sampler1, pointTexCoord).r and floor(pointTexCoord * texture size) in RGB with alpha 1; all earlier covering instances are overwritten by the last. Point values match the reported indices in the R8 input. Shader modification can alter compilation and interpolation; no claim about exact unmodified shader instructions.",
+  "projected_scalar_commands": [
+    "python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/projected_model.py",
+    "python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-point-sampler-probe/projected_model.py --projected"
+  ],
+  "scalar_comparison": {
+    "examined": 56,
+    "baseline": {
+      "different": 22,
+      "sum_abs": 29,
+      "max_abs": 4,
+      "pixel_3_191": 30,
+      "pixel_8_191": 63
+    },
+    "projected": {
+      "different": 21,
+      "sum_abs": 23,
+      "max_abs": 2,
+      "pixel_3_191": 33,
+      "pixel_8_191": 68
+    },
+    "native": {
+      "pixel_3_191": 33,
+      "pixel_8_191": 67
+    }
+  },
+  "interpretation": "Projection candidate rounds rectangle endpoints through captured 1/96 binary32 NDC matrix and 192 viewport, then models local coordinates by linear division. The two sample points and full-frame errors improve, but this is not a validated exact triangle plane, device model, or SVG/PDF improvement.",
+  "limitations": [
+    "One synthetic stroke and host transform; other geometry and contexts are untested.",
+    "Interpolation and shader arithmetic remain approximate; probe shader changes may affect compiler behavior.",
+    "Full-frame scalar error includes independent shader and compositing approximations.",
+    "No universal texel bias is justified."
+  ]
+}

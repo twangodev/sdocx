@@ -359,6 +359,15 @@ sampling differences remain. The [V14 findings](fountain-v14.md) describe its sa
 
 ## ChineseBrush source and paint controls
 
+A [synthetic Drawing control](../../conformance/chinesebrush-v1-setting-alias-native.json)
+compares omitted, `0;`, and `1;` settings with omitted color. All three select
+GLV1, produce the same 80-byte AddPoint stream, and pass the black ObjectStroke
+default to native paint setup. The renderer admits these as GLV1 aliases under
+the existing explicit profile. A separate five-point Drawing and host Mesa
+paint control with explicit color gives identical complete RGBA8 frames for
+all three settings. This does not establish device or PDF parity.
+
+
 A synthetic native Model/Drawing control with literal setting `4;` and no
 `ObjectStroke::SetColor` call returned `0xff000000` from `GetColor` and passed
 that value to both `Pen::SetColor` and `PenDrawableRT::SetPenData`. It selected

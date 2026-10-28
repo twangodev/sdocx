@@ -1,0 +1,195 @@
+{
+  "schema": "chinesebrush-v1-setting-alias-native-v1",
+  "scope": "Synthetic ObjectStroke and host adapters; pinned native Model, Drawing, GLV1 redraw and RTV1 AddPoint. No GLES framebuffer, PDF or device comparison.",
+  "runner": "conformance/chinesebrush_omitted_color_capture.py --_capture CASE with pinned helpers from 2ffac9f^",
+  "runner_sha256": "59ad82d35d38a5f273a38161627be9ccf1bdd56ad8a05bfaa11cf9abfc1887b8",
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "native_helper_sha256": {
+    "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "source_arrays": {
+    "orientations": {
+      "count": 3,
+      "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+      "element_size": 4
+    },
+    "points": {
+      "count": 3,
+      "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+      "element_size": 8
+    },
+    "pressures": {
+      "count": 3,
+      "data_hex": "9a99993e9a99193f9a99593f",
+      "element_size": 4
+    },
+    "tilts": {
+      "count": 3,
+      "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+      "element_size": 4
+    },
+    "timestamps": {
+      "count": 3,
+      "data_hex": "2c0100003b01000054010000",
+      "element_size": 4
+    }
+  },
+  "cases": {
+    "omitted": {
+      "setting": null,
+      "model_getter_color": "0xff000000",
+      "version": 1,
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002cad0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100344e0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x100344e0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x4049374c",
+          "this": "0x100356a0"
+        }
+      ],
+      "producer_sha256": "d90dc9b0e42a963184d031ea20f9609169fab9e681172da9464ed9ec44fcaf28",
+      "producer_hex": "0000803f000000c09b08ab3f3d0ad73d68c6214028b82abe86ebac3f04568e3ffdc57140f8a7aa3f71ceae3fb29d07405eff97407bfe1f405cb1b03f621048400000c040000080404794b23f89418440"
+    },
+    "zero": {
+      "setting": "0;",
+      "model_getter_color": "0xff000000",
+      "version": 1,
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002cad0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034780"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034780"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x4049374c",
+          "this": "0x10035a60"
+        }
+      ],
+      "producer_sha256": "d90dc9b0e42a963184d031ea20f9609169fab9e681172da9464ed9ec44fcaf28",
+      "producer_hex": "0000803f000000c09b08ab3f3d0ad73d68c6214028b82abe86ebac3f04568e3ffdc57140f8a7aa3f71ceae3fb29d07405eff97407bfe1f405cb1b03f621048400000c040000080404794b23f89418440"
+    },
+    "one": {
+      "setting": "1;",
+      "model_getter_color": "0xff000000",
+      "version": 1,
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "paint_color_calls": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002cad0"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034780"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034780"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x4049374c",
+          "this": "0x10035a60"
+        }
+      ],
+      "producer_sha256": "d90dc9b0e42a963184d031ea20f9609169fab9e681172da9464ed9ec44fcaf28",
+      "producer_hex": "0000803f000000c09b08ab3f3d0ad73d68c6214028b82abe86ebac3f04568e3ffdc57140f8a7aa3f71ceae3fb29d07405eff97407bfe1f405cb1b03f621048400000c040000080404794b23f89418440"
+    }
+  },
+  "host_paint": {
+    "scope": "Synthetic five-point ObjectStroke; native Drawing, GLV1 and RTV1 and host Mesa GLES; no SDK deserialization, PDF or device parity. Only advanced-setting setter differs between captures.",
+    "settings": [
+      null,
+      "0;",
+      "1;"
+    ],
+    "color_argb": "0xff6cdd8f",
+    "source_case": "2ffac9f^:conformance/chinesebrush-source-native.json cases.curve-v1",
+    "producer_sha256": "d3803fcad584a09cfeb86ae6a9577a8c829da7d1a928ecdb305754d37a59bc22",
+    "full_rgba8_sha256": "5d3f149c459aaec0d4ba127b37eb3fe8a2b2f2da092009fed94d1e38fb015c24",
+    "dimensions": [
+      321,
+      228
+    ],
+    "byte_count": 292752,
+    "capture_script": "conformance/chinesebrush_v1_alias_paint_capture.py",
+    "capture_script_sha256": "2a7d5a69edb822b06ee30f15515931d3fcf98c3a833180c2420313b6a7124b21",
+    "baseline_harness": "2ffac9f^:conformance/chinesebrush_paint_native.py",
+    "baseline_harness_sha256": "0377f7de9c48e7c79fc596603128d49bff3a7427ce59e6052db14a53d8cf342a",
+    "assertions": "Original producer to upload, native paint and framebuffer assertions passed for each setting. Harness source-contract metadata remains the canonical 1; case and is not the per-run setter observation."
+  }
+}

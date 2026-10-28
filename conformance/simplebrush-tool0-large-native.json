@@ -1,0 +1,102 @@
+{
+  "scope": "Synthetic saved ObjectStroke via native Drawing and explicitly dispatched queue, transparent 256x256 host Mesa; tool 0 and tool 2 geometry and complete RGBA readback match. Not device or serialized-note parity.",
+  "capture_script": "scratch/simplebrush-tool3-multi/simplebrush-5-paint-capture.py",
+  "capture_script_sha256": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4",
+  "source_script": "scratch/simplebrush-tool3-multi/simplebrush-5-source-capture.py",
+  "source_script_sha256": "f1c27d31edc8b1afbcbc107ccca5f17c31f1d40afce5711d51779faedf4e9eb5",
+  "arguments": "--tool-type 0 or 2 --pen-size 20 or 32 --width 256 --height 256 --dispatch-task-seq 0 through 7",
+  "controls": {
+    "two-20": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "0000a041",
+        "pen_size_requested_f32_bits": "0000a041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00008040"
+          ],
+          [
+            "00000041",
+            "00000041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          1
+        ],
+        "tool_type": 0
+      },
+      "geometry_hex": "00000000000080400000ea4052049e3f8ac093400000ea4083dc1a4021b7a6400000ea40f4ff7f40fdffbf400000ea40000080400000c0400100ea4085575f40e2d5b7402322ec40cc54b54066aada404544ee40f4ffff40faffff406766f040",
+      "geometry_sha256": "2358273a24f4b656f25b8e8742eeb1cdf1110d09abc98486da64077d67beca95",
+      "geometry_count": 8,
+      "rgba_sha256": "ef849f7e3245ece6fbcefd434b87b5a3f6ff75403332213b397f66e2c22284ce",
+      "nonzero_alpha_pixels": 201,
+      "both_gl_verdict_clean": true
+    },
+    "two-32": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000042",
+        "pen_size_requested_f32_bits": "00000042",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00008040"
+          ],
+          [
+            "00000041",
+            "00000041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          1
+        ],
+        "tool_type": 0
+      },
+      "geometry_hex": "00000000000080409a99314152049e3f8ac093409a99314183dc1a4021b7a6409a993141f4ff7f40fdffbf409a993141000080400000c0409999314185575f40e2d5b740814e3341cc54b54066aada4069033541f4ffff40faffff4051b83641",
+      "geometry_sha256": "a91e78d940ece1652dd02df88a742c6583cdb378e3bec49018538b3cd29f9b74",
+      "geometry_count": 8,
+      "rgba_sha256": "cf1ea73a9bd2ef6eda29af36c11b4fa7ac7041f72170a73afa4240dda2ac8e20",
+      "nonzero_alpha_pixels": 328,
+      "both_gl_verdict_clean": true
+    }
+  }
+}
