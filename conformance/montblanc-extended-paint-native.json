@@ -1,0 +1,156 @@
+{
+  "schema": "montblanc-extended-paint-native-v1",
+  "boundary": "Synthetic Drawing inputs on ARM64 Unicorn adapters with host Mesa; native Add vectors, explicit upload and draw, not saved-note or device parity. Five-point final vectors are observed after the latest Add body return.",
+  "script_sha256": "315b48ed5eeb293fd03dd013b8a38ebf73ff6caac61684ec19b519ce2b86f8e3",
+  "cases": {
+    "four": {
+      "input": {
+        "points": [
+          [
+            1,
+            3
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7
+        ],
+        "pen_size": 2
+      },
+      "capture_sha256": "fe84c50e1b8a43e2868c975f7583aa2d73b1af758a6f179a57221849853fbe41",
+      "native_add_vectors": [
+        {
+          "float_count": 1050,
+          "sha256": "1737f8a58f5ca755d30eb31e640e35bdfbc3fe93327b1fa882e0d17c104b8cde"
+        },
+        {
+          "float_count": 30,
+          "sha256": "4a4f5434e9d913420ec6563b1ec79a6246507204a67b30af70d06fdd0bbdecc1"
+        },
+        {
+          "float_count": 30,
+          "sha256": "f7cc5515a158c3e5058595dd76d1769952f2c8ca8e951955e9f561e2cf3a17a8"
+        }
+      ],
+      "native_vector_draw_joins": [
+        "1737f8a58f5ca755d30eb31e640e35bdfbc3fe93327b1fa882e0d17c104b8cde",
+        "4a4f5434e9d913420ec6563b1ec79a6246507204a67b30af70d06fdd0bbdecc1",
+        "f7cc5515a158c3e5058595dd76d1769952f2c8ca8e951955e9f561e2cf3a17a8"
+      ],
+      "frame_sha256": "37f002888be5b015d266f3a22737398d307764596aca93798ed32482b3e757f7",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 144,
+        "nontransparent_rgba_sha256": "e2c1fee5af8c5715e29ea0cbb10d829aaaaa9d75d0301535355ff1b53cdb0aae",
+        "unique_rgba_count": 131
+      }
+    },
+    "five": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            8
+          ],
+          [
+            11,
+            -1
+          ],
+          [
+            15,
+            6
+          ],
+          [
+            22,
+            -3
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "capture_sha256": "675d3d534d5fa7d2e6607de4bd647f3dbd3616603a07fedfd1cf443076cbc4ca",
+      "native_add_vectors": [
+        {
+          "float_count": 1110,
+          "sha256": "2ee95efc62353275c11d67e1b53e58558c75e2898fe2436b5315e00809d0f37a"
+        },
+        {
+          "float_count": 30,
+          "sha256": "30cd85a4fa0ebbf1e25fdead7dbe88f73806a1f5254a959c4f39cb54c46325d1"
+        },
+        {
+          "float_count": 30,
+          "sha256": "585a6bdf269cfc07336871f806b362687186093cb156cdc6ea8c72fb25873572"
+        }
+      ],
+      "native_vector_draw_joins": [
+        "2ee95efc62353275c11d67e1b53e58558c75e2898fe2436b5315e00809d0f37a",
+        "30cd85a4fa0ebbf1e25fdead7dbe88f73806a1f5254a959c4f39cb54c46325d1",
+        "585a6bdf269cfc07336871f806b362687186093cb156cdc6ea8c72fb25873572"
+      ],
+      "frame_sha256": "9879c98ef6c21688425cb22ece840b722e069a3da933ae78ffc699da47685216",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 152,
+        "nontransparent_rgba_sha256": "3af711dc21748234e53699d99d0a8f80ea5bff46c4f702404f98fe66773f8046",
+        "unique_rgba_count": 136
+      }
+    }
+  }
+}
