@@ -31,13 +31,19 @@ const SOURCE_HEIGHT: f32 = 595.440_06;
 mod binary_records;
 
 fn parsed_body(text: &str, size: f32) -> RichTextBox {
+    parsed_body_optional_size(text, Some(size))
+}
+
+fn parsed_body_optional_size(text: &str, size: Option<f32>) -> RichTextBox {
     let units: Vec<_> = text.encode_utf16().collect();
     let mut common = (units.len() as u32).to_le_bytes().to_vec();
     common.extend(units.iter().flat_map(|unit| unit.to_le_bytes()));
-    common.extend(1_u32.to_le_bytes());
-    common.extend(24_u16.to_le_bytes());
-    for value in [3, 0, units.len() as u32, 1, size.to_bits(), 0] {
-        common.extend(value.to_le_bytes());
+    common.extend(u32::from(size.is_some()).to_le_bytes());
+    if let Some(size) = size {
+        common.extend(24_u16.to_le_bytes());
+        for value in [3, 0, units.len() as u32, 1, size.to_bits(), 0] {
+            common.extend(value.to_le_bytes());
+        }
     }
     common.extend(0_u32.to_le_bytes());
     common.extend([0; 16]);
@@ -2427,4 +2433,110 @@ fn retained_text_airbrush_and_native_ink_export_together() {
         functions.len(),
         functions.iter().collect::<HashSet<_>>().len()
     );
+}
+
+#[test]
+fn public_pdf_paper_density_three_parsed_implicit_default_empty_paragraph() {
+    for text in [
+        format!("\n{}B", "A\n".repeat(80)),
+        format!("{}\nB", "A\n".repeat(80)),
+    ] {
+        let mut document = document(true, None, 0, 1);
+        document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+        document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+        let body = parsed_body_optional_size(&text, None);
+        assert!(body.font_size.is_none() && body.spans.is_empty());
+        document.metadata.note_text = Some(body);
+        let pdf = PdfDocument::load_mem(&export(&document, &[0], 96.0).unwrap().bytes).unwrap();
+        let pages = pdf.get_pages();
+        let extracted: Vec<_> = pages
+            .keys()
+            .map(|&page| {
+                let text = pdf.extract_text(&[page]).unwrap();
+                [text.matches('A').count(), text.matches('B').count()]
+            })
+            .collect();
+        let second_page_count = if text.starts_with('\n') { 23 } else { 22 };
+        assert_eq!(
+            &extracted[..4],
+            &[[0, 0], [second_page_count, 0], [23, 0], [13, 1]]
+        );
+        assert!(extracted[4..].iter().all(|counts| *counts == [0, 0]));
+        let form = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .filter(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+            })
+            .filter_map(|stream| {
+                Content::decode(
+                    &stream
+                        .decompressed_content()
+                        .unwrap_or_else(|_| stream.content.clone()),
+                )
+                .ok()
+            })
+            .find(|content| content.operations.iter().any(|op| op.operator == "BT"))
+            .unwrap();
+        let mut baselines: Vec<f64> = form
+            .operations
+            .iter()
+            .filter(|op| op.operator == "Tm")
+            .map(|op| number(&op.operands[5]).unwrap())
+            .collect();
+        assert_eq!(
+            baselines.len(),
+            if text.starts_with('\n') { 21 } else { 22 }
+        );
+        for (&page_number, &page) in &pages {
+            if page_number == 1 {
+                continue;
+            }
+            let content = Content::decode(&pdf.get_page_content(page).unwrap()).unwrap();
+            let count = content
+                .operations
+                .iter()
+                .filter(|op| op.operator == "Tm")
+                .count();
+            let expected = match page_number {
+                2 => second_page_count,
+                3 => 23,
+                4 => 14,
+                _ => 0,
+            };
+            assert_eq!(count, expected, "page {page_number}");
+            baselines.extend(
+                content
+                    .operations
+                    .iter()
+                    .filter(|op| op.operator == "Tm")
+                    .map(|op| number(&op.operands[5]).unwrap()),
+            );
+        }
+        baselines.sort_by(f64::total_cmp);
+        assert_eq!(baselines.len(), 81);
+        let first = if text.starts_with('\n') { 73.95 } else { 51.0 };
+        assert!((baselines[0] - first).abs() < 0.02);
+        let gaps: Vec<_> = baselines.windows(2).map(|pair| pair[1] - pair[0]).collect();
+        assert!(
+            gaps.iter()
+                .all(|&gap| (gap - 68.85).abs() < 0.02 || (gap - 91.8).abs() < 0.02)
+        );
+        assert_eq!(
+            gaps.iter()
+                .filter(|&&gap| (gap - 91.8).abs() < 0.02)
+                .count(),
+            usize::from(!text.starts_with('\n'))
+        );
+        assert!(
+            pages
+                .keys()
+                .skip(1)
+                .any(|&page| pdf.extract_text(&[page]).unwrap().contains('B'))
+        );
+    }
 }

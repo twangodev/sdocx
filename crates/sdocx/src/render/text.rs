@@ -159,6 +159,7 @@ pub(super) enum TextSpanProducer {
 pub(super) struct TextSettings {
     pub scale: f32,
     pub font_size_delta: f32,
+    pub(super) unscaled_implicit_caret: bool,
     pub(super) font_size_units: FontSizeUnits,
 }
 
@@ -173,6 +174,7 @@ impl Default for TextSettings {
         Self {
             scale: 1.0,
             font_size_delta: 0.0,
+            unscaled_implicit_caret: false,
             font_size_units: FontSizeUnits::Logical,
         }
     }
@@ -510,7 +512,12 @@ impl<'a> StyledText<'a> {
 
     fn resolved_caret_font_size(&self, character: usize) -> (f64, bool) {
         let default = self.text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE);
-        let resolved_default = self.settings.checked_caret_default(default);
+        let resolved_default =
+            if self.settings.unscaled_implicit_caret && self.text_box.font_size.is_none() {
+                Some(f64::from(default))
+            } else {
+                self.settings.checked_caret_default(default)
+            };
         let Some(utf16) = self.index.char_to_utf16(character) else {
             return (
                 resolved_default.unwrap_or_else(|| self.settings.font_size(default)),

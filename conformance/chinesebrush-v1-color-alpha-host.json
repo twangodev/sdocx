@@ -1,0 +1,13 @@
+{
+  "scope": "Synthetic curve-v1 ObjectStroke, native Drawing and ChineseBrush GLV1/RTV1, host Mesa GLES readback; not device or saved-note parity.",
+  "source_fixture": "chinesebrush-source-native.json:curve-v1",
+  "native_chinesebrush_sha256": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+  "producer_sha256": "d3803fcad584a09cfeb86ae6a9577a8c829da7d1a928ecdb305754d37a59bc22",
+  "frame_rgba8_bottom_left_sha256": "5d3f149c459aaec0d4ba127b37eb3fe8a2b2f2da092009fed94d1e38fb015c24",
+  "frame_byte_count": 292752,
+  "cases": [
+    {"argb": "0xff6cdd8f", "input_color_f32_le_hex": "d9d8d83ededd5d3f908f0f3f0000803f"},
+    {"argb": "0x406cdd8f", "input_color_f32_le_hex": "d9d8d83ededd5d3f908f0f3f8180803e"}
+  ],
+  "observation": "Both source colors yielded the same producer bytes and complete framebuffer bytes despite distinct alpha uniforms."
+}

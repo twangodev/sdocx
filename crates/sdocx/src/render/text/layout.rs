@@ -130,6 +130,7 @@ fn spacing_bullet(bullet: Option<ParagraphBullet>) -> bool {
     )
 }
 
+#[derive(Clone)]
 pub(in crate::render) struct TextFrame<'a> {
     pub bbox: BoundingBox,
     pub gravity: Option<u8>,

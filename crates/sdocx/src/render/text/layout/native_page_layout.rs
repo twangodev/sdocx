@@ -22,7 +22,22 @@ pub(in crate::render) fn layout_native_paper_text(
     TextLayout,
     Result<NativePageLayout, NativePageIndexUnavailable>,
 ) {
-    layout_native_page_text_profile(styled, frame, theme, renderer, true)
+    let settings = super::super::super::TextSettings {
+        unscaled_implicit_caret: styled.settings.scale == 3.0
+            && styled.text_box.font_size.is_none()
+            && styled.text_box.spans.is_empty(),
+        ..styled.settings
+    };
+    let paper_styled = StyledText::new(styled.text_box, styled.context(), settings);
+    if checked_width(&paper_styled, &frame, true).is_err() {
+        return layout_native_page_text_profile(styled, frame, theme, renderer, true);
+    }
+    let result =
+        layout_native_page_text_profile(&paper_styled, frame.clone(), theme, renderer, true);
+    if result.1.is_err() {
+        return layout_native_page_text_profile(styled, frame, theme, renderer, true);
+    }
+    result
 }
 
 fn layout_native_page_text_profile(

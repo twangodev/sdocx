@@ -1,0 +1,456 @@
+{
+  "apk_version": "4.4.45.37",
+  "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+  "dependencies": {
+    "caller_font_xml": "<familyset><family name=\"sans-serif\"><font weight=\"400\" style=\"normal\">Roboto-Regular.ttf</font><font weight=\"700\" style=\"normal\">Roboto-Bold.ttf</font><font weight=\"400\" style=\"italic\">Roboto-Italic.ttf</font><font weight=\"700\" style=\"italic\">Roboto-BoldItalic.ttf</font></family></familyset>",
+    "caller_font_xml_sha256": "9864ad4db5012ad4b63f82fcd0375b4f6a02a92d762147805ebdc02de0f4ed22",
+    "font_files": [
+      {"file": "Roboto-Regular.ttf", "sha256": "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d"},
+      {"file": "Roboto-Bold.ttf", "sha256": "61f89f8db49261c2f6106e8dccc35df7b2f7ed909020db40a3fc905e95f99334"},
+      {"file": "Roboto-Italic.ttf", "sha256": "fa0b17bb4aaac4a1b2ee149dd4ca3b55e97d3077aa6ba9bb02541b316e7c46ce"},
+      {"file": "Roboto-BoldItalic.ttf", "sha256": "40083ed54338397cf49d2c49f59eddcd963a30fdb301813d4bd3abbb37a13d12"}
+    ],
+    "xml_library_sha256": "46753f76c8c007e78777e8fe7de7b57202f966f9494d4fba2b675c3540e35dbd",
+    "cpp_library_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "host_libraries": [
+      {"path": "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1", "sha256": "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151"},
+      {"path": "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1", "sha256": "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24"},
+      {"path": "/usr/lib/x86_64-linux-gnu/libc.so.6", "sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92"},
+      {"path": "/usr/lib/x86_64-linux-gnu/libm.so.6", "sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"}
+    ],
+    "icu_version": [76, 1, 0, 0],
+    "unicode_version": [16, 0, 0, 0],
+    "text_initializers": [593448, 593828, 614844, 633272, 634408, 645720, 646668, 651664, 652044],
+    "per_native_call_instruction_limit": 10000000,
+    "wall_timeout_micros": 0
+  },
+  "model_library_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "base_library_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+  "text_library_sha256": "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b",
+  "skia_library_sha256": "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d",
+  "xml_library_sha256": "46753f76c8c007e78777e8fe7de7b57202f966f9494d4fba2b675c3540e35dbd",
+  "cpp_library_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+  "widget_library_sha256": "cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9",
+  "content_library_sha256": "8b263185a6dfd89239cd0279bf68e4e95d887d42cc83ae5cc6fd94a4e703c24c",
+  "drawing_library_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "bodytext_library_sha256": "27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0",
+  "memory_fills": [0, 165],
+  "repeat_zero_fill": false,
+  "capture_boundary": "Actual ObjectTextBox constructor and Construct create the body source; ApplyBinary_TextData parses caller-supplied UTF-16 text with zero spans and zero paragraph records. Widget SetObject, SetTextScale(3), Update, Measure, Layout, TextLayout getters and BodyTextPageIndexer execute. Page getters supply explicit page records; full note archive parsing, complete BodyTextContext and PDF export do not execute. Host library digests are recorded in dependencies.",
+  "cases": [
+    {
+      "name": "scale3-consecutive-newlines",
+      "input": {
+        "source_utf8": "AV\n\nTo",
+        "requested_text_scale_bits": 1077936128,
+        "requested_width_bits": 1132920832,
+        "requested_height_bits": 1148846080,
+        "requested_font_size_bits": null,
+        "requested_margin_bits": null,
+        "page_records": [[0, 0, 0, 270, 60], [60, 0, 0, 270, 60], [120, 0, 0, 270, 60], [180, 0, 0, 270, 60], [240, 0, 0, 270, 60], [300, 0, 0, 270, 60]]
+      },
+      "produced": {
+        "native_source_utf8": "AV\n\nTo",
+        "text_length_utf16": 6,
+        "layout_width": 270,
+        "default_font_size_bits": 1099431936,
+        "model_source": {
+          "font_size_at_utf16_including_end_bits": [1099431936, 1099431936, 1099431936, 1099431936, 1099431936, 1099431936, 1099431936],
+          "foreground_at_utf16_including_end": [4278190080, 4278190080, 4278190080, 4278190080, 4278190080, 4278190080, 4278190080],
+          "margin_bits": [0, 0, 0, 0],
+          "paragraphs": [],
+          "observation_after_page_indexing": true
+        },
+        "lines": [
+          {"line": 0, "source_inclusive_utf16": [0, 1], "line_top_bits": 0, "background_rect_bits": [0, 0, 1115567094, 1116320563]},
+          {"line": 1, "source_inclusive_utf16": [2, 2], "line_top_bits": 1116320563, "background_rect_bits": [0, 1116320563, 0, 1119328666]},
+          {"line": 2, "source_inclusive_utf16": [3, 5], "line_top_bits": 1119328666, "background_rect_bits": [0, 1119328666, 1113863291, 1126213222]}
+        ],
+        "first_empty_rect_bits": [0, 0, 0, 0],
+        "default_cursor_rect_bits": [0, 3241148416, 0, 1094660916],
+        "producer_calls": {"document_construct": 1, "document_constructor": 1, "layout_width": 2, "line_count": 1, "text_length": 2, "widget_layout": 1, "widget_measure": 1, "widget_update": 1},
+        "getter_observation_calls": {
+          "default_cursor": 1,
+          "first_empty:270": 2,
+          "layout_width": 1,
+          "line_background:0": 1,
+          "line_background:1": 1,
+          "line_background:2": 1,
+          "line_count": 3,
+          "line_end:0": 2,
+          "line_end:1": 1,
+          "line_end:2": 1,
+          "line_start:0": 2,
+          "line_start:1": 1,
+          "line_start:2": 1,
+          "line_top:0": 1,
+          "line_top:1": 1,
+          "line_top:2": 1,
+          "text_length": 2
+        }
+      },
+      "boundaries": [
+        {"page": 0, "line": 0, "down": true, "up": true},
+        {"page": 0, "line": 1, "down": true, "up": false},
+        {"page": 0, "line": 2, "down": true, "up": false},
+        {"page": 1, "line": 0, "down": false, "up": true},
+        {"page": 1, "line": 1, "down": true, "up": true},
+        {"page": 1, "line": 2, "down": true, "up": true},
+        {"page": 2, "line": 0, "down": false, "up": true},
+        {"page": 2, "line": 1, "down": false, "up": true},
+        {"page": 2, "line": 2, "down": true, "up": true},
+        {"page": 3, "line": 0, "down": false, "up": true},
+        {"page": 3, "line": 1, "down": false, "up": true},
+        {"page": 3, "line": 2, "down": false, "up": true},
+        {"page": 4, "line": 0, "down": false, "up": true},
+        {"page": 4, "line": 1, "down": false, "up": true},
+        {"page": 4, "line": 2, "down": false, "up": true},
+        {"page": 5, "line": 0, "down": false, "up": true},
+        {"page": 5, "line": 1, "down": false, "up": true},
+        {"page": 5, "line": 2, "down": false, "up": true},
+        {"page": 6, "line": 0, "down": false, "up": false},
+        {"page": 6, "line": 1, "down": false, "up": false},
+        {"page": 6, "line": 2, "down": false, "up": false}
+      ],
+      "boundary_calls": {
+        "down_line": 21,
+        "first_empty:270": 12,
+        "layout_width": 12,
+        "line_background:0": 6,
+        "line_background:1": 6,
+        "line_background:2": 6,
+        "line_top:0": 6,
+        "line_top:1": 6,
+        "line_top:2": 6,
+        "text_length": 36,
+        "up_line": 21
+      },
+      "stages": [
+        {
+          "stage": "cold",
+          "first_page": 0,
+          "line_sections": [[0, 1], [1, 2], [2, 1], [3, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 4], [3, 3], [6, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 5,
+            "first_empty:270": 3,
+            "layout_width": 3,
+            "line_background:0": 2,
+            "line_background:1": 1,
+            "line_background:2": 3,
+            "line_count": 1,
+            "line_end:0": 1,
+            "line_end:2": 2,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_start:2": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "line_top:2": 2,
+            "page_indexer": 1,
+            "text_length": 11,
+            "up_line": 5
+          }
+        },
+        {
+          "stage": "repeat",
+          "first_page": 0,
+          "line_sections": [[0, 1], [1, 2], [2, 1], [3, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 4], [3, 3], [6, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 5,
+            "first_empty:270": 3,
+            "layout_width": 3,
+            "line_background:0": 2,
+            "line_background:1": 1,
+            "line_background:2": 3,
+            "line_count": 1,
+            "line_end:0": 1,
+            "line_end:2": 2,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_start:2": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "line_top:2": 2,
+            "page_indexer": 1,
+            "text_length": 11,
+            "up_line": 5
+          }
+        },
+        {
+          "stage": "rescan-page1",
+          "first_page": 1,
+          "line_sections": [[0, 1], [1, 2], [2, 1], [3, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 4], [3, 3], [6, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 4,
+            "first_empty:270": 1,
+            "layout_width": 1,
+            "line_background:0": 1,
+            "line_background:1": 1,
+            "line_background:2": 3,
+            "line_count": 1,
+            "line_end:2": 2,
+            "line_start:1": 1,
+            "line_start:2": 1,
+            "line_top:1": 1,
+            "line_top:2": 2,
+            "page_indexer": 1,
+            "text_length": 8,
+            "up_line": 3
+          }
+        }
+      ]
+    },
+    {
+      "name": "scale3-leading",
+      "input": {
+        "source_utf8": "\nAV",
+        "requested_text_scale_bits": 1077936128,
+        "requested_width_bits": 1132920832,
+        "requested_height_bits": 1148846080,
+        "requested_font_size_bits": null,
+        "requested_margin_bits": null,
+        "page_records": [[0, 0, 0, 270, 60], [60, 0, 0, 270, 60], [120, 0, 0, 270, 60], [180, 0, 0, 270, 60], [240, 0, 0, 270, 60], [300, 0, 0, 270, 60]]
+      },
+      "produced": {
+        "native_source_utf8": "\nAV",
+        "text_length_utf16": 3,
+        "layout_width": 270,
+        "default_font_size_bits": 1099431936,
+        "model_source": {
+          "font_size_at_utf16_including_end_bits": [1099431936, 1099431936, 1099431936, 1099431936],
+          "foreground_at_utf16_including_end": [4278190080, 4278190080, 4278190080, 4278190080],
+          "margin_bits": [0, 0, 0, 0],
+          "paragraphs": [],
+          "observation_after_page_indexing": true
+        },
+        "lines": [
+          {"line": 0, "source_inclusive_utf16": [-1, -1], "line_top_bits": 0, "background_rect_bits": [0, 0, 0, 1102551450]},
+          {"line": 1, "source_inclusive_utf16": [0, 2], "line_top_bits": 1102551450, "background_rect_bits": [0, 1102551450, 1115567094, 1119328666]}
+        ],
+        "first_empty_rect_bits": [0, 0, 1132920832, 1102551450],
+        "default_cursor_rect_bits": [0, 0, 0, 1102551450],
+        "producer_calls": {"document_construct": 1, "document_constructor": 1, "layout_width": 2, "line_count": 1, "text_length": 2, "widget_layout": 1, "widget_measure": 1, "widget_update": 1},
+        "getter_observation_calls": {
+          "default_cursor": 1,
+          "first_empty:270": 2,
+          "layout_width": 1,
+          "line_background:0": 1,
+          "line_background:1": 1,
+          "line_count": 3,
+          "line_end:0": 2,
+          "line_end:1": 2,
+          "line_start:0": 2,
+          "line_start:1": 2,
+          "line_top:0": 1,
+          "line_top:1": 1,
+          "text_length": 2
+        }
+      },
+      "boundaries": [
+        {"page": 0, "line": 0, "down": true, "up": true},
+        {"page": 0, "line": 1, "down": true, "up": true},
+        {"page": 1, "line": 0, "down": false, "up": true},
+        {"page": 1, "line": 1, "down": true, "up": true},
+        {"page": 2, "line": 0, "down": false, "up": true},
+        {"page": 2, "line": 1, "down": false, "up": true},
+        {"page": 3, "line": 0, "down": false, "up": true},
+        {"page": 3, "line": 1, "down": false, "up": true},
+        {"page": 4, "line": 0, "down": false, "up": true},
+        {"page": 4, "line": 1, "down": false, "up": true},
+        {"page": 5, "line": 0, "down": false, "up": true},
+        {"page": 5, "line": 1, "down": false, "up": true},
+        {"page": 6, "line": 0, "down": false, "up": false},
+        {"page": 6, "line": 1, "down": false, "up": false}
+      ],
+      "boundary_calls": {"down_line": 14, "first_empty:270": 12, "layout_width": 12, "line_background:0": 6, "line_background:1": 6, "line_top:0": 6, "line_top:1": 6, "text_length": 24, "up_line": 14},
+      "stages": [
+        {
+          "stage": "cold",
+          "first_page": 0,
+          "line_sections": [[0, 2], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 3], [0, 3], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 3,
+            "first_empty:270": 2,
+            "layout_width": 2,
+            "line_background:0": 1,
+            "line_background:1": 3,
+            "line_count": 1,
+            "line_end:1": 2,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "page_indexer": 1,
+            "text_length": 7,
+            "up_line": 3
+          }
+        },
+        {
+          "stage": "repeat",
+          "first_page": 0,
+          "line_sections": [[0, 2], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 3], [0, 3], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 3,
+            "first_empty:270": 2,
+            "layout_width": 2,
+            "line_background:0": 1,
+            "line_background:1": 3,
+            "line_count": 1,
+            "line_end:1": 2,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "page_indexer": 1,
+            "text_length": 7,
+            "up_line": 3
+          }
+        },
+        {
+          "stage": "rescan-page1",
+          "first_page": 1,
+          "line_sections": [[0, 2], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 3], [0, 3], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {"down_line": 2, "line_background:1": 3, "line_count": 1, "line_end:1": 1, "line_start:1": 1, "line_top:1": 1, "page_indexer": 1, "text_length": 4, "up_line": 1}
+        }
+      ]
+    },
+    {
+      "name": "scale3-trailing",
+      "input": {
+        "source_utf8": "AV\n",
+        "requested_text_scale_bits": 1077936128,
+        "requested_width_bits": 1132920832,
+        "requested_height_bits": 1148846080,
+        "requested_font_size_bits": null,
+        "requested_margin_bits": null,
+        "page_records": [[0, 0, 0, 270, 60], [60, 0, 0, 270, 60], [120, 0, 0, 270, 60], [180, 0, 0, 270, 60], [240, 0, 0, 270, 60], [300, 0, 0, 270, 60]]
+      },
+      "produced": {
+        "native_source_utf8": "AV\n",
+        "text_length_utf16": 3,
+        "layout_width": 270,
+        "default_font_size_bits": 1099431936,
+        "model_source": {
+          "font_size_at_utf16_including_end_bits": [1099431936, 1099431936, 1099431936, 1099431936],
+          "foreground_at_utf16_including_end": [4278190080, 4278190080, 4278190080, 4278190080],
+          "margin_bits": [0, 0, 0, 0],
+          "paragraphs": [],
+          "observation_after_page_indexing": true
+        },
+        "lines": [
+          {"line": 0, "source_inclusive_utf16": [0, 1], "line_top_bits": 0, "background_rect_bits": [0, 0, 1115567094, 1116320563]},
+          {"line": 1, "source_inclusive_utf16": [2, 2], "line_top_bits": 1116320563, "background_rect_bits": [0, 1116320563, 0, 1119328666]}
+        ],
+        "first_empty_rect_bits": [0, 0, 0, 0],
+        "default_cursor_rect_bits": [0, 3241148416, 0, 1094660916],
+        "producer_calls": {"document_construct": 1, "document_constructor": 1, "layout_width": 2, "line_count": 1, "text_length": 2, "widget_layout": 1, "widget_measure": 1, "widget_update": 1},
+        "getter_observation_calls": {
+          "default_cursor": 1,
+          "first_empty:270": 2,
+          "layout_width": 1,
+          "line_background:0": 1,
+          "line_background:1": 1,
+          "line_count": 3,
+          "line_end:0": 2,
+          "line_end:1": 1,
+          "line_start:0": 2,
+          "line_start:1": 1,
+          "line_top:0": 1,
+          "line_top:1": 1,
+          "text_length": 2
+        }
+      },
+      "boundaries": [
+        {"page": 0, "line": 0, "down": true, "up": true},
+        {"page": 0, "line": 1, "down": true, "up": false},
+        {"page": 1, "line": 0, "down": false, "up": true},
+        {"page": 1, "line": 1, "down": true, "up": true},
+        {"page": 2, "line": 0, "down": false, "up": true},
+        {"page": 2, "line": 1, "down": false, "up": true},
+        {"page": 3, "line": 0, "down": false, "up": true},
+        {"page": 3, "line": 1, "down": false, "up": true},
+        {"page": 4, "line": 0, "down": false, "up": true},
+        {"page": 4, "line": 1, "down": false, "up": true},
+        {"page": 5, "line": 0, "down": false, "up": true},
+        {"page": 5, "line": 1, "down": false, "up": true},
+        {"page": 6, "line": 0, "down": false, "up": false},
+        {"page": 6, "line": 1, "down": false, "up": false}
+      ],
+      "boundary_calls": {"down_line": 14, "first_empty:270": 12, "layout_width": 12, "line_background:0": 6, "line_background:1": 6, "line_top:0": 6, "line_top:1": 6, "text_length": 24, "up_line": 14},
+      "stages": [
+        {
+          "stage": "cold",
+          "first_page": 0,
+          "line_sections": [[0, 1], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 1], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 4,
+            "first_empty:270": 3,
+            "layout_width": 3,
+            "line_background:0": 2,
+            "line_background:1": 3,
+            "line_count": 1,
+            "line_end:0": 1,
+            "line_end:1": 1,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "page_indexer": 1,
+            "text_length": 8,
+            "up_line": 3
+          }
+        },
+        {
+          "stage": "repeat",
+          "first_page": 0,
+          "line_sections": [[0, 1], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 1], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 4,
+            "first_empty:270": 3,
+            "layout_width": 3,
+            "line_background:0": 2,
+            "line_background:1": 3,
+            "line_count": 1,
+            "line_end:0": 1,
+            "line_end:1": 1,
+            "line_start:0": 1,
+            "line_start:1": 1,
+            "line_top:0": 1,
+            "line_top:1": 2,
+            "page_indexer": 1,
+            "text_length": 8,
+            "up_line": 3
+          }
+        },
+        {
+          "stage": "rescan-page1",
+          "first_page": 1,
+          "line_sections": [[0, 1], [1, 1], [2, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "text_sections": [[0, 2], [2, 1], [3, 0], [-1, 0], [-1, 0], [-1, 0]],
+          "native_calls": {
+            "down_line": 3,
+            "first_empty:270": 1,
+            "layout_width": 1,
+            "line_background:0": 1,
+            "line_background:1": 3,
+            "line_count": 1,
+            "line_end:1": 1,
+            "line_start:1": 1,
+            "line_top:1": 1,
+            "page_indexer": 1,
+            "text_length": 5,
+            "up_line": 1
+          }
+        }
+      ]
+    }
+  ]
+}

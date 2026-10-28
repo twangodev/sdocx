@@ -562,3 +562,128 @@ fn unsupported_body_profiles_use_the_existing_capture_layout() {
         assert!(actual.native_frame.is_none());
     }
 }
+
+#[test]
+#[cfg(feature = "pdf")]
+fn parsed_implicit_default_empty_lines_match_native_paper_profile() {
+    let capture: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-parsed-default-native.json"
+    ))
+    .unwrap();
+    let fonts = FontBook::default();
+    let settings = super::super::super::TextSettings {
+        scale: 3.0,
+        ..Default::default()
+    };
+    let renderer = TextRenderer::new(settings, &fonts);
+    for case in capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|case| case["name"] != "scale3-trailing")
+    {
+        let mut content = source(&case["input"]);
+        content.font_size = None;
+        let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+        let width =
+            f32::from_bits(case["input"]["requested_width_bits"].as_u64().unwrap() as u32) as i32;
+        let (layout, native) = layout_native_paper_text(
+            &styled,
+            frame(f64::from(width)),
+            RenderTheme::for_canvas(false),
+            &renderer,
+        );
+        let native = native.unwrap();
+        let pages: Vec<_> = case["input"]["page_records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|page| {
+                let v: Vec<i32> = serde_json::from_value(page.clone()).unwrap();
+                super::super::super::native_page_index::NativePageRecord {
+                    cumulative_y: v[0],
+                    local_bounds: [v[1], v[2], v[3], v[4]],
+                }
+            })
+            .collect();
+        let mut sections = super::super::super::native_page_index::NativePageSections::default();
+        native
+            .update_sections(Some(&pages), 0, &mut sections)
+            .unwrap();
+        let pairs = |items: &[super::super::super::native_page_index::NativePageSection]| {
+            items.iter().map(|s| [s.start, s.count]).collect::<Vec<_>>()
+        };
+        let stage = &case["stages"][0];
+        assert_eq!(
+            serde_json::to_value(pairs(&sections.lines)).unwrap(),
+            stage["line_sections"]
+        );
+        assert_eq!(
+            serde_json::to_value(pairs(&sections.text)).unwrap(),
+            stage["text_sections"]
+        );
+        for boundary in case["boundaries"].as_array().unwrap() {
+            let page = pages
+                .get(boundary["page"].as_u64().unwrap() as usize)
+                .copied();
+            let line = boundary["line"].as_i64().unwrap() as i32;
+            assert_eq!(
+                native.is_down_line(page, line),
+                boundary["down"].as_bool().unwrap()
+            );
+            assert_eq!(
+                native.is_up_line(page, line),
+                boundary["up"].as_bool().unwrap()
+            );
+        }
+        let expected = case["produced"]["lines"].as_array().unwrap();
+        assert_eq!(layout.lines.len(), expected.len());
+        for (line, expected) in layout.lines.iter().zip(expected) {
+            let bands = line.native_bands.unwrap();
+            assert_eq!(
+                [bands.top.to_bits(), bands.bottom.to_bits()],
+                [
+                    expected["background_rect_bits"][1].as_u64().unwrap() as u32,
+                    expected["background_rect_bits"][3].as_u64().unwrap() as u32
+                ],
+                "{}",
+                case["name"]
+            );
+        }
+    }
+}
+
+#[test]
+#[cfg(feature = "pdf")]
+fn rejected_paper_implicit_default_uses_original_fallback() {
+    let content = source(&serde_json::json!({"source_utf8":"AV\n", "requested_margin_bits":null}));
+    let mut content = content;
+    content.font_size = None;
+    let settings = super::super::super::TextSettings {
+        scale: 3.0,
+        ..Default::default()
+    };
+    let fonts = FontBook::default();
+    let renderer = TextRenderer::new(settings, &fonts);
+    let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+    let (paper, result) = layout_native_paper_text(
+        &styled,
+        frame(270.0),
+        RenderTheme::for_canvas(false),
+        &renderer,
+    );
+    assert!(result.is_err());
+    let (fallback, _) = layout_native_page_text(
+        &styled,
+        frame(270.0),
+        RenderTheme::for_canvas(false),
+        &renderer,
+    );
+    assert_eq!(paper.lines.len(), fallback.lines.len());
+    for (left, right) in paper.lines.iter().zip(&fallback.lines) {
+        assert_eq!(
+            left.native_bands.map(|b| [b.top, b.bottom]),
+            right.native_bands.map(|b| [b.top, b.bottom])
+        );
+    }
+}

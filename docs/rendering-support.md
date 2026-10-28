@@ -846,8 +846,8 @@ admits its source, font, geometry and flow settings; space-only measured lines
 remain unsupported. At density 3, a separate PDF-paper profile also accepts
 bounded ASCII body text with nonempty paragraphs and no supplied paragraph
 metadata, subject to the existing font, geometry and flow guards. A single
-leading or interior empty paragraph is also accepted for the captured 24-byte
-whole-text font-size span profile; leading requires size 50 and interior size
+leading or interior empty paragraph is also accepted for a parsed implicit-default
+body, or for the captured 24-byte whole-text font-size span profile; for the span profile, leading requires size 50 and interior size
 17 or 50. Other empty-paragraph styles remain unsupported. The prevalence of
 this span encoding in saved notes is unverified. Native
 scale-three controls cover line geometry, page-index boundaries and the

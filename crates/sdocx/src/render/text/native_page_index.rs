@@ -297,9 +297,12 @@ impl NativePageLayout {
             .split('\n')
             .filter(|part| part.is_empty())
             .count();
-        let certified_empty_paragraph = whole_font_span
-            && empty_paragraphs == 1
-            && (!source.text.starts_with('\n') || source.font_size == Some(50.0));
+        let certified_empty_paragraph = empty_paragraphs == 1
+            && ((whole_font_span
+                && (!source.text.starts_with('\n') || source.font_size == Some(50.0)))
+                || (styled.settings.unscaled_implicit_caret
+                    && source.font_size.is_none()
+                    && source.spans.is_empty()));
         if width <= 0
             || f64::from(width as f32) != f64::from(width)
             || !matches!(styled.context(), super::TextContext::Flow)

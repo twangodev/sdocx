@@ -779,7 +779,11 @@ admitted nonempty-paragraph cases. Native line-range and substring-visibility
 primitives also match the tested boundary bands; the complete BodyTextContext
 visibility method does not execute in this control. A missing default font size
 produces unscaled empty-paragraph height, while explicit sizes 17 and 50 scale;
-a narrow parsed 24-byte whole-text font span profile is admitted for one
+a parsed implicit-default body is admitted for one leading or interior empty
+paragraph; [parsed controls](../../conformance/pdf-paper-parsed-default-native.json)
+confirm the unscaled empty-line height and page-index boundaries using the body
+constructor and binary text parser. A narrow parsed 24-byte whole-text font span
+profile is admitted for one
 leading empty paragraph at size 50 or one interior empty paragraph at size 17
 or 50. The [parsed span receipt](../../conformance/pdf-paper-parsed-font-span-native.json)
 records the native lines, page-index boundaries, and rectangular visibility

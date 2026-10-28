@@ -15814,6 +15814,58 @@ mod tests {
     }
 
     #[test]
+    fn chinesebrush_v1_captured_color_alpha_matches_public_svg_and_pdf() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/chinesebrush-v1-color-alpha-host.json"
+        ))
+        .unwrap();
+        assert_ne!(
+            receipt["cases"][0]["input_color_f32_le_hex"],
+            receipt["cases"][1]["input_color_f32_le_hex"]
+        );
+        let mut document = crate::parse_bytes(include_bytes!(
+            "../tests/assets/chinesebrush/synthetic_v3.sdocx"
+        ))
+        .unwrap();
+        let options = RenderOptions {
+            chinesebrush_profile: Some(ChineseBrushRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..RenderOptions::default()
+        };
+        let rendering = document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap();
+        rendering.advanced_settings = Some("1;".into());
+        rendering.style.color_argb = Some(0xff6c_dd8f);
+        let opaque_svg = render_document_svg(&document, &options)[0].svg.clone();
+        assert!(opaque_svg.contains("data:image/png;base64,"));
+        #[cfg(feature = "pdf")]
+        let opaque_pdf =
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+        document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_argb = Some(0x406c_dd8f);
+        assert_eq!(render_document_svg(&document, &options)[0].svg, opaque_svg);
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+            opaque_pdf
+        );
+    }
+
+    #[test]
     fn opt_in_chinesebrush_paints_parsed_records_and_keeps_atomic_fallback() {
         let document = crate::parse_bytes(include_bytes!(
             "../tests/assets/chinesebrush/synthetic_v3.sdocx"
