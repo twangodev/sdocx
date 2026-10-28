@@ -7,13 +7,13 @@ root = Path(__file__).resolve().parents[1]
 runner = root / "tmp/conformance-cleanup/native-capture-a241793/conformance/inkpen_joined_paint_native.py"
 scale = int(os.environ.get("INKPEN_CAPTURE_SCALE", "1"))
 source = runner.read_text()
-if os.environ.get("INKPEN_CAPTURE_BENT") == "loop":
+if os.environ.get("INKPEN_CAPTURE_BENT") in ("loop", "phase"):
     assert hashlib.sha256(runner.read_bytes()).hexdigest() == "7a05db658343956af992823ee5a17622fa94a08c88152be9f39cee950eca4a79"
     caller = runner.with_name("inkpen_saved_caller_native.py")
     assert hashlib.sha256(caller.read_bytes()).hexdigest() == "c0b1657cdcf94bcf2c173ce68ed7817e55a4de246883b47265bb7b4d3f50dc04"
-if os.environ.get("INKPEN_CAPTURE_BENT") in ("1", "loop"):
+if os.environ.get("INKPEN_CAPTURE_BENT") in ("1", "loop", "phase"):
     anchor = "caller_source='queue_task_events=[]\\nqueue_task_active=[]\\n'+caller_source"
-    points = "[[8.,8.],[20.,18.],[35.,5.],[52.,20.]]" if os.environ["INKPEN_CAPTURE_BENT"] == "1" else "[[15.,15.],[45.,35.],[15.,35.],[45.,15.]]"
+    points = {"1": "[[8.,8.],[20.,18.],[35.,5.],[52.,20.]]", "loop": "[[15.,15.],[45.,35.],[15.,35.],[45.,15.]]", "phase": "[[8.25,8.25],[20.25,18.25],[35.25,5.25],[52.25,20.25]]"}[os.environ["INKPEN_CAPTURE_BENT"]]
     edit = f"assert caller_source.count(\"[[0.,0.],[10.,0.],[20.,0.],[30.,10.]]\") == 1 and caller_source.count(\"'size':10.0\") == 1\ncaller_source=caller_source.replace(\"[[0.,0.],[10.,0.],[20.,0.],[30.,10.]]\", \"{points}\").replace(\"'size':10.0\", \"'size':6.0\")\n"
     assert source.count(anchor) == 1
     source = source.replace(anchor, edit + anchor)

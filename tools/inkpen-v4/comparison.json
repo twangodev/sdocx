@@ -1,0 +1,92 @@
+{
+  "schema": "sdocx-inkpen-v4-3x-public-comparison-v1",
+  "scope": "Synthetic host Mesa 3x; absolute alpha error and RGB error over #fcfcfc. Not device or saved-note parity.",
+  "frames_sha256": "239d24bd7d13d13d347e90f093862d5c2f7262925125c80d94ccac21900f309d",
+  "cases": [
+    {
+      "name": "straight",
+      "rgba_sha256": "76de5f46430ccd43197d1d8b32f75c327e2e61cdd9c6c72e6057f91e45a5900a",
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "scales": {
+        "1": {
+          "svg_alpha_error": 52623,
+          "mupdf_rgb_error": 299610,
+          "pdfium_rgb_error": 146166
+        },
+        "3": {
+          "svg_alpha_error": 3480,
+          "mupdf_rgb_error": 153381,
+          "pdfium_rgb_error": 18588
+        }
+      }
+    },
+    {
+      "name": "1",
+      "rgba_sha256": "e57aec6d506b128b6cf2c1d9ef686a0a635992e6922b4b2b06294f8dd5479fd4",
+      "stream_sha256": "c3b0a235aeddcaeea06b91145b3d5c650d18bbe9cb5a76591f951de88f0831d7",
+      "scales": {
+        "1": {
+          "svg_alpha_error": 95023,
+          "mupdf_rgb_error": 423372,
+          "pdfium_rgb_error": 256200
+        },
+        "3": {
+          "svg_alpha_error": 6633,
+          "mupdf_rgb_error": 161045,
+          "pdfium_rgb_error": 45405
+        }
+      }
+    },
+    {
+      "name": "loop",
+      "rgba_sha256": "d1c7e6ca35120950853a0887bfed263051ef298b251cba1e75d3c8be62e53c1e",
+      "stream_sha256": "0f7a8f785fb0b2b3a26d55001adf2441136b6383bad502127e05a7af949dcc80",
+      "scales": {
+        "1": {
+          "svg_alpha_error": 100078,
+          "mupdf_rgb_error": 439046,
+          "pdfium_rgb_error": 268275
+        },
+        "3": {
+          "svg_alpha_error": 7520,
+          "mupdf_rgb_error": 163659,
+          "pdfium_rgb_error": 45696
+        }
+      }
+    },
+    {
+      "name": "phase",
+      "rgba_sha256": "393aba817daf00f9feebdcf6e52d539c06486276e6841880e3916e043c0923b5",
+      "stream_sha256": "9520d3c27af646c326ea4e48b01814b52e6e0df97668ee581e4e15f5af514196",
+      "scales": {
+        "1": {
+          "svg_alpha_error": 95489,
+          "mupdf_rgb_error": 424735,
+          "pdfium_rgb_error": 256926
+        },
+        "3": {
+          "svg_alpha_error": 6043,
+          "mupdf_rgb_error": 159325,
+          "pdfium_rgb_error": 43692
+        }
+      }
+    },
+    {
+      "name": "color",
+      "rgba_sha256": "0084f90ba5202e216cfc2b2a243ac9c643805d27c6dc1b63f8da4dc000704554",
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "scales": {
+        "1": {
+          "svg_alpha_error": 26436,
+          "mupdf_rgb_error": 215975,
+          "pdfium_rgb_error": 66067
+        },
+        "3": {
+          "svg_alpha_error": 1756,
+          "mupdf_rgb_error": 155150,
+          "pdfium_rgb_error": 12118
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+import json,hashlib,base64,zlib
+from pathlib import Path
+import sys
+root=Path(__file__).resolve().parents[2] / 'conformance'; captures=Path(sys.argv[1]); entries=[]; frames=bytearray()
+for name in ['straight','1','loop','phase','color']:
+ s=(captures / f'v4-3-{name}.json').read_text();d=json.loads(s[s.index('{\n'):]); r=d['target']['readback']; raw=zlib.decompress(base64.b64decode(r['fbo4_rgba8_zlib_base64']));assert hashlib.sha256(raw).hexdigest()==r['fbo4_rgba8_sha256']; compressed=zlib.compress(raw,9); entries.append({'name':name,'argb':d.get('requested_argb_u32',4278190080),'input':d['source_caller']['input'],'stream':d['source_caller']['streams']['draw_object_stroke']['values_f32_bits'],'stream_sha256':d['source_caller']['streams']['draw_object_stroke']['sha256'],'rgba_sha256':r['fbo4_rgba8_sha256'],'offset':len(frames),'length':len(compressed)});frames.extend(compressed)
+receipt={'schema':'sdocx-inkpen-v4-3x-native-v1','scope':'Five synthetic native host Mesa captures at 384x192, 3x transform, no device or saved-note parity.','frames_sha256':hashlib.sha256(frames).hexdigest(),'cases':entries,'recipe':'Use conformance/inkpen_v4_scale_capture.py with INKPEN_CAPTURE_SCALE=3 and INKPEN_CAPTURE_BENT unset, 1, loop, or phase; use conformance/inkpen_v4_color_scale_capture.py --capture-one --argb 0x80402010 for color. Set PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias. Run python3 tools/inkpen-v4/pack.py /tmp to compress each fbo4 RGBA readback with Python zlib level 9 in that order. Host inputs and library hashes are pinned by capture scripts and linked existing scale receipt.'}
+(root/'inkpen-v4-3x-native.json').write_text(json.dumps(receipt,indent=2)+'\n');(root/'inkpen-v4-3x-native.bin').write_bytes(frames)

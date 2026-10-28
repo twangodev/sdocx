@@ -1583,6 +1583,123 @@ mod tests {
     }
 
     #[test]
+    fn v4_three_scale_improves_svg_against_native_frames() {
+        use flate2::read::ZlibDecoder;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v4-3x-native.json"
+        ))
+        .unwrap();
+        let frames = include_bytes!("../../../../conformance/inkpen-v4-3x-native.bin");
+        let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        assert_eq!(hash(frames), receipt["frames_sha256"]);
+        for case in receipt["cases"].as_array().unwrap() {
+            let mut stroke = native_caller_stroke(&case["input"]);
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some("4;".into());
+            rendering.style.color_argb = Some(case["argb"].as_u64().unwrap() as u32);
+            let ink = prepare(
+                &stroke,
+                RuntimeContext {
+                    curve_enabled: true,
+                    screen_width: 1920,
+                    screen_height: 1080,
+                },
+            )
+            .unwrap();
+            let stream = case["stream"].as_array().unwrap();
+            assert_eq!(stream.len(), ink.points.len() * 3);
+            for (i, point) in ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[3 * i].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[3 * i + 1].as_str().unwrap()).to_bits()
+                );
+                assert_eq!(
+                    ink.radii[i].to_bits(),
+                    native_f32(stream[3 * i + 2].as_str().unwrap()).to_bits()
+                );
+            }
+            let offset = case["offset"].as_u64().unwrap() as usize;
+            let length = case["length"].as_u64().unwrap() as usize;
+            let mut native = Vec::new();
+            ZlibDecoder::new(&frames[offset..offset + length])
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(hash(&native), case["rgba_sha256"]);
+            assert_eq!(native.len(), 384 * 192 * 4);
+            let page = crate::Page {
+                uuid: "v4-3x".into(),
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            };
+            let document = crate::Document {
+                pages: vec![page],
+                metadata: Default::default(),
+            };
+            let render = |scale| {
+                let options = crate::RenderOptions {
+                    inkpen_profile: Some(crate::InkPenRenderProfile {
+                        screen_width: 1920,
+                        screen_height: 1080,
+                    }),
+                    inkpen_v4_output_scale: Some(scale),
+                    ..crate::RenderOptions::default()
+                };
+                let svg = crate::render_document_svg(&document, &options)
+                    .remove(0)
+                    .svg;
+                let start = svg.find('>').unwrap() + 1;
+                let end = svg.rfind("</svg>").unwrap();
+                let body = svg[start..end]
+                    .trim_start()
+                    .strip_prefix(
+                        "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>",
+                    )
+                    .unwrap();
+                let svg = format!(
+                    "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                    &svg[..start]
+                );
+                let tree =
+                    resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(384, 192).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::from_scale(3.0, 3.0),
+                    &mut pixmap.as_mut(),
+                );
+                native
+                    .as_chunks::<{ 384 * 4 }>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flat_map(|row| row.as_chunks::<4>().0)
+                    .zip(pixmap.data().as_chunks::<4>().0)
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let baseline = render(1);
+            let candidate = render(3);
+            assert!(
+                candidate < baseline / 5 && candidate < 10_000,
+                "{}: {candidate} vs {baseline}",
+                case["name"]
+            );
+        }
+    }
+
+    #[test]
     fn v4_output_scale_improves_svg_against_native_frames() {
         use flate2::read::ZlibDecoder;
         use sha2::{Digest, Sha256};

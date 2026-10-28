@@ -330,7 +330,7 @@ pub struct RenderOptions {
     /// Opt into saved InkPen V4 reconstruction with explicit display dimensions.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_profile: Option<InkPenRenderProfile>,
-    /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, or 4).
+    /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, 3, or 4).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v4_output_scale: Option<u32>,
     /// Opt into scale-aware V1 coverage at a tested uniform output scale (1, 2, 3, or 4).
@@ -4231,7 +4231,7 @@ fn render_stroke(
             ink.terminal.clone(),
             replay_index.is_some(),
             (if is_v4 {
-                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1 | 2 | 4))
+                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1..=4))
             } else {
                 inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=4))
             })
@@ -5147,7 +5147,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             (if is_v4 {
                 options
                     .inkpen_v4_output_scale
-                    .filter(|scale| matches!(scale, 1 | 2 | 4))
+                    .filter(|scale| matches!(scale, 1..=4))
             } else {
                 options
                     .inkpen_v1_output_scale
@@ -9079,14 +9079,14 @@ mod tests {
         let normal = render_document_svg(&source, &options)[0].svg.clone();
         assert_ne!(normal, baseline);
         assert!(normal.contains(r##"fill="#336699""##));
-        for scale in [0, 1, 3, 5, u32::MAX] {
+        for scale in [0, 1, 5, u32::MAX] {
             let scaled = RenderOptions {
                 inkpen_v4_output_scale: Some(scale),
                 ..options.clone()
             };
             assert_eq!(render_document_svg(&source, &scaled)[0].svg, normal);
         }
-        for scale in [2, 4] {
+        for scale in [2, 3, 4] {
             let scaled = RenderOptions {
                 inkpen_v4_output_scale: Some(scale),
                 ..options.clone()
@@ -9124,6 +9124,22 @@ mod tests {
             ..RenderOptions::default()
         };
         assert_eq!(render_document_svg(&source, &no_profile)[0].svg, baseline);
+        let no_profile_3 = RenderOptions {
+            inkpen_v4_output_scale: Some(3),
+            ..RenderOptions::default()
+        };
+        assert_eq!(render_document_svg(&source, &no_profile_3)[0].svg, baseline);
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&source, &no_profile_3, &crate::PdfOptions::default())
+                .unwrap(),
+            crate::render_document_pdf(
+                &source,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default()
+            )
+            .unwrap()
+        );
         let mut v1_source = source.clone();
         let mut v1_stroke = stroke.clone();
         v1_stroke.rendering.as_mut().unwrap().advanced_settings = None;
@@ -9131,6 +9147,14 @@ mod tests {
         assert_eq!(
             render_document_svg(&v1_source, &options)[0].svg,
             render_document_svg(&v1_source, &no_profile)[0].svg,
+        );
+        let v4_scale_3 = RenderOptions {
+            inkpen_v4_output_scale: Some(3),
+            ..options.clone()
+        };
+        assert_eq!(
+            render_document_svg(&v1_source, &v4_scale_3)[0].svg,
+            render_document_svg(&v1_source, &options)[0].svg
         );
         let v1_options = RenderOptions {
             inkpen_v1_output_scale: Some(3),
