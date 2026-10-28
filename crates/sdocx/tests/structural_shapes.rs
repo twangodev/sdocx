@@ -2874,7 +2874,8 @@ fn native_arc_unsupported_outline_styles_keep_fallback() {
         (-1.0, 0, 0),
         (f32::NAN, 0, 0),
         (f32::INFINITY, 0, 0),
-        (2.0, 1, 0),
+        (2.0, 8, 0),
+        (f32::MAX, 5, 0),
         (2.0, 0, 1),
     ] {
         let frame = include_bytes!("fixtures/native-arc-style-wide.bin");
@@ -2895,5 +2896,118 @@ fn native_arc_unsupported_outline_styles_keep_fallback() {
             1,
             "width={width} dash={dash} compound={compound}: {svg}"
         );
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn native_dashed_arcs_export_separate_paths_and_dash() {
+    let cases: [(&[u8], &[f32], f32); 7] = [
+        (
+            include_bytes!("fixtures/native-arc-dash-1.bin"),
+            &[0.01, 12.],
+            0.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-2.bin"),
+            &[12., 6.],
+            1.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-3.bin"),
+            &[24., 18.],
+            1.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-4.bin"),
+            &[24., 18., 6., 18.],
+            1.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-5.bin"),
+            &[48., 18.],
+            1.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-6.bin"),
+            &[48., 18., 6., 18.],
+            1.,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-dash-7.bin"),
+            &[48., 18., 6., 18., 6., 18.],
+            1.,
+        ),
+    ];
+    for (frame, intervals, phase) in cases {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 2, "{svg}");
+        let outline = paths[1].parent().unwrap();
+        let array: Vec<f32> = outline
+            .attribute("stroke-dasharray")
+            .unwrap()
+            .split([',', ' '])
+            .filter(|x| !x.is_empty())
+            .map(|x| x.parse().unwrap())
+            .collect();
+        assert_eq!(array, intervals);
+        assert_eq!(svg_number(outline, "stroke-dashoffset"), f64::from(phase));
+        assert_eq!(outline.attribute("stroke-opacity"), Some("0.5020"));
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        assert!(ops.operations.iter().any(|op| op.operator == "f"));
+        let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
+            value
+                .as_reference()
+                .map(|id| pdf.get_dictionary(id).unwrap().clone())
+                .unwrap_or_else(|_| value.as_dict().unwrap().clone())
+        };
+        let resources = resolve(
+            pdf.get_dictionary(pdf.get_pages()[&1])
+                .unwrap()
+                .get(b"Resources")
+                .unwrap(),
+        );
+        let states = resolve(resources.get(b"ExtGState").unwrap());
+        let mut active: Option<Vec<u8>> = None;
+        let mut dash: Option<(Vec<f32>, f32)> = None;
+        let mut stack = Vec::new();
+        let mut strokes = 0;
+        for op in &ops.operations {
+            match op.operator.as_str() {
+                "q" => stack.push((active.clone(), dash.clone())),
+                "Q" => (active, dash) = stack.pop().unwrap(),
+                "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
+                "d" => {
+                    let pattern = op.operands[0]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_float().unwrap())
+                        .collect();
+                    dash = Some((pattern, op.operands[1].as_float().unwrap()));
+                }
+                "S" => {
+                    strokes += 1;
+                    assert_eq!(dash.as_ref(), Some(&(intervals.to_vec(), phase)));
+                    let state = resolve(states.get(&active.clone().unwrap()).unwrap());
+                    let alpha = state.get(b"CA").unwrap().as_float().unwrap();
+                    assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001);
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(strokes, 1);
     }
 }

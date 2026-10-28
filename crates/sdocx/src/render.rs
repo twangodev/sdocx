@@ -1958,7 +1958,7 @@ fn matching_arc_sector(
         || !shape.style.width.is_finite()
         || shape.style.width <= 0.0
         || shape.style.compound != 0
-        || shape.style.dash != 0
+        || shape.style.dash_pattern().is_err()
         || shape.style.cap != 0
         || shape.style.join != 0
         || shape.style.begin_arrow != [0; 2]

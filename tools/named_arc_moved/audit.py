@@ -62,6 +62,7 @@ for pc, target in pairs:
         0x10030000: {"_ZdlPv", "_ZdaPv", "_ZdlPvRKSt9nothrow_t"},
         0x10030010: {"_Znwm", "_Znam", "_ZnwmRKSt9nothrow_t", "_ZnamRKSt9nothrow_t"},
         0x10030020: {"free"},
+        0x10030030: {"malloc"},
         0x10030040: {"memcpy"},
         0x10030050: {"memmove", "memcpy"},
         0x10030060: {"realloc"},
