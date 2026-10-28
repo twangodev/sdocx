@@ -1,0 +1,452 @@
+{
+  "dso_sha256": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+  "capture_sha256": "b277e27bf15167db554f5ecd3f5ed4833642a4afb9b206fa30438486190277ad",
+  "trace_sha256": "f77f8813e9076d9862101a36aa913aecdf2fe97fceb5c5dc90fef6ad1a437865",
+  "boundary": "Three-point native RTV1 calls under the project Unicorn harness; not painted output or device parity.",
+  "cases": {
+    "bent-3": {
+      "input": {
+        "points": [
+          [
+            1.25,
+            -2.5
+          ],
+          [
+            5.5,
+            9.25
+          ],
+          [
+            12.75,
+            -3.5
+          ]
+        ],
+        "pressure": [
+          0.8,
+          0.2,
+          0.4
+        ],
+        "pen_size": 3
+      },
+      "stream": [
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "0000a03f",
+            "000020c0",
+            "0000c03f",
+            "5126ae3e",
+            "7fbc703f",
+            "0000803f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "5924e63f",
+            "dec58ebf",
+            "9224c93f",
+            "673ccc3e",
+            "32c06a3f",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "52ab1740",
+            "9a25983d",
+            "2449d23f",
+            "0157f13e",
+            "a3c6613f",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "70cb3d40",
+            "a5d8883f",
+            "b66ddb3f",
+            "f2880f3f",
+            "caf9533f",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "40676640",
+            "755bf13f",
+            "4892e43f",
+            "a8d92b3f",
+            "f4be3d3f",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "f8ad9540",
+            "7c783140",
+            "dab6ed3f",
+            "a9675f3f",
+            "8d02fa3e",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "7b3eba40",
+            "702e4840",
+            "6cdbf63f",
+            "94467f3f",
+            "85f3993d",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "fbdcdc40",
+            "1a873f40",
+            "feffff3f",
+            "0f1d743f",
+            "c6339abe",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "81c7fe40",
+            "d9881e40",
+            "48920440",
+            "ecab563f",
+            "87780bbf",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "a2151141",
+            "fdf1ca3f",
+            "91240940",
+            "0c04393f",
+            "c2ee30bf",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "7b9a1d41",
+            "467b423f",
+            "dab60d40",
+            "11d3273f",
+            "cd5041bf",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "31cf2841",
+            "070fd6bd",
+            "23491240",
+            "1d071b3f",
+            "abb84bbf",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "02473441",
+            "04208dbf",
+            "6cdb1640",
+            "540f103f",
+            "8e9e53bf",
+            "8c8b0b3f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "f0014041",
+            "cdff0ec0",
+            "b56d1b40",
+            "55a6063f",
+            "58ba59bf",
+            "0000803f"
+          ]
+        ]
+      ],
+      "repeat_trace": {
+        "id": 9,
+        "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+        "caller_rva": "0x1dbd4",
+        "s0_s3_f32_bits": [
+          "920b8b41",
+          "00004040",
+          "001d0d42",
+          "00000000"
+        ],
+        "result_x0": 14
+      }
+    },
+    "reverse-10": {
+      "input": {
+        "points": [
+          [
+            20.25,
+            5.5
+          ],
+          [
+            9.75,
+            -4.25
+          ],
+          [
+            -3.5,
+            2.25
+          ]
+        ],
+        "pressure": [
+          0.1,
+          0.9,
+          0.7
+        ],
+        "pen_size": 10
+      },
+      "stream": [
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "0000a241",
+            "0000b040",
+            "0000a040",
+            "5b983bbf",
+            "0b322ebf",
+            "0000803f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "e49c9141",
+            "f76e7140",
+            "66669e40",
+            "75c94bbf",
+            "0af11abf",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "42d18041",
+            "cd2a1640",
+            "cccc9c40",
+            "56815bbf",
+            "86bb03bf",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "91cf5d41",
+            "9c5d973f",
+            "32339b40",
+            "d6326abf",
+            "98c1cebe",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "aaf73641",
+            "6d439d3e",
+            "98999940",
+            "836776bf",
+            "8add8abe",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "a9270f41",
+            "09c24fbe",
+            "feff9740",
+            "aedc7dbf",
+            "841004be",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "8089cd40",
+            "1a69b2be",
+            "64669640",
+            "77fa7fbf",
+            "74f6543c",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "f5a77540",
+            "c1c00bbe",
+            "cacc9440",
+            "4e307dbf",
+            "ef56173e",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "4585b03f",
+            "7887c33e",
+            "30339340",
+            "1c1977bf",
+            "fed7853e",
+            "b9b8383f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "e0a284bf",
+            "261b963f",
+            "96999140",
+            "38136fbf",
+            "3213b73e",
+            "0000803f"
+          ]
+        ]
+      ],
+      "repeat_trace": {
+        "id": 9,
+        "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+        "caller_rva": "0x1dbd4",
+        "s0_s3_f32_bits": [
+          "e129cd41",
+          "00001041",
+          "808a3a42",
+          "00000000"
+        ],
+        "result_x0": 10
+      }
+    },
+    "bent-40": {
+      "input": {
+        "points": [
+          [
+            -10.5,
+            7.25
+          ],
+          [
+            2.25,
+            18.5
+          ],
+          [
+            13.75,
+            -6.5
+          ]
+        ],
+        "pressure": [
+          0.7,
+          0.4,
+          0.2
+        ],
+        "pen_size": 40
+      },
+      "stream": [
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "000028c1",
+            "0000e840",
+            "0000a041",
+            "60f53f3f",
+            "0a60293f",
+            "0000803f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "5671b6c0",
+            "8b742341",
+            "55559f41",
+            "05b8713f",
+            "3c9ea83e",
+            "9a99193f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "78317abe",
+            "070d2641",
+            "aaaa9e41",
+            "fa6f753f",
+            "c58d91be",
+            "9a99193f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "8b849140",
+            "82caf040",
+            "ffff9d41",
+            "33393e3f",
+            "4b522bbf",
+            "9a99193f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "b7be0341",
+            "509e5340",
+            "54559d41",
+            "6361153f",
+            "d5e54fbf",
+            "9a99193f"
+          ]
+        ],
+        [
+          "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          [
+            "914c3341",
+            "d272b8bf",
+            "a9aa9c41",
+            "830af83e",
+            "f2f35fbf",
+            "0000803f"
+          ]
+        ]
+      ],
+      "repeat_trace": {
+        "id": 9,
+        "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+        "caller_rva": "0x1dbd4",
+        "s0_s3_f32_bits": [
+          "4aa20642",
+          "00001c42",
+          "e8b92242",
+          "00000000"
+        ],
+        "result_x0": 6
+      }
+    }
+  }
+}
