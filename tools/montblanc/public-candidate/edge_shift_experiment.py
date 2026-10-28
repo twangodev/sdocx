@@ -16,6 +16,7 @@ import pymupdf
 from PIL import Image, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parents[3]
+REVISION = '7e16607'
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
 from public_fallback_compare import composite_native_frame, metrics
 
@@ -31,9 +32,9 @@ def sha(data):
 
 def main():
     receipt = json.loads(RECEIPT.read_text())
+    assert receipt['source_revision'] == REVISION
     captures = json.loads((ROOT / 'conformance/montblanc-public-candidate-host-comparison.json').read_text())
     scale_receipt = json.loads((ROOT / 'conformance/montblanc-scene-scale-2x-comparison.json').read_text())
-    assert sha((ROOT / SOURCE).read_bytes()) == receipt['source_sha256']
     assert sha(PATCH.read_bytes()) == receipt['patch_sha256']
     assert sha(CROP.read_bytes()) == scale_receipt['native_crop_sha256']
     assert sha(Path(__file__).read_bytes()) == receipt['script_sha256']
@@ -45,7 +46,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='montblanc-edge-shift-') as directory:
         checkout = Path(directory)
         archive = checkout / 'source.tar'
-        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), 'HEAD'], cwd=ROOT, check=True)
+        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), REVISION], cwd=ROOT, check=True)
         with tarfile.open(archive) as source_archive:
             source_archive.extractall(checkout, filter='data')
         archive.unlink()

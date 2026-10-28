@@ -1,8 +1,7 @@
-use super::tests::{end_alpha, redraw_alpha_candidate};
+use super::cubic::Cubic;
 use super::*;
-use crate::ink::brushpen::Cubic;
 
-fn five_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+pub(super) fn five_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     if input.points.len() != 5 {
         return Err(Error::PointCount);
     }
@@ -246,6 +245,7 @@ fn five_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     Ok(records)
 }
 
+#[cfg(test)]
 #[test]
 fn five_point_matches_complete_native_streams() {
     let extended: serde_json::Value = serde_json::from_str(include_str!(
@@ -345,6 +345,7 @@ fn five_point_matches_complete_native_streams() {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn five_point_pressure_sweep_matches_native_stream_digests() {
     let receipt: serde_json::Value = serde_json::from_str(include_str!(
@@ -392,6 +393,7 @@ fn five_point_pressure_sweep_matches_native_stream_digests() {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn rejected_admission_and_nonfinite_intermediates_are_guarded() {
     let pressure = [0.3, 0.6, 1.0, 0.7, 0.5];

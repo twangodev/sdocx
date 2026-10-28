@@ -18,7 +18,7 @@
     "crates/sdocx/src/ink/montblanc.rs": "d093ed6d2395f47c2da07759f6cdb3ea12de4e8915116245e744b2cd5fd2c8c4",
     "crates/sdocx/src/ink/path.rs": "1eb781fc613cc10039caf3065c10d578c6ffffbfae4f9433cf1e161b804fc019",
     "tools/montblanc/public-candidate/main.rs": "a4e1fe45e1e9df1298ea9ef8d84467195e986c238d7f3e63eb8e16b78a7649d6",
-    "tools/montblanc/public-candidate/compare.py": "0b89bad48e48a756624fe3d96b7edd095f3925559ec2c37160a7297030e31823",
+    "tools/montblanc/public-candidate/compare.py": "22239d864d47e1978cffa363f92d540e0232f18aed4f6fd67add2b15e00bccb9",
     "tools/montblanc/triangle_svg_prototype.py": "e0e9bd69a4adf7d8bd94f45cdfa8656a126845ec79556e75a29554c8811b229d",
     "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
   },
@@ -96,5 +96,6 @@
         81568
       ]
     }
-  }
+  },
+  "source_revision": "7e16607"
 }

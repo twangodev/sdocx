@@ -121,6 +121,7 @@
   },
   "conclusion": "Inward shift narrows support but worsens color error and can lose native pixels. This experiment does not justify adopting the model.",
   "reproduce": ".venv/bin/python tools/montblanc/public-candidate/edge_shift_experiment.py",
-  "script_sha256": "ad7c1a83003d3d0326696631f0deed4e0a526d1385fe659d98d223d52d106980",
-  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
+  "script_sha256": "5694c8b9ce353e2633eb8e0810cda47101834c8ca75c46280a4c7053a16148e1",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "source_revision": "7e16607"
 }

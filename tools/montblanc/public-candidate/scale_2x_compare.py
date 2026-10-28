@@ -13,6 +13,7 @@ import pymupdf
 from PIL import Image, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parents[3]
+REVISION = '7e16607'
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
 from public_fallback_compare import composite_native_frame, metrics
 
@@ -26,7 +27,8 @@ def sha(path):
 
 def main():
     receipt = json.loads(RECEIPT.read_text())
-    for path, key in [(SOURCE, 'source_sha256'), (PATCH, 'patch_sha256'), (CROP, 'native_crop_sha256')]:
+    assert receipt['source_revision'] == REVISION
+    for path, key in [(PATCH, 'patch_sha256'), (CROP, 'native_crop_sha256')]:
         assert sha(path) == receipt[key], f'input changed: {path}'
     assert sha(Path(__file__)) == receipt['script_sha256']
     assert sha(ROOT / 'tools/montblanc/public_fallback_compare.py') == receipt['compositor_sha256']
@@ -39,13 +41,13 @@ def main():
     with tempfile.TemporaryDirectory(prefix='sdocx-montblanc-scale-') as directory:
         tmp = Path(directory)
         archive = tmp / 'source.tar'
-        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), 'HEAD'],
+        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), REVISION],
                        cwd=ROOT, check=True)
         with tarfile.open(archive) as source_archive:
             source_archive.extractall(tmp, filter='data')
         archive.unlink()
         archived_source = tmp / 'crates/sdocx/src/render/montblanc_candidate.rs'
-        assert sha(archived_source) == receipt['source_sha256'], 'HEAD candidate source changed'
+        assert sha(archived_source) == receipt['source_sha256'], 'historical candidate source changed'
         subprocess.run(['patch', '-p1', '-i', str(PATCH)], cwd=tmp, check=True)
         for mode in ('fixed', 'aware'):
             output = tmp / mode

@@ -112,6 +112,7 @@
   },
   "boundary": "Synthetic host Mesa controls compared to test-only reconstructed shared Scene exports; no device, saved-note, or production parity implied.",
   "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py",
-  "script_sha256": "62c40f19ee327fdcd55f4bdc478388d33e2e1dc77cdd653b147c77cf39b1ab7b",
-  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
+  "script_sha256": "b3b31e9934f8e223e17becc204fe8d35112d266e4922f02c0e1a40e2385ea41d",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "source_revision": "7e16607"
 }

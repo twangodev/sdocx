@@ -1,18 +1,14 @@
-//! Test-only Montblanc GLV1 sampler for captured three-point routes.
-//!
-//! Source: libSPenMontblancFountainPen.so SHA-256
-//! 4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350.
-//! Geometry reuses the production SmPath `Quad`; the 2,688-byte fixture is
-//! the six-f32-lane RTV1 stream from frozen baseline/pressure/size/far captures.
-//! Records are native AddStartPoint/AddPoint/AddEndPoint input tuples.
-//! Expanded RTV1 triangle meshes are checked separately against four native captures.
-//! GPU Update/Draw and painted output remain unverified by these tests.
-//! This module does not enable a production Montblanc renderer.
+//! Experimental bounded Montblanc sampler from synthetic native captures.
+//! General saved-note behavior and device parity remain unverified.
 use super::path::{P, Quad};
+mod cubic;
+#[cfg(test)]
 use sha2::{Digest, Sha256};
 use std::fmt;
 
+#[cfg(test)]
 const NATIVE_STREAM: &[u8] = include_bytes!("../../../../conformance/montblanc-native-v1.bin");
+#[cfg(test)]
 const NATIVE_STREAM_SHA256: &str =
     "860aa1762e8a341e45a8cb9087a0c74960d9e34b304ccb19c2d09800347eaf3d";
 const REPEAT_FACTOR_BITS: u32 = 0x3f99_999a; // DSO PT_LOAD literal RVA 0x101e8, loaded at code RVA 0x1f4a8
@@ -157,6 +153,7 @@ fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
 
 // Experimental extrapolation of the initialized redraw state observed in the
 // native controls. Matching controls do not establish arbitrary wide strokes.
+#[cfg(test)]
 fn sample_wide_for_test(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     sample_with_wide_model(input, true)
 }
@@ -249,6 +246,115 @@ fn sample_with_wide_model(input: Input<'_>, allow_wide: bool) -> Result<Vec<RtRe
         distance += distance_step;
     }
     Ok(records)
+}
+
+#[derive(Debug)]
+struct EndAlpha {
+    start: i32,
+    step: f32,
+}
+
+// The no-move and upper-clamp paths remain disassembly-derived.
+fn end_alpha(prior: i32, target: i32, last_move_distance: Option<f32>, repeat: u32) -> EndAlpha {
+    assert!(repeat > 0);
+    let (start, target) = if last_move_distance.is_none_or(|distance| distance < 15.0) {
+        let boosted = ((prior as f32 * 1.5).min(255.0)).trunc() as i32;
+        (boosted, boosted)
+    } else {
+        (prior, target)
+    };
+    EndAlpha {
+        start,
+        step: (target - start) as f32 / repeat as f32,
+    }
+}
+
+// Synthetic five-point redraw path only; the <4.2 and output-clamp branches
+// are inferred from disassembly and remain unobserved in these controls.
+fn redraw_alpha_candidate(prior: i32, pressure: f32, distance: f32) -> (f32, f32, i32) {
+    let factor = if distance < 4.2 {
+        1.0_f32
+    } else if distance < 9.5 {
+        ((distance - 4.2) / -5.3).mul_add(0.4, 0.4) + 0.6
+    } else if distance < 35.0 {
+        ((distance - 9.5) / -25.5).mul_add(0.5, 0.5) + 0.1
+    } else {
+        0.1
+    };
+    let original_factor = factor;
+    let factor = (factor - 1.0) + 1.0;
+    let seed = (170.0 + ((pressure * 0.5) * 170.0) * 0.5).trunc();
+    let candidate = seed * factor;
+    let next = candidate.trunc() as i32;
+    let target = if (prior - next).abs() >= 11 {
+        prior + if prior > next { -10 } else { 10 }
+    } else {
+        next
+    };
+    (original_factor, candidate, target.clamp(60, 255))
+}
+
+type Vertex = [f32; 5];
+
+/// AddStartPoint and AddEndPoint use the same four transformed cap corners.
+/// Keep each f32 operation separate and in the order visible in both DSO bodies.
+fn cap_vertices(input: [f32; 6]) -> [Vertex; 6] {
+    let [x, y, z, dx, dy, scalar] = input;
+    let h = z + 0.5_f32;
+    let dx_minus_dy = dx - dy;
+    let dy_plus_dx = dy + dx;
+    let x_a = x + h * dx_minus_dy;
+    let y_a = y + h * dy_plus_dx;
+    let x_b = x + h * dy_plus_dx;
+    let y_b = y - h * dx_minus_dy;
+    let x_c = x - h * dy_plus_dx;
+    let y_c = y + h * dx_minus_dy;
+    let x_d = x - h * dx_minus_dy;
+    let y_d = y - h * dy_plus_dx;
+    [
+        [x_a, y_a, 0.0, 0.0, scalar],
+        [x_b, y_b, 1.0, 0.0, scalar],
+        [x_c, y_c, 0.0, 1.0, scalar],
+        [x_c, y_c, 0.0, 1.0, scalar],
+        [x_d, y_d, 1.0, 1.0, scalar],
+        [x_b, y_b, 1.0, 0.0, scalar],
+    ]
+}
+
+/// One AddPoint contributes exactly six vertices to the main vector.
+/// These equations and triangle/UV order follow the sequential fmul/fadd/fsub
+/// instructions in DSO RVA 0x20990..0x21a1c; no fused multiply-add is used.
+fn point_vertices(input: [f32; 6]) -> [Vertex; 6] {
+    let [x, y, z, dx, dy, scalar] = input;
+
+    let z_dx_minus_dy = z * (dx - dy);
+    let half_dy = dy * 0.5_f32;
+    let a_x = (x + z_dx_minus_dy) - half_dy;
+
+    let z_dy_plus_dx = z * (dy + dx);
+    let negative_half_dx = dx * -0.5_f32;
+    let a_y = (y + z_dy_plus_dx) - negative_half_dx;
+
+    let b_x = (x + z_dy_plus_dx) + half_dy;
+    let z_dy_minus_dx = z * (dy - dx);
+    let b_y = negative_half_dx + (y + z_dy_minus_dx);
+
+    let c_x = (x - z_dy_plus_dx) - half_dy;
+    let half_dx = dx * 0.5_f32;
+    let c_y = (y + z_dx_minus_dy) + half_dx;
+
+    let d_x = (x - z_dx_minus_dy) + half_dy;
+    let z_dx_plus_dy = z * (dx + dy);
+    let d_y = (y - z_dx_plus_dy) - half_dx;
+
+    [
+        [a_x, a_y, 0.0, 1.0, scalar],
+        [b_x, b_y, 1.0, 1.0, scalar],
+        [c_x, c_y, 0.0, 0.0, scalar],
+        [c_x, c_y, 0.0, 0.0, scalar],
+        [d_x, d_y, 1.0, 0.0, scalar],
+        [b_x, b_y, 1.0, 1.0, scalar],
+    ]
 }
 
 #[cfg(test)]
@@ -867,10 +973,114 @@ pub(crate) mod tests {
 #[path = "montblanc_width_test.rs"]
 mod width_state_tests;
 
-#[cfg(test)]
 #[path = "montblanc_four_test.rs"]
 mod four_point_tests;
 
-#[cfg(test)]
 #[path = "montblanc_five_test.rs"]
 mod five_point_tests;
+
+pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], crate::Color)> {
+    let rendering = stroke.rendering.as_ref()?;
+    let p = rendering.properties;
+    let size = rendering.style.pen_size?;
+    if rendering.pen_name.as_deref()
+        != Some("com.samsung.android.sdk.pen.pen.preload.MontblancFountainPen")
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("") | Some("1;")
+        )
+        || !matches!(rendering.tool_type_raw, 0 | 2 | 3)
+        || !p.compressed
+        || p.replay_only
+        || p.stylus_channels
+        || p.eraser
+        || p.fixed_width
+        || p.millisecond_timestamps
+        || p.top_layer_pen
+        || p.alpha_lock
+        || p.generated
+        || p.fixed_opacity
+        || p.rainbow_effect
+        || p.straighten
+        || p.reveal_mode
+        || !p.binary_added
+        || !matches!(rendering.style.stroke_type_raw, None | Some(0))
+        || !matches!(rendering.style.color_type_raw, None | Some(0))
+        || !(0.1..=2.0).contains(&size)
+        || stroke.pen_width.to_bits() != size.to_bits()
+        || !(3..=5).contains(&stroke.points.len())
+        || stroke.pressures.len() != stroke.points.len()
+        || !(stroke.timestamps.is_empty() || stroke.timestamps.len() == stroke.points.len())
+        || !stroke.tilts.is_empty()
+        || !stroke.orientations.is_empty()
+    {
+        return None;
+    }
+    let exact = |v: f64| {
+        let f = v as f32;
+        (v.is_finite() && v.abs() <= 1_000_000.0 && f64::from(f) == v).then_some(f)
+    };
+    let points = stroke
+        .points
+        .iter()
+        .map(|p| Some([exact(p.x)?, -exact(p.y)?]))
+        .collect::<Option<Vec<_>>>()?;
+    let pressure = stroke
+        .pressures
+        .iter()
+        .map(|p| exact(*p))
+        .collect::<Option<Vec<_>>>()?;
+    // The native move gate compares each move against the last accepted point.
+    // Three/four-point models assume every move was accepted; reject shorter
+    // moves instead of applying a sampler to an unobserved route.
+    if points.len() <= 4
+        && points[..points.len() - 1].windows(2).any(|pair| {
+            (pair[1][0] - pair[0][0]).abs() < 5.0 && (pair[1][1] - pair[0][1]).abs() < 5.0
+        })
+    {
+        return None;
+    }
+    let input = Input {
+        points: &points,
+        pressure: &pressure,
+        pen_size: size,
+    };
+    let records = match points.len() {
+        3 => sample(input),
+        4 => four_point_tests::four_point(input),
+        5 => five_point_tests::five_point(input),
+        _ => return None,
+    }
+    .ok()?;
+    if records.is_empty()
+        || records.len() > MAX_RECORDS
+        || records.iter().flat_map(|r| r.lanes).any(|v| !v.is_finite())
+    {
+        return None;
+    }
+    let mut buffers: [Vec<Vertex>; 3] = std::array::from_fn(|_| Vec::new());
+    for record in records {
+        let (i, v) = match record.call {
+            RtCall::Start => (1, cap_vertices(record.lanes)),
+            RtCall::Point => (0, point_vertices(record.lanes)),
+            RtCall::End => (2, cap_vertices(record.lanes)),
+        };
+        buffers[i].extend(v);
+    }
+    if buffers
+        .iter()
+        .flatten()
+        .flatten()
+        .any(|v| !v.is_finite() || v.abs() > 1_000_100.0)
+    {
+        return None;
+    }
+    let color = stroke.color.or_else(|| {
+        rendering.style.color_argb.map(|c| crate::Color {
+            r: (c >> 16) as u8,
+            g: (c >> 8) as u8,
+            b: c as u8,
+        })
+    })?;
+    Some((buffers, color))
+}

@@ -13,6 +13,7 @@ import pymupdf
 from PIL import Image, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parents[3]
+REVISION = '7e16607'
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
 from public_fallback_compare import composite_native_frame, metrics
 
@@ -28,7 +29,7 @@ def main():
     native = json.loads(NATIVE.read_text())
     base = json.loads(BASE.read_text())
     source = ROOT / 'crates/sdocx/src/render/montblanc_candidate.rs'
-    assert sha(source) == base['source_sha256'] and sha(PATCH) == base['patch_sha256']
+    assert sha(PATCH) == base['patch_sha256']
     assert pymupdf.VersionBind == base['renderers']['pymupdf']
     assert pillow_version == base['renderers']['pillow']
     assert subprocess.check_output(['resvg', '--version'], text=True).strip() == base['renderers']['resvg']
@@ -45,7 +46,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='sdocx-montblanc-scale-variants-') as directory:
         tmp = Path(directory)
         archive = tmp / 'source.tar'
-        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), 'HEAD'], cwd=ROOT, check=True)
+        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), REVISION], cwd=ROOT, check=True)
         with tarfile.open(archive) as source_archive:
             source_archive.extractall(tmp, filter='data')
         archive.unlink()
@@ -72,7 +73,7 @@ def main():
                     assert (pix.width, pix.height) == (256, 256)
                     pdf = metrics(reference, pix.samples)
                 cases[mode][case] = {'svg': svg, 'pdf': pdf}
-    result = {'schema': 'montblanc-scene-scale-2x-variants-comparison-v1', 'source_sha256': sha(source), 'patch_sha256': sha(PATCH), 'native_receipt_sha256': sha(NATIVE), 'script_sha256': sha(Path(__file__)), 'compositor_sha256': sha(ROOT / 'tools/montblanc/public_fallback_compare.py'), 'renderers': base['renderers'], 'cases': cases, 'boundary': 'Synthetic host Mesa controls compared to test-only reconstructed shared Scene exports; no device, saved-note, or production parity implied.', 'reproduce': '.venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py'}
+    result = {'schema': 'montblanc-scene-scale-2x-variants-comparison-v1', 'source_revision': REVISION, 'source_sha256': base['source_sha256'], 'patch_sha256': sha(PATCH), 'native_receipt_sha256': sha(NATIVE), 'script_sha256': sha(Path(__file__)), 'compositor_sha256': sha(ROOT / 'tools/montblanc/public_fallback_compare.py'), 'renderers': base['renderers'], 'cases': cases, 'boundary': 'Synthetic host Mesa controls compared to test-only reconstructed shared Scene exports; no device, saved-note, or production parity implied.', 'reproduce': '.venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py'}
     if OUT.exists():
         assert json.loads(OUT.read_text()) == result
         print('Verified retained comparison')

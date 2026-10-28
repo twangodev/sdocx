@@ -1,8 +1,7 @@
-use super::tests::end_alpha;
+use super::cubic::Cubic;
 use super::*;
-use crate::ink::brushpen::Cubic;
 
-fn four_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+pub(super) fn four_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     if input.points.len() != 4 {
         return Err(Error::PointCount);
     }
@@ -82,6 +81,7 @@ fn four_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     Ok(out)
 }
 
+#[cfg(test)]
 #[test]
 fn four_point_matches_complete_native_streams() {
     let extended: serde_json::Value = serde_json::from_str(include_str!(
@@ -151,6 +151,7 @@ fn four_point_matches_complete_native_streams() {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn unsupported_four_point_state_is_rejected() {
     let points = [[0.0, 0.0], [10.0, 0.0], [25.0, 0.0], [30.0, 0.0]];

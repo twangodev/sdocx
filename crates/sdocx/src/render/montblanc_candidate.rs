@@ -8,7 +8,7 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64
                 t[1].map(f64::from),
                 t[2].map(f64::from),
             ];
-            let p = triangle.map(|v| [128.0 + v[0], 128.0 - v[1]]);
+            let p = triangle.map(|v| [v[0], -v[1]]);
             let det = (p[1][0] - p[0][0]) * (p[2][1] - p[0][1])
                 - (p[2][0] - p[0][0]) * (p[1][1] - p[0][1]);
             let mut derivative = [[0.0; 2]; 2];
@@ -84,7 +84,7 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64
                         .clamp(0.0, 1.0);
                         if alpha > 0.0 {
                             result.push((
-                                patch.map(|v| [128.0 + v[0], 128.0 - v[1]]),
+                                patch.map(|v| [v[0], -v[1]]),
                                 (alpha * 10000.0).round() / 10000.0,
                             ));
                         }
@@ -94,6 +94,50 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64
         }
     }
     result
+}
+
+pub(super) fn render(
+    scene: &mut super::vector::Scene,
+    buffers: &[Vec<[f32; 5]>; 3],
+    color: &str,
+    remaining: &std::cell::Cell<usize>,
+) -> bool {
+    use super::vector::{Data, Paint, Path, Styled};
+    let Some(count) = buffers
+        .iter()
+        .map(|b| b.len() / 3)
+        .sum::<usize>()
+        .checked_mul(64)
+    else {
+        return false;
+    };
+    if count > remaining.get() || count > 32_768 {
+        return false;
+    }
+    let patches = pieces(buffers, 8);
+    if patches
+        .iter()
+        .any(|(p, a)| !a.is_finite() || p.iter().flatten().any(|v| !v.is_finite()))
+    {
+        return false;
+    }
+    for (p, alpha) in patches {
+        let [a, b, c] = p;
+        scene.push(
+            Path::new()
+                .data(
+                    Data::new()
+                        .move_to((a[0], a[1]))
+                        .line_to((b[0], b[1]))
+                        .line_to((c[0], c[1]))
+                        .close(),
+                )
+                .fill(Paint::from_hex(color))
+                .fill_opacity(alpha),
+        );
+    }
+    remaining.set(remaining.get() - count);
+    true
 }
 
 #[cfg(feature = "pdf")]
@@ -137,10 +181,12 @@ fn captured_controls_shared_scene_exports() {
         ];
         stroke.pressures = vec![0.3, pressure, if name == "pressure" { 0.9 } else { 1. }];
         stroke.pen_width = width;
-        let triangles = pieces(
-            &crate::ink::montblanc::tests::captured_control_buffers(&stroke, case),
-            8,
-        );
+        let mut buffers = crate::ink::montblanc::tests::captured_control_buffers(&stroke, case);
+        for vertex in buffers.iter_mut().flatten() {
+            vertex[0] += 128.0;
+            vertex[1] -= 128.0;
+        }
+        let triangles = pieces(&buffers, 8);
         assert_eq!(triangles.len(), if case == 3 { 3700 } else { 2500 });
         assert!(
             triangles

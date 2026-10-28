@@ -321,6 +321,17 @@ pub struct LegacyMarkerCenterlineProfile {
     pub screen_height: u32,
 }
 
+/// Experimental Montblanc approximation. The caller asserts a fresh drawable
+/// and one output pixel per page unit. The model extrapolates from synthetic
+/// host controls; saved-note and device parity are unverified. Unsupported
+/// inputs, replay, and sliced output retain generic paint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum MontblancRenderProfile {
+    /// Approximate captured host paint under the declared unit-scale context.
+    HostUnitScale,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -375,6 +386,9 @@ pub struct RenderOptions {
     /// Experimental SimpleBrush host-capture approximation; replay uses generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    /// Opt into approximate fresh-state Montblanc paint at unit output scale.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub montblanc_profile: Option<MontblancRenderProfile>,
     /// Opt into the experimental saved Marker centerline approximation.
     #[cfg_attr(feature = "serde", serde(default))]
     pub legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -883,6 +897,7 @@ impl DocumentTextCache {
             options.pencil3_profile,
             options.airbrush_profile,
             options.simplebrush_profile,
+            options.montblanc_profile,
             options.legacy_marker_centerline_profile,
             #[cfg(feature = "pdf")]
             options.legacy_marker_vector_profile,
@@ -1392,6 +1407,7 @@ fn render_page_contents_svg(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    montblanc_profile: Option<MontblancRenderProfile>,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")] legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     slice: Option<PageSlice>,
@@ -1466,6 +1482,7 @@ fn render_page_contents_svg(
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
+        montblanc_profile,
         legacy_marker_centerline_profile,
         #[cfg(feature = "pdf")]
         legacy_marker_vector_profile,
@@ -1474,6 +1491,7 @@ fn render_page_contents_svg(
             legacy_marker_vector::SourcePageBudget::default(),
         ),
         simplebrush_remaining_stamps: Cell::new(32_768),
+        montblanc_remaining_patches: Cell::new(32_768),
         slice,
     };
     let total = page.composed_objects().count();
@@ -1520,6 +1538,7 @@ struct CompositionContext<'a> {
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    montblanc_profile: Option<MontblancRenderProfile>,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")]
     legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1527,6 +1546,7 @@ struct CompositionContext<'a> {
     legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
     simplebrush_remaining_stamps: Cell<usize>,
+    montblanc_remaining_patches: Cell<usize>,
     slice: Option<PageSlice>,
 }
 
@@ -1620,8 +1640,10 @@ fn render_object(
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
+                context.montblanc_profile,
                 context.legacy_marker_centerline_profile,
                 &context.simplebrush_remaining_stamps,
+                &context.montblanc_remaining_patches,
                 context.slice,
             );
             *stroke_index += 1;
@@ -4041,8 +4063,10 @@ fn render_stroke(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    montblanc_profile: Option<MontblancRenderProfile>,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     simplebrush_remaining_stamps: &Cell<usize>,
+    montblanc_remaining_patches: &Cell<usize>,
     slice: Option<PageSlice>,
 ) {
     // Saved ObjectDrawing admission requires at least two source points before
@@ -4157,6 +4181,21 @@ fn render_stroke(
         && airbrush_profile == Some(AirBrushRenderProfile::SavedV2)
         && let Some(paint) = airbrush::prepare(stroke, theme, viewport)
         && airbrush::render(svg, &paint, replay_index)
+    {
+        return;
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && slice.is_none()
+        && montblanc_profile == Some(MontblancRenderProfile::HostUnitScale)
+        && viewport.iter().all(|d| *d > 0)
+        && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
+        && montblanc_candidate::render(
+            svg,
+            &buffers,
+            &theme.foreground(Some(color)),
+            montblanc_remaining_patches,
+        )
     {
         return;
     }
@@ -20278,5 +20317,7 @@ mod tests {
     }
 }
 
-#[cfg(test)]
 mod montblanc_candidate;
+
+#[cfg(test)]
+mod montblanc_tests;

@@ -47,6 +47,7 @@
     "pillow": "12.1.1"
   },
   "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_compare.py",
-  "script_sha256": "96687b9ec2f7d4407895720ac5f01db8d45c7e64edce4593f78db6ed1384b099",
-  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
+  "script_sha256": "5d3538523c756b8b61bb4349aa073a28d6ad32c954991e558af03c05e7f34857",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "source_revision": "7e16607"
 }

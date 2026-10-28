@@ -10,12 +10,14 @@ import struct
 import subprocess
 import sys
 import tempfile
+import tarfile
 import zlib
 
 import pymupdf
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
+REVISION = '7e16607'
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
 from triangle_svg_prototype import build
 from public_fallback_compare import composite_native_frame, metrics, FIXTURE, FIXTURE_SHA256
@@ -28,7 +30,10 @@ def sha(data):
 def run():
     if sha(FIXTURE.read_bytes()) != FIXTURE_SHA256:
         raise ValueError('source fixture hash mismatch')
-    sampler = (ROOT / 'crates/sdocx/src/ink/montblanc.rs').read_text()
+    def historical(path):
+        return subprocess.check_output(['git', 'show', f'{REVISION}:{path}'], cwd=ROOT)
+
+    sampler = historical('crates/sdocx/src/ink/montblanc.rs').decode()
     bridge = sampler[sampler.index('use super::path'):sampler.index('#[cfg(test)]')]
     bridge = bridge.replace('use sha2::{Digest, Sha256};', '')
     bridge = bridge.replace('const NATIVE_STREAM: &[u8] = include_bytes!("../../../../conformance/montblanc-native-v1.bin");', '')
@@ -42,17 +47,25 @@ def run():
     mesh = sampler[sampler.index('    type Vertex ='):sampler.index('    #[test]\n    fn saved_routes_match_native_expanded_triangle_meshes')]
     for old, new in [('    type Vertex', '    pub type Vertex'), ('    fn cap_vertices', '    pub fn cap_vertices'), ('    fn point_vertices', '    pub fn point_vertices')]:
         mesh = mesh.replace(old, new)
-    path = (ROOT / 'crates/sdocx/src/ink/path.rs').read_text().replace('use crate::Point;', 'use sdocx::Point;')
+    path = historical('crates/sdocx/src/ink/path.rs').decode().replace('use crate::Point;', 'use sdocx::Point;')
     receipt = json.loads((ROOT / 'conformance/montblanc-public-candidate-host-comparison.json').read_text())
+    assert receipt['source_revision'] == REVISION
     for filename, expected in receipt['source_sha256'].items():
-        if sha((ROOT / filename).read_bytes()) != expected:
+        data = historical(filename) if filename.startswith('crates/sdocx/') else (ROOT / filename).read_bytes()
+        if sha(data) != expected:
             raise ValueError(f'source hash mismatch: {filename}')
     with tempfile.TemporaryDirectory(prefix='montblanc-candidate-') as directory:
-        tmp = Path(directory); (tmp / 'src').mkdir()
+        tmp = Path(directory)
+        archive = tmp / 'source.tar'
+        subprocess.run(['git', 'archive', '--format=tar', '--output', str(archive), REVISION], cwd=ROOT, check=True)
+        with tarfile.open(archive) as source_archive:
+            source_archive.extractall(tmp / 'historical', filter='data')
+        archive.unlink()
+        (tmp / 'src').mkdir()
         (tmp / 'src/sampler.rs').write_text(bridge + mesh)
         (tmp / 'src/path.rs').write_text(path)
         (tmp / 'src/main.rs').write_bytes((ROOT / 'tools/montblanc/public-candidate/main.rs').read_bytes())
-        (tmp / 'Cargo.toml').write_text('[package]\nname="montblanc-candidate"\nversion="0.1.0"\nedition="2024"\n[workspace]\n[dependencies]\nsdocx={path="' + str(ROOT / 'crates/sdocx') + '"}\nserde_json="1"\n')
+        (tmp / 'Cargo.toml').write_text('[package]\nname="montblanc-candidate"\nversion="0.1.0"\nedition="2024"\n[workspace]\n[dependencies]\nsdocx={path="' + str(tmp / 'historical/crates/sdocx') + '"}\nserde_json="1"\n')
         env = os.environ | {'CARGO_TARGET_DIR': '/tmp/sdocx-agent-target', 'CARGO_INCREMENTAL': '0', 'CARGO_PROFILE_DEV_DEBUG': '0', 'CARGO_PROFILE_TEST_DEBUG': '0'}
         output = subprocess.check_output(['cargo', 'run', '--offline', '--quiet', '--manifest-path', str(tmp / 'Cargo.toml')], cwd=ROOT, env=env, text=True)
         for line in output.splitlines():
