@@ -1,0 +1,173 @@
+{
+  "input": {
+    "advanced_setting": "5;",
+    "color_argb": "0x80336699",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+    "pen_size_f32_bits": "00008040",
+    "points_f32_bits": [
+      [
+        "00002042",
+        "00002042"
+      ],
+      [
+        "00004842",
+        "00002042"
+      ],
+      [
+        "00007042",
+        "00004842"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "0000803f",
+      "cdcc4c3d",
+      "0000803f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      8,
+      16
+    ],
+    "tool_type": 1
+  },
+  "library_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "native_vector_sha256": "4d24eb6a09e45760a4d5bba048481b06c5173d63cb5a1fd374ea74bac930c781",
+  "native_vector_bytes": 192,
+  "callback_count": 24,
+  "gles": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "readback": {
+    "bbox": [
+      38,
+      38,
+      61,
+      51
+    ],
+    "bytes": 262144,
+    "nonzero_pixels": 135,
+    "samples": [
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          1,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          20,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          1
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          8,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          8
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          128,
+          128
+        ]
+      }
+    ],
+    "sha256": "986377a3d1958ec17c3f080af7296ed82cda8dca91c2b52983d8f7611c2f1506"
+  },
+  "rgb_l1": {
+    "svg_candidate": 8096,
+    "svg_fallback": 24225,
+    "mupdf_candidate": 8286,
+    "mupdf_fallback": 25101
+  },
+  "scope": "Synthetic Drawing to native RTV1 with host bridge and Mesa GLES. Public exports compared over their backgrounds; no device parity."
+}

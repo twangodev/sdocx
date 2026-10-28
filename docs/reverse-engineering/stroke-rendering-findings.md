@@ -87,7 +87,7 @@ the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
 thin-edge shader is not ported. `Marker` stays on the pressure fallback.
 `Marker3` and `StraightMarker` use the bounded V5 page route with empty or `5;`
-settings and tool types 2 or 3; other settings remain generic. Marker4 and `StraightHighlighter`
+settings and tool types 2 or 3; tool 1 is admitted only for the captured Marker3 `5;`, sizes 4–8 and explicit ARGB. Other settings remain generic. Marker4 and `StraightHighlighter`
 settings `7;` and `8;` use rounded rectangular stamps; see [V7 findings](marker4-v7.md)
 and [V8 findings](marker4-rendering-findings.md). Other Marker4 settings remain
 on the fallback.
@@ -1138,3 +1138,46 @@ form compiler, graph import and page budgets are scratch-only; no production
 route is admitted. Its temporary patch is
 `scratch/legacy-marker-full-retained.patch` and its test is
 `scratch/legacy-marker-scene-probe.rs`.
+
+A separate [tool-1 Drawing control](../../conformance/marker3-tool1-native.json)
+uses the same synthetic three-point input as the tool-2 control. Tool 1 emits
+24 XY pairs, versus 25 for tool 2, and their complete streams differ; toggling
+the saved curve flag leaves the tool-1 stream unchanged. The host-supplied
+context and adapters have the same boundaries as the tool-3 experiment. This
+is a geometry observation, not a paint or device comparison, and the existing sampler matches both complete tool-1 streams. Reproduce both cases with
+`scratch/marker3-tool1-native.py --check-fixture --case marker3_nontrivial_saved3 --advanced-setting 5`,
+adding `--probe-curve 1` for the second case and setting
+`PYTHONPATH=scratch/apk-analysis-runtime/python`.
+
+The tool-1 path is admitted to the bounded V5 page route only for Marker3 `5;`, sizes 4–8 and explicit ARGB. A translated
+three-point control at (40,40), (50,40), (60,50), size 8 and opaque
+`#336699` retains the actual Drawing vector through the selected native RTV1
+into host Mesa GLES; the GPU upload matches the 24 captured XY pairs. The
+public SVG (resvg) and PDF (MuPDF) have RGB L1 errors of 19,687 and 20,629
+against the host frame over their respective export backgrounds, versus
+81,895 and 81,932 for the generic fallback. The fallback uses the same input
+with an unadmitted setting. This is a synthetic 1× host comparison, not a
+Samsung-device or general PDF-reader parity claim. Capture and export scripts
+are retained under `scratch/marker3-tool1-paint*.py` and
+`tmp/marker3-tool1-export/`; the page route remains an approximation of the
+fragment fringe.
+
+A second translated host control uses size 4 and ARGB `0x80336699`. Its SVG
+(resvg) and PDF (MuPDF) RGB L1 errors are 8,096 and 8,286, versus 24,225 and
+25,101 for the generic fallback. These [compact paint receipts](../../conformance/marker3-tool1-paint-comparison.json)
+and [size-4 receipt](../../conformance/marker3-tool1-size4-paint-comparison.json)
+record native inputs and hashes. Admission between sizes 4 and 8 is an interpolation based on the shared V5 size-to-radius path; the common mask shader applies the supplied color separately.
+
+A [third control](../../conformance/marker3-tool1-green-paint-comparison.json)
+uses size 8 and ARGB `0x4044cc22`: SVG and PDF RGB L1 are 4,769 and 5,278,
+versus fallback 33,950 and 33,482. The native RTV1 uses a color uniform in the
+same mask/composite pipeline for these tool-1 controls. This supports the
+explicit ARGB gate but is not exhaustive paint or device parity.
+
+The retained [40×30 RGBA crop](../../conformance/marker3-tool1-host-crop.rgba)
+is rows 30–59 and columns 30–69 of the size-8 opaque host readback. Its
+SHA-256 is `150d0a5645b5a255734ed5cabea50d1be9b1554f6e7d5500670fc1dff5a7ea58`;
+the full readback identity is recorded in the first paint receipt. The Rust
+public-export test compares SVG pixels to this crop and checks PDF generation;
+PDF pixel comparisons above are separate MuPDF observations. Controls cover
+only the stated colors, alpha values and 1× scale.

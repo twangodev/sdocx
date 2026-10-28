@@ -1,0 +1,289 @@
+{
+  "cases": {
+    "marker3_nontrivial_saved3:5:tool1:curve0": {
+      "case_id": "marker3_nontrivial_saved3",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is a host identity ARGB callback (entry input and returned W0 captured)",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods, Drawing selection, Marker3 wrapper, and saved geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": false,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803f",
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          16
+        ],
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "000000000000000000002041000000000000a04100002041",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "0000803fcdcc4c3d0000803f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "000000000800000010000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "sha256": "f34f46eaa4877aba3b75ffab6c31ec9a4608c15ec871105c757af15e0d996102",
+          "vector_bytes": "000000000000000054cf233f54cfa33eff40d13fff40513f7dd218407dd2983fcb1e5240cb1ed23fb3428a40b3420a400183a940018329405be6c1405be6414027eddb4027ed5b406a97f7406a9777408f720a418f728a4024eb194124eb994074352a417435aa401e3639411e36b9400fdd45410fddc54001ef524101efd240f36b6041f36be040e6536e41e653ee40d9a67c41d9a6fc4068b2854168b20541e3468d41e3460d41de109541de1015415b109d415b101d410000a04100002041",
+          "vector_count": 24
+        },
+        "saved_redraw": {
+          "sha256": "f34f46eaa4877aba3b75ffab6c31ec9a4608c15ec871105c757af15e0d996102",
+          "vector_bytes": "000000000000000054cf233f54cfa33eff40d13fff40513f7dd218407dd2983fcb1e5240cb1ed23fb3428a40b3420a400183a940018329405be6c1405be6414027eddb4027ed5b406a97f7406a9777408f720a418f728a4024eb194124eb994074352a417435aa401e3639411e36b9400fdd45410fddc54001ef524101efd240f36b6041f36be040e6536e41e653ee40d9a67c41d9a6fc4068b2854168b20541e3468d41e3460d41de109541de1015415b109d415b101d410000a04100002041",
+          "vector_count": 24
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "runtime_context": {
+        "canvas_model_matrix_f32": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ],
+        "color_conversion": "identity host callback",
+        "profile_dimensions_and_context_flags": "host-provided explicitly; not device defaults",
+        "profile_size": [
+          1920,
+          1080
+        ]
+      },
+      "schema": "sdocx-marker3-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV5 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    },
+    "marker3_nontrivial_saved3:5:tool1:curve1": {
+      "case_id": "marker3_nontrivial_saved3",
+      "host_boundaries": [
+        "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+        "context vslot +80 is a host identity ARGB callback (entry input and returned W0 captured)",
+        "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+        "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods, Drawing selection, Marker3 wrapper, and saved geometry execute natively"
+      ],
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803f",
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          16
+        ],
+        "tool_type": 1
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "native_calls": {
+        "source_ObjectStroke_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "000000000000000000002041000000000000a04100002041",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "0000803fcdcc4c3d0000803f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "000000000000000000000000",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "000000000800000010000000",
+            "element_size": 4
+          }
+        }
+      },
+      "phase_final_vectors": {
+        "draw_object_stroke": {
+          "sha256": "f34f46eaa4877aba3b75ffab6c31ec9a4608c15ec871105c757af15e0d996102",
+          "vector_bytes": "000000000000000054cf233f54cfa33eff40d13fff40513f7dd218407dd2983fcb1e5240cb1ed23fb3428a40b3420a400183a940018329405be6c1405be6414027eddb4027ed5b406a97f7406a9777408f720a418f728a4024eb194124eb994074352a417435aa401e3639411e36b9400fdd45410fddc54001ef524101efd240f36b6041f36be040e6536e41e653ee40d9a67c41d9a6fc4068b2854168b20541e3468d41e3460d41de109541de1015415b109d415b101d410000a04100002041",
+          "vector_count": 24
+        },
+        "saved_redraw": {
+          "sha256": "f34f46eaa4877aba3b75ffab6c31ec9a4608c15ec871105c757af15e0d996102",
+          "vector_bytes": "000000000000000054cf233f54cfa33eff40d13fff40513f7dd218407dd2983fcb1e5240cb1ed23fb3428a40b3420a400183a940018329405be6c1405be6414027eddb4027ed5b406a97f7406a9777408f720a418f728a4024eb194124eb994074352a417435aa401e3639411e36b9400fdd45410fddc54001ef524101efd240f36b6041f36be040e6536e41e653ee40d9a67c41d9a6fc4068b2854168b20541e3468d41e3460d41de109541de1015415b109d415b101d410000a04100002041",
+          "vector_count": 24
+        }
+      },
+      "profile": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "runtime_context": {
+        "canvas_model_matrix_f32": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ],
+        "color_conversion": "identity host callback",
+        "profile_dimensions_and_context_flags": "host-provided explicitly; not device defaults",
+        "profile_size": [
+          1920,
+          1080
+        ]
+      },
+      "schema": "sdocx-marker3-saved-caller-native-case-v1",
+      "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV5 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+    }
+  },
+  "schema": "sdocx-marker3-saved-caller-native-v1"
+}

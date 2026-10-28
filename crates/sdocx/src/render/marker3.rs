@@ -156,6 +156,81 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn tool_one_public_svg_matches_native_host_better_than_fallback() {
+        let input = Input {
+            samples: vec![[40.0, 40.0], [50.0, 40.0], [60.0, 50.0]],
+            pressures: Some(vec![1.0, 0.05, 1.0]),
+            width: 8.0,
+            tool_type_raw: 1,
+            fixed_width: false,
+        };
+        let render = |setting: &str| {
+            let mut stroke = marker3_stroke(&input);
+            stroke.rendering.as_mut().unwrap().advanced_settings = Some(setting.into());
+            let document = crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "marker3-tool-one".into(),
+                    width: 256,
+                    height: 256,
+                    content_bbox: BoundingBox {
+                        x_min: 30.0,
+                        y_min: 30.0,
+                        x_max: 70.0,
+                        y_max: 60.0,
+                    },
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: vec![crate::PageObject::from(stroke)],
+                }],
+                metadata: Default::default(),
+            };
+            let svg = crate::render_document_svg(&document, &Default::default())
+                .remove(0)
+                .svg;
+            let pdf =
+                crate::render_document_pdf(&document, &Default::default(), &Default::default())
+                    .unwrap();
+            assert!(pdf.starts_with(b"%PDF"));
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap
+        };
+        let native = include_bytes!("../../../../conformance/marker3-tool1-host-crop.rgba");
+        let error = |pixels: &resvg::tiny_skia::Pixmap| -> u64 {
+            let mut sum = 0_u64;
+            for y in 0..30 {
+                for x in 0..40 {
+                    let i = (y * 40 + x) * 4;
+                    let j = ((y + 30) * 256 + x + 30) * 4;
+                    let alpha = u32::from(native[i + 3]);
+                    for channel in 0..3 {
+                        let expected =
+                            u32::from(native[i + channel]) + (252 * (255 - alpha) + 127) / 255;
+                        sum += u64::from(
+                            (i32::from(pixels.data()[j + channel]) - expected as i32)
+                                .unsigned_abs(),
+                        );
+                    }
+                }
+            }
+            sum
+        };
+        let candidate = error(&render("5;"));
+        let fallback = error(&render("4;"));
+        assert!(
+            candidate < 25_000 && candidate * 2 < fallback,
+            "candidate {candidate}, fallback {fallback}"
+        );
+    }
+
     #[test]
     fn public_marker3_exports_preserve_saved_radius_and_apply_alpha_once() {
         let fixture: Fixture = serde_json::from_str(include_str!(
@@ -305,7 +380,11 @@ mod tests {
             let expected = render(2, "Marker3");
             assert_eq!(render(3, "Marker3"), expected);
             assert_eq!(render(3, "StraightMarker"), expected);
-            assert_ne!(render(1, "Marker3").0, expected.0);
+            if input.samples.len() == 2 {
+                assert_eq!(render(1, "Marker3"), expected);
+            } else {
+                assert_ne!(render(1, "Marker3").0, expected.0);
+            }
             let parsed = roxmltree::Document::parse(&expected.0).unwrap();
             let path = parsed
                 .descendants()

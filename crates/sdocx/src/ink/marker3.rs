@@ -32,9 +32,13 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     let properties = &rendering.properties;
     let style = &rendering.style;
     let argb = style.color_argb?;
-    if !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
+    if (rendering.tool_type_raw == 1
+        && (rendering.pen_name.as_deref() != Some(PEN)
+            || rendering.advanced_settings.as_deref() != Some("5;")
+            || !style.pen_size.is_some_and(|size| (4.0..=8.0).contains(&size))))
+        || !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
-        || !matches!(rendering.tool_type_raw, 2 | 3)
+        || !matches!(rendering.tool_type_raw, 1..=3)
         || properties.replay_only
         || properties.stylus_channels
         || properties.eraser
@@ -364,6 +368,32 @@ mod tests {
     }
 
     #[test]
+    fn tool_one_geometry_matches_native_drawing() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-tool1-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_object().unwrap().values() {
+            let stroke = caller_stroke(case);
+            let ink = prepare_for_page(&stroke).unwrap();
+            assert_caller_xy_matches(&ink, case);
+            for change in 0..6 {
+                let mut rejected = stroke.clone();
+                let rendering = rejected.rendering.as_mut().unwrap();
+                match change {
+                    0 => rendering.pen_name = Some(STRAIGHT_PEN.into()),
+                    1 => rendering.advanced_settings = Some(String::new()),
+                    2 => rendering.style.pen_size = Some(3.99),
+                    3 => rendering.style.pen_size = Some(8.01),
+                    4 => rendering.style.pen_size = Some(f32::NAN),
+                    _ => rendering.style.color_argb = None,
+                }
+                assert!(prepare_for_page(&rejected).is_none());
+            }
+        }
+    }
+
+    #[test]
     fn tool_three_page_geometry_matches_native_drawing() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../conformance/marker3-tool3-native.json"
@@ -403,7 +433,7 @@ mod tests {
         assert!(prepare_for_page(&rejected).is_none());
 
         let mut rejected = valid.clone();
-        rejected.rendering.as_mut().unwrap().tool_type_raw = 1;
+        rejected.rendering.as_mut().unwrap().tool_type_raw = 4;
         assert!(prepare_for_page(&rejected).is_none());
 
         let mut rejected = valid.clone();
