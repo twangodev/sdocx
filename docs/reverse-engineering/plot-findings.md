@@ -175,6 +175,23 @@ object rectangle (`0x8a038`–`0x8a070`). Without one, this function logs and
 returns; it contains no solver/curve fallback. This establishes that generic
 drawing function, not all Samsung preview or export routes.
 
+A focused [Unicorn control](../../conformance/plot-drawing-native.json) executes
+this native function with stubbed bitmap, canvas and runtime rectangle getters.
+For two supplied rectangles, the canvas receives the four f32 coordinates
+unchanged. A synthetic 17 × 11 thumbnail supplies its dimensions and buffer to
+bitmap creation; a missing thumbnail logs and draws nothing. The function saves
+and restores the canvas without issuing a rotation in these controls. The
+[probe](../../conformance/native_table/plot_drawing.rs) does not load a saved
+plot or execute the surrounding object transform, real resource decoding, or GPU
+paint, so it cannot establish saved bounds, rotation, or rendered pixels.
+The control uses APK 4.4.45.37's Drawing library SHA-256
+`788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd`
+and Model library SHA-256
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+Run the standalone harness with the Model library, `--plot-drawing`, and the
+Drawing library in that order; the harness asserts the expected handoff and
+missing-thumbnail behavior before printing its receipt.
+
 The Rust inspection API retains original plot source without evaluation.
 `PlotMetadata.base.flexible_metadata()` can expose the captured-thumbnail media
 ID, but does not own the image bytes. High-level page decoding provides neither
