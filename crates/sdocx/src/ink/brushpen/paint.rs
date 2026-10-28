@@ -24,9 +24,9 @@ struct Context {
 
 #[derive(Debug)]
 enum Error {
-    InvalidTexture,
-    InvalidContext,
-    InvalidRecord,
+    Texture,
+    Context,
+    Record,
 }
 
 #[derive(Clone, Copy)]
@@ -78,11 +78,11 @@ fn paint(
         || !context.num_tiles.is_finite()
         || context.num_tiles <= 0.0
     {
-        return Err(Error::InvalidContext);
+        return Err(Error::Context);
     }
     for record in records {
         if record.iter().any(|v| !v.is_finite()) || record[2] <= 0.0 {
-            return Err(Error::InvalidRecord);
+            return Err(Error::Record);
         }
         let quad = screen_quad(record, context);
         if quad
@@ -91,11 +91,11 @@ fn paint(
             .chain(&quad.t_gradient)
             .any(|v| !v.is_finite())
         {
-            return Err(Error::InvalidContext);
+            return Err(Error::Context);
         }
         let tile = record[3].floor();
         if tile < 0.0 || tile >= context.num_tiles * context.num_tiles {
-            return Err(Error::InvalidRecord);
+            return Err(Error::Record);
         }
     }
     for record in records {
@@ -279,7 +279,7 @@ fn validate_texture(tex: Rgba8<'_>) -> Result<(), Error> {
             .and_then(|n| n.checked_mul(4))
             != Some(tex.bytes.len())
     {
-        return Err(Error::InvalidTexture);
+        return Err(Error::Texture);
     }
     Ok(())
 }
@@ -354,7 +354,7 @@ mod tests {
             invalid.projection[index] = 0.5;
             assert!(matches!(
                 paint(&[], texture, texture, invalid, &mut destination),
-                Err(Error::InvalidContext)
+                Err(Error::Context)
             ));
             assert_eq!(destination, [19; 12 * 8 * 4]);
         }
@@ -362,7 +362,7 @@ mod tests {
         singular.projection[5] = 0.0;
         assert!(matches!(
             paint(&[], texture, texture, singular, &mut destination),
-            Err(Error::InvalidContext)
+            Err(Error::Context)
         ));
         let good = [0.0, 0.0, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
         let mut painted = destination;
@@ -372,7 +372,7 @@ mod tests {
         bad[2] = 0.0;
         assert!(matches!(
             paint(&[good, bad], texture, texture, context, &mut destination),
-            Err(Error::InvalidRecord)
+            Err(Error::Record)
         ));
         assert_eq!(destination, [19; 12 * 8 * 4]);
     }
