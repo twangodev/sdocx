@@ -430,7 +430,7 @@ pub(crate) fn prepare_stroke(
                 && points.windows(2).last().is_some_and(|pair| {
                     (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
                 })
-                && (points.len() != 3
+                && (!(3..=4).contains(&points.len())
                     || ((points[1][0] - points[0][0]).abs() < 1.5
                         && (points[1][1] - points[0][1]).abs() < 1.5))))
     {
@@ -875,6 +875,15 @@ mod tests {
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.points[2].x = 1.0;
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points.push(crate::Point { x: 1.25, y: 0. });
+        stroke.pressures.push(0.5);
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points[1].x = f64::from(f32::from_bits(1.5_f32.to_bits() - 1));
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points[1].x = 1.5;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.points.truncate(3);
+        stroke.pressures.truncate(3);
         stroke.points[2].x = 16.0;
         stroke.rendering.as_mut().unwrap().style.pen_size = Some(20.0);
         stroke.pen_width = 20.0;

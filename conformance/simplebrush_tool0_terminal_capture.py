@@ -6,6 +6,7 @@ at the scratch/tmp paths used by the harness. Run from the repository root.
 The harness writes full frame captures under its scratch capture directory.
 """
 import json
+import hashlib
 import os
 from pathlib import Path
 import struct
@@ -13,10 +14,13 @@ import subprocess
 import sys
 
 root = Path(__file__).resolve().parent.parent
-receipt = json.loads((root / 'conformance/simplebrush-tool0-terminal-native.json').read_text())
+receipt_path = Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'conformance/simplebrush-tool0-terminal-native.json'
+receipt = json.loads(receipt_path.read_text())
 harness = root / 'scratch/simplebrush-tool3-multi/simplebrush-5-paint-capture.py'
 if not harness.is_file():
     raise SystemExit(f'Local capture harness is missing: {harness}')
+if hashlib.sha256(harness.read_bytes()).hexdigest() != receipt['capture_script_sha256']:
+    raise SystemExit(f'Local capture harness digest differs: {harness}')
 
 def decode(value):
     return struct.unpack('<f', bytes.fromhex(value))[0]
@@ -28,7 +32,8 @@ for name, control in receipt['controls'].items():
         env['PYTHONPATH'] = str(root / 'scratch/apk-analysis-runtime/python')
         env['SIMPLEBRUSH_POINTS'] = json.dumps([[decode(v) for v in xy] for xy in source['points_f32_bits']])
         env['SIMPLEBRUSH_PRESSURES'] = json.dumps([decode(v) for v in source['pressure_f32_bits']])
-        command = [sys.executable, str(harness), '--case', 'simplebrush_pressure_first075', '--tool-type', str(tool)]
+        command = [sys.executable, str(harness), '--case', 'simplebrush_pressure_first075',
+                   '--pen-size', str(decode(source['pen_size_requested_f32_bits'])), '--tool-type', str(tool)]
         for sequence in range(8):
             command.extend(('--dispatch-task-seq', str(sequence)))
         result = json.loads(subprocess.check_output(command, cwd=root, env=env))

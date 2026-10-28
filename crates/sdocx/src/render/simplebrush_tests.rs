@@ -615,6 +615,14 @@ fn tool_zero_native_controls_reach_public_exports() {
         .as_object_mut()
         .unwrap()
         .extend(terminal["controls"].as_object().unwrap().clone());
+    let vertical_bent: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool0-vertical-bent-native.json"
+    ))
+    .unwrap();
+    receipt["controls"]
+        .as_object_mut()
+        .unwrap()
+        .extend(vertical_bent["controls"].as_object().unwrap().clone());
     let decode = |value: &serde_json::Value| {
         let hex = value.as_str().unwrap();
         let mut bytes = [0_u8; 4];
@@ -640,6 +648,12 @@ fn tool_zero_native_controls_reach_public_exports() {
         "curve-32",
         "short-terminal",
         "boundary",
+        "excursion-return",
+        "vertical-bent-short-terminal",
+        "extra-reverse4",
+        "extra-return3",
+        "extra-skip4",
+        "extra-vertical3",
     ] {
         let input = &receipt["controls"][name]["input"];
         let size = decode(&input["pen_size_f32_bits"]);
@@ -860,6 +874,7 @@ fn tool_zero_short_terminal_svg_improves_against_native_frame() {
 fn tool_zero_unsupported_size_and_terminal_step_fall_back() {
     let mut input = stroke();
     input.rendering.as_mut().unwrap().tool_type_raw = 0;
+    input.points[1] = Point { x: 11.0, y: 20.0 };
     input.points.push(Point { x: 30.5, y: 25.5 });
     input.pressures.push(0.5);
     let terminal = document(input.clone());
