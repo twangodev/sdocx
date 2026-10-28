@@ -240,6 +240,9 @@ fn run(
                 continue;
             }
             let shape = visible.next()?;
+            if alpha == 0. {
+                continue;
+            }
             let mut d = String::new();
             for polygon in shape {
                 for contour in polygon {

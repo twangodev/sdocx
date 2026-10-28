@@ -578,3 +578,36 @@ fn low_alpha_second_stroke_improves_against_native() {
         "vector {actual}, fallback {generic}"
     );
 }
+
+#[test]
+fn zero_alpha_retains_native_caps_in_svg_and_pdf() {
+    let mut doc = document("straight", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke");
+    };
+    stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x00ffcb30);
+    let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    let native =
+        include_bytes!("../../../../../conformance/legacy-marker-alpha00-sparse-rgba8.bin");
+    let actual = error(&candidate, native);
+    let generic = error(&fallback, native);
+    assert!(
+        actual < 500 && actual < generic,
+        "vector {actual}, fallback {generic}"
+    );
+    assert_eq!(candidate.matches("<linearGradient").count(), 2);
+    let pdf = crate::render_document_pdf(&doc, &options(), &crate::PdfOptions::default()).unwrap();
+    let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    assert!(
+        pdf.objects
+            .values()
+            .filter_map(|o| o.as_stream().ok())
+            .filter_map(|s| s.decompressed_content().ok())
+            .any(|data| data
+                .windows(b"/M1 gs /C1 Do".len())
+                .any(|w| w == b"/M1 gs /C1 Do"))
+    );
+}

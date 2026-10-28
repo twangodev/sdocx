@@ -590,7 +590,8 @@ fn tool_zero_native_controls_reach_public_exports() {
         f32::from_le_bytes(bytes)
     };
     for name in [
-        "vertical", "reverse", "curve", "two-4", "two-12", "curve-4", "curve-12",
+        "vertical", "reverse", "curve", "two-4", "two-12", "curve-4", "curve-12", "short", "seven",
+        "sixteen",
     ] {
         let input = &receipt["controls"][name]["input"];
         let size = decode(&input["pen_size_f32_bits"]);
@@ -656,16 +657,16 @@ fn tool_zero_native_controls_reach_public_exports() {
 }
 
 #[test]
-fn tool_zero_uncaptured_size_and_short_steps_fall_back() {
+fn tool_zero_uncaptured_size_and_terminal_step_fall_back() {
     let mut input = stroke();
     input.rendering.as_mut().unwrap().tool_type_raw = 0;
-    input.points[1] = Point { x: 10.5, y: 20.5 };
-    let short = document(input.clone());
+    input.points[2] = Point { x: 20.5, y: 20.5 };
+    let terminal = document(input.clone());
     assert_eq!(
-        render_document_svg(&short, &options())[0].svg,
-        render_document_svg(&short, &RenderOptions::default())[0].svg
+        render_document_svg(&terminal, &options())[0].svg,
+        render_document_svg(&terminal, &RenderOptions::default())[0].svg
     );
-    input.points[1] = Point { x: 20.0, y: 20.0 };
+    input.points[2] = Point { x: 30.0, y: 25.0 };
     input.pen_width = 13.0;
     input.rendering.as_mut().unwrap().style.pen_size = Some(13.0);
     let size = document(input);

@@ -185,7 +185,7 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         return Err("invalid pen size");
     }
 
-    if points.len() > 2 && matches!(tool_type, 2 | 3) {
+    if points.len() > 2 && matches!(tool_type, 0 | 2 | 3) {
         let mut accepted_points = Vec::with_capacity(points.len());
         let mut accepted_pressures = Vec::with_capacity(points.len());
         accepted_points.push(points[0]);
@@ -425,9 +425,9 @@ pub(crate) fn prepare_stroke(
         .collect::<Result<Vec<_>, _>>()?;
     if rendering.tool_type_raw == 0
         && (!(4.0..=12.0).contains(&size)
-            || !(2..=6).contains(&points.len())
-            || (points.len() != 2
-                && points.windows(2).any(|pair| {
+            || !(2..=16).contains(&points.len())
+            || (points.len() > 2
+                && points.windows(2).last().is_some_and(|pair| {
                     (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
                 })))
     {
@@ -854,21 +854,23 @@ mod tests {
         rendering.advanced_settings = None;
         rendering.tool_type_raw = 0;
         rendering.style.color_argb = Some(0x80402010);
-        stroke.points = (0..6)
+        stroke.points = (0..16)
             .map(|i| crate::Point {
                 x: f64::from(i * 8),
                 y: 0.,
             })
             .collect();
-        stroke.pressures = vec![0.5; 6];
+        stroke.pressures = vec![0.5; 16];
         stroke.timestamps.clear();
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
-        stroke.points.push(crate::Point { x: 48., y: 0. });
+        stroke.points.push(crate::Point { x: 128., y: 0. });
         stroke.pressures.push(0.5);
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
         stroke.points.truncate(3);
         stroke.pressures.truncate(3);
         stroke.points[1].x = 0.5;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.points[2].x = 1.0;
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
         stroke.points.truncate(2);
         stroke.pressures.truncate(2);
