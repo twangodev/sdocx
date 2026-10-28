@@ -253,7 +253,7 @@ renderer size through a host write and uses modeled RNG. A separate
 [V2 Drawing oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/crayon2-drawing-admission-native.json)
 checks native settings dispatch and Model size/color forwarding through the same
 RT, shader uniform and six opaque/partial/zero-alpha readbacks. Persisted-note
-admission, production vector paint and device parity remain open.
+admission, production vector paint and device parity remain open. A [single-record host rounding control](../conformance/crayon2-mxcsr-inline-rounding.json) changes 12 readback channels when caller MXCSR rounding changes under inline llvmpipe; it does not isolate the conversion stage. The [capture instructions](../tools/crayon2_rounding/README.md) document its local native inputs and clean-checkout limitation.
 
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.

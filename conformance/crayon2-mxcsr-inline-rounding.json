@@ -1,0 +1,123 @@
+{
+  "boundary": "One synthetic replayed native RTV1 record on host Mesa with LP_NUM_THREADS=0; mixed pipeline, not an isolated byte-conversion test or device evidence.",
+  "changed_channels": 12,
+  "changes_xy_channel_nearest_down": [
+    [
+      61,
+      64,
+      0,
+      9,
+      10
+    ],
+    [
+      61,
+      64,
+      1,
+      18,
+      20
+    ],
+    [
+      61,
+      64,
+      2,
+      28,
+      29
+    ],
+    [
+      61,
+      64,
+      3,
+      46,
+      49
+    ],
+    [
+      62,
+      64,
+      0,
+      14,
+      15
+    ],
+    [
+      62,
+      64,
+      1,
+      28,
+      30
+    ],
+    [
+      62,
+      64,
+      2,
+      42,
+      44
+    ],
+    [
+      62,
+      64,
+      3,
+      70,
+      74
+    ],
+    [
+      61,
+      65,
+      0,
+      23,
+      31
+    ],
+    [
+      61,
+      65,
+      1,
+      47,
+      63
+    ],
+    [
+      61,
+      65,
+      2,
+      70,
+      94
+    ],
+    [
+      61,
+      65,
+      3,
+      117,
+      157
+    ]
+  ],
+  "downward": {
+    "mxcsr_after": "0x3fa1",
+    "mxcsr_before": "0x3fa1",
+    "rgba_sha256": "5a6a68ce2d559eae620967a59928f453c1f74e30ae86a845c036d4110e5cc061"
+  },
+  "gl_operation_errors": [],
+  "host_gl_sha256": {
+    "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+    "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+  },
+  "loaded_gallium_path": "/usr/lib/x86_64-linux-gnu/libgallium-25.0.7-2+deb13u1.so",
+  "loaded_gallium_sha256": "5597543f11c2ef62bc95b0237a8a81339aed87e225d82ae2c6570f8973b1cee5",
+  "native_dso_sha256": {
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenCrayon2.so": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+    "libSPenDefaultPen.so": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+    "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenObliquePen.so": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "nearest": {
+    "mxcsr_after": "0x1fa1",
+    "mxcsr_before": "0x1fa1",
+    "rgba_sha256": "cdbaaa086a545660fc2b19726636815c29197e21e519574e497db131d68a28a6"
+  },
+  "schema": "crayon2-mxcsr-inline-rounding-v1",
+  "source_sha256": "e2c9552a83e139694076e3f15bd69dee2c6fcb47e5d7507b0f4ed34aff5b0701"
+}
