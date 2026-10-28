@@ -3,6 +3,9 @@ use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 #[path = "native_table/plot_drawing.rs"]
 mod plot_drawing;
 
+#[path = "native_table/plot_load_scale.rs"]
+mod plot_load_scale;
+
 #[path = "native_table/host_thunks.rs"]
 mod host_thunks;
 
@@ -1225,6 +1228,10 @@ fn main() {
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
     match mode.as_deref().and_then(|mode| mode.to_str()) {
+        Some("--plot-load-scale") => {
+            plot_load_scale::capture(&machine);
+            return;
+        }
         Some("--plot-drawing") => {
             let path = std::env::args_os().nth(3).expect("drawing library required");
             machine.load_drawing(Path::new(&path));

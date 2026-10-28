@@ -214,3 +214,39 @@ discontinuities, complete layout, export-route selection and real-document
 capture-resource persistence remain unverified. Older variants and unknown
 future fields are not established. Synthetic parser cases do not validate
 plotted appearance or writer variants beyond this APK.
+
+## Load scaling and ordinary dispatch
+
+The [load-scale control](../../conformance/native_table/plot_load_scale.rs)
+executes Model `0x2db434–0x2db4f8` with injected base data and registers.
+Its [receipt](../../conformance/plot-load-scale-native.json) covers both
+orientation branches, absent owner dimensions and unit scale. For orientation
+1, the denominator is the stored owner height; otherwise it is the stored owner
+width. In the supplied nonzero load-dimension cases, a zero selected owner dimension
+is replaced with the requested load dimension.
+The native fragment divides those signed integers as f32, multiplies all four
+current f32 bounds by the resulting scale, and scales both owner dimensions,
+converting them back to integers. The captured ratios are exactly 1 and 2;
+other ratios and rounding boundaries were not tested. These controls do not execute the complete
+saved-note loader or determine the load dimension or orientation supplied by a
+page caller.
+
+Static disassembly shows the ordinary Drawing dispatcher plot branch at `0x7fbdc–0x7fc00` constructs
+its plot drawing object and directly calls `ObjectPlotDrawing::DrawObject`;
+it does not apply an object rotation in that branch. Together with the focused
+DrawObject control, this bounds those two functions only: it does not establish
+the incoming canvas matrix or the result of every preview and export path.
+
+Run the capture with:
+
+```sh
+rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
+  -L native=scratch/apk-analysis-runtime/python/unicorn/lib \
+  -C link-arg=-Wl,-rpath,"$PWD/scratch/apk-analysis-runtime/python/unicorn/lib" \
+  -o /tmp/sdocx-native-table-plot
+/tmp/sdocx-native-table-plot scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --plot-load-scale
+```
+
+The capture injects base data and registers at the fragment entry and stubs the
+Android log call to return. It stops before the rest of the loader continues.
