@@ -1,0 +1,15 @@
+{
+  "schema": "sdocx-montblanc-native-translation-v1",
+  "boundary": "Synthetic baseline stroke; native ARM64 Montblanc Drawing and RTV1 with host adapters and Mesa GLES on a fixed 256x256 RGBA8 target. The explicitly sequenced native Draw uses a translation matrix. One integer translation does not establish scale, clipping, saved-note, PDF, or device parity.",
+  "harness": "tmp/vector-parity-plan/montblanc-rtv1-mesa-source-v12/capture_candidate.py",
+  "harness_sha256": "7378931c784f1be00527da5dd8d39dd48597b95a8c5bcc2c636fdf69d82a2fae",
+  "baseline_capture": "tools/montblanc/captures/baseline.json.gz",
+  "baseline_capture_gzip_sha256": "4e39fb977f593c7b0b83cfd77263904e5406af673f369b4b4ec67288809bd2c8",
+  "baseline_rgba8_sha256": "5591eb1f3a2904214cf74e144a64c038369c86c03244ffd8cc6eee85f21cecb1",
+  "translated_rgba8_sha256": "182919f6ebb5b87043728b48c4fb603aa1a1b1a74a4f3eef6e336c76e617d620",
+  "crop_rgba_sha256": "aa5a93ac9e6185bb1ba883b788d7b322393e31314f29205f5942af097d9e4e82",
+  "baseline_matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 128, 128, 0, 1],
+  "translated_matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 144, 136, 0, 1],
+  "result": "The complete raw bottom-origin RGBA8 frame equals the baseline shifted by (16, 8) pixels, with transparent fill; baseline alpha bounds [127,126,150,133], translated bounds [143,134,166,141].",
+  "reproduce": ".venv/bin/python tools/montblanc/conformance/translation_capture.py"
+}

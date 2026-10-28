@@ -1,0 +1,43 @@
+{
+  "boundary": "Synthetic Fountain-origin serialized frame with name table changed to Montblanc, not an actual Montblanc saved note. Native binary reader and OnAttach execute in Unicorn with host Model context, allocator, loader, canvas, queue, GLES and UUID adapters. Host explicitly sets visibility and resolves and sets the pen name after attachment. The explicit case applies the setting with a native setter after deserialization; it is not a serialized non-null setting. Digest covers observed Add entry names and six float lanes, not full geometry, paint or device pixels. No full note-loader or Android-device parity is established.",
+  "source_archive_sha256": "1a011b8fd8225d1cb5ec3b06e2fb146c5540d3bbbe46110e1727a1603ce4f910",
+  "host_script_sha256": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+  "capture_script_sha256": "f05a922a3add584ef9303d747d162ce05eae95a87adbed9ed6d036fd677a38dc",
+  "binary_sha256": {
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "MontblancFountainPen": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350"
+  },
+  "cases": {
+    "serialized_null": {
+      "consumed": 2510,
+      "attach": 268502552,
+      "serialized_advanced_null": true,
+      "count": 204,
+      "size": "6ade1141",
+      "return": 1,
+      "selected": true,
+      "redraw": [
+        "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+      ],
+      "add_count": 25,
+      "stream_sha256": "bc392e8e1f41e5d1ae61cf7008a0cc29650daeb6e09cda2a52365e032ab8353a"
+    },
+    "serialized_null_then_set_1": {
+      "consumed": 2510,
+      "attach": 268502552,
+      "serialized_advanced_null": true,
+      "count": 204,
+      "size": "6ade1141",
+      "return": 1,
+      "selected": true,
+      "redraw": [
+        "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+      ],
+      "add_count": 25,
+      "stream_sha256": "bc392e8e1f41e5d1ae61cf7008a0cc29650daeb6e09cda2a52365e032ab8353a"
+    }
+  }
+}
