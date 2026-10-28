@@ -502,6 +502,7 @@ fn render_pages_pdf_with_progress<'a>(
     let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;
+    let mut has_airbrush = false;
     let mut ink_fields = Vec::new();
     let pages = pages.into_iter();
     let (lower, upper) = pages.size_hint();
@@ -510,6 +511,7 @@ fn render_pages_pdf_with_progress<'a>(
     for (page_index, source) in pages.enumerate() {
         page_count += 1;
         let rendered = source.page;
+        has_airbrush |= rendered.svg.contains("sdocx-airbrush-v2-r8-");
         if let Some(message) = source.text_error {
             return Err(PdfError::UnsupportedText {
                 page_index,
@@ -667,6 +669,13 @@ fn render_pages_pdf_with_progress<'a>(
     } else {
         bytes
     };
+    let bytes = if has_airbrush {
+        deduplicate_exponential_functions(&bytes).map_err(|error| {
+            PdfError::Conversion(format!("PDF function deduplication failed: {error}"))
+        })?
+    } else {
+        bytes
+    };
     if ink_fields.is_empty() {
         // Native-text exports have already received the targeted marked-content
         // normalization above; marker replacement is only needed for ink fields.
@@ -705,6 +714,88 @@ fn render_pages_pdf_with_progress<'a>(
     ink_field::replace_markers(&bytes, &fields).map_err(|error| {
         PdfError::Conversion(format!("native ink PDF replacement failed: {error}"))
     })
+}
+
+// Krilla emits a separate, immutable exponential function for every gradient
+// stop. AirBrush's many hard-edge masks repeat only a handful of these.
+fn deduplicate_exponential_functions(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    use lopdf::{Document, Object, ObjectId};
+    use std::collections::HashMap;
+
+    fn number(value: &Object) -> bool {
+        matches!(value, Object::Integer(_) | Object::Real(_))
+    }
+    fn candidate(value: &Object) -> bool {
+        let Object::Dictionary(dict) = value else {
+            return false;
+        };
+        if dict.len() != 6 || dict.get(b"FunctionType").ok() != Some(&Object::Integer(2)) {
+            return false;
+        }
+        if !dict.get(b"N").is_ok_and(number) {
+            return false;
+        }
+        [b"Domain".as_slice(), b"Range", b"C0", b"C1"].iter().all(
+            |key| matches!(dict.get(key), Ok(Object::Array(values)) if values.iter().all(number)),
+        )
+    }
+    fn replace(value: &mut Object, redirects: &HashMap<ObjectId, ObjectId>) {
+        match value {
+            Object::Reference(id) => {
+                if let Some(replacement) = redirects.get(id) {
+                    *id = *replacement;
+                }
+            }
+            Object::Array(values) => {
+                for value in values {
+                    replace(value, redirects);
+                }
+            }
+            Object::Dictionary(dict) => {
+                for (_, value) in dict.iter_mut() {
+                    replace(value, redirects);
+                }
+            }
+            Object::Stream(stream) => {
+                for (_, value) in stream.dict.iter_mut() {
+                    replace(value, redirects);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut doc = Document::load_mem(bytes).map_err(|error| error.to_string())?;
+    let mut canonical: HashMap<String, (ObjectId, Object)> = HashMap::new();
+    let mut redirects = HashMap::new();
+    for (&id, value) in &doc.objects {
+        if !candidate(value) {
+            continue;
+        }
+        let key = format!("{value:?}");
+        if let Some((first, original)) = canonical.get(&key) {
+            if original == value {
+                redirects.insert(id, *first);
+            }
+        } else {
+            canonical.insert(key, (id, value.clone()));
+        }
+    }
+    if redirects.is_empty() {
+        return Ok(bytes.to_vec());
+    }
+    for value in doc.objects.values_mut() {
+        replace(value, &redirects);
+    }
+    for (_, value) in doc.trailer.iter_mut() {
+        replace(value, &redirects);
+    }
+    for id in redirects.keys() {
+        doc.objects.remove(id);
+    }
+    let mut output = Vec::new();
+    doc.save_to(&mut output)
+        .map_err(|error| error.to_string())?;
+    Ok(output)
 }
 
 /// Keep the source text from an outer tagged text block authoritative. Krilla
@@ -976,6 +1067,58 @@ fn validate_png(bytes: &[u8]) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn repeated_exponential_functions_share_only_identical_dictionaries() {
+        use lopdf::{Document, Object, dictionary};
+        let mut doc = Document::with_version("1.7");
+        let f = dictionary! {
+            "FunctionType" => 2, "Domain" => vec![0.into(), 1.into()],
+            "Range" => vec![0.into(), 1.into()], "C0" => vec![0.into()],
+            "C1" => vec![1.into()], "N" => 1,
+        };
+        let a = doc.add_object(f.clone());
+        let b = doc.add_object(f.clone());
+        let mut different = f.clone();
+        different.set("N", 2);
+        let c = doc.add_object(different);
+        let mut context = f;
+        context.set("Extra", 1);
+        let d = doc.add_object(context.clone());
+        let e = doc.add_object(context);
+        let stream = doc.add_object(lopdf::Stream::new(
+            dictionary! { "Function" => Object::Reference(b) },
+            b"unmodified stream content".to_vec(),
+        ));
+        let holder = doc.add_object(dictionary! { "Functions" => vec![Object::Reference(a), Object::Reference(b), Object::Reference(c), Object::Reference(d), Object::Reference(e)] });
+        doc.trailer.set("Root", holder);
+        doc.trailer.set("TestFunction", Object::Reference(b));
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+        let out = super::deduplicate_exponential_functions(&bytes).unwrap();
+        let result = Document::load_mem(&out).unwrap();
+        let values = result
+            .get_object(holder)
+            .unwrap()
+            .as_dict()
+            .unwrap()
+            .get(b"Functions")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        assert_eq!(values[0], values[1]);
+        assert_ne!(values[0], values[2]);
+        assert_ne!(values[3], values[4]);
+        assert!(!result.objects.contains_key(&b));
+        assert!(result.objects.contains_key(&c));
+        assert_eq!(
+            result.trailer.get(b"TestFunction").unwrap(),
+            &Object::Reference(a)
+        );
+        let stream = result.get_object(stream).unwrap().as_stream().unwrap();
+        assert_eq!(stream.dict.get(b"Function").unwrap(), &Object::Reference(a));
+        assert_eq!(stream.content, b"unmodified stream content");
+    }
+
     use super::*;
     use crate::{BoundingBox, CoverageMesh};
 

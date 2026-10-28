@@ -13413,6 +13413,23 @@ mod tests {
             )
             .unwrap();
             assert!(pdf.starts_with(b"%PDF-"));
+            let parsed_pdf = lopdf::Document::load_mem(&pdf).unwrap();
+            let functions: Vec<_> = parsed_pdf
+                .objects
+                .values()
+                .filter_map(|object| {
+                    let dict = object.as_dict().ok()?;
+                    (dict.get(b"FunctionType").ok() == Some(&lopdf::Object::Integer(2)))
+                        .then(|| format!("{dict:?}"))
+                })
+                .collect();
+            assert!(!functions.is_empty());
+            let unique: std::collections::HashSet<_> = functions.iter().collect();
+            assert_eq!(
+                functions.len(),
+                unique.len(),
+                "AirBrush gradient functions should be reused in the exported PDF"
+            );
             let alias_request =
                 super::PageSceneRequest::sliced(&alias_layout.pages[0], 0, 256, false).unwrap();
             let mut alias_cache = super::DocumentTextCache::default();
@@ -18425,6 +18442,31 @@ mod tests {
             }),
             pen_width: 8.,
         }
+    }
+
+    #[test]
+    fn marker2_empty_setting_matches_explicit_v2_public_exports() {
+        let mut page = page_with_uncolored_stroke();
+        page.objects.clear();
+        page.clear_elements();
+        let explicit = marker(false, 10.);
+        let mut empty = explicit.clone();
+        empty.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        page.objects.push(crate::PageObject::from(explicit));
+        let explicit = document(page.clone());
+        page.objects.clear();
+        page.objects.push(crate::PageObject::from(empty));
+        let empty = document(page);
+        let options = RenderOptions::default();
+        assert_eq!(
+            render_document_svg(&empty, &options)[0].svg,
+            render_document_svg(&explicit, &options)[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&empty, &options, &Default::default()).unwrap(),
+            crate::render_document_pdf(&explicit, &options, &Default::default()).unwrap()
+        );
     }
 
     #[test]

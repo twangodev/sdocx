@@ -136,12 +136,13 @@ fn accepted_settings(settings: Option<&str>) -> bool {
     let Some(settings) = settings else {
         return true;
     };
-    settings
-        .split(';')
-        .next()
-        .unwrap_or("")
-        .parse::<i32>()
-        .is_ok_and(|value| value >= 0)
+    settings.is_empty()
+        || settings
+            .split(';')
+            .next()
+            .unwrap_or("")
+            .parse::<i32>()
+            .is_ok_and(|value| value >= 0)
 }
 
 fn opacity(argb: Option<u32>) -> f64 {
@@ -202,6 +203,17 @@ mod tests {
     }
 
     #[test]
+    fn empty_setting_uses_the_same_saved_geometry_as_v2() {
+        let points = [(10., 20.), (18., 25.), (26., 20.), (34., 25.)];
+        let empty = prepare(&stroke(&points, Some(""), 2)).unwrap();
+        let explicit = prepare(&stroke(&points, Some("2;"), 2)).unwrap();
+        assert_eq!(empty.points, explicit.points);
+        assert_eq!(empty.radii, explicit.radii);
+        assert_eq!(empty.sample_ends, explicit.sample_ends);
+        assert_eq!(empty.opacity, explicit.opacity);
+    }
+
+    #[test]
     fn two_point_redraw_matches_the_traced_chord() {
         let ink = prepare(&stroke(&[(0., 0.), (4., 0.)], Some("2;"), 2)).unwrap();
         assert_eq!(ink.sample_ends, vec![1, 3]);
@@ -254,7 +266,6 @@ mod tests {
         other.rendering.as_mut().unwrap().pen_name =
             Some("com.samsung.android.sdk.pen.pen.preload.Marker".into());
         assert!(prepare(&other).is_none());
-        assert!(prepare(&stroke(&[(0., 0.), (4., 0.)], Some(""), 2)).is_none());
         assert!(prepare(&stroke(&[(0., 0.), (4., 0.)], Some("-1;"), 2)).is_none());
         let mut eraser = stroke(&[(0., 0.), (4., 0.)], Some("2;"), 2);
         eraser.rendering.as_mut().unwrap().properties.eraser = true;

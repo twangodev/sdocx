@@ -1,0 +1,68 @@
+{
+  "scope": "Synthetic native Marker2 Drawing and host-Mesa control, not serialized-note or device parity",
+  "inputs": {
+    "setting": [
+      "",
+      "2;"
+    ],
+    "size": 2,
+    "tool": 2,
+    "color_argb": "0x80336699",
+    "screen": [
+      1920,
+      1080
+    ],
+    "curve_enabled": true,
+    "points": [
+      [
+        128.25,
+        127.5
+      ],
+      [
+        136.25,
+        122.5
+      ],
+      [
+        144.25,
+        127.5
+      ],
+      [
+        152.25,
+        122.5
+      ]
+    ]
+  },
+  "native_capture_scripts": {
+    "empty": {
+      "path": "tmp/vector-parity-plan/marker2-empty-paint/empty_paint.py",
+      "sha256": "2ccd366b2058f542cb72214f968416dcf538e475099efc43d109ea5eae1a9e22"
+    },
+    "explicit": {
+      "path": "tmp/vector-parity-plan/marker2-explicit-paint/explicit_paint.py",
+      "sha256": "c0325b98aa516cc5c38326ee7299637d6f10d884bb164bcb90e2b4c8f202b3ff"
+    }
+  },
+  "native_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 <script> --one-case --size 2 --phase canonical --alpha 128 --output-dir <output>",
+  "native_matched": {
+    "vector_sha256": "8fe71701fe508874e021344985264abe7d54db634e4972319aa3e4060de6ed74",
+    "composite_png_sha256": "ddb0ac35e72de3b426bf96c7ce1edbc077ba73c46acdd046893e157677226fa6",
+    "mask_png_sha256": "67cddef1bc0eae4de5cfc0ed7b90d3c42905e83036ee724f5ae222f833305ba2"
+  },
+  "public_exports": {
+    "svg_sha256": "b633e0936787797a4d1c502d6d98b97c48e3da7846db03b966ce8bb69a0e3f9a",
+    "direct_pdf_sha256": "992d71094a6c40ece950e857f818de30955a22482852a647c54d6b905ac4ddd4",
+    "svg_rgb_absolute_error": 2269,
+    "svg_different_pixels": 50,
+    "pdf_rgb_absolute_error": 2711,
+    "pdf_different_pixels": 68,
+    "comparison": "Both public outputs are byte-identical between settings; compare against native composited on export background, resvg and PyMuPDF at 96 dpi.",
+    "generic_fallback": {
+      "method": "Same synthetic input with rejected -1; setting forces the previous generic route; the setting itself does not affect generic paint.",
+      "svg_rgb_absolute_error": 9637,
+      "svg_different_pixels": 82,
+      "pdf_rgb_absolute_error": 9576,
+      "pdf_different_pixels": 79
+    }
+  },
+  "limits": "Empty can retain a previously selected native drawable version. V1 and V2 share saved geometry, but thin-edge shader coverage differs; SVG/PDF remain approximations."
+}
