@@ -424,7 +424,7 @@ pub(crate) fn prepare_stroke(
         .map(|&p| exact_float(p))
         .collect::<Result<Vec<_>, _>>()?;
     if rendering.tool_type_raw == 0
-        && (!(4.0..=if points.len() == 2 { 32.0 } else { 12.0 }).contains(&size)
+        && (!(4.0..=if points.len() == 2 { 32.0 } else { 20.0 }).contains(&size)
             || !(2..=16).contains(&points.len())
             || (points.len() > 2
                 && points.windows(2).last().is_some_and(|pair| {
@@ -871,6 +871,13 @@ mod tests {
         stroke.points[1].x = 0.5;
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.points[2].x = 1.0;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points[2].x = 16.0;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(20.0);
+        stroke.pen_width = 20.0;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(21.0);
+        stroke.pen_width = 21.0;
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
         stroke.points.truncate(2);
         stroke.pressures.truncate(2);

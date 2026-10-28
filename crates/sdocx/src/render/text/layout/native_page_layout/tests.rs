@@ -48,6 +48,10 @@ fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
         "../../../../../../../conformance/pdf-paper-body-scale3-native.json"
     ))
     .unwrap();
+    let span_capture: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-parsed-font-span-native.json"
+    ))
+    .unwrap();
     let fonts = FontBook::default();
     let settings = super::super::super::TextSettings {
         scale: 3.0,
@@ -68,6 +72,17 @@ fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
         let mut content = source(&case["input"]);
         if case["input"]["requested_font_size_bits"].is_null() {
             content.font_size = None;
+        }
+        if ["scale3-empty50", "scale3-leading50", "scale3-empty17"]
+            .contains(&case["name"].as_str().unwrap())
+        {
+            content.spans.push(crate::RichTextSpan {
+                kind: crate::RichTextSpanType::FontSize,
+                start_utf16: 0,
+                end_utf16: content.text.len() as u32,
+                interval_type: crate::SpanIntervalType::ClosedClosed,
+                payload: [content.font_size.unwrap().to_le_bytes(), [0; 4]].concat(),
+            });
         }
         let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
         let width =
@@ -123,9 +138,6 @@ fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
             );
             checked += 1;
         }
-        if !content.text.starts_with('\n')
-            && !content.text.ends_with('\n')
-            && !content.text.contains("\n\n")
         {
             let native =
                 NativePageLayout::from_measured_profile(&styled, &layout, width, true).unwrap();
@@ -135,6 +147,23 @@ fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
                     &content, &native,
                 )
                 .unwrap();
+            if !content.spans.is_empty() {
+                let captured = span_capture["cases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|entry| entry["record_bytes"] == 24 && entry["name"] == case["name"])
+                    .unwrap();
+                assert_eq!(captured["produced"]["lines"], case["produced"]["lines"]);
+                for query in captured["queries"].as_array().unwrap() {
+                    let bits: [u32; 4] =
+                        serde_json::from_value(query["rect_bits"].clone()).unwrap();
+                    assert_eq!(
+                        snapshot.query(bits.map(f32::from_bits)).visible,
+                        query["visible"].as_bool().unwrap()
+                    );
+                }
+            }
             for query in capture["queries"]
                 .as_array()
                 .unwrap()
@@ -152,6 +181,68 @@ fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
         }
     }
     assert!(checked >= 20);
+}
+
+#[test]
+fn parsed_short_font_span_native_fallback_remains_outside_certificate() {
+    let receipt: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-parsed-font-span-native.json"
+    ))
+    .unwrap();
+    for name in ["scale3-empty50", "scale3-leading50", "scale3-empty17"] {
+        let cases = receipt["cases"].as_array().unwrap();
+        let short = cases
+            .iter()
+            .find(|case| case["name"] == name && case["record_bytes"] == 20)
+            .unwrap();
+        let full = cases
+            .iter()
+            .find(|case| case["name"] == name && case["record_bytes"] == 24)
+            .unwrap();
+        assert_ne!(
+            short["produced"]["lines"], full["produced"]["lines"],
+            "{name}"
+        );
+        assert_eq!(
+            short["produced"]["model_source"]["font_size_at_utf16_including_end_bits"][0],
+            17.0_f32.to_bits()
+        );
+    }
+}
+
+#[test]
+fn parsed_font_span_certificate_rejects_unobserved_encodings_and_ranges() {
+    let settings = super::super::super::TextSettings {
+        scale: 3.0,
+        ..Default::default()
+    };
+    let mut content = source(
+        &serde_json::json!({"source_utf8":"AV\n\nTo", "requested_font_size_bits": 1112014848_u32, "requested_margin_bits":null}),
+    );
+    let span = crate::RichTextSpan {
+        kind: crate::RichTextSpanType::FontSize,
+        start_utf16: 0,
+        end_utf16: 6,
+        interval_type: crate::SpanIntervalType::ClosedClosed,
+        payload: [50.0_f32.to_le_bytes(), [0; 4]].concat(),
+    };
+    content.spans.push(span.clone());
+    let check = |text: &RichTextBox| {
+        let styled = StyledText::new(text, super::super::super::TextContext::Flow, settings);
+        NativePageLayout::checked_source_length(&styled, 300, true).is_ok()
+    };
+    assert!(check(&content));
+    content.spans[0].payload.truncate(4);
+    assert!(!check(&content));
+    content.spans[0] = span.clone();
+    content.spans[0].interval_type = crate::SpanIntervalType::ClosedOpen;
+    assert!(!check(&content));
+    content.spans[0] = span.clone();
+    content.spans[0].end_utf16 -= 1;
+    assert!(!check(&content));
+    content.spans[0] = span.clone();
+    content.spans.push(span);
+    assert!(!check(&content));
 }
 
 #[test]

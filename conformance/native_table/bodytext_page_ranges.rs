@@ -470,8 +470,55 @@ fn sample(
     let string = spen_string(machine, STORAGE, Some(input.text));
     assert_eq!(machine.call(0x3e1408, &[SOURCE, string, 0]) & 1, 1);
     if let Some(size) = input.font_size {
-        float_arguments(machine, [size, 0., 0., 0.]);
-        machine.call(0x3b06fc, &[read_u64(machine.engine, SOURCE + 56)]);
+        if let Some(mode) = std::env::var_os("SDOCX_CAPTURE_PARSED_FONT_SPAN") {
+            let short = mode == "20";
+            let units: Vec<_> = input.text.encode_utf16().collect();
+            let mut common = (units.len() as u32).to_le_bytes().to_vec();
+            common.extend(units.iter().flat_map(|unit| unit.to_le_bytes()));
+            common.extend(1_u32.to_le_bytes());
+            common.extend(if short { 20_u16 } else { 24_u16 }.to_le_bytes());
+            for word in [3, 0, units.len() as u32, 1, size.to_bits()] {
+                common.extend(word.to_le_bytes());
+            }
+            if !short {
+                common.extend(0_u32.to_le_bytes());
+            }
+            common.extend(0_u32.to_le_bytes());
+            common.extend([0; 16]);
+            common.push(0);
+            common.extend(0_u16.to_le_bytes());
+            common.extend([0; 8]);
+            let mut data = (common.len() as u32).to_le_bytes().to_vec();
+            data.extend(common);
+            write(machine.engine, STORAGE, &data);
+            write(machine.engine, STORAGE + 0x1000, &STORAGE.to_le_bytes());
+            write(
+                machine.engine,
+                STORAGE + 0x1008,
+                &(data.len() as u32).to_le_bytes(),
+            );
+            float_arguments(machine, [1., 0., 0., 0.]);
+            assert_eq!(
+                machine.call(
+                    0x3b21d4,
+                    &[
+                        read_u64(machine.engine, SOURCE + 56),
+                        STORAGE + 0x1000,
+                        STORAGE + 0x1008,
+                        1,
+                        5500,
+                        2,
+                        0,
+                        0
+                    ]
+                ) & 1,
+                1
+            );
+            assert_eq!(read_u32(machine.engine, STORAGE + 0x1008), 0);
+        } else {
+            float_arguments(machine, [size, 0., 0., 0.]);
+            machine.call(0x3b06fc, &[read_u64(machine.engine, SOURCE + 56)]);
+        }
     }
     if let Some(margins) = input.margins {
         float_arguments(machine, margins);
@@ -616,7 +663,10 @@ pub(super) fn capture(
     });
     environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
     let mut output = Vec::new();
-    for input in inputs() {
+    for input in inputs().into_iter().filter(|input| {
+        std::env::var_os("SDOCX_CAPTURE_PARSED_FONT_SPAN").is_none()
+            || ["scale3-empty50", "scale3-leading50", "scale3-empty17"].contains(&input.name)
+    }) {
         let mut canonical = None;
         for fill in [0, 85, 165, 255, 0] {
             eprintln!("case {} allocation fill {fill}", input.name);

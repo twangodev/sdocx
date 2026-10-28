@@ -26,6 +26,57 @@ const PDF_BINDING: u32 = 42;
 const SOURCE_WIDTH: f32 = 726.204_3;
 const SOURCE_HEIGHT: f32 = 595.440_06;
 
+#[allow(dead_code)]
+#[path = "support/binary_records.rs"]
+mod binary_records;
+
+fn parsed_body(text: &str, size: f32) -> RichTextBox {
+    let units: Vec<_> = text.encode_utf16().collect();
+    let mut common = (units.len() as u32).to_le_bytes().to_vec();
+    common.extend(units.iter().flat_map(|unit| unit.to_le_bytes()));
+    common.extend(1_u32.to_le_bytes());
+    common.extend(24_u16.to_le_bytes());
+    for value in [3, 0, units.len() as u32, 1, size.to_bits(), 0] {
+        common.extend(value.to_le_bytes());
+    }
+    common.extend(0_u32.to_le_bytes());
+    common.extend([0; 16]);
+    common.push(0);
+    common.extend(0_u16.to_le_bytes());
+    common.extend([0; 8]);
+    let fixed = [
+        5500_u32.to_le_bytes().to_vec(),
+        0_u16.to_le_bytes().to_vec(),
+        0_i64.to_le_bytes().to_vec(),
+        [0.0_f64; 4]
+            .into_iter()
+            .flat_map(f64::to_le_bytes)
+            .collect(),
+        vec![0; 5],
+    ]
+    .concat();
+    let base = binary_records::frame(0, &[], &fixed, &[]);
+    let body = binary_records::text_object(&base, true, &binary_records::sized(&common));
+    let title = binary_records::text_object(&base, false, &[]);
+    let mut note = [
+        vec![0; 6],
+        5500_u32.to_le_bytes().to_vec(),
+        0_u16.to_le_bytes().to_vec(),
+        0_u32.to_le_bytes().to_vec(),
+        vec![0; 16],
+        [500_u32, 1600, 0, 0, 4000]
+            .into_iter()
+            .flat_map(u32::to_le_bytes)
+            .collect(),
+        binary_records::sized(&title),
+        binary_records::sized(&body),
+    ]
+    .concat();
+    let length = note.len() as u32;
+    note[..4].copy_from_slice(&length.to_le_bytes());
+    sdocx::parse_note_bytes(&note).unwrap().body
+}
+
 fn media_manifest_entries(entries: &[(u32, &str)]) -> sdocx::MediaManifest {
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&5500_u32.to_le_bytes());
@@ -1155,6 +1206,87 @@ fn public_pdf_paper_density_three_places_body_across_source_page_cut() {
             .windows(2)
             .all(|pair| (pair[1] - pair[0] - 68.85).abs() < 0.02)
     );
+}
+
+#[test]
+fn public_pdf_paper_density_three_accepts_parsed_font_span_empty_paragraph() {
+    for (text, size) in [
+        (format!("\n{}B", "A\n".repeat(20)), 50.0),
+        (format!("{}\nB", "A\n".repeat(80)), 17.0),
+    ] {
+        let mut document = document(true, None, 0, 1);
+        document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+        document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+        let body = parsed_body(&text, size);
+        assert_eq!(body.font_size, Some(size));
+        assert_eq!(body.spans.len(), 1);
+        document.metadata.note_text = Some(body);
+        let output = export(&document, &[0], 96.0).unwrap();
+        let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+        assert!(
+            pdf.get_pages()
+                .keys()
+                .skip(1)
+                .any(|&page| pdf.extract_text(&[page]).unwrap().contains('B'))
+        );
+        let form = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .filter(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+            })
+            .filter_map(|stream| {
+                Content::decode(
+                    &stream
+                        .decompressed_content()
+                        .unwrap_or_else(|_| stream.content.clone()),
+                )
+                .ok()
+            })
+            .find(|content| content.operations.iter().any(|op| op.operator == "BT"))
+            .unwrap();
+        let mut baselines: Vec<f64> = form
+            .operations
+            .iter()
+            .filter(|op| op.operator == "Tm")
+            .map(|op| number(&op.operands[5]).unwrap())
+            .collect();
+        for (&page_number, &page) in &pdf.get_pages() {
+            if page_number == 1 {
+                continue;
+            }
+            let content = Content::decode(&pdf.get_page_content(page).unwrap()).unwrap();
+            baselines.extend(
+                content
+                    .operations
+                    .iter()
+                    .filter(|op| op.operator == "Tm")
+                    .map(|op| number(&op.operands[5]).unwrap()),
+            );
+        }
+        baselines.sort_by(f64::total_cmp);
+        let (count, first, step, double_gaps) = if size == 50.0 {
+            (21, 352.5, 202.5, 0)
+        } else {
+            (81, 51.0, 68.85, 1)
+        };
+        assert_eq!(baselines.len(), count);
+        assert!((baselines[0] - first).abs() < 0.02, "{baselines:?}");
+        let mut observed_double_gaps = 0;
+        for pair in baselines.windows(2) {
+            let gap = pair[1] - pair[0];
+            if (gap - 2.0 * step).abs() < 0.02 {
+                observed_double_gaps += 1;
+            } else {
+                assert!((gap - step).abs() < 0.02, "{gap}");
+            }
+        }
+        assert_eq!(observed_double_gaps, double_gaps);
+    }
 }
 
 #[test]

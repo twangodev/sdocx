@@ -282,6 +282,24 @@ impl NativePageLayout {
     ) -> Result<i32, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
         let source = styled.text_box;
+        let whole_font_span = matches!(source.spans.as_slice(), [span]
+            if paper && styled.settings.scale == 3.0
+                && span.kind == crate::RichTextSpanType::FontSize
+                && span.interval_type == crate::SpanIntervalType::ClosedClosed
+                && span.start_utf16 == 0
+                && usize::try_from(span.end_utf16).ok() == Some(source.text.len())
+                && span.payload.len() == 8
+                && span.payload[4..] == [0; 4]
+                && span.font_size_value() == source.font_size
+                && matches!(source.font_size, Some(17.0 | 50.0)));
+        let empty_paragraphs = source
+            .text
+            .split('\n')
+            .filter(|part| part.is_empty())
+            .count();
+        let certified_empty_paragraph = whole_font_span
+            && empty_paragraphs == 1
+            && (!source.text.starts_with('\n') || source.font_size == Some(50.0));
         if width <= 0
             || f64::from(width as f32) != f64::from(width)
             || !matches!(styled.context(), super::TextContext::Flow)
@@ -291,7 +309,7 @@ impl NativePageLayout {
                 .bytes()
                 .all(|byte| byte == b'\n' || (b' '..=b'~').contains(&byte))
             || !source.runs.is_empty()
-            || !source.spans.is_empty()
+            || (!source.spans.is_empty() && !whole_font_span)
             || !source.object_spans.is_empty()
             || !source.text_sections.is_empty()
             || source.highlight_color.is_some()
@@ -312,9 +330,9 @@ impl NativePageLayout {
             || (styled.settings.scale == 3.0
                 && (!source.paragraphs.is_empty()
                     || source.text.is_empty()
-                    || source.text.starts_with('\n')
                     || source.text.ends_with('\n')
-                    || source.text.contains("\n\n")))
+                    || (!certified_empty_paragraph
+                        && (source.text.starts_with('\n') || source.text.contains("\n\n")))))
             || styled.settings.font_size_delta != 0.0
         {
             return Err(Error::OutsideCertificate);
