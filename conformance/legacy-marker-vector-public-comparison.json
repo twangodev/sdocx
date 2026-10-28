@@ -470,5 +470,12 @@
       {"case": "size4-new", "capture_sha256": "9aa72cb98c70b0f8171d35b09ac66765217ecb9870303d8caef09f5cd60018b3", "native_frame_sha256": "c2410e1b916702703ec484e5c360ce21d34be8b3ccbd11e76beb3304b96bc944", "candidate_l1": [1689, 2776, 2995], "fallback_l1": [2176, 2192, 2355]},
       {"case": "size5-new", "capture_sha256": "eff979064d360b2b5401cbb2917590a59e8eb5621844e642c219c038e0578038", "native_frame_sha256": "b847cf9d4245e1c392eb9ceff9fa148bad4b118f1d72ac36c4ee8a73894d147c", "candidate_l1": [703, 3354, 3677], "fallback_l1": [2798, 2941, 3021]}
     ]
+  },
+  "explicit_output_scale_straight_controls": {
+    "scope": "Synthetic host frames with checked shader matrix uniform; RGB L1 order is SVG, MuPDF, PDFium. Public outputs are scaled and cropped to the native canvas; no arbitrary-transform or device parity is established.",
+    "cases": [
+      {"scale": 0.5, "capture_sha256": "b2787b381363e35d5b1fbf43d9d9a85ad0046293993d914440f9838e97cd240f", "native_frame_sha256": "2753cef9e32a5b9fabf88a98c4658a65a9892780fac0098029c56a547b20eaa8", "candidate_l1": [743, 1370, 1619], "fallback_l1": [3156, 3009, 3205]},
+      {"scale": 2, "capture_sha256": "4444602375691764c4bc1bf79bba806831676f5916bf3a3124a44bf6052720cc", "native_frame_sha256": "9bbc8e0581d05baf3f24ed10286671a514d65b78677dc26919a12bbb6f24f427", "candidate_l1": [8089, 14915, 16855], "fallback_l1": [60888, 60488, 62176]}
+    ]
   }
 }

@@ -399,9 +399,6 @@ pub(crate) fn prepare_stroke(
     if !(2..=224).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
-    if rendering.tool_type_raw == 3 && stroke.points.len() > 7 {
-        return Err("unsupported SimpleBrush tool 3 sample count");
-    }
     let count = stroke.points.len();
     if !(stroke.timestamps.is_empty() || stroke.timestamps.len() == count)
         || !stroke.tilts.is_empty()
@@ -1053,6 +1050,15 @@ mod tests {
         }
         v25_paint_control_for_tool(8, false, false, false, 0, 3);
         v25_paint_control_for_tool(12, false, false, false, 7, 3);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn tool3_long_native_paint_controls() {
+        for probe in [16, 64, 224] {
+            v25_paint_control_for_tool(8, false, false, false, probe, 3);
+        }
+        v25_paint_control_for_tool(20, false, false, false, 16, 3);
     }
 
     #[cfg(feature = "pdf")]

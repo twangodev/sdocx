@@ -631,6 +631,247 @@
       "paint_clean": true,
       "tool2_control": "simplebrush-terminal.json",
       "identical_to_tool2": true
+    },
+    "long-16": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000041",
+        "pen_size_requested_f32_bits": "00000041",
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tool_type": 3,
+        "points_and_pressures_fixture": "simplebrush-16-8.json",
+        "point_count": 16,
+        "timestamps": "sequential integers 0 through point_count - 1",
+        "tilt_and_orientation": "all zero",
+        "preserved_native_input": "scratch/simplebrush-tool3-multi/native-inputs/tool3-16-input.json",
+        "preserved_native_input_sha256": "a97cb060f16c747b9d079f46980d90347e970a9bf15d4b851aa8f43f4dcb4854"
+      },
+      "geometry_count": 65,
+      "geometry_sha256": "4afe510748c1be52f2402f5c4b3b0460d127c3bf768b64ed2e35eb11051a51d2",
+      "full_frame_sha256": "78be80378dcadd878f1ba1ff49dc8320a897b400ffa815d8b05aa6138caff2e9",
+      "paint_clean": true,
+      "tool2_control": "simplebrush-16-8.json",
+      "tool2_geometry_matches": true,
+      "tool2_paint_matches": "full frame"
+    },
+    "long-64": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000041",
+        "pen_size_requested_f32_bits": "00000041",
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tool_type": 3,
+        "points_and_pressures_fixture": "simplebrush-64-8.json",
+        "point_count": 64,
+        "timestamps": "sequential integers 0 through point_count - 1",
+        "tilt_and_orientation": "all zero",
+        "preserved_native_input": "scratch/simplebrush-tool3-multi/native-inputs/tool3-64-input.json",
+        "preserved_native_input_sha256": "8fb6dd5efb953a1da5b0ef52f91d42cfc099339a4ec2eca455dd4177cdaa2039"
+      },
+      "geometry_count": 257,
+      "geometry_sha256": "956e94ef7de2fe4e4beffdd41c34355949c9086c5e7ede86687f67fba1651022",
+      "full_frame_sha256": "ac6714f713b6d60b4570e84c2b321ead04d1fddebe77332ba3be34c96acc6b30",
+      "paint_clean": true,
+      "tool2_control": "simplebrush-64-8.json",
+      "tool2_geometry_matches": true,
+      "tool2_paint_matches": "full frame"
+    },
+    "long-224": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000041",
+        "pen_size_requested_f32_bits": "00000041",
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tool_type": 3,
+        "points_and_pressures_fixture": "simplebrush-224-8.json",
+        "point_count": 224,
+        "timestamps": "sequential integers 0 through point_count - 1",
+        "tilt_and_orientation": "all zero",
+        "preserved_native_input": "scratch/simplebrush-tool3-multi/native-inputs/tool3-224-input.json",
+        "preserved_native_input_sha256": "df4b9228584a3bea95cf421f1b777f8a7c1bd97b1c504ab1f32b02a942afab28"
+      },
+      "geometry_count": 896,
+      "geometry_sha256": "4992390d3737c38aafc8362cc113e1b3870367ed250a0b059b08c10e43297f0b",
+      "full_frame_sha256": "eec1a7d3f86bb4aa5f507a0a50acffcf925c4fa5451cd9bf46a4c8da8d4288a8",
+      "paint_clean": true,
+      "tool2_control": "simplebrush-224-8.json",
+      "tool2_geometry_matches": true,
+      "tool2_paint_matches": "crop",
+      "crop_sha256": "a8c06486f02f463242119da48613da960ee0ef24a4a756683d85dedda26ebdfc"
+    },
+    "long-16-20": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "0000a041",
+        "pen_size_requested_f32_bits": "0000a041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00008040"
+          ],
+          [
+            "00000041",
+            "00000041"
+          ],
+          [
+            "00008041",
+            "00004041"
+          ],
+          [
+            "0000c041",
+            "00008040"
+          ],
+          [
+            "00000042",
+            "00000041"
+          ],
+          [
+            "00002042",
+            "00004041"
+          ],
+          [
+            "00004042",
+            "00008040"
+          ],
+          [
+            "00006042",
+            "00000041"
+          ],
+          [
+            "00008042",
+            "00004041"
+          ],
+          [
+            "00009042",
+            "00008040"
+          ],
+          [
+            "0000a042",
+            "00000041"
+          ],
+          [
+            "0000b042",
+            "00004041"
+          ],
+          [
+            "0000c042",
+            "00008040"
+          ],
+          [
+            "0000d042",
+            "00000041"
+          ],
+          [
+            "0000e042",
+            "00004041"
+          ],
+          [
+            "0000f042",
+            "00008040"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000c03e",
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000c03e",
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000c03e",
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000c03e"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "tool_type": 3
+      },
+      "geometry_count": 64,
+      "geometry_sha256": "faf0d51e7549671abd664b96880f11ab314d864fb83552db3e77dface1c70d5a",
+      "full_frame_sha256": "5b5ff9a5032ddc19d220b21112ba41d02eca2d7d0d699420645d19e9320eaa6b",
+      "paint_clean": true,
+      "tool2_control": "simplebrush-size-16-20.json",
+      "tool2_geometry_matches": true,
+      "tool2_paint_matches": "full frame"
     }
   },
   "direct_document_pdf_pairs": {
