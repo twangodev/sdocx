@@ -1,0 +1,163 @@
+{
+  "scope": "Synthetic translated 3 point BrushPen GLV10 Drawing to Mesa control; no saved-note or device parity",
+  "capture": "tools/brushpen-transform/color_control.py",
+  "source_fixture": "conformance/brushpen-translation-native.json",
+  "crop_origin": [
+    100,
+    97
+  ],
+  "crop_size": [
+    5,
+    7
+  ],
+  "results": {
+    "0x006cdd8f": {
+      "frame_sha256": "ad97859ee0aac108d9906732346f300c7e87a20366b35580be7254dc98057f12",
+      "crop_sha256": "6f1902c428cbbdef782aa4a66d873419e1956f0f00ddd64dc700911aa5b41375",
+      "uniforms": [
+        {
+          "count": 1,
+          "location": 0,
+          "transpose": 0,
+          "values": [
+            0.006230529397726059,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.008771929889917374,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "count": 1,
+          "phase": "native PenGLRenderMsg task2",
+          "raw_f32_le": "d9d8d83ededd5d3f908f0f3f00000000",
+          "uniform4fv_location": 4,
+          "values": [
+            0.42352941632270813,
+            0.8666666746139526,
+            0.5607843399047852,
+            0.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            321.0,
+            228.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            101.0,
+            98.0
+          ]
+        },
+        {
+          "uniform1f_location": 1,
+          "value": 3.0
+        },
+        {
+          "uniform1i_location": 2,
+          "value": 0
+        },
+        {
+          "uniform1i_location": 3,
+          "value": 1
+        }
+      ],
+      "crop_path": "conformance/brushpen-translation-paint/native-crop-5x7.rgba"
+    },
+    "0x80123456": {
+      "frame_sha256": "4d3c15c23e875125d30f293695f036b772c5428000d03b0e13528223a7974c52",
+      "crop_sha256": "150bd6737babeeb43b1e0615b9c3c8bb24a4a8ab3739681cb430b6899770b376",
+      "uniforms": [
+        {
+          "count": 1,
+          "location": 0,
+          "transpose": 0,
+          "values": [
+            0.006230529397726059,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.008771929889917374,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "count": 1,
+          "phase": "native PenGLRenderMsg task2",
+          "raw_f32_le": "9190903dd1d0503eadacac3e8180003f",
+          "uniform4fv_location": 4,
+          "values": [
+            0.07058823853731155,
+            0.20392157137393951,
+            0.33725491166114807,
+            0.501960813999176
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            321.0,
+            228.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            101.0,
+            98.0
+          ]
+        },
+        {
+          "uniform1f_location": 1,
+          "value": 3.0
+        },
+        {
+          "uniform1i_location": 2,
+          "value": 0
+        },
+        {
+          "uniform1i_location": 3,
+          "value": 1
+        }
+      ],
+      "crop_path": "conformance/brushpen-color-control/0x80123456.rgba"
+    }
+  },
+  "limitations": [
+    "Synthetic manual ObjectStroke source with host queue/canvas adapters and Mesa GLES; no saved-note or device fidelity.",
+    "Equal alpha-zero and alpha-255 frame hashes establish alpha behavior only for the supplied RGB and scene.",
+    "Color painter differs from native at one alpha byte by one level.",
+    "Runner, probe and source fixture are SHA-256 pinned; native shared libraries, ignored helper tree, Python dependencies, Mesa and host runtime are not independently pinned by this wrapper.",
+    "Temporary injected scripts are created in an automatically removed temporary directory; upstream native helpers may have their own side effects."
+  ],
+  "replay": "PYTHONPATH=scratch/apk-analysis-runtime/python EGL_PLATFORM=surfaceless python3 tools/brushpen-transform/color_control.py"
+}

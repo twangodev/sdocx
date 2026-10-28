@@ -1076,8 +1076,7 @@ mod tests {
             false
         );
     }
-    #[test]
-    fn translated_native_source_paint_matches_with_one_alpha_step() {
+    fn translated_paint(rgb: [f32; 3]) -> Vec<u8> {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-translation-native.json"
         ))
@@ -1136,7 +1135,7 @@ mod tests {
                     0.0,
                     1.0,
                 ],
-                rgb: [108.0 / 255.0, 221.0 / 255.0, 143.0 / 255.0],
+                rgb,
                 grain_period: [321.0, 228.0],
                 grain_offset: [101.0, 98.0],
                 num_tiles: 3.0,
@@ -1144,26 +1143,41 @@ mod tests {
             &mut actual,
         )
         .unwrap();
-        let crop = include_bytes!(
-            "../../../../../conformance/brushpen-translation-paint/native-crop-5x7.rgba"
-        );
-        let mut native = vec![0; actual.len()];
-        for y in 0..7 {
-            let offset = ((97 + y) * 321 + 100) * 4;
-            native[offset..offset + 20].copy_from_slice(&crop[y * 20..(y + 1) * 20]);
+        actual
+    }
+
+    #[test]
+    fn translated_native_source_paint_matches_with_one_alpha_step() {
+        let cases: [([u8; 3], &[u8], &str); 2] = [
+            (
+                [108, 221, 143],
+                include_bytes!(
+                    "../../../../../conformance/brushpen-translation-paint/native-crop-5x7.rgba"
+                ),
+                "ad97859ee0aac108d9906732346f300c7e87a20366b35580be7254dc98057f12",
+            ),
+            (
+                [18, 52, 86],
+                include_bytes!("../../../../../conformance/brushpen-color-control/0x80123456.rgba"),
+                "4d3c15c23e875125d30f293695f036b772c5428000d03b0e13528223a7974c52",
+            ),
+        ];
+        for (rgb, crop, expected_hash) in cases {
+            let actual = translated_paint(rgb.map(|component| f32::from(component) / 255.0));
+            let mut native = vec![0; actual.len()];
+            for y in 0..7 {
+                let offset = ((97 + y) * 321 + 100) * 4;
+                native[offset..offset + 20].copy_from_slice(&crop[y * 20..(y + 1) * 20]);
+            }
+            assert_eq!(sha256(&native), expected_hash);
+            let differences: Vec<_> = actual
+                .iter()
+                .zip(&native)
+                .enumerate()
+                .filter(|(_, (a, b))| a != b)
+                .collect();
+            assert_eq!(differences, [(130099, (&222, &223))], "RGB {rgb:?}");
         }
-        assert_eq!(
-            sha256(&native),
-            "ad97859ee0aac108d9906732346f300c7e87a20366b35580be7254dc98057f12"
-        );
-        let differences: Vec<_> = actual
-            .iter()
-            .zip(&native)
-            .enumerate()
-            .filter(|(_, (a, b))| a != b)
-            .collect();
-        assert_eq!(differences.len(), 1);
-        assert_eq!(differences[0], (130099, (&222, &223)));
     }
 
     #[test]
