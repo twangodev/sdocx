@@ -5,32 +5,32 @@
       "direct_pdf": {
         "4": {
           "metrics": [
-            101,
+            100,
             128,
-            101,
+            100,
             128,
-            7248
+            5264
           ],
           "pdf_bytes": 29398
         },
         "8": {
           "metrics": [
-            101,
+            100,
             120,
-            101,
+            100,
             120,
-            5035
+            3611
           ],
           "pdf_bytes": 101971
         }
       },
       "svg_to_pdf": {
         "metrics": [
-          101,
+          100,
           135,
-          101,
+          100,
           135,
-          53421
+          56899
         ],
         "opaque_black_fill_operators": 26,
         "pdf_shading_operators": 0,
@@ -43,32 +43,32 @@
       "direct_pdf": {
         "4": {
           "metrics": [
-            141,
+            140,
             180,
-            141,
+            140,
             180,
-            10718
+            7379
           ],
           "pdf_bytes": 41856
         },
         "8": {
           "metrics": [
-            141,
+            140,
             170,
-            141,
+            140,
             170,
-            7309
+            4772
           ],
           "pdf_bytes": 145101
         }
       },
       "svg_to_pdf": {
         "metrics": [
-          141,
+          140,
           192,
-          141,
+          140,
           192,
-          76533
+          81568
         ],
         "opaque_black_fill_operators": 38,
         "pdf_shading_operators": 0,
@@ -81,32 +81,32 @@
       "direct_pdf": {
         "4": {
           "metrics": [
-            101,
+            100,
             128,
-            101,
+            100,
             128,
-            7019
+            5446
           ],
           "pdf_bytes": 29311
         },
         "8": {
           "metrics": [
-            101,
+            100,
             120,
-            101,
+            100,
             120,
-            4839
+            3726
           ],
           "pdf_bytes": 101499
         }
       },
       "svg_to_pdf": {
         "metrics": [
-          101,
+          100,
           135,
-          101,
+          100,
           135,
-          52802
+          55953
         ],
         "opaque_black_fill_operators": 26,
         "pdf_shading_operators": 0,
@@ -119,32 +119,32 @@
       "direct_pdf": {
         "4": {
           "metrics": [
-            90,
+            89,
             124,
-            90,
+            89,
             124,
-            7516
+            5129
           ],
           "pdf_bytes": 30631
         },
         "8": {
           "metrics": [
-            90,
+            89,
             113,
-            90,
+            89,
             113,
-            5246
+            3399
           ],
           "pdf_bytes": 105602
         }
       },
       "svg_to_pdf": {
         "metrics": [
-          90,
+          89,
           133,
-          90,
+          89,
           133,
-          52553
+          55946
         ],
         "opaque_black_fill_operators": 26,
         "pdf_shading_operators": 0,
@@ -153,11 +153,12 @@
       }
     }
   },
-  "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route.",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route. Native RGB is premultiplied; composition uses nearest-integer source-over.",
   "mupdf_version": "1.28.2",
   "prototype_sha256": "e0e9bd69a4adf7d8bd94f45cdfa8656a126845ec79556e75a29554c8811b229d",
   "pymupdf_version": "1.28.2",
   "schema": "montblanc-direct-pdf-experiment-v1",
   "scope": "Captured host-Mesa meshes and shader approximations; direct PDF centroid alpha triangles. No production integration or device parity.",
-  "script_sha256": "f32c062e1e18979504c19bc5f0033f5e9147027b7497fa358732611ace8f423c"
+  "script_sha256": "dfb1cbbbc69d3ce3b41fbf447ad76692686b2fc6fc5fa60c0b093a1027401083"
 }

@@ -17,80 +17,80 @@
     "pymupdf": "1.28.2",
     "pillow": "12.1.1"
   },
-  "method": "Rasterize SVG with resvg; PDF with MuPDF fitted to 256x256 RGB. Support is any RGB channel more than 2 from 252. Values are native support, export support, intersection, union, RGB byte L1 summed on union. PDF background can differ slightly from #fcfcfc and contributes to L1.",
+  "method": "Rasterize SVG with resvg; PDF with MuPDF fitted to 256x256 RGB. Support is any RGB channel more than 2 from 252. Values are native support, export support, intersection, union, RGB byte L1 summed on union. PDF background can differ slightly from #fcfcfc and contributes to L1. Native framebuffer RGB is premultiplied and is composited over paper with nearest-integer source-over.",
   "reproduction": "From repository root run .venv/bin/python tools/montblanc/public_fallback_compare.py. Requires pinned ignored source fixture, offline Cargo dependencies, resvg, Pillow and PyMuPDF. Generated SVG/PDF/PNG stay in a temporary directory.",
   "scripts_sha256": {
     "tools/montblanc/public-fallback/src/main.rs": "bead682010be337e0e54e5ef569282dc47a0a1e8dc23033dd53b35fd47cd62aa",
     "tools/montblanc/public-fallback/Cargo.toml": "5a0ec1bc9011f8eb0d193d00486cc862126da623e7266b122c1b9333af86fae6",
-    "tools/montblanc/public_fallback_compare.py": "ebbda4a5fee45847863bdd58dd952f17fc3149777d6a62813516681918b5fccc"
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
   },
   "cases": {
     "baseline": {
       "capture_sha256": "84b12c69f047527f5f3bea87ea82b89c356dd4e0007f72b0598f45f0529b03af",
       "svg": [
-        101,
+        100,
         42,
         42,
-        101,
-        28107
+        100,
+        24629
       ],
       "pdf": [
-        101,
+        100,
         40,
         40,
-        101,
-        27730
+        100,
+        24254
       ]
     },
     "pressure": {
       "capture_sha256": "a66367bcce64d0ab6962668920f3b4e516d5213fdd74186906e4987bd7dd08aa",
       "svg": [
-        101,
+        100,
         42,
         42,
-        101,
-        28076
+        100,
+        24925
       ],
       "pdf": [
-        101,
+        100,
         40,
         40,
-        101,
-        27589
+        100,
+        24440
       ]
     },
     "size": {
       "capture_sha256": "660fa05e91d87d39bce96d679a85b29c3360b2643780c37a13fd2b928c2b861b",
       "svg": [
-        90,
+        89,
         42,
         42,
-        90,
-        26918
+        89,
+        23526
       ],
       "pdf": [
-        90,
+        89,
         34,
         34,
-        90,
-        26605
+        89,
+        23215
       ]
     },
     "far_endpoint": {
       "capture_sha256": "62ff0a279fcb6fa003382d20ff4bd2e9c9230838e29e4a74c94fd6fcf2563c67",
       "svg": [
-        141,
+        140,
         64,
         64,
-        141,
-        40441
+        140,
+        35410
       ],
       "pdf": [
-        141,
+        140,
         54,
         54,
-        141,
-        39873
+        140,
+        34844
       ]
     }
   }

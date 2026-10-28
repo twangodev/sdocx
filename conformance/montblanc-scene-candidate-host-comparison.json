@@ -1,70 +1,70 @@
 {
   "schema": "montblanc-scene-candidate-host-comparison-v1",
   "scope": "Test-only four synthetic public Stroke controls; existing native-stream sampler and mesh; Rust centroid-alpha tessellation with approximate analytic fwidth, shared Scene SVG and native PDF exporter. Not public dispatch, arbitrary saved-stroke admission, exact shader behavior, or device parity.",
-  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel. resvg SVG and PyMuPDF PDF raster at 256x256; PDF default 96dpi page rasterized at 4/3.",
+  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel. resvg SVG and PyMuPDF PDF raster at 256x256; PDF default 96dpi page rasterized at 4/3. Native RGB is premultiplied; composition uses nearest-integer source-over.",
   "cases": {
     "baseline": {
       "svg": [
-        101,
+        100,
         117,
-        101,
+        100,
         117,
-        7323
+        5067
       ],
       "pdf": [
-        101,
+        100,
         121,
-        101,
+        100,
         121,
-        5048
+        3704
       ]
     },
     "pressure": {
       "svg": [
-        101,
+        100,
         117,
-        101,
+        100,
         117,
-        7166
+        5305
       ],
       "pdf": [
-        101,
+        100,
         121,
-        101,
+        100,
         121,
-        4863
+        3802
       ]
     },
     "size": {
       "svg": [
-        90,
+        89,
         115,
-        90,
+        89,
         115,
-        7258
+        4631
       ],
       "pdf": [
-        90,
+        89,
         117,
-        90,
+        89,
         117,
-        5300
+        3493
       ]
     },
     "far_endpoint": {
       "svg": [
-        141,
+        140,
         171,
-        141,
+        140,
         171,
-        10883
+        7002
       ],
       "pdf": [
-        141,
+        140,
         173,
-        141,
+        140,
         173,
-        7354
+        4897
       ]
     }
   },
@@ -73,5 +73,9 @@
     "resvg": "0.45.1",
     "pymupdf": "1.28.2",
     "pillow": "12.1.1"
+  },
+  "scripts_sha256": {
+    "tools/montblanc/public-candidate/scene_compare.py": "588847bf7c767480c626c458819b575db412582e9452c76f7625dded107f9a46",
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
   }
 }

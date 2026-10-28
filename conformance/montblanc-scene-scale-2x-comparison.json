@@ -8,9 +8,45 @@
   "native_crop_sha256": "7277bbf40a7c6d7920d4ae9a1122c89ee6ec5acb39557b888753a7faa0277218",
   "native_receipt": "conformance/montblanc-native-scale-2x.json",
   "cases": {
-    "fixed": {"svg": [395, 440, 395, 440, 46150], "pdf": [395, 446, 395, 446, 42261]},
-    "aware": {"svg": [395, 462, 395, 462, 32769], "pdf": [395, 465, 395, 465, 27846]}
+    "fixed": {
+      "svg": [
+        391,
+        440,
+        391,
+        440,
+        34499
+      ],
+      "pdf": [
+        391,
+        446,
+        391,
+        446,
+        30936
+      ]
+    },
+    "aware": {
+      "svg": [
+        391,
+        462,
+        391,
+        462,
+        22614
+      ],
+      "pdf": [
+        391,
+        465,
+        391,
+        465,
+        18133
+      ]
+    }
   },
-  "renderers": {"resvg": "0.45.1", "pymupdf": "1.28.2", "pillow": "12.1.1"},
-  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_compare.py"
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  },
+  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_compare.py",
+  "script_sha256": "96687b9ec2f7d4407895720ac5f01db8d45c7e64edce4593f78db6ed1384b099",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
 }

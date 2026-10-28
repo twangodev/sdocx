@@ -10,11 +10,11 @@ import sys
 import tempfile
 
 import pymupdf
-from PIL import Image
+from PIL import Image, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
-from public_fallback_compare import metrics
+from public_fallback_compare import composite_native_frame, metrics
 
 RECEIPT = ROOT / 'conformance/montblanc-scene-scale-2x-comparison.json'
 PATCH = ROOT / 'tools/montblanc/public-candidate/scale_2x_experiment.patch'
@@ -28,12 +28,14 @@ def main():
     receipt = json.loads(RECEIPT.read_text())
     for path, key in [(SOURCE, 'source_sha256'), (PATCH, 'patch_sha256'), (CROP, 'native_crop_sha256')]:
         assert sha(path) == receipt[key], f'input changed: {path}'
+    assert sha(Path(__file__)) == receipt['script_sha256']
+    assert sha(ROOT / 'tools/montblanc/public_fallback_compare.py') == receipt['compositor_sha256']
     assert pymupdf.VersionBind == receipt['renderers']['pymupdf']
+    assert pillow_version == receipt['renderers']['pillow']
+    assert subprocess.check_output(['resvg', '--version'], text=True).strip() == receipt['renderers']['resvg']
     native = Image.new('RGBA', (256, 256))
     native.paste(Image.frombytes('RGBA', (47, 14), CROP.read_bytes()), (125, 124))
-    background = Image.new('RGBA', (256, 256), (252, 252, 252, 255))
-    background.alpha_composite(native.transpose(Image.Transpose.FLIP_TOP_BOTTOM))
-    reference = background.convert('RGB').tobytes()
+    reference = composite_native_frame(native.tobytes(), (256, 256)).tobytes()
     with tempfile.TemporaryDirectory(prefix='sdocx-montblanc-scale-') as directory:
         tmp = Path(directory)
         archive = tmp / 'source.tar'

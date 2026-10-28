@@ -18,7 +18,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[3]
 REVISION = 'afc6f8e32b4d24bc4238900e15cdaac26987a1b9'
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
-from public_fallback_compare import metrics
+from public_fallback_compare import composite_native_frame, metrics
 
 receipt = json.loads((ROOT / 'conformance/montblanc-extended-paint-native.json').read_text())
 with tempfile.TemporaryDirectory(prefix='montblanc-extended-scene-') as directory:
@@ -108,7 +108,8 @@ with tempfile.TemporaryDirectory(prefix='montblanc-extended-scene-') as director
               'boundary':'Synthetic controls, test-only sampler and approximate Scene paint on #fcfcfc; host Mesa is not device or saved-note parity.',
               'capture_receipt_sha256':hashlib.sha256((ROOT / 'conformance/montblanc-extended-paint-native.json').read_bytes()).hexdigest(),
               'source_revision':REVISION,'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-              'method':'native support, export support, intersection, union, RGB absolute error on union; support differs from 252 by more than 2',
+              'compositor_sha256':hashlib.sha256((ROOT / 'tools/montblanc/public_fallback_compare.py').read_bytes()).hexdigest(),
+              'method':'native support, export support, intersection, union, RGB absolute error on union; support differs from 252 by more than 2. Native RGB is premultiplied; composition uses nearest-integer source-over.',
               'renderers':{'pymupdf':pymupdf.VersionBind,'resvg':subprocess.check_output(['resvg','--version'],text=True).strip(),'pillow':Image.__version__}, 'cases':{}}
     for name in ('four','five'):
         raw = gzip.decompress((ROOT / f'tools/montblanc/extended-paint/{name}.json.gz').read_bytes())
@@ -118,9 +119,7 @@ with tempfile.TemporaryDirectory(prefix='montblanc-extended-scene-') as director
             assert hashlib.sha256((output / f'{(0 if name == "four" else 1)}-{index}.bin').read_bytes()).hexdigest() == expected['sha256'], (name,index)
         frame = zlib.decompress(base64.b64decode(capture['post_readback']['rgba8_zlib_base64']))
         assert hashlib.sha256(frame).hexdigest() == receipt['cases'][name]['frame_sha256']
-        paper = Image.new('RGBA',(256,256),(252,252,252,255))
-        paper.alpha_composite(Image.frombytes('RGBA',(256,256),frame).transpose(Image.Transpose.FLIP_TOP_BOTTOM))
-        reference = paper.convert('RGB').tobytes()
+        reference = composite_native_frame(frame, (256, 256)).tobytes()
         png = tmp / 'page.png'
         subprocess.run(['resvg',str(output / f'{name}.svg'),str(png)],check=True)
         svg = metrics(reference,Image.open(png).convert('RGB').tobytes())

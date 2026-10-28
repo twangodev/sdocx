@@ -12,104 +12,106 @@
     "fixed": {
       "pressure": {
         "svg": [
-          395,
+          391,
           441,
-          395,
+          391,
           441,
-          44892
+          35091
         ],
         "pdf": [
-          395,
+          391,
           447,
-          395,
+          391,
           447,
-          40760
+          31255
         ]
       },
       "size": {
         "svg": [
-          385,
+          383,
           415,
-          385,
+          383,
           415,
-          46294
+          33680
         ],
         "pdf": [
-          385,
+          383,
           416,
-          385,
+          383,
           416,
-          42778
+          30474
         ]
       },
       "far_endpoint": {
         "svg": [
-          574,
+          571,
           622,
-          574,
+          571,
           622,
-          64987
+          47315
         ],
         "pdf": [
-          574,
+          571,
           623,
-          574,
+          571,
           623,
-          58858
+          41704
         ]
       }
     },
     "aware": {
       "pressure": {
         "svg": [
-          395,
+          391,
           462,
-          395,
+          391,
           462,
-          31476
+          23239
         ],
         "pdf": [
-          395,
+          391,
           465,
-          395,
+          391,
           465,
-          26521
+          18636
         ]
       },
       "size": {
         "svg": [
-          385,
+          383,
           438,
-          385,
+          383,
           438,
-          31287
+          20515
         ],
         "pdf": [
-          385,
+          383,
           440,
-          385,
+          383,
           440,
-          26732
+          16258
         ]
       },
       "far_endpoint": {
         "svg": [
-          574,
+          571,
           659,
-          574,
+          571,
           659,
-          44837
+          29549
         ],
         "pdf": [
-          574,
+          571,
           665,
-          574,
+          571,
           665,
-          37307
+          22803
         ]
       }
     }
   },
   "boundary": "Synthetic host Mesa controls compared to test-only reconstructed shared Scene exports; no device, saved-note, or production parity implied.",
-  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py"
+  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py",
+  "script_sha256": "62c40f19ee327fdcd55f4bdc478388d33e2e1dc77cdd653b147c77cf39b1ab7b",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
 }

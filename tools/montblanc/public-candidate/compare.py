@@ -18,7 +18,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
 from triangle_svg_prototype import build
-from public_fallback_compare import metrics, FIXTURE, FIXTURE_SHA256
+from public_fallback_compare import composite_native_frame, metrics, FIXTURE, FIXTURE_SHA256
 
 
 def sha(data):
@@ -74,8 +74,7 @@ def run():
             frame = zlib.decompress(base64.b64decode(capture['post_readback']['rgba8_zlib_base64']))
             if sha(frame) != capture['post_readback']['sha256']:
                 raise ValueError(f'{name}: frame hash mismatch')
-            native = Image.new('RGBA', (256, 256), (252, 252, 252, 255))
-            native.alpha_composite(Image.frombytes('RGBA', (256, 256), frame).transpose(Image.Transpose.FLIP_TOP_BOTTOM))
+            native = composite_native_frame(frame, (256, 256))
             actual = Image.new('RGBA', (256, 256), (252, 252, 252, 255))
             actual.alpha_composite(Image.open(tmp / 'page.png').convert('RGBA'))
             svg_values = metrics(native.convert('RGB').tobytes(), actual.convert('RGB').tobytes())

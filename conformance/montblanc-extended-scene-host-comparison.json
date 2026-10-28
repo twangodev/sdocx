@@ -3,8 +3,9 @@
   "boundary": "Synthetic controls, test-only sampler and approximate Scene paint on #fcfcfc; host Mesa is not device or saved-note parity.",
   "capture_receipt_sha256": "bd4eb285178ee2179c77065578054e47b79329728ec2eab53b35d0487466e82d",
   "source_revision": "afc6f8e32b4d24bc4238900e15cdaac26987a1b9",
-  "script_sha256": "9a6402674583cfbd51f0b92c7acb230c90dcc4b92475dd033218d42675c27793",
-  "method": "native support, export support, intersection, union, RGB absolute error on union; support differs from 252 by more than 2",
+  "script_sha256": "e0f886c6209d9ac37f286c483127711839c93d4908c205a1977c6849a290edec",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "method": "native support, export support, intersection, union, RGB absolute error on union; support differs from 252 by more than 2. Native RGB is premultiplied; composition uses nearest-integer source-over.",
   "renderers": {
     "pymupdf": "1.28.2",
     "resvg": "0.45.1",
@@ -13,32 +14,32 @@
   "cases": {
     "four": {
       "svg": [
-        142,
+        140,
         176,
-        142,
+        140,
         176,
-        11807
+        7929
       ],
       "pdf": [
-        142,
+        140,
         174,
-        142,
+        140,
         174,
-        8478
+        5634
       ],
       "fallback_svg": [
-        142,
+        140,
         59,
         46,
-        155,
-        45914
+        153,
+        40772
       ],
       "fallback_pdf": [
-        142,
+        140,
         64,
         49,
-        157,
-        45347
+        155,
+        40245
       ],
       "vertex_buffers_match_native": true
     },
@@ -48,28 +49,28 @@
         184,
         151,
         184,
-        12450
+        8275
       ],
       "pdf": [
         151,
         183,
         151,
         183,
-        9869
+        7158
       ],
       "fallback_svg": [
         151,
         69,
         51,
         169,
-        50699
+        44948
       ],
       "fallback_pdf": [
         151,
         72,
         53,
         170,
-        49950
+        44213
       ],
       "vertex_buffers_match_native": true
     }

@@ -20,6 +20,15 @@ FIXTURE_SHA256 = "b0233b505f42a2a875e60ee3d2aee0d6e0f4e0db3ce8e5536a8f2b68e75d91
 RECEIPT = ROOT / "conformance/montblanc-public-fallback-host-comparison.json"
 
 
+def composite_native_frame(frame, size, paper=252):
+    """Composite a premultiplied native RGBA8 readback over opaque gray."""
+    if len(frame) != size[0] * size[1] * 4:
+        raise ValueError("native framebuffer size mismatch")
+    rgb = bytes(min(255, frame[i + channel] + (paper * (255 - frame[i + 3]) + 127) // 255)
+                for i in range(0, len(frame), 4) for channel in range(3))
+    return Image.frombytes("RGB", size, rgb).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+
+
 def metrics(native, actual):
     def support(data):
         return [any(abs(data[i + j] - 252) > 2 for j in range(3)) for i in range(0, len(data), 3)]
@@ -47,10 +56,7 @@ def main():
             capture = json.loads(raw)
             frame = zlib.decompress(base64.b64decode(capture["post_readback"]["rgba8_zlib_base64"]))
             assert hashlib.sha256(frame).hexdigest() == capture["post_readback"]["sha256"]
-            image = Image.frombytes("RGBA", (256, 256), frame).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-            paper = Image.new("RGBA", (256, 256), (252, 252, 252, 255))
-            paper.alpha_composite(image)
-            native = paper.convert("RGB").tobytes()
+            native = composite_native_frame(frame, (256, 256)).tobytes()
             subprocess.run(["resvg", str(output / f"{case}.svg"), str(output / "page.png")], check=True)
             svg = Image.open(output / "page.png").convert("RGB").tobytes()
             with pymupdf.open(output / f"{case}.pdf") as document:

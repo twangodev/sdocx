@@ -13,11 +13,11 @@ import tempfile
 import zlib
 
 import pymupdf
-from PIL import Image
+from PIL import Image, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
-from public_fallback_compare import metrics
+from public_fallback_compare import composite_native_frame, metrics
 
 RECEIPT = ROOT / 'conformance/montblanc-edge-shift-experiment.json'
 SOURCE = Path('crates/sdocx/src/render/montblanc_candidate.rs')
@@ -36,7 +36,11 @@ def main():
     assert sha((ROOT / SOURCE).read_bytes()) == receipt['source_sha256']
     assert sha(PATCH.read_bytes()) == receipt['patch_sha256']
     assert sha(CROP.read_bytes()) == scale_receipt['native_crop_sha256']
+    assert sha(Path(__file__).read_bytes()) == receipt['script_sha256']
+    assert sha((ROOT / 'tools/montblanc/public_fallback_compare.py').read_bytes()) == receipt['compositor_sha256']
     assert pymupdf.VersionBind == scale_receipt['renderers']['pymupdf']
+    assert pillow_version == scale_receipt['renderers']['pillow']
+    assert subprocess.check_output(['resvg', '--version'], text=True).strip() == scale_receipt['renderers']['resvg']
     seen = set()
     with tempfile.TemporaryDirectory(prefix='montblanc-edge-shift-') as directory:
         checkout = Path(directory)
@@ -59,7 +63,6 @@ def main():
                                     'pdf', 'captured_controls_shared_scene_exports'], cwd=checkout, env=env,
                                    stdout=subprocess.DEVNULL, check=True)
                     for name in (('baseline', 'pressure', 'size', 'far_endpoint') if scale == 1 else ('baseline',)):
-                        native = Image.new('RGBA', (256, 256), (252, 252, 252, 255))
                         if scale == 1:
                             raw = gzip.decompress((ROOT / f'tools/montblanc/captures/{name}.json.gz').read_bytes())
                             assert sha(raw) == captures['cases'][name]['capture_sha256']
@@ -70,8 +73,7 @@ def main():
                         else:
                             image = Image.new('RGBA', (256, 256))
                             image.paste(Image.frombytes('RGBA', (47, 14), CROP.read_bytes()), (125, 124))
-                        native.alpha_composite(image.transpose(Image.Transpose.FLIP_TOP_BOTTOM))
-                        reference = native.convert('RGB').tobytes()
+                        reference = composite_native_frame(image.tobytes(), (256, 256)).tobytes()
                         raster = output / 'raster.png'
                         subprocess.run(['resvg', str(output / f'{name}.svg'), str(raster)], check=True)
                         with Image.open(raster) as image:

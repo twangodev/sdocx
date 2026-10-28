@@ -10,11 +10,10 @@ import tempfile
 import zlib
 
 import pymupdf
-from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/montblanc'))
-from public_fallback_compare import metrics
+from public_fallback_compare import composite_native_frame, metrics
 from triangle_svg_prototype import alpha_at, build, screen_point, subdivide, triangles_for_buffer, uv_derivatives
 
 
@@ -61,6 +60,7 @@ def main():
               'metrics': old['metrics'], 'pymupdf_version': pymupdf.VersionBind,
               'mupdf_version': pymupdf.VersionFitz, 'script_sha256': digest(Path(__file__).read_bytes()),
               'prototype_sha256': digest((ROOT / 'tools/montblanc/triangle_svg_prototype.py').read_bytes()),
+              'compositor_sha256': digest((ROOT / 'tools/montblanc/public_fallback_compare.py').read_bytes()),
               'cases': {}}
     with tempfile.TemporaryDirectory(prefix='montblanc-direct-pdf-') as directory:
         tmp = Path(directory)
@@ -72,8 +72,7 @@ def main():
             frame = zlib.decompress(base64.b64decode(capture['post_readback']['rgba8_zlib_base64']))
             if digest(frame) != capture['post_readback']['sha256']:
                 raise ValueError(f'{name}: framebuffer hash mismatch')
-            native = Image.new('RGBA', (256, 256), (252, 252, 252, 255))
-            native.alpha_composite(Image.frombytes('RGBA', (256, 256), frame).transpose(Image.Transpose.FLIP_TOP_BOTTOM))
+            native = composite_native_frame(frame, (256, 256))
             native = native.convert('RGB').tobytes()
             source = tmp / f'{name}.json'
             source.write_bytes(raw)

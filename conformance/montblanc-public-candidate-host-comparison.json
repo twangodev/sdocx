@@ -3,7 +3,7 @@
   "scope": "Isolated public Stroke synthetic controls through existing test-only sampler and mesh expansion, compared to four retained host-Mesa frames. This does not integrate with production exports or establish device parity.",
   "geometry": "A cloned public Stroke receives points, pressures and width; its pen metadata is not changed or used for dispatch. Points are transformed from page coordinates to the fixed capture projection x-128, 128-y. Existing sampler and native-derived mesh functions are extracted verbatim with visibility changes; each of three emitted buffers is required to match native captured VBO bytes exactly. Capture draw metadata is reused only for prototype paint.",
   "paint": "Existing SVG prototype uses subdivision 4, source shader approximations and analytic fwidth; SVG rendered with resvg 0.45.1. PDF is MuPDF 1.28.2 SVG-to-PDF conversion, not sdocx direct PDF.",
-  "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route.",
+  "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route. Native RGB is premultiplied; composition uses nearest-integer source-over.",
   "inputs": {
     "pen": "com.samsung.android.sdk.pen.pen.preload.MontblancFountainPen",
     "points": "(128,128), (138,128), (148,126); far endpoint (158,126), corresponding to captured positions with x=128+x and y=128-y",
@@ -18,9 +18,9 @@
     "crates/sdocx/src/ink/montblanc.rs": "d093ed6d2395f47c2da07759f6cdb3ea12de4e8915116245e744b2cd5fd2c8c4",
     "crates/sdocx/src/ink/path.rs": "1eb781fc613cc10039caf3065c10d578c6ffffbfae4f9433cf1e161b804fc019",
     "tools/montblanc/public-candidate/main.rs": "a4e1fe45e1e9df1298ea9ef8d84467195e986c238d7f3e63eb8e16b78a7649d6",
-    "tools/montblanc/public-candidate/compare.py": "8e2c797d80d1081f127fb723bb726bf63221cc13e9446001704d0973aade7cc7",
+    "tools/montblanc/public-candidate/compare.py": "0b89bad48e48a756624fe3d96b7edd095f3925559ec2c37160a7297030e31823",
     "tools/montblanc/triangle_svg_prototype.py": "e0e9bd69a4adf7d8bd94f45cdfa8656a126845ec79556e75a29554c8811b229d",
-    "tools/montblanc/public_fallback_compare.py": "ebbda4a5fee45847863bdd58dd952f17fc3149777d6a62813516681918b5fccc"
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
   },
   "reproduction": "Run .venv/bin/python tools/montblanc/public-candidate/compare.py from repository root, with pinned ignored fixture, offline Cargo dependencies, resvg, Pillow and PyMuPDF. Temporary files are removed; shared Cargo target is reused.",
   "cases": {
@@ -28,72 +28,72 @@
       "capture_sha256": "84b12c69f047527f5f3bea87ea82b89c356dd4e0007f72b0598f45f0529b03af",
       "generated_vbos_equal_native": true,
       "svg": [
-        101,
+        100,
         114,
-        101,
+        100,
         114,
-        7647
+        5275
       ],
       "svg_to_pdf": [
-        101,
+        100,
         135,
-        101,
+        100,
         135,
-        53421
+        56899
       ]
     },
     "pressure": {
       "capture_sha256": "a66367bcce64d0ab6962668920f3b4e516d5213fdd74186906e4987bd7dd08aa",
       "generated_vbos_equal_native": true,
       "svg": [
-        101,
+        100,
         114,
-        101,
+        100,
         114,
-        7339
+        5364
       ],
       "svg_to_pdf": [
-        101,
+        100,
         135,
-        101,
+        100,
         135,
-        52802
+        55953
       ]
     },
     "size": {
       "capture_sha256": "660fa05e91d87d39bce96d679a85b29c3360b2643780c37a13fd2b928c2b861b",
       "generated_vbos_equal_native": true,
       "svg": [
-        90,
+        89,
         107,
-        90,
+        89,
         107,
-        7517
+        4752
       ],
       "svg_to_pdf": [
-        90,
+        89,
         133,
-        90,
+        89,
         133,
-        52553
+        55946
       ]
     },
     "far_endpoint": {
       "capture_sha256": "62ff0a279fcb6fa003382d20ff4bd2e9c9230838e29e4a74c94fd6fcf2563c67",
       "generated_vbos_equal_native": true,
       "svg": [
-        141,
+        140,
         157,
-        141,
+        140,
         157,
-        11322
+        7341
       ],
       "svg_to_pdf": [
-        141,
+        140,
         192,
-        141,
+        140,
         192,
-        76533
+        81568
       ]
     }
   }
