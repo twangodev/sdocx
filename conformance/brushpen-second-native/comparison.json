@@ -1,0 +1,107 @@
+{
+  "matrix": {
+    "native_sha256": "41c0aa6d14988878281ccd0cf89b70263985c47a2a88a9e8bf48c1f8bcc5d248",
+    "native_support": 532,
+    "svg_resvg": {
+      "alpha_l1": 37292,
+      "alpha_max": 119,
+      "rgb_l1": 55301,
+      "rgb_max": 96,
+      "support": 692
+    },
+    "pdf_mupdf": {
+      "alpha_l1": 38232,
+      "alpha_max": 118,
+      "rgb_l1": 58421,
+      "rgb_max": 96,
+      "support": 674
+    },
+    "matrix_uniform": [
+      0.006230529397726059,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.008771929889917374,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -3.0518509447574615e-05,
+      0.0,
+      -0.9968847632408142,
+      -0.9956140518188477,
+      0.0,
+      1.0
+    ],
+    "grain_period": [
+      321.0,
+      228.0
+    ],
+    "grain_offset": [
+      125.49999237060547,
+      30.5
+    ]
+  },
+  "scale": {
+    "native_sha256": "8f249e7fa84e068dd702177a6cb1f6ff2c5c366fb385ff1da18bea4c85d658ed",
+    "native_support": 2145,
+    "svg_resvg": {
+      "alpha_l1": 69941,
+      "alpha_max": 204,
+      "rgb_l1": 105860,
+      "rgb_max": 165,
+      "support": 2156
+    },
+    "pdf_mupdf": {
+      "alpha_l1": 70047,
+      "alpha_max": 204,
+      "rgb_l1": 107496,
+      "rgb_max": 165,
+      "support": 2140
+    },
+    "matrix_uniform": [
+      0.012461058795452118,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.017543859779834747,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -3.0518509447574615e-05,
+      0.0,
+      -1.0,
+      -1.0,
+      0.0,
+      1.0
+    ],
+    "grain_period": [
+      642.0,
+      456.0
+    ],
+    "grain_offset": [
+      249.99998474121094,
+      60.000003814697266
+    ]
+  },
+  "capture_recipe": {
+    "scripts": {
+      "tools/brushpen-transform/second_mapdraw.py": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+      "tools/brushpen-transform/long_probe.py": "77e48b4625361cd14eb5aa4637e31af5e7e3da52794547e93681f5b0e6bbeb40"
+    },
+    "environment": "BRUSHPEN_RUN_CREATE_CANVAS_TASK=1 BRUSHPEN_NATIVE_PEN_DATA_MANAGER=1 PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin",
+    "matrix_values": {
+      "matrix": "1,0,0,0,1,0,0.5,0.5,1",
+      "scale": "2,0,0,0,2,0,0,0,1"
+    },
+    "command": "Set BRUSHPEN_CANVAS_MATRIX to the selected matrix value and run python3 tools/brushpen-transform/second_mapdraw.py.",
+    "dependencies": [
+      "Pinned native ARM64 libraries under scratch/apk-analysis-native/arm64-v8a and Python/binutils runtime under scratch/apk-analysis-runtime.",
+      "Ignored helper tree tmp/conformance-cleanup/native-capture-a241793/conformance, including brushpen_queue_native.py, brushpen_paint_positive_native.py and brushpen-handoff-native.json.",
+      "Generate /tmp/brushpen-second-geometry.json first using the geometry runner documented in conformance/brushpen-second-native/receipt.json; the script checks its captured buffer against the native Drawing upload."
+    ]
+  }
+}

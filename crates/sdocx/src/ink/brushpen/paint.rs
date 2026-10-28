@@ -1082,6 +1082,84 @@ mod tests {
         ZlibDecoder::new(&include_bytes!("../../../../../conformance/brushpen-second-native/frame-rgba8.zlib")[..]).read_to_end(&mut native).unwrap();
         assert_eq!(sha256(&native), fixture["paint"]["full_rgba_sha256"]);
         assert_eq!(painted, native);
+        let transform_receipt: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-second-native/comparison.json"
+        ))
+        .unwrap();
+        for (name, compressed) in [
+            (
+                "matrix",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/matrix-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "scale",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/scale-frame.rgba.zlib"
+                )[..],
+            ),
+        ] {
+            let mut reference = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut reference)
+                .unwrap();
+            assert_eq!(reference.len(), 321 * 228 * 4);
+            assert_eq!(sha256(&reference), transform_receipt[name]["native_sha256"]);
+            let projection: [f32; 16] = transform_receipt[name]["matrix_uniform"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            let mut actual = vec![0; reference.len()];
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width: 321,
+                    height: 228,
+                    projection,
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: transform_receipt[name]["grain_period"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_f64().unwrap() as f32)
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap(),
+                    grain_offset: transform_receipt[name]["grain_offset"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_f64().unwrap() as f32)
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut actual,
+            )
+            .unwrap();
+            let l1: u64 = actual
+                .iter()
+                .zip(&reference)
+                .map(|(a, b)| u64::from(a.abs_diff(*b)))
+                .sum();
+            assert!(l1 <= if name == "matrix" { 0 } else { 4 }, "{name}: {l1}");
+        }
         let pair: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-version-paint-pair.json"
         ))

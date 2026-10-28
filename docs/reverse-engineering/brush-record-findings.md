@@ -268,3 +268,17 @@ bytes as well as placement/crop and preview identity. Rendering the thumbnail
 alone is a preview fallback, with no demonstrated preservation of editable
 painting vectors. None of these findings implements brush or painting
 rendering in the SDK.
+
+### BrushPen transformed grain controls
+
+The synthetic 221-record Drawing/queued-RT host Mesa [transform
+controls](../../conformance/brushpen-second-native/comparison.json) show grain
+period/offset changing from `[321, 228]` / `[124.99999237, 30.00000191]` at baseline to
+`[321, 228]` / `[125.49999237, 30.5]` under half-pixel translation and `[642, 456]` /
+`[249.99998474, 60.00000381]` at 2×. These observations are consistent with scaling the
+period and transforming the offset; a general affine producer formula is unverified. The
+test-only paint model using captured uniforms matches the translated frame exactly and
+has scaled RGBA absolute-error sum 4, versus 8,954 using baseline grain uniforms. The
+receipt includes the capture recipe; capture scripts are retained under
+`tools/brushpen-transform`; native inputs and host helpers remain in scratch and ignored
+helper trees. Public SVG/PDF transport and device parity remain unverified.
