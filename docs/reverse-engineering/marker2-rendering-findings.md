@@ -281,5 +281,14 @@ and 4×. The [compact native mask fixture](../../conformance/marker2-finite-scal
 retains the inputs and expected masks; the experimental model check is in
 `scratch/marker2-thin-scale-control/`. A four-layer vector approximation reduced
 error at 1×–4× but regressed at 0.5× in the tested SVG and SVG-to-PDF renders.
-These controls do not establish native composite, direct PDF, Android device,
-or arbitrary viewer-scale parity; the finite model is not production paint.
+The [compact composite fixture](../../conformance/marker2-composite-transparent.json)
+retains 20 transparent-target host-Mesa crops across two RGB colors, alpha 128
+and 255, and scales 0.5×–4×. Every captured RGBA byte matches rounding the
+mask times packed alpha to an 8-bit alpha, then rounding each RGB channel
+times that alpha to premultiplied 8-bit color. This covers internal stamp
+overlap through the MAX mask, but does not test overlapping separate strokes
+or a nontransparent destination. The experimental check is in
+`scratch/marker2-thin-scale-control/composite-check.py`.
+
+These controls do not establish direct PDF, Android device, or arbitrary
+viewer-scale parity; the finite model is not production paint.
