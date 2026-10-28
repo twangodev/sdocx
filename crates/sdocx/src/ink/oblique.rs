@@ -868,7 +868,7 @@ mod tests {
         let fixture: Value =
             serde_json::from_str(include_str!("../../../../conformance/oblique-redraw.json"))
                 .unwrap();
-        assert_eq!(fixture["schema"], "sdocx-oblique-v4-native-redraw-v2");
+        assert_eq!(fixture["schema"], "sdocx-oblique-v4-native-redraw-v3");
         for case in fixture["cases"].as_array().unwrap() {
             let id = case["id"].as_str().unwrap();
             let source: Vec<P> = case["points"]
