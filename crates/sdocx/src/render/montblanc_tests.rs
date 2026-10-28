@@ -287,7 +287,7 @@ fn two_pixel_profile_sliced_output_falls_back() {
 }
 
 #[test]
-fn two_pixel_profile_rejects_uncaptured_four_and_five_point_strokes() {
+fn two_pixel_profile_admits_bounded_four_and_five_point_strokes() {
     let opts = RenderOptions {
         montblanc_two_pixels_per_page_unit: true,
         ..Default::default()
@@ -302,11 +302,63 @@ fn two_pixel_profile_rejects_uncaptured_four_and_five_point_strokes() {
             &[0.3, 0.6, 1., 0.7, 0.5][..],
         ),
     ] {
-        let doc = document(source(points, pressures));
+        let stroke = source(points, pressures);
+        assert!(crate::ink::montblanc::prepare(&stroke).is_some());
+        let doc = document(stroke.clone());
+        let generic = render_document_svg(&doc, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let aware = render_document_svg(&doc, &opts)[0].svg.clone();
+        let unit = render_document_svg(&doc, &options())[0].svg.clone();
+        assert_ne!(aware, generic);
+        assert_ne!(aware, unit);
+        assert!(aware.matches("fill=\"#336699\"").count() > 100);
+        let layout = crate::layout_document(&doc);
         assert_eq!(
-            render_document_svg(&doc, &opts)[0].svg,
-            render_document_svg(&doc, &RenderOptions::default())[0].svg
+            render_layout_page_replay_svg(&doc, &layout, 0, &opts)
+                .unwrap()
+                .svg,
+            render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg
         );
+        let conflict = RenderOptions {
+            montblanc_profile: Some(MontblancRenderProfile::HostUnitScale),
+            ..opts.clone()
+        };
+        assert_eq!(render_document_svg(&doc, &conflict)[0].svg, generic);
+        let mut unsupported = stroke;
+        unsupported
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .fixed_width = true;
+        assert!(crate::ink::montblanc::prepare(&unsupported).is_none());
+        let unsupported_doc = document(unsupported);
+        assert_eq!(
+            render_document_svg(&unsupported_doc, &opts)[0].svg,
+            render_document_svg(&unsupported_doc, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        {
+            let render_slice = |options: &RenderOptions| {
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            assert_eq!(render_slice(&opts), render_slice(&RenderOptions::default()));
+        }
     }
 }
 

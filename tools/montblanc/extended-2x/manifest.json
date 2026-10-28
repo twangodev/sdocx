@@ -1,0 +1,33 @@
+{
+  "revision": "935672344898339504fc7c4441af117e5e11338a",
+  "source_sha256": {
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "tools/montblanc/public-optin-2x/Cargo.toml": "b94ddbb3a5a9a5ab98ac53e771d5ed33071c1fa31e2e066abbfdccd563e7be57",
+    "tools/montblanc/public-optin-2x/Cargo.lock": "3668fb1adb2aaef5f90571b03158e06e9e5e899fd52c11d1779bfa5dfdc3e2a7",
+    "tools/montblanc/public-optin-2x/src/main.rs": "c00807aa4bcc71df7a4a62da6038b7c98d00774769ee111d8b083d400914f87b",
+    "crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx": "ec4476cba55a9e92e4d5c54eb5789e0842a223e120825009fffd004a952d7de5",
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+    "tools/montblanc/extended-paint/capture_candidate.py": "7378931c784f1be00527da5dd8d39dd48597b95a8c5bcc2c636fdf69d82a2fae",
+    "tools/montblanc/extended-paint/native_drawing_capture.py": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+    "crates/sdocx/src/ink/montblanc.rs": "6c49ce383fd71aac2326dc1711815e73c3295f7e8387c0366fdcb910c7b4868e",
+    "crates/sdocx/src/render/montblanc_candidate.rs": "9fd951266ee1f7304136bdffd637d3808c5db7c63cc99a46509bc5ea0cb4fb4c"
+  },
+  "artifacts_sha256": {
+    "montblanc-2x-capture.py": "40fd0fb5c3a2936b31fcd3ed95d9a69a70c37ffbfe0a5c14ed30e796080390e3",
+    "montblanc-four-2x.rgba": "24af88540f16844068a61a63200a55a18fb19e4c9351e5b213f94552fb95014d",
+    "montblanc-five-2x.rgba": "891e36c65fa753b8f66805a36e1dac8aa3121a933d85f0f0a098274c489ee3ee",
+    "montblanc-2x-comparison.json": "3e5f9e2bea3c64720a8f9b2579aacc26239440271e705598e5c9b7c43e70e505",
+    "verify.py": "28bed8e5c5271fe44ded28059ae15aa35372c604d0a0df83bdce5a2c774e6f5e",
+    "montblanc-extended-2x-provenance.json": "54134a20199d84c7237c3bf40917c62b1eca4ff446056b65088fa4edcd66c1ce",
+    "gate.patch.gz": "9d3cd3a13a84889fc7ea75dc567d2711ff83e74cffeba0cdc74c863c1d47a7f7"
+  },
+  "versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  },
+  "patched_sha256": {
+    "crates/sdocx/src/render.rs": "7e11629e39bb93453b4f8d271d5a3c29aabc21985f75b8d4f7dd9622bb8b723a",
+    "crates/sdocx/src/render/montblanc_tests.rs": "8b658fd0ed400f1410d4f02a18541d781d764790d3ca19faee2a8045e515469a"
+  }
+}

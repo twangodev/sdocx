@@ -390,7 +390,8 @@ pub struct RenderOptions {
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
     /// Assert a fresh drawable and two output pixels per page unit for Montblanc.
-    /// Only three-point inputs are admitted. Combining this with a Montblanc
+    /// Three- to five-point inputs use the same admission bounds as unit scale.
+    /// Combining this with a Montblanc
     /// profile, or using unsupported inputs, falls back to generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_two_pixels_per_page_unit: bool,
@@ -4200,9 +4201,7 @@ fn render_stroke(
         && slice.is_none()
         && ((montblanc_profile == Some(MontblancRenderProfile::HostUnitScale)
             && !montblanc_two_pixels_per_page_unit)
-            || (montblanc_profile.is_none()
-                && montblanc_two_pixels_per_page_unit
-                && stroke.points.len() == 3))
+            || (montblanc_profile.is_none() && montblanc_two_pixels_per_page_unit))
         && viewport.iter().all(|d| *d > 0)
         && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
         && montblanc_candidate::render(
