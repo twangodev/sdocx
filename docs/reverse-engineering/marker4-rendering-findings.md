@@ -80,6 +80,21 @@ comparison at 1×/2×. PDFium's color-region error worsens at 1× and improves a
 2×; thresholded color support worsens slightly at both scales. The correction
 follows the executed native center contract; filtering remains approximate.
 
+A further height experiment compared the current vector height `0.99 * size`
+with `0.99 * (size + 1)`, reflecting the full native quad extent. For the
+HF04 source SHA-256 `8299abbf763e8e3e5af746815d13dfdf45443da27b0eb79192c328571905cdd2`
+and Samsung PDF SHA-256 `b951e506c2d5ebd0ae100ac5cf7179e2575e6fcc8dcdea59be822de4341f8a9a`,
+MuPDF 1.28.2 rendered each public PDF and reference to 600×848 and 1200×1696.
+Using RGB channel range greater than 35 as the color mask, intersection over
+union changed from 0.94149 to 0.92515 at 1× and from 0.97027 to 0.97005 at
+2×. Absolute RGB error summed over the color-mask union increased from 296,271
+to 310,238 and from 726,454 to 757,895 respectively. The larger height reduced
+missing color pixels but increased extra pixels. This does not support changing
+the approximation; quad extent is not equivalent to filtered mask coverage.
+The scratch comparison is `tmp/marker4-height-comparison/compare.py` and uses
+the baseline and candidate CLI PDFs in `/tmp`. It does not establish general
+device or PDF-reader behavior.
+
 The comparison includes narrow ruled paper (template 1). Observed differences
 include native mask filtering and typed-text placement/size. Other Marker4
 versions, rainbow effects and live prediction remain unsupported by this path;
