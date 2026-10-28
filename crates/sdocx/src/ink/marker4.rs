@@ -14,6 +14,41 @@ pub(super) struct Ink {
     pub opacity: f64,
 }
 
+/// Experimental host-controlled V7 finger geometry, not document dispatch.
+#[cfg(all(test, feature = "serde"))]
+pub(super) fn prepare_v7_finger(s: &Stroke) -> Option<Ink> {
+    let rendering = s.rendering.as_ref()?;
+    if rendering.advanced_settings.as_deref() != Some("7;")
+        || rendering.tool_type_raw != 0
+        || rendering.properties.straighten
+        || rendering.properties.fixed_width
+        || s.points.is_empty()
+        || s.points.len() > 100_000
+        || s.pressures.len() != s.points.len()
+        || s.timestamps.len() != s.points.len()
+        || s.pressures.iter().any(|p| !p.is_finite())
+        || (!s.tilts.is_empty() && s.tilts.len() != s.points.len())
+        || (!s.orientations.is_empty() && s.orientations.len() != s.points.len())
+        || s.tilts
+            .iter()
+            .chain(&s.orientations)
+            .any(|v| !v.is_finite())
+    {
+        return None;
+    }
+    let size = rendering.style.pen_size?;
+    if !size.is_finite() || size < 0. {
+        return None;
+    }
+    let mut proxy = s.clone();
+    proxy.rendering.as_mut()?.advanced_settings = Some("8;".into());
+    let mut ink = prepare(&proxy)?;
+    let radius = (size.clamp(0.4, 800.) * 0.5).max(1.);
+    ink.stamp.width = f64::from(radius + 0.5) * 1.54;
+    ink.stamp.height = f64::from(radius + 0.5) * 2.;
+    Some(ink)
+}
+
 pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
     // Drawing reads the saved Model style size, then Pen::SetSize clamps it.
@@ -177,6 +212,115 @@ mod tests {
 
     fn reference() -> Reference {
         serde_json::from_str(include_str!("../../../../conformance/marker4-v7.json")).unwrap()
+    }
+
+    #[test]
+    fn v7_finger_adapter_matches_native_saved_geometry() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = 0;
+            rendering.advanced_settings = Some("7;".into());
+            rendering.style.pen_size = Some(case["size"].as_f64().unwrap() as f32);
+            for sample in case["samples"].as_array().unwrap() {
+                stroke.points.push(Point {
+                    x: sample[0].as_f64().unwrap(),
+                    y: sample[1].as_f64().unwrap(),
+                });
+                stroke.pressures.push(sample[2].as_f64().unwrap());
+                stroke.tilts.push(sample[3].as_f64().unwrap());
+                stroke.timestamps.push(stroke.timestamps.len() as i64 * 8);
+            }
+            let actual = prepare_v7_finger(&stroke).unwrap();
+            let dots = case["dots"].as_array().unwrap();
+            let name = case["name"].as_str().unwrap();
+            let ends: Vec<_> = case["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(actual.sample_ends, ends, "{name}");
+            assert_eq!(actual.points.len(), dots.len(), "{name}");
+            let bounds = case["tip_bounds"].as_array().unwrap();
+            assert!(
+                (actual.stamp.width - (bounds[2].as_f64().unwrap() - bounds[0].as_f64().unwrap()))
+                    .abs()
+                    < 1e-4,
+                "{name} width"
+            );
+            assert!(
+                (actual.stamp.height - (bounds[3].as_f64().unwrap() - bounds[1].as_f64().unwrap()))
+                    .abs()
+                    < 1e-4,
+                "{name} height"
+            );
+            for (point, dot) in actual.points.iter().zip(dots) {
+                assert!(
+                    (point.x - dot[0].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} x"
+                );
+                assert!(
+                    (point.y - dot[1].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} y"
+                );
+                assert!(
+                    (actual.stamp.angle - dot[3].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} angle"
+                );
+                let radius = dot[2].as_f64().unwrap();
+                assert!(
+                    (actual.stamp.width - 1.54 * (radius + 0.5)).abs() < 1e-4,
+                    "{name} radius"
+                );
+            }
+            assert!(prepare(&stroke).is_none(), "{name} stays on fallback");
+        }
+    }
+
+    #[test]
+    fn v7_finger_adapter_rejects_unsupported_inputs() {
+        let mut valid = reference().stroke;
+        valid.rendering.as_mut().unwrap().tool_type_raw = 0;
+        valid.rendering.as_mut().unwrap().style.pen_size = Some(9.5);
+        valid.points.push(Point { x: 20., y: 20. });
+        valid.pressures.push(0.5);
+        valid.timestamps.push(0);
+        assert!(prepare_v7_finger(&valid).is_some());
+        macro_rules! rejected {
+            ($change:expr) => {{
+                let mut stroke = valid.clone();
+                ($change)(&mut stroke);
+                assert!(
+                    prepare_v7_finger(&stroke).is_none(),
+                    "{}",
+                    stringify!($change)
+                );
+            }};
+        }
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().tool_type_raw = 2);
+        rejected!(
+            |s: &mut Stroke| s.rendering.as_mut().unwrap().advanced_settings = Some("8;".into())
+        );
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().pen_name = Some("other".into()));
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().properties.straighten = true);
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().properties.fixed_width = true);
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().properties.eraser = true);
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().properties.rainbow_effect = true);
+        rejected!(|s: &mut Stroke| s.pressures.clear());
+        rejected!(|s: &mut Stroke| s.timestamps.clear());
+        rejected!(|s: &mut Stroke| s.pressures[0] = f64::NAN);
+        rejected!(|s: &mut Stroke| s.tilts.push(f64::NAN));
+        rejected!(|s: &mut Stroke| s.orientations.extend([0., 0.]));
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().style.pen_size = None);
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().style.pen_size = Some(-1.));
+        rejected!(|s: &mut Stroke| s.rendering.as_mut().unwrap().style.pen_size = Some(f32::NAN));
+        rejected!(|s: &mut Stroke| s.points.clear());
+        rejected!(|s: &mut Stroke| s.points[0].x = f64::INFINITY);
     }
 
     #[test]

@@ -1,0 +1,11 @@
+--- tools/marker4_v7/mesa_capture.py	2026-10-28 10:05:02.387324954 -0700
++++ /tmp/m4-rot-probe.py	2026-10-28 10:36:06.628157938 -0700
+@@ -242,7 +242,7 @@
+  p.call('SPen::SPTextureBitmap::GetSubBitmap(int)',[ob,0]);sub=p.x(0)
+  # Matrix4 column-major transform: doc x remains +, doc y is flipped to raster top-down.
+  mat=p.alloc(64);scale=cli_args.scale
+- p.put(mat,'16f',scale,0,0,0,0,-scale,0,0,0,0,1,0,w/2-scale*cx+cli_args.phase_x,h/2+scale*cy-cli_args.phase_y,0,1)
++ a=0.4; c=math.cos(a); s=math.sin(a); p.put(mat,'16f',scale*c,-scale*s,0,0,-scale*s,-scale*c,0,0,0,0,1,0,w/2-scale*(c*cx-s*cy)+cli_args.phase_x,h/2+scale*(s*cx+c*cy)-cli_args.phase_y,0,1)
+  p.call('SPen::PenDrawableRT::SetRedrawState(bool)',[rt,1]);p.call('SPen::PenDrawableRT::SetEnhancedAntiAlias(bool)',[rt,1])
+  before=len(p.gl_calls);p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
+  if cli_args.draw_count == 2:

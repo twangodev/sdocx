@@ -45,6 +45,7 @@ cli.add_argument('--case', default='turn-9.5')
 cli.add_argument('--scale', type=float, default=1.0)
 cli.add_argument('--phase-x', type=float, default=0.0)
 cli.add_argument('--phase-y', type=float, default=0.0)
+cli.add_argument('--draw-count', type=int, choices=(1, 2), default=1)
 cli_args=cli.parse_args()
 output_path=Path(cli_args.capture_output)
 if output_path.suffix != '.json':
@@ -244,10 +245,13 @@ try:
  p.put(mat,'16f',scale,0,0,0,0,-scale,0,0,0,0,1,0,w/2-scale*cx+cli_args.phase_x,h/2+scale*cy-cli_args.phase_y,0,1)
  p.call('SPen::PenDrawableRT::SetRedrawState(bool)',[rt,1]);p.call('SPen::PenDrawableRT::SetEnhancedAntiAlias(bool)',[rt,1])
  before=len(p.gl_calls);p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
+ if cli_args.draw_count == 2:
+  p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
  g=p.gles.f; rf=C.CFUNCTYPE(None,C.c_int,C.c_int,C.c_int,C.c_int,C.c_uint,C.c_uint,C.c_void_p)(p.gles.gl.glReadPixels)
  raw=C.create_string_buffer(w*h*4);rf(0,0,w,h,0x1908,0x1401,raw);err=g['glGetError']()
  out=output_path.with_suffix('.rgba');write_new(out,raw.raw)
  fm={'schema':'marker4-v7-native-task2-mesa-frame-v1','source_json_sha256':hashlib.sha256(Path('conformance/marker4-v7-finger-native.json').read_bytes()).hexdigest(),'case':cli_args.case,'tool':0,'source_dot_count':len(dots),'source_dots_sha256':hashlib.sha256(json.dumps(dots,separators=(',',':')).encode()).hexdigest(),'producer_bytes':len(stream),'producer_sha256':hashlib.sha256(stream).hexdigest(),'producer_float_count':(e-b)//4,'set_pen_size_f32':case['size'],'set_pen_argb':hex(0x80ffcb30),'scale':cli_args.scale,'phase':[cli_args.phase_x,cli_args.phase_y],'target':[w,h],'frame_center_doc':[cx,cy],'matrix_f32':p.get(mat,'16f'),'texture_id':None,'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'read_framebuffer':(lambda q:(p.gles.gl.glGetIntegerv(0x8CAA,C.byref(q)),q.value)[1])(C.c_int()),'gl_error':err,'draw_calls':p.gl_calls[before:],'image_path':str(out),'raw_input_boundary':'saved native V7 AddPoint outputs; GL/task callbacks use actual native render code'}
+ fm['draw_count']=cli_args.draw_count
  fm['texture_id']=next((x.get('texture') for x in p.gl_calls[before:] if x.get('call')=='glFramebufferTexture2D'),None)
  fm['pre_draw_native_vbo_uploads']=[x for x in p.gl_calls if x.get('call')=='glBufferData' and x.get('size')==len(stream)]
  fm['target_texture_fbo_events']=[x for x in p.gl_calls if x.get('call') in ('glTexImage2D','glFramebufferTexture2D','glCheckFramebufferStatus')]

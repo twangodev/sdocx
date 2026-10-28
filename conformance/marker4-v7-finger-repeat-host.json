@@ -1,0 +1,31 @@
+{
+  "scope": "Synthetic native V7 tool 0 AddPoint host Mesa capture. One versus two identical Draw calls into the same transparent target; alpha only. No different-color ordering, saved-note, device, SVG or PDF parity.",
+  "case": "turn-9.5",
+  "scale": 1.5,
+  "phase": [
+    0.375,
+    0.125
+  ],
+  "target": [
+    1024,
+    512
+  ],
+  "single_rgba_sha256": "aba136de4d9523e2408a839b986045edb42512b8d3a3496abcce4b761e3bd783",
+  "double_rgba_sha256": "f5f13268d31a9e06b567762c388b999556ff54cf81c6cc05eede40adf80d3692",
+  "source_dots_sha256": "57a856213b4bed08d1f87eb476ba931cda2fb1b41595f99a352ffa47d725455c",
+  "single_alpha_support": 630,
+  "double_alpha_support": 630,
+  "single_alpha_max": 128,
+  "double_alpha_max": 192,
+  "alpha_source_over_l1": 0,
+  "alpha_source_over_max": 0,
+  "model_vs_single": {
+    "support": 630,
+    "native_support": 630,
+    "alpha_l1": 22,
+    "max_error": 1
+  },
+  "capture_script": "tools/marker4_v7/mesa_capture.py",
+  "recipe": "Capture twice at --case turn-9.5 --scale 1.5 --phase-x 0.375 --phase-y 0.125, once with --draw-count 1 and once with --draw-count 2; compare alpha using round(a + a*(255-a)/255). The script requires the pinned local native harness listed in its source.",
+  "note": "Receipts and full frames were temporary; hashes identify the observed outputs."
+}

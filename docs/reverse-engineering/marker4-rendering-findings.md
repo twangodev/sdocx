@@ -113,3 +113,7 @@ this requires untracked Unicorn and native libraries, `tmp/conformance-cleanup/n
 and `scratch/defaultpen-native/native_marker4_v8.py`. Host adapters supply object and motion-event channels and intercept AddPoint.
 For one rotated V7 finger curve, native RTV3/Mesa and standalone resvg/MuPDF vector controls differ in alpha coverage; see
 `conformance/marker4-v7-finger-paint-host.json` and `tools/marker4_v7/` for the bounded receipt and capture recipe.
+The test-only [pixel model](../../conformance/marker4-v7-finger-pixel-model-host.json)
+matches native alpha support within the retained crops and two-pixel borders across
+seven host controls, with at most one alpha level of error. It depends on the
+declared output grid and does not establish public export or device parity.

@@ -1,0 +1,348 @@
+{
+  "scope": "Test-only finite-pixel CPU model against native Marker4 V7 RTV3 saved tool 0 host Unicorn/Mesa captures. Fixed pixel grid, synthetic controls including one rotated similarity transform; no arbitrary affine, device or sdocx public export parity.",
+  "mask_rgba_sha256": "07d961c792fbd15286c3200e5358ceaff34b205db6d8cffb0e327302228b4f5b",
+  "mask": "conformance/marker4-v7-mask-rgba.zlib",
+  "cases": [
+    {
+      "capture_receipt_sha256": "3c94fb23705472a72ea668a3bef4df53d1275531fae79a36599769d2842e1a79",
+      "native_rgba_sha256": "399593d98c868457f2d72b6e86e03acc5261a570230c0114184cae5799f47f63",
+      "source_dots_sha256": "e2433b2020a2983a3920d081536d881f336214ba052ac7796f1b3031bad32d0d",
+      "matrix_f32": [
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        502.5,
+        265.5,
+        0.0,
+        1.0
+      ],
+      "gl_error": 0,
+      "comparison": {
+        "case": "tap-9.5",
+        "scale": 0.5,
+        "phase": [
+          0.5,
+          0.5
+        ],
+        "support": 21,
+        "native_support": 21,
+        "alpha_l1": 6,
+        "native_sum": 1644,
+        "candidate_sum": 1638,
+        "max_error": 1
+      }
+    },
+    {
+      "capture_receipt_sha256": "3527787e91ee573bdfdf5bc1298c8838b0901f1e5bf79c52dcf4e43e3b48c14e",
+      "native_rgba_sha256": "3fef803bcf2956d6eb1fe62faea1048f9d16001c087457d774d13e892c07ab39",
+      "source_dots_sha256": "57a856213b4bed08d1f87eb476ba931cda2fb1b41595f99a352ffa47d725455c",
+      "matrix_f32": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        488.5058898925781,
+        283.672119140625,
+        0.0,
+        1.0
+      ],
+      "gl_error": 0,
+      "comparison": {
+        "case": "turn-9.5",
+        "scale": 1.0,
+        "phase": [
+          0.25,
+          0.5
+        ],
+        "support": 285,
+        "native_support": 285,
+        "alpha_l1": 19,
+        "native_sum": 30308,
+        "candidate_sum": 30313,
+        "max_error": 1
+      }
+    },
+    {
+      "capture_receipt_sha256": "c91059fb3f077fc9a036667cad90f14787b8e32d4a8812e18ff0bce9aee39e9a",
+      "native_rgba_sha256": "4be9edad113b73768fcc4480e0b939c79a1704cbd4c4e1529cb4201071458794",
+      "source_dots_sha256": "e2433b2020a2983a3920d081536d881f336214ba052ac7796f1b3031bad32d0d",
+      "matrix_f32": [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        472.25,
+        296.0,
+        0.0,
+        1.0
+      ],
+      "gl_error": 0,
+      "comparison": {
+        "case": "tap-9.5",
+        "scale": 2.0,
+        "phase": [
+          0.25,
+          0.0
+        ],
+        "support": 308,
+        "native_support": 308,
+        "alpha_l1": 16,
+        "native_sum": 37730,
+        "candidate_sum": 37714,
+        "max_error": 1
+      }
+    },
+    {
+      "capture_receipt_sha256": "3cd540fc454ef75f830a2cc95c53d27175217607761283f9a96cc40018aca041",
+      "native_rgba_sha256": "f62eb62c1b65372939df97713a399539878adb14783086149d605b62656fa51f",
+      "source_dots_sha256": "7557fc09370315321fc64ec9677934520695919346761e5df1b5693feb6737aa",
+      "matrix_f32": [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        446.3506774902344,
+        318.0826110839844,
+        0.0,
+        1.0
+      ],
+      "gl_error": 0,
+      "comparison": {
+        "case": "diagonal-0.4",
+        "scale": 2.0,
+        "phase": [
+          0.25,
+          0.25
+        ],
+        "support": 419,
+        "native_support": 419,
+        "alpha_l1": 18,
+        "native_sum": 40051,
+        "candidate_sum": 40051,
+        "max_error": 1
+      }
+    },
+    {
+      "capture_receipt_sha256": "df54c39f83063d65ac0b01b86e5e5f09da13e9d13e363e0153bc7efc363c1b98",
+      "native_rgba_sha256": "fd3ed54a2f7d85b8072a0a5df081f74b04f694eb7cd5d8448883425ef35fa1e4",
+      "source_dots_sha256": "0e69a6ba285ac7dd2bfb1156e7c67c5bff33ce5c3b1afc54c5d4639318eb5256",
+      "matrix_f32": [
+        4.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -4.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        419.6224365234375,
+        348.6275634765625,
+        0.0,
+        1.0
+      ],
+      "gl_error": 0,
+      "comparison": {
+        "case": "loop-9.5",
+        "scale": 4.0,
+        "phase": [
+          0.5,
+          0.25
+        ],
+        "support": 2799,
+        "native_support": 2799,
+        "alpha_l1": 144,
+        "native_sum": 344931,
+        "candidate_sum": 345033,
+        "max_error": 1
+      }
+    }
+  ],
+  "transport": {
+    "case": "loop-9.5",
+    "scale": 4,
+    "phase": [
+      0.5,
+      0.25
+    ],
+    "resvg_alpha_l1": 0,
+    "direct_pymupdf_pdf_mupdf_alpha_l1": 261,
+    "maximum_alpha_error": 1,
+    "scope": "Standalone embedded PNG SVG and direct PyMuPDF PDF image insertion, 1:1 rasterization; not sdocx public exporters."
+  },
+  "recipe": "Capture as in conformance/marker4-v7-finger-paint-host.json with the listed case, scale, and phase; run .venv/bin/python tools/marker4_v7/pixel_model.py CAPTURE.json conformance/marker4-v7-mask-rgba.zlib --output /tmp/NEW.png; then .venv/bin/python tools/marker4_v7/raster_transport.py /tmp/NEW.png.",
+  "rust_fixture_provenance": {
+    "path": "conformance/marker4-v7-pixels",
+    "cases": "cases.json records source capture receipt, full RGBA, dot stream, producer stream and cropped PNG SHA-256; bounds are half-open top-down pixels.",
+    "mask_png_sha256": "1ad1fa98f80ff50ceb526f92fe43db5f7b9d74950eae9d9468706be03db84f4c",
+    "mask_source": "Alpha channel of 200x200 GL-bottom-up native readback; mask_rgba_sha256 above.",
+    "extraction": "tools/marker4_v7/extract_pixel_fixtures.py verifies full RGBA hash and crops alpha.",
+    "comparison_scope": "Rust compares exact support and alpha error within the crop plus a two-pixel border; it does not compare beyond that region. Fixed pixel grid, axis-aligned uniform matrices and one rotated similarity matrix; no arbitrary affine coverage."
+  },
+  "additional_similarity_controls": {
+    "host": "Mesa llvmpipe LLVM 19.1.7, OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1; Unicorn native execution",
+    "capture_script_sha256": "f1ff217a5d835c28078cf22d7fefd9bb1f0d0af1462094d9cbfce587ff402b5f",
+    "rotated_capture_script_sha256": "0989edef303064b3e4bed98bc61cfc21552bac5ff0cfa72e41230f81442d8099",
+    "controls": [
+      {
+        "capture_receipt_sha256": "011a96bccffa7509bade0f84610c27c16115d93639c6ba9370d0146519dee77d",
+        "rotation_radians": 0.0,
+        "native_receipt": {
+          "schema": "marker4-v7-native-task2-mesa-frame-v1",
+          "source_json_sha256": "5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77",
+          "case": "turn-9.5",
+          "tool": 0,
+          "source_dot_count": 22,
+          "source_dots_sha256": "57a856213b4bed08d1f87eb476ba931cda2fb1b41595f99a352ffa47d725455c",
+          "producer_bytes": 2112,
+          "producer_sha256": "32d82674673186a2cbfe50e6b9db947fbace2bb10a54a5841377e367332748e9",
+          "producer_float_count": 528,
+          "set_pen_size_f32": 9.5,
+          "set_pen_argb": "0x80ffcb30",
+          "scale": 1.3,
+          "phase": [
+            0.137,
+            0.731
+          ],
+          "target": [
+            1024,
+            512
+          ],
+          "frame_center_doc": [
+            23.744105078957297,
+            28.172126683321867
+          ],
+          "matrix_f32": [
+            1.2999999523162842,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.2999999523162842,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            481.2696533203125,
+            291.89276123046875,
+            0.0,
+            1.0
+          ],
+          "rgba_sha256": "542f4dc11e9e550105d3df5736c35b217b5fc6f2a2e47e050914686529c36499",
+          "read_framebuffer": 3,
+          "gl_error": 0,
+          "draw_count": 1,
+          "raw_input_boundary": "saved native V7 AddPoint outputs; GL/task callbacks use actual native render code"
+        },
+        "comparison": {
+          "support": 476,
+          "native_support": 476,
+          "alpha_l1": 13,
+          "native_sum": 53946,
+          "candidate_sum": 53943,
+          "max_error": 1
+        }
+      },
+      {
+        "capture_receipt_sha256": "3311c465364da208d047fe3f3436762febed19a5a8098b6b928c1c9231c8ba85",
+        "rotation_radians": 0.4,
+        "native_receipt": {
+          "schema": "marker4-v7-native-task2-mesa-frame-v1",
+          "source_json_sha256": "5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77",
+          "case": "turn-9.5",
+          "tool": 0,
+          "source_dot_count": 22,
+          "source_dots_sha256": "57a856213b4bed08d1f87eb476ba931cda2fb1b41595f99a352ffa47d725455c",
+          "producer_bytes": 2112,
+          "producer_sha256": "32d82674673186a2cbfe50e6b9db947fbace2bb10a54a5841377e367332748e9",
+          "producer_float_count": 528,
+          "set_pen_size_f32": 9.5,
+          "set_pen_argb": "0x80ffcb30",
+          "scale": 1.3,
+          "phase": [
+            0.137,
+            0.731
+          ],
+          "target": [
+            1024,
+            512
+          ],
+          "frame_center_doc": [
+            23.744105078957297,
+            28.172126683321867
+          ],
+          "matrix_f32": [
+            1.1973793506622314,
+            -0.5062438249588013,
+            0.0,
+            0.0,
+            -0.5062438249588013,
+            -1.1973793506622314,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            497.96826171875,
+            301.02203369140625,
+            0.0,
+            1.0
+          ],
+          "rgba_sha256": "75a0b000dba25175e8adca5b9db6cf991e96c2aa1097f22645ae5542146b9247",
+          "read_framebuffer": 3,
+          "gl_error": 0,
+          "draw_count": 1,
+          "raw_input_boundary": "saved native V7 AddPoint outputs; GL/task callbacks use actual native render code"
+        },
+        "comparison": {
+          "support": 479,
+          "native_support": 479,
+          "alpha_l1": 17,
+          "native_sum": 54027,
+          "candidate_sum": 54020,
+          "max_error": 1
+        }
+      }
+    ],
+    "recipe": "From project root, set PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/conformance-cleanup/native-capture-a241793/conformance:scratch/defaultpen-native. For the phase control run .venv/bin/python tools/marker4_v7/mesa_capture.py --capture-output /tmp/NEW.json --case turn-9.5 --scale 1.3 --phase-x 0.137 --phase-y 0.731. For the rotated control copy tools/marker4_v7/mesa_capture.py to /tmp/m4-rotation.py, run patch /tmp/m4-rotation.py < tools/marker4_v7/rotation-probe.patch, then run the same command with /tmp/m4-rotation.py. Use a new output basename each time. Run .venv/bin/python tools/marker4_v7/pixel_model.py /tmp/NEW.json conformance/marker4-v7-mask-rgba.zlib --rotation 0.4 for the rotated capture, or omit --rotation for the phase control. Extract the compact fixture with tools/marker4_v7/extract_pixel_fixtures.py. Capture JSON includes output paths, so receipt hashes vary with basename; full RGBA and matrix identify the result."
+  }
+}

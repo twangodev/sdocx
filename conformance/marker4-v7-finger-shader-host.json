@@ -1,0 +1,231 @@
+{
+  "scope": "Native Marker4 V7 saved tool 0 RTV3 host Unicorn/Mesa capture, synthetic tap-9.5 at scale 2 phase (0.25, 0); not device or public export evidence.",
+  "capture_receipt_sha256": "c91059fb3f077fc9a036667cad90f14787b8e32d4a8812e18ff0bce9aee39e9a",
+  "native_rgba_sha256": "4be9edad113b73768fcc4480e0b939c79a1704cbd4c4e1529cb4201071458794",
+  "native_mask_rgba_sha256": "07d961c792fbd15286c3200e5358ceaff34b205db6d8cffb0e327302228b4f5b",
+  "native_library_sha256": "23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff",
+  "shader_sources": [
+    {
+      "shader": 1,
+      "source": [
+        "#version 300 es \n precision highp float; in vec4 position; uniform mat4 ProjectionMatrix; out vec2 fragCoord; void main(void) { gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0); fragCoord = vec2(position.z, position.w); }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "#version 300 es \n precision mediump float; uniform sampler2D pointTexture; in vec2 fragCoord; uniform vec4 inputColor; const float radius = 0.5; vec2 center = vec2(0.5, 0.5); out vec4 FragColor; void main(void) { vec2 pointTexCoord = vec2(fragCoord.x, fragCoord.y); float alpha = texture(pointTexture, pointTexCoord).a; if (alpha == 0.0) discard; float distX = abs(center.x - fragCoord.x); float pixelDistX = fwidth(distX) * 1.0; float smoothAlphaX = 1.0 - clamp((distX - (radius - pixelDistX)) / pixelDistX, 0.0, 1.0); float distY = abs(center.y - fragCoord.y); float pixelDistY = fwidth(distY) * 1.0; float smoothAlphaY = 1.0 - clamp((distY - (radius - pixelDistY)) / pixelDistY, 0.0, 1.0); if (smoothAlphaX == 0.0 || smoothAlphaY == 0.0) discard; FragColor = vec4(0.0, 0.0, 0.0, alpha * smoothAlphaX * smoothAlphaY * inputColor.a); }"
+      ]
+    },
+    {
+      "shader": 1,
+      "source": [
+        "#version 300 es \n precision highp float; in vec4 position; out vec2 vUV; void main(void) { gl_Position = vec4(position.xy, 0.0, 1.0); vUV = position.zw; }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "#version 300 es \n precision highp float; in vec2 vUV; uniform sampler2D StrokeTexture; uniform sampler2D MaskBitmap; uniform vec4 inputColor; uniform vec2 viewSize; uniform int isSetReferenceBitmap; out vec4 FragColor; void main(void) { float strokeAlpha = texture(StrokeTexture, vUV).a; if (isSetReferenceBitmap == 1) { vec2 grainTexCoord = vec2(gl_FragCoord.x / viewSize.x, gl_FragCoord.y / viewSize.y); vec4 color = texture(MaskBitmap, grainTexCoord); strokeAlpha *= (1.0 - color.r); } if (strokeAlpha > 0.0) FragColor = vec4(inputColor.rgb, strokeAlpha); else discard; }"
+      ]
+    }
+  ],
+  "sampler_parameters": [
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10242,
+      "value": 33071
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10243,
+      "value": 33071
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10240,
+      "value": 9729
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10241,
+      "value": 9729
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 33082,
+      "value": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 33083,
+      "value": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10241,
+      "value": 9728
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10240,
+      "value": 9728
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10242,
+      "value": 33071
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10243,
+      "value": 33071
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10240,
+      "value": 9729
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10241,
+      "value": 9729
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 33082,
+      "value": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 33083,
+      "value": 0
+    }
+  ],
+  "draw_state": [
+    {
+      "call": "glBlendEquationSeparate",
+      "values": [
+        32776,
+        32776
+      ]
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "values": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "call": "glBindSampler",
+      "unit": 0,
+      "nativeSampler": 101,
+      "mesaSampler": 2
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 2,
+      "values": [
+        1.0,
+        0.7960784435272217,
+        0.1882352977991104,
+        0.501960813999176
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "values": [
+        4,
+        0,
+        6
+      ],
+      "state": {
+        "program": 3,
+        "vao": 0,
+        "framebuffer": 1,
+        "activeTexture": 33984,
+        "texture2d": 2
+      }
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "values": [
+        32774,
+        32774
+      ]
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "values": [
+        770,
+        771,
+        1,
+        771
+      ]
+    },
+    {
+      "call": "glBindSampler",
+      "unit": 0,
+      "nativeSampler": 100,
+      "mesaSampler": 1
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 2,
+      "values": [
+        1.0,
+        0.7960784435272217,
+        0.1882352977991104,
+        0.501960813999176
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "values": [
+        4,
+        0,
+        6
+      ],
+      "state": {
+        "program": 4,
+        "vao": 0,
+        "framebuffer": 3,
+        "activeTexture": 33984,
+        "texture2d": 1
+      }
+    }
+  ],
+  "interpretation": "First shader samples the mask with linear filtering, multiplies by derivative-based x and y edge ramps and input alpha, and stamps with GL_MAX. The composite samples the stroke texture with nearest filtering and uses source-over blending. Mask alpha nonzero bounding box is [1,1,199,199] in 200x200 GL readback pixels.",
+  "recipe": "See conformance/marker4-v7-finger-paint-host.json additional_controls.recipe."
+}
