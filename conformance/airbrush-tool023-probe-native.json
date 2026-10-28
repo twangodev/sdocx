@@ -1,0 +1,60 @@
+{
+  "description": "Synthetic 5-point AirBrush V2 Drawing host-Mesa control; tool types 0, 2, and 3; explicit empty setting; source size 3.144; 256x256 frame. Hashes are canonical JSON SHA-256.",
+  "capture_script": "conformance/airbrush_tool023_probe.py",
+  "baseline_capture_script": "conformance/airbrush_tool_motion_capture.py",
+  "captures": {
+    "0": {
+      "frame_sha256": "728b885628e0bd0c54be7dcbd05d96379258063118fda835d1d89583684fe0c5",
+      "producer_events_sha256": "cc0c2797f0f5bfb71f4dbd2ac19d7ba1dd2a83103084d41046d36afa14c48099",
+      "queue_events_sha256": "38e5efc3b29a17f667cdec9f96b22896b43c1ec6e99eca3f90df4ddccfb09c99",
+      "draw_result": 1,
+      "selected_profile": 2
+    },
+    "2": {
+      "frame_sha256": "728b885628e0bd0c54be7dcbd05d96379258063118fda835d1d89583684fe0c5",
+      "producer_events_sha256": "cc0c2797f0f5bfb71f4dbd2ac19d7ba1dd2a83103084d41046d36afa14c48099",
+      "queue_events_sha256": "38e5efc3b29a17f667cdec9f96b22896b43c1ec6e99eca3f90df4ddccfb09c99",
+      "draw_result": 1,
+      "selected_profile": 2
+    },
+    "3": {
+      "frame_sha256": "082589bc7b18362165c596d4e3d7bc93a9b043d6fa0cfbca2383a5d9a1918bc7",
+      "producer_events_sha256": "adad5f26616edde0afc1e206a85fcee10a818882c55eccbbf626a6ef0bee17f6",
+      "queue_events_sha256": "645c17e019c47623c873d933336c1ce3978e3e84a60194f007ea0eb8c9a720bf",
+      "draw_result": 1,
+      "selected_profile": 2
+    }
+  },
+  "limitations": "One synthetic host control; does not establish saved-note, Android, SVG, or PDF parity.",
+  "zigzag_size_8_75": {
+    "0": {
+      "frame_sha256": "d3c42112e4958991375b8fadbacbbf8bc633b8e2a7c0fa320e00c3c211f010c8",
+      "pixel_sha256": "40b2a59a148e30bfe79cb079c473eaef1e01f81f6b81602d840e8a603f559124",
+      "producer_events_sha256": "adbe3f32b1ab7414b04f376547dd990fa8448ff50fda4bae2378c5d669fa06da",
+      "queue_events_sha256": "5cf9092d00ef72ef4fb03fb62c1746af68028eecfe74d2c3a16e197870e1f284"
+    },
+    "2": {
+      "frame_sha256": "d3c42112e4958991375b8fadbacbbf8bc633b8e2a7c0fa320e00c3c211f010c8",
+      "pixel_sha256": "40b2a59a148e30bfe79cb079c473eaef1e01f81f6b81602d840e8a603f559124",
+      "producer_events_sha256": "adbe3f32b1ab7414b04f376547dd990fa8448ff50fda4bae2378c5d669fa06da",
+      "queue_events_sha256": "5cf9092d00ef72ef4fb03fb62c1746af68028eecfe74d2c3a16e197870e1f284"
+    }
+  },
+  "curved_public_export": {
+    "native_pixel_sha256": "2d5ceec07d29c5fe44b79bc73610891c468857d6c5e97a40bf65f7e6d045e3cb",
+    "svg_pixel_sha256_matches_native": true,
+    "pdf_alpha_absolute_error": {
+      "mupdf": {
+        "profile": 1331,
+        "fallback": 1447
+      },
+      "pdfium": {
+        "profile": 1472,
+        "fallback": 2315
+      }
+    },
+    "pdf_raster_scale": "96 dpi, transparent",
+    "limitations": "Synthetic host Mesa; alpha error only; device and saved-note parity unverified."
+  },
+  "curved_stream_hex": "0074004300840043000000000000803f5c8300438f86004371972e3f003a3bbf71b100433e8e00435b607fbf88dc8e3d3dfe00430a9b004309f3463f251b213fc2690143f6ac004371830ebe35827dbf00f4014300c40043e8d512bff3b3513f1349024352e50043e2677a3fc0e654beff9b0243490601434e6f5bbf8fd903bfc6ec0243e426014363208d3e3d15763f683b0343254701438871e83efb1864bfe387034308670143b28f70bf431daf3e39d20343918601433aa66b3fd20dc83e6a1a0443bda50143bd3fd0be20de69bf736004438fc40143d3b0a6be830d723f59a4044304e30143e108623f7d5ef0be18e604431e010243ea4677bfef8384beb1250543dd1e0243d5a8073fa719593f256305433f3c02430c63433ef04b7bbf739e054346590243cc1b4fbf0379163fd7ea0543c27f024380177e3f0b97f93d0b3e06434cab0243ba8d24bf7d1b44bf158c0643fad50243735d56bd30a67f3ff8d40643ccff02439626383f34d531bfb1180743c228034305f67fbf1af58e3c41570743dc500343b43e3e3f2f4c2b3faa90074319780343b27eb2bd9e067fbfe9c407437a9e0343f49b1dbf1abb493f00f4074300c4034321d97c3fbf3020be4723084351ec0343c03b54bf5a270fbf4d550843bf180443575a663e4670793f128a08434a4904430000003fd7b35dbf95c10843f47d044373d074bf5cb1953ed7fb0843bcb604436917663f0272e03ed7380943a1f30443d07bb7be2aff6ebf95780943a334054312ccbfbeff5b6d3f12bb0943c4790543ca03683f6b61d8be33f10943eeb20543617873bfdc379ebe27200a4319e505432339f83e08e75f3f4e500a4311190643c5ba773e476578bfaa810a43d84e064302b356bfa16d0b3f39b40a436c8606435c1c7c3fd7d0313efde70a43cebf064363101abf80734cbff41c0b43fffa06433f12d6bdff987e3f1f530b43fc370743b734413f68f327bf7d8a0b43c876074316d87fbfa0ef0ebd10c30b4361b70743f304353ff404353fd7fc0b43c8f9074387ef0ebd16d87fbfd2370c43fd3d084369f327bfb634413f"
+}

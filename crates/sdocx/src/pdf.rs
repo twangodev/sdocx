@@ -333,10 +333,16 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
             )
         })
         .unwrap_or((document, layout, None));
+    let mut paper_cache = DocumentTextCache::for_paper_export();
     let body_query_snapshot = has_selected_pdf_paper
         .then(|| {
             paper_layout.pages.first().and_then(|page| {
-                cache.continuous_body_query_snapshot(paper_document, page, render_options, fonts)
+                paper_cache.continuous_body_query_snapshot(
+                    paper_document,
+                    page,
+                    render_options,
+                    fonts,
+                )
             })
         })
         .flatten();
@@ -360,7 +366,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
             render_options,
             &pdf_options,
             fonts,
-            cache,
+            &mut paper_cache,
             observer,
         );
     }

@@ -431,15 +431,13 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
     }) || !rendering.properties.compressed
         || !(rendering.tool_type_raw == 2
             || (!v1
-                && rendering.tool_type_raw == 1
-                && matches!(
-                    rendering.advanced_settings.as_deref(),
-                    Some("") | Some("2;")
-                )))
+                && (rendering.tool_type_raw == 1
+                    || (rendering.tool_type_raw == 0
+                        && rendering.advanced_settings.as_deref() == Some("")))))
     {
         return None;
     }
-    let source_argb = super::saved_airbrush_argb_with_tool1(stroke, !v1)?;
+    let source_argb = super::saved_airbrush_argb_with_extra_tools(stroke, !v1)?;
     let raw_size = rendering.style.pen_size?;
     if !raw_size.is_finite() {
         return None;

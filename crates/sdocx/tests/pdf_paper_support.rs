@@ -982,6 +982,247 @@ fn public_pdf_export_without_paper_keeps_the_ordinary_single_page_route() {
 }
 
 #[test]
+fn public_pdf_paper_accepts_density_one_certified_ascii_body() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((360, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = rich_text("Visible note text", Vec::new());
+    body.spans.clear();
+    body.paragraphs.clear();
+    document.metadata.note_text = Some(body);
+    let original = document.metadata.note_text.clone();
+    let svg_before = sdocx::render_layout_page_svg(
+        &document,
+        &sdocx::layout_document(&document),
+        0,
+        &Default::default(),
+    )
+    .unwrap()
+    .svg;
+    let output = export(&document, &[0], 96.0).unwrap();
+    assert_eq!(document.metadata.note_text, original);
+    let svg_after = sdocx::render_layout_page_svg(
+        &document,
+        &sdocx::layout_document(&document),
+        0,
+        &Default::default(),
+    )
+    .unwrap()
+    .svg;
+    assert_eq!(svg_before, svg_after);
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let page_id = pdf.get_pages()[&1];
+    let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+    let commands = content
+        .operations
+        .iter()
+        .filter(|op| op.operator == "Do")
+        .collect::<Vec<_>>();
+    assert!(
+        commands.len() >= 2,
+        "source image must precede overlay form"
+    );
+    assert_eq!(commands[0].operands[0].as_name().unwrap(), b"Im0");
+    let overlay = pdf
+        .objects
+        .values()
+        .filter_map(|object| object.as_stream().ok())
+        .filter(|stream| {
+            stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+        })
+        .filter_map(|stream| {
+            Content::decode(
+                &stream
+                    .decompressed_content()
+                    .unwrap_or_else(|_| stream.content.clone()),
+            )
+            .ok()
+        })
+        .find(|content| {
+            content
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "BT")
+        })
+        .expect("text overlay form");
+    let text = overlay
+        .operations
+        .iter()
+        .position(|op| op.operator == "BT")
+        .unwrap();
+    let stroke = overlay
+        .operations
+        .iter()
+        .position(|op| op.operator == "S")
+        .unwrap();
+    assert!(text < stroke);
+    assert!(
+        overlay.operations[..text]
+            .iter()
+            .any(|op| op.operator == "W")
+    );
+    let matrix = overlay
+        .operations
+        .iter()
+        .find(|op| op.operator == "Tm")
+        .unwrap();
+    assert_eq!(number(&matrix.operands[4]).unwrap(), 0.0);
+    assert_eq!(number(&matrix.operands[5]).unwrap(), 17.0);
+    assert!(pdf.objects.values().any(|object| {
+        object
+            .as_stream()
+            .is_ok_and(|stream| stream.content == [0x31, 0x62, 0x93])
+    }));
+}
+
+#[test]
+fn public_pdf_paper_rejects_visible_ascii_outside_density_certificate() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = rich_text("Visible note text", Vec::new());
+    body.spans.clear();
+    body.paragraphs.clear();
+    document.metadata.note_text = Some(body);
+    assert!(matches!(
+        export(&document, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+}
+
+#[test]
+fn public_pdf_paper_rejects_space_only_body_line() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((360, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = rich_text(" \nVisible", Vec::new());
+    body.spans.clear();
+    body.paragraphs.clear();
+    document.metadata.note_text = Some(body);
+    assert!(matches!(
+        export(&document, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+}
+
+#[test]
+fn public_pdf_paper_places_ascii_body_across_source_page_boundary() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((360, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = rich_text(&"A\n".repeat(160), Vec::new());
+    body.spans.clear();
+    body.paragraphs.clear();
+    document.metadata.note_text = Some(body);
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let pages = pdf.get_pages();
+    let continuation = Content::decode(&pdf.get_page_content(pages[&2]).unwrap()).unwrap();
+    let matrices = continuation
+        .operations
+        .iter()
+        .filter(|op| op.operator == "Tm")
+        .collect::<Vec<_>>();
+    assert!(
+        !matrices.is_empty(),
+        "continuation must paint visible body text"
+    );
+    assert!(
+        matrices
+            .iter()
+            .all(|op| number(&op.operands[5]).is_some_and(|y| (1485.0..3100.0).contains(&y)))
+    );
+    assert!(continuation.operations.iter().any(|op| op.operator == "W"));
+    let next = Content::decode(&pdf.get_page_content(pages[&3]).unwrap()).unwrap();
+    assert!(
+        next.operations
+            .iter()
+            .any(|op| op.operator == "Tm" && number(&op.operands[5]).is_some_and(|y| y >= 3000.0))
+    );
+    assert!(next.operations.iter().any(|op| op.operator == "W"));
+    let imported = pdf
+        .objects
+        .values()
+        .filter_map(|object| object.as_stream().ok())
+        .filter(|stream| {
+            stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+        })
+        .filter_map(|stream| {
+            Content::decode(
+                &stream
+                    .decompressed_content()
+                    .unwrap_or_else(|_| stream.content.clone()),
+            )
+            .ok()
+        })
+        .find(|content| {
+            content
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "BT")
+        })
+        .expect("imported page text overlay");
+    // Whole lines that intersect a slice can be emitted on both sides; each
+    // page clips them. Check source-line coverage and bound that overlap.
+    let mut baselines = [&imported, &continuation, &next]
+        .iter()
+        .flat_map(|content| {
+            content
+                .operations
+                .iter()
+                .filter(|op| op.operator == "Tm")
+                .map(|op| number(&op.operands[5]).unwrap())
+        })
+        .collect::<Vec<_>>();
+    let total_painted = baselines.len();
+    baselines.sort_by(f64::total_cmp);
+    baselines.dedup();
+    assert_eq!(baselines.len(), 160, "every source line must reach a slice");
+    assert!(
+        total_painted <= 162,
+        "only lines crossing a clip may be emitted twice"
+    );
+    assert_eq!(baselines[0], 17.0);
+    assert!(
+        baselines
+            .windows(2)
+            .all(|pair| (pair[1] - pair[0] - 22.95).abs() < 0.01)
+    );
+    let per_page = [&imported, &continuation, &next].map(|content| {
+        content
+            .operations
+            .iter()
+            .filter(|op| op.operator == "Tm")
+            .map(|op| number(&op.operands[5]).unwrap())
+            .collect::<Vec<_>>()
+    });
+    assert!(
+        per_page
+            .iter()
+            .all(|page| page.windows(2).all(|pair| pair[0] < pair[1]))
+    );
+    let second_boundary = 1485.0 + page_box(&pdf, 2)[3] * f64::from(NOTE_WIDTH) / 600.0;
+    for (pair, boundary) in per_page.windows(2).zip([1485.0, second_boundary]) {
+        for baseline in pair[0].iter().filter(|value| pair[1].contains(value)) {
+            assert!(
+                (*baseline - boundary).abs() < 30.0,
+                "only a line crossing a physical clip can appear on both pages"
+            );
+        }
+    }
+    assert!(pdf.objects.values().any(|object| {
+        object
+            .as_stream()
+            .is_ok_and(|stream| stream.content == [0x31, 0x62, 0x93])
+    }));
+}
+
+#[test]
 fn public_pdf_paper_accepts_styled_blank_body_and_rejects_visible_inline_image_body() {
     let mut blank = document(true, None, 0, 1);
     let mut body = rich_text("\n".repeat(488).as_str(), Vec::new());

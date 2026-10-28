@@ -779,10 +779,13 @@ fn prepare_stroke_inner<'a>(
 }
 
 pub(crate) fn saved_airbrush_argb(stroke: &Stroke) -> Option<u32> {
-    saved_airbrush_argb_with_tool1(stroke, false)
+    saved_airbrush_argb_with_extra_tools(stroke, false)
 }
 
-pub(crate) fn saved_airbrush_argb_with_tool1(stroke: &Stroke, allow_tool1: bool) -> Option<u32> {
+pub(crate) fn saved_airbrush_argb_with_extra_tools(
+    stroke: &Stroke,
+    allow_extra_tools: bool,
+) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     if rendering.metadata.is_none()
@@ -792,7 +795,8 @@ pub(crate) fn saved_airbrush_argb_with_tool1(stroke: &Stroke, allow_tool1: bool)
             rendering.advanced_settings.as_deref(),
             None | Some("1;") | Some("") | Some("2;")
         )
-        || !(rendering.tool_type_raw == 2 || (allow_tool1 && rendering.tool_type_raw == 1))
+        || !(rendering.tool_type_raw == 2
+            || (allow_extra_tools && matches!(rendering.tool_type_raw, 0 | 1)))
         || properties.replay_only
         || properties.eraser
         || properties.fixed_width

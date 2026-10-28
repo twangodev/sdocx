@@ -152,8 +152,9 @@ impl InkPen2V1OutputScale {
 ///
 /// Both profiles require normal saved style flags. `SavedV1` requires tool 2 and
 /// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
-/// `SavedV2` accepts tools 1 and 2 with empty or `2;` settings. Tool 1 beyond
-/// the captured synthetic host controls is extrapolated.
+/// `SavedV2` accepts tools 1 and 2 with empty or `2;` settings and tool 0
+/// with an empty setting. Tool 0 and 1 inputs beyond captured synthetic host
+/// controls are extrapolated.
 /// V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
@@ -162,7 +163,7 @@ impl InkPen2V1OutputScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Empty or `2;` saved setting for tools 1 and 2.
+    /// Empty or `2;` saved setting for tools 1 and 2, or empty for tool 0.
     SavedV2,
     /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
@@ -452,6 +453,8 @@ impl RenderedPage {
 pub struct DocumentTextCache {
     context: Option<BodyPreparationContext>,
     plans: Vec<(BodyPlanKey, Rc<PreparedBodyPlan>)>,
+    #[cfg(feature = "pdf")]
+    paper_body_query: bool,
 }
 
 #[derive(PartialEq, Eq)]
@@ -482,11 +485,20 @@ struct BodyPlanKey {
     last_page_index: usize,
     detached: bool,
     theme: RenderTheme,
+    #[cfg(feature = "pdf")]
+    paper_body_query: bool,
 }
 
 const BODY_PLAN_CACHE_CAPACITY: usize = 2;
 
 impl DocumentTextCache {
+    #[cfg(feature = "pdf")]
+    pub(crate) fn for_paper_export() -> Self {
+        Self {
+            paper_body_query: true,
+            ..Self::default()
+        }
+    }
     /// Release retained body plans and their font references.
     pub fn clear(&mut self) {
         self.context = None;
@@ -508,11 +520,6 @@ impl DocumentTextCache {
         if document.metadata.page_mode != Some(1)
             || source_flow_width.is_none_or(|width| width == 0 || width != layout_page.page.width)
             || layout_page.single_page_continuous_body(document).is_none()
-            || !document
-                .metadata
-                .note_text
-                .as_ref()
-                .is_some_and(|text| body_query::query_image_sources(text, document).is_some())
         {
             return None;
         }
@@ -520,7 +527,13 @@ impl DocumentTextCache {
         let theme = RenderTheme::resolve(&layout_page.page, &document.metadata, options.color_mode);
         let renderer = page_text_renderer(document, layout_page, options, fonts);
         let body = PreparedBodyText::new(document, layout_page, theme, &renderer, self, None)?;
-        ContinuousBodyQuerySnapshot::from_plan(&body.plan, document)
+        body.plan
+            .native_query_layout
+            .as_ref()
+            .and_then(|layout| {
+                ContinuousBodyQuerySnapshot::from_native_text(&body.plan.text, layout)
+            })
+            .or_else(|| ContinuousBodyQuerySnapshot::from_plan(&body.plan, document))
     }
 
     /// Render a visible page, sharing compatible body measurements with prior calls.
@@ -919,6 +932,8 @@ struct PreparedBodyPlan {
     object_issues: Vec<text::SourceObjectDiagnostic>,
     exclusions: Option<text::PageExclusions>,
     native_pages: Result<native_body_pages::NativeBodyPages, text::NativePageIndexUnavailable>,
+    #[cfg(feature = "pdf")]
+    native_query_layout: Option<text::NativePageLayout>,
 }
 
 impl PreparedBodyText {
@@ -962,6 +977,8 @@ impl PreparedBodyText {
             last_page_index,
             detached,
             theme,
+            #[cfg(feature = "pdf")]
+            paper_body_query: cache.paper_body_query,
         };
         let plan = if let Some((_, plan)) = cache.plans.iter().find(|(stored, _)| *stored == key) {
             Rc::clone(plan)
@@ -1130,7 +1147,57 @@ impl PreparedBodyPlan {
             && document.metadata.note_text.as_ref().is_some_and(|source| {
                 source.text_sections.is_empty() && crate::layout::same_text_source(source, &text)
             });
-        let (layout, native_page_layout) = if complete_source {
+        #[cfg(feature = "pdf")]
+        let paper_source = key.paper_body_query
+            && !key.detached
+            && document.metadata.page_mode == Some(1)
+            && key.first_page_index == 0
+            && key.last_page_index == 0
+            && document.pages.len() == 1
+            && document.metadata.note_text.as_ref().is_some_and(|source| {
+                source.text_area_type.is_none()
+                    && source.bbox == BoundingBox::default()
+                    && source.rotation_degrees.is_none()
+                    && crate::layout::same_text_source(source, &text)
+            });
+        #[cfg(feature = "pdf")]
+        let mut native_query_layout = None;
+        #[cfg(not(feature = "pdf"))]
+        let paper_source = false;
+        let (layout, native_page_layout) = if paper_source {
+            let (native_layout, measured) =
+                text::layout_native_page_text(&styled, frame, key.theme, &planner);
+            #[cfg(feature = "pdf")]
+            if let Ok(measured) = measured {
+                native_query_layout = Some(measured);
+                (
+                    native_layout,
+                    Err(text::NativePageIndexUnavailable::OutsideCertificate),
+                )
+            } else {
+                let fallback_frame = text::TextFrame {
+                    bbox: BoundingBox {
+                        x_min: padding,
+                        y_min: 0.0,
+                        x_max: frame_width - padding,
+                        y_max: 0.0,
+                    },
+                    gravity: None,
+                    exclusions: &bands,
+                };
+                let mut layout =
+                    text::layout_capture_text(&styled, fallback_frame, key.theme, &planner);
+                layout.native_object_entry = None;
+                (
+                    layout,
+                    Err(text::NativePageIndexUnavailable::OutsideCertificate),
+                )
+            }
+            #[cfg(not(feature = "pdf"))]
+            {
+                (native_layout, measured)
+            }
+        } else if complete_source {
             text::layout_native_page_text(&styled, frame, key.theme, &planner)
         } else {
             let mut layout = text::layout_capture_text(&styled, frame, key.theme, &planner);
@@ -1155,6 +1222,8 @@ impl PreparedBodyPlan {
             object_issues: planner.scoped_object_diagnostics(),
             exclusions,
             native_pages,
+            #[cfg(feature = "pdf")]
+            native_query_layout,
         })
     }
 }
@@ -13235,6 +13304,124 @@ mod tests {
                     .collect::<Vec<_>>();
                 assert_eq!(parts, ["2", "3"]);
             }
+        }
+    }
+
+    #[test]
+    fn saved_v2_tool0_matches_native_and_tool2_exports() {
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = (0..5)
+            .map(|i| Point {
+                x: 128.453125 + i as f64 * 3.0,
+                y: 128.515625 + (i * i) as f64 * 0.5,
+            })
+            .collect();
+        stroke.pressures = vec![0.3; 5];
+        stroke.tilts = vec![0.12; 5];
+        stroke.orientations = vec![0.2; 5];
+        stroke.timestamps = vec![300, 315, 330, 345, 360];
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 0;
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff44aaee);
+        let sampled = crate::ink::airbrush::saved_v2_from_stroke(stroke).unwrap();
+        let stream: String = sampled
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|value| value.to_le_bytes())
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-tool023-probe-native.json"
+        ))
+        .unwrap();
+        assert_eq!(stream, evidence["curved_stream_hex"].as_str().unwrap());
+        let mut unsupported = stroke.clone();
+        unsupported.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
+        assert!(crate::ink::airbrush::saved_v2_from_stroke(&unsupported).is_none());
+        unsupported.rendering.as_mut().unwrap().advanced_settings = None;
+        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
+        let mut other = document.clone();
+        other.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .tool_type_raw = 3;
+        assert!(
+            crate::ink::airbrush::saved_v2_from_stroke(other.pages[0].strokes().next().unwrap())
+                .is_none()
+        );
+        other.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .tool_type_raw = 2;
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let page = |doc: &Document| {
+            let layout = layout_document(doc);
+            render_layout_page_svg(doc, &layout, 0, &options).unwrap()
+        };
+        let first = page(&document);
+        let second = page(&other);
+        assert_eq!(first.svg, second.svg);
+        #[cfg(feature = "pdf")]
+        {
+            let scene = |doc: &Document| {
+                let layout = layout_document(doc);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        doc,
+                        &[request],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+            };
+            let first = scene(&document);
+            let second = scene(&other);
+            let tree =
+                resvg::usvg::Tree::from_str(&first.page.svg, &resvg::usvg::Options::default())
+                    .unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            let bottom_up = pixmap
+                .data()
+                .as_chunks::<{ 256 * 4 }>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .copied()
+                .collect::<Vec<_>>();
+            assert_eq!(
+                sha256_hex(&bottom_up),
+                "2d5ceec07d29c5fe44b79bc73610891c468857d6c5e97a40bf65f7e6d045e3cb"
+            );
+            let pdf = |scene| {
+                crate::pdf::render_scenes_pdf_with_progress(
+                    std::slice::from_ref(scene),
+                    &crate::PdfOptions::default(),
+                    &mut |_| {},
+                )
+                .unwrap()
+            };
+            assert_eq!(pdf(&first), pdf(&second));
         }
     }
 

@@ -42,6 +42,60 @@ fn frame(width: f64) -> TextFrame<'static> {
 }
 
 #[test]
+#[cfg(feature = "pdf")]
+fn certified_ascii_body_query_matches_native_boundary_visibility() {
+    let baseline: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/table-bodytext-page-ranges.json"
+    ))
+    .unwrap();
+    let receipt: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-ascii-body-query.json"
+    ))
+    .unwrap();
+    let fonts = FontBook::default();
+    let mut checked = 0;
+    for case in baseline["cases"].as_array().unwrap() {
+        let content = source(&case["input"]);
+        let width = f64::from(f32::from_bits(
+            case["input"]["requested_width_bits"].as_u64().unwrap() as u32,
+        ));
+        let settings = super::super::super::TextSettings::resolved();
+        let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+        let renderer = TextRenderer::new(settings, &fonts);
+        let (_, native) = layout_native_page_text(
+            &styled,
+            frame(width),
+            RenderTheme::for_canvas(false),
+            &renderer,
+        );
+        let Ok(native) = native else { continue };
+        let Some(snapshot) =
+            crate::render::body_query::ContinuousBodyQuerySnapshot::from_native_text(
+                &content, &native,
+            )
+        else {
+            continue;
+        };
+        for query in receipt["queries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|query| query["case"] == case["name"])
+        {
+            let bits: [u32; 4] = serde_json::from_value(query["rect_bits"].clone()).unwrap();
+            assert_eq!(
+                snapshot.query(bits.map(f32::from_bits)).visible,
+                query["visible"].as_bool().unwrap(),
+                "{}: {bits:?}",
+                case["name"]
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked >= 100);
+}
+
+#[test]
 fn body_measurement_preserves_native_bands_without_admitting_cached_paint() {
     let capture: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../conformance/table-bodytext-page-ranges.json"

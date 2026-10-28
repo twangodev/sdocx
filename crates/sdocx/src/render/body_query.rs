@@ -34,6 +34,37 @@ pub(crate) struct ContinuousBodyQuerySnapshot {
 }
 
 impl ContinuousBodyQuerySnapshot {
+    pub(super) fn from_native_text(
+        text: &RichTextBox,
+        layout: &super::text::NativePageLayout,
+    ) -> Option<Self> {
+        let utf16 = text.text.encode_utf16().collect::<Vec<_>>();
+        let mut lines = Vec::with_capacity(layout.lines.len());
+        for line in &layout.lines {
+            let [start, end] = line.source_inclusive_utf16;
+            let visible = if start < 0 || end < start {
+                false
+            } else {
+                let start = usize::try_from(start).ok()?;
+                let end = usize::try_from(end).ok()?.checked_add(1)?;
+                let source = utf16.get(start..end)?;
+                let visible = source.iter().any(|unit| !matches!(*unit, 10 | 13 | 32));
+                if !visible && source.contains(&32) {
+                    return None;
+                }
+                visible
+            };
+            if !valid_line_rect(line.background) {
+                return None;
+            }
+            lines.push(BodyQueryLine {
+                rect: line.background,
+                owns_visible_image: visible,
+            });
+        }
+        (!lines.is_empty()).then_some(Self { lines })
+    }
+
     pub(super) fn from_plan(plan: &PreparedBodyPlan, document: &Document) -> Option<Self> {
         let anchors = query_image_sources(&plan.text, document)?;
         if !plan.object_issues.is_empty() {
