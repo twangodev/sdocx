@@ -1758,3 +1758,236 @@ fn production_real_pdf_paper_transport_preserves_source_graph() {
         );
     }
 }
+
+#[cfg(feature = "serde")]
+fn add_captured_ink_and_airbrush(document: &mut Document) {
+    let evidence: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/fountain-v16-scale-native.json")).unwrap();
+    let mut fountain: sdocx::Stroke = serde_json::from_value(evidence["stroke"].clone()).unwrap();
+    fountain.bbox = bbox(115.0, 205.0, 134.0, 230.0);
+    fountain.rendering.as_mut().unwrap().metadata = document.pages[0]
+        .strokes()
+        .next()
+        .unwrap()
+        .rendering
+        .as_ref()
+        .unwrap()
+        .metadata
+        .clone();
+    fountain
+        .rendering
+        .as_mut()
+        .unwrap()
+        .metadata
+        .as_mut()
+        .unwrap()
+        .bbox = fountain.bbox;
+    document.pages[0].objects.push(fountain.into());
+    let mut airbrush = document.pages[0].strokes().next().unwrap().clone();
+    airbrush.points = (0..5)
+        .map(|i| sdocx::Point {
+            x: 300.0 + f64::from(i) * 3.0,
+            y: 300.0 + f64::from(i * i) * 0.5,
+        })
+        .collect();
+    airbrush.pressures = vec![0.3; 5];
+    airbrush.tilts = vec![0.12; 5];
+    airbrush.orientations = vec![0.2; 5];
+    airbrush.timestamps = vec![300, 315, 330, 345, 360];
+    airbrush.pen_width = 3.144;
+    airbrush.bbox = bbox(300.0, 300.0, 312.0, 308.0);
+    let rendering = airbrush.rendering.as_mut().unwrap();
+    rendering.metadata.as_mut().unwrap().bbox = airbrush.bbox;
+    rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.AirBrushPen".into());
+    rendering.advanced_settings = Some(String::new());
+    rendering.tool_type_raw = 1;
+    rendering.properties.compressed = true;
+    rendering.properties.fixed_width = false;
+    rendering.style.pen_size = Some(3.144);
+    rendering.style.color_argb = Some(0xff44_aaee);
+    rendering.style.stroke_type_raw = Some(0);
+    rendering.style.color_type_raw = Some(0);
+    document.pages[0].objects.push(airbrush.into());
+    let mut ink = document.pages[0].strokes().next().unwrap().clone();
+    ink.points = vec![
+        sdocx::Point { x: 200.0, y: 250.0 },
+        sdocx::Point { x: 208.0, y: 250.0 },
+    ];
+    ink.pressures = vec![0.25, 0.5];
+    ink.timestamps = vec![100, 110];
+    ink.tilts = vec![0.0; 2];
+    ink.orientations = vec![0.0; 2];
+    ink.bbox = bbox(200.0, 250.0, 208.0, 250.0);
+    ink.pen_width = 4.0;
+    let rendering = ink.rendering.as_mut().unwrap();
+    rendering.metadata.as_mut().unwrap().bbox = ink.bbox;
+    rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen2".into());
+    rendering.advanced_settings = Some("9;".into());
+    rendering.tool_type_raw = 2;
+    rendering.properties.compressed = true;
+    rendering.properties.stylus_channels = true;
+    rendering.properties.binary_added = true;
+    rendering.properties.millisecond_timestamps = false;
+    rendering.properties.fixed_width = false;
+    rendering.style = Default::default();
+    rendering.style.color_argb = Some(0xff336699);
+    rendering.style.pen_size = Some(4.0);
+    rendering.style.initial_tolerance = Some(0.0);
+    rendering.style.line_type_raw = Some(0);
+    rendering.style.stroke_type_raw = Some(0);
+    document.pages[0].objects.push(ink.into());
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn airbrush_pdf_paper_keeps_source_and_native_ink() {
+    let mut document = document(true, None, 0, 1);
+    add_captured_ink_and_airbrush(&mut document);
+    let layout = sdocx::layout_document(&document);
+    let mut options = sdocx::RenderOptions::default();
+    options.airbrush_profile = Some(sdocx::AirBrushRenderProfile::SavedV2);
+    options.inkpen2_profile = Some(sdocx::InkPen2RenderProfile {
+        screen_width: 1920,
+        screen_height: 1080,
+        enhanced_antialias: false,
+    });
+    let mut pdf_options = PdfOptions::default();
+    pdf_options.pdf_paper_fixed_axis_size = Some(1080);
+    let output = render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &layout,
+        &[0],
+        &options,
+        &pdf_options,
+        &FontBook::default(),
+    )
+    .unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(
+        page_box(&pdf, 1),
+        [0.0, 0.0, f64::from(SOURCE_WIDTH), f64::from(SOURCE_HEIGHT)]
+    );
+    let source = Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap()).unwrap();
+    assert!(source.operations.iter().any(|op| {
+        op.operator == "Do"
+            && op
+                .operands
+                .last()
+                .is_some_and(|o| o.as_name().ok() == Some(b"Im0"))
+    }));
+    assert!(source.operations.iter().any(|op| op.operator == "S"));
+    assert!(
+        pdf.objects
+            .values()
+            .any(|object| object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .ok()
+                    .and_then(|value| value.as_name().ok())
+                    == Some(b"Image")
+                    && stream
+                        .decompressed_content()
+                        .unwrap_or_else(|_| stream.content.clone())
+                        == [0x31, 0x62, 0x93]
+            }))
+    );
+    let functions: Vec<_> = pdf
+        .objects
+        .values()
+        .filter_map(|o| o.as_dict().ok())
+        .filter(|d| d.get(b"FunctionType").ok() == Some(&Object::Integer(2)) && d.len() == 6)
+        .map(|d| format!("{d:?}"))
+        .collect();
+    let mut fallback_options = options.clone();
+    fallback_options.airbrush_profile = None;
+    let fallback = render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &layout,
+        &[0],
+        &fallback_options,
+        &pdf_options,
+        &FontBook::default(),
+    )
+    .unwrap();
+    let fallback_pdf = PdfDocument::load_mem(&fallback.bytes).unwrap();
+    let fallback_count = fallback_pdf
+        .objects
+        .values()
+        .filter_map(|o| o.as_dict().ok())
+        .filter(|d| d.get(b"FunctionType").ok() == Some(&Object::Integer(2)) && d.len() == 6)
+        .count();
+    assert!(
+        fallback_count > functions.len(),
+        "AirBrush activates function reuse"
+    );
+    assert!(!functions.is_empty());
+    assert_eq!(
+        functions.len(),
+        functions.iter().collect::<HashSet<_>>().len()
+    );
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn retained_text_airbrush_and_native_ink_export_together() {
+    let mut document = document(false, None, 0, 1);
+    document.metadata.page_mode = Some(0);
+    document.pages[0].width = 600;
+    document.pages[0].height = 600;
+    add_captured_ink_and_airbrush(&mut document);
+    let ink = document.pages[0]
+        .strokes_mut()
+        .last()
+        .unwrap()
+        .rendering
+        .as_mut()
+        .unwrap();
+    ink.properties.rainbow_effect = true;
+    ink.style.color_type_raw = Some(1);
+    ink.style.gradient_colors_argb = Some(vec![0xff336699, 0xffcc8844]);
+    ink.style.rainbow_distance = Some(100);
+    ink.style.rainbow_offset = Some(0.0);
+    let mut text = rich_text("Paper text", Vec::new());
+    text.bbox = bbox(50.0, 50.0, 450.0, 100.0);
+    document.pages[0]
+        .objects
+        .push(PageElement::TextBox(text).into());
+    let mut options = sdocx::RenderOptions::default();
+    options.airbrush_profile = Some(sdocx::AirBrushRenderProfile::SavedV2);
+    options.inkpen2_profile = Some(sdocx::InkPen2RenderProfile {
+        screen_width: 1920,
+        screen_height: 1080,
+        enhanced_antialias: false,
+    });
+    let bytes = sdocx::render_document_pdf(&document, &options, &PdfOptions::default()).unwrap();
+    let pdf = PdfDocument::load_mem(&bytes).unwrap();
+    assert_eq!(
+        pdf.extract_text(&[1]).unwrap().replace(['\n', ' '], ""),
+        "Papertext"
+    );
+    let type4 = pdf
+        .objects
+        .values()
+        .filter(|o| {
+            o.as_stream()
+                .is_ok_and(|s| s.dict.get(b"FunctionType").ok() == Some(&Object::Integer(4)))
+        })
+        .count();
+    assert!(
+        type4 > 0,
+        "per-stamp native ink must lower to calculator functions"
+    );
+    let functions: Vec<_> = pdf
+        .objects
+        .values()
+        .filter_map(|o| o.as_dict().ok())
+        .filter(|d| d.get(b"FunctionType").ok() == Some(&Object::Integer(2)) && d.len() == 6)
+        .map(|d| format!("{d:?}"))
+        .collect();
+    assert!(!functions.is_empty());
+    assert_eq!(
+        functions.len(),
+        functions.iter().collect::<HashSet<_>>().len()
+    );
+}
