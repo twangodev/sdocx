@@ -333,7 +333,7 @@ pub struct RenderOptions {
     /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, or 4).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v4_output_scale: Option<u32>,
-    /// Opt into scale-aware V1 coverage at a tested uniform output scale (1, 2, or 4).
+    /// Opt into scale-aware V1 coverage at a tested uniform output scale (1, 2, 3, or 4).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v1_output_scale: Option<u32>,
     /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
@@ -4231,11 +4231,10 @@ fn render_stroke(
             ink.terminal.clone(),
             replay_index.is_some(),
             (if is_v4 {
-                inkpen_v4_output_scale
+                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1 | 2 | 4))
             } else {
-                inkpen_v1_output_scale
+                inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=4))
             })
-            .filter(|scale| matches!(scale, 1 | 2 | 4))
             .unwrap_or(1),
         )
     {
@@ -5134,7 +5133,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
         .or_else(|| {
             options
                 .inkpen_v1_output_scale
-                .filter(|scale| matches!(scale, 1 | 2 | 4))
+                .filter(|scale| matches!(scale, 1..=4))
                 .and_then(|_| crate::ink::prepare_inkpen_v1_for_page(stroke))
                 .map(|ink| (ink, false))
         });
@@ -5146,11 +5145,14 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             ink.terminal.clone(),
             true,
             (if is_v4 {
-                options.inkpen_v4_output_scale
+                options
+                    .inkpen_v4_output_scale
+                    .filter(|scale| matches!(scale, 1 | 2 | 4))
             } else {
-                options.inkpen_v1_output_scale
+                options
+                    .inkpen_v1_output_scale
+                    .filter(|scale| matches!(scale, 1..=4))
             })
-            .filter(|scale| matches!(scale, 1 | 2 | 4))
             .unwrap_or(1),
         )
     {
@@ -5220,7 +5222,7 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
     if viewport.contains(&0)
         && options
             .inkpen_v1_output_scale
-            .is_some_and(|scale| matches!(scale, 1 | 2 | 4))
+            .is_some_and(|scale| matches!(scale, 1..=4))
         && crate::ink::prepare_inkpen_v1_for_page(stroke).is_some()
     {
         return crate::ink::prepare_stroke_for_context(
@@ -9077,7 +9079,7 @@ mod tests {
         let normal = render_document_svg(&source, &options)[0].svg.clone();
         assert_ne!(normal, baseline);
         assert!(normal.contains(r##"fill="#336699""##));
-        for scale in [0, 1, 3, u32::MAX] {
+        for scale in [0, 1, 3, 5, u32::MAX] {
             let scaled = RenderOptions {
                 inkpen_v4_output_scale: Some(scale),
                 ..options.clone()
@@ -9131,13 +9133,20 @@ mod tests {
             render_document_svg(&v1_source, &no_profile)[0].svg,
         );
         let v1_options = RenderOptions {
-            inkpen_v1_output_scale: Some(4),
+            inkpen_v1_output_scale: Some(3),
             ..options.clone()
         };
         let v1_base = render_document_svg(&v1_source, &options)[0].svg.clone();
+        for scale in [2, 3, 4] {
+            let scaled = RenderOptions {
+                inkpen_v1_output_scale: Some(scale),
+                ..options.clone()
+            };
+            assert_ne!(render_document_svg(&v1_source, &scaled)[0].svg, v1_base);
+        }
         assert_ne!(render_document_svg(&v1_source, &v1_options)[0].svg, v1_base);
         assert_eq!(render_document_svg(&source, &v1_options)[0].svg, normal);
-        for scale in [0, 1, 3, u32::MAX] {
+        for scale in [0, 1, 5, u32::MAX] {
             let invalid = RenderOptions {
                 inkpen_v1_output_scale: Some(scale),
                 ..options.clone()

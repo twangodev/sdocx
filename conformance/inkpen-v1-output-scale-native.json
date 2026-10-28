@@ -1,8 +1,8 @@
 {
   "capture_script": "conformance/inkpen_v1_scale_capture.py",
   "scope": "Synthetic InkPen V1 Drawing-selected Mesa host, transparent targets, 1920x1080 display; scaled native Draw projection. No device or saved-note parity.",
-  "capture_command": "INKPEN_CAPTURE_SCALE=1|2|4 INKPEN_CAPTURE_BENT=0|1 PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias python3 conformance/inkpen_v1_scale_capture.py --print-capture",
-  "frames_sha256": "f0da375036bdec11e5bed5689805f77db1889b86d085cb21f36918b66c1af36e",
+  "capture_command": "INKPEN_CAPTURE_SCALE=1|2|3|4 INKPEN_CAPTURE_BENT=0|1 INKPEN_CAPTURE_PHASE=0|1 PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias python3 conformance/inkpen_v1_scale_capture.py --print-capture",
+  "frames_sha256": "9d56fc802983a467408ca909543285d862f03b3720dcf0e30251edf4bdd718b8",
   "cases": [
     {
       "shape": "straight",
@@ -45,6 +45,27 @@
       "zlib_offset": 3512,
       "zlib_length": 2030,
       "rgba_sha256": "21b878f479e8431f9d95ac7ab32b9dadd5f8b43244fda00aa2cabbb8264db749"
+    },
+    {
+      "shape": "straight",
+      "scale": 3,
+      "zlib_offset": 5542,
+      "zlib_length": 983,
+      "rgba_sha256": "a905dd23f46359763f38787513cfa40076586d04082e5eaf9dd8575973c2a795"
+    },
+    {
+      "shape": "bent",
+      "scale": 3,
+      "zlib_offset": 6525,
+      "zlib_length": 1414,
+      "rgba_sha256": "7a1e08ac491525cf1ddfbe92e1f9526b1849ec1ae041406c34db89c76aaedc89"
+    },
+    {
+      "shape": "phase",
+      "scale": 3,
+      "zlib_offset": 7939,
+      "zlib_length": 1228,
+      "rgba_sha256": "8b4623543a4d3d8e17ef39ac4747e216da4aeac286815c67f7915be5a0c56436"
     }
   ],
   "public_comparison_alpha_error": {
@@ -56,6 +77,10 @@
       "4": [
         108074,
         4746
+      ],
+      "3": [
+        53878,
+        3454
       ]
     },
     "bent": {
@@ -66,6 +91,16 @@
       "4": [
         189828,
         8110
+      ],
+      "3": [
+        94395,
+        6860
+      ]
+    },
+    "phase": {
+      "3": [
+        73761,
+        5603
       ]
     }
   },
@@ -90,6 +125,16 @@
           310560,
           21678
         ]
+      },
+      "3": {
+        "mupdf": [
+          125119,
+          75312
+        ],
+        "pdfium": [
+          50236,
+          6075
+        ]
       }
     },
     "bent": {
@@ -112,11 +157,33 @@
           535776,
           52695
         ]
+      },
+      "3": {
+        "mupdf": [
+          164302,
+          77584
+        ],
+        "pdfium": [
+          85230,
+          14915
+        ]
+      }
+    },
+    "phase": {
+      "3": {
+        "mupdf": [
+          145208,
+          77813
+        ],
+        "pdfium": [
+          69408,
+          10510
+        ]
       }
     }
   },
-  "comparison_script": "scratch/inkpen_v1_scale_compare.py",
-  "comparison_note": "Reads native capture JSON and production SVG/PDF controls from /tmp; fixture generation follows the existing V4 public fixture method with V1 input and inkpen_v1_output_scale.",
+  "comparison_script": "tools/inkpen-v1/compare_3x.py",
+  "comparison_note": "The existing native-frame test compares public SVG alpha against the compressed native captures. The comparison script temporarily instruments that test in an isolated checkout to export paired direct PDFs, then checks MuPDF and PDFium 3x single-channel grayscale errors (the older 2x and 4x entries sum RGB channels).",
   "reproduction": {
     "archived_revision": "a24179384fbe043a8b5f003ee0c7bebeb394d106",
     "archive_setup": "Restore the conformance tree from that revision under tmp/conformance-cleanup/native-capture-a241793 and make the project-local scratch/apk-analysis-native and scratch/apk-analysis-runtime trees available there; see original harness dependencies.",
@@ -124,8 +191,7 @@
       "inkpen_joined_paint_native.py": "7a05db658343956af992823ee5a17622fa94a08c88152be9f39cee950eca4a79",
       "inkpen_saved_caller_native.py": "c0b1657cdcf94bcf2c173ce68ed7817e55a4de246883b47265bb7b4d3f50dc04"
     },
-    "public_fixture_command": "python3 scratch/inkpen_v1_public_fixture_producer.py (requires exclusive source and shared Cargo access; restores the instrumented source).",
-    "comparison_command": "PYTHONPATH=<cached pypdfium2 wheel directory> .venv/bin/python scratch/inkpen_v1_scale_compare.py; requires native captures and public fixtures in /tmp and /tmp/sdocx-agent-target/debug/sdocx-render-svg-047."
+    "comparison_command": "In an isolated checkout with the candidate render changes and receipt, run python3 tools/inkpen-v1/compare_3x.py with PyMuPDF and pypdfium2 installed; the script sets the shared Cargo target and restores instrumented source."
   },
   "inputs": {
     "straight": {
@@ -213,6 +279,60 @@
         [
           "00005042",
           "0000a041"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803e",
+        "0000003f",
+        "0000403f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "tool_type": 1
+    },
+    "phase": {
+      "advanced_getter_object_hex": null,
+      "advanced_getter_pointer_nonnull": false,
+      "advanced_getter_utf8": null,
+      "advanced_setting_state": "null",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+      "pen_size_f32_bits": "00004040",
+      "points_f32_bits": [
+        [
+          "00008840",
+          "0000d040"
+        ],
+        [
+          "00006441",
+          "00003841"
+        ],
+        [
+          "0000ca41",
+          "00006040"
+        ],
+        [
+          "00001d42",
+          "00008c41"
         ]
       ],
       "pressure_f32_bits": [
