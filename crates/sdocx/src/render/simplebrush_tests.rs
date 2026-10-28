@@ -195,7 +195,7 @@ fn profile_accepts_six_points_across_captured_sizes() {
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
         assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     }
-    for i in 6..192 {
+    for i in 6..224 {
         source.points.push(Point {
             x: 60.0 + (i as f64) * 8.0,
             y: 42.0,
@@ -408,12 +408,19 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
         scene.finish()
     }
 
-    let source = stroke();
+    let mut source = stroke();
+    let mut small = source.clone();
+    for i in 3..224 {
+        source.points.push(Point {
+            x: (i * 8) as f64,
+            y: (4 + i % 3 * 4) as f64,
+        });
+        source.pressures.push(f64::from(0.4_f32));
+    }
     let count = crate::ink::simplebrush::prepare_stroke(&source, true, 32_768)
         .unwrap()
         .samples
         .len();
-    let mut small = source.clone();
     small.points[1] = Point { x: 12.0, y: 20.0 };
     small.points[2] = Point { x: 14.0, y: 20.0 };
     let small_count = crate::ink::simplebrush::prepare_stroke(&small, true, 32_768)

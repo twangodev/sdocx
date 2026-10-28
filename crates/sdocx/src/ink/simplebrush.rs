@@ -396,7 +396,7 @@ pub(crate) fn prepare_stroke(
     if !(3.0..=24.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
-    if !(2..=192).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
+    if !(2..=224).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -1113,6 +1113,9 @@ mod tests {
             _ if probe == 128 => {
                 include_bytes!("../../../../conformance/simplebrush-128-8-crop.rgba")
             }
+            _ if probe == 224 => {
+                include_bytes!("../../../../conformance/simplebrush-224-8-crop.rgba")
+            }
             _ if probe == 192 => {
                 include_bytes!("../../../../conformance/simplebrush-192-8-crop.rgba")
             }
@@ -1220,6 +1223,7 @@ mod tests {
             _ if probe == 32 => include_str!("../../../../conformance/simplebrush-32-8.json"),
             _ if probe == 64 => include_str!("../../../../conformance/simplebrush-64-8.json"),
             _ if probe == 128 => include_str!("../../../../conformance/simplebrush-128-8.json"),
+            _ if probe == 224 => include_str!("../../../../conformance/simplebrush-224-8.json"),
             _ if probe == 192 => include_str!("../../../../conformance/simplebrush-192-8.json"),
             _ if probe == 16 => include_str!("../../../../conformance/simplebrush-16-8.json"),
             (_, 4) if six => include_str!("../../../../conformance/simplebrush-six-size4.json"),
@@ -1263,10 +1267,18 @@ mod tests {
             .as_str()
             .unwrap()
         );
-        let probe_points: Vec<[f32; 2]> = (0..if probe >= 201 { 2 } else { probe })
+        let probe_points: Vec<[f32; 2]> = (0..if (201..=215).contains(&probe) {
+            2
+        } else {
+            probe
+        })
             .map(|i| [(i * 8) as f32, (4 + (i % 3) * 4) as f32])
             .collect();
-        let probe_pressures: Vec<f32> = (0..if probe >= 201 { 2 } else { probe })
+        let probe_pressures: Vec<f32> = (0..if (201..=215).contains(&probe) {
+            2
+        } else {
+            probe
+        })
             .map(|i| {
                 if probe == 2 && size != 8 {
                     0.75
@@ -1402,6 +1414,7 @@ mod tests {
             _ if probe == 64 => 4045,
             _ if probe == 128 => 8113,
             _ if probe == 192 => 12192,
+            _ if probe == 224 => 14233,
             (_, 4) if six => 211,
             (_, 16) if six => 623,
             (false, 4) => 80,
@@ -1419,7 +1432,7 @@ mod tests {
         let size = if size == 55 { 5.5 } else { size as f32 };
         let (crop_width, crop_height) = if extra || probe != 0 {
             (
-                if probe > 16 && probe < 201 {
+                if probe > 16 && !(201..=215).contains(&probe) {
                     probe * 8 + 16
                 } else {
                     144
@@ -1548,6 +1561,9 @@ mod tests {
                 (_, 64) => include_bytes!("../../../../conformance/simplebrush-64-8-geometry.bin"),
                 (_, 128) => {
                     include_bytes!("../../../../conformance/simplebrush-128-8-geometry.bin")
+                }
+                (_, 224) => {
+                    include_bytes!("../../../../conformance/simplebrush-224-8-geometry.bin")
                 }
                 (_, 192) => {
                     include_bytes!("../../../../conformance/simplebrush-192-8-geometry.bin")
@@ -1855,6 +1871,7 @@ mod tests {
         v25_paint_control(8, false, false, false, 64);
         v25_paint_control(8, false, false, false, 128);
         v25_paint_control(8, false, false, false, 192);
+        v25_paint_control(8, false, false, false, 224);
     }
 
     #[test]
