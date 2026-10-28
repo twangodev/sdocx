@@ -43,7 +43,7 @@ corpus. Initialize the `hf` submodule and its LFS files when needed, then run:
 ```sh
 cargo build -p sdocx-cli
 cargo run -p sdocx-conformance --bin visual -- \
-  --pdf-python conformance/.venv/bin/python --output tmp/visual/current
+  --pdf-python .venv/bin/python --output tmp/visual/current
 cargo test -p sdocx-conformance
 ```
 
