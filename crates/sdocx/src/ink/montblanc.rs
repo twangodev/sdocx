@@ -639,7 +639,11 @@ pub(crate) mod tests {
 
     // Synthetic five-point redraw path only; the <4.2 and output-clamp branches
     // are inferred from disassembly and remain unobserved in these controls.
-    fn redraw_alpha_candidate(prior: i32, pressure: f32, distance: f32) -> (f32, f32, i32) {
+    pub(super) fn redraw_alpha_candidate(
+        prior: i32,
+        pressure: f32,
+        distance: f32,
+    ) -> (f32, f32, i32) {
         let factor = if distance < 4.2 {
             1.0_f32
         } else if distance < 9.5 {
@@ -866,3 +870,7 @@ mod width_state_tests;
 #[cfg(test)]
 #[path = "montblanc_four_test.rs"]
 mod four_point_tests;
+
+#[cfg(test)]
+#[path = "montblanc_five_test.rs"]
+mod five_point_tests;
