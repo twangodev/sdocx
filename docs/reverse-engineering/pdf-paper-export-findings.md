@@ -874,3 +874,10 @@ MuPDF reported 792 × 612 at rotation 90. The PDF Reference 1.6 section 3.2.6
 specifies null dictionary entries as equivalent to absent entries, but these
 reader results do not establish Samsung Notes import behavior. The PDF paper
 planner continues to reject the tested null page geometry.
+
+A synthetic public export with ASCIIHex→Flate page content retained its blue
+rectangle in MuPDF 1.28.2 and PDFium 150.0.7869.0, including missing ASCIIHex end
+marker and default predictor variants; each reader produced identical first-page
+pixels across the variants. The local recipe and counts are in
+`tmp/pdf-chain-reader-probe/receipt.txt`; this does not establish malformed-stream
+handling, cross-reader pixel parity, or Samsung Notes behavior.

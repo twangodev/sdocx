@@ -309,6 +309,394 @@ fn export(document: &Document, indices: &[usize], dpi: f32) -> Result<sdocx::Pdf
     export_with_fixed_axis(document, indices, dpi, None)
 }
 
+fn document_with_encoded_pdf_content(encoded: &[u8], filter: Object) -> Document {
+    document_with_encoded_pdf_content_params(encoded, filter, None)
+}
+
+fn document_with_encoded_pdf_content_params(
+    encoded: &[u8],
+    filter: Object,
+    params: Option<Object>,
+) -> Document {
+    let mut note = document(true, None, 0, 1);
+    let ArchiveResourceContent::Opaque { data } = &mut note.metadata.archive_resources[0].content
+    else {
+        panic!("expected source PDF");
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page_id = *source.get_pages().get(&1).unwrap();
+    let content_id = source
+        .get_dictionary(page_id)
+        .unwrap()
+        .get(b"Contents")
+        .unwrap()
+        .as_reference()
+        .unwrap();
+    let mut dict = dictionary! { "Filter" => filter };
+    if let Some(params) = params {
+        dict.set("DecodeParms", params);
+    }
+    *source.get_object_mut(content_id).unwrap() =
+        Object::Stream(Stream::new(dict, encoded.to_vec()));
+    data.clear();
+    source.save_to(data).unwrap();
+    note
+}
+
+#[test]
+fn imported_ascii_hex_content_is_preserved_when_overlay_is_added() {
+    let plain = b"0 0 1 rg 30 30 300 300 re f\n";
+    let encoded = format!(
+        "{} 2>",
+        plain.iter().map(|b| format!("{b:02X}")).collect::<String>()
+    );
+    let note = document_with_encoded_pdf_content(
+        encoded.as_bytes(),
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+    );
+    let result = export(&note, &[0], 96.0).unwrap();
+    let output = PdfDocument::load_mem(&result.bytes).unwrap();
+    assert!(
+        output
+            .objects
+            .values()
+            .any(|object| matches!(object, Object::Stream(stream)
+        if stream.dict.get(b"Filter").ok().and_then(|v| v.as_name().ok()) == Some(b"ASCIIHexDecode")
+            && stream.content == encoded.as_bytes()))
+    );
+}
+
+#[test]
+fn imported_ascii_hex_rejects_invalid_digits_and_malformed_flate() {
+    let invalid =
+        document_with_encoded_pdf_content(b"GG>", Object::Name(b"ASCIIHexDecode".to_vec()));
+    assert!(export(&invalid, &[0], 96.0).is_err());
+    let chain = document_with_encoded_pdf_content(
+        b"00>",
+        Object::Array(vec![
+            Object::Name(b"ASCIIHexDecode".to_vec()),
+            Object::Name(b"FlateDecode".to_vec()),
+        ]),
+    );
+    assert!(export(&chain, &[0], 96.0).is_err());
+    let unsupported = document_with_encoded_pdf_content(
+        b"00>",
+        Object::Array(vec![
+            Object::Name(b"ASCIIHexDecode".to_vec()),
+            Object::Name(b"UnsupportedDecode".to_vec()),
+        ]),
+    );
+    assert!(export(&unsupported, &[0], 96.0).is_err());
+}
+
+#[test]
+fn imported_ascii_hex_flate_chain_preserves_source_stream() {
+    use std::io::Write;
+
+    let plain = b"0 0 1 rg 30 30 300 300 re f\n";
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    encoder.write_all(plain).unwrap();
+    let compressed = encoder.finish().unwrap();
+    let encoded = format!(
+        "{}>",
+        compressed
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<String>()
+    );
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+        Object::Name(b"FlateDecode".to_vec()),
+    ]);
+    let note = document_with_encoded_pdf_content(encoded.as_bytes(), filter.clone());
+    let result = export(&note, &[0], 96.0).unwrap();
+    let output = PdfDocument::load_mem(&result.bytes).unwrap();
+    assert!(output.objects.values().any(|object| matches!(object, Object::Stream(stream)
+        if stream.dict.get(b"Filter").ok() == Some(&filter) && stream.content == encoded.as_bytes())));
+}
+
+#[test]
+fn imported_ascii85_flate_accepts_explicit_default_predictor() {
+    let encoded = b"Gap9`#il$e!n75;~>";
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCII85Decode".to_vec()),
+        Object::Name(b"FlateDecode".to_vec()),
+    ]);
+    for (params_dict, valid) in [
+        (
+            dictionary! { "Predictor" => 1, "Colors" => 3, "Columns" => 12, "BitsPerComponent" => 8 },
+            true,
+        ),
+        (dictionary! { "Predictor" => 2 }, false),
+        (dictionary! { "Predictor" => 1, "Columns" => 0 }, false),
+        (
+            dictionary! { "Predictor" => 1, "BitsPerComponent" => 3 },
+            false,
+        ),
+        (dictionary! { "Predictor" => 1, "Unknown" => 1 }, false),
+    ] {
+        let params = Object::Array(vec![Object::Null, Object::Dictionary(params_dict)]);
+        let note = document_with_encoded_pdf_content_params(encoded, filter.clone(), Some(params));
+        let result = export(&note, &[0], 96.0);
+        assert_eq!(result.is_ok(), valid);
+        if let Ok(result) = result {
+            let output = PdfDocument::load_mem(&result.bytes).unwrap();
+            assert!(
+                output
+                    .objects
+                    .values()
+                    .any(|object| matches!(object, Object::Stream(stream)
+                if stream.dict.get(b"Filter").ok() == Some(&filter) && stream.content == encoded))
+            );
+        }
+    }
+}
+
+#[test]
+fn imported_ascii85_lzw_accepts_default_early_change() {
+    let encoded = br"J/gr\&6&c~>";
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCII85Decode".to_vec()),
+        Object::Name(b"LZWDecode".to_vec()),
+    ]);
+    assert_eq!(
+        Stream::new(dictionary! { "Filter" => filter.clone() }, encoded.to_vec())
+            .decompressed_content()
+            .unwrap(),
+        b"q Q\n"
+    );
+    for (early_change, valid) in [(1, true), (0, false)] {
+        let params = Object::Array(vec![
+            Object::Null,
+            Object::Dictionary(dictionary! {
+                "EarlyChange" => early_change, "Predictor" => 1, "Colors" => 3,
+                "Columns" => 12, "BitsPerComponent" => 8
+            }),
+        ]);
+        let note = document_with_encoded_pdf_content_params(encoded, filter.clone(), Some(params));
+        let result = export(&note, &[0], 96.0);
+        assert_eq!(result.is_ok(), valid);
+        if let Ok(result) = result {
+            let output = PdfDocument::load_mem(&result.bytes).unwrap();
+            assert!(
+                output
+                    .objects
+                    .values()
+                    .any(|object| matches!(object, Object::Stream(stream)
+                if stream.dict.get(b"Filter").ok() == Some(&filter) && stream.content == encoded))
+            );
+        }
+    }
+}
+
+#[test]
+fn imported_indirect_ascii_hex_flate_filter_is_decoded_and_preserved() {
+    use std::io::Write;
+
+    for (plain, valid) in [(b"q Q\n".as_slice(), true), (b"Q\n".as_slice(), false)] {
+        let mut encoder =
+            flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(plain).unwrap();
+        let encoded = format!(
+            "{}>",
+            encoder
+                .finish()
+                .unwrap()
+                .iter()
+                .map(|b| format!("{b:02X}"))
+                .collect::<String>()
+        );
+        let mut note = document_with_encoded_pdf_content(
+            encoded.as_bytes(),
+            Object::Name(b"ASCIIHexDecode".to_vec()),
+        );
+        let ArchiveResourceContent::Opaque { data } =
+            &mut note.metadata.archive_resources[0].content
+        else {
+            panic!("expected source PDF")
+        };
+        let mut source = PdfDocument::load_mem(data).unwrap();
+        let page_id = source.get_pages()[&1];
+        let content_id = source
+            .get_dictionary(page_id)
+            .unwrap()
+            .get(b"Contents")
+            .unwrap()
+            .as_reference()
+            .unwrap();
+        let hex = source.add_object(Object::Name(b"ASCIIHexDecode".to_vec()));
+        let flate = source.add_object(Object::Name(b"FlateDecode".to_vec()));
+        let filter = source.add_object(Object::Array(vec![
+            Object::Reference(hex),
+            Object::Reference(flate),
+        ]));
+        source
+            .get_object_mut(content_id)
+            .unwrap()
+            .as_stream_mut()
+            .unwrap()
+            .dict
+            .set("Filter", Object::Reference(filter));
+        data.clear();
+        source.save_to(data).unwrap();
+        let result = export(&note, &[0], 96.0);
+        assert_eq!(result.is_ok(), valid);
+        if let Ok(result) = result {
+            let output = PdfDocument::load_mem(&result.bytes).unwrap();
+            assert!(output.objects.values().any(|object| matches!(object, Object::Stream(stream) if stream.content == encoded.as_bytes() && matches!(stream.dict.get(b"Filter"), Ok(Object::Reference(_))))));
+        }
+    }
+}
+
+#[test]
+fn imported_ascii_hex_flate_accepts_default_predictor() {
+    use std::io::Write;
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    encoder.write_all(b"q Q\n").unwrap();
+    let encoded = format!(
+        "{}>",
+        encoder
+            .finish()
+            .unwrap()
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<String>()
+    );
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+        Object::Name(b"FlateDecode".to_vec()),
+    ]);
+    for predictor in [1, 2] {
+        let params = Object::Array(vec![
+            Object::Null,
+            Object::Dictionary(dictionary! { "Predictor" => predictor }),
+        ]);
+        let note = document_with_encoded_pdf_content_params(
+            encoded.as_bytes(),
+            filter.clone(),
+            Some(params),
+        );
+        assert_eq!(export(&note, &[0], 96.0).is_ok(), predictor == 1);
+    }
+}
+
+#[test]
+fn imported_ascii_hex_flate_accepts_indirect_default_parameters() {
+    use std::io::Write;
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    encoder.write_all(b"q Q\n").unwrap();
+    let encoded = format!(
+        "{}>",
+        encoder
+            .finish()
+            .unwrap()
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<String>()
+    );
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+        Object::Name(b"FlateDecode".to_vec()),
+    ]);
+    let mut note = document_with_encoded_pdf_content(encoded.as_bytes(), filter);
+    let ArchiveResourceContent::Opaque { data } = &mut note.metadata.archive_resources[0].content
+    else {
+        panic!("expected source PDF")
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page_id = source.get_pages()[&1];
+    let content_id = source
+        .get_dictionary(page_id)
+        .unwrap()
+        .get(b"Contents")
+        .unwrap()
+        .as_reference()
+        .unwrap();
+    let hex_params = source.add_object(Object::Dictionary(dictionary! {}));
+    let predictor = source.add_object(Object::Integer(1));
+    let flate_params = source.add_object(Object::Dictionary(
+        dictionary! { "Predictor" => Object::Reference(predictor) },
+    ));
+    let params = source.add_object(Object::Array(vec![
+        Object::Reference(hex_params),
+        Object::Reference(flate_params),
+    ]));
+    source
+        .get_object_mut(content_id)
+        .unwrap()
+        .as_stream_mut()
+        .unwrap()
+        .dict
+        .set("DecodeParms", Object::Reference(params));
+    data.clear();
+    source.save_to(data).unwrap();
+    assert!(export(&note, &[0], 96.0).is_ok());
+}
+
+#[test]
+fn imported_ascii_hex_flate_rejects_expansion_past_limit() {
+    use std::io::Write;
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::fast());
+    let chunk = [b' '; 8192];
+    for _ in 0..8192 {
+        encoder.write_all(&chunk).unwrap();
+    }
+    encoder.write_all(b" ").unwrap();
+    let encoded = format!(
+        "{}>",
+        encoder
+            .finish()
+            .unwrap()
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<String>()
+    );
+    let filter = Object::Array(vec![
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+        Object::Name(b"FlateDecode".to_vec()),
+    ]);
+    let error = export(
+        &document_with_encoded_pdf_content(encoded.as_bytes(), filter),
+        &[0],
+        96.0,
+    )
+    .unwrap_err();
+    assert_eq!(error.to_string(), "invalid PDF dimensions for page 0");
+}
+
+#[test]
+fn imported_ascii_hex_flate_content_is_checked_for_unmatched_restore() {
+    use std::io::Write;
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    encoder.write_all(b"Q\n").unwrap();
+    let encoded = format!(
+        "{}>",
+        encoder
+            .finish()
+            .unwrap()
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<String>()
+    );
+    let note = document_with_encoded_pdf_content(
+        encoded.as_bytes(),
+        Object::Array(vec![
+            Object::Name(b"ASCIIHexDecode".to_vec()),
+            Object::Name(b"FlateDecode".to_vec()),
+        ]),
+    );
+    assert!(export(&note, &[0], 96.0).is_err());
+}
+
+#[test]
+fn imported_ascii_hex_accepts_missing_end_marker() {
+    let note = document_with_encoded_pdf_content(
+        b"3020302031207267203330203330203330302033303020726520660A",
+        Object::Name(b"ASCIIHexDecode".to_vec()),
+    );
+    assert!(export(&note, &[0], 96.0).is_ok());
+}
+
 fn export_with_fixed_axis(
     document: &Document,
     indices: &[usize],

@@ -186,7 +186,190 @@ fn contents_bytes(doc: &Document, page: &Dictionary) -> Result<Vec<u8>, String> 
                 Ok(())
             }
             Object::Stream(stream) => {
-                out.extend(stream.decompressed_content().map_err(|e| e.to_string())?);
+                let filters = match stream.dict.get(b"Filter") {
+                    Err(_) => Vec::new(),
+                    Ok(filter) => match deref(doc, filter)? {
+                        Object::Name(name) => vec![name.as_slice()],
+                        Object::Array(items) if items.is_empty() => {
+                            return Err("empty stream Filter array".into());
+                        }
+                        Object::Array(items) => items
+                            .iter()
+                            .map(|item| {
+                                deref(doc, item)?
+                                    .as_name()
+                                    .map_err(|e| format!("invalid stream Filter: {e}"))
+                            })
+                            .collect::<Result<Vec<_>, _>>()?,
+                        _ => return Err("invalid stream Filter".into()),
+                    },
+                };
+                if filters.first() == Some(&b"ASCIIHexDecode".as_slice()) {
+                    // This ceiling applies to ASCIIHex streams and their Flate output;
+                    // it is not a global limit on other page content filters.
+                    const MAX_DECODED_CONTENT: usize = 64 * 1024 * 1024;
+                    let mut decoded = Vec::new();
+                    let mut high = None;
+                    for &byte in &stream.content {
+                        if byte == b'>' {
+                            break;
+                        }
+                        if matches!(byte, 0 | 9 | 10 | 12 | 13 | 32) {
+                            continue;
+                        }
+                        let digit = (byte as char)
+                            .to_digit(16)
+                            .ok_or("invalid ASCIIHexDecode content")?
+                            as u8;
+                        if let Some(first) = high.take() {
+                            if decoded.len() == MAX_DECODED_CONTENT {
+                                return Err("decoded page content exceeds 64 MiB".into());
+                            }
+                            decoded.push(first << 4 | digit);
+                        } else {
+                            high = Some(digit);
+                        }
+                    }
+                    // Accept EOF without the end marker, as PDFium and MuPDF do.
+                    if let Some(first) = high {
+                        if decoded.len() == MAX_DECODED_CONTENT {
+                            return Err("decoded page content exceeds 64 MiB".into());
+                        }
+                        decoded.push(first << 4);
+                    }
+                    match filters.as_slice() {
+                        [_] => {
+                            if out.len().saturating_add(decoded.len()) > MAX_DECODED_CONTENT {
+                                return Err("decoded page content exceeds 64 MiB".into());
+                            }
+                            out.extend(decoded);
+                        }
+                        [_, b"FlateDecode"] => {
+                            // Predictors and other parameters require their own decoding;
+                            // reject them rather than interpreting the content incorrectly.
+                            if let Ok(params) = stream.dict.get(b"DecodeParms") {
+                                let params = deref(doc, params)?;
+                                match params {
+                                    Object::Null => {}
+                                    Object::Array(items) if items.len() == 2 => {
+                                        match deref(doc, &items[0])? {
+                                            Object::Null => {}
+                                            Object::Dictionary(dict) if dict.is_empty() => {}
+                                            _ => {
+                                                return Err(
+                                                    "unsupported ASCIIHex DecodeParms".into()
+                                                );
+                                            }
+                                        }
+                                        match deref(doc, &items[1])? {
+                                            Object::Null => {}
+                                            Object::Dictionary(dict) => {
+                                                if let Ok(predictor) = dict.get(b"Predictor")
+                                                    && deref(doc, predictor)?.as_i64().ok()
+                                                        != Some(1)
+                                                {
+                                                    return Err(
+                                                        "unsupported Flate predictor".into()
+                                                    );
+                                                }
+                                            }
+                                            _ => return Err("unsupported Flate DecodeParms".into()),
+                                        }
+                                    }
+                                    _ => {
+                                        return Err("unsupported ASCIIHex/Flate DecodeParms".into());
+                                    }
+                                }
+                            }
+                            let mut decoder = flate2::Decompress::new(true);
+                            let mut plain = Vec::new();
+                            let mut buffer = [0u8; 8192];
+                            loop {
+                                let input_offset = decoder.total_in() as usize;
+                                let previous_out = decoder.total_out();
+                                let status = decoder
+                                    .decompress(
+                                        &decoded[input_offset..],
+                                        &mut buffer,
+                                        flate2::FlushDecompress::Finish,
+                                    )
+                                    .map_err(|e| e.to_string())?;
+                                let produced = (decoder.total_out() - previous_out) as usize;
+                                if out
+                                    .len()
+                                    .saturating_add(plain.len())
+                                    .saturating_add(produced)
+                                    > MAX_DECODED_CONTENT
+                                {
+                                    return Err("decoded page content exceeds 64 MiB".into());
+                                }
+                                plain.extend_from_slice(&buffer[..produced]);
+                                if status == flate2::Status::StreamEnd {
+                                    break;
+                                }
+                                if produced == 0 && decoder.total_in() as usize == input_offset {
+                                    return Err("incomplete FlateDecode content".into());
+                                }
+                            }
+                            out.extend(plain);
+                        }
+                        _ => return Err("unsupported ASCIIHexDecode filter chain".into()),
+                    }
+                } else {
+                    if !filters.is_empty() {
+                        // lopdf cannot resolve indirect filters or per-filter parameters.
+                        if stream.filters().is_err() {
+                            return Err("unsupported indirect stream Filter".into());
+                        }
+                        if let Ok(params) = stream.dict.get(b"DecodeParms") {
+                            match params {
+                                Object::Null => {}
+                                Object::Array(items)
+                                    if items.len() == filters.len()
+                                        && items.iter().zip(&filters).all(|(item, filter)| {
+                                            match item {
+                                                Object::Null => true,
+                                                Object::Dictionary(dict) => {
+                                                    dict.is_empty()
+                                                        || (matches!(
+                                                            *filter,
+                                                            b"FlateDecode" | b"LZWDecode"
+                                                        ) && dict.iter().all(|(key, value)| {
+                                                            match (
+                                                                key.as_slice(),
+                                                                value.as_i64().ok(),
+                                                            ) {
+                                                                (b"Predictor", Some(1)) => true,
+                                                                (b"EarlyChange", Some(1))
+                                                                    if *filter == b"LZWDecode" =>
+                                                                {
+                                                                    true
+                                                                }
+                                                                (
+                                                                    b"Colors" | b"Columns",
+                                                                    Some(n),
+                                                                ) => n > 0,
+                                                                (
+                                                                    b"BitsPerComponent",
+                                                                    Some(1 | 2 | 4 | 8 | 16),
+                                                                ) => true,
+                                                                _ => false,
+                                                            }
+                                                        }))
+                                                }
+                                                _ => false,
+                                            }
+                                        }) => {}
+                                Object::Dictionary(dict)
+                                    if !dict.iter().any(|(_, value)| {
+                                        matches!(value, Object::Reference(_))
+                                    }) => {}
+                                _ => return Err("unsupported stream DecodeParms".into()),
+                            }
+                        }
+                    }
+                    out.extend(stream.decompressed_content().map_err(|e| e.to_string())?);
+                }
                 Ok(())
             }
             other => Err(format!("unsupported page Contents object: {other:?}")),
@@ -3497,6 +3680,84 @@ fn transform_point(matrix: [f64; 6], point: [f64; 2]) -> [f64; 2] {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn malformed_filter_is_not_treated_as_plain_content() {
+        let stream = lopdf::Stream::new(
+            lopdf::dictionary! { "Filter" => lopdf::Object::Integer(7) },
+            b"q Q\n".to_vec(),
+        );
+        let page = lopdf::dictionary! { "Contents" => lopdf::Object::Stream(stream) };
+        assert!(super::contents_bytes(&lopdf::Document::new(), &page).is_err());
+    }
+
+    #[test]
+    fn unsupported_filter_metadata_is_not_silently_ignored() {
+        let mut doc = lopdf::Document::new();
+        let filter = doc.add_object(lopdf::Object::Name(b"FlateDecode".to_vec()));
+        let params = doc.add_object(lopdf::Object::Dictionary(lopdf::dictionary! {
+            "Predictor" => 2
+        }));
+        let dictionaries = [
+            lopdf::dictionary! { "Filter" => lopdf::Object::Array(vec![]) },
+            lopdf::dictionary! { "Filter" => lopdf::Object::Reference(filter) },
+            lopdf::dictionary! { "Filter" => "FlateDecode", "DecodeParms" => lopdf::Object::Reference(params) },
+            lopdf::dictionary! { "Filter" => "FlateDecode", "DecodeParms" => lopdf::Object::Array(vec![lopdf::Object::Null, lopdf::Object::Null]) },
+            lopdf::dictionary! { "Filter" => "FlateDecode", "DecodeParms" => lopdf::Object::Dictionary(lopdf::dictionary! { "Predictor" => lopdf::Object::Reference(params) }) },
+        ];
+        for dict in dictionaries {
+            let page = lopdf::dictionary! { "Contents" => lopdf::Object::Stream(lopdf::Stream::new(dict, b"q Q\n".to_vec())) };
+            assert!(super::contents_bytes(&doc, &page).is_err());
+        }
+    }
+
+    #[test]
+    fn nonhex_default_parameter_arrays_are_accepted() {
+        use std::io::Write;
+        let mut encoder =
+            flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(b"q Q\n").unwrap();
+        let compressed = encoder.finish().unwrap();
+        for params in [
+            lopdf::Object::Null,
+            lopdf::Object::Dictionary(lopdf::dictionary! {}),
+        ] {
+            let dict = lopdf::dictionary! { "Filter" => lopdf::Object::Array(vec![lopdf::Object::Name(b"FlateDecode".to_vec())]), "DecodeParms" => lopdf::Object::Array(vec![params]) };
+            let page = lopdf::dictionary! { "Contents" => lopdf::Object::Stream(lopdf::Stream::new(dict, compressed.clone())) };
+            assert_eq!(
+                super::contents_bytes(&lopdf::Document::new(), &page).unwrap(),
+                b"q Q\n"
+            );
+        }
+    }
+
+    #[test]
+    fn ascii_hex_flate_expansion_is_bounded() {
+        use std::io::Write;
+        let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::fast());
+        for _ in 0..8192 {
+            encoder.write_all(&[b' '; 8192]).unwrap();
+        }
+        encoder.write_all(b" ").unwrap();
+        let encoded = format!(
+            "{}>",
+            encoder
+                .finish()
+                .unwrap()
+                .iter()
+                .map(|b| format!("{b:02X}"))
+                .collect::<String>()
+        );
+        let stream = lopdf::Stream::new(
+            lopdf::dictionary! { "Filter" => lopdf::Object::Array(vec![lopdf::Object::Name(b"ASCIIHexDecode".to_vec()), lopdf::Object::Name(b"FlateDecode".to_vec())]) },
+            encoded.into_bytes(),
+        );
+        let page = lopdf::dictionary! { "Contents" => lopdf::Object::Stream(stream) };
+        assert_eq!(
+            super::contents_bytes(&lopdf::Document::new(), &page).unwrap_err(),
+            "decoded page content exceeds 64 MiB"
+        );
+    }
+
     #[test]
     fn paper_run_owners_follow_each_runs_actual_clip_and_ignore_empty_overlap() {
         let mut owners = super::PaperRunOwners::new();
