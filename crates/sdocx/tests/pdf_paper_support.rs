@@ -1798,6 +1798,60 @@ fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_b
 }
 
 #[test]
+fn public_pdf_paper_accepts_reversed_inherited_page_boxes() {
+    let mut document = document(true, None, 90, 1);
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("test source PDF must be retained bytes");
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page_id = source.get_pages()[&1];
+    let parent_id = source
+        .get_dictionary(page_id)
+        .unwrap()
+        .get(b"Parent")
+        .unwrap()
+        .as_reference()
+        .unwrap();
+    let page = source.get_dictionary_mut(page_id).unwrap();
+    page.remove(b"MediaBox");
+    page.remove(b"CropBox");
+    let coordinates = [570, 535, 20, 35].map(|value| Object::Reference(source.add_object(value)));
+    let crop_id = source.add_object(Object::Array(coordinates.to_vec()));
+    let parent = source.get_dictionary_mut(parent_id).unwrap();
+    parent.set("MediaBox", vec![600.into(), 600.into(), 0.into(), 0.into()]);
+    parent.set("CropBox", crop_id);
+    let source_content = source.get_page_content(page_id).unwrap();
+    let mut bytes = Vec::new();
+    source.save_to(&mut bytes).unwrap();
+    *data = bytes;
+
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+    let page = pdf.get_dictionary(pdf.get_pages()[&1]).unwrap();
+    let crop = pdf
+        .dereference(page.get(b"CropBox").unwrap())
+        .unwrap()
+        .1
+        .as_array()
+        .unwrap();
+    assert_eq!(
+        crop.iter()
+            .map(|v| pdf.dereference(v).unwrap().1.as_i64().unwrap())
+            .collect::<Vec<_>>(),
+        [570, 535, 20, 35]
+    );
+    let output_content = pdf.get_page_content(pdf.get_pages()[&1]).unwrap();
+    assert!(
+        output_content
+            .windows(source_content.len())
+            .any(|part| part == source_content)
+    );
+}
+
+#[test]
 fn public_pdf_paper_accepts_indirect_page_box_coordinates() {
     let mut document = document(true, None, 90, 1);
     let ArchiveResourceContent::Opaque { data } =

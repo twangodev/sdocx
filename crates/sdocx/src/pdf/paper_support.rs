@@ -88,6 +88,12 @@ fn rect_value(doc: &Document, value: &Object) -> Result<[f64; 4], String> {
     if !out.iter().all(|value| value.is_finite()) {
         return Err("page box contains non-finite coordinates".into());
     }
+    if out[0] > out[2] {
+        out.swap(0, 2);
+    }
+    if out[1] > out[3] {
+        out.swap(1, 3);
+    }
     Ok(out)
 }
 
@@ -3565,6 +3571,31 @@ mod tests {
         let page = RenderedPage::new(0, 150, 115, svg);
         let options = PdfOptions::new(Arc::new(crate::pdf::fontdb::Database::new()));
         super::super::render_svg_pages_pdf(&[page], &options).unwrap()
+    }
+
+    #[test]
+    fn page_boxes_accept_opposite_corners_in_either_order() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let page_id = doc.get_pages()[&1];
+        let parent_id = doc
+            .get_dictionary(page_id)
+            .unwrap()
+            .get(b"Parent")
+            .unwrap()
+            .as_reference()
+            .unwrap();
+        let parent = doc.get_dictionary_mut(parent_id).unwrap();
+        parent.set("MediaBox", vec![200.into(), 100.into(), 0.into(), 0.into()]);
+        parent.set("CropBox", vec![180.into(), 10.into(), 10.into(), 90.into()]);
+        let page = doc.get_dictionary_mut(page_id).unwrap();
+        page.remove(b"MediaBox");
+        page.remove(b"CropBox");
+        page.set("Rotate", 90);
+        page.set("UserUnit", 1);
+        let page = doc.get_dictionary(page_id).unwrap();
+        let (matrix, crop) = page_to_display(&doc, page).unwrap();
+        assert_eq!(crop, [10.0, 10.0, 180.0, 90.0]);
+        assert_eq!(matrix, [0.0, -1.0, 1.0, 0.0, -10.0, 180.0]);
     }
 
     #[test]
