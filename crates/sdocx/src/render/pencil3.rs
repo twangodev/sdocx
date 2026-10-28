@@ -833,3 +833,74 @@ mod pencil3_transport_probe {
         }
     }
 }
+
+#[cfg(all(test, feature = "serde"))]
+mod translated_native_transport_test {
+    use crate::{
+        Document, Pencil3PaperSampler, Pencil3RenderProfile, RenderOptions, render_document_svg,
+    };
+
+    #[test]
+    fn public_svg_tracks_translated_native_host_crop() {
+        // Synthetic native Drawing + Mesa replay, top-down crop [48, 88, 100, 119].
+        // Capture provenance and limitations: pencil3-shift-transport-host.json.
+        let document: Document = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-shift-document.json"
+        ))
+        .unwrap();
+        let options = RenderOptions {
+            pencil3_profile: Some(Pencil3RenderProfile {
+                screen_width: 2560,
+                screen_height: 1440,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: Pencil3PaperSampler::Repeat,
+            }),
+            ..Default::default()
+        };
+        let svg = &render_document_svg(&document, &options)[0].svg;
+        assert!(
+            svg.contains("sdocx-pencil3-brush-atlas"),
+            "Pencil3 profile was not admitted"
+        );
+        let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(320, 180).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixels.as_mut(),
+        );
+        let native = include_bytes!("../../../../conformance/pencil3-shift-native-crop.rgba");
+        let mut error = 0_u64;
+        let mut visible = 0_usize;
+        for y in 0..31 {
+            for x in 0..52 {
+                let i = (y * 52 + x) * 4;
+                let j = ((y + 88) * 320 + x + 48) * 4;
+                let alpha = u32::from(native[i + 3]);
+                let background = (252 * (255 - alpha) + 127) / 255;
+                for c in 0..3 {
+                    let expected = u32::from(native[i + c]) + background;
+                    error += u64::from(expected.abs_diff(u32::from(pixels.data()[j + c])));
+                }
+                visible += usize::from(alpha > 1);
+            }
+        }
+        assert_eq!(visible, 440);
+        assert!(error <= 2700, "native crop RGB error: {error}");
+        for y in 0..180 {
+            for x in 0..320 {
+                if (48..100).contains(&x) && (88..119).contains(&y) {
+                    continue;
+                }
+                let i = (y * 320 + x) * 4;
+                assert!(
+                    pixels.data()[i..i + 3]
+                        .iter()
+                        .all(|&v| v.abs_diff(252) <= 1),
+                    "unexpected paint outside native crop at ({x}, {y})"
+                );
+            }
+        }
+    }
+}

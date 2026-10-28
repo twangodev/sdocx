@@ -1,0 +1,82 @@
+{
+  "scope": "single translated synthetic native Drawing host Mesa repeat sampler, 320x180; no device parity",
+  "source_points": [
+    [
+      60,
+      100
+    ],
+    [
+      70,
+      100
+    ],
+    [
+      80,
+      100
+    ],
+    [
+      90,
+      110
+    ]
+  ],
+  "native_raw_sha256": "8a4229444836a3f3c65528eb9b46f0d226ade606405e435f4214c833f51fcb5f",
+  "fixture_sha256": "07af413ed1e4f3a008760d7ea162af2383d380f43b4ea809505d007495dbb5e3",
+  "results": {
+    "svg_resvg": {
+      "roi_pixels": 466,
+      "native_support": 440,
+      "export_support": 463,
+      "intersection": 437,
+      "absolute_rgb_error": 2301,
+      "rgb_mae": 1.645922746781116
+    },
+    "pdf_mupdf": {
+      "roi_pixels": 556,
+      "native_support": 440,
+      "export_support": 550,
+      "intersection": 434,
+      "absolute_rgb_error": 27947,
+      "rgb_mae": 16.754796163069546
+    }
+  },
+  "native_capture_script": "tmp/conformance-cleanup/native-capture-a241793/conformance/pencil3_topdown_seam_probe.py",
+  "native_capture_script_sha256": "5e8c7ef54501c4f4e4eda7465e398ed2f8859834f0016ee1229a83d0f8ba30c5",
+  "native_capture_environment": {
+    "PENCIL_PAPER_PROFILE_CHILD": "1",
+    "PENCIL_PAPER_MODE": "native",
+    "PENCIL_X_SHIFT": "-40",
+    "PENCIL_CONTEXT_WIDTH": "2560",
+    "PENCIL_CONTEXT_HEIGHT": "1440",
+    "PENCIL_PAPER_WRAP": "repeat"
+  },
+  "document": "conformance/pencil3-shift-document.json",
+  "document_sha256": "d01104e287eda647ae0c85a7344ffdb05a51b68cf8c82039bc20f54599715534",
+  "native_crop": "conformance/pencil3-shift-native-crop.rgba",
+  "native_crop_bounds_top_down": [
+    48,
+    88,
+    100,
+    119
+  ],
+  "production_export_source": "tmp/vector-parity-plan/pencil-intrinsic-image-prototype/seam-x60/public_export.rs",
+  "production_export_binary_sha256": "8e5406215fc48bedea4b8c64b1dc505464e001be17150212dbe1d1e56debde13",
+  "svg_sha256": "72ccbc7bb2996869b1a568e0324d08f5da0992d96fd8b13f4b114970f8d6e51c",
+  "pdf_sha256": "7eabbcf5bae0f5e32151c98193be0fa3d13aa502ca75552e1ffd89dd3e845e67",
+  "engines": {
+    "resvg_cli_comparison": "0.45.1",
+    "resvg_rust_test_lockfile": "0.47.0",
+    "mupdf": "1.28.2"
+  },
+  "measurement_script": "scratch/pencil3-shift-transport-control/compare.py",
+  "metric": "RGB mean absolute error over union of native and export visible support; composited over #fcfcfc; support threshold greater than one byte.",
+  "native_crop_sha256": "1d53490a823b1411fe864d343b6cf404c6c0c7720b845994f55859f747f80bec",
+  "local_script_limitations": "Capture and measurement scripts and their pinned dependencies are project-local scratch inputs and not portable; the measurement script uses temporary export paths.",
+  "measurement_script_sha256": "a0e0555680831df7973767e750ec70e28d9f2acd42b5ba58fe296f24446ad883",
+  "native_full_frame_nonzero_alpha_bounds_top_down": [
+    53,
+    93,
+    95,
+    114
+  ],
+  "rust_test_crop_rgb_absolute_error_resvg_0_47_0": 2439,
+  "rust_test_crop_rgb_absolute_error_limit": 2700
+}
