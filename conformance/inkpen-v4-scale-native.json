@@ -1,0 +1,249 @@
+{
+  "schema": "sdocx-inkpen-v4-scale-native-v1",
+  "scope": "Two synthetic four-point V4 saved Drawing and RTV1 host-Mesa replays, including partial-alpha color. Source and pen size unchanged within each scale set; native Draw transform and viewport scale together. Raw framebuffer orientation; no device or arbitrary-transform parity.",
+  "capture_script": "conformance/inkpen_v4_scale_capture.py",
+  "frames_sha256": "0f1727437e4f23d849f94c2051505460541671d53cf257000bda520767bf459d",
+  "cases": [
+    {
+      "scale": 1,
+      "viewport": [
+        0,
+        0,
+        128,
+        64
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "6e7fbee39b673aadeca7f2722ba51b7c9a864a959afa24f0753053bfb21a3475",
+      "zlib_offset": 0,
+      "zlib_length": 245,
+      "support": 171,
+      "partial_alpha": 56
+    },
+    {
+      "scale": 2,
+      "viewport": [
+        0,
+        0,
+        256,
+        128
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "610a6190cffdb4b6d057ef6dedd06fafdce71cfd3013691a4f32a57a361b5a05",
+      "zlib_offset": 245,
+      "zlib_length": 581,
+      "support": 691,
+      "partial_alpha": 136
+    },
+    {
+      "scale": 4,
+      "viewport": [
+        0,
+        0,
+        512,
+        256
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "83f4819c1b7e6056427cc46a61dd0e41fe573c79cc1a3b845b1efce2eff5a69e",
+      "zlib_offset": 826,
+      "zlib_length": 1383,
+      "support": 2781,
+      "partial_alpha": 281
+    },
+    {
+      "trajectory": "bent-size6",
+      "scale": 1,
+      "viewport": [
+        0,
+        0,
+        128,
+        64
+      ],
+      "stream_sha256": "c3b0a235aeddcaeea06b91145b3d5c650d18bbe9cb5a76591f951de88f0831d7",
+      "rgba_sha256": "a575c492e221dcc5f56ecda2c427ac1c4dc68c313798c32d9b84fb55f9bd3818",
+      "zlib_offset": 2209,
+      "zlib_length": 359,
+      "support": 189,
+      "partial_alpha": 107
+    },
+    {
+      "trajectory": "bent-size6",
+      "scale": 2,
+      "viewport": [
+        0,
+        0,
+        256,
+        128
+      ],
+      "stream_sha256": "c3b0a235aeddcaeea06b91145b3d5c650d18bbe9cb5a76591f951de88f0831d7",
+      "rgba_sha256": "7b5aee1b1b707c165b4420f54b36b80dd4b67292584929330c86cdb007e4dc7c",
+      "zlib_offset": 2568,
+      "zlib_length": 874,
+      "support": 761,
+      "partial_alpha": 250
+    },
+    {
+      "trajectory": "bent-size6",
+      "scale": 4,
+      "viewport": [
+        0,
+        0,
+        512,
+        256
+      ],
+      "stream_sha256": "c3b0a235aeddcaeea06b91145b3d5c650d18bbe9cb5a76591f951de88f0831d7",
+      "rgba_sha256": "7e547642d59acb74483ef79aac6c58739d8f0fc34dedc0982d1748a8efd5f92e",
+      "zlib_offset": 3442,
+      "zlib_length": 1974,
+      "support": 3053,
+      "partial_alpha": 496
+    },
+    {
+      "trajectory": "straight-partial-alpha-80402010",
+      "scale": 1,
+      "viewport": [
+        0,
+        0,
+        128,
+        64
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "6717aff7e6db610e12307c6f52a2960c46163ef00cb47a15c81e87aa6eaf72b5",
+      "zlib_offset": 5416,
+      "zlib_length": 314,
+      "support": 171,
+      "partial_alpha": 56
+    },
+    {
+      "trajectory": "straight-partial-alpha-80402010",
+      "scale": 2,
+      "viewport": [
+        0,
+        0,
+        256,
+        128
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "86f2ec7417cde0a21f77f15dadc6c124f374b7d8ded88da2e221d9f7e1961eee",
+      "zlib_offset": 5730,
+      "zlib_length": 720,
+      "support": 691,
+      "partial_alpha": 136
+    },
+    {
+      "trajectory": "straight-partial-alpha-80402010",
+      "scale": 4,
+      "viewport": [
+        0,
+        0,
+        512,
+        256
+      ],
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "rgba_sha256": "67d18cbfecc77beb7c6aa4c40176d9b8a692cd43cbd0c92e7116a4bacf4ec842",
+      "zlib_offset": 6450,
+      "zlib_length": 1690,
+      "support": 2781,
+      "partial_alpha": 281
+    }
+  ],
+  "color_capture_script": "conformance/inkpen_v4_color_scale_capture.py",
+  "output_comparisons": {
+    "scope": "Scale-aware contour prototype from native geometry; standalone SVG via resvg and direct document PDF via MuPDF and PDFium. PDF uses source-units-to-points factor 0.75 and is rasterized at 4/3 times the scale; native and output are composited on #fcfcfc. PDF comparisons cover straight geometry only.",
+    "svg_alpha_absolute_error": {
+      "straight_opaque": {
+        "fixed": [
+          1321,
+          17477,
+          104749
+        ],
+        "scale_aware": [
+          1321,
+          2673,
+          4718
+        ]
+      },
+      "bent_size6_opaque": {
+        "fixed": [
+          2793,
+          31462,
+          190232
+        ],
+        "scale_aware": [
+          2793,
+          4550,
+          7878
+        ]
+      },
+      "straight_80402010": {
+        "fixed": [
+          664,
+          8786,
+          52607
+        ],
+        "scale_aware": [
+          664,
+          1344,
+          2387
+        ]
+      }
+    },
+    "pdf_rgb_absolute_error": {
+      "straight_opaque": {
+        "mupdf_fixed": [
+          19617,
+          114972,
+          565912
+        ],
+        "mupdf_scale_aware": [
+          19617,
+          70910,
+          268875
+        ],
+        "pdfium_fixed": [
+          9423,
+          43074,
+          300309
+        ],
+        "pdfium_scale_aware": [
+          9423,
+          15030,
+          21444
+        ]
+      },
+      "straight_80402010": {
+        "mupdf_fixed": [
+          18103,
+          88204,
+          398296
+        ],
+        "mupdf_scale_aware": [
+          18103,
+          69885,
+          274599
+        ],
+        "pdfium_fixed": [
+          4424,
+          20095,
+          134638
+        ],
+        "pdfium_scale_aware": [
+          4424,
+          8166,
+          16819
+        ]
+      }
+    }
+  },
+  "reproduction": {
+    "archived_revision": "a24179384fbe043a8b5f003ee0c7bebeb394d106",
+    "archive_setup": "Restore the conformance tree from that git revision under tmp/conformance-cleanup/native-capture-a241793 and make the project-local scratch/apk-analysis-native and scratch/apk-analysis-runtime trees available there; see its original harness dependencies. No machine-wide registration is needed.",
+    "pinned_harness_sha256": {
+      "inkpen_joined_paint_native.py": "7a05db658343956af992823ee5a17622fa94a08c88152be9f39cee950eca4a79",
+      "inkpen_color_native.py": "ede05015aacd99d35c0cdc759f502587cfcd12033ad85120ea22d51e5b411c4f",
+      "inkpen_saved_caller_native.py": "c0b1657cdcf94bcf2c173ce68ed7817e55a4de246883b47265bb7b4d3f50dc04"
+    },
+    "capture_command": "For each scale 1, 2, 4: INKPEN_CAPTURE_SCALE=<scale> PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias python3 conformance/inkpen_v4_scale_capture.py --print-capture > /tmp/inkpen-v4-scale-<scale>.json; add INKPEN_CAPTURE_BENT=1 for bent control. For color, use conformance/inkpen_v4_color_scale_capture.py --capture-one --argb 0x80402010.",
+    "comparison_command": "PYTHONPATH=<cached pypdfium2 wheel directory> .venv/bin/python scratch/inkpen_v4_scale_compare.py. Requires captured JSONs, public SVG/PDF fixtures at the paths in that script, and /tmp/sdocx-agent-target/debug/sdocx-render-svg-047. Generate public fixtures first with the documented scratch producer.",
+    "public_fixture_command": "python3 scratch/inkpen_v4_public_fixture_producer.py (temporarily instruments the existing test and restores it in a finally block; requires exclusive Cargo and source access)."
+  }
+}

@@ -327,6 +327,9 @@ pub struct RenderOptions {
     /// Opt into saved InkPen V4 reconstruction with explicit display dimensions.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_profile: Option<InkPenRenderProfile>,
+    /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, or 4).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen_v4_output_scale: Option<u32>,
     /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
     /// `Some` opts into fresh state and identity page transform; the profile
     /// explicitly selects its enhanced-antialiasing paint route.
@@ -850,6 +853,7 @@ impl DocumentTextCache {
             body_text.as_ref(),
             retain_text,
             options.inkpen_profile,
+            options.inkpen_v4_output_scale,
             options.inkpen2_profile,
             options.inkpen2_v1_output_scale,
             options.chinesebrush_profile,
@@ -1293,6 +1297,7 @@ fn render_page_contents_svg(
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
     inkpen_profile: Option<InkPenRenderProfile>,
+    inkpen_v4_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -1365,6 +1370,7 @@ fn render_page_contents_svg(
         replay,
         body_text,
         inkpen_profile,
+        inkpen_v4_output_scale,
         inkpen2_profile,
         inkpen2_v1_output_scale,
         chinesebrush_profile,
@@ -1417,6 +1423,7 @@ struct CompositionContext<'a> {
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
     inkpen_profile: Option<InkPenRenderProfile>,
+    inkpen_v4_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -1515,6 +1522,7 @@ fn render_object(
                 native_allowed,
                 [context.page.width, context.page.height],
                 context.inkpen_profile,
+                context.inkpen_v4_output_scale,
                 context.inkpen2_profile,
                 context.inkpen2_v1_output_scale,
                 context.chinesebrush_profile,
@@ -3922,6 +3930,7 @@ fn render_stroke(
     native_allowed: bool,
     viewport: [u32; 2],
     inkpen_profile: Option<InkPenRenderProfile>,
+    inkpen_v4_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -4114,13 +4123,16 @@ fn render_stroke(
     }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Some(ink) = prepare_page_inkpen(stroke, inkpen_profile)
+        && let Some((ink, is_v4)) = prepare_page_inkpen_with_version(stroke, inkpen_profile)
         && let Some(vector) = inkpen_v1_vector_path(
             &ink.points,
             &ink.radii,
             &ink.sample_ends,
             ink.terminal.clone(),
             replay_index.is_some(),
+            inkpen_v4_output_scale
+                .filter(|scale| is_v4 && matches!(scale, 1 | 2 | 4))
+                .unwrap_or(1),
         )
     {
         let color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
@@ -4316,10 +4328,18 @@ fn valid_fountain_v14_output_scale(scale: f32) -> bool {
     inverse.is_finite() && inverse > 0.0 && inverse <= 1_000_000.0
 }
 
+#[cfg(test)]
 fn prepare_page_inkpen(
     stroke: &Stroke,
     profile: Option<InkPenRenderProfile>,
 ) -> Option<crate::ink::PreparedInkPenV1> {
+    prepare_page_inkpen_with_version(stroke, profile).map(|(ink, _)| ink)
+}
+
+fn prepare_page_inkpen_with_version(
+    stroke: &Stroke,
+    profile: Option<InkPenRenderProfile>,
+) -> Option<(crate::ink::PreparedInkPenV1, bool)> {
     profile
         .and_then(|profile| {
             crate::ink::prepare_inkpen_v4_for_page(
@@ -4328,7 +4348,8 @@ fn prepare_page_inkpen(
                 profile.screen_height,
             )
         })
-        .or_else(|| crate::ink::prepare_inkpen_v1_for_page(stroke))
+        .map(|ink| (ink, true))
+        .or_else(|| crate::ink::prepare_inkpen_v1_for_page(stroke).map(|ink| (ink, false)))
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -4374,6 +4395,7 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
             &ink.sample_ends,
             ink.terminal,
             true,
+            1,
         )
     {
         prepared.points = Cow::Owned(ink.points);
@@ -4433,6 +4455,7 @@ fn inkpen_v1_vector_path(
     sample_ends: &[usize],
     terminal: Range<usize>,
     replay: bool,
+    output_scale: u32,
 ) -> Option<InkPenV1VectorPath> {
     const VERTICES: usize = 96;
     const MAX_STAMPS: usize = 65_536;
@@ -4493,7 +4516,7 @@ fn inkpen_v1_vector_path(
                 // Approximate the native shader's half-coverage contour with
                 // a continuous-derivative boundary at one source unit per SVG
                 // pixel. Native finite 2x2 `fwidth` coverage differs near edges.
-                let contour = (radius - coverage_offset).max(0.0);
+                let contour = (radius - coverage_offset / f64::from(output_scale)).max(0.0);
                 let x = point.x + contour * cos;
                 let y = point.y + contour * sin;
                 if !x.is_finite() || !y.is_finite() {
@@ -4547,7 +4570,7 @@ pub(crate) fn inkpen_v1_vector_candidate_svg(
     {
         return None;
     }
-    let vector = inkpen_v1_vector_path(points, radii, sample_ends, terminal, replay)?;
+    let vector = inkpen_v1_vector_path(points, radii, sample_ends, terminal, replay, 1)?;
     let root = Svg::new()
         .width(viewport[0])
         .height(viewport[1])
@@ -5006,6 +5029,10 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             &ink.sample_ends,
             ink.terminal.clone(),
             true,
+            options
+                .inkpen_v4_output_scale
+                .filter(|scale| matches!(scale, 1 | 2 | 4))
+                .unwrap_or(1),
         )
     {
         let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
@@ -8851,6 +8878,7 @@ mod tests {
             &ink.sample_ends,
             ink.terminal,
             true,
+            1,
         )
         .unwrap();
         assert_eq!(
@@ -8877,6 +8905,59 @@ mod tests {
         let normal = render_document_svg(&source, &options)[0].svg.clone();
         assert_ne!(normal, baseline);
         assert!(normal.contains(r##"fill="#336699""##));
+        for scale in [0, 1, 3, u32::MAX] {
+            let scaled = RenderOptions {
+                inkpen_v4_output_scale: Some(scale),
+                ..options.clone()
+            };
+            assert_eq!(render_document_svg(&source, &scaled)[0].svg, normal);
+        }
+        for scale in [2, 4] {
+            let scaled = RenderOptions {
+                inkpen_v4_output_scale: Some(scale),
+                ..options.clone()
+            };
+            assert_ne!(render_document_svg(&source, &scaled)[0].svg, normal);
+            let scaled_replay = super::render_layout_page_replay_svg(
+                &source,
+                &layout_document(&source),
+                0,
+                &scaled,
+            )
+            .unwrap()
+            .svg;
+            assert_ne!(
+                scaled_replay,
+                super::render_layout_page_replay_svg(
+                    &source,
+                    &layout_document(&source),
+                    0,
+                    &options,
+                )
+                .unwrap()
+                .svg
+            );
+            #[cfg(feature = "pdf")]
+            assert_ne!(
+                crate::render_document_pdf(&source, &scaled, &crate::PdfOptions::default())
+                    .unwrap(),
+                crate::render_document_pdf(&source, &options, &crate::PdfOptions::default())
+                    .unwrap(),
+            );
+        }
+        let no_profile = RenderOptions {
+            inkpen_v4_output_scale: Some(4),
+            ..RenderOptions::default()
+        };
+        assert_eq!(render_document_svg(&source, &no_profile)[0].svg, baseline);
+        let mut v1_source = source.clone();
+        let mut v1_stroke = stroke.clone();
+        v1_stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        v1_source.pages[0].objects = vec![v1_stroke.into()];
+        assert_eq!(
+            render_document_svg(&v1_source, &options)[0].svg,
+            render_document_svg(&v1_source, &no_profile)[0].svg,
+        );
         let replay =
             super::render_layout_page_replay_svg(&source, &layout_document(&source), 0, &options)
                 .unwrap()
@@ -9023,6 +9104,7 @@ mod tests {
                 &ink.sample_ends,
                 ink.terminal,
                 true,
+                1,
             )
             .is_none()
         );

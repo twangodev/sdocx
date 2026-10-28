@@ -377,6 +377,13 @@ saved ARGB and a caller-supplied display size; the default remains generic. The
 exact `18;0;100;` setting also admits the native opaque-black default when ARGB
 is absent, as observed in a synthetic serialized-frame derivative; this color
 is retained when geometry falls back.
+The optional `inkpen_v4_output_scale` adjusts the coverage contour for a known
+uniform output scale of 1, 2, or 4; absent and other values preserve the prior
+contour. The display profile is still required. Synthetic native host-Mesa
+controls cover two trajectories and partial-alpha color; SVG comparisons and
+direct document PDF comparisons in MuPDF and PDFium improve at 2× and 4× on
+the straight control. The PDF comparisons do not cover the bent control, and
+device, arbitrary transforms, and other scales remain unverified.
 For fixed-width V4 strokes, the opt-in additionally admits fixed widths 0 through 200 for tools 0–4 in either curve mode. Synthetic Drawing and Mesa controls cover widths 0, 0.25, 0.5, 1, 3, 6, 12, 20, 30, 50, 100, and 200 and two geometries; all tools and curve modes are covered at width 6. Their complete geometry streams match, and public SVG and direct PDF comparisons reduce pixel error against these host captures. Widths outside that interval remain on fallback; intermediate widths are admitted but have not been individually captured. Its contour approximates native coverage, and V4 replay event boundaries and
 other output scales remain unverified.
 The numeric core matches twenty-one
