@@ -1,0 +1,78 @@
+{
+  "schema": "montblanc-drawing-reuse-sequence-v1",
+  "scope": "Synthetic three-point ObjectStroke A/B/A through one native Drawing using host-emulated ARM64; B changes only pressures. Compares native AddStartPoint/AddPoint/AddEndPoint signatures and six f32 words against separate existing fresh-Drawing captures. Does not establish arbitrary-stroke state independence, serialized defaults, GL paint, native PDF, or Android parity.",
+  "inputs": {
+    "pen": "com.samsung.android.sdk.pen.pen.preload.MontblancFountainPen",
+    "setting": "1;",
+    "tool": 2,
+    "stroke_type": 0,
+    "curve_enabled": true,
+    "visible": true,
+    "size": 2.0,
+    "points": [
+      [
+        0,
+        0
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        20,
+        2
+      ]
+    ],
+    "pressure_A": [
+      0.3,
+      0.6,
+      1.0
+    ],
+    "pressure_B": [
+      0.3,
+      0.85,
+      0.9
+    ]
+  },
+  "result": {
+    "counts": [
+      25,
+      25,
+      25
+    ],
+    "first_equals_fresh_baseline": true,
+    "pen_size_f32_bits": [
+      [
+        "00000040",
+        "00000040"
+      ],
+      [
+        "00000040"
+      ],
+      [
+        "00000040"
+      ]
+    ],
+    "returns": [
+      1,
+      1,
+      1
+    ],
+    "same_gl_receiver": true,
+    "same_rtv_receiver": true,
+    "second_equals_fresh_pressure": true,
+    "stream_sha256": [
+      "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8",
+      "45a4092301fde976ba0006d92a5c8a30d8d0a41211b0caf2cbd2afbb547bfd62",
+      "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+    ],
+    "third_equals_fresh_baseline": true
+  },
+  "source_sha256": {
+    "tools/montblanc/state-sequence/capture.py": "73db0e3260d50b3d6c1dfa1d36dfa4ad01d53f7b0e3e52cdd05b80373e24c43e",
+    "tmp/vector-parity-plan/montblanc-rtv1-mesh-capture-root-v2/montblanc_state_controls.py": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+    "tmp/vector-parity-plan/montblanc-rtv1-mesh-capture-root-v2/captures/baseline.json": "7273ca60078c8fdd675d0beb874d9912b4ba08036425a234e544f49a77914e6c",
+    "tmp/vector-parity-plan/montblanc-rtv1-mesh-capture-root-v2/captures/pressure.json": "932996cae976178e9088e367f195b8a1ee8543ad45a525d2a148e9cc37dbe807"
+  },
+  "reproduction": "From repository root: PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/vector-parity-plan/montblanc-rtv1-mesh-capture-root-v2/conformance python3 tools/montblanc/state-sequence/capture.py. Requires pinned ignored harness, runtime inputs, native libraries, Python Unicorn and host adapters; not guaranteed in a clean checkout."
+}
