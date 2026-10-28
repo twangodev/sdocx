@@ -368,7 +368,10 @@ pub(crate) fn prepare_stroke(
     let rendering = stroke.rendering.as_ref().ok_or("missing stroke metadata")?;
     let p = rendering.properties;
     if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Brush")
-        || !matches!(rendering.advanced_settings.as_deref(), None | Some(""))
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            None | Some("") | Some("1;")
+        )
         || rendering.tool_type_raw != 2
         || !p.compressed
         || p.replay_only
@@ -821,6 +824,8 @@ mod tests {
         stroke.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
         assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
         stroke.rendering.as_mut().unwrap().advanced_settings = None;
         stroke.rendering.as_mut().unwrap().style.pen_size = Some(4.0);

@@ -1,0 +1,108 @@
+{
+  "scope": "Synthetic Model ObjectStroke and emulated native Drawing with explicit host queue and Mesa GLES; not saved-note or device evidence. Other admitted inputs are extrapolated.",
+  "commands": [
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py --advanced-setting 1 --dispatch-task-seq 0 --dispatch-task-seq 1 --dispatch-task-seq 2 --dispatch-task-seq 3 --dispatch-task-seq 4 --dispatch-task-seq 5 --dispatch-task-seq 6 --dispatch-task-seq 7",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py --advanced-setting null --dispatch-task-seq 0 --dispatch-task-seq 1 --dispatch-task-seq 2 --dispatch-task-seq 3 --dispatch-task-seq 4 --dispatch-task-seq 5 --dispatch-task-seq 6 --dispatch-task-seq 7"
+  ],
+  "harness_sha256": {
+    "scratch/simplebrush-two-variation/simplebrush-5-source-capture.py": "ccdf93b6199498245fb2e5a6228122a2b15c5fe47b1cfaa11cf91c35f09e5df4",
+    "scratch/simplebrush-two-variation/simplebrush-5-paint-capture.py": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4"
+  },
+  "literal_one_input": {
+    "advanced_setting": "1;",
+    "color_argb": "0x8044aaee",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+    "pen_size_f32_bits": "00000041",
+    "pen_size_requested_f32_bits": "00000041",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00008040"
+      ],
+      [
+        "00000041",
+        "00000041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "0000803e",
+      "0000003f"
+    ],
+    "pressure_profile": "case",
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      1
+    ],
+    "tool_type": 2
+  },
+  "null_input": {
+    "advanced_setting": null,
+    "color_argb": "0x8044aaee",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+    "pen_size_f32_bits": "00000041",
+    "pen_size_requested_f32_bits": "00000041",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00008040"
+      ],
+      [
+        "00000041",
+        "00000041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "0000803e",
+      "0000003f"
+    ],
+    "pressure_profile": "case",
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      1
+    ],
+    "tool_type": 2
+  },
+  "geometry": {
+    "sha256": "af31a002a35d938800c4d686b44d170e7884d44424777356c868c95b16c6e922",
+    "vector_bytes": "00000000000080409a99614052049e3f8ac093409a99614083dc1a4021b7a6409a996140f4ff7f40fdffbf409a996140000080400000c0409999614085575f40e2d5b740814e6340cc54b54066aada4069036540f4ffff40faffff4051b86640",
+    "vector_count": 8
+  },
+  "frame_sha256": "7b01749a4179c9e0274ca800843c62be0b9801222ed0e38eb1996b25a7d4d551",
+  "nonzero_alpha_pixels": 85,
+  "native_gl_error_verdict": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  }
+}

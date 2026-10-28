@@ -251,6 +251,17 @@ fn opted_in_paint_uses_explicit_color_and_unsupported_setting_falls_back() {
         crate::render_document_pdf(&doc, &options(), &Default::default()).unwrap()
     );
     source.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+    let literal_one = document(source.clone());
+    assert_eq!(
+        render_document_svg(&literal_one, &options()).remove(0).svg,
+        profiled
+    );
+    #[cfg(feature = "pdf")]
+    assert_eq!(
+        crate::render_document_pdf(&literal_one, &options(), &Default::default()).unwrap(),
+        crate::render_document_pdf(&doc, &options(), &Default::default()).unwrap()
+    );
+    source.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
     let unsupported = document(source);
     assert_eq!(
         render_document_svg(&unsupported, &options()).remove(0).svg,
