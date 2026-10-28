@@ -1461,6 +1461,122 @@ mod tests {
     }
 
     #[test]
+    fn v4_crossing_export_control() {
+        use base64::Engine;
+        use flate2::read::ZlibDecoder;
+        use sha2::{Digest, Sha256};
+        use std::io::{Read, Write};
+
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v4-crossing-native.json"
+        ))
+        .unwrap();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(receipt["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut native = Vec::new();
+        ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut native)
+            .unwrap();
+        assert_eq!(native.len(), 128 * 64 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&native)),
+            receipt["rgba_sha256"]
+        );
+        assert_eq!(
+            native
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|pixel| pixel[3] != 0)
+                .count(),
+            190
+        );
+        let mut stroke = native_caller_stroke(&receipt["input"]);
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
+        let page = crate::Page {
+            uuid: "inkpen-v4-crossing".into(),
+            width: 128,
+            height: 64,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![stroke.into()],
+        };
+        let document = crate::Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let mut errors = Vec::new();
+        for (name, options) in [
+            ("generic", crate::RenderOptions::default()),
+            (
+                "profile",
+                crate::RenderOptions {
+                    inkpen_profile: Some(crate::InkPenRenderProfile {
+                        screen_width: 1920,
+                        screen_height: 1080,
+                    }),
+                    inkpen_v4_output_scale: Some(1),
+                    ..Default::default()
+                },
+            ),
+        ] {
+            let svg = crate::render_document_svg(&document, &options)
+                .remove(0)
+                .svg;
+            let start = svg.find('>').unwrap() + 1;
+            let end = svg.rfind("</svg>").unwrap();
+            let body = svg[start..end]
+                .trim_start()
+                .strip_prefix(
+                    "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>",
+                )
+                .unwrap();
+            let svg = format!(
+                "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                &svg[..start]
+            );
+            if let Some(dir) = std::env::var_os("SDOCX_INKPEN_CROSSING_EXPORT_DIR") {
+                let dir = std::path::Path::new(&dir);
+                let rendered = crate::RenderedPage::new(0, 128, 64, svg.clone());
+                let pdf = crate::render_svg_pages_pdf(&[rendered], &crate::PdfOptions::default())
+                    .unwrap();
+                for (extension, bytes) in [("svg", svg.as_bytes()), ("pdf", pdf.as_slice())] {
+                    std::fs::File::options()
+                        .write(true)
+                        .create_new(true)
+                        .open(dir.join(format!("{name}.{extension}")))
+                        .unwrap()
+                        .write_all(bytes)
+                        .unwrap();
+                }
+            }
+            let tree = resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 64).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            errors.push(
+                native
+                    .as_chunks::<512>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flat_map(|row| row.as_chunks::<4>().0)
+                    .zip(pixmap.data().as_chunks::<4>().0)
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>(),
+            );
+        }
+        assert!(errors[1] < errors[0] / 5, "{errors:?}");
+        assert!(errors[1] < 6_000, "{errors:?}");
+    }
+
+    #[test]
     fn v4_output_scale_improves_svg_against_native_frames() {
         use flate2::read::ZlibDecoder;
         use sha2::{Digest, Sha256};

@@ -1,0 +1,60 @@
+{
+  "scope": "Synthetic crossing InkPen V4 host Mesa control, 1920x1080 display, 128x64 framebuffer, transparent black.",
+  "input": {
+    "advanced_getter_object_hex": "d0bf0e02000000003042031000000000f0bf0e02000000001000000000000000",
+    "advanced_getter_pointer_nonnull": true,
+    "advanced_getter_utf8": "",
+    "advanced_setting_state": "empty",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+    "pen_size_f32_bits": "0000c040",
+    "points_f32_bits": [
+      [
+        "00007041",
+        "00007041"
+      ],
+      [
+        "00003442",
+        "00000c42"
+      ],
+      [
+        "00007041",
+        "00000c42"
+      ],
+      [
+        "00003442",
+        "00007041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "0000803e",
+      "0000003f",
+      "0000403f",
+      "0000803f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "tool_type": 1
+  },
+  "stream_sha256": "0f7a8f785fb0b2b3a26d55001adf2441136b6383bad502127e05a7af949dcc80",
+  "rgba_sha256": "ebf3b0b23a1cb6ab141ec6916bbb9a6400748200bf62d49ab3e6739f18da6402",
+  "rgba_zlib_base64": "eNrt2c8rRFEYxvFjQVMWSkzD1PxoYkMoNpKFsrWykYVSilL+B1YoC6UsZCFlJRs75T9QWNuxQLK2EZ5r7q3jIM2YH/fO/X7qWUzNnLfe99y5c88YAwAAAAAAAAAAAHxa8YN4zv7dz7YyUMPaQV2EY/5BJmtQt2DVKzCGuu+BPWcPvCndVayZt2rlGUHdeTN4cvbArjJXpXpZq06W9oeG993/4OyDTSVT4To5a/0cbQ+VHmX9h98F41z/sTKv7Dh74EZpr8DaGWvNDK0OraRy4eyBLWXqn+umrfXStDn0xqzngmBuq0or84+NLn/mwdyelWtlqIy1UtY6KVobKdP+M4F9T7hSWkq8rwSfTdLSyEkol84e2FBmyrj+22hnZA0q58qt+Xpu9NcZ8rD1/gRtjLQmZcma54spniUuK6O/fGbW8P9Po/HOjRaUR+e+cKjsKyNKv3Lg7487ZZG2NZwJZc18Pz+8V16t12fc+xtahymeE50qJ9b8j5UjpZMWxUaz0qv0lficCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBkfo5l5AA=="
+}

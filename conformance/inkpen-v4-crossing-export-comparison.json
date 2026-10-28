@@ -1,0 +1,16 @@
+{
+  "scope": "Alpha absolute-error sums against a synthetic host-Mesa frame; MuPDF rasterizes SVG and PDF. No device parity.",
+  "pymupdf_version": "1.28.2",
+  "cases": {
+    "generic": {
+      "svg": 49953,
+      "pdf": 49953
+    },
+    "profile": {
+      "svg": 3719,
+      "pdf": 3719
+    }
+  },
+  "native_rgba_sha256": "ebf3b0b23a1cb6ab141ec6916bbb9a6400748200bf62d49ab3e6739f18da6402",
+  "recipe": "Run the v4_crossing_export_control Rust test with SDOCX_INKPEN_CROSSING_EXPORT_DIR set to an existing empty directory. Decode rgba_zlib_base64 from inkpen-v4-crossing-native.json; reverse its 64 rows of 512 RGBA bytes. Open each SVG in PyMuPDF at scale 1 and each PDF at scale 4/3, with alpha=True. Assert 128x64 RGBA; sum absolute differences of the native and raster alpha bytes. Both exports strip the #fcfcfc page background and wrap the body in translate(0 64) scale(1 -1)."
+}
