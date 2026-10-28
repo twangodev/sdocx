@@ -1,0 +1,27 @@
+{
+  "schema": "sdocx.airbrush-tool1-matrix-export-comparison.v1",
+  "native_fixture": "airbrush-tool1-matrix-native.json",
+  "scope": "Synthetic saved V2 tool-1 Drawing desktop Mesa controls, 256x256. Public page SVG rasterized by resvg, direct scene PDF rasterized at 96 dpi by PyMuPDF 1.28.2 on transparent and PDFium via pypdfium2 5.14.0 on white. SVG and MuPDF channels are premultiplied RGBA; PDFium white RGB compared with source-over native frame. Scores are sums of absolute channel errors. No Android device, transformed output or general PDF parity is established.",
+  "cases": {
+    "zigzag": {
+      "svg_rgba_error": 0,
+      "mupdf_rgba_error": 6952,
+      "pdfium_white_rgb_error": 4063,
+      "artifact_sha256": {
+        "svg": "e98227ef32808615762a7ecfd97192d3347fcd4ae93a9e5e862db4251cbe4f79",
+        "png": "97810a0493a127d022a8340453458f39b5fce95ff96b8e121975980e81b6248c",
+        "pdf": "955eeecc1598ae9bb7b904100985b33f4d1d6415cd9c7fa04e56fadfb3da00e2"
+      }
+    },
+    "reverse": {
+      "svg_rgba_error": 0,
+      "mupdf_rgba_error": 2216,
+      "pdfium_white_rgb_error": 1325,
+      "artifact_sha256": {
+        "svg": "8cfc30d0cb2dd7faafe7c8d86afc589c7770cbaa75b6e94f772df68522bc0042",
+        "png": "8f5df0580bb2e9dfdce265d6a398622e605558df91d790f84caed27601d5b876",
+        "pdf": "e3b695f5264ba5d4e64abc8b4fb599f5bc3d6c002a4423a85e3cc0039ad5bffc"
+      }
+    }
+  }
+}

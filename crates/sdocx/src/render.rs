@@ -13315,6 +13315,51 @@ mod tests {
                 matrix["cases"][index]["stream_hex"].as_str().unwrap(),
                 "tool-1 matrix case {index}"
             );
+            #[cfg(feature = "pdf")]
+            {
+                let mut probe_document = public_airbrush_v2_document();
+                *probe_document.pages[0].strokes_mut().next().unwrap() = probe;
+                let probe_layout = layout_document(&probe_document);
+                let options = RenderOptions {
+                    airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+                    ..RenderOptions::default()
+                };
+                let request =
+                    super::PageSceneRequest::sliced(&probe_layout.pages[0], 0, 256, false).unwrap();
+                let mut cache = super::DocumentTextCache::default();
+                let scene = cache
+                    .render_layout_page_scene_requests(
+                        &probe_document,
+                        &[request],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0);
+                let tree =
+                    resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default())
+                        .unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                let bottom_up = pixmap
+                    .data()
+                    .as_chunks::<{ 256 * 4 }>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flatten()
+                    .copied()
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    sha256_hex(&bottom_up),
+                    matrix["cases"][index]["frame"]["sha256"].as_str().unwrap(),
+                    "tool-1 matrix case {index} native frame"
+                );
+            }
         }
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
         assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
