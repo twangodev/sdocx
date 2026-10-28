@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 base = {'points': [[0, 0], [8, 0], [16, 3], [24, 3]], 'size': 4,
         'curve_enabled': True, 'tool_type': 2, 'stroke_type': 0,
         'pressure': [.2, .4, .6, .8], 'timestamps': [0, 10, 20, 30],
@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory() as tmp:
         path.write_text(json.dumps(source))
         captures = []
         for pen in ('InkPen2', 'StraightInkPen2'):
-            cmd = [sys.executable, str(root / 'conformance/inkpen2_v1_paint_native.py'), '--print-capture', '--matrix-translate-x', '32', '--matrix-translate-y', '32', '--matrix-scale', str(scale), '--color-argb', color, '--input-json', str(path), '--pen-name', pen]
+            cmd = [sys.executable, str(root / 'tools/inkpen-capture/inkpen2_v1_paint_native.py'), '--print-capture', '--matrix-translate-x', '32', '--matrix-translate-y', '32', '--matrix-scale', str(scale), '--color-argb', color, '--input-json', str(path), '--pen-name', pen]
             captures.append(json.loads(subprocess.check_output(cmd, cwd=root, env=env)))
         a, b = captures
         for key in ('geometry_hex', 'geometry_sha256', 'rgba_zlib_base64', 'rgba_sha256', 'draw_calls', 'shader_programs', 'output_size', 'draw_matrix'):
@@ -39,6 +39,6 @@ with tempfile.TemporaryDirectory() as tmp:
                      'nonzero_pixels': a['nonzero_pixels'], 'selected_versions': [a['selected_version'], b['selected_version']]}
 print(json.dumps({'schema': 'sdocx-straightinkpen2-null-v1-paired-paint-native-v1',
                   'scope': 'Paired synthetic ObjectStroke Drawing and RTV1 host Mesa, transparent target; no serialized notes or device output.',
-                  'capture_script': 'conformance/straightinkpen2_v1_paired_paint_capture.py',
-                  'adapter_sha256': hashlib.sha256((root / 'conformance/inkpen2_v1_paint_native.py').read_bytes()).hexdigest(),
+                  'capture_script': 'tools/inkpen-capture/straightinkpen2_v1_paired_paint_capture.py',
+                  'adapter_sha256': hashlib.sha256((root / 'tools/inkpen-capture/inkpen2_v1_paint_native.py').read_bytes()).hexdigest(),
                   'compared': ['geometry bytes', 'RGBA bytes', 'draw calls', 'shader programs', 'output size', 'draw matrix'], 'cases': out}, indent=2))

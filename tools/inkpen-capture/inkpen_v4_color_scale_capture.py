@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 runner = root / "tmp/conformance-cleanup/native-capture-a241793/conformance/inkpen_color_native.py"
 scale = int(os.environ.get("INKPEN_CAPTURE_SCALE", "1"))
 source = runner.read_text()

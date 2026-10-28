@@ -12,11 +12,11 @@ available under `tmp/` and `scratch/`:
 
 ```sh
 export PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias
-INKPEN_CAPTURE_SCALE=3 python3 conformance/inkpen_v4_scale_capture.py --print-capture > /tmp/v4-3-straight.json
+INKPEN_CAPTURE_SCALE=3 python3 tools/inkpen-capture/inkpen_v4_scale_capture.py --print-capture > /tmp/v4-3-straight.json
 for name in 1 loop phase; do
-  INKPEN_CAPTURE_SCALE=3 INKPEN_CAPTURE_BENT="$name" python3 conformance/inkpen_v4_scale_capture.py --print-capture > "/tmp/v4-3-$name.json"
+  INKPEN_CAPTURE_SCALE=3 INKPEN_CAPTURE_BENT="$name" python3 tools/inkpen-capture/inkpen_v4_scale_capture.py --print-capture > "/tmp/v4-3-$name.json"
 done
-INKPEN_CAPTURE_SCALE=3 python3 conformance/inkpen_v4_color_scale_capture.py --capture-one --argb 0x80402010 > /tmp/v4-3-color.json
+INKPEN_CAPTURE_SCALE=3 python3 tools/inkpen-capture/inkpen_v4_color_scale_capture.py --capture-one --argb 0x80402010 > /tmp/v4-3-color.json
 python3 tools/inkpen-v4/pack.py /tmp
 ```
 

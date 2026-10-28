@@ -65,9 +65,8 @@ Metrics, reports, ink selection and their tests are Rust. PDF rasterization
 uses a small external PyMuPDF adapter; install `pymupdf==1.28.2` in the Python
 environment passed with `--pdf-python` (or `SDOCX_PDF_PYTHON`). Its Python and
 PyMuPDF versions are recorded in each report. The corpus is never downloaded
-by the runner. Native-capture Python scripts are no longer maintained in this
-checkout. Their full sources are
-retained in the ignored archive at
+by the runner. Native capture and analysis tools are kept under `tools/`;
+some depend on historical helpers retained in the ignored archive at
 `tmp/conformance-cleanup/native-capture-a241793` and can be restored from
 revision `a24179384fbe043a8b5f003ee0c7bebeb394d106` with:
 

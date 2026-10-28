@@ -30,7 +30,7 @@ for dy in (0, 75):
                         'difference_examples': differences[:10]})
 receipt = {'schema': 'sdocx-pencil2-v14-target-height-native-v1',
            'scope': 'Controlled native RTV4 host Mesa replay with the same 84 records, draw matrix and inverse scale, on 192x192 and 192x267 RGBA8 targets. Readback coordinates have OpenGL bottom-left origin. Not full Drawing, Android, PDF or device evidence.',
-           'command': 'PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil2_v14_target_height_capture.py',
+           'command': 'PYTHONPATH=scratch/apk-analysis-runtime/python python3 tools/pencil-capture/pencil2_v14_target_height_capture.py',
            'capture_source': str(source.relative_to(Path.cwd())),
            'capture_source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
            'baseline_rgba_sha256': hashlib.sha256(baseline).hexdigest(),

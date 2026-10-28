@@ -7,7 +7,7 @@ Run from the repository root (requires the project's PyMuPDF environment):
     CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
     SDOCX_AIRBRUSH_PDF_CAPTURE_DIR=/tmp cargo test -p sdocx --features pdf \
     --lib saved_v1_public_short_stroke_matches_native_frame
-    .venv/bin/python conformance/compare_airbrush_v1_pdf.py /tmp
+    .venv/bin/python tools/pen-capture/compare_airbrush_v1_pdf.py /tmp
 """
 import hashlib
 import json

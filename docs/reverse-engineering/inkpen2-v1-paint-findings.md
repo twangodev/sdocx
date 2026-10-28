@@ -12,7 +12,7 @@ blending. A fresh recapture reproduced both full RGBA SHA-256 values on this
 host. These are host Mesa outputs, not Android/device pixels, a complete app
 canvas, serialized-note admission, or SVG/PDF parity.
 
-The [capture adapter](../../conformance/inkpen2_v1_paint_native.py) checks the
+The [capture adapter](../../tools/inkpen-capture/inkpen2_v1_paint_native.py) checks the
 SHA-256 of the joined native harness and seven support scripts before running;
 the parent harness checks pinned native libraries. It requires the existing
 `scratch/apk-analysis-native`, `scratch/apk-analysis-runtime` and
@@ -23,8 +23,8 @@ different pixels. From the project root, recapture with:
 
 ```sh
 export PYTHONPATH=scratch/straightinkpen2-alias:scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin
-python3 conformance/inkpen2_v1_paint_native.py --print-capture > /tmp/inkpen2-v1-original.json
-python3 conformance/inkpen2_v1_paint_native.py --print-capture --matrix-translate-x 32 --matrix-translate-y 32 > /tmp/inkpen2-v1-translated.json
+python3 tools/inkpen-capture/inkpen2_v1_paint_native.py --print-capture > /tmp/inkpen2-v1-original.json
+python3 tools/inkpen-capture/inkpen2_v1_paint_native.py --print-capture --matrix-translate-x 32 --matrix-translate-y 32 > /tmp/inkpen2-v1-translated.json
 ```
 
 Compare `geometry_sha256`, `rgba_sha256`, `draw_matrix`, and the complete
@@ -41,7 +41,7 @@ The capture uses the same identity canvas and synthetic setter boundary as the
 geometry controls; it does not deserialize a saved page or establish device
 appearance. An attempted type-1 stroke hit an unmapped read in this host
 harness, so it does not establish whether native Drawing admits that style.
-Recapture with `python3 conformance/inkpen2_v1_style_capture.py`; the adapter
+Recapture with `python3 tools/inkpen-capture/inkpen2_v1_style_capture.py`; the adapter
 requires the same local native and runtime research trees as the geometry
 capture.
 
@@ -73,7 +73,7 @@ worsened PDF alpha error for all six shapes, so the vector renderer retains circ
 
 At 1440 × 2560, the six-shape [host capture](../../conformance/inkpen2-v1-screen-paint-native.json) retains complete vertex streams. The resolution-dependent model matches all six byte for byte, including the reverse stroke whose geometry and frame differ from 1920 × 1080. The public 1× SVG and [PDF comparison](../../conformance/inkpen2-v1-high-pdf-comparison.json) have lower alpha error than generic output in all six cases. This is host-Mesa evidence, not device or application-canvas parity. At 2×, six additional host frames and public SVG/PDF comparisons also improve against generic output. At 0.5×, the short stroke candidate has worse SVG and PDF alpha error, so that scale remains excluded. See the [capture](../../conformance/inkpen2-v1-high-scales-native.json) and [PDF comparison](../../conformance/inkpen2-v1-high-scales-pdf-comparison.json).
 
-Additional [synthetic geometry controls](../../conformance/inkpen2-v1-extra-controls-native.json) compare zero, full, and alternating pressures, pen sizes 0.5 and 8, and 32-point curved and straight strokes against native saved redraw at 1920 × 1080. All seven vertex streams match the bounded model byte for byte. These controls do not establish paint, serialized-note, or device parity. Recapture with `python3 conformance/inkpen2_v1_extra_controls_capture.py`. Four further callback controls use fractional negative coordinates, irregular timestamps, descending timestamps, and a disabled curve flag. Their native vertex streams also match the model byte for byte. They do not establish SVG or PDF paint parity for these inputs.
+Additional [synthetic geometry controls](../../conformance/inkpen2-v1-extra-controls-native.json) compare zero, full, and alternating pressures, pen sizes 0.5 and 8, and 32-point curved and straight strokes against native saved redraw at 1920 × 1080. All seven vertex streams match the bounded model byte for byte. These controls do not establish paint, serialized-note, or device parity. Recapture with `python3 tools/inkpen-capture/inkpen2_v1_extra_controls_capture.py`. Four further callback controls use fractional negative coordinates, irregular timestamps, descending timestamps, and a disabled curve flag. Their native vertex streams also match the model byte for byte. They do not establish SVG or PDF paint parity for these inputs.
 
 A further [host capture](../../conformance/inkpen2-v1-pressure-paint-native.json)
 compares zero, full, and alternating pressure on the same four-point stroke,
@@ -84,6 +84,6 @@ PDF comparisons recorded in the receipt. SVG uses resvg and PDF uses PyMuPDF
 at 4/3 pixels per point. These are synthetic transparent host-Mesa controls,
 not saved-note or device parity; they do not justify a change to the existing
 profile. Recapture the native inputs with
-`python3 conformance/inkpen2_v1_pressure_paint_capture.py` using the local
+`python3 tools/inkpen-capture/inkpen2_v1_pressure_paint_capture.py` using the local
 prerequisites above. The public comparisons used a temporary test harness
 adapted from `inkpen2_v1_distinct_native_shapes_public_svg`.

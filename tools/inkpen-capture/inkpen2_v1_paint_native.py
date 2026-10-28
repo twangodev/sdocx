@@ -11,7 +11,7 @@ opaque_background = '--opaque-background' in sys.argv
 if opaque_background:
     sys.argv.remove('--opaque-background')
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 support = root / 'tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance'
 pins = {
     'oblique_canvas_native.py': '1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2',
@@ -26,7 +26,7 @@ for name, digest in pins.items():
     path = support / name
     if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
         raise SystemExit(f'missing or changed pinned capture support: {path}')
-source = Path(__file__).resolve().parents[1] / 'scratch/straightinkpen2-alias/inkpen2_joined_paint_native.py'
+source = Path(__file__).resolve().parents[2] / 'scratch/straightinkpen2-alias/inkpen2_joined_paint_native.py'
 if hashlib.sha256(source.read_bytes()).hexdigest() != '22d16b75d3324b36606b66cc380e37cd4d6c9f3df14c4d4849120ed0ae294b38':
     raise SystemExit(f'changed joined capture harness: {source}')
 code = source.read_text()

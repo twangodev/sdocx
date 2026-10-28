@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pencil3_sampler_inputs_native as capture
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 fixture = json.loads((root / 'conformance/pencil3-sampler-inputs-native.json').read_text())
 cases = {}
 for name in ('baseline_tool2_curve', 'tool3_curve_4pt'):

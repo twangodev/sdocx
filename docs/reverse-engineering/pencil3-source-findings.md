@@ -189,7 +189,7 @@ complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted
 optional axes remain distinct. The strict ordinary-style gate does not establish
 native behavior for the rejected effects or all property combinations.
 
-The [negative-size Drawing probe](../../conformance/pencil3_negative_size_capture.py)
+The [negative-size Drawing probe](../../tools/pencil-capture/pencil3_negative_size_capture.py)
 and its [receipt](../../conformance/pencil3-negative-size-native.json)
 also captures -10 and -0.1. The native Model setter's getter returns 0 for
 both; Drawing's Pen setter then clamps that to 0.4. Both produce the same complete

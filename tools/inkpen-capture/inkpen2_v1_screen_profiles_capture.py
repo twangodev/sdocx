@@ -7,8 +7,8 @@ import subprocess
 import sys
 import tempfile
 
-root = Path(__file__).resolve().parents[1]
-harness = root / 'conformance/inkpen2_v1_controls_native.py'
+root = Path(__file__).resolve().parents[2]
+harness = root / 'tools/inkpen-capture/inkpen2_v1_controls_native.py'
 case = {'points': [[0, 0], [8, 0], [16, 3], [24, 3]], 'size': 4,
         'curve_enabled': True, 'tool_type': 2, 'stroke_type': 0,
         'pressure': [.2, .4, .6, .8], 'timestamps': [0, 10, 20, 30],
@@ -39,6 +39,6 @@ with tempfile.TemporaryDirectory() as directory:
             'redraw_rect_f32_bits': result['native_calls']['separate_saved_RedrawPen_rect_f32_bits']}
 receipt = {'schema': 'sdocx-inkpen2-v1-screen-profiles-native-v1',
            'scope': 'One synthetic null-setting saved stroke, native Drawing and RedrawPen with explicit screen dimensions and identity canvas. Callback geometry only; no paint, device defaults or deserialization.',
-           'capture_script': 'conformance/inkpen2_v1_screen_profiles_capture.py',
+           'capture_script': 'tools/inkpen-capture/inkpen2_v1_screen_profiles_capture.py',
            'input': case, 'profiles': profiles}
 (root / 'conformance/inkpen2-v1-screen-profiles-native.json').write_text(json.dumps(receipt, indent=2) + '\n')

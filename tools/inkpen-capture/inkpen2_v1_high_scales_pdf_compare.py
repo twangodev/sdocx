@@ -12,7 +12,7 @@ import sys
 import zlib
 import pymupdf
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 if len(sys.argv) not in (2, 4) or (len(sys.argv) == 4 and (sys.argv[2] != '--scale' or sys.argv[3] not in ('0.5', '2'))):
     raise SystemExit('usage: inkpen2_v1_high_scales_pdf_compare.py PDF_DIR [--scale 0.5|2]')
 cases = json.loads((root / 'conformance/inkpen2-v1-high-scales-native.json').read_text())['cases']

@@ -11,7 +11,7 @@ import zlib
 
 import pymupdf
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 pdf_dir = Path(sys.argv[1])
 cases = json.loads((root / 'conformance/inkpen2-v1-screen-paint-native.json').read_text())['cases']
 results = {}

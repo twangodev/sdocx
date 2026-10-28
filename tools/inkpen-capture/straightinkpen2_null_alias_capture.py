@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 HARNESS = ROOT / 'scratch/straightinkpen2-alias/inkpen2_saved_caller_native.py'
 EXPECTED = '773e365a08bcb63fd25b1d5895a7d8f5d5f6a56820678dc8a93e2207e0a15d01'
 STREAM = '4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb'

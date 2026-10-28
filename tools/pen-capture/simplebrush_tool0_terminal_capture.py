@@ -13,7 +13,7 @@ import struct
 import subprocess
 import sys
 
-root = Path(__file__).resolve().parent.parent
+root = Path(__file__).resolve().parents[2]
 receipt_path = Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'conformance/simplebrush-tool0-terminal-native.json'
 receipt = json.loads(receipt_path.read_text())
 harness = root / 'scratch/simplebrush-tool3-multi/simplebrush-5-paint-capture.py'

@@ -3,8 +3,8 @@ from pathlib import Path
 import hashlib
 import json
 
-source = Path(__file__).resolve().parents[1] / 'scratch/straightinkpen2-alias/inkpen2_saved_caller_native.py'
-controls = Path(__file__).resolve().parent / 'inkpen2-null-v1-controls-native.json'
+source = Path(__file__).resolve().parents[2] / 'scratch/straightinkpen2-alias/inkpen2_saved_caller_native.py'
+controls = Path(__file__).resolve().parents[2] / 'conformance/inkpen2-null-v1-controls-native.json'
 assert hashlib.sha256(source.read_bytes()).hexdigest() == json.loads(controls.read_text())['source_harness_sha256']
 code = source.read_text()
 code = code.replace("parser.add_argument('--pen-name', choices=", "parser.add_argument('--input-json', required=True)\nparser.add_argument('--pen-name', choices=")
