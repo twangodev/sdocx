@@ -7,6 +7,11 @@ fn synthetic_marker_parser_matches_native_model_channels() {
         "../../../conformance/legacy-marker-synthetic-serialized-drawing.json"
     ))
     .unwrap();
+    let montblanc: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/montblanc-serialized-unseeded-native.json"
+    ))
+    .unwrap();
+    let native = &montblanc["case"];
     let bytes = include_bytes!("assets/legacy-marker/synthetic-serialized.sdocx");
 
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
@@ -55,6 +60,17 @@ fn synthetic_marker_parser_matches_native_model_channels() {
     assert_eq!(rendering.style.color_argb, None);
     assert_eq!(rendering.tool_type_raw, 2);
     assert_eq!(stroke.pen_width.to_bits(), 0x4111_de6a);
+    assert_eq!(native["getters"]["count"], stroke.points.len());
+    assert_eq!(native["getters"]["tool"], rendering.tool_type_raw);
+    assert_eq!(native["getters"]["color"], 0xff00_0000_u32);
+    assert_eq!(native["serialized_advanced_null"], true);
+    let size_hex: String = stroke
+        .pen_width
+        .to_le_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    assert_eq!(native["size"], size_hex);
     let points: Vec<u8> = stroke
         .points
         .iter()
@@ -79,13 +95,16 @@ fn synthetic_marker_parser_matches_native_model_channels() {
         ("tilt", floats(&stroke.tilts)),
         ("orientation", floats(&stroke.orientations)),
     ] {
+        let digest = format!("{:x}", Sha256::digest(data));
         assert_eq!(
-            format!("{:x}", Sha256::digest(data)),
+            digest,
             receipt["native_and_parser_arrays"][name]["native_and_rust_sha256"]
                 .as_str()
                 .unwrap(),
             "{name}"
         );
+        let native_name = if name == "timestamps" { "time" } else { name };
+        assert_eq!(digest, native["array_sha256"][native_name], "{name}");
     }
 }
 

@@ -1,0 +1,38 @@
+{
+  "boundary": "Synthetic Fountain-origin frame with its name table changed to Montblanc; not an actual Montblanc saved note. Native Model initializer, ObjectStroke constructor/Construct, binary reader and OnAttach run in Unicorn with host Model context, allocator, loader, canvas, queue, GLES and no-op UUID adapters. Host does not set visibility, implementation pointer or pen name. Serialized advanced setting is null. Native getters report source channels; hashes cover little-endian in-memory bytes, and Add stream digest covers entry names and six float lanes only. Neither full native note loading, paint, Android device behavior nor arbitrary inputs are established.",
+  "source_archive_sha256": "1a011b8fd8225d1cb5ec3b06e2fb146c5540d3bbbe46110e1727a1603ce4f910",
+  "host_script_sha256": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+  "capture_script_sha256": "12ea5f2c702b183ae9db2821a7fa3b9bc99f76db932a09eb6f65f517f8dcf769",
+  "binary_sha256": {
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "MontblancFountainPen": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350"
+  },
+  "case": {
+    "getters": {
+      "color": 4278190080,
+      "tool": 2,
+      "count": 204
+    },
+    "array_sha256": {
+      "points": "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4",
+      "pressure": "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9",
+      "time": "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a",
+      "tilt": "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6",
+      "orientation": "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+    },
+    "consumed": 2510,
+    "attach": 268584360,
+    "serialized_advanced_null": true,
+    "count": 204,
+    "size": "6ade1141",
+    "return": 1,
+    "selected": true,
+    "redraw": [
+      "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+      "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+    ],
+    "add_count": 25,
+    "stream_sha256": "bc392e8e1f41e5d1ae61cf7008a0cc29650daeb6e09cda2a52365e032ab8353a"
+  }
+}
