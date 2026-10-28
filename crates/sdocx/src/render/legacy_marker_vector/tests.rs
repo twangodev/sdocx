@@ -517,3 +517,35 @@ fn identical_top_layer_strokes_improve_against_native_two_draws() {
     let wrapper = std::str::from_utf8(&wrapper).unwrap();
     assert!(wrapper.find("/x0 Do").unwrap() < wrapper.find("/x1 Do").unwrap());
 }
+
+#[test]
+fn distinct_top_layer_strokes_match_native_order() {
+    let mut doc = document("straight", 2, 2);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[1].content else {
+        panic!("stroke");
+    };
+    for point in &mut stroke.points {
+        point.y += 5.0;
+    }
+    stroke.color = Some(Color {
+        r: 0,
+        g: 96,
+        b: 255,
+    });
+    stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x800060ff);
+    let native =
+        include_bytes!("../../../../../conformance/legacy-marker-two-distinct-sparse-rgba8.bin");
+    let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    let actual = error(&candidate, native);
+    let generic = error(&fallback, native);
+    doc.pages[0].objects.swap(0, 1);
+    let reversed = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let reversed_error = error(&reversed, native);
+    assert!(
+        actual < 6_000 && actual < generic && actual < reversed_error,
+        "vector {actual}, fallback {generic}, reversed {reversed_error}"
+    );
+}
