@@ -118,7 +118,9 @@ controls, matched-background SVG RGB L1 was 2993/2489; direct PDF L1 was
 same per-stroke and per-page work limits. A self-overlap host control now
 passes bounded clipping and measured Scene reservation: SVG/MuPDF/PDFium L1 is
 4255/6699/8784 versus 25199/25098/26880 on fallback. These checks preserve the
-existing page limits. A synthetic straight control with checked 0.5× and 2×
+existing page limits. Two successive native Drawing submissions of an identical
+top-layer stroke also improve over fallback in SVG and both PDF readers; other
+multi-stroke compositions remain unverified. A synthetic straight control with checked 0.5× and 2×
 output transforms improves over fallback in SVG, MuPDF and PDFium; other
 transforms remain unverified. This is an experimental approximation. For effective widths below 3, SVG retains the fallback; direct
 PDF retains it below 6 because synthetic narrow-stroke controls favored the

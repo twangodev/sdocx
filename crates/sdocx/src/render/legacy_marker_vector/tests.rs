@@ -474,3 +474,46 @@ fn width_six_svg_improves_on_native_host_control() {
     let native = include_bytes!("../../../../../conformance/legacy-marker-size6-sparse-rgba8.bin");
     assert!(error(&candidate, native) < error(&fallback, native));
 }
+
+#[test]
+fn identical_top_layer_strokes_improve_against_native_two_draws() {
+    let doc = document("straight", 2, 2);
+    let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    let native =
+        include_bytes!("../../../../../conformance/legacy-marker-two-drawing-sparse-rgba8.bin");
+    let actual = error(&candidate, native);
+    let generic = error(&fallback, native);
+    assert!(
+        actual < 4_000 && actual < generic,
+        "vector {actual}, fallback {generic}"
+    );
+    let pdf = crate::render_document_pdf(&doc, &options(), &crate::PdfOptions::default()).unwrap();
+    let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    let retained = pdf
+        .objects
+        .values()
+        .filter_map(|o| o.as_stream().ok())
+        .filter(|s| s.dict.get(b"Subtype").ok().and_then(|v| v.as_name().ok()) == Some(b"Form"))
+        .filter_map(|s| s.decompressed_content().ok())
+        .filter(|data| {
+            data.windows(b"/M1 gs /C1 Do".len())
+                .any(|w| w == b"/M1 gs /C1 Do")
+        })
+        .count();
+    assert_eq!(retained, 2);
+    let wrapper = pdf
+        .objects
+        .values()
+        .filter_map(|o| o.as_stream().ok())
+        .filter_map(|s| s.decompressed_content().ok())
+        .find(|data| {
+            data.windows(b"/x0 Do".len()).any(|w| w == b"/x0 Do")
+                && data.windows(b"/x1 Do".len()).any(|w| w == b"/x1 Do")
+        })
+        .expect("ordered two-stroke wrapper");
+    let wrapper = std::str::from_utf8(&wrapper).unwrap();
+    assert!(wrapper.find("/x0 Do").unwrap() < wrapper.find("/x1 Do").unwrap());
+}
