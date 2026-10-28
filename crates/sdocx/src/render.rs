@@ -152,8 +152,8 @@ impl InkPen2V1OutputScale {
 ///
 /// Both profiles require normal saved style flags. `SavedV1` requires tool 2 and
 /// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
-/// `SavedV2` accepts tools 1 and 2 with empty or `2;` settings and tool 0
-/// with an empty setting. Tool 0 and 1 inputs beyond captured synthetic host
+/// `SavedV2` accepts tools 1, 2 and 3 with empty or `2;` settings and tool 0
+/// with an empty setting. Inputs beyond captured synthetic host
 /// controls are extrapolated.
 /// V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
@@ -163,7 +163,7 @@ impl InkPen2V1OutputScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Empty or `2;` saved setting for tools 1 and 2, or empty for tool 0.
+    /// Empty or `2;` saved setting for tools 1, 2 and 3, or empty for tool 0.
     SavedV2,
     /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
@@ -1174,7 +1174,7 @@ impl PreparedBodyPlan {
         let paper_source = false;
         let (layout, native_page_layout) = if paper_source {
             let (native_layout, measured) =
-                text::layout_native_page_text(&styled, frame, key.theme, &planner);
+                text::layout_native_paper_text(&styled, frame, key.theme, &planner);
             #[cfg(feature = "pdf")]
             if let Ok(measured) = measured {
                 native_query_layout = Some(measured);
@@ -13369,7 +13369,7 @@ mod tests {
             .rendering
             .as_mut()
             .unwrap()
-            .tool_type_raw = 3;
+            .tool_type_raw = 4;
         assert!(
             crate::ink::airbrush::saved_v2_from_stroke(other.pages[0].strokes().next().unwrap())
                 .is_none()
@@ -13489,7 +13489,17 @@ mod tests {
             matrix["cases"][2]["frame"]["sha256"],
             case["frame"]["sha256"]
         );
-        for (index, size, color) in [(0, 8.75, 0x8044ee11), (1, 2.25, 0xffdf2255)] {
+        let tool3: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-tool3-matrix-native.json"
+        ))
+        .unwrap();
+        for (index, size, color, tool) in [
+            (0, 8.75, 0x8044ee11, 1),
+            (1, 2.25, 0xffdf2255, 1),
+            (0, 8.75, 0x8044ee11, 3),
+            (1, 2.25, 0xffdf2255, 3),
+            (2, 3.144, 0xff44aaee, 3),
+        ] {
             let mut probe = stroke.clone();
             probe.points = (0..5)
                 .map(|i| {
@@ -13498,10 +13508,15 @@ mod tests {
                             x: 128.453125 + i as f64 * 4.0,
                             y: 128.515625 + (i % 2) as f64 * 7.0,
                         }
-                    } else {
+                    } else if index == 1 {
                         Point {
                             x: 128.453125 - i as f64 * 2.5,
                             y: 128.515625 - i as f64 * 1.25,
+                        }
+                    } else {
+                        Point {
+                            x: 128.453125 + i as f64 * 3.0,
+                            y: 128.515625 + (i * i) as f64 * 0.5,
                         }
                     }
                 })
@@ -13509,6 +13524,10 @@ mod tests {
             let rendering = probe.rendering.as_mut().unwrap();
             rendering.style.pen_size = Some(size);
             rendering.style.color_argb = Some(color);
+            rendering.tool_type_raw = tool;
+            if index == 2 {
+                rendering.advanced_settings = Some("2;".into());
+            }
             let output = crate::ink::airbrush::saved_v2_from_stroke(&probe).unwrap();
             let hex: String = output
                 .rows
@@ -13522,6 +13541,19 @@ mod tests {
                 matrix["cases"][index]["stream_hex"].as_str().unwrap(),
                 "tool-1 matrix case {index}"
             );
+            if tool == 3 {
+                let bytes = output
+                    .rows
+                    .iter()
+                    .flatten()
+                    .flat_map(|v| v.to_le_bytes())
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    sha256_hex(&bytes),
+                    tool3["cases"][index]["stream_sha256"].as_str().unwrap()
+                );
+                assert_eq!(tool3["cases"][index]["selected_profile"], 2);
+            }
             #[cfg(feature = "pdf")]
             {
                 let mut probe_document = public_airbrush_v2_document();
@@ -13543,6 +13575,40 @@ mod tests {
                         &mut |_| {},
                     )
                     .remove(0);
+                if tool == 3 {
+                    let mut reference = probe_document.clone();
+                    reference.pages[0]
+                        .strokes_mut()
+                        .next()
+                        .unwrap()
+                        .rendering
+                        .as_mut()
+                        .unwrap()
+                        .tool_type_raw = 1;
+                    let reference_layout = layout_document(&reference);
+                    let reference_request =
+                        super::PageSceneRequest::sliced(&reference_layout.pages[0], 0, 256, false)
+                            .unwrap();
+                    let reference_scene = cache
+                        .render_layout_page_scene_requests(
+                            &reference,
+                            &[reference_request],
+                            &options,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0);
+                    assert_eq!(scene.page.svg, reference_scene.page.svg);
+                    let pdf = |value| {
+                        crate::pdf::render_scenes_pdf_with_progress(
+                            std::slice::from_ref(value),
+                            &crate::PdfOptions::default(),
+                            &mut |_| {},
+                        )
+                        .unwrap()
+                    };
+                    assert_eq!(pdf(&scene), pdf(&reference_scene));
+                }
                 let tree =
                     resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default())
                         .unwrap();
@@ -13561,11 +13627,22 @@ mod tests {
                     .flatten()
                     .copied()
                     .collect::<Vec<_>>();
-                assert_eq!(
-                    sha256_hex(&bottom_up),
-                    matrix["cases"][index]["frame"]["sha256"].as_str().unwrap(),
-                    "tool-1 matrix case {index} native frame"
-                );
+                if index == 2 {
+                    assert_eq!(
+                        tool3["cases"][index]["frame_sha256"],
+                        case["frame"]["sha256"]
+                    );
+                } else {
+                    assert_eq!(
+                        sha256_hex(&bottom_up),
+                        if tool == 3 {
+                            tool3["cases"][index]["frame_sha256"].as_str().unwrap()
+                        } else {
+                            matrix["cases"][index]["frame"]["sha256"].as_str().unwrap()
+                        },
+                        "tool-{tool} matrix case {index} native frame"
+                    );
+                }
             }
         }
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;

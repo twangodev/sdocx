@@ -1081,6 +1081,7 @@ fn public_pdf_paper_accepts_density_one_certified_ascii_body() {
 #[test]
 fn public_pdf_paper_rejects_visible_ascii_outside_density_certificate() {
     let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((1440, SEGMENT_HEIGHT));
     document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
     let mut body = rich_text("Visible note text", Vec::new());
     body.spans.clear();
@@ -1090,6 +1091,70 @@ fn public_pdf_paper_rejects_visible_ascii_outside_density_certificate() {
         export(&document, &[0], 96.0),
         Err(PdfError::UnsupportedPdfPaper { .. })
     ));
+}
+
+#[test]
+fn public_pdf_paper_density_three_places_body_across_source_page_cut() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = rich_text(&format!("{}A", "A\n".repeat(80)), Vec::new());
+    body.font_size = None;
+    body.spans.clear();
+    body.paragraphs.clear();
+    document.metadata.note_text = Some(body);
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let pages = pdf.get_pages();
+    assert!(pages.len() >= 2);
+    assert!(pdf.extract_text(&[2]).unwrap().contains('A'));
+    let imported = pdf
+        .objects
+        .values()
+        .filter_map(|object| object.as_stream().ok())
+        .filter(|stream| {
+            stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+        })
+        .filter_map(|stream| {
+            Content::decode(
+                &stream
+                    .decompressed_content()
+                    .unwrap_or_else(|_| stream.content.clone()),
+            )
+            .ok()
+        })
+        .find(|content| content.operations.iter().any(|op| op.operator == "BT"))
+        .unwrap();
+    let mut baselines: Vec<f64> = imported
+        .operations
+        .iter()
+        .filter(|op| op.operator == "Tm")
+        .map(|op| number(&op.operands[5]).unwrap())
+        .collect();
+    for (&page_number, &page) in &pages {
+        if page_number == 1 {
+            continue;
+        }
+        let content = Content::decode(&pdf.get_page_content(page).unwrap()).unwrap();
+        baselines.extend(
+            content
+                .operations
+                .iter()
+                .filter(|op| op.operator == "Tm")
+                .map(|op| number(&op.operands[5]).unwrap()),
+        );
+    }
+    baselines.sort_by(f64::total_cmp);
+    assert_eq!(baselines.len(), 81);
+    assert_eq!(baselines[0], 51.0);
+    assert!(
+        baselines
+            .windows(2)
+            .all(|pair| (pair[1] - pair[0] - 68.85).abs() < 0.02)
+    );
 }
 
 #[test]

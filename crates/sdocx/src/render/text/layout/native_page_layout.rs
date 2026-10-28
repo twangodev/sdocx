@@ -10,7 +10,32 @@ pub(in crate::render) fn layout_native_page_text(
     TextLayout,
     Result<NativePageLayout, NativePageIndexUnavailable>,
 ) {
-    let width = checked_width(styled, &frame);
+    layout_native_page_text_profile(styled, frame, theme, renderer, false)
+}
+
+pub(in crate::render) fn layout_native_paper_text(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> (
+    TextLayout,
+    Result<NativePageLayout, NativePageIndexUnavailable>,
+) {
+    layout_native_page_text_profile(styled, frame, theme, renderer, true)
+}
+
+fn layout_native_page_text_profile(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    paper: bool,
+) -> (
+    TextLayout,
+    Result<NativePageLayout, NativePageIndexUnavailable>,
+) {
+    let width = checked_width(styled, &frame, paper);
     let width = match width {
         Ok(width) => width,
         Err(error) => {
@@ -33,7 +58,11 @@ pub(in crate::render) fn layout_native_page_text(
         }),
     )
     .expect("fixed-width body layout does not require native automatic measurement");
-    let page_layout = NativePageLayout::from_measured(styled, &layout, width);
+    let page_layout = if paper {
+        NativePageLayout::from_measured_profile(styled, &layout, width, true)
+    } else {
+        NativePageLayout::from_measured(styled, &layout, width)
+    };
     layout.native_frame = None;
     (layout, page_layout)
 }
@@ -41,6 +70,7 @@ pub(in crate::render) fn layout_native_page_text(
 fn checked_width(
     styled: &StyledText<'_>,
     frame: &TextFrame<'_>,
+    paper: bool,
 ) -> Result<i32, NativePageIndexUnavailable> {
     use NativePageIndexUnavailable as Error;
     if frame.bbox.x_min != 0.0
@@ -60,7 +90,7 @@ fn checked_width(
         return Err(Error::OutsideCertificate);
     }
     let width = frame.bbox.x_max as i32;
-    NativePageLayout::checked_source_length(styled, width)?;
+    NativePageLayout::checked_source_length(styled, width, paper)?;
     Ok(width)
 }
 

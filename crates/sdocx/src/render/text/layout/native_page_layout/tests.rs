@@ -43,6 +43,148 @@ fn frame(width: f64) -> TextFrame<'static> {
 
 #[test]
 #[cfg(feature = "pdf")]
+fn scale_three_nonempty_and_explicit_font_lines_match_native_controls() {
+    let capture: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-body-scale3-native.json"
+    ))
+    .unwrap();
+    let fonts = FontBook::default();
+    let settings = super::super::super::TextSettings {
+        scale: 3.0,
+        ..Default::default()
+    };
+    let renderer = TextRenderer::new(settings, &fonts);
+    let mut checked = 0;
+    for case in capture["cases"].as_array().unwrap().iter().skip(1) {
+        if [
+            "scale3-consecutive-newlines",
+            "scale3-leading",
+            "scale3-trailing",
+        ]
+        .contains(&case["name"].as_str().unwrap())
+        {
+            continue;
+        }
+        let mut content = source(&case["input"]);
+        if case["input"]["requested_font_size_bits"].is_null() {
+            content.font_size = None;
+        }
+        let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+        let width =
+            f32::from_bits(case["input"]["requested_width_bits"].as_u64().unwrap() as u32) as i32;
+        let layout = try_layout_text_with_context(
+            &styled,
+            frame(f64::from(width)),
+            RenderTheme::for_canvas(false),
+            &renderer,
+            LayoutContext::Capture,
+            None,
+            Some(NativeCellMeasurement {
+                width: NativeCellMeasurementWidth::Fixed(width),
+                height_limit: f32::INFINITY,
+            }),
+        )
+        .unwrap();
+        assert!(layout.native_frame.is_some());
+        let expected = case["produced"]["lines"].as_array().unwrap();
+        assert_eq!(layout.lines.len(), expected.len(), "{}", case["name"]);
+        for (line, expected) in layout.lines.iter().zip(expected) {
+            let start = line.line.source.start;
+            let owner = if line.line.source.is_empty() && start == 0 {
+                [-1, -1]
+            } else {
+                let first = if start > 0 && content.text.as_bytes()[start - 1] == b'\n' {
+                    start - 1
+                } else {
+                    start
+                };
+                [first as i32, line.line.source.end as i32 - 1]
+            };
+            assert_eq!(
+                owner,
+                serde_json::from_value::<[i32; 2]>(expected["source_inclusive_utf16"].clone())
+                    .unwrap(),
+                "{} owner",
+                case["name"]
+            );
+            let bands = line.native_bands.unwrap();
+            let right = line
+                .line
+                .native_placed
+                .as_ref()
+                .and_then(|p| p.positions.last())
+                .map_or(line.x as f32, |p| p.right);
+            assert_eq!(
+                [line.x as f32, bands.top, right, bands.bottom].map(f32::to_bits),
+                serde_json::from_value::<[u32; 4]>(expected["background_rect_bits"].clone())
+                    .unwrap(),
+                "{} background",
+                case["name"]
+            );
+            checked += 1;
+        }
+        if !content.text.starts_with('\n')
+            && !content.text.ends_with('\n')
+            && !content.text.contains("\n\n")
+        {
+            let native =
+                NativePageLayout::from_measured_profile(&styled, &layout, width, true).unwrap();
+            assert!(NativePageLayout::from_measured(&styled, &layout, width).is_err());
+            let snapshot =
+                crate::render::body_query::ContinuousBodyQuerySnapshot::from_native_text(
+                    &content, &native,
+                )
+                .unwrap();
+            for query in capture["queries"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|q| q["case"] == case["name"])
+            {
+                let bits: [u32; 4] = serde_json::from_value(query["rect_bits"].clone()).unwrap();
+                assert_eq!(
+                    snapshot.query(bits.map(f32::from_bits)).visible,
+                    query["visible"].as_bool().unwrap(),
+                    "{} query",
+                    case["name"]
+                );
+            }
+        }
+    }
+    assert!(checked >= 20);
+}
+
+#[test]
+fn scale_three_paper_rejects_empty_paragraphs_and_unsupported_sources() {
+    let settings = super::super::super::TextSettings {
+        scale: 3.0,
+        ..Default::default()
+    };
+    for text in ["", "\nA", "A\n", "A\n\nB", "A\tB", "λ"] {
+        let content = source(
+            &serde_json::json!({"source_utf8": text, "requested_font_size_bits": null, "requested_margin_bits": null}),
+        );
+        let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+        assert!(
+            NativePageLayout::checked_source_length(&styled, 270, true).is_err(),
+            "{text:?}"
+        );
+    }
+    let mut content = source(
+        &serde_json::json!({"source_utf8":"A", "requested_font_size_bits":null, "requested_margin_bits":null}),
+    );
+    content.paragraphs.push(crate::RichTextParagraph {
+        kind: crate::RichTextParagraphType::ParsingState,
+        start_paragraph: 0,
+        end_paragraph: 1,
+        payload: 1_u32.to_le_bytes().to_vec(),
+    });
+    let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
+    assert!(NativePageLayout::checked_source_length(&styled, 270, true).is_err());
+}
+
+#[test]
+#[cfg(feature = "pdf")]
 fn certified_ascii_body_query_matches_native_boundary_visibility() {
     let baseline: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../../../../conformance/table-bodytext-page-ranges.json"

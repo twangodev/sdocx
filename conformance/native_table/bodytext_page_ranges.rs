@@ -21,6 +21,7 @@ struct Input {
     font_size: Option<f32>,
     margins: Option<[f32; 4]>,
     page_height: i32,
+    text_scale: f32,
 }
 
 fn inputs() -> Vec<Input> {
@@ -31,9 +32,100 @@ fn inputs() -> Vec<Input> {
         font_size: None,
         margins: None,
         page_height: 20,
+        text_scale: 1.0,
     };
     vec![
         ordinary,
+        Input {
+            name: "scale3-wide",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-wrapped",
+            text: "AV abc AV abc AV abc",
+            width: 120.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-newline",
+            text: "AV\nTo\nlast",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-narrow",
+            width: 60.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-font50",
+            text: "AV abc AV",
+            width: 300.0,
+            page_height: 150,
+            font_size: Some(50.0),
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-consecutive-newlines",
+            text: "AV\n\nTo",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-leading",
+            text: "\nAV",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-trailing",
+            text: "AV\n",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-empty50",
+            text: "AV\n\nTo",
+            width: 300.0,
+            page_height: 150,
+            font_size: Some(50.0),
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-leading50",
+            text: "\nAV",
+            width: 300.0,
+            page_height: 150,
+            font_size: Some(50.0),
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-empty17",
+            text: "AV\n\nTo",
+            width: 270.0,
+            page_height: 60,
+            font_size: Some(17.0),
+            text_scale: 3.0,
+            ..ordinary
+        },
         Input {
             name: "default-narrow",
             width: 20.0,
@@ -387,6 +479,8 @@ fn sample(
     }
     machine.call(WIDGET + 0xd2fb4, &[WRAPPER, CONTEXT, 0]);
     machine.call(WIDGET + 0xd3974, &[WRAPPER, SOURCE]);
+    float_arguments(machine, [input.text_scale, 0., 0., 0.]);
+    machine.call(WIDGET + 0xd948c, &[WRAPPER]);
     machine.call(WIDGET + 0xd3e3c, &[WRAPPER]);
     float_arguments(machine, [input.width, 0., 0., 0.]);
     machine.call(WIDGET + 0xd398c, &[WRAPPER]);
@@ -416,6 +510,39 @@ fn sample(
     let pages = Pages::new(machine, width, input.page_height);
     let line_count = machine.call(TEXT + 0x8adb0, &[wrapper]);
     recorder.take();
+    if std::env::var_os("SDOCX_CAPTURE_BODY_QUERY").is_some() {
+        let range = STORAGE + 0xc00;
+        for line in 0..line_count {
+            let rect = returned_rect(machine, TEXT + 0x8b42c, &[wrapper, line]);
+            let top = f32::from_bits(rect[1]);
+            let bottom = f32::from_bits(rect[3]);
+            for y in [top - 1.0, top, bottom - 1.0, bottom, bottom + 1.0] {
+                let query = [0.0, y, width as f32, y + 1.0];
+                write(machine.engine, range, &[0xff; 8]);
+                float_arguments(machine, query);
+                machine.call(TEXT + 0x8b564, &[wrapper, range]);
+                let start = read_u32(machine.engine, range) as i32;
+                let end = read_u32(machine.engine, range + 4) as i32;
+                let visible = if start >= 0 && end >= start {
+                    let first =
+                        machine.call(TEXT + 0x8ae34, &[wrapper, start as u64]) as u32 as i32;
+                    let last = machine.call(TEXT + 0x8ae80, &[wrapper, end as u64]) as u32 as i32;
+                    let first = first.max(0);
+                    let length = last.saturating_sub(first).saturating_add(1).max(0);
+                    machine.call(WIDGET + 0xde170, &[wrapper, first as u64, length as u64]) != 0
+                } else {
+                    false
+                };
+                eprintln!(
+                    "BODY_QUERY {{\"case\":{},\"fill\":{fill},\"line\":{line},\"rect_bits\":{:?},\"range\":[{start},{end}],\"visible\":{}}}",
+                    json_string(input.name),
+                    query.map(f32::to_bits),
+                    visible
+                );
+            }
+        }
+        recorder.take();
+    }
     let mut queries = Vec::new();
     for page in 0..=pages.inputs.pages.len() {
         for line in 0..line_count.max(1) {
@@ -441,9 +568,10 @@ fn sample(
     assert_eq!(measured_lines(machine, wrapper), lines);
     let model = model_source(machine, length);
     format!(
-        "{{\"name\":{},\"input\":{{\"source_utf8\":{},\"requested_width_bits\":{},\"requested_height_bits\":{},\"requested_font_size_bits\":{},\"requested_margin_bits\":{},\"page_records\":{:?}}},\"produced\":{{\"native_source_utf8\":{},\"text_length_utf16\":{length},\"layout_width\":{width},\"default_font_size_bits\":{},\"model_source\":{model},\"lines\":{lines},\"first_empty_rect_bits\":{first_empty:?},\"default_cursor_rect_bits\":{cursor:?},\"producer_calls\":{producer_calls},\"getter_observation_calls\":{observation_calls}}},\"boundaries\":[{}],\"boundary_calls\":{boundary_calls},\"stages\":[{}]}}",
+        "{{\"name\":{},\"input\":{{\"source_utf8\":{},\"requested_text_scale_bits\":{},\"requested_width_bits\":{},\"requested_height_bits\":{},\"requested_font_size_bits\":{},\"requested_margin_bits\":{},\"page_records\":{:?}}},\"produced\":{{\"native_source_utf8\":{},\"text_length_utf16\":{length},\"layout_width\":{width},\"default_font_size_bits\":{},\"model_source\":{model},\"lines\":{lines},\"first_empty_rect_bits\":{first_empty:?},\"default_cursor_rect_bits\":{cursor:?},\"producer_calls\":{producer_calls},\"getter_observation_calls\":{observation_calls}}},\"boundaries\":[{}],\"boundary_calls\":{boundary_calls},\"stages\":[{}]}}",
         json_string(input.name),
         json_string(input.text),
+        input.text_scale.to_bits(),
         input.width.to_bits(),
         1000_f32.to_bits(),
         input

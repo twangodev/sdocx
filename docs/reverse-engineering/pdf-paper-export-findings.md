@@ -771,3 +771,22 @@ Its nonzero MediaBox/CropBox, UserUnit 2 and original vector path survive; nativ
 page dimensions use the rotated CropBox without multiplying by UserUnit. The
 form receives literal `4 - rotation`, including 4 for an unrotated source.
 This remains a synthetic PDFium API sequence, not the Samsung writer wrapper.
+
+The [scale-three body controls](../../conformance/pdf-paper-body-scale3-native.json)
+execute Widget `SetTextScale(3)` before native shaping, layout and page-index
+queries. Their ASCII line rectangles and source owners match the SDK for the
+admitted nonempty-paragraph cases. Native line-range and substring-visibility
+primitives also match the tested boundary bands; the complete BodyTextContext
+visibility method does not execute in this control. A missing default font size
+produces unscaled empty-paragraph height, while explicit sizes 17 and 50 scale;
+the PDF-paper route therefore rejects empty paragraphs at density three.
+The [entry controls](../../conformance/native-resolved-entry-facts-51-150.json)
+measure direct resolved sizes 51 and 150 on a native table-cell producer, not
+through the document scale setter. They cover letters, digits, punctuation,
+spaces, wrapping and LF; they do not establish arbitrary fonts or scripts.
+Both captures used a host libc with a different digest from the earlier pin.
+The density-one baseline geometry agrees with the prior capture, and the
+receipt records the affected boundary. The public PDF regression checks line
+baselines across source-page cuts. Independent MuPDF and PDFium reads of that
+synthetic output extracted 81 characters on the same four pages. Neither check
+establishes native export pixels or saved-device parity.

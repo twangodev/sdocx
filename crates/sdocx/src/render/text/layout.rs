@@ -10,7 +10,7 @@ pub(in crate::render) use native_object_bound::{
     caller_capture_profile as native_object_capture_profile,
     caller_capture_source as native_object_capture_source,
 };
-pub(in crate::render) use native_page_layout::layout_native_page_text;
+pub(in crate::render) use native_page_layout::{layout_native_page_text, layout_native_paper_text};
 
 use crate::render::RenderTheme;
 use crate::render::marker::{PointMarkerSizingProfile, PreparedMarker, marker_center_y};

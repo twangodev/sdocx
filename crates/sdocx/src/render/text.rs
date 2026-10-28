@@ -39,8 +39,8 @@ use layout::measure_paragraph;
 pub(super) use layout::{
     NativeCellPageObstacles, NativeCellTextConstraints, NativeObjectEntryBounds,
     NativeObjectPageObstacles, PositionedMarker, TextFrame, TextLayout, TextLine,
-    VerticalExclusion, layout_flow_text, layout_native_page_text, layout_table_cell_text,
-    layout_text, layout_text_with_size,
+    VerticalExclusion, layout_flow_text, layout_native_page_text, layout_native_paper_text,
+    layout_table_cell_text, layout_text, layout_text_with_size,
 };
 #[cfg(all(test, feature = "serde"))]
 pub(super) use layout::{native_object_capture_profile, native_object_capture_source};

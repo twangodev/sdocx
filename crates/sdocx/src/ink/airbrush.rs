@@ -431,7 +431,7 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
     }) || !rendering.properties.compressed
         || !(rendering.tool_type_raw == 2
             || (!v1
-                && (rendering.tool_type_raw == 1
+                && (matches!(rendering.tool_type_raw, 1 | 3)
                     || (rendering.tool_type_raw == 0
                         && rendering.advanced_settings.as_deref() == Some("")))))
     {

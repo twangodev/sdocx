@@ -1,0 +1,77 @@
+{
+  "schema": "sdocx.native-resolved-entry-facts.v1",
+  "host_libc_sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+  "previous_host_libc_sha256": "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
+  "memory_fills": [0, 165, 255, 0],
+  "boundary": "Actual native Model cell font-size setter supplies 51 or 150 directly; Widget and Text measure and emit entry facts using supplied Roboto and host ICU. This does not exercise document SetTextScale, body PDF export, other fonts, or all character classes.",
+  "cases": [
+    {
+      "name": "resolved-51",
+      "native_text_utf8": "AV abc",
+      "measured_entries": [
+        {"utf16_slot": 0, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 1, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 2, "kind": 1, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 3, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 4, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 5, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true}
+      ]
+    },
+    {
+      "name": "resolved-150",
+      "native_text_utf8": "AV abc",
+      "measured_entries": [
+        {"utf16_slot": 0, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 1, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 2, "kind": 1, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 3, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 4, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 5, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true}
+      ]
+    },
+    {
+      "name": "resolved-51-wrapped",
+      "native_text_utf8": "AZaz09.,!? -_/\nQ",
+      "measured_entries": [
+        {"utf16_slot": 0, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 1, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 2, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 3, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 4, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 5, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 6, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 7, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 8, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 9, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 10, "kind": 1, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 11, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 12, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 13, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true},
+        {"utf16_slot": 14, "kind": 4, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": false},
+        {"utf16_slot": 15, "kind": 0, "font_size_bits": 1112276992, "font_height_bits": 1112276992, "drawable": true}
+      ]
+    },
+    {
+      "name": "resolved-150-wrapped",
+      "native_text_utf8": "AZaz09.,!? -_/\nQ",
+      "measured_entries": [
+        {"utf16_slot": 0, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 1, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 2, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 3, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 4, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 5, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 6, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 7, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 8, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 9, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 10, "kind": 1, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 11, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 12, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 13, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true},
+        {"utf16_slot": 14, "kind": 4, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": false},
+        {"utf16_slot": 15, "kind": 0, "font_size_bits": 1125515264, "font_height_bits": 1125515264, "drawable": true}
+      ]
+    }
+  ]
+}

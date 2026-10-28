@@ -278,6 +278,7 @@ impl NativePageLayout {
     pub(super) fn checked_source_length(
         styled: &StyledText<'_>,
         width: i32,
+        paper: bool,
     ) -> Result<i32, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
         let source = styled.text_box;
@@ -307,7 +308,13 @@ impl NativePageLayout {
                 .paragraphs
                 .iter()
                 .any(|paragraph| paragraph.kind != crate::RichTextParagraphType::ParsingState)
-            || styled.settings.scale != 1.0
+            || (styled.settings.scale != 1.0 && !(paper && styled.settings.scale == 3.0))
+            || (styled.settings.scale == 3.0
+                && (!source.paragraphs.is_empty()
+                    || source.text.is_empty()
+                    || source.text.starts_with('\n')
+                    || source.text.ends_with('\n')
+                    || source.text.contains("\n\n")))
             || styled.settings.font_size_delta != 0.0
         {
             return Err(Error::OutsideCertificate);
@@ -330,8 +337,17 @@ impl NativePageLayout {
         layout: &TextLayout,
         width: i32,
     ) -> Result<Self, NativePageIndexUnavailable> {
+        Self::from_measured_profile(styled, layout, width, false)
+    }
+
+    pub(super) fn from_measured_profile(
+        styled: &StyledText<'_>,
+        layout: &TextLayout,
+        width: i32,
+        paper: bool,
+    ) -> Result<Self, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
-        let text_length_utf16 = Self::checked_source_length(styled, width)?;
+        let text_length_utf16 = Self::checked_source_length(styled, width, paper)?;
         if layout.lines.len() > 250_000
             || layout
                 .native_frame
@@ -378,7 +394,16 @@ impl NativePageLayout {
                     let owner = owner
                         .checked_sub(native.source().utf16().start)
                         .ok_or(Error::InvalidSource)?;
-                    if native.entry_facts_at_utf16(owner).is_none() {
+                    let paper_entry = paper
+                        && styled.settings.scale == 3.0
+                        && native
+                            .source_instance()
+                            .is_some_and(|source| source.language().is_empty() && !source.bitmap())
+                        && owner
+                            .checked_sub(native.geometry().source_range_utf16().start)
+                            .and_then(|index| native.geometry().entries().get(index as usize))
+                            .is_some_and(|entry| !entry.glyphs().is_empty());
+                    if native.entry_facts_at_utf16(owner).is_none() && !paper_entry {
                         return Err(Error::OutsideCertificate);
                     }
                 }
@@ -467,7 +492,11 @@ impl NativePageLayout {
         if paragraph_index != paragraphs.len() {
             return Err(Error::InvalidSource);
         }
-        let caret_height = styled.caret_line_height(0) as f32;
+        let caret_height = if styled.settings.scale == 3.0 && source.font_size.is_none() {
+            17.0_f32 * 1.35
+        } else {
+            styled.caret_line_height(0) as f32
+        };
         if !caret_height.is_finite() || caret_height <= 0.0 {
             return Err(Error::InvalidGeometry);
         }

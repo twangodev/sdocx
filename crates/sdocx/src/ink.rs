@@ -796,7 +796,7 @@ pub(crate) fn saved_airbrush_argb_with_extra_tools(
             None | Some("1;") | Some("") | Some("2;")
         )
         || !(rendering.tool_type_raw == 2
-            || (allow_extra_tools && matches!(rendering.tool_type_raw, 0 | 1)))
+            || (allow_extra_tools && matches!(rendering.tool_type_raw, 0 | 1 | 3)))
         || properties.replay_only
         || properties.eraser
         || properties.fixed_width

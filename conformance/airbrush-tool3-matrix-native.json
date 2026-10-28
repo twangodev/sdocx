@@ -1,0 +1,30 @@
+{
+  "scope": "Synthetic native Drawing with pinned DSOs and host-Mesa; three tool-3 controls exactly match the corresponding tool-1 streams and frames. Not Android or saved-note evidence.",
+  "capture_script": "conformance/airbrush_tool3_matrix_capture.py",
+  "paired_tool1_receipt": "conformance/airbrush-tool1-matrix-native.json",
+  "cases": [
+    {
+      "name": "zigzag",
+      "selected_profile": 2,
+      "stream_sha256": "b7576be41dd930c056b6eda16348cd76ea45ca9dd244f00ca5acbbf26699cfab",
+      "frame_sha256": "e89820f1c715d7e1e9c6dfa197d44427eeb74a1b9b58fa0af951f84c0d6a9a6e",
+      "matches_tool1_stream_and_frame": true
+    },
+    {
+      "name": "reverse",
+      "selected_profile": 2,
+      "stream_sha256": "1f30ac46288754eb71291d6dec80f4a78c6574adb9f0dad4b1f1616f1293c49e",
+      "frame_sha256": "6422d11f110bffce7d88ca08594a8676a69a929de2fd0523b27c825c077e2761",
+      "matches_tool1_stream_and_frame": true
+    },
+    {
+      "name": "literal2",
+      "selected_profile": 2,
+      "stream_sha256": "3eb0ebce121bce0970f53914f36705b6361e43f3166a4ade442fbbcb21e01a2a",
+      "frame_sha256": "d92ff7bce74eed6571a05f861382778c52c13f48120ffb761274d413927789f2",
+      "matches_tool1_stream_and_frame": true
+    }
+  ],
+  "export_comparison": "conformance/airbrush-tool1-matrix-export-comparison.json",
+  "export_note": "Public rendering reconstructs the same streams and paint for these controls; PDF comparison is inherited from matching output, not a fresh native PDF export."
+}
