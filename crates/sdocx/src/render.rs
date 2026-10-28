@@ -20277,3 +20277,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod montblanc_candidate;

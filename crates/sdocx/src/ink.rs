@@ -12,7 +12,7 @@ mod colored_pencil;
 #[cfg(test)]
 mod crayon2;
 #[cfg(test)]
-mod montblanc;
+pub(crate) mod montblanc;
 #[cfg(all(test, feature = "serde"))]
 mod oilbrush3;
 #[cfg(all(test, feature = "serde"))]

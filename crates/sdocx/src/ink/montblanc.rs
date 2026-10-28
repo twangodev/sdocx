@@ -181,7 +181,7 @@ fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     struct NativeCase {
@@ -498,5 +498,40 @@ mod tests {
             repeat_count(20.0, 2.5).unwrap_err(),
             Error::UnsupportedWidthBranch
         );
+    }
+    pub(crate) fn captured_control_buffers(
+        stroke: &crate::Stroke,
+        case: usize,
+    ) -> [Vec<[f32; 5]>; 3] {
+        let expected = &CASES[case];
+        let points: Vec<_> = stroke
+            .points
+            .iter()
+            .map(|point| [point.x as f32 - 128., 128. - point.y as f32])
+            .collect();
+        let pressure: Vec<_> = stroke.pressures.iter().map(|value| *value as f32).collect();
+        assert_eq!(points, expected.points);
+        assert_eq!(pressure, expected.pressure);
+        assert_eq!(stroke.pen_width, expected.size);
+        let records = sample(Input {
+            points: &points,
+            pressure: &pressure,
+            pen_size: stroke.pen_width,
+        })
+        .unwrap();
+        assert_eq!(records.len(), expected.records);
+        let mut buffers: [Vec<[f32; 5]>; 3] = std::array::from_fn(|_| Vec::new());
+        for (index, record) in records.iter().enumerate() {
+            for (lane_index, lane) in record.lanes.iter().enumerate() {
+                assert_eq!(lane.to_bits(), expected_lane(expected, index, lane_index));
+            }
+            let (buffer, vertices) = match record.call {
+                RtCall::Start => (1, cap_vertices(record.lanes)),
+                RtCall::Point => (0, point_vertices(record.lanes)),
+                RtCall::End => (2, cap_vertices(record.lanes)),
+            };
+            buffers[buffer].extend(vertices);
+        }
+        buffers
     }
 }

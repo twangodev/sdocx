@@ -1,0 +1,77 @@
+{
+  "schema": "montblanc-scene-candidate-host-comparison-v1",
+  "scope": "Test-only four synthetic public Stroke controls; existing native-stream sampler and mesh; Rust centroid-alpha tessellation with approximate analytic fwidth, shared Scene SVG and native PDF exporter. Not public dispatch, arbitrary saved-stroke admission, exact shader behavior, or device parity.",
+  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel. resvg SVG and PyMuPDF PDF raster at 256x256; PDF default 96dpi page rasterized at 4/3.",
+  "cases": {
+    "baseline": {
+      "svg": [
+        101,
+        117,
+        101,
+        117,
+        7323
+      ],
+      "pdf": [
+        101,
+        121,
+        101,
+        121,
+        5048
+      ]
+    },
+    "pressure": {
+      "svg": [
+        101,
+        117,
+        101,
+        117,
+        7166
+      ],
+      "pdf": [
+        101,
+        121,
+        101,
+        121,
+        4863
+      ]
+    },
+    "size": {
+      "svg": [
+        90,
+        115,
+        90,
+        115,
+        7258
+      ],
+      "pdf": [
+        90,
+        117,
+        90,
+        117,
+        5300
+      ]
+    },
+    "far_endpoint": {
+      "svg": [
+        141,
+        171,
+        141,
+        171,
+        10883
+      ],
+      "pdf": [
+        141,
+        173,
+        141,
+        173,
+        7354
+      ]
+    }
+  },
+  "reproduction": "With an empty directory set SDOCX_MONTBLANC_CAPTURE_DIR to its path and run cargo test -p sdocx --lib --features pdf captured_controls_shared_scene_exports; then run .venv/bin/python tools/montblanc/public-candidate/scene_compare.py DIRECTORY. The Rust test refuses existing output files. Without the environment variable it performs in-memory checks only.",
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  }
+}
