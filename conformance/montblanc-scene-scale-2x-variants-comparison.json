@@ -1,0 +1,115 @@
+{
+  "schema": "montblanc-scene-scale-2x-variants-comparison-v1",
+  "source_sha256": "a12773a0032e7e63bca09a0f425e59488f2337e2a7465e87da55b0dd5140f11e",
+  "patch_sha256": "20c79a3718f7161daafd8e9fd5fcb9ddf5c18c0821149215045eafc46c72f1bd",
+  "native_receipt_sha256": "df23a09c8dd05c7a0e295ec2087dc5429cc4a1f49d58ffe13777fe2cf096edb8",
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  },
+  "cases": {
+    "fixed": {
+      "pressure": {
+        "svg": [
+          395,
+          441,
+          395,
+          441,
+          44892
+        ],
+        "pdf": [
+          395,
+          447,
+          395,
+          447,
+          40760
+        ]
+      },
+      "size": {
+        "svg": [
+          385,
+          415,
+          385,
+          415,
+          46294
+        ],
+        "pdf": [
+          385,
+          416,
+          385,
+          416,
+          42778
+        ]
+      },
+      "far_endpoint": {
+        "svg": [
+          574,
+          622,
+          574,
+          622,
+          64987
+        ],
+        "pdf": [
+          574,
+          623,
+          574,
+          623,
+          58858
+        ]
+      }
+    },
+    "aware": {
+      "pressure": {
+        "svg": [
+          395,
+          462,
+          395,
+          462,
+          31476
+        ],
+        "pdf": [
+          395,
+          465,
+          395,
+          465,
+          26521
+        ]
+      },
+      "size": {
+        "svg": [
+          385,
+          438,
+          385,
+          438,
+          31287
+        ],
+        "pdf": [
+          385,
+          440,
+          385,
+          440,
+          26732
+        ]
+      },
+      "far_endpoint": {
+        "svg": [
+          574,
+          659,
+          574,
+          659,
+          44837
+        ],
+        "pdf": [
+          574,
+          665,
+          574,
+          665,
+          37307
+        ]
+      }
+    }
+  },
+  "boundary": "Synthetic host Mesa controls compared to test-only reconstructed shared Scene exports; no device, saved-note, or production parity implied.",
+  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_variants_compare.py"
+}

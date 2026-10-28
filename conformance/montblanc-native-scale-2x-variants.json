@@ -1,0 +1,971 @@
+{
+  "harness_sha256": "7378931c784f1be00527da5dd8d39dd48597b95a8c5bcc2c636fdf69d82a2fae",
+  "modified_harness_sha256": "b04738cd4e03d3c811f18bee5682e4a379ce421f2e50e304614a4a0002ef3d70",
+  "cases": {
+    "pressure": {
+      "frame_sha256": "12cdc51eaf2a3865b766df179db3a2be6c85afd11aadce6d54d6ef8b1071f178",
+      "bounds_half_open": [
+        125,
+        124,
+        172,
+        138
+      ],
+      "crop_sha256": "c36a471134018b8e1ba0fd68da3787266feee01b14845c530a96601a40acf1d1",
+      "crop_bytes": 2632,
+      "statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 402,
+        "nontransparent_rgba_sha256": "af1807f6243c1f0086aa085c8ef7ac42f457d9ff7e59750fadbd9143d7d7dcaa",
+        "unique_rgba_count": 253
+      },
+      "native_add_vectors": [
+        {
+          "byte_count": 2760,
+          "field": 200,
+          "float_count": 690,
+          "object": "0x10013770",
+          "sha256": "f2a4d0ff16d3da795d8d5e382d77e7a56574a7717e400d28d2ebf314160b20d7"
+        },
+        {
+          "byte_count": 120,
+          "field": 208,
+          "float_count": 30,
+          "object": "0x10013790",
+          "sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08"
+        },
+        {
+          "byte_count": 120,
+          "field": 216,
+          "float_count": 30,
+          "object": "0x100137b0",
+          "sha256": "9cfc4a174ce55974c2d8411793f88854517cf0a02c861e3649c7dd6330bf701f"
+        }
+      ],
+      "draw_provenance": [
+        {
+          "actual_program": 3,
+          "attributes": [
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "f2a4d0ff16d3da795d8d5e382d77e7a56574a7717e400d28d2ebf314160b20d7",
+                "matches_native_add_vector": true,
+                "size": 2760,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "f2a4d0ff16d3da795d8d5e382d77e7a56574a7717e400d28d2ebf314160b20d7",
+                "matches_native_add_vector": true,
+                "size": 2760,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 0,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            138
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 4,
+          "attributes": [
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 1,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 5,
+          "attributes": [
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "9cfc4a174ce55974c2d8411793f88854517cf0a02c861e3649c7dd6330bf701f",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "9cfc4a174ce55974c2d8411793f88854517cf0a02c861e3649c7dd6330bf701f",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 2,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        }
+      ],
+      "uniform_diagnostics": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 3,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 3,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 4,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 4,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 5,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 5,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        }
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "input_pins": {
+        "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+        "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+        "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+      }
+    },
+    "size": {
+      "frame_sha256": "63852c197e77beef3b126ae3eb6d1423f5c097b0ec1ebd55c61949a96bff539c",
+      "bounds_half_open": [
+        125,
+        125,
+        172,
+        138
+      ],
+      "crop_sha256": "a6a1e716c2a94a017d2e19804f72d07709ab82eaac9a651a460f05e6fdecdf3d",
+      "crop_bytes": 2444,
+      "statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 390,
+        "nontransparent_rgba_sha256": "70b09f4ebcc158a1cc5bc7d8b47af6168f13087fe5b997f6dca44a6fe6fcd941",
+        "unique_rgba_count": 272
+      },
+      "native_add_vectors": [
+        {
+          "byte_count": 2760,
+          "field": 200,
+          "float_count": 690,
+          "object": "0x10013770",
+          "sha256": "d336c65a1c62e3896e0707035cbf35bf709dcd789049bfe5fabc760689583830"
+        },
+        {
+          "byte_count": 120,
+          "field": 208,
+          "float_count": 30,
+          "object": "0x10013790",
+          "sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08"
+        },
+        {
+          "byte_count": 120,
+          "field": 216,
+          "float_count": 30,
+          "object": "0x100137b0",
+          "sha256": "20efc2c58578e8acf26e6e3a3e29cef3ea1b4423b5bbc8d27d9d89ed529e93c4"
+        }
+      ],
+      "draw_provenance": [
+        {
+          "actual_program": 3,
+          "attributes": [
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "d336c65a1c62e3896e0707035cbf35bf709dcd789049bfe5fabc760689583830",
+                "matches_native_add_vector": true,
+                "size": 2760,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "d336c65a1c62e3896e0707035cbf35bf709dcd789049bfe5fabc760689583830",
+                "matches_native_add_vector": true,
+                "size": 2760,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 0,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            138
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 4,
+          "attributes": [
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 1,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 5,
+          "attributes": [
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "20efc2c58578e8acf26e6e3a3e29cef3ea1b4423b5bbc8d27d9d89ed529e93c4",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "20efc2c58578e8acf26e6e3a3e29cef3ea1b4423b5bbc8d27d9d89ed529e93c4",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 2,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        }
+      ],
+      "uniform_diagnostics": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 3,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 3,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 4,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 4,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 5,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 5,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        }
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "input_pins": {
+        "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+        "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+        "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+      }
+    },
+    "far_endpoint": {
+      "frame_sha256": "aa3ccf866e993b853319bd3d92952f493c085a5db69090434b396e2f6efe4a48",
+      "bounds_half_open": [
+        125,
+        125,
+        192,
+        138
+      ],
+      "crop_sha256": "e89989e5a5e5a85dafecd8218f28f168f043b2eb816c85bee81ebb956b84631c",
+      "crop_bytes": 3484,
+      "statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 581,
+        "nontransparent_rgba_sha256": "0abbe494b2ad9c1d70475b187a87d4282e1b56c3e6717bea10fd01bc941876fb",
+        "unique_rgba_count": 350
+      },
+      "native_add_vectors": [
+        {
+          "byte_count": 4200,
+          "field": 200,
+          "float_count": 1050,
+          "object": "0x10013770",
+          "sha256": "9fb904c77913eeabd72bd4dbaa2c05991eb6283a8838532eb46ee3d7a836ae83"
+        },
+        {
+          "byte_count": 120,
+          "field": 208,
+          "float_count": 30,
+          "object": "0x10013790",
+          "sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08"
+        },
+        {
+          "byte_count": 120,
+          "field": 216,
+          "float_count": 30,
+          "object": "0x100137b0",
+          "sha256": "8328d840b6331fc319181d3cb68c9d45a77204dffb0eec1bef0d3294e9b806cf"
+        }
+      ],
+      "draw_provenance": [
+        {
+          "actual_program": 3,
+          "attributes": [
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "9fb904c77913eeabd72bd4dbaa2c05991eb6283a8838532eb46ee3d7a836ae83",
+                "matches_native_add_vector": true,
+                "size": 4200,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 1,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "9fb904c77913eeabd72bd4dbaa2c05991eb6283a8838532eb46ee3d7a836ae83",
+                "matches_native_add_vector": true,
+                "size": 4200,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 0,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            210
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 4,
+          "attributes": [
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 2,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "ca9e3ddf742d9397424374dc0689fd4822f6f0ef20fbc63acf459c3d829dbb08",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 1,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        },
+        {
+          "actual_program": 5,
+          "attributes": [
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 0,
+              "latest_buffer_upload": {
+                "data_sha256": "8328d840b6331fc319181d3cb68c9d45a77204dffb0eec1bef0d3294e9b806cf",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 0,
+              "size": 4,
+              "stride": 20,
+              "type": 5126
+            },
+            {
+              "buffer": 3,
+              "divisor": 0,
+              "enabled": true,
+              "index": 1,
+              "latest_buffer_upload": {
+                "data_sha256": "8328d840b6331fc319181d3cb68c9d45a77204dffb0eec1bef0d3294e9b806cf",
+                "matches_native_add_vector": true,
+                "size": 120,
+                "usage": 35048
+              },
+              "normalized": false,
+              "pointer_offset": 16,
+              "size": 1,
+              "stride": 20,
+              "type": 5126
+            }
+          ],
+          "draw_index": 2,
+          "framebuffer": 1,
+          "mode_count": [
+            4,
+            0,
+            6
+          ],
+          "vao": 0
+        }
+      ],
+      "uniform_diagnostics": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 3,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 3,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 4,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 4,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "program_at_call": 5,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "program_at_call": 5,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            1.0
+          ]
+        }
+      ],
+      "host_gles": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "input_pins": {
+        "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+        "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+        "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+      }
+    }
+  },
+  "boundary": "Synthetic strokes, explicit native SetBuffer/SendDataToGPU sequencing, native Draw with 2x XY matrix on 256x256 host Mesa RGBA8. Does not establish device, PDF, saved-note, or general transform parity.",
+  "reproduce": ".venv/bin/python tools/montblanc/conformance/scale_2x_variants_capture.py"
+}
