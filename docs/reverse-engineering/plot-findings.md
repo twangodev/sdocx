@@ -200,6 +200,26 @@ preserves its existing appearance; replacing the expressions and ordered inputs
 with that image would discard recoverable source. Generated paths would be a
 separate reconstruction artifact, not a decoded saved vector channel.
 
+The native thumbnail acquisition continues through common image machinery.
+`ObjectBaseImpl::GetCapturedThumbnailBitmap` (`0x2d7e8c`) rejects a negative
+runtime index and otherwise calls `ImageCommon::AcquireImage` with it.
+`AcquireImage` (`0x2b5f3c`) looks up that index under a lock and calls
+`ImageData::GetBitmap` (`0x2b6060`). `GetBitmap` (`0x2b8520`) reuses a cached
+bitmap or, for a nonempty image path, calls `BitmapFactory::CreateBitmap`;
+two stored flags can then select `CreateFlippedBitmap` (`0x2b857c–0x2b85b0`).
+An empty path or failed decode returns no bitmap. These are static call-path
+observations; they do not establish the flag values for saved plot thumbnails,
+the decoded pixels, or the incoming drawing transform.
+
+The field-17 loader passes the media ID with a zero rectangle and zero final
+argument to `AddImage` (`0x2dba58–0x2dba70`). The image setup clears both flip
+bytes on success (`0x2b80c8–0x2b80d4`), though `AddImage` can return an existing
+entry for the same media ID. A [native control](../../conformance/plot-bitmap-native.json)
+executes `GetBitmap` with injected image data and stubbed path, factory and
+mutex calls. It confirms all four flip-byte combinations reach the factory in
+reverse byte order, and a second acquisition reuses the cached result. It does
+not execute media registration, image decoding, or a saved document.
+
 ## Validation and evidence limits
 
 Five synthetic integration tests cover all six fields, multiple graph styles
