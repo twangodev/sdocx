@@ -185,7 +185,7 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         return Err("invalid pen size");
     }
 
-    if points.len() > 2 && tool_type == 2 {
+    if points.len() > 2 && matches!(tool_type, 2 | 3) {
         let mut accepted_points = Vec::with_capacity(points.len());
         let mut accepted_pressures = Vec::with_capacity(points.len());
         accepted_points.push(points[0]);
@@ -373,7 +373,6 @@ pub(crate) fn prepare_stroke(
             None | Some("") | Some("1;")
         )
         || !matches!(rendering.tool_type_raw, 2 | 3)
-        || (rendering.tool_type_raw == 3 && stroke.points.len() != 2)
         || !p.compressed
         || p.replay_only
         || p.stylus_channels
@@ -399,6 +398,9 @@ pub(crate) fn prepare_stroke(
     }
     if !(2..=224).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
         return Err("unsupported SimpleBrush sample shape");
+    }
+    if rendering.tool_type_raw == 3 && stroke.points.len() > 7 {
+        return Err("unsupported SimpleBrush tool 3 sample count");
     }
     let count = stroke.points.len();
     if !(stroke.timestamps.is_empty() || stroke.timestamps.len() == count)
@@ -1049,6 +1051,15 @@ mod tests {
         for probe in [2, 201, 202, 203] {
             v25_paint_control_for_tool(8, false, false, false, probe, 3);
         }
+        v25_paint_control_for_tool(8, false, false, false, 0, 3);
+        v25_paint_control_for_tool(12, false, false, false, 7, 3);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn tool3_short_multi_point_native_paint_controls() {
+        v25_paint_control_for_tool(8, false, false, false, 205, 3);
+        v25_paint_control_for_tool(4, false, false, false, 207, 3);
     }
 
     #[cfg(feature = "pdf")]

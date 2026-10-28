@@ -451,4 +451,24 @@
     "limits": "No per-stroke or per-page limits increased; fallback verified by focused test.",
     "limitations": "Host control only."
   }
+,
+  "width_alpha_controls_before_backend_fallback": {
+    "scope": "Synthetic straight host controls; measurements precede narrow-width backend fallback. Effective width is source pen size truncated toward zero. RGB L1 is matched to each exported background. Neither device nor saved-note parity is established.",
+    "l1_order": ["svg", "mupdf", "pdfium"],
+    "cases": [
+      {"case": "alpha00", "capture_sha256": "bad6e2a7ccfd2346d2c7ffeaaed04641d8b48bc94772cc121bcd491e6f3a049e", "native_frame_sha256": "1674338767cb8f371f9e0a21e13ae21148d2340a718d1f4b1f9e88041bfd33d9", "candidate_l1": [3264, 3264, 3264], "fallback_l1": [3264, 3264, 3264]},
+      {"case": "alpha01", "capture_sha256": "ef669992dff1198d1954fe08df069de7b0d8a08203d99b3707ba79fd435a02e4", "native_frame_sha256": "712130e270de6db4181bd71138cf7dbc199540ec8e8d996495feee9e4f4367dc", "candidate_l1": [425, 906, 970], "fallback_l1": [3380, 3672, 3552]},
+      {"case": "alpha40", "capture_sha256": "53e1d822d56ec62ed7f0207ef89a7fe4401c21de0492a78fa9bfd75ac05baf42", "native_frame_sha256": "22837092e7641c3c6d2750e7b92eee5320c4dc5b5312bb20de06fc73d57d3d83", "candidate_l1": [1614, 3027, 3321], "fallback_l1": [8632, 8836, 9008]},
+      {"case": "alphac8", "capture_sha256": "3f497e7fc6fd6fca6c93856a3e39f89fbd7ab16d90a398c2dcb46ef7f08b0f9e", "native_frame_sha256": "2d6408162c1e34f67c246e310ff2a7614e49721210fadb3be2af31602b1dd939", "candidate_l1": [4934, 8188, 7541], "fallback_l1": [19482, 19875, 19434]},
+      {"case": "size2", "capture_sha256": "94695c5cff429d3f80718ac18dfd1f5903f282033a4a4d76f50d4cf014c5c124", "native_frame_sha256": "88fd8d3c86c33a7818fcf9eb74f1d91b9da19b1ae3b8938c899aa09bcc037120", "candidate_l1": [1191, 2110, 2245], "fallback_l1": [722, 729, 817]},
+      {"case": "size3", "capture_sha256": "c48f128a42eb566a8065e6751398e87f59b91f5cbbf46ef2cc659d48afb41d4f", "native_frame_sha256": "ce3bca61656fa594b5191ff1b16171fd37f89372aa44f0da7f5a86529e9b631d", "candidate_l1": [736, 3246, 3417], "fallback_l1": [1139, 1329, 1301]},
+      {"case": "size6", "capture_sha256": "8aae753ed7680b0fcf6071ca8ebd58489f02677cf0d7d9b6353a1fa388dd10d2", "native_frame_sha256": "b47c901e8b42dcb7b8895f445900bd11d1e72d44f48032e544c317ec65bfffbc", "candidate_l1": [1923, 3185, 3525], "fallback_l1": [3773, 3610, 3956]},
+      {"case": "size2_5", "capture_sha256": "94a7e580177b83ad86091728d9fa90ef30723b8d2301062b5343f3ae531446d8", "native_frame_sha256": "88fd8d3c86c33a7818fcf9eb74f1d91b9da19b1ae3b8938c899aa09bcc037120", "candidate_l1": [1191, 2110, 2245], "fallback_l1": [722, 729, 817]},
+      {"case": "size12_75", "capture_sha256": "abd81adfe66c5f9eb3ba9ac0a2d8a50a361c54179a18db5b751e3535b72b1832", "native_frame_sha256": "160edd33305843eb51ee4efba2449ad1062a23011ccda7375a096b2875d27a64", "candidate_l1": [2993, 4721, 5332], "fallback_l1": [13926, 13748, 14291]},
+      {"case": "size24-v3", "capture_sha256": "a80129bb3cf00b6588aa88de08ffe9dbdd8e6a4f2f9d06b81cd46fbb698b5af6", "native_frame_sha256": "cab0e333b33d06b53ccacaf7963a37cfe0cd1c103073abe3787f12f11f0fd7a4", "candidate_l1": [6583, 9842, 10812], "fallback_l1": [49832, 49542, 50008]},
+      {"case": "self-overlap-blue", "capture_sha256": "c940623a8cb4dccb87c963db2dc2c58526867e441b9468873e11862a48c19f0e", "native_frame_sha256": "92d55fbd32e3fc65c80b7b24dc9de76ce22d98fb2fa115d581c5be5c0a9b5a45", "candidate_l1": [6642, 11514, 11694], "fallback_l1": [43393, 44221, 43664]},
+      {"case": "size4-new", "capture_sha256": "9aa72cb98c70b0f8171d35b09ac66765217ecb9870303d8caef09f5cd60018b3", "native_frame_sha256": "c2410e1b916702703ec484e5c360ce21d34be8b3ccbd11e76beb3304b96bc944", "candidate_l1": [1689, 2776, 2995], "fallback_l1": [2176, 2192, 2355]},
+      {"case": "size5-new", "capture_sha256": "eff979064d360b2b5401cbb2917590a59e8eb5621844e642c219c038e0578038", "native_frame_sha256": "b847cf9d4245e1c392eb9ceff9fa148bad4b118f1d72ac36c4ee8a73894d147c", "candidate_l1": [703, 3354, 3677], "fallback_l1": [2798, 2941, 3021]}
+    ]
+  }
 }

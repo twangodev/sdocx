@@ -432,3 +432,45 @@ fn measured_svg_budget_covers_real_nodes_with_large_ids() {
     assert!(super::emit(&mut scene, prepared));
     assert!(scene.finish().len() <= reserved);
 }
+
+#[test]
+fn narrow_effective_widths_choose_backend_fallback() {
+    for size in [2.0, 2.5, 3.0, 4.0, 5.0, 5.99, 6.0] {
+        let mut doc = document("straight", 2, 1);
+        let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+            panic!("stroke");
+        };
+        stroke.pen_width = size;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        let vector_svg = crate::render_document_svg(&doc, &options()).remove(0).svg;
+        let fallback_svg = crate::render_document_svg(&doc, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert_eq!(vector_svg == fallback_svg, size < 3.0, "SVG size {size}");
+        let vector_pdf =
+            crate::render_document_pdf(&doc, &options(), &crate::PdfOptions::default()).unwrap();
+        let fallback_pdf = crate::render_document_pdf(
+            &doc,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(vector_pdf == fallback_pdf, size < 6.0, "PDF size {size}");
+    }
+}
+
+#[test]
+fn width_six_svg_improves_on_native_host_control() {
+    let mut doc = document("straight", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke");
+    };
+    stroke.pen_width = 6.0;
+    stroke.rendering.as_mut().unwrap().style.pen_size = Some(6.0);
+    let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    let native = include_bytes!("../../../../../conformance/legacy-marker-size6-sparse-rgba8.bin");
+    assert!(error(&candidate, native) < error(&fallback, native));
+}

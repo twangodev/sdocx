@@ -599,7 +599,7 @@ pub(super) fn render(
     let Some(size) = rendering.style.pen_size else {
         return false;
     };
-    if !size.is_finite() || !(2.0..=800.0).contains(&size) {
+    if !size.is_finite() || !(3.0..=800.0).contains(&size) || (scene.retains_text() && size < 6.0) {
         return false;
     }
     let size = size.trunc();
