@@ -1,0 +1,231 @@
+{
+  "scope": "Synthetic tool-2 Drawing SimpleBrush under Unicorn and host Mesa GLES; fractional 2x transform. Public SVG resvg 0.45.1, direct PDF MuPDF 1.28.2; not device or saved-note parity. Other sizes, geometry and pressures extrapolate.",
+  "matrix": [
+    2,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0.25,
+    0.5,
+    1
+  ],
+  "cases": [
+    {
+      "case": "fraction3",
+      "size": 3,
+      "points": [
+        [
+          32,
+          32
+        ],
+        [
+          42,
+          32
+        ],
+        [
+          52,
+          37
+        ]
+      ],
+      "geometry_sha256": "ae6c0767809b62dfd0853a79571617bfc51e3605377205b931e037eaee42eaa9",
+      "geometry_f32le_hex": "0000004200000042cdcc06402b2c064200000042cdcc06403b190c4200000042cdcc06400000144200000042cdcc06400000144200000042d0cc06409add1a426b4b0042b1c7064034bb2142ad2d014292c20640309028428ea4024273bd0640ca0a2f420c92044254b8064064853542dc05074235b3064000003c4200000a4216ae064000003c4200000a420aae06406c66354236b30642fe5e0740c39f3b42e2cf0942f30f08404f66424228330d42e8c008408a994842c64c1042dc710940feff4f4200001442d0220a40",
+      "frame_sha256": "fb276b2ef036f3e9fbdbf16d08304c30fe9f0e88131d7680ca1c910f0528af51",
+      "alpha_bounds": [
+        60,
+        60,
+        109,
+        79
+      ],
+      "nonzero_alpha": 408,
+      "crop": {
+        "file": "simplebrush-2x-fraction3.rgba",
+        "sha256": "0926a0b36eb37623126f0161594d88e9d43a010447e80acdba9a40f9d3a39312"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        72505,
+        8919,
+        2474
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        78087,
+        13607,
+        10951
+      ],
+      "paint_clean": true
+    },
+    {
+      "case": "fraction4",
+      "size": 4,
+      "points": [
+        [
+          32,
+          32
+        ],
+        [
+          42,
+          32
+        ],
+        [
+          52,
+          37
+        ]
+      ],
+      "geometry_sha256": "62a00ae39a66f1f4e3d49f7862a0ec3df8aeeb2fc70c53901447084f80455afd",
+      "geometry_f32le_hex": "000000420000004266661e402b2c06420000004266661e403b190c420000004266661e40000014420000004266661e40000014420000004264661e409add1a426b4b0042915f1e4034bb2142ad2d0142be581e40309028428ea40242eb511e40ca0a2f420c920442184b1e4064853542dc05074245441e4000003c4200000a42723d1e4000003c4200000a427f3d1e406c66354236b306426a291f40c39f3b42e2cf0942551520404f66424228330d42400121408a994842c64c10422bed2140feff4f420000144216d92240",
+      "frame_sha256": "47d64d3637d6c746e02733498583fd3ed2a07e36cbd92774b47eb23154075d84",
+      "alpha_bounds": [
+        59,
+        60,
+        109,
+        80
+      ],
+      "nonzero_alpha": 479,
+      "crop": {
+        "file": "simplebrush-2x-fraction4.rgba",
+        "sha256": "d8b7258c6f190324ae6553cdcff09fce158b3d81a3b638583579c2a928c10b22"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        88458,
+        8714,
+        2793
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        96195,
+        13798,
+        11555
+      ],
+      "paint_clean": true
+    },
+    {
+      "case": "fraction32",
+      "size": 32,
+      "points": [
+        [
+          32,
+          32
+        ],
+        [
+          42,
+          32
+        ],
+        [
+          52,
+          37
+        ]
+      ],
+      "geometry_sha256": "955a062110f098ba3a8d74357b01e67129f7e9e56296e691b392e487399dec07",
+      "geometry_f32le_hex": "0000004200000042cdcc4c412b2c064200000042cdcc4c413b190c4200000042cdcc4c410000144200000042cdcc4c410000144200000042cccc4c4134bb2142ad2d01427eb14c41ca0a2f420c92044230964c4100003c4200000a42e27a4c4100003c4200000a42e17a4c41d67239426bb90842508d4f4140554442a02a0e42bf9f5241feff4f42000014422eb25541",
+      "frame_sha256": "095c54f62b6e9954780b8f1a0b5ae99a14bdc8644515b77f3b776a8da4459beb",
+      "alpha_bounds": [
+        39,
+        39,
+        131,
+        101
+      ],
+      "nonzero_alpha": 4312,
+      "crop": {
+        "file": "simplebrush-2x-fraction32.rgba",
+        "sha256": "d71b0b20455de565adf4961a7948dfbc83fe31cc0483da45401c20ca2d60e20b"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        880635,
+        20575,
+        6401
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        961257,
+        30337,
+        25613
+      ],
+      "paint_clean": true
+    },
+    {
+      "case": "reverse3",
+      "size": 3,
+      "points": [
+        [
+          80,
+          70
+        ],
+        [
+          65,
+          78
+        ],
+        [
+          48,
+          67
+        ]
+      ],
+      "geometry_sha256": "9a54dd0e94b21463799654fd1a77a1f33c82941951e45a0a53b2470c81e4fc26",
+      "geometry_f32le_hex": "0000a04200008c42cdcc0640a3999d42a9478d42cdcc0640a8999a4240e18e42cdcc0640fbee9742584d9042cdcc0640c3bb944243029242cdcc06400000914200009442cdcc06400000914200009442cccc06405c828d421d98954262c9064011f7894285ae9642f8c5064070468642504597428fc20640b48282426e53974226bf064098b17d428fdf9642bcbb0640b3607642aff1954252b8064034646f4224a19442e9b4064046bc6842db00934280b10640020062420000914216ae064000006242000091421cae06408db16942357d93426a10074010136c4267429442b6720740605666423e67924204d507403bbd5f42c044904250370840922f5942fa258e429e99084079d55342b66a8c42eafb08402fda4d424c7b8a42385e0940b23d4742ba57884284c009400400404202008642d2220a40",
+      "frame_sha256": "cbb5711dcd2922a087399d91fdba56c05c113e9763a91138d64cbd64d1d35f87",
+      "alpha_bounds": [
+        92,
+        130,
+        164,
+        156
+      ],
+      "nonzero_alpha": 643,
+      "crop": {
+        "file": "simplebrush-2x-reverse3.rgba",
+        "sha256": "a14dd68c0e9847b4fde5b5b0c9ccd0ddb5cefe9cd2d5d3a2fd9948def1144a55"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        116234,
+        13778,
+        4500
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        127144,
+        21409,
+        17271
+      ],
+      "paint_clean": true
+    },
+    {
+      "case": "reverse32",
+      "size": 32,
+      "points": [
+        [
+          80,
+          70
+        ],
+        [
+          65,
+          78
+        ],
+        [
+          48,
+          67
+        ]
+      ],
+      "geometry_sha256": "a105c3e2e412816c9f935d90b67d608639e8a77628b367f0fd779db699cc3cdf",
+      "geometry_f32le_hex": "0000a04200008c42cdcc4c41e05e9b4211788e42cdcc4c4114ed9642e4d69042cdcc4c410000914200009442cdcc4c410000914200009442c8cc4c4170468642504597427bb14c41b3607642aff195422e964c410200624200009142e17a4c410000624200009142e07a4c41605666423e6792424f8d4f4179d55342b66a8c42be9f524104004042020086422db25541",
+      "frame_sha256": "8cffaa44eca5361174950ee0b5100e9f35b0dd10af0888c4bb01f3ddb5c5f7fd",
+      "alpha_bounds": [
+        70,
+        108,
+        186,
+        177
+      ],
+      "nonzero_alpha": 5789,
+      "crop": {
+        "file": "simplebrush-2x-reverse32.rgba",
+        "sha256": "16e8b36c21c5e55a9ea06f0eb0d4261260a0e9d8229ac46deef91369c9b347bb"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        1139046,
+        25302,
+        8568
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        1243251,
+        36607,
+        31482
+      ],
+      "paint_clean": true
+    }
+  ]
+}

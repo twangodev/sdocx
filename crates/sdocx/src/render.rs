@@ -4238,12 +4238,14 @@ fn render_stroke(
                 && simplebrush_two_pixels_per_page_unit
                 && stroke.points.len() == 3
                 && stroke.rendering.as_ref().is_some_and(|rendering| {
-                    matches!(rendering.tool_type_raw, 0 | 2 | 3)
-                        && rendering.advanced_settings.is_none()
-                        && rendering
-                            .style
-                            .pen_size
-                            .is_some_and(|size| (8.0..=20.0).contains(&size))
+                    rendering.advanced_settings.is_none()
+                        && rendering.style.pen_size.is_some_and(|size| {
+                            match rendering.tool_type_raw {
+                                2 => (3.0..=32.0).contains(&size),
+                                0 | 3 => (8.0..=20.0).contains(&size),
+                                _ => false,
+                            }
+                        })
                 })
                 && slice.is_none()))
         && viewport.iter().all(|dimension| *dimension > 0)

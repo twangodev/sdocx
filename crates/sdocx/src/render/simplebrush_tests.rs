@@ -921,8 +921,8 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
         (3, 21.0, None),
         (0, 8.0, Some("1;")),
         (3, 8.0, Some("1;")),
-        (2, 7.0, None),
-        (2, 21.0, None),
+        (2, 2.99, None),
+        (2, 32.01, None),
         (2, 8.0, Some("1;")),
     ] {
         let mut unsupported = stroke();
@@ -945,6 +945,30 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
         render_document_svg(&unsupported, &two)[0].svg,
         render_document_svg(&unsupported, &RenderOptions::default())[0].svg
     );
+}
+
+#[test]
+fn two_pixel_tool_two_size_boundaries_reach_svg_and_pdf() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for size in [3.0, 4.0, 32.0] {
+        let mut source = stroke();
+        source.pen_width = size;
+        source.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        let doc = document(source);
+        assert_ne!(
+            render_document_svg(&doc, &two)[0].svg,
+            render_document_svg(&doc, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_ne!(
+            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+            crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default())
+                .unwrap()
+        );
+    }
 }
 
 #[test]
@@ -1067,11 +1091,15 @@ fn two_pixel_native_export_fixture() {
             Point { x: 48.0, y: 189.0 },
         ];
     }
-    let size = if std::env::var_os("SDOCX_REVERSE").is_some() {
-        20.0
+    let default_size = if std::env::var_os("SDOCX_REVERSE").is_some() {
+        "20"
     } else {
-        12.0
+        "12"
     };
+    let size: f32 = std::env::var("PROBE_SIZE")
+        .unwrap_or(default_size.into())
+        .parse()
+        .unwrap();
     source.pen_width = size;
     source.rendering.as_mut().unwrap().style.pen_size = Some(size);
     source.color = Some(Color {

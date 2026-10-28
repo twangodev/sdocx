@@ -131,7 +131,7 @@ transforms, saved-note and device parity remain unverified. The profile is unava
 
 A separate experimental `simplebrush_two_pixels_per_page_unit` assertion selects
 scale-adjusted SimpleBrush fringe for three-point, tool-0, tool-2, and tool-3 null-setting strokes
-with sizes 8 through 20. The caller asserts two output pixels per page unit;
+with sizes 8 through 20 for tools 0 and 3, and 3 through 32 for tool 2. Five synthetic tool-2 controls at sizes 3, 4 and 32 across two paths improve SVG alpha error and matched-paper direct-PDF RGB error over fallback and the unit-scale approximation; see the [size controls](../conformance/simplebrush-scale-2x-size-host.json). Intermediate values and other paths extrapolate from these host controls. The caller asserts two output pixels per page unit;
 combining it with `simplebrush_profile`, replay, sliced output, and unsupported
 inputs uses generic paint. Synthetic 2× host controls support the approximation,
 with other paths and intermediate sizes extrapolated. A [public SVG and direct
