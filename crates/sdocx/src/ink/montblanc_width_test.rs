@@ -1,37 +1,7 @@
 //! Pinned native endPen width arithmetic for zero tilt and an initialized redraw.
 //! These controls validate width state only, not complete streams or rendering.
 
-fn width_state(
-    middle: [f32; 2],
-    end: [f32; 2],
-    size: f32,
-    end_pressure: f32,
-    previous: f32,
-) -> (f32, f32, f32, f32) {
-    let dx = end[0] - middle[0];
-    let dy = end[1] - middle[1];
-    let distance = dx.mul_add(dx, dy * dy).sqrt();
-    let factor = if distance < 4.2 {
-        1.0
-    } else if distance < 9.5 {
-        ((distance + -4.2) / -5.3).mul_add(0.4, 0.4) + 0.6
-    } else if distance < 35.0 {
-        ((distance + -9.5) / -25.5).mul_add(0.5, 0.5) + 0.1
-    } else {
-        0.1
-    };
-    let pressure = end_pressure.min(1.0);
-    let pressure_term = ((pressure * 3.0) * 0.5) * size * 0.5;
-    let intermediate = size / 3.0 + pressure_term;
-    let candidate = factor * intermediate;
-    let bounded = if (previous - candidate).abs() > 1.0 {
-        previous + if previous > candidate { -1.0 } else { 1.0 }
-    } else {
-        candidate
-    };
-    let target = bounded.max(pressure * size).max(5.0);
-    (intermediate, factor, target, target.min(previous))
-}
+use super::width_state;
 
 fn word(value: &serde_json::Value) -> u32 {
     let text = value.as_str().unwrap();

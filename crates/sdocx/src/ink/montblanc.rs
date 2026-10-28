@@ -1,4 +1,4 @@
-//! Test-only Montblanc GLV1 sampler for the four captured three-point routes.
+//! Test-only Montblanc GLV1 sampler for captured three-point routes.
 //!
 //! Source: libSPenMontblancFountainPen.so SHA-256
 //! 4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350.
@@ -119,7 +119,49 @@ fn alpha_state(input: Input<'_>) -> AlphaState {
     }
 }
 
+fn width_state(
+    middle: [f32; 2],
+    end: [f32; 2],
+    size: f32,
+    end_pressure: f32,
+    previous: f32,
+) -> (f32, f32, f32, f32) {
+    let dx = end[0] - middle[0];
+    let dy = end[1] - middle[1];
+    let distance = dx.mul_add(dx, dy * dy).sqrt();
+    let factor = if distance < 4.2 {
+        1.0
+    } else if distance < 9.5 {
+        ((distance + -4.2) / -5.3).mul_add(0.4, 0.4) + 0.6
+    } else if distance < 35.0 {
+        ((distance + -9.5) / -25.5).mul_add(0.5, 0.5) + 0.1
+    } else {
+        0.1
+    };
+    let pressure = end_pressure.min(1.0);
+    let pressure_term = ((pressure * 3.0) * 0.5) * size * 0.5;
+    let intermediate = size / 3.0 + pressure_term;
+    let candidate = factor * intermediate;
+    let bounded = if (previous - candidate).abs() > 1.0 {
+        previous + if previous > candidate { -1.0 } else { 1.0 }
+    } else {
+        candidate
+    };
+    let target = bounded.max(pressure * size).max(5.0);
+    (intermediate, factor, target, target.min(previous))
+}
+
 fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+    sample_with_wide_model(input, false)
+}
+
+// Experimental extrapolation of the initialized redraw state observed in the
+// native controls. Matching controls do not establish arbitrary wide strokes.
+fn sample_wide_for_test(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+    sample_with_wide_model(input, true)
+}
+
+fn sample_with_wide_model(input: Input<'_>, allow_wide: bool) -> Result<Vec<RtRecord>, Error> {
     if input.points.len() != 3 {
         return Err(Error::PointCount);
     }
@@ -142,7 +184,7 @@ fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         return Err(Error::InvalidInput);
     }
 
-    if input.pen_size > 2.0 {
+    if input.pen_size > 2.0 && !allow_wide {
         return Err(Error::UnsupportedWidthBranch);
     }
 
@@ -160,11 +202,17 @@ fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     if !curve.length.is_finite() || curve.length <= 0.0 {
         return Err(Error::InvalidInput);
     }
-    let count = repeat_count(curve.length, previous_full_width)?;
+    let (_, _, target_width, repeat_width) = width_state(
+        input.points[1],
+        input.points[2],
+        input.pen_size,
+        input.pressure[2],
+        previous_full_width,
+    );
+    let count = repeat_count(curve.length, repeat_width)?;
 
-    // endPen raises the full-width target to at least 5 and increments it by
+    // endPen increments the full width by
     // (target - previous)/count. drawPoint clamps the emitted half-width to 1.
-    let target_width = (input.pen_size * input.pressure[1]).max(5.0_f32);
     let width_step = (target_width - previous_full_width) / count as f32;
     let distance_step = curve.length / count as f32;
     let mut width = previous_full_width;
@@ -607,12 +655,76 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn wide_streams_match_native() {
+        for receipt in [
+            include_str!("../../../../conformance/montblanc-wide-paths-native.json"),
+            include_str!("../../../../conformance/montblanc-width-branches-native.json"),
+            include_str!("../../../../conformance/montblanc-wide-low-pressure-native.json"),
+            include_str!("../../../../conformance/montblanc-wide-validation-native.json"),
+        ] {
+            let data: serde_json::Value = serde_json::from_str(receipt).unwrap();
+            for (name, case) in data["cases"].as_object().unwrap() {
+                let input = &case["input"];
+                let n = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
+                let points: Vec<[f32; 2]> = input["points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| [n(&p[0]), n(&p[1])])
+                    .collect();
+                let pressure: Vec<f32> = input["pressure"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(n)
+                    .collect();
+                let actual = sample_wide_for_test(Input {
+                    points: &points,
+                    pressure: &pressure,
+                    pen_size: n(&input["pen_size"]),
+                })
+                .unwrap();
+                let stream = case["stream"].as_array().unwrap();
+                assert_eq!(actual.len(), stream.len(), "{name}");
+                for (i, (record, expected)) in actual.iter().zip(stream).enumerate() {
+                    let symbol = expected[0].as_str().unwrap();
+                    let call = if symbol.contains("AddStartPoint") {
+                        RtCall::Start
+                    } else if symbol.contains("AddEndPoint") {
+                        RtCall::End
+                    } else {
+                        assert!(symbol.contains("AddPoint"));
+                        RtCall::Point
+                    };
+                    assert_eq!(record.call, call, "{name} record {i}");
+                    assert_eq!(
+                        expected[1].as_array().unwrap().len(),
+                        6,
+                        "{name} record {i}"
+                    );
+                    for (lane, word) in expected[1].as_array().unwrap().iter().enumerate() {
+                        let bytes = word.as_str().unwrap();
+                        let bits = u32::from_le_bytes(std::array::from_fn(|j| {
+                            u8::from_str_radix(&bytes[j * 2..j * 2 + 2], 16).unwrap()
+                        }));
+                        assert_eq!(
+                            record.lanes[lane].to_bits(),
+                            bits,
+                            "{name} record {i} lane {lane}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn rejects_unobserved_point_branches() {
         assert_eq!(
             sample(Input {
                 points: &[[0.0, 0.0], [10.0, 0.0], [20.0, 2.0]],
                 pressure: &[0.3, 0.6, 1.0],
-                pen_size: 2.5,
+                pen_size: 2.5
             })
             .unwrap_err(),
             Error::UnsupportedWidthBranch
