@@ -15,7 +15,7 @@ from PIL import Image
 import PIL
 
 repository = Path(__file__).resolve().parents[3]
-receipt = json.loads(subprocess.check_output(['git', 'show', ':conformance/montblanc-many-point-paint-host.json'], cwd=repository))
+receipt = json.loads((repository / 'conformance/montblanc-many-point-paint-host.json').read_text())
 revision = receipt['source_revision']
 subprocess.run(['git', 'cat-file', '-e', f'{revision}^{{commit}}'], cwd=repository, check=True)
 with tempfile.TemporaryDirectory(prefix='montblanc-many-point-') as directory:
@@ -27,12 +27,8 @@ with tempfile.TemporaryDirectory(prefix='montblanc-many-point-') as directory:
     with tarfile.open(archive) as source:
         source.extractall(root, filter='data')
     for name, digest in receipt['source_sha256'].items():
-        data = subprocess.check_output(['git', 'show', f':{name}'], cwd=repository)
-        assert hashlib.sha256(data).hexdigest() == digest, name
-        target = root / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
-    assert hashlib.sha256(Path(__file__).read_bytes()).hexdigest() == receipt['source_sha256']['tools/montblanc/many-point-paint/verify.py']
+        assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
+    assert hashlib.sha256(Path(__file__).read_bytes()).hexdigest() == receipt['verifier_sha256']
     (root / 'scratch').symlink_to(repository / 'scratch', target_is_directory=True)
     package = root / 'tools/montblanc/many-point-paint'
     sys.path.insert(0, str(root / 'tools/montblanc'))

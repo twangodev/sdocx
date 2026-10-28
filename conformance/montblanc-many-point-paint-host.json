@@ -653,7 +653,7 @@
     "pymupdf": "1.28.2",
     "pillow": "12.1.1"
   },
-  "source_revision": "d5b1f89332ac80c757a4248abc5b222287d6475d",
+  "source_revision": "f55d14848904c83bf111b48e2b4888e677eedc82",
   "source_sha256": {
     "Cargo.toml": "0bad4ac50f469c7ab58363c76edecfed05e47e2c4dbeb1bbb3430b724b187a21",
     "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
@@ -669,5 +669,6 @@
     "tools/montblanc/many-point-public/Cargo.toml": "7f5e57c6314ae41bce76444fe3f0bf180af198f1669328b54ef2c8ff94f92a39",
     "tools/montblanc/many-point-public/Cargo.lock": "7a24b97c07212d4e79a8d569143e0a0c5289f12d7e7463c64d96c3cf79d1afc0",
     "tools/montblanc/many-point-public/src/main.rs": "36fe5e68aa3400cba10ad12ff16e62fa75a62e48c48d6eef0250594d1170bdc8"
-  }
+  },
+  "verifier_sha256": "2f97a19984c5f93c5425e52cd8eb45ac56c96a15bba4a32dca2edc5269fe9c44"
 }
