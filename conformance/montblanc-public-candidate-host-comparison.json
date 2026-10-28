@@ -1,7 +1,7 @@
 {
   "schema": "montblanc-public-candidate-host-comparison-v1",
   "scope": "Isolated public Stroke synthetic controls through existing test-only sampler and mesh expansion, compared to four retained host-Mesa frames. This does not integrate with production exports or establish device parity.",
-  "geometry": "Captured pen fields are assigned to public Stroke; points transformed from page coordinates to the fixed capture projection x-128, 128-y. Existing sampler and native-derived mesh functions are extracted verbatim with visibility changes; each of three emitted buffers is required to match native captured VBO bytes exactly. Capture draw metadata is reused only for prototype paint.",
+  "geometry": "A cloned public Stroke receives points, pressures and width; its pen metadata is not changed or used for dispatch. Points are transformed from page coordinates to the fixed capture projection x-128, 128-y. Existing sampler and native-derived mesh functions are extracted verbatim with visibility changes; each of three emitted buffers is required to match native captured VBO bytes exactly. Capture draw metadata is reused only for prototype paint.",
   "paint": "Existing SVG prototype uses subdivision 4, source shader approximations and analytic fwidth; SVG rendered with resvg 0.45.1. PDF is MuPDF 1.28.2 SVG-to-PDF conversion, not sdocx direct PDF.",
   "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route.",
   "inputs": {
