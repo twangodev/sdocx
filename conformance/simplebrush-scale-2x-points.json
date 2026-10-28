@@ -1,5 +1,5 @@
 {
-  "description": "Synthetic SimpleBrush host-Mesa 2x controls; 32 points is diagnostic only",
+  "description": "Synthetic SimpleBrush host-Mesa 2x point-count controls",
   "matrix": [
     2,
     0,
@@ -237,6 +237,6 @@
     },
     "point_inputs": "Counts 2, 4 and 7: (32+6i, 32+3(i mod 3)), pressure 0.5. Counts 16 and 32: (25+2i, 40+[0,2,5,7,8,7,5,2][i mod 8]), pressures [0.25,0.5,0.75,1][i mod 4].",
     "base_revision": "3860738cb2360f40d6a3f746b309316e9aa8b0d7",
-    "admission": "2..16 points at sizes 8..20 for tools 0, 2 and 3; three-point tool 2 also admits 3..32 from separate size controls"
+    "admission": "2..32 points at sizes 8..20 for tools 2 and 3; tool 0 retains 2..16; three-point tool 2 also admits 3..32 from separate size controls"
   }
 }

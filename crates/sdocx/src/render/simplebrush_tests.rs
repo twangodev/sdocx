@@ -462,8 +462,8 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
     assert_eq!(render_one(&source, &fresh_page_budget, true, false), native);
     assert_eq!(fresh_page_budget.get(), small_count);
 
-    source.points.truncate(16);
-    source.pressures.truncate(16);
+    source.points.truncate(32);
+    source.pressures.truncate(32);
     source.pen_width = 12.0;
     source.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
     let long_count = crate::ink::simplebrush::prepare_stroke(&source, true, 32_768)
@@ -958,13 +958,13 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
         );
     }
     let mut unsupported = stroke();
-    unsupported.points = (0..17)
+    unsupported.points = (0..33)
         .map(|i| Point {
             x: i as f64 * 2.0,
             y: 20.0,
         })
         .collect();
-    unsupported.pressures = vec![0.5; 17];
+    unsupported.pressures = vec![0.5; 33];
     let unsupported = document(unsupported);
     assert_eq!(
         render_document_svg(&unsupported, &two)[0].svg,
@@ -1144,6 +1144,25 @@ fn two_pixel_native_export_fixture() {
             })
             .collect();
     }
+    match std::env::var("VARIANT").as_deref() {
+        Ok("reverse") => {
+            source.points.reverse();
+            source.pressures.reverse();
+        }
+        Ok("alternate") => {
+            let heights = [0, -3, -5, -4, 0, 5, 7, 3];
+            source.points = (0..32)
+                .map(|i| Point {
+                    x: 27.0 + 2.0 * i as f64,
+                    y: 208.0 - heights[i % 8] as f64,
+                })
+                .collect();
+            source.pressures = (0..32)
+                .map(|i| f64::from([1.0_f32, 0.3, 0.6, 0.8, 0.4][i % 5]))
+                .collect();
+        }
+        _ => {}
+    }
     let default_size = if std::env::var_os("SDOCX_REVERSE").is_some() {
         "20"
     } else {
@@ -1255,7 +1274,7 @@ fn two_pixel_point_counts_match_native_geometry_and_dispatch() {
         let doc = document(source);
         let actual = &render_document_svg(&doc, &two)[0].svg;
         let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
-        if count <= 16 {
+        if count <= 32 {
             assert_ne!(actual, fallback);
         } else {
             assert_eq!(actual, fallback);
@@ -1269,7 +1288,7 @@ fn two_pixel_point_and_size_boundaries() {
         simplebrush_two_pixels_per_page_unit: true,
         ..Default::default()
     };
-    for count in [2, 3, 4, 16, 17] {
+    for count in [2, 3, 4, 16, 17, 32, 33] {
         for tool in [0, 2, 3] {
             for size in [3.0, 7.0, 8.0, 20.0, 21.0, 32.0] {
                 let mut source = stroke();
@@ -1285,8 +1304,9 @@ fn two_pixel_point_and_size_boundaries() {
                 rendering.tool_type_raw = tool;
                 rendering.style.pen_size = Some(size);
                 let doc = document(source);
-                let admitted =
-                    count <= 16 && ((tool == 2 && count == 3) || (8.0..=20.0).contains(&size));
+                let admitted = count <= 32
+                    && (tool != 0 || count <= 16)
+                    && ((tool == 2 && count == 3) || (8.0..=20.0).contains(&size));
                 let actual = &render_document_svg(&doc, &two)[0].svg;
                 let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
                 assert_eq!(
@@ -1296,5 +1316,62 @@ fn two_pixel_point_and_size_boundaries() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn two_pixel_long_controls_match_native_geometry() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-scale-2x-points-32-variants.json"
+    ))
+    .unwrap();
+    for name in ["reverse", "alternate"] {
+        let mut points: Vec<[f32; 2]> = (0..32)
+            .map(|i| {
+                if name == "reverse" {
+                    [
+                        25.0 + 2.0 * i as f32,
+                        40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f32,
+                    ]
+                } else {
+                    [
+                        27.0 + 2.0 * i as f32,
+                        48.0 + [0, -3, -5, -4, 0, 5, 7, 3][i % 8] as f32,
+                    ]
+                }
+            })
+            .collect();
+        let mut pressures: Vec<f32> = (0..32)
+            .map(|i| {
+                if name == "reverse" {
+                    [0.25, 0.5, 0.75, 1.0][i % 4]
+                } else {
+                    [1.0, 0.3, 0.6, 0.8, 0.4][i % 5]
+                }
+            })
+            .collect();
+        if name == "reverse" {
+            points.reverse();
+            pressures.reverse();
+        }
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: 12.0,
+            tool_type: 2,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(
+            hex,
+            receipt["cases"][name]["geometry_hex"].as_str().unwrap()
+        );
     }
 }

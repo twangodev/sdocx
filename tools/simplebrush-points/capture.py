@@ -99,6 +99,15 @@ def main():
         if count not in (2, 4, 7, 16, 32): raise ValueError("unsupported point count")
         points = [[25.0 + i * 2, 40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8]] for i in range(count)] if count >= 16 else [[32.0 + i * 6, 32.0 + (i % 3) * 3] for i in range(count)]
         pressures = [[0.25, 0.5, 0.75, 1.0][i % 4] for i in range(count)] if count >= 16 else [0.5] * count
+        variant = os.environ.get("VARIANT")
+        if variant is not None and (variant not in ("reverse", "alternate") or count != 32):
+            raise ValueError("expected VARIANT=reverse|alternate and POINT_COUNT=32")
+        if variant == "reverse":
+            points = points[::-1]
+            pressures = pressures[::-1]
+        elif variant == "alternate":
+            points = [[27.0 + 2*i, 48.0 + [0,-3,-5,-4,0,5,7,3][i%8]] for i in range(count)]
+            pressures = [[1.0, 0.3, 0.6, 0.8, 0.4][i%5] for i in range(count)]
         for old in ("[0.5,0.25,0.75]", "[0.75,0.25,1.0]"):
             text = text.replace("'pressure':" + old, "'pressure':" + repr(pressures))
         for key, old, values in [("timestamps", "[0,8,19]", list(range(count))), ("tilt", "[0.0,0.2,0.4]", [0.0] * count), ("orientation", "[0.0,0.25,0.5]", [0.0] * count)]:
@@ -124,8 +133,12 @@ def main():
             subprocess.run(command, cwd=ROOT, env=env, stdout=output, check=True)
         captured = json.loads(args.output.read_text())
         frame = captured.get("native_draw_target_readback") or {}
-        points_receipt = json.loads((Path(__file__).resolve().parents[2] / "conformance/simplebrush-scale-2x-points.json").read_text())
-        expected = next(c for c in points_receipt["cases"] if c["count"] == count)
+        if variant is None:
+            points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points.json").read_text())
+            expected = next(c for c in points_receipt["cases"] if c["count"] == count)
+        else:
+            points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points-32-variants.json").read_text())
+            expected = points_receipt["cases"][variant]
         if (not captured.get("native_gl_error_verdict", {}).get("paint_clean")
             or frame.get("sha256") != expected["frame_sha256"]
             or captured["drawing_vector"]["sha256"] != expected["geometry_sha256"]):

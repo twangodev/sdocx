@@ -9,10 +9,16 @@ import sys
 from pathlib import Path
 
 b = Path(sys.argv[1]).resolve()
-count = int(sys.argv[2])
+control = sys.argv[2]
 root = Path(__file__).resolve().parents[2]
-receipt = json.loads((root / "conformance/simplebrush-scale-2x-points.json").read_text())
-case = next(c for c in receipt["cases"] if c["count"] == count)
+if control in ("reverse", "alternate"):
+    receipt = json.loads((root / "conformance/simplebrush-scale-2x-points-32-variants.json").read_text())
+    case = receipt["cases"][control]
+    expected = case["comparison"]
+else:
+    receipt = json.loads((root / "conformance/simplebrush-scale-2x-points.json").read_text())
+    case = next(c for c in receipt["cases"] if c["count"] == int(control))
+    expected = receipt["comparison"][control]
 x0, y0, x1, y1 = case["alpha_bounds"]
 crop = (root / "conformance" / case["crop"]["file"]).read_bytes()
 assert hashlib.sha256(crop).hexdigest() == case["crop"]["sha256"]
@@ -135,7 +141,6 @@ for mode in ("generic", "one", "two"):
         },
     )
     assert matched_local == matched
-    expected = receipt["comparison"][str(count)]
     index = {"generic": 0, "one": 1, "two": 2}[mode]
     assert [inter, union] == expected["svg_support"][index]
     assert err == expected["svg_alpha"][index] and matched == expected["pdf_matched_rgb"][index]
