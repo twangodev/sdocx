@@ -9,7 +9,7 @@
       "modes": {
         "candidate": {
           "gradient_nodes": 148,
-          "pdf_bytes": 95555,
+          "pdf_bytes": 92800,
           "svg": {
             "background": [
               252,
@@ -25,7 +25,7 @@
               252,
               251
             ],
-            "l1": 4933,
+            "l1": 4900,
             "max": 57
           },
           "pdfium": {
@@ -34,7 +34,7 @@
               252,
               252
             ],
-            "l1": 5342,
+            "l1": 5344,
             "max": 51
           }
         },
@@ -69,6 +69,36 @@
             "max": 143
           }
         }
+      },
+      "previous_candidate": {
+        "svg": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 3085,
+          "max": 44
+        },
+        "mupdf": {
+          "background": [
+            251,
+            252,
+            251
+          ],
+          "l1": 4933,
+          "max": 57
+        },
+        "pdfium": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 5342,
+          "max": 51
+        },
+        "pdf_bytes": 95555
       }
     },
     {
@@ -139,6 +169,36 @@
             "max": 186
           }
         }
+      },
+      "previous_candidate": {
+        "svg": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 24117,
+          "max": 186
+        },
+        "mupdf": {
+          "background": [
+            251,
+            252,
+            251
+          ],
+          "l1": 23904,
+          "max": 185
+        },
+        "pdfium": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 23671,
+          "max": 186
+        },
+        "pdf_bytes": 3072
       }
     },
     {
@@ -209,6 +269,36 @@
             "max": 143
           }
         }
+      },
+      "previous_candidate": {
+        "svg": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 25199,
+          "max": 143
+        },
+        "mupdf": {
+          "background": [
+            251,
+            252,
+            251
+          ],
+          "l1": 25098,
+          "max": 142
+        },
+        "pdfium": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 26880,
+          "max": 143
+        },
+        "pdf_bytes": 2995
       }
     },
     {
@@ -219,7 +309,7 @@
       "modes": {
         "candidate": {
           "gradient_nodes": 83,
-          "pdf_bytes": 53767,
+          "pdf_bytes": 53080,
           "svg": {
             "background": [
               252,
@@ -235,7 +325,7 @@
               252,
               251
             ],
-            "l1": 11516,
+            "l1": 11515,
             "max": 86
           },
           "pdfium": {
@@ -244,7 +334,7 @@
               252,
               252
             ],
-            "l1": 12906,
+            "l1": 12905,
             "max": 85
           }
         },
@@ -279,6 +369,36 @@
             "max": 145
           }
         }
+      },
+      "previous_candidate": {
+        "svg": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 7683,
+          "max": 89
+        },
+        "mupdf": {
+          "background": [
+            251,
+            252,
+            251
+          ],
+          "l1": 11516,
+          "max": 86
+        },
+        "pdfium": {
+          "background": [
+            252,
+            252,
+            252
+          ],
+          "l1": 12906,
+          "max": 85
+        },
+        "pdf_bytes": 53767
       }
     }
   ],
@@ -290,5 +410,17 @@
     "numpy": "2.4.2",
     "pillow": "12.3.0",
     "pypdfium2": "5.14.0"
+  },
+  "page_budget_observation": {
+    "case": "eight repeated unscaled bend controls",
+    "previous_admitted": 1,
+    "current_admitted": 2,
+    "per_stroke_clipping_work": 43252,
+    "total_clipping_work_including_fallbacks": 346016,
+    "admitted_visible_vertices": 2530,
+    "reserved_svg_bytes": 873472,
+    "actual_svg_bytes": 148390,
+    "actual_pdf_bytes": 105253,
+    "limitations": "Host control only; budget limits unchanged."
   }
 }

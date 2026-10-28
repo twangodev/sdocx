@@ -183,14 +183,27 @@ fn invalid_metadata_and_page_budget_fall_back_atomically() {
         .remove(0)
         .svg;
     assert!(!invalid.contains("linearGradient"));
-    let svg = crate::render_document_svg(&document("bend", 2, 2), &options())
+    let svg = crate::render_document_svg(&document("bend", 2, 8), &options())
         .remove(0)
         .svg;
     let xml = roxmltree::Document::parse(&svg).unwrap();
-    assert!(xml.descendants().any(|n| n.has_tag_name("linearGradient")));
+    let gradients = xml
+        .descendants()
+        .filter(|n| n.has_tag_name("linearGradient"))
+        .count();
+    let single = crate::render_document_svg(&document("bend", 2, 1), &options())
+        .remove(0)
+        .svg;
+    let single = roxmltree::Document::parse(&single).unwrap();
+    let single_gradients = single
+        .descendants()
+        .filter(|n| n.has_tag_name("linearGradient"))
+        .count();
+    assert!(single_gradients > 0);
+    assert_eq!(gradients, 2 * single_gradients);
     assert!(xml.descendants().any(|n| n.has_tag_name("polyline")));
     let pdf = crate::render_document_pdf(
-        &document("bend", 2, 2),
+        &document("bend", 2, 8),
         &options(),
         &crate::PdfOptions::default(),
     )

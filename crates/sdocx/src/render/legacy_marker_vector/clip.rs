@@ -177,6 +177,28 @@ fn bbox(p: &[P]) -> [i128; 4] {
 fn intersects(a: [i128; 4], b: [i128; 4]) -> bool {
     a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
 }
+fn piece_intersects(piece: &[P], bounds: [i128; 4], ops: &mut usize, limit: usize) -> Option<bool> {
+    let mut left = false;
+    let mut right = false;
+    let mut above = false;
+    let mut below = false;
+    for point in piece {
+        if *ops >= limit {
+            return None;
+        }
+        *ops = ops.checked_add(1)?;
+        let x = point[0];
+        let y = point[1];
+        left |= x.n < bounds[2].checked_mul(x.d)?;
+        right |= x.n > bounds[0].checked_mul(x.d)?;
+        above |= y.n < bounds[3].checked_mul(y.d)?;
+        below |= y.n > bounds[1].checked_mul(y.d)?;
+        if left && right && above && below {
+            return Some(true);
+        }
+    }
+    Some(false)
+}
 pub(super) type VisiblePolygon = Vec<Vec<Vec<[f64; 2]>>>;
 pub(super) type VisiblePolygons = Vec<VisiblePolygon>;
 
@@ -283,12 +305,17 @@ pub(super) fn run(
                     return None;
                 }
                 *ops = ops.checked_add(1)?;
-                if !intersects(box_tri, bbox(owner)) {
+                let owner_bounds = bbox(owner);
+                if !intersects(box_tri, owner_bounds) {
                     continue;
                 }
                 let mut next = vec![];
                 for piece in pieces {
-                    next.extend(minus(&piece, owner, ops, limit)?);
+                    if piece_intersects(&piece, owner_bounds, ops, limit)? {
+                        next.extend(minus(&piece, owner, ops, limit)?);
+                    } else {
+                        next.push(piece);
+                    }
                     if next.len() > 256 {
                         return None;
                     }
@@ -351,5 +378,29 @@ mod tests {
         let mut collapsed = false;
         assert!(run(&mesh, &mut work, 10, &mut collapsed, 10_000.).is_none());
         assert_eq!(work, 10);
+    }
+    #[test]
+    fn exact_piece_bounds_skip_disjoint_or_touching_fragments() {
+        let half = Q::new(1, 2).unwrap();
+        let piece = vec![[half, half], [Q::i(1), half], [half, Q::i(1)]];
+        let mut work = 0;
+        assert_eq!(
+            piece_intersects(&piece, [0, 0, 1, 1], &mut work, 100),
+            Some(true)
+        );
+        assert_eq!(
+            piece_intersects(&piece, [1, 0, 2, 1], &mut work, 100),
+            Some(false)
+        );
+        assert_eq!(
+            piece_intersects(&piece, [2, 0, 3, 1], &mut work, 100),
+            Some(false)
+        );
+        let mut exhausted = 0;
+        assert_eq!(
+            piece_intersects(&piece, [0, 0, 1, 1], &mut exhausted, 0),
+            None
+        );
+        assert_eq!(exhausted, 0);
     }
 }
