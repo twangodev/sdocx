@@ -64,5 +64,25 @@
       "pdf_different_pixels": 79
     }
   },
-  "limits": "Empty can retain a previously selected native drawable version. V1 and V2 share saved geometry, but thin-edge shader coverage differs; SVG/PDF remain approximations."
+  "limits": "Empty can retain a previously selected native drawable version. V1 and V2 share saved geometry, but thin-edge shader coverage differs; SVG/PDF remain approximations.",
+  "additional_width_3_control": {
+    "scope": "Same pinned native harness and canonical points; size 3, canonical phase, ARGB 0x80336699; empty versus explicit 2;.",
+    "native_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 <script> --one-case --size 3 --phase canonical --alpha 128 --output-dir <output>",
+    "matched": {
+      "vector_sha256": "8fe71701fe508874e021344985264abe7d54db634e4972319aa3e4060de6ed74",
+      "mask_png_sha256": "a12c41b418828c9b301ec98e1ab762e6ec83270ad422fab74156a146be700a5a",
+      "composite_png_sha256": "13d30f9ed4fd43311a04db613cc0a893b2e567a57ae035ad6b40caaa60f08f9c",
+      "mask_raw_gl_sha256": "e3459b435cf811a889e1160c9baab437d616090d604db0132b0e83dc36f84b50",
+      "composite_raw_gl_sha256": "ad64fbea5912b6743654f8cb2374ee3dc7417e9e538b5903aa07e6a122d1ae98"
+    },
+    "gl_error_checks_per_capture": 274,
+    "limits": [
+      "Pinned ARM64 native Marker2 methods execute under Unicorn; host Mesa provides GL rasterization.",
+      "ObjectDrawing selects RTV2 through native factory; original saved-redraw callbacks are captured.",
+      "The host eglGetCurrentContext callback returns guest token 0xabc; this is not an Android EGL context observation.",
+      "Queue hooks and RT+88 vector materialization are explicit host services; exactly 22 captured saved-redraw samples are replayed once through native AddPoint.",
+      "The subpixel phase is applied by the Draw caller Matrix4, leaving source callback bytes and native RT bounds unchanged.",
+      "This is not Android device GPU, archive deserialization, or complete Samsung page composition."
+    ]
+  }
 }

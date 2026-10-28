@@ -258,11 +258,14 @@ thin V2 edges, self-crossings or every input tool.
 An explicit empty setting is stateful: a fresh Marker2 manager selects V2,
 while a reused manager can retain V1. In two synthetic fresh-manager host-Mesa
 controls, empty and `2;` produced identical geometry, mask and composite
-frames. Reusing the `2;` approximation reduced RGB error against native from
+frames. A further canonical width-3, alpha-128 control also matched the
+geometry, raw mask and composite for both settings, with 274 GL error checks
+per capture. Reusing the `2;` approximation reduced RGB error against native from
 9637/9576 to 2269/2711 and from 21491/21188 to 2777/2788 in SVG/PDF. A third
 2× control improved from 56634/56311 to 18457/18607. These host comparisons do
 not establish cached V1 equivalence, device appearance or saved-document manager
-history, so empty settings remain on the generic route.
+history. The renderer now uses the shared Marker2 geometry for empty settings;
+its paint remains an approximation and may not reproduce a reused V1 manager.
 
 Native capture runners and receipts are retained under
 `tmp/vector-parity-plan/marker2-{empty,explicit}-paint*`; public export and
