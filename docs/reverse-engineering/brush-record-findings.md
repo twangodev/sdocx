@@ -302,3 +302,10 @@ matrix, not the stale target-summary projection. Singular or perspective
 projections are rejected. These controls establish only this synthetic host-Mesa
 profile; device behavior, arbitrary transforms, and public SVG/PDF transport
 remain unverified.
+
+A standalone [probe](../../tools/brushpen-transform/transport_probe.py) embeds
+seven target-sized native frame PNGs in SVG and a separately generated PDF. Its
+[receipt](../../conformance/brushpen-second-native/image-transport-probe.json) records
+zero RGBA error in resvg and alpha error sums of 103–338 in MuPDF. These synthetic
+host frame replays are not public exports or scalable paint: they require the final
+transform and target pixels, and retain the captured texture and caller limits.

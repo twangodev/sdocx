@@ -1,0 +1,72 @@
+{
+  "frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 1652,
+      "alpha_l1": 105
+    }
+  },
+  "matrix-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 1654,
+      "alpha_l1": 103
+    }
+  },
+  "scale-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 5805,
+      "alpha_l1": 278
+    }
+  },
+  "nonuniform-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 8349,
+      "alpha_l1": 338
+    }
+  },
+  "shear-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 1519,
+      "alpha_l1": 104
+    }
+  },
+  "rotate-visible-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 1678,
+      "alpha_l1": 106
+    }
+  },
+  "flip-visible-frame": {
+    "svg_resvg": {
+      "rgba_l1": 0,
+      "alpha_l1": 0
+    },
+    "pdf_mupdf": {
+      "rgba_l1": 1652,
+      "alpha_l1": 105
+    }
+  }
+}
