@@ -1,0 +1,97 @@
+{
+  "schema": "montblanc-public-fallback-host-comparison-v1",
+  "scope": "Synthetic public Stroke generic SVG and direct PDF exports versus retained native Montblanc RTV1 host-Mesa frames. Not native PDF, full note loading, or Android device parity.",
+  "inputs": {
+    "pen": "com.samsung.android.sdk.pen.pen.preload.MontblancFountainPen",
+    "points": "(128,128), (138,128), (148,126); far endpoint (158,126), corresponding to captured positions with x=128+x and y=128-y",
+    "pressure": "[0.3,0.6,1.0]; pressure case [0.3,0.85,0.9]",
+    "pen_size": "2.0; size case 1.5",
+    "argb": "0xff336699",
+    "page": "256x256, default #fcfcfc paper",
+    "source_fixture": "tmp/legacy-marker-source-controls/serialized-marker.sdocx",
+    "source_fixture_sha256": "b0233b505f42a2a875e60ee3d2aee0d6e0f4e0db3ce8e5536a8f2b68e75d91e1"
+  },
+  "native_provenance": "See conformance/montblanc-triangle-export-comparison.json and tools/montblanc/captures/*.json.gz. Synthetic real Drawing/ObjectStroke/RTV1 producer and native Draw; controlled buffer sequencing, host EGL/GLES adapters, Mesa llvmpipe. Native RGBA readback rows flipped and composited onto #fcfcfc.",
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  },
+  "method": "Rasterize SVG with resvg; PDF with MuPDF fitted to 256x256 RGB. Support is any RGB channel more than 2 from 252. Values are native support, export support, intersection, union, RGB byte L1 summed on union. PDF background can differ slightly from #fcfcfc and contributes to L1.",
+  "reproduction": "From repository root run .venv/bin/python tools/montblanc/public_fallback_compare.py. Requires pinned ignored source fixture, offline Cargo dependencies, resvg, Pillow and PyMuPDF. Generated SVG/PDF/PNG stay in a temporary directory.",
+  "scripts_sha256": {
+    "tools/montblanc/public-fallback/src/main.rs": "bead682010be337e0e54e5ef569282dc47a0a1e8dc23033dd53b35fd47cd62aa",
+    "tools/montblanc/public-fallback/Cargo.toml": "5a0ec1bc9011f8eb0d193d00486cc862126da623e7266b122c1b9333af86fae6",
+    "tools/montblanc/public_fallback_compare.py": "ebbda4a5fee45847863bdd58dd952f17fc3149777d6a62813516681918b5fccc"
+  },
+  "cases": {
+    "baseline": {
+      "capture_sha256": "84b12c69f047527f5f3bea87ea82b89c356dd4e0007f72b0598f45f0529b03af",
+      "svg": [
+        101,
+        42,
+        42,
+        101,
+        28107
+      ],
+      "pdf": [
+        101,
+        40,
+        40,
+        101,
+        27730
+      ]
+    },
+    "pressure": {
+      "capture_sha256": "a66367bcce64d0ab6962668920f3b4e516d5213fdd74186906e4987bd7dd08aa",
+      "svg": [
+        101,
+        42,
+        42,
+        101,
+        28076
+      ],
+      "pdf": [
+        101,
+        40,
+        40,
+        101,
+        27589
+      ]
+    },
+    "size": {
+      "capture_sha256": "660fa05e91d87d39bce96d679a85b29c3360b2643780c37a13fd2b928c2b861b",
+      "svg": [
+        90,
+        42,
+        42,
+        90,
+        26918
+      ],
+      "pdf": [
+        90,
+        34,
+        34,
+        90,
+        26605
+      ]
+    },
+    "far_endpoint": {
+      "capture_sha256": "62ff0a279fcb6fa003382d20ff4bd2e9c9230838e29e4a74c94fd6fcf2563c67",
+      "svg": [
+        141,
+        64,
+        64,
+        141,
+        40441
+      ],
+      "pdf": [
+        141,
+        54,
+        54,
+        141,
+        39873
+      ]
+    }
+  }
+}

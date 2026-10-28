@@ -1,0 +1,7 @@
+[package]
+name = "montblanc-public-fallback-probe"
+version = "0.1.0"
+edition = "2024"
+[workspace]
+[dependencies]
+sdocx = { path = "../../../crates/sdocx", features = ["pdf"] }
