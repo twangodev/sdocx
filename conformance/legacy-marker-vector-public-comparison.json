@@ -9,7 +9,7 @@
       "modes": {
         "candidate": {
           "gradient_nodes": 148,
-          "pdf_bytes": 92800,
+          "pdf_bytes": 92921,
           "svg": {
             "background": [
               252,
@@ -109,7 +109,7 @@
       "modes": {
         "candidate": {
           "gradient_nodes": 184,
-          "pdf_bytes": 118522,
+          "pdf_bytes": 118565,
           "svg": {
             "background": [
               252,
@@ -177,8 +177,8 @@
             252,
             252
           ],
-          "l1": 24117,
-          "max": 186
+          "l1": 5733,
+          "max": 103
         },
         "mupdf": {
           "background": [
@@ -186,8 +186,8 @@
             252,
             251
           ],
-          "l1": 23904,
-          "max": 185
+          "l1": 9650,
+          "max": 96
         },
         "pdfium": {
           "background": [
@@ -195,10 +195,10 @@
             252,
             252
           ],
-          "l1": 23671,
-          "max": 186
+          "l1": 9032,
+          "max": 98
         },
-        "pdf_bytes": 3072
+        "pdf_bytes": 118522
       }
     },
     {
@@ -208,16 +208,16 @@
       "scale": 1,
       "modes": {
         "candidate": {
-          "gradient_nodes": 0,
-          "pdf_bytes": 2995,
+          "gradient_nodes": 340,
+          "pdf_bytes": 208154,
           "svg": {
             "background": [
               252,
               252,
               252
             ],
-            "l1": 25199,
-            "max": 143
+            "l1": 4255,
+            "max": 63
           },
           "mupdf": {
             "background": [
@@ -225,8 +225,8 @@
               252,
               251
             ],
-            "l1": 25098,
-            "max": 142
+            "l1": 6699,
+            "max": 72
           },
           "pdfium": {
             "background": [
@@ -234,8 +234,8 @@
               252,
               252
             ],
-            "l1": 26880,
-            "max": 143
+            "l1": 8784,
+            "max": 70
           }
         },
         "fallback": {
@@ -309,7 +309,7 @@
       "modes": {
         "candidate": {
           "gradient_nodes": 83,
-          "pdf_bytes": 53080,
+          "pdf_bytes": 53150,
           "svg": {
             "background": [
               252,
@@ -411,7 +411,7 @@
     "pillow": "12.3.0",
     "pypdfium2": "5.14.0"
   },
-  "page_budget_observation": {
+  "previous_page_budget_observation": {
     "case": "eight repeated unscaled bend controls",
     "previous_admitted": 1,
     "current_admitted": 2,
@@ -437,5 +437,18 @@
     "clip_operations": 85956,
     "limits": "Retries share the unchanged 200000 per-stroke and 500000 per-page clipping limits.",
     "scope": "One synthetic host control; general precision/device parity unverified."
+  },
+  "self_overlap_fixture": {
+    "path": "conformance/legacy-marker-self-overlap-sparse-rgba8.bin",
+    "sha256": "fa63721ef4050a48bb961413543165d5ae9140073843fc2eb4366156e54c3f12",
+    "bytes": 7000,
+    "format": "little-endian pixel index and premultiplied RGBA8"
+  },
+  "page_budget_observation": {
+    "case": "eight repeated unscaled bend controls",
+    "previous_admitted": 2,
+    "current_admitted": 4,
+    "limits": "No per-stroke or per-page limits increased; fallback verified by focused test.",
+    "limitations": "Host control only."
   }
 }

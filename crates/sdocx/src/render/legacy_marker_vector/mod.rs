@@ -309,6 +309,7 @@ pub(crate) struct SourcePageBudget {
     clip_ops: usize,
     visible_vertices: usize,
     svg_bytes: usize,
+    svg_work: usize,
     pdf: pdf::PageBudget,
 }
 pub(super) struct SourceStroke {
@@ -386,17 +387,7 @@ pub(super) fn execute(
         return None;
     }
     let (plan, bounds) = run(&m, paint, grid, &shape, stroke.page)?;
-    // Each finite f32 coordinate has a bounded decimal representation. Reserve
-    // a conservative 128 bytes per path command and 1024 per draw for nodes,
-    // attributes and gradient/mask definitions before publishing the scene.
-    let svg_cost = plan.draws.iter().try_fold(0usize, |n, d| {
-        let commands = d
-            .path
-            .lines()
-            .count()
-            .checked_add(d.owner.as_ref().map_or(0, |p| p.lines().count()))?;
-        n.checked_add(commands.checked_mul(128)?)?.checked_add(1024)
-    })?;
+    let svg_cost = measure_svg(&plan, bounds, budget)?;
     let next_svg = budget.svg_bytes.checked_add(svg_cost)?;
     if next_svg > 1_000_000 {
         return None;
@@ -430,11 +421,109 @@ fn scene_data(s: &str) -> Option<super::vector::Data> {
     Some(data)
 }
 
-pub(super) fn emit(scene: &mut super::vector::Scene, prepared: PreparedStroke) -> bool {
+fn emit_draw(
+    scene: &mut super::vector::Scene,
+    draw: &pdf::Draw,
+    path: super::vector::Data,
+    owner: Option<super::vector::Data>,
+    bounds: [f32; 4],
+) -> Option<()> {
     use super::vector::{
-        ColorValue, Data, Definitions, Gradient, Group, LinearGradient, Mask, Paint, Path,
-        Rectangle, Stop, Styled, SvgMask,
+        ColorValue, Definitions, Gradient, LinearGradient, Mask, Paint, Path, Rectangle, Stop,
+        Styled, SvgMask,
     };
+    let [x, y, x2, y2] = bounds;
+    let color = ColorValue::rgb_components(
+        f64::from(draw.color[0]),
+        f64::from(draw.color[1]),
+        f64::from(draw.color[2]),
+    )?;
+    let paint = if let Some(g) = draw.gradient {
+        let id = scene.definition::<Gradient>();
+        scene.push(
+            Definitions::new().add(
+                LinearGradient::new(&id)
+                    .x1(g[0])
+                    .y1(g[1])
+                    .x2(g[2])
+                    .y2(g[3])
+                    .add(Stop::new(0, color).opacity(0))
+                    .add(Stop::new(1, color).opacity(1)),
+            ),
+        );
+        Paint::Gradient(id)
+    } else {
+        Paint::Solid(color)
+    };
+    let mut node = Path::new().data(path).fill(paint).fill_opacity(draw.alpha);
+    if draw.even_odd {
+        node = node.even_odd_fill()
+    }
+    if let Some(owner) = owner {
+        let id = scene.definition::<Mask>();
+        scene.push(
+            Definitions::new().add(
+                SvgMask::luminance(&id)
+                    .x(x)
+                    .y(y)
+                    .width(x2 - x)
+                    .height(y2 - y)
+                    .add(
+                        Rectangle::new()
+                            .x(x)
+                            .y(y)
+                            .width(x2 - x)
+                            .height(y2 - y)
+                            .fill(Paint::Solid(ColorValue::gray(1.)?)),
+                    )
+                    .add(Path::new().data(owner).fill(Paint::BLACK)),
+            ),
+        );
+        node = node.masked(&id);
+    }
+    scene.push(node);
+    Some(())
+}
+
+fn measure_svg(plan: &pdf::Plan, bounds: [f32; 4], budget: &mut SourcePageBudget) -> Option<usize> {
+    use super::vector::{Scene, Svg};
+    let mut total = 128usize;
+    for draw in &plan.draws {
+        let commands = draw
+            .path
+            .lines()
+            .count()
+            .checked_add(draw.owner.as_ref().map_or(0, |p| p.lines().count()))?;
+        let available = 12_000usize.saturating_sub(budget.svg_work);
+        if commands > available {
+            budget.svg_work = 12_000;
+            return None;
+        }
+        budget.svg_work = budget.svg_work.checked_add(commands)?;
+        // Bound each temporary Scene before serializing it. The same emitter is
+        // used below; this larger bound covers its nodes and f32 formatting.
+        if commands.checked_mul(128)?.checked_add(1024)? > 1_000_000 {
+            return None;
+        }
+        let path = scene_data(&draw.path)?;
+        let owner = match draw.owner.as_deref() {
+            Some(v) => Some(scene_data(v)?),
+            None => None,
+        };
+        let mut scene = Scene::new(Svg::new().width(plan.width).height(plan.height));
+        emit_draw(&mut scene, draw, path, owner, bounds)?;
+        // Each draw has at most a gradient and a mask, each referenced twice.
+        // Reserve 20 additional bytes per occurrence for any larger page ID.
+        total = total.checked_add(scene.finish().len())?.checked_add(80)?;
+        if total > 1_000_000usize.saturating_sub(budget.svg_bytes) {
+            return None;
+        }
+    }
+    Some(total)
+}
+
+pub(super) fn emit(scene: &mut super::vector::Scene, prepared: PreparedStroke) -> bool {
+    use super::vector::{Data, Group};
     let compiled = prepared
         .plan
         .draws
@@ -469,58 +558,8 @@ pub(super) fn emit(scene: &mut super::vector::Scene, prepared: PreparedStroke) -
         group
     };
     scene.scope(group, |scene| {
-        for (draw, (path, owner)) in prepared.plan.draws.into_iter().zip(compiled) {
-            let Some(color) = ColorValue::rgb_components(
-                f64::from(draw.color[0]),
-                f64::from(draw.color[1]),
-                f64::from(draw.color[2]),
-            ) else {
-                continue;
-            };
-            let paint = if let Some(g) = draw.gradient {
-                let id = scene.definition::<Gradient>();
-                scene.push(
-                    Definitions::new().add(
-                        LinearGradient::new(&id)
-                            .x1(g[0])
-                            .y1(g[1])
-                            .x2(g[2])
-                            .y2(g[3])
-                            .add(Stop::new(0, color).opacity(0))
-                            .add(Stop::new(1, color).opacity(1)),
-                    ),
-                );
-                Paint::Gradient(id)
-            } else {
-                Paint::Solid(color)
-            };
-            let mut node = Path::new().data(path).fill(paint).fill_opacity(draw.alpha);
-            if draw.even_odd {
-                node = node.even_odd_fill()
-            }
-            if let Some(owner) = owner {
-                let id = scene.definition::<Mask>();
-                scene.push(
-                    Definitions::new().add(
-                        SvgMask::luminance(&id)
-                            .x(x)
-                            .y(y)
-                            .width(x2 - x)
-                            .height(y2 - y)
-                            .add(
-                                Rectangle::new()
-                                    .x(x)
-                                    .y(y)
-                                    .width(x2 - x)
-                                    .height(y2 - y)
-                                    .fill(Paint::Solid(ColorValue::gray(1.).expect("valid white"))),
-                            )
-                            .add(Path::new().data(owner).fill(Paint::BLACK)),
-                    ),
-                );
-                node = node.masked(&id);
-            }
-            scene.push(node);
+        for (draw, (path, owner)) in prepared.plan.draws.iter().zip(compiled) {
+            let _ = emit_draw(scene, draw, path, owner, prepared.bounds);
         }
     });
     true

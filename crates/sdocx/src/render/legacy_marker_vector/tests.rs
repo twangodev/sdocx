@@ -200,7 +200,7 @@ fn invalid_metadata_and_page_budget_fall_back_atomically() {
         .filter(|n| n.has_tag_name("linearGradient"))
         .count();
     assert!(single_gradients > 0);
-    assert_eq!(gradients, 2 * single_gradients);
+    assert_eq!(gradients, 4 * single_gradients);
     assert!(xml.descendants().any(|n| n.has_tag_name("polyline")));
     let pdf = crate::render_document_pdf(
         &document("bend", 2, 8),
@@ -358,4 +358,77 @@ fn finer_grid_admits_varied_blue_native_control() {
                 .windows(b"/M1 gs /C1 Do".len())
                 .any(|w| w == b"/M1 gs /C1 Do"))
     );
+}
+
+#[test]
+fn self_overlap_native_control_uses_bounded_vector_paint() {
+    let mut doc = document("bend", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke")
+    };
+    stroke.points = [
+        [30., 30.],
+        [50., 30.],
+        [50., 50.],
+        [30., 50.],
+        [30., 30.],
+        [50., 30.],
+    ]
+    .into_iter()
+    .map(|[x, y]| Point { x, y })
+    .collect();
+    let native =
+        include_bytes!("../../../../../conformance/legacy-marker-self-overlap-sparse-rgba8.bin");
+    let svg = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    assert!(svg.contains("linearGradient"));
+    let actual = error(&svg, native);
+    let generic = error(&fallback, native);
+    assert!(
+        actual < 8_000 && actual < generic,
+        "vector {actual}, fallback {generic}"
+    );
+    let pdf = crate::render_document_pdf(&doc, &options(), &crate::PdfOptions::default()).unwrap();
+    let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    assert!(
+        pdf.objects
+            .values()
+            .filter_map(|o| o.as_stream().ok())
+            .filter_map(|s| s.decompressed_content().ok())
+            .any(|s| s
+                .windows(b"/M1 gs /C1 Do".len())
+                .any(|w| w == b"/M1 gs /C1 Do"))
+    );
+}
+
+#[test]
+fn measured_svg_budget_covers_real_nodes_with_large_ids() {
+    let doc = document("bend", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &doc.pages[0].objects[0].content else {
+        panic!("stroke")
+    };
+    let source = super::SourceStroke {
+        points: stroke
+            .points
+            .iter()
+            .map(|p| [p.x as f32, p.y as f32])
+            .collect(),
+        size: 12.,
+        screen: [1920, 1080],
+        argb: 0x80ffcb30,
+        scale: 1.,
+        page: [1920., 1080.],
+    };
+    let mut budget = super::SourcePageBudget::default();
+    let prepared = super::execute(&source, &mut budget).unwrap();
+    let reserved = budget.svg_bytes;
+    let mut scene =
+        super::super::vector::Scene::new(super::super::vector::Svg::new().width(1920).height(1080));
+    for _ in 0..10_000 {
+        let _ = scene.definition::<super::super::vector::Gradient>();
+    }
+    assert!(super::emit(&mut scene, prepared));
+    assert!(scene.finish().len() <= reserved);
 }

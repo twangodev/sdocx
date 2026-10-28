@@ -177,27 +177,30 @@ fn bbox(p: &[P]) -> [i128; 4] {
 fn intersects(a: [i128; 4], b: [i128; 4]) -> bool {
     a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
 }
-fn piece_intersects(piece: &[P], bounds: [i128; 4], ops: &mut usize, limit: usize) -> Option<bool> {
-    let mut left = false;
-    let mut right = false;
-    let mut above = false;
-    let mut below = false;
-    for point in piece {
+struct Piece {
+    polygon: Poly,
+    bounds: [i128; 4],
+}
+fn make_piece(polygon: Poly, ops: &mut usize, limit: usize) -> Option<Piece> {
+    let mut bounds = [i128::MAX, i128::MAX, i128::MIN, i128::MIN];
+    for point in &polygon {
         if *ops >= limit {
             return None;
         }
         *ops = ops.checked_add(1)?;
-        let x = point[0];
-        let y = point[1];
-        left |= x.n < bounds[2].checked_mul(x.d)?;
-        right |= x.n > bounds[0].checked_mul(x.d)?;
-        above |= y.n < bounds[3].checked_mul(y.d)?;
-        below |= y.n > bounds[1].checked_mul(y.d)?;
-        if left && right && above && below {
-            return Some(true);
+        for axis in 0..2 {
+            let q = point[axis];
+            let floor = q.n.div_euclid(q.d);
+            let ceil = if q.n.rem_euclid(q.d) == 0 {
+                floor
+            } else {
+                floor.checked_add(1)?
+            };
+            bounds[axis] = bounds[axis].min(floor);
+            bounds[axis + 2] = bounds[axis + 2].max(ceil);
         }
     }
-    Some(false)
+    Some(Piece { polygon, bounds })
 }
 pub(super) type VisiblePolygon = Vec<Vec<Vec<[f64; 2]>>>;
 pub(super) type VisiblePolygons = Vec<VisiblePolygon>;
@@ -299,7 +302,10 @@ pub(super) fn run(
         for t in side.windows(3) {
             let Some(tri) = orient(t)? else { continue };
             let box_tri = bbox(&tri);
-            let mut pieces = vec![tri.clone()];
+            let mut pieces = vec![Piece {
+                polygon: tri.clone(),
+                bounds: box_tri,
+            }];
             for owner in &owners {
                 if *ops >= limit {
                     return None;
@@ -311,13 +317,29 @@ pub(super) fn run(
                 }
                 let mut next = vec![];
                 for piece in pieces {
-                    if piece_intersects(&piece, owner_bounds, ops, limit)? {
-                        next.extend(minus(&piece, owner, ops, limit)?);
+                    if intersects(piece.bounds, owner_bounds) {
+                        let mut clipped = minus(&piece.polygon, owner, ops, limit)?;
+                        if clipped.len() == 1 {
+                            if next.len() >= 256 {
+                                return None;
+                            }
+                            next.push(Piece {
+                                polygon: clipped.pop()?,
+                                bounds: piece.bounds,
+                            });
+                        } else {
+                            for polygon in clipped {
+                                if next.len() >= 256 {
+                                    return None;
+                                }
+                                next.push(make_piece(polygon, ops, limit)?);
+                            }
+                        }
                     } else {
+                        if next.len() >= 256 {
+                            return None;
+                        }
                         next.push(piece);
-                    }
-                    if next.len() > 256 {
-                        return None;
                     }
                 }
                 pieces = next;
@@ -325,7 +347,7 @@ pub(super) fn run(
                     break;
                 }
             }
-            total = total.checked_add(pieces.iter().map(Vec::len).sum::<usize>())?;
+            total = total.checked_add(pieces.iter().map(|p| p.polygon.len()).sum::<usize>())?;
             if total > 12_000 {
                 return None;
             }
@@ -333,7 +355,8 @@ pub(super) fn run(
                 .iter()
                 .map(|p| {
                     vec![
-                        p.iter()
+                        p.polygon
+                            .iter()
                             .map(|v| [v[0].f() / grid + origin[0], v[1].f() / grid + origin[1]])
                             .collect::<Vec<_>>(),
                     ]
@@ -380,27 +403,18 @@ mod tests {
         assert_eq!(work, 10);
     }
     #[test]
-    fn exact_piece_bounds_skip_disjoint_or_touching_fragments() {
+    fn conservative_piece_bounds_cover_fractional_and_negative_points() {
         let half = Q::new(1, 2).unwrap();
-        let piece = vec![[half, half], [Q::i(1), half], [half, Q::i(1)]];
+        let negative = Q::new(-1, 2).unwrap();
+        let polygon = vec![[negative, half], [Q::i(1), half], [half, Q::i(1)]];
         let mut work = 0;
-        assert_eq!(
-            piece_intersects(&piece, [0, 0, 1, 1], &mut work, 100),
-            Some(true)
-        );
-        assert_eq!(
-            piece_intersects(&piece, [1, 0, 2, 1], &mut work, 100),
-            Some(false)
-        );
-        assert_eq!(
-            piece_intersects(&piece, [2, 0, 3, 1], &mut work, 100),
-            Some(false)
-        );
+        let piece = make_piece(polygon.clone(), &mut work, 100).unwrap();
+        assert_eq!(piece.bounds, [-1, 0, 1, 1]);
+        assert_eq!(work, 3);
+        assert!(intersects(piece.bounds, [0, 0, 1, 1]));
+        assert!(!intersects(piece.bounds, [1, 0, 2, 1]));
         let mut exhausted = 0;
-        assert_eq!(
-            piece_intersects(&piece, [0, 0, 1, 1], &mut exhausted, 0),
-            None
-        );
+        assert!(make_piece(polygon, &mut exhausted, 0).is_none());
         assert_eq!(exhausted, 0);
     }
     #[test]
@@ -429,5 +443,31 @@ mod tests {
         assert!(result.is_some());
         assert!(!collapsed);
         assert!(work > prior && work <= 200_000);
+    }
+    #[test]
+    fn single_fragment_keeps_a_conservative_previous_envelope() {
+        let polygon = vec![
+            [Q::i(0), Q::i(0)],
+            [Q::i(4), Q::i(0)],
+            [Q::i(4), Q::i(4)],
+            [Q::i(0), Q::i(4)],
+        ];
+        let owner = vec![
+            [Q::i(2), Q::i(-1)],
+            [Q::i(5), Q::i(-1)],
+            [Q::i(5), Q::i(5)],
+            [Q::i(2), Q::i(5)],
+        ];
+        let mut work = 0;
+        let original = make_piece(polygon, &mut work, 1_000).unwrap();
+        let mut remaining = minus(&original.polygon, &owner, &mut work, 1_000).unwrap();
+        assert_eq!(remaining.len(), 1);
+        let clipped = make_piece(remaining.pop().unwrap(), &mut work, 1_000).unwrap();
+        for axis in 0..2 {
+            assert!(original.bounds[axis] <= clipped.bounds[axis]);
+            assert!(original.bounds[axis + 2] >= clipped.bounds[axis + 2]);
+        }
+        assert!(intersects(original.bounds, [0, 0, 1, 1]));
+        assert!(!intersects(original.bounds, [4, 0, 5, 4]));
     }
 }

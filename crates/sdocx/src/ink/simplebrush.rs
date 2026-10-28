@@ -248,7 +248,7 @@ fn generate_with_terminal(
     };
     let mut previous_width = half_width(size, previous_pressure).max(1.0);
     if points.len() == 2
-        && tool_type == 2
+        && matches!(tool_type, 2 | 3)
         && (points[1][0] - points[0][0]).abs() < 1.5
         && (points[1][1] - points[0][1]).abs() < 1.5
     {
@@ -372,7 +372,8 @@ pub(crate) fn prepare_stroke(
             rendering.advanced_settings.as_deref(),
             None | Some("") | Some("1;")
         )
-        || rendering.tool_type_raw != 2
+        || !matches!(rendering.tool_type_raw, 2 | 3)
+        || (rendering.tool_type_raw == 3 && stroke.points.len() != 2)
         || !p.compressed
         || p.replay_only
         || p.stylus_channels
@@ -438,7 +439,7 @@ pub(crate) fn prepare_stroke(
         points: &points,
         pressures: &pressures,
         size,
-        tool_type: 2,
+        tool_type: i32::from(rendering.tool_type_raw),
         curve_enabled: true,
         max_samples,
     })?;
@@ -1013,8 +1014,57 @@ mod tests {
 
     // This compares a source-derived 1px radial fringe with the actual generic
     // page renderer. These are bounded host-Mesa controls, not a parity claim.
+    #[test]
+    fn tool3_three_point_native_geometry_control() {
+        use std::fmt::Write;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-tool3-native.json"
+        ))
+        .unwrap();
+        let samples = reconstruct(
+            &[[0.0, 0.0], [10.0, 0.0], [20.0, 5.0]],
+            &[0.75, 0.25, 1.0],
+            8.0,
+            3,
+            true,
+        )
+        .unwrap();
+        let mut actual = String::new();
+        for value in samples.iter().flatten() {
+            for byte in value.to_le_bytes() {
+                write!(actual, "{byte:02x}").unwrap();
+            }
+        }
+        assert_eq!(
+            actual,
+            receipt["controls"]["three"]["geometry_hex"]
+                .as_str()
+                .unwrap()
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn tool3_two_point_native_paint_control() {
+        for probe in [2, 201, 202, 203] {
+            v25_paint_control_for_tool(8, false, false, false, probe, 3);
+        }
+    }
+
     #[cfg(feature = "pdf")]
     fn v25_paint_control(size: u32, four: bool, alt: bool, six: bool, probe: usize) {
+        v25_paint_control_for_tool(size, four, alt, six, probe, 2);
+    }
+
+    #[cfg(feature = "pdf")]
+    fn v25_paint_control_for_tool(
+        size: u32,
+        four: bool,
+        alt: bool,
+        six: bool,
+        probe: usize,
+        tool: u16,
+    ) {
         use crate::{
             BoundingBox, Color, Document, Page, Point, Stroke, StrokeProperties, StrokeRendering,
             StrokeStyle,
@@ -1607,7 +1657,7 @@ mod tests {
                 metadata: None,
                 pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Brush".into()),
                 advanced_settings: None,
-                tool_type_raw: 2,
+                tool_type_raw: tool,
                 properties: StrokeProperties {
                     compressed: true,
                     replay_only: false,
@@ -1659,6 +1709,8 @@ mod tests {
         // generic Brush route also uses whole-stroke opacity 1, despite the
         // saved 0x80 alpha; compare the actual routes, not an assumed opacity.
         assert_eq!(crate::prepare_stroke(&stroke, false).opacity, 1.0);
+        let mut paired_stroke = stroke.clone();
+        paired_stroke.rendering.as_mut().unwrap().tool_type_raw = 2;
         let document = Document {
             pages: vec![Page {
                 uuid: "simplebrush-v25".into(),
@@ -1672,6 +1724,20 @@ mod tests {
             }],
             metadata: Default::default(),
         };
+        if tool == 3 {
+            let mut paired_document = document.clone();
+            paired_document.pages[0].objects = vec![paired_stroke.into()];
+            let options = crate::RenderOptions {
+                simplebrush_profile: Some(crate::SimpleBrushRenderProfile::HostV25),
+                ..Default::default()
+            };
+            let pdf_options =
+                crate::PdfOptions::from_font_book(&crate::render::fonts::FontBook::default());
+            let actual = crate::render_document_pdf(&document, &options, &pdf_options).unwrap();
+            let paired =
+                crate::render_document_pdf(&paired_document, &options, &pdf_options).unwrap();
+            assert_eq!(actual, paired);
+        }
         let layout = crate::layout_document(&document);
         let request =
             crate::render::PageSceneRequest::sliced(&layout.pages[0], 0, 1080, false).unwrap();
