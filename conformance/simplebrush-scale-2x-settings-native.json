@@ -1,0 +1,103 @@
+{
+  "scope": "Synthetic native Drawing and host Mesa controls, with explicit two-pixels-per-page-unit transform. Frame and geometry hashes are compared to the null-setting control. Saved notes, real devices and other paths remain unverified.",
+  "capture": "tools/simplebrush-scale/capture.py",
+  "base_receipt": "conformance/simplebrush-scale-2x-host.json",
+  "cases": [
+    {
+      "case": "fraction12",
+      "tool": 0,
+      "setting": "",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 2,
+      "setting": "",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 3,
+      "setting": "",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 0,
+      "setting": "1;",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 2,
+      "setting": "1;",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 3,
+      "setting": "1;",
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 0,
+      "setting": "",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 2,
+      "setting": "",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 3,
+      "setting": "",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 0,
+      "setting": "1;",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 2,
+      "setting": "1;",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 3,
+      "setting": "1;",
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    }
+  ]
+}

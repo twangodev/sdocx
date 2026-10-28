@@ -939,11 +939,8 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
     for (tool, size, setting) in [
         (0, 7.0, None),
         (3, 21.0, None),
-        (0, 8.0, Some("1;")),
-        (3, 8.0, Some("1;")),
         (2, 2.99, None),
         (2, 32.01, None),
-        (2, 8.0, Some("1;")),
     ] {
         let mut unsupported = stroke();
         let rendering = unsupported.rendering.as_mut().unwrap();
@@ -956,6 +953,19 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
             render_document_svg(&unsupported, &two)[0].svg,
             render_document_svg(&unsupported, &RenderOptions::default())[0].svg
         );
+    }
+    for tool in [0, 2, 3] {
+        for setting in ["2;", "1", "1; "] {
+            let mut unsupported = stroke();
+            let rendering = unsupported.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = tool;
+            rendering.advanced_settings = Some(setting.into());
+            let unsupported = document(unsupported);
+            assert_eq!(
+                render_document_svg(&unsupported, &two)[0].svg,
+                render_document_svg(&unsupported, &RenderOptions::default())[0].svg
+            );
+        }
     }
     let mut unsupported = stroke();
     unsupported.points = (0..33)
@@ -1373,5 +1383,45 @@ fn two_pixel_long_controls_match_native_geometry() {
             hex,
             receipt["cases"][name]["geometry_hex"].as_str().unwrap()
         );
+    }
+}
+
+#[test]
+fn two_pixel_setting_aliases_match_null_svg_and_pdf() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for (size, points) in [
+        (12.0, [(32.0, 32.0), (42.0, 32.0), (52.0, 37.0)]),
+        (20.0, [(80.0, 70.0), (65.0, 78.0), (48.0, 67.0)]),
+    ] {
+        for tool in [0, 2, 3] {
+            let mut source = stroke();
+            source.pen_width = size;
+            source.points = points.into_iter().map(|(x, y)| Point { x, y }).collect();
+            let rendering = source.rendering.as_mut().unwrap();
+            rendering.style.pen_size = Some(size);
+            rendering.tool_type_raw = tool;
+            rendering.advanced_settings = None;
+            let reference = document(source.clone());
+            let svg = render_document_svg(&reference, &two)[0].svg.clone();
+            assert_ne!(
+                svg,
+                render_document_svg(&reference, &RenderOptions::default())[0].svg
+            );
+            #[cfg(feature = "pdf")]
+            let pdf = crate::render_document_pdf(&reference, &two, &Default::default()).unwrap();
+            for setting in ["", "1;"] {
+                source.rendering.as_mut().unwrap().advanced_settings = Some(setting.into());
+                let doc = document(source.clone());
+                assert_eq!(render_document_svg(&doc, &two)[0].svg, svg);
+                #[cfg(feature = "pdf")]
+                assert_eq!(
+                    crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+                    pdf
+                );
+            }
+        }
     }
 }

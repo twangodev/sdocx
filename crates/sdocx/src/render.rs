@@ -4327,16 +4327,18 @@ fn render_stroke(
                 && simplebrush_two_pixels_per_page_unit
                 && (2..=32).contains(&stroke.points.len())
                 && stroke.rendering.as_ref().is_some_and(|rendering| {
-                    rendering.advanced_settings.is_none()
-                        && rendering.style.pen_size.is_some_and(|size| {
-                            match rendering.tool_type_raw {
-                                2 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
-                                2 => (8.0..=20.0).contains(&size),
-                                0 => stroke.points.len() <= 16 && (8.0..=20.0).contains(&size),
-                                3 => (8.0..=20.0).contains(&size),
-                                _ => false,
-                            }
-                        })
+                    matches!(
+                        rendering.advanced_settings.as_deref(),
+                        None | Some("") | Some("1;")
+                    ) && rendering.style.pen_size.is_some_and(|size| {
+                        match rendering.tool_type_raw {
+                            2 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
+                            2 => (8.0..=20.0).contains(&size),
+                            0 => stroke.points.len() <= 16 && (8.0..=20.0).contains(&size),
+                            3 => (8.0..=20.0).contains(&size),
+                            _ => false,
+                        }
+                    })
                 })
                 && slice.is_none()))
         && viewport.iter().all(|dimension| *dimension > 0)

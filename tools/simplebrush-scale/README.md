@@ -63,3 +63,8 @@ recapture a full native frame, run `python3 tools/simplebrush-scale/capture-size
 reverse32 /tmp/simplebrush-size-native.json` with the local inputs described
 above; the wrapper verifies the geometry and frame hashes. Other cases use the
 same command with the desired case name.
+
+The 2× setting-alias controls use `--advanced-setting empty` or `--advanced-setting 1`
+with `fraction12` and `reverse20`, and each `--tool` value 0, 2, and 3.
+The wrapper checks native geometry and complete frames against the null-setting
+control. The compact matrix is `conformance/simplebrush-scale-2x-settings-native.json`.
