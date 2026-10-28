@@ -292,11 +292,13 @@ signed values rather than scale magnitudes. A test checks this prediction agains
 the captured uploads. These observations do not identify the producer's native
 implementation or prove arbitrary transform or rendered-frame parity.
 
-The same affine captures also retain full host RGBA8 readbacks and draw-time
-projection uploads. The conditional paint model reproduces the nonuniform-scale
-frame with an RGBA absolute-error sum at most 4. This comparison uses the
-intercepted draw-time matrix, not the stale target-summary projection. Shear,
-rotation, and reflection frames are retained with hashes and support counts for
-future comparisons; the current painter rejects non-axis-aligned projections and
-negative grain periods, so these frames do not establish paint parity. This is a
-synthetic host-Mesa profile and does not establish device or SVG/PDF parity.
+The same affine captures retain full host RGBA8 readbacks and draw-time
+projection uploads. The conditional painter solves the projected stamp's affine
+varying plane and preserves the signed grain divisors. Compared with the four
+native readbacks, RGBA absolute-error sums are 2 for nonuniform scale, 0 for
+shear, 0 for quarter-turn rotation, and 2 for reflection. The test checks frame
+hashes and allows an error sum of 4 per frame. It uses the intercepted draw-time
+matrix, not the stale target-summary projection. Singular or perspective
+projections are rejected. These controls establish only this synthetic host-Mesa
+profile; device behavior, arbitrary transforms, and public SVG/PDF transport
+remain unverified.

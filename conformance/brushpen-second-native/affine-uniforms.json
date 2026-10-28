@@ -517,7 +517,7 @@
     }
   },
   "inference": "For this fixture, grain is the baseline grain vector transformed by the affine linear part, and grain_offset is the baseline offset transformed as a point. Signed components are retained.",
-  "limitations": "Does not establish the native producer implementation, arbitrary input dimensions or transforms, device parity, or public SVG/PDF transport. The conditional paint model has been compared only with the nonuniform frame; shear, rotation, and reflection readbacks are retained without paint parity claims.",
+  "limitations": "Does not establish the native producer implementation, arbitrary input dimensions or transforms, device parity, or public SVG/PDF transport. The conditional paint model has been compared with the four captured frames; this does not establish arbitrary-transform paint parity.",
   "input_sha256": {
     "tools/brushpen-transform/second_mapdraw.py": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
     "tools/brushpen-transform/long_probe.py": "77e48b4625361cd14eb5aa4637e31af5e7e3da52794547e93681f5b0e6bbeb40",

@@ -26,7 +26,6 @@ struct Context {
 enum Error {
     InvalidTexture,
     InvalidContext,
-    NonAxisAlignedProjection,
     InvalidRecord,
 }
 
@@ -36,8 +35,9 @@ struct ScreenQuad {
     right: f32,
     bottom: f32,
     top: f32,
-    s_dx: f32,
-    t_dy: f32,
+    origin: [f32; 2],
+    s_gradient: [f32; 2],
+    t_gradient: [f32; 2],
 }
 
 /// Paint captured 11-float RTV1 records into a transparent bottom-left RGBA8 target.
@@ -55,36 +55,52 @@ fn paint(
         .width
         .checked_mul(context.height)
         .and_then(|n| n.checked_mul(4));
+    let determinant = context.projection[0] * context.projection[5]
+        - context.projection[1] * context.projection[4];
     if context.width == 0
         || context.height == 0
         || byte_len != Some(destination.len())
         || context.projection.iter().any(|v| !v.is_finite())
+        || context.projection[2] != 0.0
+        || context.projection[6] != 0.0
+        || context.projection[14] != 0.0
+        || context.projection[3] != 0.0
+        || context.projection[7] != 0.0
+        || context.projection[15] != 1.0
+        || !determinant.is_finite()
+        || determinant == 0.0
         || context.rgb.iter().any(|v| !v.is_finite())
         || context
             .grain_period
             .iter()
-            .any(|v| !v.is_finite() || *v <= 0.0)
+            .any(|v| !v.is_finite() || *v == 0.0)
         || context.grain_offset.iter().any(|v| !v.is_finite())
         || !context.num_tiles.is_finite()
         || context.num_tiles <= 0.0
     {
         return Err(Error::InvalidContext);
     }
-    // The retained V7 program uses an axis-aligned projection. General affine
-    // interpolation can be added from a new capture; do not silently approximate it.
-    if context.projection[1] != 0.0 || context.projection[4] != 0.0 {
-        return Err(Error::NonAxisAlignedProjection);
-    }
-
     for record in records {
         if record.iter().any(|v| !v.is_finite()) || record[2] <= 0.0 {
             return Err(Error::InvalidRecord);
         }
         let quad = screen_quad(record, context);
+        if quad
+            .s_gradient
+            .iter()
+            .chain(&quad.t_gradient)
+            .any(|v| !v.is_finite())
+        {
+            return Err(Error::InvalidContext);
+        }
         let tile = record[3].floor();
         if tile < 0.0 || tile >= context.num_tiles * context.num_tiles {
             return Err(Error::InvalidRecord);
         }
+    }
+    for record in records {
+        let quad = screen_quad(record, context);
+        let tile = record[3].floor();
         let opacity = record[3].fract() * 1000.0 / 255.0;
         let tile_x = tile % context.num_tiles;
         let tile_y = (tile / context.num_tiles).floor();
@@ -180,27 +196,30 @@ fn screen_quad(record: &[f32; 11], c: Context) -> ScreenQuad {
         ]
     };
     let bl = project(-1.0, -1.0);
+    let br = project(1.0, -1.0);
+    let tl = project(-1.0, 1.0);
     let tr = project(1.0, 1.0);
-    let left = bl[0].min(tr[0]);
-    let right = bl[0].max(tr[0]);
-    let bottom = bl[1].min(tr[1]);
-    let top = bl[1].max(tr[1]);
-    // Source varying values at opposing vertices are s=0/1 and t=1/0.
-    // Solve its affine plane in f32 once and evaluate that plane per fragment.
+    let dx = [br[0] - bl[0], br[1] - bl[1]];
+    let dy = [tl[0] - bl[0], tl[1] - bl[1]];
+    let det = dx[0] * dy[1] - dx[1] * dy[0];
     ScreenQuad {
-        left,
-        right,
-        bottom,
-        top,
-        s_dx: 1.0 / (right - left),
-        t_dy: -1.0 / (top - bottom),
+        left: bl[0].min(br[0]).min(tl[0]).min(tr[0]),
+        right: bl[0].max(br[0]).max(tl[0]).max(tr[0]),
+        bottom: bl[1].min(br[1]).min(tl[1]).min(tr[1]),
+        top: bl[1].max(br[1]).max(tl[1]).max(tr[1]),
+        origin: bl,
+        s_gradient: [dy[1] / det, -dy[0] / det],
+        t_gradient: [dx[1] / det, -dx[0] / det],
     }
 }
 
 fn interpolate_frag_coord(px: f32, py: f32, q: ScreenQuad) -> [f32; 2] {
-    // Values at the quad's vertices are exactly s=(0,1) left/right and t=(1,0)
-    // bottom/top. Evaluate the f32 affine interpolation plane at pixel centers.
-    [0.0 + (px - q.left) * q.s_dx, 1.0 + (py - q.bottom) * q.t_dy]
+    let dx = px - q.origin[0];
+    let dy = py - q.origin[1];
+    [
+        dx * q.s_gradient[0] + dy * q.s_gradient[1],
+        1.0 + dx * q.t_gradient[0] + dy * q.t_gradient[1],
+    ]
 }
 
 fn radial_distance(s: f32, t: f32) -> f32 {
@@ -307,6 +326,56 @@ mod tests {
     use serde_json::Value;
     use sha2::{Digest, Sha256};
     use std::io::Read;
+
+    #[test]
+    fn invalid_projection_or_late_record_leaves_destination_unchanged() {
+        let bytes = [255; 4];
+        let texture = Rgba8 {
+            width: 1,
+            height: 1,
+            bytes: &bytes,
+        };
+        let mut projection = [0.0; 16];
+        projection[0] = 1.0;
+        projection[5] = 1.0;
+        projection[15] = 1.0;
+        let context = Context {
+            width: 12,
+            height: 8,
+            projection,
+            rgb: [1.0; 3],
+            grain_period: [1.0; 2],
+            grain_offset: [0.0; 2],
+            num_tiles: 1.0,
+        };
+        let mut destination = [19; 12 * 8 * 4];
+        for index in [3, 7, 2, 6, 14] {
+            let mut invalid = context;
+            invalid.projection[index] = 0.5;
+            assert!(matches!(
+                paint(&[], texture, texture, invalid, &mut destination),
+                Err(Error::InvalidContext)
+            ));
+            assert_eq!(destination, [19; 12 * 8 * 4]);
+        }
+        let mut singular = context;
+        singular.projection[5] = 0.0;
+        assert!(matches!(
+            paint(&[], texture, texture, singular, &mut destination),
+            Err(Error::InvalidContext)
+        ));
+        let good = [0.0, 0.0, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let mut painted = destination;
+        paint(&[good], texture, texture, context, &mut painted).unwrap();
+        assert_ne!(painted, destination, "the valid record must paint pixels");
+        let mut bad = good;
+        bad[2] = 0.0;
+        assert!(matches!(
+            paint(&[good, bad], texture, texture, context, &mut destination),
+            Err(Error::InvalidRecord)
+        ));
+        assert_eq!(destination, [19; 12 * 8 * 4]);
+    }
 
     #[test]
     fn affine_grain_prediction_matches_native_uniforms() {
@@ -1251,55 +1320,78 @@ mod tests {
             "../../../../../conformance/brushpen-second-native/affine-uniforms.json"
         ))
         .unwrap();
-        let case = &affine["cases"]["nonuniform"];
-        let read = |key: &str| -> Vec<f32> {
-            case[key]
-                .as_array()
-                .unwrap()
+        for (name, compressed) in [
+            (
+                "nonuniform",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/nonuniform-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "shear",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/shear-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "rotate-visible",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/rotate-visible-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "flip-visible",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/flip-visible-frame.rgba.zlib"
+                )[..],
+            ),
+        ] {
+            let case = &affine["cases"][name];
+            let read = |key: &str| -> Vec<f32> {
+                case[key]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap() as f32)
+                    .collect()
+            };
+            let mut reference = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut reference)
+                .unwrap();
+            assert_eq!(sha256(&reference), case["frame_sha256"]);
+            let mut actual = vec![0; reference.len()];
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width: 321,
+                    height: 228,
+                    projection: read("projection_matrix").try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: read("grain").try_into().unwrap(),
+                    grain_offset: read("grain_offset").try_into().unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut actual,
+            )
+            .unwrap();
+            let l1: u64 = actual
                 .iter()
-                .map(|v| v.as_f64().unwrap() as f32)
-                .collect()
-        };
-        let mut reference = Vec::new();
-        ZlibDecoder::new(
-            &include_bytes!(
-                "../../../../../conformance/brushpen-second-native/nonuniform-frame.rgba.zlib"
-            )[..],
-        )
-        .read_to_end(&mut reference)
-        .unwrap();
-        assert_eq!(sha256(&reference), case["frame_sha256"]);
-        let mut actual = vec![0; reference.len()];
-        paint(
-            &records,
-            Rgba8 {
-                width: 144,
-                height: 144,
-                bytes: &atlas_rgba,
-            },
-            Rgba8 {
-                width: 321,
-                height: 228,
-                bytes: &grain_rgba,
-            },
-            Context {
-                width: 321,
-                height: 228,
-                projection: read("projection_matrix").try_into().unwrap(),
-                rgb: color[..3].try_into().unwrap(),
-                grain_period: read("grain").try_into().unwrap(),
-                grain_offset: read("grain_offset").try_into().unwrap(),
-                num_tiles: 3.0,
-            },
-            &mut actual,
-        )
-        .unwrap();
-        let l1: u64 = actual
-            .iter()
-            .zip(&reference)
-            .map(|(a, b)| u64::from(a.abs_diff(*b)))
-            .sum();
-        assert!(l1 <= 4, "nonuniform: {l1}");
+                .zip(&reference)
+                .map(|(a, b)| u64::from(a.abs_diff(*b)))
+                .sum();
+            assert!(l1 <= 4, "{name}: {l1}");
+        }
         let pair: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-version-paint-pair.json"
         ))
