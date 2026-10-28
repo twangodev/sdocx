@@ -1,0 +1,460 @@
+{
+  "schema": "sdocx-montblanc-native-color-v1",
+  "boundary": "Synthetic baseline stroke with host-controlled native PenDrawableRT::SetPenData color; native ARM64 Drawing and RTV1 and explicitly sequenced native Draw through host EGL/GLES adapters and Mesa llvmpipe on a fixed RGBA8 framebuffer. No saved-note color propagation, native PDF, natural worker sequencing, or Android device parity is established.",
+  "harness": "tmp/vector-parity-plan/montblanc-rtv1-mesa-source-v12/capture_candidate.py",
+  "harness_sha256": "7378931c784f1be00527da5dd8d39dd48597b95a8c5bcc2c636fdf69d82a2fae",
+  "reproduce": ".venv/bin/python tools/montblanc/conformance/color_capture.py",
+  "verification": "Each case checks transparent pre-draw readback, framebuffer completeness and matching native draw/read attachment, GL errors, three draws, captured native setter, uniforms and fragment source. Fragment shaders use inputColor.xyz and 1.0, with separate inputAlpha, ignoring inputColor.a.",
+  "cases": {
+    "ff336699": {
+      "setter_calls": [
+        {
+          "argb": "0xff336699",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          1.0
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          1.0
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          1.0
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "5591eb1f3a2904214cf74e144a64c038369c86c03244ffd8cc6eee85f21cecb1",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "f797146334b3acae7690932f3ebfefc5c4a19760f15f9705c886fabdfbeed057",
+        "unique_rgba_count": 94
+      }
+    },
+    "80336699": {
+      "setter_calls": [
+        {
+          "argb": "0x80336699",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.501960813999176
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.501960813999176
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.501960813999176
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "5591eb1f3a2904214cf74e144a64c038369c86c03244ffd8cc6eee85f21cecb1",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "f797146334b3acae7690932f3ebfefc5c4a19760f15f9705c886fabdfbeed057",
+        "unique_rgba_count": 94
+      }
+    },
+    "00336699": {
+      "setter_calls": [
+        {
+          "argb": "0x336699",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.4000000059604645,
+          0.6000000238418579,
+          0.0
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "5591eb1f3a2904214cf74e144a64c038369c86c03244ffd8cc6eee85f21cecb1",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          51,
+          102,
+          153,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "f797146334b3acae7690932f3ebfefc5c4a19760f15f9705c886fabdfbeed057",
+        "unique_rgba_count": 94
+      }
+    },
+    "ffff0000": {
+      "setter_calls": [
+        {
+          "argb": "0xffff0000",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "613b3996b224309d0a0f25839e665faf5a9aaa1ed7f2b4fb79aad4a7afc94595",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "channel_min": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "9350c24abbde196de13262b8042bde4c6bb36f41e7e1e483b4f3128753fb4c0b",
+        "unique_rgba_count": 75
+      }
+    },
+    "ff00ff00": {
+      "setter_calls": [
+        {
+          "argb": "0xff00ff00",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "e7906ae08927770cd318a7bd6e47f0ccf0b04aa3e9f07cb913ceab4fecebddc9",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          0,
+          255,
+          0,
+          255
+        ],
+        "channel_min": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "99ad84a66d7856d522c1e0a2f637553912a18e9440a86929acbe3dd835d5b980",
+        "unique_rgba_count": 75
+      }
+    },
+    "ff0000ff": {
+      "setter_calls": [
+        {
+          "argb": "0xff0000ff",
+          "receiver": "0x100132f0",
+          "size_s0_bits": "00000040"
+        }
+      ],
+      "color_uniforms": [
+        [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "fragment_shader_sha256": [
+        "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+        "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+        "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64"
+      ],
+      "draw_counts": [
+        [
+          4,
+          0,
+          138
+        ],
+        [
+          4,
+          0,
+          6
+        ],
+        [
+          4,
+          0,
+          6
+        ]
+      ],
+      "pre_rgba8_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "post_rgba8_sha256": "07e4c6bf370c4282376bef3ff8da985d9d561a136d2f9ec6ce5127fa4009fe7e",
+      "pixel_statistics": {
+        "byte_count": 262144,
+        "channel_max": [
+          0,
+          0,
+          255,
+          255
+        ],
+        "channel_min": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "dimensions": [
+          256,
+          256
+        ],
+        "nontransparent_pixels": 104,
+        "nontransparent_rgba_sha256": "886b6b0ada4fd8febbbc965017cc626f0de5cfc4f2ae1fc93dca000ab7964901",
+        "unique_rgba_count": 75
+      }
+    }
+  }
+}
