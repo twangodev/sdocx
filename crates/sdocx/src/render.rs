@@ -152,9 +152,8 @@ impl InkPen2V1OutputScale {
 ///
 /// Both profiles require normal saved style flags. `SavedV1` requires tool 2 and
 /// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
-/// `SavedV2` accepts tools 1, 2 and 3 with empty or `2;` settings and tool 0
-/// with an empty setting. Inputs beyond captured synthetic host
-/// controls are extrapolated.
+/// `SavedV2` accepts tools 0, 1, 2 and 3 with empty or `2;` settings.
+/// Inputs beyond captured synthetic host controls are extrapolated.
 /// V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
@@ -163,7 +162,7 @@ impl InkPen2V1OutputScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Empty or `2;` saved setting for tools 1, 2 and 3, or empty for tool 0.
+    /// Empty or `2;` saved setting for tools 0, 1, 2 and 3.
     SavedV2,
     /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
@@ -13473,7 +13472,8 @@ mod tests {
         assert_eq!(stream, evidence["curved_stream_hex"].as_str().unwrap());
         let mut unsupported = stroke.clone();
         unsupported.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
-        assert!(crate::ink::airbrush::saved_v2_from_stroke(&unsupported).is_none());
+        let literal = crate::ink::airbrush::saved_v2_from_stroke(&unsupported).unwrap();
+        assert_eq!(literal.rows, sampled.rows);
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
         assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
         let mut other = document.clone();

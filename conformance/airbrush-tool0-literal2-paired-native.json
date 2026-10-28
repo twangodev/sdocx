@@ -1,0 +1,114 @@
+{
+  "description": "Paired synthetic AirBrush tool 0 Drawing host-Mesa captures: empty and literal 2; settings",
+  "runner": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py",
+  "runner_sha256": "d38a83f3cf71b228f58654c08a135d3f91d3bda0349df1d6014926752dc3b73e",
+  "cases": [
+    {
+      "shape": "curve",
+      "model_empty": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "",
+        "color_argb_u32": "0xff44aaee",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 3.1440000534057617,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "model_literal": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "2;",
+        "color_argb_u32": "0xff44aaee",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 3.1440000534057617,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "selected_profile": 2,
+      "producer_stream_sha256": "fbfb81ffea787d3495d9c0261c99ed5d7b85f5d6968fbbadb1c7cd9b2fd0a470",
+      "frame_sha256": "2d5ceec07d29c5fe44b79bc73610891c468857d6c5e97a40bf65f7e6d045e3cb",
+      "frame_nonzero_pixels": 54
+    },
+    {
+      "shape": "zigzag",
+      "model_empty": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "",
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "model_literal": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "2;",
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "selected_profile": 2,
+      "producer_stream_sha256": "1994f49cc7576bd71dc7241f7b1a2aa33a20faef72c079c3312f7706535ee817",
+      "frame_sha256": "d49bff27dc8401c97d059397d4863b4e07f0fc0230a1cfe0e2a675dcebba36bc",
+      "frame_nonzero_pixels": 194
+    },
+    {
+      "shape": "reverse",
+      "model_empty": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "",
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "model_literal": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "2;",
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "selected_profile": 2,
+      "producer_stream_sha256": "26d28552b58366911a5dcbd798ae69b477072974184a6d9c3b46528fd2370036",
+      "frame_sha256": "37e26dcdb4a66137184f6c9998bc9a0240209209e3c260820149a53dd057e9dc",
+      "frame_nonzero_pixels": 26
+    }
+  ],
+  "capture_script": "tools/airbrush/tool0_literal2_capture.py",
+  "recipe": "python3 tools/airbrush/tool0_literal2_capture.py OUTPUT_DIRECTORY",
+  "native_hashes": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "dependencies": {
+    "native_libraries": "scratch/apk-analysis-native/arm64-v8a (hashes in native_hashes); libc++_shared.so sha256 4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "python_path": [
+      "scratch/apk-analysis-runtime/python",
+      "scratch/apk-analysis-runtime/binutils-aarch64/usr/bin",
+      "tmp/conformance-cleanup/native-capture-a241793/conformance"
+    ],
+    "library_path": "scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu",
+    "host": "desktop Mesa EGL/GLES, Unicorn, Python 3; exact host and helper identities are checked by the pinned runner where applicable",
+    "caveat": "Paths outside tracked sources are local retained dependencies and must be restored separately if absent."
+  },
+  "verify_script": "tools/airbrush/verify_tool0_literal2.py",
+  "verification_recipe": "python3 tools/airbrush/verify_tool0_literal2.py OUTPUT_DIRECTORY",
+  "verification_method": "Decode and compare full RGBA frames, compare producer after/delta byte records and their JSON SHA-256, selected profile, model inputs, and DSO hashes against receipt."
+}
