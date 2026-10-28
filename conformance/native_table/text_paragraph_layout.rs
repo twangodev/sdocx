@@ -259,7 +259,7 @@ pub(super) fn paragraph_icu_import(
 }
 
 fn utf16(engine: Engine, address: u64, length: u64) -> Vec<u16> {
-    assert!(length <= 256);
+    assert!(length <= 4096);
     bytes(engine, address, length as usize * 2)
         .chunks_exact(2)
         .map(|slot| u16::from_le_bytes(slot.try_into().unwrap()))

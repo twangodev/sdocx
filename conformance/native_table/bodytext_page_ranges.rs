@@ -37,6 +37,14 @@ fn inputs() -> Vec<Input> {
     vec![
         ordinary,
         Input {
+            name: "scale3-long-crossing",
+            text: "AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc AV abc\nTo abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc To abc",
+            width: 360.0,
+            page_height: 1485,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
             name: "scale3-wide",
             width: 270.0,
             page_height: 60,
@@ -632,7 +640,11 @@ fn sample(
     let first_empty = returned_rect(machine, TEXT + 0x8ad54, &[wrapper, width as u32 as u64]);
     let cursor = returned_rect(machine, WIDGET + 0xa36fc, &[wrapper]);
     let observation_calls = recorder.take();
-    let page_count = if input.name == "scale3-multiple-wrapped" { 23 } else { 6 };
+    let page_count = if input.name == "scale3-multiple-wrapped" {
+        23
+    } else {
+        6
+    };
     let pages = Pages::new(machine, width, input.page_height, page_count);
     let line_count = machine.call(TEXT + 0x8adb0, &[wrapper]);
     recorder.take();
@@ -743,6 +755,9 @@ pub(super) fn capture(
     environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
     let mut output = Vec::new();
     for input in inputs().into_iter().filter(|input| {
+        if std::env::var_os("SDOCX_CAPTURE_LONG_INDENT").is_some() {
+            return input.name == "scale3-long-crossing";
+        }
         if std::env::var_os("SDOCX_CAPTURE_PARSED_INDENT").is_some() {
             return [
                 "scale3-wide",

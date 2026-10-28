@@ -858,7 +858,10 @@ scale-three controls cover line geometry, page-index boundaries and the
 line-range and substring-visibility primitives, but do not execute the complete
 BodyTextContext visibility method. A synthetic public PDF test checks 81 text
 baselines across source-page cuts; MuPDF and PDFium extract the same 81
-characters across its first four pages. The density-one controls also cover
+characters across its first four pages. A separate long indented-body control
+crosses page cuts after increasing the shaping-window limit to 512; native layout
+and independent PDF-reader checks cover the synthetic examples. Worst-case
+performance at the new limit remains unmeasured. The density-one controls also cover
 native line-range and visibility primitives. Both sets use a changed host libc;
 public PDF tests check source resources, overlay clipping and text placement. Boundary text
 uses stable source ranges and physical-clip ownership; duplicate visible pieces

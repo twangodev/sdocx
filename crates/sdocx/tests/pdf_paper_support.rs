@@ -2632,3 +2632,68 @@ fn public_pdf_paper_density_three_parsed_implicit_default_empty_paragraph() {
         );
     }
 }
+
+#[test]
+fn public_pdf_paper_long_indented_paragraphs_cross_pages() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let text = format!(
+        "{}\n{}",
+        "AV abc ".repeat(120).trim_end(),
+        "To abc ".repeat(120).trim_end()
+    );
+    let mut body = parsed_body_optional_size(&text, None);
+    body.paragraphs = vec![RichTextParagraph {
+        kind: RichTextParagraphType::IndentLevel,
+        start_paragraph: 0,
+        end_paragraph: 1,
+        payload: [1_u32.to_le_bytes(), 1_u32.to_le_bytes()].concat(),
+    }];
+    document.metadata.note_text = Some(body);
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert_eq!(pdf.extract_text(&[2]).unwrap().matches("To").count(), 15);
+    let imported = pdf
+        .objects
+        .values()
+        .filter_map(|object| object.as_stream().ok())
+        .filter(|stream| {
+            stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+        })
+        .filter_map(|stream| {
+            Content::decode(
+                &stream
+                    .decompressed_content()
+                    .unwrap_or_else(|_| stream.content.clone()),
+            )
+            .ok()
+        })
+        .find(|content| content.operations.iter().any(|op| op.operator == "BT"))
+        .unwrap();
+    let continuation =
+        Content::decode(&pdf.get_page_content(pdf.get_pages()[&2]).unwrap()).unwrap();
+    let page_baselines = [&imported, &continuation].map(|content| {
+        content
+            .operations
+            .iter()
+            .filter(|op| op.operator == "Tm")
+            .map(|op| number(&op.operands[5]).unwrap())
+            .collect::<Vec<_>>()
+    });
+    assert!(page_baselines.iter().all(|lines| !lines.is_empty()));
+    let distinct = page_baselines.map(|mut lines| {
+        lines.sort_by(f64::total_cmp);
+        lines.dedup();
+        lines
+    });
+    assert!(
+        distinct[0]
+            .iter()
+            .all(|baseline| !distinct[1].contains(baseline))
+    );
+    assert_eq!(distinct.iter().map(Vec::len).sum::<usize>(), 24);
+}

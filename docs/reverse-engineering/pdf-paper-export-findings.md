@@ -845,3 +845,23 @@ receipt records the affected boundary. The public PDF regression checks line
 baselines across source-page cuts. Independent MuPDF and PDFium reads of that
 synthetic output extracted 81 characters on the same four pages. Neither check
 establishes native export pixels or saved-device parity.
+
+The [long indent capture](../../conformance/pdf-paper-parsed-indent-long-native.json)
+uses two 279-character paragraphs at density 3, width 360 and 1485-unit page
+records. Native produces 47 lines and overlapping sections across the first
+three page records. Rust matches the captured line rectangles, UTF-16 ownership,
+and all supplied page sections. The input exceeds the previous 128 cache-word
+window limit, so the bounded limit is now 512; source, selected-scalar, shaping,
+and per-window limits remain in force. Focused unoptimized exports at width 1812
+took 0.80 seconds for two 279-character paragraphs and 2.37 seconds for two
+839-character paragraphs on this host; these are not general benchmarks. The associated
+[reader receipt](../../conformance/pdf-paper-long-export-readers.json) records
+MuPDF 1.28.2 and PDFium 5.9.0 each extracting all 120 `AV` and 120 `To` markers
+across the first two pages. These synthetic controls do not execute the native
+PDF writer or establish device rendering parity. The native replay uses the
+parsed-indent density-3 capture flags and `SDOCX_CAPTURE_LONG_INDENT=1`; its
+temporary harness uses the host libc digest recorded in the receipt.
+
+The independent MuPDF 1.28.2 and PDFium 5.9.0 reader comparison was performed
+manually on the generated public-export fixture. The timings above do not
+measure the 512-window worst case or peak memory.

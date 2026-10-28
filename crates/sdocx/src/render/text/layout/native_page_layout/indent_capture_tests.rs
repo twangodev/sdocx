@@ -16,12 +16,21 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
         "../../../../../../../conformance/pdf-paper-parsed-indent-multiple-native.json"
     ))
     .unwrap();
+    let long: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-parsed-indent-long-native.json"
+    ))
+    .unwrap();
     let record = &original["serialized_paragraph_record"];
     let settings = super::super::super::TextSettings {
         scale: 3.0,
         ..Default::default()
     };
-    for (receipt, expected_native_x) in [(&original, 16.0), (&density3, 48.0), (&multiple, 48.0)] {
+    for (receipt, expected_native_x) in [
+        (&original, 16.0),
+        (&density3, 48.0),
+        (&multiple, 48.0),
+        (&long, 48.0),
+    ] {
         for case in receipt["cases"].as_array().unwrap() {
             let input = &case["input"];
             if case["name"] == "scale3-multiple-wrapped" {

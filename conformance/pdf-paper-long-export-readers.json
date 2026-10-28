@@ -1,0 +1,131 @@
+{
+  "pdf_sha256": "ced527d4479cf73aad9c8520518bce0f1741d42e47b320ad1fb553183f59d517",
+  "pdf_bytes": 204908,
+  "source": "two paragraphs of 120 repeats each, level-1 LTR indent on first paragraph; synthetic public PDF-paper export",
+  "page_count": 11,
+  "mupdf_version": "1.28.2",
+  "pdfium_version": "5.9.0",
+  "pages": [
+    {
+      "page": 1,
+      "mupdf": {
+        "AV": 120,
+        "To": 105
+      },
+      "pdfium": {
+        "AV": 120,
+        "To": 105
+      }
+    },
+    {
+      "page": 2,
+      "mupdf": {
+        "AV": 0,
+        "To": 15
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 15
+      }
+    },
+    {
+      "page": 3,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 4,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 5,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 6,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 7,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 8,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 9,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 10,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    },
+    {
+      "page": 11,
+      "mupdf": {
+        "AV": 0,
+        "To": 0
+      },
+      "pdfium": {
+        "AV": 0,
+        "To": 0
+      }
+    }
+  ]
+}

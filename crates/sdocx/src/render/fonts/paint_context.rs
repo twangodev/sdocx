@@ -6,7 +6,7 @@ use crate::text_index::TextIndex;
 const MAX_SOURCE_BYTES: usize = 262_144;
 const MAX_SOURCE_UTF16: usize = 65_536;
 const MAX_SELECTED_SCALARS: usize = 16_384;
-const MAX_WINDOWS: usize = 128;
+const MAX_WINDOWS: usize = 512;
 
 /// A native cache-word source view and its selected interval in paragraph coordinates.
 #[derive(Debug, Clone, PartialEq, Eq)]
