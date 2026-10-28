@@ -432,7 +432,10 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
         || !(rendering.tool_type_raw == 2
             || (!v1
                 && rendering.tool_type_raw == 1
-                && rendering.advanced_settings.as_deref() == Some("")))
+                && matches!(
+                    rendering.advanced_settings.as_deref(),
+                    Some("") | Some("2;")
+                )))
     {
         return None;
     }
@@ -898,7 +901,7 @@ mod tests {
         ))
         .unwrap();
         for case in fixture["cases"].as_array().unwrap() {
-            let bytes = case["source_arrays"]["points"]["data_hex"]
+            let bytes = fixture["source_arrays"]["points"]["data_hex"]
                 .as_str()
                 .unwrap();
             let points: Vec<P> = bytes

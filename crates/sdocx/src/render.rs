@@ -152,8 +152,8 @@ impl InkPen2V1OutputScale {
 ///
 /// Both profiles require normal saved style flags. `SavedV1` requires tool 2 and
 /// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
-/// `SavedV2` accepts tool 2 with empty or `2;` settings, and tool 1 with an empty
-/// setting. Tool 1 beyond the captured synthetic host control is extrapolated.
+/// `SavedV2` accepts tools 1 and 2 with empty or `2;` settings. Tool 1 beyond
+/// the captured synthetic host controls is extrapolated.
 /// V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
@@ -162,7 +162,7 @@ impl InkPen2V1OutputScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Empty or `2;` saved setting for tool 2, or empty setting for tool 1.
+    /// Empty or `2;` saved setting for tools 1 and 2.
     SavedV2,
     /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
@@ -13271,7 +13271,51 @@ mod tests {
         assert_eq!(hex, case["stream_hex"].as_str().unwrap());
         let mut unsupported = stroke.clone();
         unsupported.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
-        assert!(crate::ink::airbrush::saved_v2_from_stroke(&unsupported).is_none());
+        let alias_sampled = crate::ink::airbrush::saved_v2_from_stroke(&unsupported).unwrap();
+        assert_eq!(alias_sampled.rows, sampled.rows);
+        let matrix: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-tool1-matrix-native.json"
+        ))
+        .unwrap();
+        assert_eq!(matrix["cases"][2]["stream_hex"], case["stream_hex"]);
+        assert_eq!(
+            matrix["cases"][2]["frame"]["sha256"],
+            case["frame"]["sha256"]
+        );
+        for (index, size, color) in [(0, 8.75, 0x8044ee11), (1, 2.25, 0xffdf2255)] {
+            let mut probe = stroke.clone();
+            probe.points = (0..5)
+                .map(|i| {
+                    if index == 0 {
+                        Point {
+                            x: 128.453125 + i as f64 * 4.0,
+                            y: 128.515625 + (i % 2) as f64 * 7.0,
+                        }
+                    } else {
+                        Point {
+                            x: 128.453125 - i as f64 * 2.5,
+                            y: 128.515625 - i as f64 * 1.25,
+                        }
+                    }
+                })
+                .collect();
+            let rendering = probe.rendering.as_mut().unwrap();
+            rendering.style.pen_size = Some(size);
+            rendering.style.color_argb = Some(color);
+            let output = crate::ink::airbrush::saved_v2_from_stroke(&probe).unwrap();
+            let hex: String = output
+                .rows
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            assert_eq!(
+                hex,
+                matrix["cases"][index]["stream_hex"].as_str().unwrap(),
+                "tool-1 matrix case {index}"
+            );
+        }
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
         assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
         unsupported.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
@@ -13291,6 +13335,19 @@ mod tests {
         let default_page =
             render_layout_page_svg(&document, &layout, 0, &RenderOptions::default()).unwrap();
         assert_ne!(page.svg, default_page.svg);
+        let mut alias_document = document.clone();
+        alias_document.pages[0]
+            .strokes_mut()
+            .next()
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("2;".into());
+        let alias_layout = layout_document(&alias_document);
+        let alias_page =
+            render_layout_page_svg(&alias_document, &alias_layout, 0, &options).unwrap();
+        assert_eq!(page.svg, alias_page.svg);
         #[cfg(feature = "pdf")]
         {
             let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
@@ -13311,6 +13368,25 @@ mod tests {
             )
             .unwrap();
             assert!(pdf.starts_with(b"%PDF-"));
+            let alias_request =
+                super::PageSceneRequest::sliced(&alias_layout.pages[0], 0, 256, false).unwrap();
+            let mut alias_cache = super::DocumentTextCache::default();
+            let alias_scene = alias_cache
+                .render_layout_page_scene_requests(
+                    &alias_document,
+                    &[alias_request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0);
+            let alias_pdf = crate::pdf::render_scenes_pdf_with_progress(
+                std::slice::from_ref(&alias_scene),
+                &crate::PdfOptions::default(),
+                &mut |_| {},
+            )
+            .unwrap();
+            assert_eq!(pdf, alias_pdf);
             let tree =
                 resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default())
                     .unwrap();

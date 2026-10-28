@@ -1,0 +1,213 @@
+{
+  "schema": "sdocx.airbrush-tool1-matrix-native.v1",
+  "scope": "Synthetic saved Drawing control, pinned Samsung DSOs, emulated host callbacks and desktop Mesa GLES; not device parity. Frame is bottom-up premultiplied RGBA8.",
+  "runner": "tmp/vector-parity-plan/pen-family-audit/airbrush-v1-short-native/frame-capture.py",
+  "runner_sha256": "d38a83f3cf71b228f58654c08a135d3f91d3bda0349df1d6014926752dc3b73e",
+  "native_hashes": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "cases": [
+    {
+      "name": "zigzag",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "",
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "00740043008400430074044300840743007408430084004300740c43008407430074104300840043",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "selected_profile": 2,
+      "stream_hex": "0074004300840043000000000000803feac500435a13014371972e3f003a3bbf502c01438cc601435b607fbf88dc8e3d56870143d665024309f3463f251b213f90f40143fe24034371830ebe35827dbf0074024300040443e8d512bff3b3513fcbeb0243a0bf0443e2677a3fc0e654be2b7003433a6505434e6f5bbf8fd903bf1f010443d1f4054363208d3e3d15763fa99e0443636e06438871e83efb1864bf3249054327d20643b28f70bf431daf3ed8000643f61f07433aa66b3fd20dc83e31c506438a570743bd3fd0be20de69bf3e960743e2780743d3b0a6be830d723f0074084300840743e108623f7d5ef0bed639094347730743ea4677bfef8384beaeff09431c410743d5a8073fa719593f84c50a437fed06430c63433ef04b7bbf5a8b0b4371780643cc1b4fbf0379163f32510c43f0e1054380177e3f0b97f93dd8df0c43ab600543ba8d24bf7d1b44bfb8620d43c5da0443735d56bd30a67f3f9ae50d433c4604439626383f34d531bf7c680e4310a3034305f67fbf1af58e3c5ceb0e4340f10243b43e3e3f2f4c2b3f3e6e0f43ce300243b27eb2bd9e067fbf1ef10f43b9610143f49b1dbf1abb493f",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "e89820f1c715d7e1e9c6dfa197d44427eeb74a1b9b58fa0af951f84c0d6a9a6e",
+        "nonzero_pixels": 207,
+        "nonzero_channels": [
+          191,
+          207,
+          122,
+          207
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2llvFTcUAGDbs9xt7p59AbKHEEJCSBOgCbRE6kPf+v9/TMehD5UKpZsIqb5vNLq6M7I0frDPsX1CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAryiGWPRDv5zGWf7NdyhCUTRxmDqhc9+fB/z3UhnKPNa7K3G1bELTf1xsdx+nrar9X8/TYjUKo8562szvQmov4H8h5vjej4NyHMaDvXTQeZSeTF4Vl7Ob6sPkrLwYPy9eDE/Ks8563Ogsx5W7PKDNE+77u4F/J7ZxP1ahqpficnOQng52i4PhUXkyfVu9n7+rbmc35Y+jq+p6fFm8mbT38Cg+66yG1dSL/TQIA/MAPFxFL/S6a3G9vx13mpN0Ontf3c5fl9fT9l66rX6aXxfvRm0OMHpZXEwvy7fDw+JZfyvtdFbTet3mC7EbuvfdB+Dvy3l8vRAWum1ePzkvv1v+ufPL5E15M23jfXOUng224nZnMz5qjtPJYD8dDPeLp4vtnDB+WV2OT8vzoglNMQxDOQA8PHm9339S7DQHxVGO7dM31U1vL+73ttNuOYnTcjEs5vFdzMKst5W2m8N0NL2uP0yvyrfji/L1+EV53nuUnuQ1xH33BfiL2nhdTsO0GMSm2U37w+PydPZ9/b45LI8HO3GnXgkrRc7r48cr5jxhOa50N+Jmfyfuzm/KH2Y39YfhafmquxrX6kmYpDrU990t4MtSFaqPZ3xpK+/5zd/VtzmWDw/SYd4PiJ8Yy/mMoGxzgc5SWOptF3vDs+JV87w4bfbTYX7+qTbAtyeP8c5aXB8eFyfTi+pqfN6u58+rq95GenQ3/j93vt8+T+37nCc0e8VhXjf0co3ANM7y86/cDeAfuIvl7dq/s5Y2Ri+Ks1zrk2N6vRiXcq3fn7XNeX7V5vvdtWKzsxJXcz1APUsLd+eI6oLgm5fHaTmMo3oeF/Kavl6Ii3k+yPv5X27cNu+GbjWL83IUx7kuONcN5jnFOQA8DHm9fnd+N4jN3d5d3uf7Quz/Q/vfrxWMfXg4fhuvuQbA3j0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAn/Mr+hky8A==",
+        "compressed_bytes": 1000,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    {
+      "name": "reverse",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "",
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300e8fb420088fe4200e8f6420008fc4200e8f1420088f94200e8ec420008f742",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "selected_profile": 2,
+      "stream_hex": "0074004300840043000000000000803f1d6b00438e7f004371972e3f003a3bbf72500043397200435b607fbf88dc8e3d00240043005c004309f3463f251b213f8ecbff42e33c004371830ebe35827dbf8f2bff42e3140043e8d512bff3b3513f0068fe4200c8ff42e2677a3fc0e654be6626fe4233a7ff424e6f5bbf8fd903bf9ae1fd42cd84ff4263208d3e3d15763f9a99fd42cd60ff428871e83efb1864bf664efd42333bff42b28f70bf431daf3e0000fd420014ff423aa66b3fd20dc83e66aefc4233ebfe42bd3fd0be20de69bf9a59fc42cdc0fe42d3b0a6be830d723f9a01fc42cd94fe42e108623f7d5ef0be66a6fb423367fe42ea4677bfef8384be0048fb420038fe42d5a8073fa719593f66e6fa423307fe420c63433ef04b7bbf9a81fa42cdd4fd42cc1b4fbf0379163f9a19fa42cda0fd4280177e3f0b97f93d66aef942336bfd42ba8d24bf7d1b44bf0040f9420034fd42735d56bd30a67f3f66cef84233fbfc429626383f34d531bf9a59f842cdc0fc4205f67fbf1af58e3c9ae1f742cd84fc42b43e3e3f2f4c2b3f6666f7423347fc42b27eb2bd9e067fbf00e8f6420008fc42f49b1dbf1abb493f3089f64298d8fb4221d97c3fbf3020be5e2af64230a9fb42c03b54bf5a270fbf8ecbf542c879fb42575a663e4670793fbe6cf5425e4afb420000003fd7b35dbfee0df542f61afb4273d074bf5cb1953e1caff4428eebfa426917663f0272e03e4c50f44226bcfa42d07bb7be2aff6ebf7cf1f342be8cfa4212ccbfbeff5b6d3faa92f342565dfa42ca03683f6b61d8beda33f342ee2dfa42617873bfdc379ebe0ad5f24284fef9422339f83e08e75f3f3a76f2421ccff942c5ba773e476578bf6817f242b49ff94202b356bfa16d0b3f98b8f1424c70f9425c1c7c3fd7d0313ec859f142e440f94263101abf80734cbff6faf0427c11f9423f12d6bdff987e3f269cf04214e2f842b734413f68f327bf563df042aab2f84216d87fbfa0ef0ebd84deef424283f842f304353ff404353fb47fef42da53f84287ef0ebd16d87fbfe420ef427224f84269f327bfb634413f14c2ee420af5f742ff987e3f3312d6bd4263ee42a2c5f7427f734cbf64101abf7204ee423a96f742d1d0313e5d1c7c3fa2a5ed42d066f742a26d0b3f01b356bfd046ed426837f742476578bfc0ba773e",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "6422d11f110bffce7d88ca08594a8676a69a929de2fd0523b27c825c077e2761",
+        "nonzero_pixels": 26,
+        "nonzero_channels": [
+          26,
+          20,
+          26,
+          26
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt0zFKA0EAQNGZzcwk0Y0xG9BKLQKiItmIJgQrwUY7GytBsLbLBby6eAfXLXzvBL/5IQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAIdZUOLsusfapPXvtuAf5GCVW5Hx897iZXX+1wvhmEOOi7CejWz/dtae5e6tO369HsNoWY+m4CujWp0vRh7/j5oznf3Yzn2xxi7rsJ6FaKMa9Gzfb9cPF5lvcXKVa+h3/iokyXy2GzzsH3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8nm8AmwrO",
+        "compressed_bytes": 414,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    {
+      "name": "literal2",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "explicit-empty",
+        "advanced_setting": "2;",
+        "color_argb_u32": "0xff44aaee",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 3.1440000534057617,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300740343000401430074064300840243007409430004054300740c4300840843",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "selected_profile": 2,
+      "stream_hex": "0074004300840043000000000000803f5c8300438f86004371972e3f003a3bbf71b100433e8e00435b607fbf88dc8e3d3dfe00430a9b004309f3463f251b213fc2690143f6ac004371830ebe35827dbf00f4014300c40043e8d512bff3b3513f80250243c0cd0043e2677a3fc0e654be005a024300db00434e6f5bbf8fd903bf80910243c0eb004363208d3e3d15763f00cc0243000001438871e83efb1864bf80090343c0170143b28f70bf431daf3e004a0343003301433aa66b3fd20dc83e808d0343c0510143bd3fd0be20de69bf00d4034300740143d3b0a6be830d723f801d0443c0990143e108623f7d5ef0be006a044300c30143ea4677bfef8384be80b90443c0ef0143d5a8073fa719593f000c0543002002430c63433ef04b7bbf80610543c0530243cc1b4fbf0379163f00ba0543008b024380177e3f0b97f93d80150643c0c50243ba8d24bf7d1b44bf0074064300040343735d56bd30a67f3fe4ac0643742a03439626383f34d531bfc8e50643f551034305f67fbf1af58e3caa1e0743857a0343b43e3e3f2f4c2b3f8e57074322a40343b27eb2bd9e067fbf72900743cdce0343f49b1dbf1abb493f56c9074385fa034321d97c3fbf3020be380208434b270443c03b54bf5a270fbf1c3b08431e550443575a663e4670793f00740843008404430000003fd7b35dbfe4ac0843efb3044373d074bf5cb1953ec8e50843ece404436917663f0272e03eaa1e0943f6160543d07bb7be2aff6ebf8e5709430f4a054312ccbfbeff5b6d3f72900943357e0543ca03683f6b61d8be56c9094368b30543617873bfdc379ebe38020a43a9e905432339f83e08e75f3f1c3b0a43f9200643c5ba773e476578bf00740a435559064302b356bfa16d0b3fe4ac0a43c09206435c1c7c3fd7d0313ec8e50a4338cd064363101abf80734cbfaa1e0b43be0807433f12d6bdff987e3f8e570b4351450743b734413f68f327bf72900b43f282074316d87fbfa0ef0ebd56c90b43a1c10743f304353ff404353f38020c435e01084387ef0ebd16d87fbf1c3b0c432842084369f327bfb634413f",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d92ff7bce74eed6571a05f861382778c52c13f48120ffb761274d413927789f2",
+        "nonzero_pixels": 52,
+        "nonzero_channels": [
+          48,
+          52,
+          52,
+          52
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2c9OE1EUwOHOML10qLRSSkdaoYN1gdpggkSMiIjGKIpoAkaT6oawMP5ZaNj67sJDTK/R73uC3+bk5p5TqwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBfIE3T2AnAdCUzWda6ubmd94ZrtSRJYvcAU3Lx5jdX1u/0X559a48278fOAaZnfvX2uDz6cb6w8eTZTMjz2D1A9bIwN1dsvX432J+cLm29epuGRiN2E1C9sNC7trjx9Pny7snkSjm+a/bhP3Dx1w95u10efv914+T8d7M7LJN6CLGzgGqF+cXu1fUHO8X20XHv3sGbZjFci90EVONyl9fo9Ad5fzQa7H86XTn88rN4/OFz59bOXpK488O/LGu0WsWj95Plh8cfr784+9oZ7+6FVncpdhdQvbQ+O5sXq+XlzCdZvR67BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgPj+ALytHD0=",
+        "compressed_bytes": 545,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    }
+  ]
+}

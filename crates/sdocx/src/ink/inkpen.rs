@@ -1580,7 +1580,8 @@ mod tests {
             .iter()
             .filter(|frame| frame["scale"] != 1)
         {
-            let mut stroke = native_caller_stroke(&frame["input"]);
+            let shape = frame["shape"].as_str().unwrap();
+            let mut stroke = native_caller_stroke(&receipt["inputs"][shape]);
             stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
             let page = crate::Page {
                 uuid: "inkpen-v4-scale-control".into(),
