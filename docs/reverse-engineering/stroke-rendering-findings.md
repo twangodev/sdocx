@@ -1181,3 +1181,39 @@ the full readback identity is recorded in the first paint receipt. The Rust
 public-export test compares SVG pixels to this crop and checks PDF generation;
 PDF pixel comparisons above are separate MuPDF observations. Controls cover
 only the stated colors, alpha values and 1× scale.
+
+### Thin legacy Marker vector coverage
+
+A synthetic size-3 host capture tests a half-pixel translated horizontal
+stroke, and two additional captures use a four-point curve at 1× and with an
+explicitly overridden 2× projection matrix. The native Drawing path runs the
+Marker RTV1 shader in Unicorn/Mesa; these are host controls, not device or
+saved-note captures. For the horizontal control, the three central native
+pixel rows have alpha 128. The SVG vector fringe's edge rows are lighter because
+SVG rasterization antialiases the geometry in addition to interpolating the
+native-style fringe. This interpretation is bounded to the measured pixels.
+
+Requesting `shape-rendering="crispEdges"` for the vector and ownership paths
+improves matched-background RGB L1 against the native frames. For the new
+curve, resvg changes from 1,267 to 482 at 1× and 2,316 to 255 at 2×;
+Chromium changes from 1,384 to 484 and 2,313 to 236. For the half-pixel
+horizontal control, resvg changes from 1,618 to 439. The opt-in SVG vector
+profile now requests this hint only when the native truncated size is 3;
+other sizes keep their existing behavior. Browser implementations and other
+scales, curves, colors, and device output remain unverified. PDF still uses
+its existing fallback below size 6; on the curve its fallback/candidate
+outputs have identical errors in both MuPDF (4,956 and 20,932 at 1×/2×) and
+PDFium (4,875 and 20,689).
+
+The native input and capture scripts are retained under
+`tmp/legacy-marker-source-controls/size3-{half-phase,curve-phase,curve-scale2}.py`;
+the curve scripts' guard uses the observed 44/6/52/52/6 draw counts. The
+2× script explicitly overrides and reads back the projection uniform. A [compact provenance receipt](../../conformance/legacy-marker-size3-crisp-controls.json)
+records inputs and hashes. Sparse frame fixtures and reproducible native-pixel tests are in
+`conformance/legacy-marker-size3-*-sparse-rgba8.bin` and
+`crates/sdocx/src/render/legacy_marker_vector/tests.rs`. Rust tests exercise resvg;
+Chromium is a separate local browser experiment using
+`tmp/legacy-marker-source-controls/chromium-crisp-check.mjs`. The corresponding
+capture JSON SHA-256 values are `32b65d65b372499e4a9a7452329ce06432e81190f35dc4172129ba9799a2c7d3`,
+`7e1ea5630edc1190de110089197939452badab38b1db40e1e981ecbb8b556976`, and
+`4b1429acf56d7b5b780423afffc58687698d44e28c74e50acdd3ed7c5fbe172c`.

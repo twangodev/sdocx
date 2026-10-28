@@ -1,0 +1,54 @@
+{
+  "scope": "Synthetic Model setter inputs, native Samsung ARM64 Drawing and Marker RTV1 under Unicorn, host Mesa GLES; no device or saved-note parity. 2x is an explicit projection-uniform override with readback. Sparse format is little-endian pixel index followed by RGBA8.",
+  "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+  "marker_so_sha256": "f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6",
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "rendering": "RGBA8 native framebuffer; compared to public SVG/PDF rendered over each output background",
+  "cases": [
+    {
+      "name": "size3-half-phase",
+      "points_f32_hex_le": "000028410000a441000094410000a4410000d4410000a44100000e420000a441",
+      "argb": "0x80ffcb30",
+      "size_f32_bits": "40400000",
+      "tool_type": 2,
+      "projection_scale_override": 1,
+      "source_script": "tmp/legacy-marker-source-controls/size3-half-phase.py",
+      "source_script_sha256": "059403ab1ae2e985f591a95e690673a8adf60cef88ccf2d2276ac77844033699",
+      "capture_sha256": "32b65d65b372499e4a9a7452329ce06432e81190f35dc4172129ba9799a2c7d3",
+      "native_frame_sha256": "84fecc1f81e96c154d5d012d874e17aacba0a57662c5a7ca2e894c6e0cbde625",
+      "sparse_file": "legacy-marker-size3-half-phase-sparse-rgba8.bin",
+      "sparse_sha256": "cb7ce628e3297b681f46bb0fa8392f7a96c9a6399764e3e6c4731c3e4f31d1ce"
+    },
+    {
+      "name": "size3-curve-phase-v2",
+      "points_f32_hex_le": "000028410000a441000094410000a4410000d4410000dc4100000e420000a441",
+      "argb": "0x80ffcb30",
+      "size_f32_bits": "40400000",
+      "tool_type": 2,
+      "projection_scale_override": 1,
+      "source_script": "tmp/legacy-marker-source-controls/size3-curve-phase.py",
+      "source_script_sha256": "1f00e0974cd9ccecce4dc210d8b3b464f934611546be9cd8e84cc32b61213fe8",
+      "capture_sha256": "7e1ea5630edc1190de110089197939452badab38b1db40e1e981ecbb8b556976",
+      "native_frame_sha256": "86798f53e16947062a4658e48002ee5d6b044298871c6fc0941e95aa107c141a",
+      "sparse_file": "legacy-marker-size3-curve-phase-v2-sparse-rgba8.bin",
+      "sparse_sha256": "1098dc3d94ef5bfa7a308b62c54d4500294cdb3772a8e0dd4a284d96743b183c"
+    },
+    {
+      "name": "size3-curve-scale2-v2",
+      "points_f32_hex_le": "000028410000a441000094410000a4410000d4410000dc4100000e420000a441",
+      "argb": "0x80ffcb30",
+      "size_f32_bits": "40400000",
+      "tool_type": 2,
+      "projection_scale_override": 2,
+      "source_script": "tmp/legacy-marker-source-controls/size3-curve-scale2.py",
+      "source_script_sha256": "029574d4d8ec6eda0c84f505543f6247fe1f06a3d6456840c53889e5cdadf955",
+      "capture_sha256": "4b1429acf56d7b5b780423afffc58687698d44e28c74e50acdd3ed7c5fbe172c",
+      "native_frame_sha256": "a55ef21d83b24277f3cb1d6bda69513bbedf3fe967191e29195113b9bb40c053",
+      "sparse_file": "legacy-marker-size3-curve-scale2-v2-sparse-rgba8.bin",
+      "sparse_sha256": "f6b0e2a19bf635fe0141e178fc39339b96027e69a055aa0916bd173f48e93e5b"
+    }
+  ]
+}

@@ -327,6 +327,7 @@ pub(super) struct PreparedStroke {
     pub(super) plan: pdf::Plan,
     pub(super) form: pdf::Prepared,
     pub(super) bounds: [f32; 4],
+    crisp_edges: bool,
 }
 pub(super) fn execute(
     stroke: &SourceStroke,
@@ -390,7 +391,8 @@ pub(super) fn execute(
         return None;
     }
     let (plan, bounds) = run(&m, paint, grid, &shape, stroke.page)?;
-    let svg_cost = measure_svg(&plan, bounds, budget)?;
+    let crisp_edges = stroke.size == 3.;
+    let svg_cost = measure_svg(&plan, bounds, budget, crisp_edges)?;
     let next_svg = budget.svg_bytes.checked_add(svg_cost)?;
     if next_svg > 1_000_000 {
         return None;
@@ -407,7 +409,12 @@ pub(super) fn execute(
     budget.visible_vertices = next_vertices;
     budget.svg_bytes = next_svg;
 
-    Some(PreparedStroke { plan, form, bounds })
+    Some(PreparedStroke {
+        plan,
+        form,
+        bounds,
+        crisp_edges,
+    })
 }
 
 fn scene_data(s: &str) -> Option<super::vector::Data> {
@@ -430,6 +437,7 @@ fn emit_draw(
     path: super::vector::Data,
     owner: Option<super::vector::Data>,
     bounds: [f32; 4],
+    crisp_edges: bool,
 ) -> Option<()> {
     use super::vector::{
         ColorValue, Definitions, Gradient, LinearGradient, Mask, Paint, Path, Rectangle, Stop,
@@ -459,6 +467,9 @@ fn emit_draw(
         Paint::Solid(color)
     };
     let mut node = Path::new().data(path).fill(paint).fill_opacity(draw.alpha);
+    if crisp_edges {
+        node = node.crisp_edges();
+    }
     if draw.even_odd {
         node = node.even_odd_fill()
     }
@@ -479,7 +490,11 @@ fn emit_draw(
                             .height(y2 - y)
                             .fill(Paint::Solid(ColorValue::gray(1.)?)),
                     )
-                    .add(Path::new().data(owner).fill(Paint::BLACK)),
+                    .add(if crisp_edges {
+                        Path::new().data(owner).fill(Paint::BLACK).crisp_edges()
+                    } else {
+                        Path::new().data(owner).fill(Paint::BLACK)
+                    }),
             ),
         );
         node = node.masked(&id);
@@ -488,7 +503,12 @@ fn emit_draw(
     Some(())
 }
 
-fn measure_svg(plan: &pdf::Plan, bounds: [f32; 4], budget: &mut SourcePageBudget) -> Option<usize> {
+fn measure_svg(
+    plan: &pdf::Plan,
+    bounds: [f32; 4],
+    budget: &mut SourcePageBudget,
+    crisp_edges: bool,
+) -> Option<usize> {
     use super::vector::{Scene, Svg};
     let mut total = 128usize;
     for draw in &plan.draws {
@@ -514,7 +534,7 @@ fn measure_svg(plan: &pdf::Plan, bounds: [f32; 4], budget: &mut SourcePageBudget
             None => None,
         };
         let mut scene = Scene::new(Svg::new().width(plan.width).height(plan.height));
-        emit_draw(&mut scene, draw, path, owner, bounds)?;
+        emit_draw(&mut scene, draw, path, owner, bounds, crisp_edges)?;
         // Each draw has at most a gradient and a mask, each referenced twice.
         // Reserve 20 additional bytes per occurrence for any larger page ID.
         total = total.checked_add(scene.finish().len())?.checked_add(80)?;
@@ -562,7 +582,14 @@ pub(super) fn emit(scene: &mut super::vector::Scene, prepared: PreparedStroke) -
     };
     scene.scope(group, |scene| {
         for (draw, (path, owner)) in prepared.plan.draws.iter().zip(compiled) {
-            let _ = emit_draw(scene, draw, path, owner, prepared.bounds);
+            let _ = emit_draw(
+                scene,
+                draw,
+                path,
+                owner,
+                prepared.bounds,
+                prepared.crisp_edges,
+            );
         }
     });
     true

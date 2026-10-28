@@ -93,11 +93,14 @@ fn options() -> RenderOptions {
     }
 }
 fn error(svg: &str, native: &[u8]) -> u64 {
+    scaled_error(svg, native, 1.)
+}
+fn scaled_error(svg: &str, native: &[u8], scale: f32) -> u64 {
     let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
     let mut pix = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
     resvg::render(
         &tree,
-        resvg::tiny_skia::Transform::identity(),
+        resvg::tiny_skia::Transform::from_scale(scale, scale),
         &mut pix.as_mut(),
     );
     let data = pix.data();
@@ -447,6 +450,11 @@ fn narrow_effective_widths_choose_backend_fallback() {
             .remove(0)
             .svg;
         assert_eq!(vector_svg == fallback_svg, size < 3.0, "SVG size {size}");
+        assert_eq!(
+            vector_svg.contains("shape-rendering=\"crispEdges\""),
+            (3.0..4.0).contains(&size),
+            "SVG hint size {size}"
+        );
         let vector_pdf =
             crate::render_document_pdf(&doc, &options(), &crate::PdfOptions::default()).unwrap();
         let fallback_pdf = crate::render_document_pdf(
@@ -610,4 +618,63 @@ fn zero_alpha_retains_native_caps_in_svg_and_pdf() {
                 .windows(b"/M1 gs /C1 Do".len())
                 .any(|w| w == b"/M1 gs /C1 Do"))
     );
+}
+
+#[test]
+fn size_three_crisp_edges_improve_curved_native_host_frames() {
+    let mut doc = document("straight", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke")
+    };
+    stroke.points = [(10.5, 20.5), (18.5, 20.5), (26.5, 27.5), (35.5, 20.5)]
+        .into_iter()
+        .map(|(x, y)| Point { x, y })
+        .collect();
+    stroke.pen_width = 3.;
+    stroke.rendering.as_mut().unwrap().style.pen_size = Some(3.);
+    let svg = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let plain = svg.replace(" shape-rendering=\"crispEdges\"", "");
+    for (scale, native) in [
+        (
+            1.,
+            include_bytes!(
+                "../../../../../conformance/legacy-marker-size3-curve-phase-v2-sparse-rgba8.bin"
+            )
+            .as_slice(),
+        ),
+        (
+            2.,
+            include_bytes!(
+                "../../../../../conformance/legacy-marker-size3-curve-scale2-v2-sparse-rgba8.bin"
+            )
+            .as_slice(),
+        ),
+    ] {
+        let crisp = scaled_error(&svg, native, scale);
+        let regular = scaled_error(&plain, native, scale);
+        assert!(
+            crisp < regular,
+            "scale {scale}: crisp {crisp}, regular {regular}"
+        );
+    }
+}
+
+#[test]
+fn size_three_crisp_edges_improve_half_pixel_native_host_frame() {
+    let mut doc = document("straight", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke")
+    };
+    stroke.points = [(10.5, 20.5), (18.5, 20.5), (26.5, 20.5), (35.5, 20.5)]
+        .into_iter()
+        .map(|(x, y)| Point { x, y })
+        .collect();
+    stroke.pen_width = 3.;
+    stroke.rendering.as_mut().unwrap().style.pen_size = Some(3.);
+    let svg = crate::render_document_svg(&doc, &options()).remove(0).svg;
+    let plain = svg.replace(" shape-rendering=\"crispEdges\"", "");
+    let native = include_bytes!(
+        "../../../../../conformance/legacy-marker-size3-half-phase-sparse-rgba8.bin"
+    );
+    assert!(error(&svg, native) < error(&plain, native));
 }
