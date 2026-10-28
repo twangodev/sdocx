@@ -1,0 +1,204 @@
+{
+  "schema": "sdocx-inkpen-v1-fixed-width-export-comparison-v1",
+  "scope": "Synthetic host Mesa and public SVG/direct PDF; not device or saved-note parity",
+  "cases": [
+    {
+      "width": 50,
+      "tool": 1,
+      "curve": true,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "b8693da63a7c98d79605ae93001eb3237b5309ad99ac1ab44bad1d8b943f761a",
+      "candidate": {
+        "svg_alpha_error": 1570,
+        "mupdf_rgb_error": 17432,
+        "pdfium_rgb_error": 8916
+      },
+      "generic": {
+        "svg_alpha_error": 384998,
+        "mupdf_rgb_error": 1158012,
+        "pdfium_rgb_error": 1147455
+      }
+    },
+    {
+      "width": 100,
+      "tool": 1,
+      "curve": true,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "1b96be0471e7b38a965d27920fa636d33fadd9348a160ded038fd7a33f28b83f",
+      "candidate": {
+        "svg_alpha_error": 2552,
+        "mupdf_rgb_error": 14545,
+        "pdfium_rgb_error": 10356
+      },
+      "generic": {
+        "svg_alpha_error": 1016856,
+        "mupdf_rgb_error": 3021339,
+        "pdfium_rgb_error": 3020778
+      }
+    },
+    {
+      "width": 200,
+      "tool": 1,
+      "curve": true,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "eb29e7164e458e5bfd2883765120da6706006e94d5c606352e48dd1deff77c7d",
+      "candidate": {
+        "svg_alpha_error": 1024,
+        "mupdf_rgb_error": 3193,
+        "pdfium_rgb_error": 2832
+      },
+      "generic": {
+        "svg_alpha_error": 2007946,
+        "mupdf_rgb_error": 5944216,
+        "pdfium_rgb_error": 5959035
+      }
+    },
+    {
+      "width": 6,
+      "tool": 0,
+      "curve": true,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "25302640d619063d3ea51d284e05874fd58d74935d469b57efd7803d35ca031a",
+      "candidate": {
+        "svg_alpha_error": 1334,
+        "mupdf_rgb_error": 19450,
+        "pdfium_rgb_error": 5688
+      },
+      "generic": {
+        "svg_alpha_error": 16345,
+        "mupdf_rgb_error": 70530,
+        "pdfium_rgb_error": 54243
+      }
+    },
+    {
+      "width": 6,
+      "tool": 1,
+      "curve": false,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "5ec7b39a2ac2bb3b78d345e0459f233ae1f3a1aa78e2de030cfe1ae23c2a3df3",
+      "candidate": {
+        "svg_alpha_error": 1471,
+        "mupdf_rgb_error": 19146,
+        "pdfium_rgb_error": 8016
+      },
+      "generic": {
+        "svg_alpha_error": 16116,
+        "mupdf_rgb_error": 70330,
+        "pdfium_rgb_error": 53865
+      }
+    },
+    {
+      "width": 6,
+      "tool": 2,
+      "curve": true,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "25302640d619063d3ea51d284e05874fd58d74935d469b57efd7803d35ca031a",
+      "candidate": {
+        "svg_alpha_error": 1334,
+        "mupdf_rgb_error": 19450,
+        "pdfium_rgb_error": 5688
+      },
+      "generic": {
+        "svg_alpha_error": 16345,
+        "mupdf_rgb_error": 70530,
+        "pdfium_rgb_error": 54243
+      }
+    },
+    {
+      "width": 6,
+      "tool": 3,
+      "curve": false,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "bed292d4826b7373431ffe06e0f88cd93243b86095b23824ab42f3d7423e32e8",
+      "candidate": {
+        "svg_alpha_error": 1286,
+        "mupdf_rgb_error": 19183,
+        "pdfium_rgb_error": 4248
+      },
+      "generic": {
+        "svg_alpha_error": 15525,
+        "mupdf_rgb_error": 67913,
+        "pdfium_rgb_error": 51618
+      }
+    },
+    {
+      "width": 6,
+      "tool": 4,
+      "curve": false,
+      "scale": 1,
+      "shape": "straight",
+      "native_sha256": "bed292d4826b7373431ffe06e0f88cd93243b86095b23824ab42f3d7423e32e8",
+      "candidate": {
+        "svg_alpha_error": 1286,
+        "mupdf_rgb_error": 19183,
+        "pdfium_rgb_error": 4248
+      },
+      "generic": {
+        "svg_alpha_error": 15525,
+        "mupdf_rgb_error": 67913,
+        "pdfium_rgb_error": 51618
+      }
+    },
+    {
+      "width": 6,
+      "tool": 1,
+      "curve": true,
+      "scale": 2,
+      "shape": "bent",
+      "native_sha256": "858668e805b52b480e1482924153f77c98c6fd66e509cc2e8ba5165722581d41",
+      "candidate": {
+        "svg_alpha_error": 4458,
+        "mupdf_rgb_error": 73450,
+        "pdfium_rgb_error": 38838
+      },
+      "generic": {
+        "svg_alpha_error": 348716,
+        "mupdf_rgb_error": 1089116,
+        "pdfium_rgb_error": 1029366
+      }
+    },
+    {
+      "width": 6,
+      "tool": 1,
+      "curve": true,
+      "scale": 3,
+      "shape": "phase",
+      "native_sha256": "351276bcc17c434ca51e1b7f5f2047b894e3e78e1669a718ff1209fdb693485b",
+      "candidate": {
+        "svg_alpha_error": 5398,
+        "mupdf_rgb_error": 156508,
+        "pdfium_rgb_error": 44541
+      },
+      "generic": {
+        "svg_alpha_error": 632929,
+        "mupdf_rgb_error": 2013906,
+        "pdfium_rgb_error": 1875357
+      }
+    },
+    {
+      "width": 6,
+      "tool": 1,
+      "curve": true,
+      "scale": 4,
+      "shape": "straight",
+      "native_sha256": "0e29cb950a34f2542c6a65415b58b91c36bd96350c3e3d9b968e83b728e6fab6",
+      "candidate": {
+        "svg_alpha_error": 4944,
+        "mupdf_rgb_error": 268790,
+        "pdfium_rgb_error": 23181
+      },
+      "generic": {
+        "svg_alpha_error": 564057,
+        "mupdf_rgb_error": 1976805,
+        "pdfium_rgb_error": 1727031
+      }
+    }
+  ]
+}

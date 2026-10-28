@@ -837,7 +837,11 @@ pub(super) fn prepare_v1_bounded(
     if r.pen_name.as_deref() != Some(PEN)
         || r.tool_type_raw > 4
         || r.properties.eraser
-        || r.properties.fixed_width
+        || (r.properties.fixed_width
+            && !r
+                .style
+                .fixed_width
+                .is_some_and(|width| width.is_finite() && (0.0..=200.0).contains(&width)))
         || r.properties.straighten
         || r.properties.rainbow_effect
         || s.points.len() < 2
@@ -874,7 +878,10 @@ pub(super) fn prepare_v1_bounded(
         previous_time: s.timestamps[0],
         movement: 0.,
         width: 0.,
-        fixed_width_radius: None,
+        fixed_width_radius: r
+            .properties
+            .fixed_width
+            .then(|| r.style.fixed_width.unwrap() * 0.5),
         alternate: false,
         max_generated_dots: max_generated_dots.min(MAX_GENERATED_DOTS),
         points: Vec::new(),
@@ -3243,5 +3250,276 @@ mod tests {
             let g = error(&raster(&generic));
             assert!(c < g, "candidate RGBA error {c}, generic {g}");
         }
+    }
+    #[cfg(feature = "pdf")]
+    mod fixed_width_export_tests {
+        include!("inkpen/fixed_width_export_tests.rs");
+    }
+
+    #[test]
+    fn v1_fixed_width_matches_native_streams_and_rejects_invalid_widths() {
+        let mut fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-fixed-width-native.json"
+        ))
+        .unwrap();
+        let extended: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-fixed-width-extended-native.json"
+        ))
+        .unwrap();
+        fixture["cases"]
+            .as_array_mut()
+            .unwrap()
+            .extend(extended["cases"].as_array().unwrap().iter().cloned());
+        for invalid in [
+            None,
+            Some(-1.0),
+            Some(f32::NAN),
+            Some(f32::INFINITY),
+            Some(f32::NEG_INFINITY),
+            Some(200.0_f32.next_up()),
+        ] {
+            let mut stroke = native_caller_stroke(&fixture["cases"][0]["input"]);
+            let r = stroke.rendering.as_mut().unwrap();
+            r.properties.fixed_width = true;
+            r.style.fixed_width = invalid;
+            assert!(
+                prepare_v1(
+                    &stroke,
+                    RuntimeContext {
+                        curve_enabled: true,
+                        screen_width: 1920,
+                        screen_height: 1080
+                    }
+                )
+                .is_none(),
+                "invalid fixed width {invalid:?}"
+            );
+            assert!(
+                crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(&stroke, true).is_none(),
+                "public fixed width {invalid:?}"
+            );
+        }
+        for (i, case) in fixture["cases"].as_array().unwrap().iter().enumerate() {
+            let mut stroke = native_caller_stroke(&case["input"]);
+            let r = stroke.rendering.as_mut().unwrap();
+            r.properties.fixed_width = true;
+            r.style.fixed_width = Some(case["width"].as_f64().unwrap() as f32);
+            r.style.color_argb = Some(0xff000000);
+            let ink = prepare_v1(
+                &stroke,
+                RuntimeContext {
+                    curve_enabled: case["curve"].as_bool().unwrap(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                },
+            )
+            .unwrap();
+            let stream = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+                .as_array()
+                .unwrap();
+            let mut matched = stream.len() == ink.points.len() * 3;
+            if matched {
+                for (j, p) in ink.points.iter().enumerate() {
+                    matched &= (p.x as f32).to_bits()
+                        == native_f32(stream[3 * j].as_str().unwrap()).to_bits()
+                        && (p.y as f32).to_bits()
+                            == native_f32(stream[3 * j + 1].as_str().unwrap()).to_bits()
+                        && ink.radii[j].to_bits()
+                            == native_f32(stream[3 * j + 2].as_str().unwrap()).to_bits();
+                }
+            }
+            assert!(matched, "case {i}: native stream differs");
+            assert!(
+                crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(&stroke, true).is_some(),
+                "case {i}: public admission"
+            );
+        }
+    }
+
+    #[test]
+    fn v1_fixed_width_matches_native_replay_boundaries() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-fixed-width-boundaries-native.json"
+        ))
+        .unwrap();
+        for (i, case) in fixture["cases"].as_array().unwrap().iter().enumerate() {
+            let mut stroke = native_caller_stroke(&case["input"]);
+            let r = stroke.rendering.as_mut().unwrap();
+            r.properties.fixed_width = true;
+            r.style.fixed_width = Some(case["width"].as_f64().unwrap() as f32);
+            let ink = prepare_v1(
+                &stroke,
+                RuntimeContext {
+                    curve_enabled: case["curve"].as_bool().unwrap(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                },
+            )
+            .unwrap();
+            let packed = ink
+                .points
+                .iter()
+                .zip(&ink.radii)
+                .flat_map(|(point, r)| [point.x as f32, point.y as f32, *r])
+                .flat_map(f32::to_le_bytes)
+                .map(|b| format!("{b:02x}"))
+                .collect::<String>();
+            let expected = case["stream"]["values_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap())
+                .collect::<String>();
+            let curve = case["curve"].as_bool().unwrap();
+            let trace = case[if curve { "trace" } else { "no_curve_trace" }]
+                .as_array()
+                .unwrap();
+            assert_eq!(packed, expected, "case {i}: stream");
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                let method = if curve {
+                    "reDrawLine"
+                } else {
+                    "drawLine_NoCurve"
+                };
+                let mut ends = vec![0];
+                for event in trace
+                    .iter()
+                    .filter(|event| event["phase"] == phase && event["method"] == method)
+                {
+                    let end = event["after_record_count"].as_u64().unwrap() as usize;
+                    assert_eq!(
+                        event["after_stream_bytes"],
+                        &packed[..end * 24],
+                        "case {i}: {phase} prefix"
+                    );
+                    ends.push(end);
+                }
+                assert_eq!(ink.sample_ends, ends, "case {i}: {phase} sample ends");
+                let terminal = case["summary"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|x| x["phase"] == phase)
+                    .unwrap()["terminal"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_u64().unwrap() as usize)
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    ink.terminal,
+                    terminal[0]..terminal[1],
+                    "case {i}: {phase} terminal"
+                );
+            }
+        }
+    }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v1_fixed_width_requires_opt_in_for_public_exports_and_replay() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-fixed-width-native.json"
+        ))
+        .unwrap();
+        let mut stroke = native_caller_stroke(&fixture["cases"][3]["input"]);
+        let r = stroke.rendering.as_mut().unwrap();
+        r.properties.fixed_width = true;
+        r.style.fixed_width = Some(6.0);
+        r.style.color_argb = Some(0xff000000);
+        let make_document = |s: Stroke| crate::Document {
+            pages: vec![crate::Page {
+                uuid: "fixed-width".into(),
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![s.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let document = make_document(stroke.clone());
+        let mut generic = stroke.clone();
+        generic.rendering.as_mut().unwrap().advanced_settings = Some("unsupported".into());
+        let fallback = make_document(generic);
+        let defaults = crate::RenderOptions::default();
+        let svg = crate::render_document_svg(&document, &defaults)
+            .remove(0)
+            .svg;
+        let pdf = crate::render_document_pdf(&document, &defaults, &crate::PdfOptions::default())
+            .unwrap();
+        assert_eq!(
+            svg,
+            crate::render_document_svg(&fallback, &defaults)
+                .remove(0)
+                .svg
+        );
+        assert_eq!(
+            pdf,
+            crate::render_document_pdf(&fallback, &defaults, &crate::PdfOptions::default())
+                .unwrap()
+        );
+        let default_replay = crate::prepare_stroke_for_page_with_theme(
+            &stroke,
+            crate::RenderTheme::resolve(
+                &document.pages[0],
+                &document.metadata,
+                crate::RenderColorMode::Light,
+            ),
+            &defaults,
+        );
+        let legacy_replay = crate::prepare_stroke_for_page(&stroke, false);
+        assert_eq!(format!("{default_replay:?}"), format!("{legacy_replay:?}"));
+        for scale in [0, 5, u32::MAX] {
+            let options = crate::RenderOptions {
+                inkpen_v1_output_scale: Some(scale),
+                ..Default::default()
+            };
+            assert_eq!(
+                svg,
+                crate::render_document_svg(&document, &options)
+                    .remove(0)
+                    .svg
+            );
+            assert_eq!(
+                pdf,
+                crate::render_document_pdf(&document, &options, &crate::PdfOptions::default())
+                    .unwrap()
+            );
+            let replay = crate::prepare_stroke_for_page_with_theme(
+                &stroke,
+                crate::RenderTheme::resolve(
+                    &document.pages[0],
+                    &document.metadata,
+                    crate::RenderColorMode::Light,
+                ),
+                &options,
+            );
+            assert_eq!(format!("{default_replay:?}"), format!("{replay:?}"));
+        }
+        let opted = crate::RenderOptions {
+            inkpen_v1_output_scale: Some(1),
+            ..Default::default()
+        };
+        assert_ne!(
+            svg,
+            crate::render_document_svg(&document, &opted).remove(0).svg
+        );
+        assert_ne!(
+            pdf,
+            crate::render_document_pdf(&document, &opted, &crate::PdfOptions::default()).unwrap()
+        );
+        let replay = crate::prepare_stroke_for_page_with_theme(
+            &stroke,
+            crate::RenderTheme::resolve(
+                &document.pages[0],
+                &document.metadata,
+                crate::RenderColorMode::Light,
+            ),
+            &opted,
+        );
+        assert_eq!(replay.profile, Some("InkPen"));
+        assert_ne!(replay.points, default_replay.points);
     }
 }

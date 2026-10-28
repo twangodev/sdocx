@@ -223,6 +223,13 @@ pub(crate) struct PreparedInkPenV1 {
 }
 
 pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkPenV1> {
+    prepare_inkpen_v1_for_page_with_fixed_width(stroke, false)
+}
+
+pub(crate) fn prepare_inkpen_v1_for_page_with_fixed_width(
+    stroke: &Stroke,
+    fixed_width_enabled: bool,
+) -> Option<PreparedInkPenV1> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
     let argb = rendering.style.color_argb.unwrap_or(0xff00_0000);
@@ -231,7 +238,7 @@ pub(crate) fn prepare_inkpen_v1_for_page(stroke: &Stroke) -> Option<PreparedInkP
         || rendering.tool_type_raw > 4
         || properties.replay_only
         || properties.eraser
-        || properties.fixed_width
+        || (properties.fixed_width && !fixed_width_enabled)
         || properties.top_layer_pen
         || properties.alpha_lock
         || properties.fixed_opacity

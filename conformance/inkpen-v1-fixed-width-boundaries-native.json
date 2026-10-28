@@ -1,0 +1,2728 @@
+{
+  "schema": "sdocx-inkpen-v1-fixed-width-boundaries-v1",
+  "scope": "Synthetic native Drawing event return prefixes; not saved-note or device parity",
+  "cases": [
+    {
+      "width": 0.5,
+      "tool": 1,
+      "curve": true,
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ],
+          [
+            "0000e041",
+            "00006041"
+          ],
+          [
+            "00002042",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "tool_type": 1
+      },
+      "summary": [
+        {
+          "phase": "draw_object_stroke",
+          "sample_ends": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "terminal": [
+            16,
+            35
+          ],
+          "sample_added": [
+            0,
+            0,
+            16,
+            0
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        },
+        {
+          "phase": "saved_redraw",
+          "sample_ends": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "terminal": [
+            16,
+            35
+          ],
+          "sample_added": [
+            0,
+            0,
+            16,
+            0
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        }
+      ],
+      "stream": {
+        "callback_count": 35,
+        "float_count": 105,
+        "sha256": "cb73a802571cf123b2fe1189a0960e8204a0b22e9a939c8bcbeb03bb189549a3",
+        "values_f32_bits": [
+          "00000000",
+          "00000000",
+          "0000c03f",
+          "cb5aa53f",
+          "45cdf03c",
+          "0000c03f",
+          "31d12440",
+          "45cdf03d",
+          "0000c03f",
+          "626b7640",
+          "7673873e",
+          "0000c03f",
+          "fdbda340",
+          "45cdf03e",
+          "0000c03f",
+          "7c01cc40",
+          "5e203c3f",
+          "0000c03f",
+          "2f00f440",
+          "7873873f",
+          "0000c03f",
+          "0add0d41",
+          "2a5db83f",
+          "0000c03f",
+          "63352141",
+          "fda0ef3f",
+          "0000c03f",
+          "28773341",
+          "da691540",
+          "0000c03f",
+          "169b4541",
+          "cc463640",
+          "0000c03f",
+          "2ca15741",
+          "57675a40",
+          "0000c03f",
+          "6b896941",
+          "bce58040",
+          "0000c03f",
+          "d1537b41",
+          "97399640",
+          "0000c03f",
+          "30808641",
+          "412fad40",
+          "0000c03f",
+          "8c478f41",
+          "b5c6c540",
+          "0000c03f",
+          "00009841",
+          "0000e040",
+          "0000c03f",
+          "2b1da141",
+          "c96cf940",
+          "0000c03f",
+          "8a6aaa41",
+          "d5c90641",
+          "0000c03f",
+          "21e8b341",
+          "503a0e41",
+          "0000c03f",
+          "5696bd41",
+          "fe071341",
+          "0000c03f",
+          "90a2c741",
+          "46361541",
+          "0000c03f",
+          "c2e0d141",
+          "eda81441",
+          "0000c03f",
+          "ed50dc41",
+          "f35f1141",
+          "0000c03f",
+          "c5c5e641",
+          "6c7a0b41",
+          "0000c03f",
+          "7e92ef41",
+          "a2980441",
+          "0000c03f",
+          "5a80f841",
+          "fccdf740",
+          "0000c03f",
+          "abc70042",
+          "02cbe240",
+          "0000c03f",
+          "bb5f0542",
+          "5628ca40",
+          "0000c03f",
+          "d3bb0942",
+          "e1ceaf40",
+          "0000c03f",
+          "76590d42",
+          "88d79740",
+          "0000c03f",
+          "dc001142",
+          "bf7b7b40",
+          "0000c03f",
+          "03b21442",
+          "c3034340",
+          "0000c03f",
+          "eb6c1842",
+          "2f470640",
+          "0000c03f",
+          "94311c42",
+          "eb8b8a3f",
+          "0000c03f"
+        ]
+      },
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetAdvancedPenSetting() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dec00"
+        },
+        "SPen::ObjectStroke::GetColor() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0ac0"
+        },
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenName() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2de974"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "trace": [
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 16,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 19,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f000098410000e0400000c03f2b1da141c96cf9400000c03f8a6aaa41d5c906410000c03f21e8b341503a0e410000c03f5696bd41fe0713410000c03f90a2c741463615410000c03fc2e0d141eda814410000c03fed50dc41f35f11410000c03fc5c5e6416c7a0b410000c03f7e92ef41a29804410000c03f5a80f841fccdf7400000c03fabc7004202cbe2400000c03fbb5f05425628ca400000c03fd3bb0942e1ceaf400000c03f76590d4288d797400000c03fdc001142bf7b7b400000c03f03b21442c30343400000c03feb6c18422f4706400000c03f94311c42eb8b8a3f0000c03f",
+          "args_s0_s2_bits": [
+            "0x10036450",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 16,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 19,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000c03fcb5aa53f45cdf03c0000c03f31d1244045cdf03d0000c03f626b76407673873e0000c03ffdbda34045cdf03e0000c03f7c01cc405e203c3f0000c03f2f00f4407873873f0000c03f0add0d412a5db83f0000c03f63352141fda0ef3f0000c03f28773341da6915400000c03f169b4541cc4636400000c03f2ca1574157675a400000c03f6b896941bce580400000c03fd1537b41973996400000c03f30808641412fad400000c03f8c478f41b5c6c5400000c03f000098410000e0400000c03f2b1da141c96cf9400000c03f8a6aaa41d5c906410000c03f21e8b341503a0e410000c03f5696bd41fe0713410000c03f90a2c741463615410000c03fc2e0d141eda814410000c03fed50dc41f35f11410000c03fc5c5e6416c7a0b410000c03f7e92ef41a29804410000c03f5a80f841fccdf7400000c03fabc7004202cbe2400000c03fbb5f05425628ca400000c03fd3bb0942e1ceaf400000c03f76590d4288d797400000c03fdc001142bf7b7b400000c03f03b21442c30343400000c03feb6c18422f4706400000c03f94311c42eb8b8a3f0000c03f",
+          "args_s0_s2_bits": [
+            "0x10037300",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        }
+      ],
+      "no_curve_trace": []
+    },
+    {
+      "width": 6,
+      "tool": 1,
+      "curve": true,
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ],
+          [
+            "0000e041",
+            "00006041"
+          ],
+          [
+            "00002042",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "tool_type": 1
+      },
+      "summary": [
+        {
+          "phase": "draw_object_stroke",
+          "sample_ends": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "terminal": [
+            16,
+            35
+          ],
+          "sample_added": [
+            0,
+            0,
+            16,
+            0
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        },
+        {
+          "phase": "saved_redraw",
+          "sample_ends": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "terminal": [
+            16,
+            35
+          ],
+          "sample_added": [
+            0,
+            0,
+            16,
+            0
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        }
+      ],
+      "stream": {
+        "callback_count": 35,
+        "float_count": 105,
+        "sha256": "790c2b854406383eaa6930091eef1eff6b47ceb41911b80dba6d79bde1c66bdd",
+        "values_f32_bits": [
+          "00000000",
+          "00000000",
+          "00006040",
+          "cb5aa53f",
+          "45cdf03c",
+          "00006040",
+          "31d12440",
+          "45cdf03d",
+          "00006040",
+          "626b7640",
+          "7673873e",
+          "00006040",
+          "fdbda340",
+          "45cdf03e",
+          "00006040",
+          "7c01cc40",
+          "5e203c3f",
+          "00006040",
+          "2f00f440",
+          "7873873f",
+          "00006040",
+          "0add0d41",
+          "2a5db83f",
+          "00006040",
+          "63352141",
+          "fda0ef3f",
+          "00006040",
+          "28773341",
+          "da691540",
+          "00006040",
+          "169b4541",
+          "cc463640",
+          "00006040",
+          "2ca15741",
+          "57675a40",
+          "00006040",
+          "6b896941",
+          "bce58040",
+          "00006040",
+          "d1537b41",
+          "97399640",
+          "00006040",
+          "30808641",
+          "412fad40",
+          "00006040",
+          "8c478f41",
+          "b5c6c540",
+          "00006040",
+          "00009841",
+          "0000e040",
+          "00006040",
+          "2b1da141",
+          "c96cf940",
+          "00006040",
+          "8a6aaa41",
+          "d5c90641",
+          "00006040",
+          "21e8b341",
+          "503a0e41",
+          "00006040",
+          "5696bd41",
+          "fe071341",
+          "00006040",
+          "90a2c741",
+          "46361541",
+          "00006040",
+          "c2e0d141",
+          "eda81441",
+          "00006040",
+          "ed50dc41",
+          "f35f1141",
+          "00006040",
+          "c5c5e641",
+          "6c7a0b41",
+          "00006040",
+          "7e92ef41",
+          "a2980441",
+          "00006040",
+          "5a80f841",
+          "fccdf740",
+          "00006040",
+          "abc70042",
+          "02cbe240",
+          "00006040",
+          "bb5f0542",
+          "5628ca40",
+          "00006040",
+          "d3bb0942",
+          "e1ceaf40",
+          "00006040",
+          "76590d42",
+          "88d79740",
+          "00006040",
+          "dc001142",
+          "bf7b7b40",
+          "00006040",
+          "03b21442",
+          "c3034340",
+          "00006040",
+          "eb6c1842",
+          "2f470640",
+          "00006040",
+          "94311c42",
+          "eb8b8a3f",
+          "00006040"
+        ]
+      },
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetAdvancedPenSetting() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dec00"
+        },
+        "SPen::ObjectStroke::GetColor() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0ac0"
+        },
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenName() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2de974"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "trace": [
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 16,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 19,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040000098410000e040000060402b1da141c96cf940000060408a6aaa41d5c906410000604021e8b341503a0e41000060405696bd41fe0713410000604090a2c7414636154100006040c2e0d141eda8144100006040ed50dc41f35f114100006040c5c5e6416c7a0b41000060407e92ef41a2980441000060405a80f841fccdf74000006040abc7004202cbe24000006040bb5f05425628ca4000006040d3bb0942e1ceaf400000604076590d4288d7974000006040dc001142bf7b7b400000604003b21442c303434000006040eb6c18422f4706400000604094311c42eb8b8a3f00006040",
+          "args_s0_s2_bits": [
+            "0x10036450",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 16,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 192,
+          "after_record_count": 16,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        },
+        {
+          "added_record_count": 19,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040cb5aa53f45cdf03c0000604031d1244045cdf03d00006040626b76407673873e00006040fdbda34045cdf03e000060407c01cc405e203c3f000060402f00f4407873873f000060400add0d412a5db83f0000604063352141fda0ef3f0000604028773341da69154000006040169b4541cc463640000060402ca1574157675a40000060406b896941bce5804000006040d1537b41973996400000604030808641412fad40000060408c478f41b5c6c54000006040000098410000e040000060402b1da141c96cf940000060408a6aaa41d5c906410000604021e8b341503a0e41000060405696bd41fe0713410000604090a2c7414636154100006040c2e0d141eda8144100006040ed50dc41f35f114100006040c5c5e6416c7a0b41000060407e92ef41a2980441000060405a80f841fccdf74000006040abc7004202cbe24000006040bb5f05425628ca4000006040d3bb0942e1ceaf400000604076590d4288d7974000006040dc001142bf7b7b400000604003b21442c303434000006040eb6c18422f4706400000604094311c42eb8b8a3f00006040",
+          "args_s0_s2_bits": [
+            "0x10037300",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 192,
+          "before_record_count": 16,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268660688,
+          "vector_object": "0x10036fd0"
+        }
+      ],
+      "no_curve_trace": []
+    },
+    {
+      "width": 30,
+      "tool": 3,
+      "curve": true,
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ],
+          [
+            "0000e041",
+            "00006041"
+          ],
+          [
+            "00002042",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "tool_type": 3
+      },
+      "summary": [
+        {
+          "phase": "draw_object_stroke",
+          "sample_ends": [
+            0,
+            13,
+            22,
+            31
+          ],
+          "terminal": [
+            31,
+            38
+          ],
+          "sample_added": [
+            0,
+            13,
+            9,
+            9
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 38
+        },
+        {
+          "phase": "saved_redraw",
+          "sample_ends": [
+            0,
+            13,
+            22,
+            31
+          ],
+          "terminal": [
+            31,
+            38
+          ],
+          "sample_added": [
+            0,
+            13,
+            9,
+            9
+          ],
+          "boundary_granularity": "one native reDrawLine return per source index 1..N-1",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 38
+        }
+      ],
+      "stream": {
+        "callback_count": 38,
+        "float_count": 114,
+        "sha256": "4894fdc9fc79f6a24447a50f960f2781393d09cf3693d703d4845f121f001017",
+        "values_f32_bits": [
+          "00000000",
+          "00000000",
+          "00007841",
+          "6b7fb03f",
+          "4bb6c93c",
+          "00007841",
+          "92582d40",
+          "4bb6c93d",
+          "00007841",
+          "944a7f40",
+          "14ed623e",
+          "00007841",
+          "df0aa740",
+          "4bb6c93e",
+          "00007841",
+          "06ddcc40",
+          "69961d3f",
+          "00007841",
+          "c11bf140",
+          "11ed623f",
+          "00007841",
+          "88e30941",
+          "8f6f9a3f",
+          "00007841",
+          "f76d1d41",
+          "1e36d33f",
+          "00007841",
+          "e9423041",
+          "a9360b40",
+          "00007841",
+          "2fef4141",
+          "f2743140",
+          "00007841",
+          "ca725241",
+          "eb555c40",
+          "00007841",
+          "b8cd6141",
+          "caec8540",
+          "00007841",
+          "00007041",
+          "0000a040",
+          "00007841",
+          "01ca7f41",
+          "3bf1be40",
+          "00007841",
+          "4fa18741",
+          "20fadb40",
+          "00007841",
+          "ec348f41",
+          "b01af740",
+          "00007841",
+          "d79f9641",
+          "76290841",
+          "00007841",
+          "11e29d41",
+          "69d11341",
+          "00007841",
+          "91c4a641",
+          "c9182141",
+          "00007841",
+          "3c6eaf41",
+          "ffe82c41",
+          "00007841",
+          "60d7b741",
+          "11363741",
+          "00007841",
+          "0000c041",
+          "00004041",
+          "00007841",
+          "a828ca41",
+          "3b6b4641",
+          "00007841",
+          "f78fd441",
+          "73434641",
+          "00007841",
+          "8fb8de41",
+          "dcb44041",
+          "00007841",
+          "3537e841",
+          "ab6f3741",
+          "00007841",
+          "c5e1f041",
+          "47ff2b41",
+          "00007841",
+          "8eb1f941",
+          "78cb1d41",
+          "00007841",
+          "d5750042",
+          "ed671041",
+          "00007841",
+          "932d0442",
+          "1b240141",
+          "00007841",
+          "00000842",
+          "0000e040",
+          "00007841",
+          "ab2d0c42",
+          "6800b940",
+          "00007841",
+          "5fd70f42",
+          "85d09640",
+          "00007841",
+          "cb051342",
+          "813e7240",
+          "00007841",
+          "a0c11542",
+          "07373f40",
+          "00007841",
+          "2ed81942",
+          "97cee53f",
+          "00007841",
+          "86b81c42",
+          "e2d8743f",
+          "00007841"
+        ]
+      },
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetAdvancedPenSetting() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dec00"
+        },
+        "SPen::ObjectStroke::GetColor() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0ac0"
+        },
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenName() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2de974"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "trace": [
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 13,
+          "after_count_bytes": 156,
+          "after_record_count": 13,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 264,
+          "after_record_count": 22,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b7411136374100007841",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 156,
+          "before_record_count": 13,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 372,
+          "after_record_count": 31,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b74111363741000078410000c0410000404100007841a828ca413b6b464100007841f78fd44173434641000078418fb8de41dcb44041000078413537e841ab6f374100007841c5e1f04147ff2b41000078418eb1f94178cb1d4100007841d5750042ed67104100007841932d04421b24014100007841",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 264,
+          "before_record_count": 22,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 7,
+          "after_count_bytes": 456,
+          "after_record_count": 38,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b74111363741000078410000c0410000404100007841a828ca413b6b464100007841f78fd44173434641000078418fb8de41dcb44041000078413537e841ab6f374100007841c5e1f04147ff2b41000078418eb1f94178cb1d4100007841d5750042ed67104100007841932d04421b24014100007841000008420000e04000007841ab2d0c426800b940000078415fd70f4285d0964000007841cb051342813e724000007841a0c1154207373f40000078412ed8194297cee53f0000784186b81c42e2d8743f00007841",
+          "args_s0_s2_bits": [
+            "0x10036670",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 372,
+          "before_record_count": 31,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268656832,
+          "vector_object": "0x100360c0"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 0,
+          "after_record_count": 0,
+          "after_stream_bytes": "",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 1,
+          "vector_obj": 268660720,
+          "vector_object": "0x10036ff0"
+        },
+        {
+          "added_record_count": 13,
+          "after_count_bytes": 156,
+          "after_record_count": 13,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 2,
+          "vector_obj": 268660720,
+          "vector_object": "0x10036ff0"
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 264,
+          "after_record_count": 22,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b7411136374100007841",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 156,
+          "before_record_count": 13,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 3,
+          "vector_obj": 268660720,
+          "vector_object": "0x10036ff0"
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 372,
+          "after_record_count": 31,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b74111363741000078410000c0410000404100007841a828ca413b6b464100007841f78fd44173434641000078418fb8de41dcb44041000078413537e841ab6f374100007841c5e1f04147ff2b41000078418eb1f94178cb1d4100007841d5750042ed67104100007841932d04421b24014100007841",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f000000"
+          ],
+          "before_count_bytes": 264,
+          "before_record_count": 22,
+          "entry_pc": "0x5026fa8",
+          "method": "reDrawLine",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x7fff",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027544",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawLine(float, float, float, long long, SPen::RectF*)",
+          "source_history_index": 4,
+          "vector_obj": 268660720,
+          "vector_object": "0x10036ff0"
+        },
+        {
+          "added_record_count": 7,
+          "after_count_bytes": 456,
+          "after_record_count": 38,
+          "after_stream_bytes": "0000000000000000000078416b7fb03f4bb6c93c0000784192582d404bb6c93d00007841944a7f4014ed623e00007841df0aa7404bb6c93e0000784106ddcc4069961d3f00007841c11bf14011ed623f0000784188e309418f6f9a3f00007841f76d1d411e36d33f00007841e9423041a9360b40000078412fef4141f274314000007841ca725241eb555c4000007841b8cd6141caec854000007841000070410000a0400000784101ca7f413bf1be40000078414fa1874120fadb4000007841ec348f41b01af74000007841d79f9641762908410000784111e29d4169d113410000784191c4a641c9182141000078413c6eaf41ffe82c410000784160d7b74111363741000078410000c0410000404100007841a828ca413b6b464100007841f78fd44173434641000078418fb8de41dcb44041000078413537e841ab6f374100007841c5e1f04147ff2b41000078418eb1f94178cb1d4100007841d5750042ed67104100007841932d04421b24014100007841000008420000e04000007841ab2d0c426800b940000078415fd70f4285d0964000007841cb051342813e724000007841a0c1154207373f40000078412ed8194297cee53f0000784186b81c42e2d8743f00007841",
+          "args_s0_s2_bits": [
+            "0x10037520",
+            "0xb",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 372,
+          "before_record_count": 31,
+          "entry_pc": "0x502599c",
+          "method": "endPen",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034c00",
+          "return_pc": "0x5027618",
+          "rt": "0x10035970",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268660720,
+          "vector_object": "0x10036ff0"
+        }
+      ],
+      "no_curve_trace": []
+    },
+    {
+      "width": 6,
+      "tool": 0,
+      "curve": false,
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": false,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ],
+          [
+            "0000e041",
+            "00006041"
+          ],
+          [
+            "00002042",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "tool_type": 0
+      },
+      "summary": [
+        {
+          "phase": "draw_object_stroke",
+          "sample_ends": [
+            0,
+            9,
+            21,
+            25,
+            35
+          ],
+          "terminal": [
+            35,
+            35
+          ],
+          "sample_added": [
+            9,
+            12,
+            4,
+            10
+          ],
+          "history_batch": [
+            0,
+            35
+          ],
+          "segment_return_method": "drawLine_NoCurve",
+          "boundary_granularity": "per-source history segment drawLine_NoCurve return; source index follows ordered calls and is checked against current XY registers",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        },
+        {
+          "phase": "saved_redraw",
+          "sample_ends": [
+            0,
+            9,
+            21,
+            25,
+            35
+          ],
+          "terminal": [
+            35,
+            35
+          ],
+          "sample_added": [
+            9,
+            12,
+            4,
+            10
+          ],
+          "history_batch": [
+            0,
+            35
+          ],
+          "segment_return_method": "drawLine_NoCurve",
+          "boundary_granularity": "per-source history segment drawLine_NoCurve return; source index follows ordered calls and is checked against current XY registers",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        }
+      ],
+      "stream": {
+        "callback_count": 35,
+        "float_count": 105,
+        "sha256": "3b15f50815a155038d68991ffb2b4e339a069b46b1782b680d5f495f259c7528",
+        "values_f32_bits": [
+          "00000000",
+          "00000000",
+          "00006040",
+          "e1388e3f",
+          "00000000",
+          "00006040",
+          "e1380e40",
+          "00000000",
+          "00006040",
+          "51555540",
+          "00000000",
+          "00006040",
+          "e1388e40",
+          "00000000",
+          "00006040",
+          "19c7b140",
+          "00000000",
+          "00006040",
+          "5155d540",
+          "00000000",
+          "00006040",
+          "8ae3f840",
+          "00000000",
+          "00006040",
+          "e1380e41",
+          "00000000",
+          "00006040",
+          "00002041",
+          "00000000",
+          "00006040",
+          "55552d41",
+          "5055553f",
+          "00006040",
+          "aaaa3a41",
+          "5055d53f",
+          "00006040",
+          "ffff4741",
+          "fcff1f40",
+          "00006040",
+          "54555541",
+          "50555540",
+          "00006040",
+          "a9aa6241",
+          "52558540",
+          "00006040",
+          "feff6f41",
+          "fcff9f40",
+          "00006040",
+          "53557d41",
+          "a5aaba40",
+          "00006040",
+          "54558541",
+          "5055d540",
+          "00006040",
+          "feff8b41",
+          "faffef40",
+          "00006040",
+          "a9aa9241",
+          "53550541",
+          "00006040",
+          "54559941",
+          "a8aa1241",
+          "00006040",
+          "0000a041",
+          "00002041",
+          "00006040",
+          "0000b041",
+          "00003041",
+          "00006040",
+          "ffffbf41",
+          "ffff3f41",
+          "00006040",
+          "ffffcf41",
+          "ffff4f41",
+          "00006040",
+          "0000e041",
+          "00006041",
+          "00006040",
+          "9999e941",
+          "9a994941",
+          "00006040",
+          "3333f341",
+          "34333341",
+          "00006040",
+          "ccccfc41",
+          "cecc1c41",
+          "00006040",
+          "33330342",
+          "68660641",
+          "00006040",
+          "00000842",
+          "0400e040",
+          "00006040",
+          "cccc0c42",
+          "3a33b340",
+          "00006040",
+          "99991142",
+          "6c668640",
+          "00006040",
+          "66661642",
+          "40333340",
+          "00006040",
+          "32331b42",
+          "5233b33f",
+          "00006040"
+        ]
+      },
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetAdvancedPenSetting() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dec00"
+        },
+        "SPen::ObjectStroke::GetColor() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0ac0"
+        },
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenName() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2de974"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "trace": [
+        {
+          "added_record_count": 35,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "args_s0_s2_bits": [
+            "0x0",
+            "0x0",
+            "0x437f0000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x50279b8",
+          "method": "reDrawPen_NoCurve",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027760",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawPen_NoCurve(SPen::ObjectStroke const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268657296,
+          "vector_object": "0x10036290"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "args_s0_s2_bits": [
+            "0x100367f0",
+            "0xb",
+            "0x0"
+          ],
+          "before_count_bytes": 420,
+          "before_record_count": 35,
+          "entry_pc": "0x5025db8",
+          "method": "endPen_NoCurve",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027b88",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen_NoCurve(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268657296,
+          "vector_object": "0x10036290"
+        },
+        {
+          "added_record_count": 35,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "args_s0_s2_bits": [
+            "0x0",
+            "0x0",
+            "0x437f0000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x50279b8",
+          "method": "reDrawPen_NoCurve",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027760",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawPen_NoCurve(SPen::ObjectStroke const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268661072,
+          "vector_object": "0x10037150"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "args_s0_s2_bits": [
+            "0x10037680",
+            "0xb",
+            "0x0"
+          ],
+          "before_count_bytes": 420,
+          "before_record_count": 35,
+          "entry_pc": "0x5025db8",
+          "method": "endPen_NoCurve",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027b88",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen_NoCurve(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268661072,
+          "vector_object": "0x10037150"
+        }
+      ],
+      "no_curve_trace": [
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 108,
+          "after_record_count": 9,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e410000000000006040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3ecccccd"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 0,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 12,
+          "after_count_bytes": 252,
+          "after_record_count": 21,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa124100006040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f19999a"
+          ],
+          "before_count_bytes": 108,
+          "before_record_count": 9,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 1,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 4,
+          "after_count_bytes": 300,
+          "after_record_count": 25,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f4100006040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f4ccccd"
+          ],
+          "before_count_bytes": 252,
+          "before_record_count": 21,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 2,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 10,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 300,
+          "before_record_count": 25,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 3,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 108,
+          "after_record_count": 9,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e410000000000006040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3ecccccd"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 0,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 12,
+          "after_count_bytes": 252,
+          "after_record_count": 21,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa124100006040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f19999a"
+          ],
+          "before_count_bytes": 108,
+          "before_record_count": 9,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 1,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 4,
+          "after_count_bytes": 300,
+          "after_record_count": 25,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f4100006040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f4ccccd"
+          ],
+          "before_count_bytes": 252,
+          "before_record_count": 21,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 2,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 10,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "000000000000000000006040e1388e3f0000000000006040e1380e400000000000006040515555400000000000006040e1388e40000000000000604019c7b14000000000000060405155d54000000000000060408ae3f8400000000000006040e1380e41000000000000604000002041000000000000604055552d415055553f00006040aaaa3a415055d53f00006040ffff4741fcff1f4000006040545555415055554000006040a9aa62415255854000006040feff6f41fcff9f400000604053557d41a5aaba4000006040545585415055d54000006040feff8b41faffef4000006040a9aa9241535505410000604054559941a8aa1241000060400000a04100002041000060400000b0410000304100006040ffffbf41ffff3f4100006040ffffcf41ffff4f41000060400000e04100006041000060409999e9419a994941000060403333f3413433334100006040ccccfc41cecc1c4100006040333303426866064100006040000008420400e04000006040cccc0c423a33b34000006040999911426c6686400000604066661642403333400000604032331b425233b33f00006040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 300,
+          "before_record_count": 25,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 3,
+          "vector_obj": 268661072
+        }
+      ]
+    },
+    {
+      "width": 12,
+      "tool": 4,
+      "curve": false,
+      "input": {
+        "advanced_getter_object_hex": null,
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_getter_utf8": null,
+        "advanced_setting_state": "null",
+        "curve_enabled": false,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+        "pen_size_f32_bits": "00002041",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "00002041",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00002041"
+          ],
+          [
+            "0000e041",
+            "00006041"
+          ],
+          [
+            "00002042",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f",
+          "cdcc4c3f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "tool_type": 4
+      },
+      "summary": [
+        {
+          "phase": "draw_object_stroke",
+          "sample_ends": [
+            0,
+            9,
+            21,
+            25,
+            35
+          ],
+          "terminal": [
+            35,
+            35
+          ],
+          "sample_added": [
+            9,
+            12,
+            4,
+            10
+          ],
+          "history_batch": [
+            0,
+            35
+          ],
+          "segment_return_method": "drawLine_NoCurve",
+          "boundary_granularity": "per-source history segment drawLine_NoCurve return; source index follows ordered calls and is checked against current XY registers",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        },
+        {
+          "phase": "saved_redraw",
+          "sample_ends": [
+            0,
+            9,
+            21,
+            25,
+            35
+          ],
+          "terminal": [
+            35,
+            35
+          ],
+          "sample_added": [
+            9,
+            12,
+            4,
+            10
+          ],
+          "history_batch": [
+            0,
+            35
+          ],
+          "segment_return_method": "drawLine_NoCurve",
+          "boundary_granularity": "per-source history segment drawLine_NoCurve return; source index follows ordered calls and is checked against current XY registers",
+          "event_prefixes_match_final_stream": true,
+          "native_final_count": 35
+        }
+      ],
+      "stream": {
+        "callback_count": 35,
+        "float_count": 105,
+        "sha256": "6e7890b6aca2bfeb3e65a0e36294c90b0f6ce8ac34a2ada3626c17082f11e7a7",
+        "values_f32_bits": [
+          "00000000",
+          "00000000",
+          "0000d040",
+          "e1388e3f",
+          "00000000",
+          "0000d040",
+          "e1380e40",
+          "00000000",
+          "0000d040",
+          "51555540",
+          "00000000",
+          "0000d040",
+          "e1388e40",
+          "00000000",
+          "0000d040",
+          "19c7b140",
+          "00000000",
+          "0000d040",
+          "5155d540",
+          "00000000",
+          "0000d040",
+          "8ae3f840",
+          "00000000",
+          "0000d040",
+          "e1380e41",
+          "00000000",
+          "0000d040",
+          "00002041",
+          "00000000",
+          "0000d040",
+          "55552d41",
+          "5055553f",
+          "0000d040",
+          "aaaa3a41",
+          "5055d53f",
+          "0000d040",
+          "ffff4741",
+          "fcff1f40",
+          "0000d040",
+          "54555541",
+          "50555540",
+          "0000d040",
+          "a9aa6241",
+          "52558540",
+          "0000d040",
+          "feff6f41",
+          "fcff9f40",
+          "0000d040",
+          "53557d41",
+          "a5aaba40",
+          "0000d040",
+          "54558541",
+          "5055d540",
+          "0000d040",
+          "feff8b41",
+          "faffef40",
+          "0000d040",
+          "a9aa9241",
+          "53550541",
+          "0000d040",
+          "54559941",
+          "a8aa1241",
+          "0000d040",
+          "0000a041",
+          "00002041",
+          "0000d040",
+          "0000b041",
+          "00003041",
+          "0000d040",
+          "ffffbf41",
+          "ffff3f41",
+          "0000d040",
+          "ffffcf41",
+          "ffff4f41",
+          "0000d040",
+          "0000e041",
+          "00006041",
+          "0000d040",
+          "9999e941",
+          "9a994941",
+          "0000d040",
+          "3333f341",
+          "34333341",
+          "0000d040",
+          "ccccfc41",
+          "cecc1c41",
+          "0000d040",
+          "33330342",
+          "68660641",
+          "0000d040",
+          "00000842",
+          "0400e040",
+          "0000d040",
+          "cccc0c42",
+          "3a33b340",
+          "0000d040",
+          "99991142",
+          "6c668640",
+          "0000d040",
+          "66661642",
+          "40333340",
+          "0000d040",
+          "32331b42",
+          "5233b33f",
+          "0000d040"
+        ]
+      },
+      "native_model_getters": {
+        "SPen::ObjectStroke::GetAdvancedPenSetting() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dec00"
+        },
+        "SPen::ObjectStroke::GetColor() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0ac0"
+        },
+        "SPen::ObjectStroke::GetOrientation() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dffbc"
+        },
+        "SPen::ObjectStroke::GetPenName() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2de974"
+        },
+        "SPen::ObjectStroke::GetPenSize() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e0d54"
+        },
+        "SPen::ObjectStroke::GetPoint() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa28"
+        },
+        "SPen::ObjectStroke::GetPointCount() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfa98"
+        },
+        "SPen::ObjectStroke::GetPressure() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfaf0"
+        },
+        "SPen::ObjectStroke::GetStrokeType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e16b0"
+        },
+        "SPen::ObjectStroke::GetTilt() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dff4c"
+        },
+        "SPen::ObjectStroke::GetTimeStamp() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2dfb60"
+        },
+        "SPen::ObjectStroke::GetToolType() const": {
+          "host_callback_present": false,
+          "native_symbol_rva": "0x2e1550"
+        }
+      },
+      "trace": [
+        {
+          "added_record_count": 35,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "args_s0_s2_bits": [
+            "0x0",
+            "0x0",
+            "0x437f0000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x50279b8",
+          "method": "reDrawPen_NoCurve",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x24",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027760",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawPen_NoCurve(SPen::ObjectStroke const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268657296,
+          "vector_object": "0x10036290"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "args_s0_s2_bits": [
+            "0x100367f0",
+            "0xb",
+            "0x0"
+          ],
+          "before_count_bytes": 420,
+          "before_record_count": 35,
+          "entry_pc": "0x5025db8",
+          "method": "endPen_NoCurve",
+          "phase": "draw_object_stroke",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027b88",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen_NoCurve(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268657296,
+          "vector_object": "0x10036290"
+        },
+        {
+          "added_record_count": 35,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "args_s0_s2_bits": [
+            "0x0",
+            "0x0",
+            "0x437f0000"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x50279b8",
+          "method": "reDrawPen_NoCurve",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x1f3",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027760",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::reDrawPen_NoCurve(SPen::ObjectStroke const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268661072,
+          "vector_object": "0x10037150"
+        },
+        {
+          "added_record_count": 0,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "args_s0_s2_bits": [
+            "0x10037680",
+            "0xb",
+            "0x0"
+          ],
+          "before_count_bytes": 420,
+          "before_record_count": 35,
+          "entry_pc": "0x5025db8",
+          "method": "endPen_NoCurve",
+          "phase": "saved_redraw",
+          "raw_x3_register": "0x0",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027b88",
+          "rt": "0x10035b40",
+          "signature": "SPen::InkPenStrokeDrawableGLV1::endPen_NoCurve(SPen::MotionEvent const*, SPen::RectF*)",
+          "source_history_index": null,
+          "vector_obj": 268661072,
+          "vector_object": "0x10037150"
+        }
+      ],
+      "no_curve_trace": [
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 108,
+          "after_record_count": 9,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3ecccccd"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 0,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 12,
+          "after_count_bytes": 252,
+          "after_record_count": 21,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f19999a"
+          ],
+          "before_count_bytes": 108,
+          "before_record_count": 9,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 1,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 4,
+          "after_count_bytes": 300,
+          "after_record_count": 25,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f4ccccd"
+          ],
+          "before_count_bytes": 252,
+          "before_record_count": 21,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 2,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 10,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "arg_x1": "0x200eee90",
+          "arg_x2": "0x200eee90",
+          "arg_x3": "0x24",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 300,
+          "before_record_count": 25,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "draw_object_stroke",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 3,
+          "vector_obj": 268657296
+        },
+        {
+          "added_record_count": 9,
+          "after_count_bytes": 108,
+          "after_record_count": 9,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41200000",
+            "0x0",
+            "0x3ecccccd"
+          ],
+          "before_count_bytes": 0,
+          "before_record_count": 0,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 0,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 12,
+          "after_count_bytes": 252,
+          "after_record_count": 21,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41a00000",
+            "0x41200000",
+            "0x3f19999a"
+          ],
+          "before_count_bytes": 108,
+          "before_record_count": 9,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 1,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 4,
+          "after_count_bytes": 300,
+          "after_record_count": 25,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x41e00000",
+            "0x41600000",
+            "0x3f4ccccd"
+          ],
+          "before_count_bytes": 252,
+          "before_record_count": 21,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 2,
+          "vector_obj": 268661072
+        },
+        {
+          "added_record_count": 10,
+          "after_count_bytes": 420,
+          "after_record_count": 35,
+          "after_stream_bytes": "00000000000000000000d040e1388e3f000000000000d040e1380e40000000000000d04051555540000000000000d040e1388e40000000000000d04019c7b140000000000000d0405155d540000000000000d0408ae3f840000000000000d040e1380e41000000000000d04000002041000000000000d04055552d415055553f0000d040aaaa3a415055d53f0000d040ffff4741fcff1f400000d04054555541505555400000d040a9aa6241525585400000d040feff6f41fcff9f400000d04053557d41a5aaba400000d040545585415055d5400000d040feff8b41faffef400000d040a9aa9241535505410000d04054559941a8aa12410000d0400000a041000020410000d0400000b041000030410000d040ffffbf41ffff3f410000d040ffffcf41ffff4f410000d0400000e041000060410000d0409999e9419a9949410000d0403333f341343333410000d040ccccfc41cecc1c410000d04033330342686606410000d040000008420400e0400000d040cccc0c423a33b3400000d040999911426c6686400000d04066661642403333400000d04032331b425233b33f0000d040",
+          "arg_x1": "0x10033be0",
+          "arg_x2": "0x10033be0",
+          "arg_x3": "0x1f3",
+          "args_s0_s2_bits": [
+            "0x42200000",
+            "0x0",
+            "0x3f800000"
+          ],
+          "before_count_bytes": 300,
+          "before_record_count": 25,
+          "entry_pc": "0x5028328",
+          "method": "drawLine_NoCurve",
+          "phase": "saved_redraw",
+          "receiver_address": "0x10034dd0",
+          "return_pc": "0x5027ad8",
+          "rt": "0x10035b40",
+          "segment_call_index": 3,
+          "vector_obj": 268661072
+        }
+      ]
+    }
+  ],
+  "harness_sha256": "dc2a2ef356eab6dd826673f6cf77ff2269ab74a080463f943ff7d2e97fad4aec"
+}

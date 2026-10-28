@@ -4222,7 +4222,8 @@ fn render_stroke(
     }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Some((ink, is_v4)) = prepare_page_inkpen_with_version(stroke, inkpen_profile)
+        && let Some((ink, is_v4)) =
+            prepare_page_inkpen_with_version(stroke, inkpen_profile, inkpen_v1_output_scale)
         && let Some(vector) = inkpen_v1_vector_path(
             &ink.points,
             &ink.radii,
@@ -4435,12 +4436,13 @@ fn prepare_page_inkpen(
     stroke: &Stroke,
     profile: Option<InkPenRenderProfile>,
 ) -> Option<crate::ink::PreparedInkPenV1> {
-    prepare_page_inkpen_with_version(stroke, profile).map(|(ink, _)| ink)
+    prepare_page_inkpen_with_version(stroke, profile, None).map(|(ink, _)| ink)
 }
 
 fn prepare_page_inkpen_with_version(
     stroke: &Stroke,
     profile: Option<InkPenRenderProfile>,
+    v1_scale: Option<u32>,
 ) -> Option<(crate::ink::PreparedInkPenV1, bool)> {
     profile
         .and_then(|profile| {
@@ -4451,7 +4453,13 @@ fn prepare_page_inkpen_with_version(
             )
         })
         .map(|ink| (ink, true))
-        .or_else(|| crate::ink::prepare_inkpen_v1_for_page(stroke).map(|ink| (ink, false)))
+        .or_else(|| {
+            crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(
+                stroke,
+                v1_scale.is_some_and(|scale| matches!(scale, 1..=4)),
+            )
+            .map(|ink| (ink, false))
+        })
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -5133,7 +5141,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             options
                 .inkpen_v1_output_scale
                 .filter(|scale| matches!(scale, 1..=4))
-                .and_then(|_| crate::ink::prepare_inkpen_v1_for_page(stroke))
+                .and_then(|_| crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, true))
                 .map(|ink| (ink, false))
         });
     if let Some((ink, is_v4)) = inkpen
@@ -5222,7 +5230,7 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
         && options
             .inkpen_v1_output_scale
             .is_some_and(|scale| matches!(scale, 1..=4))
-        && crate::ink::prepare_inkpen_v1_for_page(stroke).is_some()
+        && crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, true).is_some()
     {
         return crate::ink::prepare_stroke_for_context(
             stroke,
