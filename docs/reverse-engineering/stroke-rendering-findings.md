@@ -1113,3 +1113,11 @@ modules.
 The typed scratch preparation now returns a precompiled Form and namespaced SVG
 carrier together, reserving both only after successful preparation; a focused
 page-budget rollback test passed. The carrier is still raw SVG, not Scene nodes.
+A temporary `CompositionContext` experiment lowered the typed plan into real
+vector Scene nodes. For straight long and 2× bend controls, the tested Scene
+output matched the raw even-odd prototype in resvg and MuPDF raster pixels;
+this does not prove general fill-rule equivalence. A two-stroke page test
+confirmed one admitted Marker and one generic fallback under the shared budget.
+The hooks remain test-only in `scratch/legacy-marker-composition-hook.patch`
+and `scratch/legacy-marker-scene-probe.rs`; prepared PDF form registration is
+not yet connected to this composition experiment.
