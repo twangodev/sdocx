@@ -376,7 +376,7 @@ fn graft_overlay_page(
         .set("Resources", resources);
 
     let command = format!(
-        "q {} {} {} {} re W n {} {} {} {} {} {} cm /{} Do Q\n",
+        "n q {} {} {} {} re W n {} {} {} {} {} {} cm /{} Do Q\n",
         clip[0],
         clip[1],
         clip[2] - clip[0],
@@ -3005,7 +3005,7 @@ fn add_overlay_form(
     resources.set("XObject", xobjects);
     page.set("Resources", resources);
     let command = format!(
-        "q {} {} {} {} re W n {} {} {} {} {} {} cm /{} Do Q\n",
+        "n q {} {} {} {} re W n {} {} {} {} {} {} cm /{} Do Q\n",
         clip[0],
         clip[1],
         clip[2] - clip[0],
@@ -5513,6 +5513,55 @@ mod tests {
         let page = output.get_dictionary(output.get_pages()[&1]).unwrap();
         let resources = as_dict(&output, page.get(b"Resources").unwrap());
         assert!(resources.get(b"XObject").is_ok());
+    }
+
+    #[test]
+    fn overlay_clip_discards_unfinished_source_path_in_both_graft_routes() {
+        let mut source = Document::load_mem(&source_without_resources()).unwrap();
+        let page_id = source.get_pages()[&1];
+        let content =
+            source.add_object(Stream::new(Dictionary::new(), b"70 70 20 20 re\n".to_vec()));
+        source
+            .get_dictionary_mut(page_id)
+            .unwrap()
+            .set("Contents", content);
+        let mut bytes = Vec::new();
+        source.save_to(&mut bytes).unwrap();
+        let overlay_bytes = sdk_overlay_pdf();
+        let matrix = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        let clip = [0.0, 0.0, 20.0, 20.0];
+
+        let grafted = graft_overlay_page(&bytes, 1, &overlay_bytes, 1, matrix, clip).unwrap();
+        let grafted = Document::load_mem(&grafted).unwrap();
+        let grafted_page = grafted.get_dictionary(grafted.get_pages()[&1]).unwrap();
+
+        let overlay = Document::load_mem(&overlay_bytes).unwrap();
+        let mut page = source.get_dictionary(page_id).unwrap().clone();
+        add_overlay_form(
+            &mut source,
+            &mut page,
+            &overlay,
+            overlay.get_pages()[&1],
+            matrix,
+            clip,
+            None,
+        )
+        .unwrap();
+
+        for (doc, page) in [(&grafted, grafted_page), (&source, &page)] {
+            let content = contents_bytes(doc, page).unwrap();
+            let operators: Vec<_> = Content::decode(&content)
+                .unwrap()
+                .operations
+                .into_iter()
+                .map(|op| op.operator)
+                .collect();
+            let source_path = operators.iter().position(|op| op == "re").unwrap();
+            assert_eq!(
+                &operators[source_path + 1..source_path + 5],
+                ["Q", "n", "q", "re"]
+            );
+        }
     }
 
     #[test]
