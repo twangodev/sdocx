@@ -1621,6 +1621,61 @@ fn assemble_prepared_output_pages(
         }
     }
 
+    // Reserve annotation identities for each selected page occurrence before
+    // following any cross-page links. A shared source annotation has a distinct
+    // identity on each occurrence, while external links use its first occurrence.
+    let mut annotation_plans = std::collections::BTreeMap::<String, AnnotationPlan>::new();
+    for key in &selected_sources {
+        annotation_plans.entry(key.clone()).or_default();
+    }
+    for (spec, output_id) in output_pages.iter().zip(&output_page_ids) {
+        if let OutputPage::Imported {
+            source_key,
+            source_page_index,
+            ..
+        } = spec
+        {
+            let source = &parsed[*source_key];
+            let page = source
+                .doc
+                .get_dictionary(source.pages[&(u32::try_from(*source_page_index).unwrap() + 1)])
+                .map_err(|e| e.to_string())?;
+            if let Ok(annots) = page.get(b"Annots") {
+                let mut ids = Vec::new();
+                collect_annotation_ids(&source.doc, annots, &mut ids);
+                let plan = annotation_plans
+                    .entry((*source_key).to_owned())
+                    .or_default();
+                for id in ids {
+                    if plan.occurrences.contains_key(&(*output_id, id)) {
+                        continue;
+                    }
+                    let target = output.new_object_id();
+                    plan.occurrences.insert((*output_id, id), target);
+                    plan.canonical.entry(id).or_insert(target);
+                    plan.pages.insert(target, *output_id);
+                }
+            }
+        }
+    }
+
+    for (key, plan) in &mut annotation_plans {
+        plan.sensitive = annotation_sensitive_objects(&parsed[key].doc, &plan.canonical);
+        let source = &parsed[key];
+        for page_id in source.pages.values() {
+            if page_remaps[key].contains_key(page_id) {
+                continue;
+            }
+            if let Ok(page) = source.doc.get_dictionary(*page_id)
+                && let Ok(annots) = page.get(b"Annots")
+            {
+                let mut ids = Vec::new();
+                collect_annotation_ids(&source.doc, annots, &mut ids);
+                plan.unselected.extend(ids);
+            }
+        }
+    }
+
     // Clone the retained source catalog before page graphs so cycles and
     // references to selected pages can be remapped consistently.
     let first_source_key = selected_sources.iter().next().expect("nonempty");
@@ -1649,6 +1704,7 @@ fn assemble_prepared_output_pages(
             object_maps.entry(first_source_key.clone()).or_default(),
             pages_root_id,
         );
+        cloner.plan = annotation_plans.get_mut(first_source_key);
         catalog.set(key.clone(), cloner.clone_object(value, None)?);
     }
     catalog.set("Type", "Catalog");
@@ -1695,6 +1751,7 @@ fn assemble_prepared_output_pages(
                     object_maps.entry((*source_key).to_owned()).or_default(),
                     pages_root_id,
                 );
+                cloner.plan = annotation_plans.get_mut(*source_key);
                 let mut page = cloner.clone_page(page_dict, *output_id)?;
                 drop(cloner);
                 let form_id = add_overlay_form(
@@ -2744,13 +2801,82 @@ fn is_annotation_dictionary(dict: &Dictionary) -> bool {
         || (dict.has(b"Subtype") && dict.has(b"Rect"))
 }
 
+#[derive(Default)]
+struct AnnotationPlan {
+    canonical: HashMap<ObjectId, ObjectId>,
+    occurrences: HashMap<(ObjectId, ObjectId), ObjectId>,
+    pages: HashMap<ObjectId, ObjectId>,
+    initialized: HashSet<ObjectId>,
+    sensitive: HashSet<ObjectId>,
+    unselected: HashSet<ObjectId>,
+    local_objects: HashMap<(Option<ObjectId>, ObjectId), ObjectId>,
+}
+
+fn collect_annotation_ids(doc: &Document, object: &Object, ids: &mut Vec<ObjectId>) {
+    let mut seen = HashSet::new();
+    let mut pending = vec![object];
+    while let Some(object) = pending.pop() {
+        match object {
+            Object::Array(items) => pending.extend(items.iter().rev()),
+            Object::Reference(id) if seen.insert(*id) => match doc.objects.get(id) {
+                Some(Object::Array(items)) => pending.extend(items.iter().rev()),
+                Some(Object::Dictionary(dict)) if is_annotation_dictionary(dict) => ids.push(*id),
+                Some(next @ Object::Reference(_)) => pending.push(next),
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+}
+
+// Compute the reverse reference closure once per source. Page objects are
+// boundaries: following their parent and resources would make unrelated shared
+// objects occurrence-specific merely because they point at a page.
+fn annotation_sensitive_objects(
+    doc: &Document,
+    annotations: &HashMap<ObjectId, ObjectId>,
+) -> HashSet<ObjectId> {
+    let pages: HashSet<_> = doc.get_pages().into_values().collect();
+    let mut reverse: HashMap<ObjectId, Vec<ObjectId>> = HashMap::new();
+    for (id, object) in &doc.objects {
+        if pages.contains(id) {
+            continue;
+        }
+        let mut stack = vec![object];
+        while let Some(value) = stack.pop() {
+            match value {
+                Object::Reference(target) if !pages.contains(target) => {
+                    reverse.entry(*target).or_default().push(*id)
+                }
+                Object::Array(items) => stack.extend(items),
+                Object::Dictionary(dict) => stack.extend(dict.iter().map(|(_, value)| value)),
+                Object::Stream(stream) => stack.extend(stream.dict.iter().map(|(_, value)| value)),
+                _ => {}
+            }
+        }
+    }
+    let mut sensitive: HashSet<_> = annotations.keys().copied().collect();
+    let mut pending: Vec<_> = sensitive.iter().copied().collect();
+    while let Some(id) = pending.pop() {
+        if let Some(parents) = reverse.get(&id) {
+            for parent in parents {
+                if sensitive.insert(*parent) {
+                    pending.push(*parent);
+                }
+            }
+        }
+    }
+    sensitive
+}
+
 struct GraphCloner<'a> {
     source: &'a Document,
     target: &'a mut Document,
     page_remap: Option<&'a std::collections::HashMap<ObjectId, ObjectId>>,
     pages_root_id: ObjectId,
     objects: &'a mut std::collections::HashMap<ObjectId, ObjectId>,
-    annotation_objects: std::collections::HashMap<ObjectId, ObjectId>,
+    annotation_objects: std::collections::HashMap<(Option<ObjectId>, ObjectId), ObjectId>,
+    plan: Option<&'a mut AnnotationPlan>,
     source_pages: HashSet<ObjectId>,
     cloned_count: usize,
 }
@@ -2771,6 +2897,7 @@ impl<'a> GraphCloner<'a> {
             pages_root_id,
             objects,
             annotation_objects: Default::default(),
+            plan: None,
             source_pages,
             cloned_count: 0,
         }
@@ -2833,17 +2960,19 @@ impl<'a> GraphCloner<'a> {
                     .collect::<Result<_, _>>()?,
             )),
             Object::Reference(id) => {
-                if let Some(mapped) = self.annotation_objects.get(id) {
+                if let Some(mapped) = self.annotation_objects.get(&(Some(current_page), *id)) {
                     return Ok(Object::Reference(*mapped));
                 }
                 let source_object = self
                     .source
-                    .get_object(*id)
-                    .map_err(|e| e.to_string())?
+                    .objects
+                    .get(id)
+                    .ok_or_else(|| format!("missing PDF object {id:?}"))?
                     .clone();
                 if matches!(&source_object, Object::Array(_)) {
                     let target_id = self.target.new_object_id();
-                    self.annotation_objects.insert(*id, target_id);
+                    self.annotation_objects
+                        .insert((Some(current_page), *id), target_id);
                     self.target.objects.insert(target_id, Object::Null);
                     let cloned =
                         self.clone_annotation_list(&source_object, current_page, depth + 1)?;
@@ -2876,14 +3005,68 @@ impl<'a> GraphCloner<'a> {
                 }
                 let is_annotation = self
                     .source
-                    .get_object(*id)
-                    .ok()
+                    .objects
+                    .get(id)
                     .and_then(|o| o.as_dict().ok())
                     .is_some_and(is_annotation_dictionary);
-                if is_annotation && let Some(mapped) = self.annotation_objects.get(id) {
+                if is_annotation && let Some(plan) = &mut self.plan {
+                    let mapped = current_page
+                        .and_then(|page| plan.occurrences.get(&(page, *id)).copied())
+                        .or_else(|| plan.canonical.get(id).copied());
+                    if let Some(target_id) = mapped {
+                        if plan.initialized.insert(target_id) {
+                            let annotation_page = plan.pages[&target_id];
+                            self.target.objects.insert(target_id, Object::Null);
+                            let source = self
+                                .source
+                                .get_object(*id)
+                                .map_err(|e| e.to_string())?
+                                .clone();
+                            let copied =
+                                self.clone_object_at(&source, Some(annotation_page), depth + 1)?;
+                            self.target.objects.insert(target_id, copied);
+                        }
+                        return Ok(Object::Reference(target_id));
+                    }
+                }
+                if is_annotation
+                    && self
+                        .plan
+                        .as_ref()
+                        .is_some_and(|plan| plan.unselected.contains(id))
+                {
+                    return Err("annotation references an unselected page".into());
+                }
+                if is_annotation
+                    && let Ok(dict) = self.source.get_dictionary(*id)
+                    && let Ok(Object::Reference(owner)) = dict.get(b"P")
+                    && self.source_pages.contains(owner)
+                    && self.page_remap.and_then(|map| map.get(owner)).is_none()
+                {
+                    return Err("annotation references an unselected page".into());
+                }
+                let page_sensitive = !is_annotation
+                    && self
+                        .plan
+                        .as_ref()
+                        .is_some_and(|plan| plan.sensitive.contains(id));
+                if page_sensitive
+                    && let Some(mapped) = self
+                        .plan
+                        .as_ref()
+                        .and_then(|plan| plan.local_objects.get(&(current_page, *id)))
+                {
                     return Ok(Object::Reference(*mapped));
                 }
-                if !is_annotation && let Some(mapped) = self.objects.get(id) {
+                if is_annotation
+                    && let Some(mapped) = self.annotation_objects.get(&(current_page, *id))
+                {
+                    return Ok(Object::Reference(*mapped));
+                }
+                if !is_annotation
+                    && !page_sensitive
+                    && let Some(mapped) = self.objects.get(id)
+                {
                     return Ok(Object::Reference(*mapped));
                 }
                 self.cloned_count += 1;
@@ -2892,15 +3075,23 @@ impl<'a> GraphCloner<'a> {
                 }
                 let target_id = self.target.new_object_id();
                 if is_annotation {
-                    self.annotation_objects.insert(*id, target_id);
+                    self.annotation_objects
+                        .insert((current_page, *id), target_id);
+                } else if page_sensitive {
+                    self.plan
+                        .as_mut()
+                        .expect("page-sensitive objects require a plan")
+                        .local_objects
+                        .insert((current_page, *id), target_id);
                 } else {
                     self.objects.insert(*id, target_id);
                 }
                 self.target.objects.insert(target_id, Object::Null);
                 let source = self
                     .source
-                    .get_object(*id)
-                    .map_err(|e| e.to_string())?
+                    .objects
+                    .get(id)
+                    .ok_or_else(|| format!("missing PDF object {id:?}"))?
                     .clone();
                 let copied = self.clone_object_at(&source, current_page, depth + 1)?;
                 self.target.objects.insert(target_id, copied);
@@ -4778,6 +4969,272 @@ mod tests {
             )
             .unwrap_err()
             .contains("unmatched Q")
+        );
+    }
+
+    #[test]
+    fn assembler_preserves_cross_page_replies_and_duplicate_annotation_ownership() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let pages = doc.get_pages();
+        let first = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
+        let second = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()], "IRT" => first });
+        doc.get_dictionary_mut(first).unwrap().set("IRT", second);
+        doc.get_dictionary_mut(pages[&1])
+            .unwrap()
+            .set("Annots", vec![first.into()]);
+        let array = doc.add_object(vec![Object::Reference(second)]);
+        doc.get_dictionary_mut(pages[&2])
+            .unwrap()
+            .set("Annots", array);
+        let mut source = Vec::new();
+        doc.save_to(&mut source).unwrap();
+        let overlay = sdk_noop_overlay_pdf();
+        let specs = [1, 0, 1]
+            .into_iter()
+            .map(|source_page_index| OutputPage::Imported {
+                source_key: "paper-a",
+                source_page_index,
+                overlay_bytes: &overlay,
+                overlay_page_number: 1,
+                display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                clip: [0.0, 0.0, 100.0, 100.0],
+            })
+            .collect::<Vec<_>>();
+        let output = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &source,
+            }],
+            &specs,
+        )
+        .unwrap();
+        let output = Document::load_mem(&output).unwrap();
+        let pages = output.get_pages();
+        let annot = |page| {
+            deref(
+                &output,
+                output
+                    .get_dictionary(pages[&page])
+                    .unwrap()
+                    .get(b"Annots")
+                    .unwrap(),
+            )
+            .unwrap()
+            .as_array()
+            .unwrap()[0]
+                .as_reference()
+                .unwrap()
+        };
+        let reply = |page| output.get_dictionary(annot(page)).unwrap();
+        for page in [1, 3] {
+            assert_eq!(
+                reply(page).get(b"IRT").unwrap().as_reference().unwrap(),
+                annot(2)
+            );
+            assert_eq!(
+                reply(page).get(b"P").unwrap().as_reference().unwrap(),
+                pages[&page]
+            );
+        }
+        assert_eq!(
+            reply(2).get(b"IRT").unwrap().as_reference().unwrap(),
+            annot(1)
+        );
+        assert_ne!(annot(1), annot(3));
+        assert_eq!(
+            reply(2).get(b"P").unwrap().as_reference().unwrap(),
+            pages[&2]
+        );
+        let error = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &source,
+            }],
+            &specs[..1],
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("annotation references an unselected page"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn assembler_preserves_annotation_aliases_cycles_and_shared_objects() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let pages = doc.get_pages();
+        let annotation = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
+        let alias = doc.add_object(Object::Reference(annotation));
+        doc.get_dictionary_mut(pages[&1])
+            .unwrap()
+            .set("Annots", vec![alias.into()]);
+        let intermediary = doc.new_object_id();
+        doc.objects.insert(
+            intermediary,
+            Object::Dictionary(dictionary! { "Self" => intermediary, "Annotation" => annotation }),
+        );
+        let shared = doc.add_object(dictionary! { "Value" => 42 });
+        let root = doc.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        let catalog = doc.get_dictionary_mut(root).unwrap();
+        catalog.set("Metadata", intermediary);
+        catalog.set("ViewerPreferences", intermediary);
+        catalog.set("OutputIntents", shared);
+        catalog.set("MarkInfo", shared);
+        let mut source = Vec::new();
+        doc.save_to(&mut source).unwrap();
+        let overlay = sdk_noop_overlay_pdf();
+        let specs = [0, 0].map(|source_page_index| OutputPage::Imported {
+            source_key: "paper-a",
+            source_page_index,
+            overlay_bytes: &overlay,
+            overlay_page_number: 1,
+            display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            clip: [0.0, 0.0, 100.0, 100.0],
+        });
+        let bytes = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &source,
+            }],
+            &specs,
+        )
+        .unwrap();
+        let output = Document::load_mem(&bytes).unwrap();
+        let root = output.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        let catalog = output.get_dictionary(root).unwrap();
+        let intermediate = catalog.get(b"Metadata").unwrap().as_reference().unwrap();
+        assert_eq!(
+            intermediate,
+            catalog
+                .get(b"ViewerPreferences")
+                .unwrap()
+                .as_reference()
+                .unwrap()
+        );
+        let container = output.get_dictionary(intermediate).unwrap();
+        assert_eq!(
+            container.get(b"Self").unwrap().as_reference().unwrap(),
+            intermediate
+        );
+        assert_eq!(
+            catalog.get(b"OutputIntents").unwrap(),
+            catalog.get(b"MarkInfo").unwrap()
+        );
+        let pages = output.get_pages();
+        let annotation_id = |page| {
+            let page = output.get_dictionary(pages[&page]).unwrap();
+            let alias = page.get(b"Annots").unwrap().as_array().unwrap()[0]
+                .as_reference()
+                .unwrap();
+            output.objects.get(&alias).unwrap().as_reference().unwrap()
+        };
+        assert_eq!(
+            container
+                .get(b"Annotation")
+                .unwrap()
+                .as_reference()
+                .unwrap(),
+            annotation_id(1)
+        );
+        assert_ne!(annotation_id(1), annotation_id(2));
+    }
+
+    #[test]
+    fn assembler_handles_annotation_array_aliases_and_reference_cycles() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let pages = doc.get_pages();
+        let source_page = pages[&1];
+        let annotation = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
+        let cycle_a = doc.new_object_id();
+        let cycle_b = doc.new_object_id();
+        doc.objects.insert(cycle_a, Object::Reference(cycle_b));
+        doc.objects.insert(cycle_b, Object::Reference(cycle_a));
+        let array = doc.add_object(vec![Object::Reference(annotation)]);
+        let alias = doc.add_object(Object::Reference(array));
+        doc.get_dictionary_mut(pages[&1])
+            .unwrap()
+            .set("Annots", alias);
+        let mut source = Vec::new();
+        doc.save_to(&mut source).unwrap();
+        let overlay = sdk_noop_overlay_pdf();
+        let specs = [0, 0].map(|source_page_index| OutputPage::Imported {
+            source_key: "paper-a",
+            source_page_index,
+            overlay_bytes: &overlay,
+            overlay_page_number: 1,
+            display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            clip: [0.0, 0.0, 100.0, 100.0],
+        });
+        let bytes = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &source,
+            }],
+            &specs,
+        )
+        .unwrap();
+        let output = Document::load_mem(&bytes).unwrap();
+        let pages = output.get_pages();
+        let array = |page| {
+            let page = output.get_dictionary(pages[&page]).unwrap();
+            let alias = page.get(b"Annots").unwrap().as_reference().unwrap();
+            let array_id = output.objects[&alias].as_reference().unwrap();
+            output.objects[&array_id].as_array().unwrap()
+        };
+        let first = array(1);
+        let second = array(2);
+        assert_ne!(first[0], second[0]);
+        doc.get_dictionary_mut(source_page)
+            .unwrap()
+            .set("Annots", cycle_a);
+        let mut cyclic_source = Vec::new();
+        doc.save_to(&mut cyclic_source).unwrap();
+        let error = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &cyclic_source,
+            }],
+            &specs,
+        )
+        .unwrap_err();
+        assert!(error.contains("reference cycle"), "{error}");
+    }
+
+    #[test]
+    fn assembler_rejects_catalog_annotation_from_unselected_page_without_owner_field() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let pages = doc.get_pages();
+        doc.get_dictionary_mut(pages[&1]).unwrap().remove(b"Annots");
+        let annotation = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
+        doc.get_dictionary_mut(pages[&2])
+            .unwrap()
+            .set("Annots", vec![annotation.into()]);
+        let root = doc.trailer.get(b"Root").unwrap().as_reference().unwrap();
+        doc.get_dictionary_mut(root)
+            .unwrap()
+            .set("Metadata", annotation);
+        let mut source = Vec::new();
+        doc.save_to(&mut source).unwrap();
+        let overlay = sdk_noop_overlay_pdf();
+        let specs = [OutputPage::Imported {
+            source_key: "paper-a",
+            source_page_index: 0,
+            overlay_bytes: &overlay,
+            overlay_page_number: 1,
+            display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            clip: [0.0, 0.0, 100.0, 100.0],
+        }];
+        let error = assemble_output_pages(
+            &[SourcePdf {
+                key: "paper-a",
+                bytes: &source,
+            }],
+            &specs,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("annotation references an unselected page"),
+            "{error}"
         );
     }
 

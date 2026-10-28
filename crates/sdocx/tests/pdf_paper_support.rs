@@ -1711,6 +1711,73 @@ fn public_pdf_paper_route_rejects_unproven_objects_transforms_and_partial_select
 }
 
 #[test]
+fn public_pdf_paper_preserves_cross_page_annotation_reply_identity() {
+    let records = [
+        [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485],
+        [PDF_BINDING as i32, 1, 0, 1485, NOTE_WIDTH as i32, 3012],
+    ];
+    let mut document = document_with_records(
+        true,
+        None,
+        0,
+        1,
+        true,
+        &records,
+        &[[SOURCE_WIDTH, SOURCE_HEIGHT], [640.0, 480.0]],
+    );
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("expected PDF resource")
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let pages = source.get_pages();
+    let original = source.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
+    let reply = source.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()], "IRT" => original });
+    source
+        .get_dictionary_mut(pages[&1])
+        .unwrap()
+        .set("Annots", vec![original.into()]);
+    source
+        .get_dictionary_mut(pages[&2])
+        .unwrap()
+        .set("Annots", vec![reply.into()]);
+    data.clear();
+    source.save_to(data).unwrap();
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let pages = pdf.get_pages();
+    let annot = |page| {
+        pdf.get_dictionary(pages[&page])
+            .unwrap()
+            .get(b"Annots")
+            .unwrap()
+            .as_array()
+            .unwrap()[0]
+            .as_reference()
+            .unwrap()
+    };
+    assert_eq!(
+        pdf.get_dictionary(annot(2))
+            .unwrap()
+            .get(b"IRT")
+            .unwrap()
+            .as_reference()
+            .unwrap(),
+        annot(1)
+    );
+    assert_eq!(
+        pdf.get_dictionary(annot(2))
+            .unwrap()
+            .get(b"P")
+            .unwrap()
+            .as_reference()
+            .unwrap(),
+        pages[&2]
+    );
+}
+
+#[test]
 fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_boxes() {
     let records = [
         [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485],

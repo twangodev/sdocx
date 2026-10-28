@@ -890,14 +890,17 @@ recovered contracts to the Rust model and verified vector PDF transport.
 Rust assembly tests cover scoped resources, overlay tags, reordered/duplicate
 pages and ordinary tails; public export tests cover source preservation,
 cross-band whole-stroke admission and DPI-independent physical page sizes.
-Cross-page annotation identity remains unresolved: a structural probe confirmed
-that an annotation reached through another page's `/IRT` is cloned separately
-from its owning page's `/Annots` entry and its `/P` is rebound to the referring
-page. Cross-page `/Popup` relationships may have the same problem but have not
-been independently reproduced. A fix needs source-wide ownership and identity,
-including annotations without `/P`, handling of unselected owners, and distinct
-page-bound graphs for repeated output pages. Cyclic popup and reply references
-and indirect annotation arrays need regression coverage.
+Source annotation identities are reserved across selected pages before graph
+cloning. A cross-page `/IRT` now points to the annotation in its selected owner's
+`/Annots`, with `/P` set to that output page. Repeated output pages receive
+separate page-bound annotations; references from other pages use the first
+selected occurrence. Assembly tests cover cyclic replies, indirect annotation
+arrays and aliases, shared intermediary objects, and rejection of references to
+annotations on unselected pages, including those without `/P`. A public export
+test also checks cross-page reply identity. These are structural tests; annotation
+appearance and interaction in PDF readers, and cross-page `/Popup` behavior,
+have not been independently verified. Cyclic references in an annotation list
+are rejected.
 Page-box geometry accepts either corner order while preserving the source values;
 blank source pages with direct or indirect null content can receive overlays.
 Overlay grafts clear unfinished source paths before clipping; a synthetic manual
