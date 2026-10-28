@@ -429,11 +429,14 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
             Some("") | Some("2;")
         )
     }) || !rendering.properties.compressed
-        || rendering.tool_type_raw != 2
+        || !(rendering.tool_type_raw == 2
+            || (!v1
+                && rendering.tool_type_raw == 1
+                && rendering.advanced_settings.as_deref() == Some("")))
     {
         return None;
     }
-    let source_argb = super::saved_airbrush_argb(stroke)?;
+    let source_argb = super::saved_airbrush_argb_with_tool1(stroke, !v1)?;
     let raw_size = rendering.style.pen_size?;
     if !raw_size.is_finite() {
         return None;
@@ -484,7 +487,7 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
             history: &points[..count - 1],
             endpoint: *points.last()?,
             size,
-            tool_type: 2,
+            tool_type: i32::from(rendering.tool_type_raw),
             source: 0,
             runtime: Runtime { counter_seed: 0 },
         })?
@@ -495,7 +498,7 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
             initial_position: points[0],
             size,
             tolerance: size / 20.0,
-            tool_type: 2,
+            tool_type: i32::from(rendering.tool_type_raw),
             source: 0,
             counter_seed: 0,
         })?;
@@ -885,6 +888,57 @@ mod tests {
                 .collect();
             assert_eq!(actual, expected, "native V1 boundary: {case}");
             assert_eq!(case["v2_matches_v1"], true);
+        }
+    }
+
+    #[test]
+    fn v2_tool_motion_streams_match_native_drawing() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-tool-motion-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let bytes = case["source_arrays"]["points"]["data_hex"]
+                .as_str()
+                .unwrap();
+            let points: Vec<P> = bytes
+                .as_bytes()
+                .as_chunks::<16>()
+                .0
+                .iter()
+                .map(|pair| {
+                    let pair = std::str::from_utf8(pair).unwrap();
+                    P {
+                        x: little_endian_f32(&pair[..8]),
+                        y: little_endian_f32(&pair[8..]),
+                    }
+                })
+                .collect();
+            let size = case["model_state"]["size"].as_f64().unwrap() as f32;
+            let output = saved_redraw_v2(V2Input {
+                history: &points[..points.len() - 1],
+                endpoint: *points.last().unwrap(),
+                initial_position: points[0],
+                size,
+                tolerance: size / 20.0,
+                tool_type: case["tool_type"].as_i64().unwrap() as i32,
+                source: 0,
+                counter_seed: 0,
+            })
+            .unwrap();
+            let actual: String = output
+                .stamps
+                .iter()
+                .flat_map(|stamp| stamp.values)
+                .flat_map(f32::to_le_bytes)
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            assert_eq!(
+                actual,
+                case["stream_hex"].as_str().unwrap(),
+                "tool {}",
+                case["tool_type"]
+            );
         }
     }
 

@@ -401,6 +401,7 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             None,
             None,
             None,
+            None,
             profile.then_some(SimpleBrushRenderProfile::HostV25),
             None,
             remaining,

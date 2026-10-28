@@ -1562,6 +1562,102 @@ mod tests {
     }
 
     #[test]
+    fn v1_output_scale_improves_svg_against_native_frames() {
+        use flate2::read::ZlibDecoder;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-output-scale-native.json"
+        ))
+        .unwrap();
+        let frames = include_bytes!("../../../../conformance/inkpen-v1-output-scale-native.bin");
+        let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        assert_eq!(hash(frames), receipt["frames_sha256"]);
+        for frame in receipt["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|frame| frame["scale"] != 1)
+        {
+            let mut stroke = native_caller_stroke(&frame["input"]);
+            stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_0000);
+            let page = crate::Page {
+                uuid: "inkpen-v4-scale-control".into(),
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.clone().into()],
+            };
+            let document = crate::Document {
+                pages: vec![page],
+                metadata: Default::default(),
+            };
+            let scale = frame["scale"].as_u64().unwrap() as u32;
+            let offset = frame["zlib_offset"].as_u64().unwrap() as usize;
+            let length = frame["zlib_length"].as_u64().unwrap() as usize;
+            let mut native = Vec::new();
+            ZlibDecoder::new(&frames[offset..offset + length])
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(hash(&native), frame["rgba_sha256"]);
+            let width = 128 * scale;
+            let height = 64 * scale;
+            assert_eq!(native.len(), (width * height * 4) as usize);
+            let render = |output_scale| {
+                let options = crate::RenderOptions {
+                    inkpen_profile: Some(crate::InkPenRenderProfile {
+                        screen_width: 1920,
+                        screen_height: 1080,
+                    }),
+                    inkpen_v1_output_scale: output_scale,
+                    ..crate::RenderOptions::default()
+                };
+                let svg = crate::render_document_svg(&document, &options)
+                    .remove(0)
+                    .svg;
+                let start = svg.find('>').unwrap() + 1;
+                let end = svg.rfind("</svg>").unwrap();
+                let body = svg[start..end]
+                    .trim_start()
+                    .strip_prefix(
+                        "<rect fill=\"#fcfcfc\" height=\"64\" width=\"128\" x=\"0\" y=\"0\"/>",
+                    )
+                    .expect("page background");
+                let svg = format!(
+                    "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
+                    &svg[..start]
+                );
+                let tree =
+                    resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(width, height).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                    &mut pixmap.as_mut(),
+                );
+                native
+                    .chunks_exact((width * 4) as usize)
+                    .rev()
+                    .flat_map(|row| row.as_chunks::<4>().0)
+                    .zip(pixmap.data().as_chunks::<4>().0)
+                    .map(|(a, b)| u64::from(a[3].abs_diff(b[3])))
+                    .sum::<u64>()
+            };
+            let default_error = render(None);
+            let scaled_error = render(Some(scale));
+            assert!(
+                scaled_error < default_error,
+                "shape {} scale {scale}: {scaled_error} vs {default_error}",
+                frame["shape"]
+            );
+        }
+    }
+
+    #[test]
     fn v4_vector_candidate_improves_on_generic_against_host_frames() {
         use flate2::read::ZlibDecoder;
         use sha2::{Digest, Sha256};

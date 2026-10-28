@@ -150,9 +150,11 @@ impl InkPen2V1OutputScale {
 
 /// Explicit opt-in to bounded saved AirBrush texture routes.
 ///
-/// Both profiles require tool type 2 and normal saved style flags. `SavedV1`
+/// Both profiles require normal saved style flags. `SavedV1` requires tool 2 and
 /// accepts null or `1;` advanced settings; admitted empty streams emit no paint.
-/// `SavedV2` accepts empty or `2;` settings. V1 replay groups follow synthetic
+/// `SavedV2` accepts tool 2 with empty or `2;` settings, and tool 1 with an empty
+/// setting. Tool 1 beyond the captured synthetic host control is extrapolated.
+/// V1 replay groups follow synthetic
 /// redraw call boundaries; native progressive display is unverified.
 /// One synthetic V1 host-Mesa frame matches the public SVG; device and PDF
 /// parity and arbitrary output transforms remain unverified. Stamp angles use
@@ -160,7 +162,7 @@ impl InkPen2V1OutputScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AirBrushRenderProfile {
-    /// Empty or `2;` saved setting selecting native AirBrush GLV2.
+    /// Empty or `2;` saved setting for tool 2, or empty setting for tool 1.
     SavedV2,
     /// Null saved setting selecting native AirBrush GLV1.
     SavedV1,
@@ -330,6 +332,9 @@ pub struct RenderOptions {
     /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, or 4).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v4_output_scale: Option<u32>,
+    /// Opt into scale-aware V1 coverage at a tested uniform output scale (1, 2, or 4).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen_v1_output_scale: Option<u32>,
     /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
     /// `Some` opts into fresh state and identity page transform; the profile
     /// explicitly selects its enhanced-antialiasing paint route.
@@ -854,6 +859,7 @@ impl DocumentTextCache {
             retain_text,
             options.inkpen_profile,
             options.inkpen_v4_output_scale,
+            options.inkpen_v1_output_scale,
             options.inkpen2_profile,
             options.inkpen2_v1_output_scale,
             options.chinesebrush_profile,
@@ -1298,6 +1304,7 @@ fn render_page_contents_svg(
     retain_text: bool,
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen_v4_output_scale: Option<u32>,
+    inkpen_v1_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -1371,6 +1378,7 @@ fn render_page_contents_svg(
         body_text,
         inkpen_profile,
         inkpen_v4_output_scale,
+        inkpen_v1_output_scale,
         inkpen2_profile,
         inkpen2_v1_output_scale,
         chinesebrush_profile,
@@ -1424,6 +1432,7 @@ struct CompositionContext<'a> {
     body_text: Option<&'a PreparedBodyText>,
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen_v4_output_scale: Option<u32>,
+    inkpen_v1_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -1523,6 +1532,7 @@ fn render_object(
                 [context.page.width, context.page.height],
                 context.inkpen_profile,
                 context.inkpen_v4_output_scale,
+                context.inkpen_v1_output_scale,
                 context.inkpen2_profile,
                 context.inkpen2_v1_output_scale,
                 context.chinesebrush_profile,
@@ -3931,6 +3941,7 @@ fn render_stroke(
     viewport: [u32; 2],
     inkpen_profile: Option<InkPenRenderProfile>,
     inkpen_v4_output_scale: Option<u32>,
+    inkpen_v1_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -4130,9 +4141,13 @@ fn render_stroke(
             &ink.sample_ends,
             ink.terminal.clone(),
             replay_index.is_some(),
-            inkpen_v4_output_scale
-                .filter(|scale| is_v4 && matches!(scale, 1 | 2 | 4))
-                .unwrap_or(1),
+            (if is_v4 {
+                inkpen_v4_output_scale
+            } else {
+                inkpen_v1_output_scale
+            })
+            .filter(|scale| matches!(scale, 1 | 2 | 4))
+            .unwrap_or(1),
         )
     {
         let color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
@@ -5017,25 +5032,44 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
     if stroke.points.len() <= 1 {
         return empty_saved_stroke_paint(stroke, theme);
     }
-    if let Some(profile) = options.inkpen_profile
-        && let Some(ink) = crate::ink::prepare_inkpen_v4_for_page(
-            stroke,
-            profile.screen_width,
-            profile.screen_height,
-        )
+    let inkpen = options
+        .inkpen_profile
+        .and_then(|profile| {
+            crate::ink::prepare_inkpen_v4_for_page(
+                stroke,
+                profile.screen_width,
+                profile.screen_height,
+            )
+            .map(|ink| (ink, true))
+        })
+        .or_else(|| {
+            options
+                .inkpen_v1_output_scale
+                .filter(|scale| matches!(scale, 1 | 2 | 4))
+                .and_then(|_| crate::ink::prepare_inkpen_v1_for_page(stroke))
+                .map(|ink| (ink, false))
+        });
+    if let Some((ink, is_v4)) = inkpen
         && let Some(vector) = inkpen_v1_vector_path(
             &ink.points,
             &ink.radii,
             &ink.sample_ends,
             ink.terminal.clone(),
             true,
-            options
-                .inkpen_v4_output_scale
-                .filter(|scale| matches!(scale, 1 | 2 | 4))
-                .unwrap_or(1),
+            (if is_v4 {
+                options.inkpen_v4_output_scale
+            } else {
+                options.inkpen_v1_output_scale
+            })
+            .filter(|scale| matches!(scale, 1 | 2 | 4))
+            .unwrap_or(1),
         )
     {
-        let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
+        let mut prepared = crate::ink::prepare_stroke_for_context(
+            stroke,
+            theme.is_dark(),
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
         prepared.points = Cow::Owned(ink.points);
         prepared.sample_ends = Some(vector.sample_ends);
         prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
@@ -5093,6 +5127,18 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
 ) -> crate::PreparedStroke<'a> {
     if stroke.points.len() <= 1 {
         return empty_saved_stroke_paint(stroke, theme);
+    }
+    if viewport.contains(&0)
+        && options
+            .inkpen_v1_output_scale
+            .is_some_and(|scale| matches!(scale, 1 | 2 | 4))
+        && crate::ink::prepare_inkpen_v1_for_page(stroke).is_some()
+    {
+        return crate::ink::prepare_stroke_for_context(
+            stroke,
+            theme.is_dark(),
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
     }
     if viewport.contains(&0)
         && options.inkpen_profile.is_some()
@@ -8853,6 +8899,44 @@ mod tests {
     }
 
     #[test]
+    fn inkpen_v1_scaled_preparation_respects_theme_and_viewport() {
+        let stroke = inkpen_v1_stroke();
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(crate::Color { r: 0, g: 0, b: 0 });
+        let mut source = document(page);
+        source.metadata.dark_mode_compatibility = Some(false);
+        source.pages[0].objects = vec![stroke.clone().into()];
+        let theme =
+            RenderTheme::resolve(&source.pages[0], &source.metadata, RenderColorMode::Light);
+        let options = RenderOptions {
+            inkpen_v1_output_scale: Some(4),
+            ..RenderOptions::default()
+        };
+        let page_paint = super::prepare_stroke_for_page_with_theme(&stroke, theme, &options);
+        let viewport_paint =
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [100, 100]);
+        assert_eq!(page_paint.color, "#336699");
+        assert_eq!(viewport_paint.color, page_paint.color);
+        assert_eq!(viewport_paint.sample_ends, page_paint.sample_ends);
+        assert_eq!(viewport_paint.dot_radii, page_paint.dot_radii);
+        assert!(
+            render_document_svg(&source, &options)[0]
+                .svg
+                .contains("fill=\"#336699\"")
+        );
+        let zero =
+            super::prepare_stroke_for_viewport_with_theme(&stroke, theme, &options, [0, 100]);
+        let fallback = crate::ink::prepare_stroke_for_context(
+            &stroke,
+            theme.is_dark(),
+            crate::ink::InkRenderContext::CanonicalPage,
+        );
+        assert_eq!(zero.profile, fallback.profile);
+        assert_eq!(zero.points, fallback.points);
+        assert_eq!(zero.dot_radii, fallback.dot_radii);
+    }
+
+    #[test]
     fn inkpen_v4_opt_in_matches_replay_and_preserves_fallback() {
         let mut stroke = inkpen_v1_stroke();
         stroke.rendering.as_mut().unwrap().advanced_settings = Some("4;".into());
@@ -8957,6 +9041,45 @@ mod tests {
         assert_eq!(
             render_document_svg(&v1_source, &options)[0].svg,
             render_document_svg(&v1_source, &no_profile)[0].svg,
+        );
+        let v1_options = RenderOptions {
+            inkpen_v1_output_scale: Some(4),
+            ..options.clone()
+        };
+        let v1_base = render_document_svg(&v1_source, &options)[0].svg.clone();
+        assert_ne!(render_document_svg(&v1_source, &v1_options)[0].svg, v1_base);
+        assert_eq!(render_document_svg(&source, &v1_options)[0].svg, normal);
+        for scale in [0, 1, 3, u32::MAX] {
+            let invalid = RenderOptions {
+                inkpen_v1_output_scale: Some(scale),
+                ..options.clone()
+            };
+            assert_eq!(render_document_svg(&v1_source, &invalid)[0].svg, v1_base);
+        }
+        assert_ne!(
+            super::render_layout_page_replay_svg(
+                &v1_source,
+                &layout_document(&v1_source),
+                0,
+                &v1_options
+            )
+            .unwrap()
+            .svg,
+            super::render_layout_page_replay_svg(
+                &v1_source,
+                &layout_document(&v1_source),
+                0,
+                &options
+            )
+            .unwrap()
+            .svg,
+        );
+        #[cfg(feature = "pdf")]
+        assert_ne!(
+            crate::render_document_pdf(&v1_source, &v1_options, &crate::PdfOptions::default())
+                .unwrap(),
+            crate::render_document_pdf(&v1_source, &options, &crate::PdfOptions::default())
+                .unwrap(),
         );
         let replay =
             super::render_layout_page_replay_svg(&source, &layout_document(&source), 0, &options)
@@ -13112,6 +13235,109 @@ mod tests {
                     .collect::<Vec<_>>();
                 assert_eq!(parts, ["2", "3"]);
             }
+        }
+    }
+
+    #[test]
+    fn saved_v2_tool1_native_motion_exports() {
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-tool-motion-native.json"
+        ))
+        .unwrap();
+        let case = &evidence["cases"][0];
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = (0..5)
+            .map(|i| Point {
+                x: 128.453125 + i as f64 * 3.0,
+                y: 128.515625 + (i * i) as f64 * 0.5,
+            })
+            .collect();
+        stroke.pressures = vec![0.3; 5];
+        stroke.tilts = vec![0.12; 5];
+        stroke.orientations = vec![0.2; 5];
+        stroke.timestamps = vec![300, 315, 330, 345, 360];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 1;
+        rendering.style.color_argb = Some(0xff44aaee);
+        let sampled = crate::ink::airbrush::saved_v2_from_stroke(stroke).unwrap();
+        let hex: String = sampled
+            .rows
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(hex, case["stream_hex"].as_str().unwrap());
+        let mut unsupported = stroke.clone();
+        unsupported.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
+        assert!(crate::ink::airbrush::saved_v2_from_stroke(&unsupported).is_none());
+        unsupported.rendering.as_mut().unwrap().advanced_settings = None;
+        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
+        unsupported.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
+        unsupported
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .fixed_width = true;
+        assert!(crate::ink::airbrush::saved_v2_from_stroke(&unsupported).is_none());
+        let options = RenderOptions {
+            airbrush_profile: Some(super::AirBrushRenderProfile::SavedV2),
+            ..RenderOptions::default()
+        };
+        let layout = layout_document(&document);
+        let page = render_layout_page_svg(&document, &layout, 0, &options).unwrap();
+        let default_page =
+            render_layout_page_svg(&document, &layout, 0, &RenderOptions::default()).unwrap();
+        assert_ne!(page.svg, default_page.svg);
+        #[cfg(feature = "pdf")]
+        {
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let mut cache = super::DocumentTextCache::default();
+            let scene = cache
+                .render_layout_page_scene_requests(
+                    &document,
+                    &[request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0);
+            let pdf = crate::pdf::render_scenes_pdf_with_progress(
+                std::slice::from_ref(&scene),
+                &crate::PdfOptions::default(),
+                &mut |_| {},
+            )
+            .unwrap();
+            assert!(pdf.starts_with(b"%PDF-"));
+            let tree =
+                resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default())
+                    .unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            let mut native = vec![0_u8; 256 * 256 * 4];
+            for pixel in case["frame"]["nonzero_top_left_pixels"].as_array().unwrap() {
+                let x = pixel[0].as_u64().unwrap() as usize;
+                let y = pixel[1].as_u64().unwrap() as usize;
+                for channel in 0..4 {
+                    native[(y * 256 + x) * 4 + channel] = pixel[2][channel].as_u64().unwrap() as u8;
+                }
+            }
+            let error: usize = (120..155)
+                .flat_map(|y| {
+                    (120..155).flat_map(move |x| (0..4).map(move |c| (y * 256 + x) * 4 + c))
+                })
+                .map(|i| pixmap.data()[i].abs_diff(native[i]) as usize)
+                .sum();
+            assert!(
+                error <= 12,
+                "SVG versus native RGBA absolute error: {error}"
+            );
         }
     }
 

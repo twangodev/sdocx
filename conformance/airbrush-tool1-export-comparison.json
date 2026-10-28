@@ -1,0 +1,27 @@
+{
+  "schema": "sdocx.airbrush-tool1-export-comparison.v1",
+  "native_fixture": "airbrush-tool-motion-native.json",
+  "scope": "Synthetic empty-setting V2 tool 1 Drawing and desktop Mesa control. SVG rasterized by resvg to 256x256 premultiplied RGBA, PDF rasterized by MuPDF at 96dpi transparent and PDFium at 96dpi on white. Error is sum of absolute channel differences from the native host frame. Neither Android device nor other transforms are established.",
+  "artifacts": {
+    "generic.svg": "4e4815c15dc3b1d381513e91b99a95d79249218462ce8e9b456074530d96d2a9",
+    "tool1.png": "9ceca4098d616be205c78c02cca1076429265ce74579cd84be10435e1244b242",
+    "generic.png": "6ac099c1176e83830db2281c679188415b136eae144c1f6a2d767a009855d3d5",
+    "generic.pdf": "63f70bd2aeb7d0a00a0784b9f2b8e828fc6d4d61d9ab1a546c8e436c3ad9f225",
+    "tool1.pdf": "6c079c09abaf327d23aa46e69ab553728d454d89ebfda2eb578a373d4bc8f859",
+    "tool1.svg": "7e5df4f9f23ee0cf85131b1a331958c2a68f84c78db1c1a46c215f79cae0fdc0"
+  },
+  "results": {
+    "svg_rgba": {
+      "profile_error": 12,
+      "fallback_error": 5431
+    },
+    "mupdf_rgba": {
+      "profile_error": 3825,
+      "fallback_error": 5591
+    },
+    "pdfium_rgb_white": {
+      "profile_error": 1575,
+      "fallback_error": 9022
+    }
+  }
+}
