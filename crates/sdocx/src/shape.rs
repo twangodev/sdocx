@@ -7,7 +7,7 @@ use crate::shape_paint_source::{
 };
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
-mod model_arc;
+pub(crate) mod model_arc;
 mod model_quad_arc;
 mod native_arc;
 #[cfg(test)]

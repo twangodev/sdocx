@@ -2523,3 +2523,172 @@ fn native_arc_roundtrip_frame_parses() {
     );
     assert_eq!(shape.path_data.len(), 87);
 }
+
+#[cfg(feature = "pdf")]
+#[test]
+fn captured_default_arc_renders_sector_fill_and_open_outline() {
+    let cases: [(&[u8], u32, &str); 3] = [
+        (
+            include_bytes!("fixtures/native-arc-filled-frame.bin"),
+            0xffff0000,
+            "L110,70 z",
+        ),
+        (
+            include_bytes!("fixtures/native-arc-circle-frame.bin"),
+            0xff0088ff,
+            "L60,70 z",
+        ),
+        (
+            include_bytes!("fixtures/native-arc-tall-frame.bin"),
+            0x80ff0000,
+            "L60,120 z",
+        ),
+    ];
+    for (frame, color, center) in cases {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+        assert!(matches!(shape.fill, ShapePaint::Solid(value) if value == color));
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 2);
+        let expected_rgb = if color == 0xff0088ff {
+            "#0088ff"
+        } else {
+            "#ff0000"
+        };
+        let expected_alpha = if color == 0x80ff0000 {
+            "0.5020"
+        } else {
+            "1.0000"
+        };
+        assert_eq!(paths[0].attribute("fill"), Some(expected_rgb));
+        assert_eq!(paths[0].attribute("fill-opacity"), Some(expected_alpha));
+        let fill = paths[0].attribute("d").unwrap();
+        let outline = paths[1].attribute("d").unwrap();
+        assert!(fill.ends_with(center), "{fill}");
+        assert!(!outline.contains('L'));
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        let red = ops
+            .operations
+            .iter()
+            .position(|op| op.operator == "rg")
+            .unwrap();
+        let color_operands = &ops.operations[red].operands;
+        let expected = if color == 0xff0088ff {
+            [0.0, 136.0 / 255.0, 1.0]
+        } else {
+            [1.0, 0.0, 0.0]
+        };
+        for (actual, expected) in color_operands.iter().zip(expected) {
+            assert!((f64::from(actual.as_float().unwrap()) - expected).abs() < 0.00001);
+        }
+        if color == 0x80ff0000 {
+            let page = pdf.get_pages()[&1];
+            let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
+                value
+                    .as_reference()
+                    .map(|id| pdf.get_dictionary(id).unwrap().clone())
+                    .unwrap_or_else(|_| value.as_dict().unwrap().clone())
+            };
+            let resources = resolve(pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap());
+            let states = resolve(resources.get(b"ExtGState").unwrap());
+            let fill_index = red
+                + ops.operations[red..]
+                    .iter()
+                    .position(|op| op.operator == "f")
+                    .unwrap();
+            let mut active: Option<Vec<u8>> = None;
+            let mut stack = Vec::new();
+            for op in &ops.operations[..fill_index] {
+                match op.operator.as_str() {
+                    "q" => stack.push(active.clone()),
+                    "Q" => active = stack.pop().unwrap(),
+                    "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
+                    _ => {}
+                }
+            }
+            let state = resolve(states.get(&active.expect("fill graphics state")).unwrap());
+            let alpha = state.get(b"ca").unwrap().as_float().unwrap();
+            assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001, "{alpha}");
+        }
+        let shape_ops: Vec<_> = ops.operations[red..]
+            .iter()
+            .map(|op| op.operator.as_str())
+            .collect();
+        assert!(
+            shape_ops.windows(2).any(|ops| ops == ["l", "h"]),
+            "{shape_ops:?}"
+        );
+        assert!(shape_ops.contains(&"f"));
+        assert!(shape_ops.contains(&"S"));
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn arc_with_moved_control_retains_generic_path_fallback() {
+    let mut frame = include_bytes!("fixtures/native-arc-filled-frame.bin").to_vec();
+    assert_eq!(&frame[330..338], &110.0_f64.to_le_bytes());
+    frame[330..338].copy_from_slice(&100.0_f64.to_le_bytes());
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &frame)).unwrap();
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(shape.control_points[0], [100.0, 20.0]);
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    assert_eq!(
+        xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+        1
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn default_arc_with_custom_outline_retains_generic_path_fallback() {
+    let frame = include_bytes!("fixtures/native-arc-filled-frame.bin");
+    let base_len = u32::from_le_bytes(frame[..4].try_into().unwrap()) as usize;
+    let base6_len = u32::from_le_bytes(frame[base_len..base_len + 4].try_into().unwrap()) as usize;
+    let frame = [
+        frame[..base_len].to_vec(),
+        outline(),
+        frame[base_len + base6_len..].to_vec(),
+    ]
+    .concat();
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &frame)).unwrap();
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(shape.style.width, 3.5);
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    assert_eq!(
+        xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+        1
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn arc_with_changed_owner_bounds_retains_generic_path_fallback() {
+    let frame = include_bytes!("fixtures/native-arc-filled-frame.bin");
+    let mut parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+    let sdocx::PageObjectContent::Element(PageElement::Shape(shape)) =
+        &mut parsed.document.pages[0].objects[0].content
+    else {
+        panic!("expected shape")
+    };
+    shape.metadata.bbox.x_min += 1.0;
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    assert_eq!(
+        xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+        1
+    );
+}

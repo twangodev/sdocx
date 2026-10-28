@@ -1945,6 +1945,12 @@ fn main() {
             shape_paths::capture_saved(Path::new(&path), Path::new(&base), Path::new(&skia));
             return;
         }
+        Some("--named-arc-drawing") => {
+            let base = std::env::args_os().nth(3).unwrap();
+            let skia = std::env::args_os().nth(4).unwrap();
+            shape_paths::capture_drawing_shape(Path::new(&path), Path::new(&base), Path::new(&skia));
+            return;
+        }
         Some("--shape-paths") => {
             let base = std::env::args_os()
                 .nth(3)

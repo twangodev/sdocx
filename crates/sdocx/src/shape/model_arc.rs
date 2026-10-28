@@ -122,7 +122,7 @@ fn ray_parameter(angle: f32, rect: [f32; 4], rx: f32, ry: f32) -> Option<([f32; 
 /// start point followed by quadratic control/end pairs. `None` means the
 /// rectangle is inverted or non-finite and this bounded reconstruction does
 /// not claim a result for it.
-pub(super) fn expand(input: [f32; 6]) -> Option<Vec<[f32; 2]>> {
+pub(crate) fn expand(input: [f32; 6]) -> Option<Vec<[f32; 2]>> {
     let [left, top, right, bottom, start, sweep] = input;
     if input.iter().any(|value| !value.is_finite()) || left > right || top > bottom {
         return None;

@@ -13,7 +13,7 @@ const RECTANGLE: u64 = MODEL + 0x1100;
 const ITERATOR: u64 = MODEL + 0x1200;
 const OUTPUT: u64 = MODEL + 0x2000;
 const FILLS: [u8; 5] = [0, 85, 165, 255, 0];
-const SYMBOLS: [&str; 23] = [
+const SYMBOLS: [&str; 26] = [
     "_ZdlPv",
     "_Znwm",
     "free",
@@ -31,7 +31,7 @@ const SYMBOLS: [&str; 23] = [
     "emutls",
     "strlen",
     "pow",
-    "uuid_create", "uuid_make", "uuid_export", "uuid_destroy", "memcmp", "acosf",
+    "uuid_create", "uuid_make", "uuid_export", "uuid_destroy", "memcmp", "acosf", "guard_acquire", "guard_release", "guard_abort",
 ];
 
 #[link(name = "m")]
@@ -129,6 +129,9 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, context: *mu
     let second = read_register(engine, REGISTER_X0 + 1);
     let third = read_register(engine, REGISTER_X0 + 2);
     match name {
+        "guard_acquire" => register(engine, REGISTER_X0, u64::from(bytes(engine,first,1)[0] == 0)),
+        "guard_release" => write(engine,first,&[1]),
+        "guard_abort" => {},
         "acosf" => { let x = f32::from_bits(read_register(engine, 136) as u32); register(engine, 136, u64::from(unsafe { acosf(x) }.to_bits())); },
         "memcmp" => { let a = bytes(engine, first, third as usize); let b = bytes(engine, second, third as usize); let cmp = a.iter().zip(b.iter()).find_map(|(x,y)| if x != y { Some(i32::from(*x)-i32::from(*y)) } else { None }).unwrap_or(0); register(engine, REGISTER_X0, cmp as u32 as u64); },
         "uuid_create" => { write(engine, first, &(MODEL + 0x7d000).to_le_bytes()); register(engine, REGISTER_X0, 0); },
@@ -153,6 +156,7 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, context: *mu
         "realloc" => {
             let pointer = state.allocate(engine, second);
             if first != 0 {
+                if !state.audit_events.is_null() { unsafe { &mut *state.audit_events }.push((false, first, 0)); }
                 let previous = state
                     .allocations
                     .remove(&first)
@@ -1970,3 +1974,7 @@ pub(super) use named_arc::capture_named;
 #[path = "../../tools/named_arc_saved/capture.rs"]
 mod named_arc_saved;
 pub(super) use named_arc_saved::capture_named as capture_saved;
+
+#[path = "../../tools/named_arc_drawing/capture.rs"]
+mod named_arc_drawing;
+pub(super) use named_arc_drawing::capture_named as capture_drawing_shape;

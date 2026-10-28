@@ -6,7 +6,7 @@ unicorn=${2:?supply Unicorn library directory}
 tmp=$(mktemp -d /tmp/sdocx-arc-saved.XXXXXX)
 trap 'rm -rf "$tmp"' EXIT
 cd "$root"
-printf '%s\n' '722441aa6e9e64dc5c275d04e77566645fa4e998bc397556099a6fa3e72d8e0a  conformance/native_table.rs' '982bab3e53c91743ce911bc929459bec2ec0afedf6ee780b11c213f985838d54  conformance/native_table/shape_paths.rs' '1f605d2770657dbeef414b7dda0dbed935d81a4ae12ed8272183174ef436fde3  tools/named_arc_saved/capture.rs' | sha256sum -c
+printf '%s\n' '5726e44277b6b7daeddb8e75e2429580e984852cb75638092db43d8240ba00c4  conformance/native_table.rs' '4e90665effc605483a5d2589a5b85bebb016025e1250b7659b0e269e28593f0c  conformance/native_table/shape_paths.rs' '1f605d2770657dbeef414b7dda0dbed935d81a4ae12ed8272183174ef436fde3  tools/named_arc_saved/capture.rs' | sha256sum -c
 printf '%s  %s\n' ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c "$unicorn/libunicorn.so.2" | sha256sum -c
 ln -s "$unicorn/libunicorn.so.2" "$tmp/libunicorn.so"
 rustc --edition=2024 conformance/native_table.rs -L "$tmp" -o "$tmp/probe"

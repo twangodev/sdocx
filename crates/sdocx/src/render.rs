@@ -1941,6 +1941,83 @@ fn native_svg_commands(
     Ok(data)
 }
 
+// Native Drawing records a center-closed fill and open outline for default
+// unrotated Arc controls. The matching path and default outline checks keep
+// moved controls, nonmatching paths and unobserved line styles on the fallback.
+fn default_arc_sector(
+    shape: &crate::NativeShape,
+    commands: &[crate::shape::NativePathCommand],
+) -> Option<Data> {
+    use crate::shape::NativePathCommand;
+    if shape.shape_type != 20
+        || shape.rotation_degrees != 0.0
+        || shape.horizontal_flip
+        || shape.vertical_flip
+        || !matches!(shape.fill, crate::ShapePaint::Solid(_))
+        || !matches!(shape.style.paint, crate::ShapePaint::Solid(0xff000000))
+        || shape.style.width != 2.0
+        || shape.style.compound != 0
+        || shape.style.dash != 0
+        || shape.style.cap != 0
+        || shape.style.join != 0
+        || shape.style.begin_arrow != [0; 2]
+        || shape.style.end_arrow != [0; 2]
+    {
+        return None;
+    }
+    let owner = shape.metadata.bbox;
+    let drawn = shape.drawn_bbox;
+    let owner = [owner.x_min, owner.y_min, owner.x_max, owner.y_max].map(|x| x as f32);
+    let drawn = [drawn.x_min, drawn.y_min, drawn.x_max, drawn.y_max].map(|x| x as f32);
+    if owner.iter().any(|x| !x.is_finite())
+        || owner.map(f32::to_bits) != drawn.map(f32::to_bits)
+        || shape
+            .metadata
+            .rotation_degrees
+            .is_some_and(|angle| angle != 0.0)
+    {
+        return None;
+    }
+    let bounds = [
+        shape.geometry_bbox.x_min,
+        shape.geometry_bbox.y_min,
+        shape.geometry_bbox.x_max,
+        shape.geometry_bbox.y_max,
+    ]
+    .map(|x| x as f32);
+    let [left, top, right, bottom] = bounds;
+    if bounds.iter().any(|x| !x.is_finite()) || left >= right || top >= bottom {
+        return None;
+    }
+    let cx = (left + right) * 0.5;
+    let cy = (top + bottom) * 0.5;
+    if !cx.is_finite()
+        || !cy.is_finite()
+        || shape.control_points
+            != [
+                [f64::from(cx), f64::from(top)],
+                [f64::from(right), f64::from(cy)],
+            ]
+    {
+        return None;
+    }
+    let points = crate::shape::model_arc::expand([left, top, right, bottom, 270.0, 90.0])?;
+    let mut expected = vec![NativePathCommand::Move(points.first()?.map(f64::from))];
+    for pair in points[1..].as_chunks::<2>().0 {
+        expected.push(NativePathCommand::Quadratic([
+            pair[0].map(f64::from),
+            pair[1].map(f64::from),
+        ]));
+    }
+    if commands != expected {
+        return None;
+    }
+    let mut fill = expected;
+    fill.push(NativePathCommand::Line([f64::from(cx), f64::from(cy)]));
+    fill.push(NativePathCommand::Close);
+    native_svg_commands(fill).ok()
+}
+
 fn render_shape(
     svg: &mut Scene,
     shape: &crate::NativeShape,
@@ -1948,6 +2025,7 @@ fn render_shape(
     source_offset: Option<usize>,
 ) -> Result<(), GeometryDiagnosticKind> {
     // Validate all path/primitive geometry before paint definitions allocate IDs.
+    let mut arc_fill = None;
     let path = if shape.path_data.is_empty() {
         None
     } else {
@@ -1995,6 +2073,7 @@ fn render_shape(
                 GeometryDiagnosticKind::UnrepresentablePath
             });
         };
+        arc_fill = default_arc_sector(shape, &normalized.commands);
         Some(native_svg_commands(normalized.commands)?)
     };
     let bbox = shape.geometry_bbox;
@@ -2032,6 +2111,16 @@ fn render_shape(
         theme,
         source_offset,
     );
+    let separated_fill = arc_fill.is_some();
+    if let Some(fill_path) = arc_fill {
+        svg.push(
+            Path::new()
+                .data(fill_path)
+                .fill(fill)
+                .fill_opacity(decimal(opacity, 4))
+                .stroke(Paint::None),
+        );
+    }
     let mut style = shape_outline(
         svg,
         &shape.style,
@@ -2039,7 +2128,7 @@ fn render_shape(
         source_offset,
         &shape.metadata.uuid,
     )
-    .fill(fill)
+    .fill(if separated_fill { Paint::None } else { fill })
     .fill_opacity(decimal(opacity, 4));
     if let Some(path) = path {
         svg.push(style.add(Path::new().data(path)));
