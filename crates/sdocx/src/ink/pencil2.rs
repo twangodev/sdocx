@@ -464,6 +464,41 @@ mod tests {
     const FIXTURE: &str = include_str!("../../../../conformance/pencil2-v14-native.json");
     const NATIVE_RECORDS: &[u8] = include_bytes!("../../../../conformance/pencil2-v14-native.bin");
 
+    #[test]
+    fn pressure_alpha_matches_native_source_alpha_controls() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil2-v14-alpha-mid-native.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 4);
+        for name in [
+            "alpha_zero",
+            "alpha_mid_low",
+            "alpha_mid_high",
+            "alpha_full",
+        ] {
+            let case = &cases[name];
+            let color =
+                u32::from_str_radix(case["color"].as_str().unwrap().trim_start_matches("0x"), 16)
+                    .unwrap();
+            let state = AlphaState {
+                alpha_byte: (color >> 24) as u8,
+                square_pressure_flag: 0,
+                base: 2.0,
+                size_level: 1,
+            };
+            let expected = hex_u32(case["return_bits"].as_str().unwrap()).unwrap();
+            let pressure =
+                f32::from_bits(hex_u32(case["pressure_bits"].as_str().unwrap()).unwrap());
+            assert_eq!(
+                pressure_alpha(pressure, state).to_bits(),
+                expected,
+                "{name}"
+            );
+        }
+    }
+
     fn fixture() -> Value {
         serde_json::from_str(FIXTURE).expect("valid compact Pencil2 V14 fixture")
     }
