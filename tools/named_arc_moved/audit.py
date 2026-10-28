@@ -33,12 +33,10 @@ for n, p, base, shift in libs:
         if ndx != "UND":
             byname[name.split("@")[0]].add(int(addr, 16))
     d[n] = (f.read_bytes(), reloc, byname, base, shift)
-trace = (
-    (script_dir / "target-trace.txt")
-    .read_text()
-    .split("reached plt {")[1]
-    .split("}")[0]
+trace_path = (
+    pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else script_dir / "target-trace.txt"
 )
+trace = trace_path.read_text().split("reached plt {")[1].split("}")[0]
 pairs = [
     tuple(int(x, 16) for x in z) for z in re.findall(r"([0-9a-f]+): ([0-9a-f]+)", trace)
 ]

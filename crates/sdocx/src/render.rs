@@ -1943,7 +1943,7 @@ fn native_svg_commands(
 
 // Native Drawing records a center-closed fill and open outline for captured
 // unrotated Arc controls. Require the reconstructed outline to match the saved
-// path exactly; unobserved styles and nonmatching geometry use the fallback.
+// path exactly; unsupported styles and nonmatching geometry use the fallback.
 fn matching_arc_sector(
     shape: &crate::NativeShape,
     commands: &[crate::shape::NativePathCommand],
@@ -1954,8 +1954,9 @@ fn matching_arc_sector(
         || shape.horizontal_flip
         || shape.vertical_flip
         || !matches!(shape.fill, crate::ShapePaint::Solid(_))
-        || !matches!(shape.style.paint, crate::ShapePaint::Solid(0xff000000))
-        || shape.style.width != 2.0
+        || !matches!(shape.style.paint, crate::ShapePaint::Solid(_))
+        || !shape.style.width.is_finite()
+        || shape.style.width <= 0.0
         || shape.style.compound != 0
         || shape.style.dash != 0
         || shape.style.cap != 0

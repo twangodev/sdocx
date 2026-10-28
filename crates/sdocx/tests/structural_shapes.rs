@@ -2771,3 +2771,129 @@ fn native_moved_arcs_render_sector_and_open_outline() {
         assert!(names.contains(&"f") && names.contains(&"S"));
     }
 }
+
+#[cfg(feature = "render")]
+#[test]
+fn native_moved_arcs_with_solid_outlines_render_separate_paths() {
+    for (frame, color, width) in [
+        (
+            include_bytes!("fixtures/native-arc-style-thin.bin").as_slice(),
+            "#009955",
+            "0.5",
+        ),
+        (
+            include_bytes!("fixtures/native-arc-style-wide.bin").as_slice(),
+            "#cc6622",
+            "12",
+        ),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 2, "{svg}");
+        assert!(paths[0].attribute("d").unwrap().ends_with("L110,70 z"));
+        assert!(!paths[1].attribute("d").unwrap().contains('L'));
+        let outline = paths[1]
+            .ancestors()
+            .find(|n| n.attribute("stroke-width").is_some())
+            .unwrap();
+        assert_eq!(outline.attribute("stroke"), Some(color));
+        assert_eq!(outline.attribute("stroke-width"), Some(width));
+        if color == "#009955" {
+            let group = paths[1]
+                .ancestors()
+                .find(|n| n.attribute("stroke-opacity").is_some())
+                .unwrap();
+            assert!(
+                (group
+                    .attribute("stroke-opacity")
+                    .unwrap()
+                    .parse::<f64>()
+                    .unwrap()
+                    - 128.0 / 255.0)
+                    .abs()
+                    < 0.0001
+            );
+        }
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        if color == "#009955" {
+            let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
+                value
+                    .as_reference()
+                    .map(|id| pdf.get_dictionary(id).unwrap().clone())
+                    .unwrap_or_else(|_| value.as_dict().unwrap().clone())
+            };
+            let page = pdf.get_pages()[&1];
+            let resources = resolve(pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap());
+            let states = resolve(resources.get(b"ExtGState").unwrap());
+            let mut active: Option<Vec<u8>> = None;
+            let mut stack = Vec::new();
+            for op in &ops.operations {
+                match op.operator.as_str() {
+                    "q" => stack.push(active.clone()),
+                    "Q" => active = stack.pop().unwrap(),
+                    "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
+                    "S" => {
+                        let state = resolve(
+                            states
+                                .get(&active.clone().expect("stroke graphics state"))
+                                .unwrap(),
+                        );
+                        let alpha = state.get(b"CA").unwrap().as_float().unwrap();
+                        assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001, "{alpha}");
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let names: Vec<_> = ops
+            .operations
+            .iter()
+            .map(|op| op.operator.as_str())
+            .collect();
+        assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
+        assert!(names.contains(&"f") && names.contains(&"S"));
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn native_arc_unsupported_outline_styles_keep_fallback() {
+    for (width, dash, compound) in [
+        (0.0, 0, 0),
+        (-1.0, 0, 0),
+        (f32::NAN, 0, 0),
+        (f32::INFINITY, 0, 0),
+        (2.0, 1, 0),
+        (2.0, 0, 1),
+    ] {
+        let frame = include_bytes!("fixtures/native-arc-style-wide.bin");
+        let mut parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let PageElement::Shape(shape) = parsed.document.pages[0].elements_mut().next().unwrap()
+        else {
+            panic!("expected shape")
+        };
+        shape.style.width = width;
+        shape.style.dash = dash;
+        shape.style.compound = compound;
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("path"))
+                .count(),
+            1,
+            "width={width} dash={dash} compound={compound}: {svg}"
+        );
+    }
+}
