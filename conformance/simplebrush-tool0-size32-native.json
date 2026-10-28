@@ -1,0 +1,73 @@
+{
+  "scope": "Synthetic ObjectStroke through native Drawing and explicitly dispatched native tasks, transparent 256x256 host Mesa; tool 0 and tool 2 geometry and complete RGBA frame match. Not serialized note or device parity.",
+  "capture_script": "scratch/simplebrush-tool3-multi/simplebrush-5-paint-capture.py",
+  "capture_script_sha256": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4",
+  "source_script": "scratch/simplebrush-tool3-multi/simplebrush-5-source-capture.py",
+  "source_script_sha256": "f1c27d31edc8b1afbcbc107ccca5f17c31f1d40afce5711d51779faedf4e9eb5",
+  "arguments": "SIMPLEBRUSH_POINTS=[[0,4],[8,8],[16,4],[24,12]] SIMPLEBRUSH_PRESSURES=[0.25,0.5,0.75,1.0] --tool-type 0 or 2 --pen-size 32 --width 256 --height 256 --dispatch-task-seq 0 through 7",
+  "rgba_sha256": "11816bb062e8b0f3060a328bc6561bf60715a5c79d80716a8210d1363414c9d2",
+  "crop_sha256": "652c7ab11b08494aafc29d3df785224ca7135094ef326819a549952ffc92abc3",
+  "controls": {
+    "curve-32": {
+      "input": {
+        "advanced_setting": null,
+        "color_argb": "0x8044aaee",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Brush",
+        "pen_size_f32_bits": "00000042",
+        "pen_size_requested_f32_bits": "00000042",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00008040"
+          ],
+          [
+            "00000041",
+            "00000041"
+          ],
+          [
+            "00008041",
+            "00008040"
+          ],
+          [
+            "0000c041",
+            "00004041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "pressure_profile": "case",
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "tool_type": 0
+      },
+      "geometry_hex": "00000000000080409a99314152049e3f8ac093409a99314183dc1a4021b7a6409a993141f4ff7f40fdffbf409a993141000080400000c04099993141a854d540aa71dc4051b83241fe541541e471dc4009d73341fdff3f410300c040c1f53441000040410000c040c2f53441804b6e4129d2aa40273136418e378c419d36c3408c6c3741feff9f41faffff40f1a738410000a04100000041f1a73841f1ea9b41c3abef4099b83a413455ad4167aa1a4141c93c41fdffbf41faff3f41e9d93e41",
+      "geometry_sha256": "614f922dda653bbb26ea101acdce701982e18ceb59751bf5ded2cf2d2f2f11b2",
+      "geometry_count": 16,
+      "rgba_sha256": "11816bb062e8b0f3060a328bc6561bf60715a5c79d80716a8210d1363414c9d2",
+      "both_gl_verdict_clean": true
+    }
+  }
+}
