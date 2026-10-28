@@ -206,6 +206,22 @@ Drawing and saved-redraw streams match each other and the Rust adapter in the
 [stationary controls](../../conformance/pencil3-stationary-native.json). These
 are synthetic Model inputs under the same host adapters, not device frames.
 
+A [hybrid serialized-frame
+control](../../conformance/pencil3-generated-serialized-native.json) supplies
+four synthetic points and channels, a synthetic string table, and a 166-byte
+type-1 frame retaining source-derived structural and style bytes, including
+pen size f32 bytes `6ade1141` to native Model attachment and Drawing under the
+host Unicorn adapters. Drawing selects Pencil3 GLV3 and emits 51 records. A
+Rust regression decodes the same type-1 frame following a synthetic type-0
+base, manually resolves the two relevant string IDs, and matches every byte of
+the native record stream at the explicit 1920×1080 screen setting; the public
+viewport preparer also selects its V3 profile. The receipt retains the hybrid
+frame and synthetic table, native stream, library and local script hashes, and
+the original invocation. The capture depends on ignored scratch and tmp
+harnesses and an operator-local source note, so it is not portable to a clean
+checkout. This does not exercise Rust archive or note-table parsing, the whole
+native note loader, public SVG/PDF paint, or Android device output.
+
 A [short-stroke control](../../conformance/pencil3-short-stroke-native.json)
 found that native Drawing returns failure without selecting a Pencil3 drawable
 for one source point. Two and three points produce 19 and 31 particles,

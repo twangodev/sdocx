@@ -11924,6 +11924,89 @@ mod tests {
     }
 
     #[test]
+    fn pencil3_generated_serialized_frame_reaches_native_v3_records() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/pencil3-generated-serialized-native.json"
+        ))
+        .unwrap();
+        let decode = |hex: &str| -> Vec<u8> {
+            hex.as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let mut fixed = 5500_u32.to_le_bytes().to_vec();
+        fixed.extend_from_slice(&36_u16.to_le_bytes());
+        fixed.extend_from_slice(b"00000000-0000-0000-0000-000000000001");
+        fixed.extend_from_slice(&1234_i64.to_le_bytes());
+        for value in [10.0_f64, 10.0, 40.0, 20.0] {
+            fixed.extend_from_slice(&value.to_le_bytes());
+        }
+        fixed.extend_from_slice(&0_i32.to_le_bytes());
+        fixed.push(0);
+        let offset = 18 + fixed.len();
+        let mut payload = ((offset + 16) as u32).to_le_bytes().to_vec();
+        payload.extend_from_slice(&0_i16.to_le_bytes());
+        payload.extend_from_slice(&(offset as u32).to_le_bytes());
+        payload.extend_from_slice(&[2, 8, 0, 4]);
+        payload.extend_from_slice(&0x6000_u32.to_le_bytes());
+        payload.extend_from_slice(&fixed);
+        payload.extend_from_slice(&[0; 16]);
+        payload.extend(decode(receipt["frame_hex"].as_str().unwrap()));
+        let mut stroke =
+            crate::decode::decode_stroke(&payload, &crate::ParseLimits::default()).unwrap();
+        crate::StrokeResources::new(&crate::NoteStringTable {
+            entries: vec![
+                crate::NoteStringId {
+                    id: 1,
+                    text: "4;".into(),
+                },
+                crate::NoteStringId {
+                    id: 2,
+                    text: "com.samsung.android.sdk.pen.pen.preload.Pencil3".into(),
+                },
+            ],
+            trailing_data: Vec::new(),
+        })
+        .resolve(&mut stroke);
+        let rendering = stroke.rendering.as_ref().unwrap();
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("4;"));
+        assert_eq!(rendering.style.color_argb, Some(0xff00_0000));
+        assert_eq!(stroke.points.len(), 4);
+        let prepared =
+            crate::ink::pencil_source::prepare_pencil3_v3_source(&stroke, 1920, 1080).unwrap();
+        let actual: Vec<u8> = prepared
+            .records
+            .iter()
+            .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            actual,
+            decode(receipt["native_stream_hex"].as_str().unwrap())
+        );
+        let options = RenderOptions {
+            pencil3_profile: Some(super::Pencil3RenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+                canvas_width: 320,
+                canvas_height: 180,
+                paper_sampler: super::Pencil3PaperSampler::ClampToEdge,
+            }),
+            ..RenderOptions::default()
+        };
+        let public = super::prepare_stroke_for_viewport_with_theme(
+            &stroke,
+            RenderTheme::for_canvas(false),
+            &options,
+            [320, 180],
+        );
+        assert_eq!(public.profile, Some("Pencil3V3"));
+        assert_eq!(public.points.len(), prepared.records.len());
+    }
+
+    #[test]
     fn inkpen2_serialized_style_mapping_reaches_native_v9_records() {
         // Bounded hybrid source control: this type-0 base prefix is borrowed
         // from a Fountain note, while the type-1 style frame is host-built.

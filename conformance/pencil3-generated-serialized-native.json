@@ -1,0 +1,73 @@
+{
+  "schema": "pencil3-generated-serialized-native-v1",
+  "scope": "Hybrid synthetic 4-point type-1 frame: generated channels and substituted IDs with source-derived structural and style bytes, including pen size f32 little-endian 6ade1141. Loaded through native Model, string manager and Drawing under host Unicorn adapters. Not complete note loading or device paint.",
+  "screen": [
+    1920,
+    1080
+  ],
+  "frame_hex": "a6000000010096000000020404048e000000040000000000000024400000000000002440000000000000344000000000000024400000000000003e400000000000003440000000000000444000000000000034400000803e0000003f0000403f0000803f0a000000140000001e000000280000000000000000000000000000000000000000000000000000000000000000000000020001000000000000ff6ade114102000000",
+  "frame_sha256": "5db0b10a048225c27ad8698f0cd99dcafbf806359fbff81b615fd57c127145e6",
+  "table_sha256": "ad582d45546692b695123a05b69c72b2ca68061a551c2ac1900a8a62692247be",
+  "native_arrays": {
+    "orientation": {
+      "count": 4,
+      "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+    },
+    "points": {
+      "count": 4,
+      "sha256": "78f7ccf39b399c6593fcbe5f21008f3360ac9a991761e956f3fb5fba35928819"
+    },
+    "pressure": {
+      "count": 4,
+      "sha256": "bb5f01878113000f16ce91be1275eda29f7ca5e04fb3e13f652a94ed5b480b5d"
+    },
+    "tilt": {
+      "count": 4,
+      "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+    },
+    "timestamps": {
+      "count": 4,
+      "sha256": "20ce21953bfa4d1d969e1968f84e5fbac0404d2faf337635a1a6b471a26d3cf6"
+    }
+  },
+  "native_stream_hex": "cdcc2041cdcc28416adea14000006041abaa2a3e66663641000034416adea14000004041abaa2a3e9a991141000018416adea14000000040abaa2a3e66662641333307416adea1400000803fabaa2a3e9a990d4100003c416adea14000001041abaa2a3ecdcc0841cdcc28416adea1400000c040abaa2a3ecdcc0841cdcc3c416adea1400000e040abaa2a3e90682641000026410456564000001041abaaaa3e997c4b41333335410456564000005041abaaaa3e520e5241cdcc0a41045656400000e040abaaaa3ecf894c41cdcc2a410456564000004040abaaaa3edfbb6341676614410456564000000041abaaaa3e4f717441333335410456564000003041abaaaa3e6cd184418a6832416adea14000004040cdcccc3e8e8e7e414e8624416adea14000001041cdcccc3e76ad6e41b80a39416adea14000007041cdcccc3e63999841cbf513416adea14000003041cdcccc3e3e0f9141511432416adea1400000a040cdcccc3ee5519a417f9946416adea14000004040cdcccc3e58619641ef1e23416adea14000002041cdcccc3e2b909b41cac336416adea14000006041cdcccc3ef607a941c22526416adea14000002041cdcccc3ec17fa641c8ac43416adea14000000000cdcccc3ef25dae41a82550416adea14000005041cdcccc3e233caa41fc2959416adea14000000040cdcccc3e541aaa41605364416adea14000005041cdcccc3e54c5bc41d0a15d416adea14000005041cdcccc3e86a3d0411ce245416adea14000000040cdcccc3e844eb741421465416adea1400000c040cdcccc3e4876c04109d25c416adea14000008040cdcccc3ea2aac441f1358a416adea14000000040cdcccc3e7145da4134698b416adea14000000040cdcccc3e51e0dc41346982416adea1400000803fcdcccc3e0d48d141bd0292416adea14000003041cdcccc3e4016d741cf3592416adea14000000000cdcccc3e84e4f3416a029b416adea14000000040cdcccc3ea47ff24129028e416adea14000005041cdcccc3ea3e7e441d6018e416adea14000000000cdcccc3e17b6ec41a7349a416adea14000001041cdcccc3e32e200424d3b97416adea14000000000cdcccc3eda74f241378b9f416adea14000001041cdcccc3eb13d044277eb8a416adea14000007041cdcccc3efceb05420c5c8d416adea14000007041cdcccc3e50450b4292768e416adea14000006041cdcccc3edf7c0942d507a5416adea14000006041cdcccc3e442c0e42a0dc9b416adea14000007041cdcccc3eaf8614425c5ba5416adea1400000803fcdcccc3e248c0f426deaa5416adea14000007041cdcccc3e39d60f42d489a1416adea1400000803fcdcccc3e58cb18422cd3a1416adea14000004041cdcccc3eb19e1d42d92c97416adea14000000040cdcccc3e",
+  "native_stream_sha256": "9612cb736eb61da292a3c34b6787c2a05f1da56bbeb2075ed9de6f6a270a6ae3",
+  "native_stream_count": 51,
+  "native_redraw": [
+    "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+    "SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+    "SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+  ],
+  "source_caller_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+  "capture_scripts_sha256": {
+    "scratch/pencil3-serialized-context/capture-stream.py": "4abddeaf929f1344d2f398a3661c9b69bdad2a99cf96e16948890e628aadffd5",
+    "tmp/vector-parity-plan/inkpen-v1-serialized-admission/probe_attached_context.py": "4dbb6400cfe0032471aa61091f2035f86530e8f5086c9d24b7a448f3eab531c1",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
+  },
+  "native_libraries_sha256": {
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "libSPenEngine.so": "79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "capture_invocation": "PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin:tmp/conformance-cleanup/native-capture-a241793/conformance LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu conformance/.venv/bin/python scratch/pencil3-serialized-context/capture-stream.py --v3 --ablated --generated",
+  "rust_boundary": "Rust decodes the synthetic type-1 frame following a host-built type-0 base and manually resolves the two string IDs; it does not parse note.note or run native Android note loading.",
+  "synthetic_table_entries": {
+    "1": "4;",
+    "0": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+    "2": "com.samsung.android.sdk.pen.pen.preload.Pencil3"
+  },
+  "table_hex": "030001000000020034003b0000000000330063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00700065006e002e00700065006e002e007000720065006c006f00610064002e0046006f0075006e007400610069006e00500065006e00020000002f0063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00700065006e002e00700065006e002e007000720065006c006f00610064002e00500065006e00630069006c003300",
+  "reproducibility": "Local nonportable capture: the scratch script derives the synthetic frame and table from an operator-local FountainPen note and imports ignored tmp harnesses; those inputs are not included in this receipt and may be unavailable. The retained frame includes source-derived non-channel structural and style bytes, including pen size f32 little-endian 6ade1141; its four channels and IDs are generated. The table uses synthetic IDs and class names. The local harness uses Unicorn and the pinned native libraries; no complete note loader or device paint is observed.",
+  "local_source_note_sha256": "ec61a8d7a116175b1e5ab953d505d7a31e0708f73acf46cd39bb297d648ce943"
+}
