@@ -403,6 +403,7 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             None,
             None,
             profile.then_some(SimpleBrushRenderProfile::HostV25),
+            false,
             None,
             false,
             None,
@@ -894,4 +895,168 @@ fn tool_zero_unsupported_size_and_terminal_step_fall_back() {
         render_document_svg(&size, &options())[0].svg,
         render_document_svg(&size, &RenderOptions::default())[0].svg
     );
+}
+
+#[test]
+fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
+    let doc = document(stroke());
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let baseline = render_document_svg(&doc, &RenderOptions::default())[0]
+        .svg
+        .clone();
+    let one = render_document_svg(&doc, &options())[0].svg.clone();
+    let scaled = render_document_svg(&doc, &two)[0].svg.clone();
+    assert_ne!(scaled, baseline);
+    assert_ne!(scaled, one);
+    let conflict = RenderOptions {
+        simplebrush_profile: Some(SimpleBrushRenderProfile::HostV25),
+        ..two.clone()
+    };
+    assert_eq!(render_document_svg(&doc, &conflict)[0].svg, baseline);
+    for (tool, size, setting) in [
+        (0, 8.0, None),
+        (3, 8.0, None),
+        (2, 7.0, None),
+        (2, 21.0, None),
+        (2, 8.0, Some("1;")),
+    ] {
+        let mut unsupported = stroke();
+        let rendering = unsupported.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = tool;
+        rendering.advanced_settings = setting.map(str::to_owned);
+        rendering.style.pen_size = Some(size);
+        unsupported.pen_width = size;
+        let unsupported = document(unsupported);
+        assert_eq!(
+            render_document_svg(&unsupported, &two)[0].svg,
+            render_document_svg(&unsupported, &RenderOptions::default())[0].svg
+        );
+    }
+    let mut unsupported = stroke();
+    unsupported.points.push(Point { x: 40.0, y: 25.0 });
+    unsupported.pressures.push(0.5);
+    let unsupported = document(unsupported);
+    assert_eq!(
+        render_document_svg(&unsupported, &two)[0].svg,
+        render_document_svg(&unsupported, &RenderOptions::default())[0].svg
+    );
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn two_pixel_profile_deserializes_old_options_and_roundtrips() {
+    let mut value = serde_json::to_value(RenderOptions::default()).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .remove("simplebrush_two_pixels_per_page_unit");
+    let old: RenderOptions = serde_json::from_value(value).unwrap();
+    assert!(!old.simplebrush_two_pixels_per_page_unit);
+    let value = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let restored: RenderOptions =
+        serde_json::from_value(serde_json::to_value(value).unwrap()).unwrap();
+    assert!(restored.simplebrush_two_pixels_per_page_unit);
+}
+
+#[test]
+fn two_pixel_profile_falls_back_for_replay_and_slices() {
+    let doc = document(stroke());
+    let layout = layout_document(&doc);
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let baseline = RenderOptions::default();
+    let replay = |options: &RenderOptions| {
+        render_layout_page_replay_svg(&doc, &layout, 0, options)
+            .unwrap()
+            .svg
+    };
+    assert_eq!(replay(&two), replay(&baseline));
+    let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
+    let scene = |options: &RenderOptions| {
+        super::DocumentTextCache::default()
+            .render_layout_page_scene_requests(
+                &doc,
+                &[request],
+                options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg
+    };
+    assert_eq!(scene(&two), scene(&baseline));
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn two_pixel_profile_reaches_direct_pdf() {
+    let doc = document(stroke());
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let render = |options: &RenderOptions| {
+        crate::render_document_pdf(&doc, options, &Default::default()).unwrap()
+    };
+    assert_ne!(render(&two), render(&RenderOptions::default()));
+    let conflict = RenderOptions {
+        simplebrush_profile: Some(SimpleBrushRenderProfile::HostV25),
+        ..two
+    };
+    assert_eq!(render(&conflict), render(&RenderOptions::default()));
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn two_pixel_native_export_fixture() {
+    let mut source = stroke();
+    source.points = vec![
+        Point { x: 32.0, y: 224.0 },
+        Point { x: 42.0, y: 224.0 },
+        Point { x: 52.0, y: 219.0 },
+    ];
+    source.pen_width = 12.0;
+    source.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+    source.color = Some(Color {
+        r: 0x44,
+        g: 0xaa,
+        b: 0xee,
+    });
+    let mut doc = document(source);
+    doc.pages[0].width = 256;
+    doc.pages[0].height = 256;
+    if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_TWO_EXPORT") {
+        let directory = std::path::Path::new(&directory);
+        std::fs::create_dir_all(directory).unwrap();
+        let mut blank = doc.clone();
+        blank.pages[0].objects.clear();
+        std::fs::write(
+            directory.join("paper.pdf"),
+            crate::render_document_pdf(&blank, &Default::default(), &Default::default()).unwrap(),
+        )
+        .unwrap();
+        let two = RenderOptions {
+            simplebrush_two_pixels_per_page_unit: true,
+            ..Default::default()
+        };
+        for (name, options) in [
+            ("generic", RenderOptions::default()),
+            ("one", options()),
+            ("two", two),
+        ] {
+            let svg = render_document_svg(&doc, &options).remove(0).svg;
+            let pdf = crate::render_document_pdf(&doc, &options, &Default::default()).unwrap();
+            std::fs::write(directory.join(format!("{name}.svg")), svg).unwrap();
+            std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
+        }
+    }
 }

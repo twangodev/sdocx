@@ -386,6 +386,10 @@ pub struct RenderOptions {
     /// Experimental SimpleBrush host-capture approximation; replay uses generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    /// Assert two output pixels per page unit for the experimental SimpleBrush route.
+    /// Combining this assertion with `simplebrush_profile` falls back to generic paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub simplebrush_two_pixels_per_page_unit: bool,
     /// Opt into approximate fresh-state Montblanc paint at unit output scale.
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
@@ -903,6 +907,7 @@ impl DocumentTextCache {
             options.pencil3_profile,
             options.airbrush_profile,
             options.simplebrush_profile,
+            options.simplebrush_two_pixels_per_page_unit,
             options.montblanc_profile,
             options.montblanc_two_pixels_per_page_unit,
             options.legacy_marker_centerline_profile,
@@ -1414,6 +1419,7 @@ fn render_page_contents_svg(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    simplebrush_two_pixels_per_page_unit: bool,
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1490,6 +1496,7 @@ fn render_page_contents_svg(
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
+        simplebrush_two_pixels_per_page_unit,
         montblanc_profile,
         montblanc_two_pixels_per_page_unit,
         legacy_marker_centerline_profile,
@@ -1547,6 +1554,7 @@ struct CompositionContext<'a> {
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    simplebrush_two_pixels_per_page_unit: bool,
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1650,6 +1658,7 @@ fn render_object(
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
+                context.simplebrush_two_pixels_per_page_unit,
                 context.montblanc_profile,
                 context.montblanc_two_pixels_per_page_unit,
                 context.legacy_marker_centerline_profile,
@@ -4074,6 +4083,7 @@ fn render_stroke(
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
+    simplebrush_two_pixels_per_page_unit: bool,
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -4222,17 +4232,35 @@ fn render_stroke(
     // carries correct per-source-sample and terminal part boundaries.
     if native_allowed
         && replay_index.is_none()
-        && simplebrush_profile == Some(SimpleBrushRenderProfile::HostV25)
+        && ((simplebrush_profile == Some(SimpleBrushRenderProfile::HostV25)
+            && !simplebrush_two_pixels_per_page_unit)
+            || (simplebrush_profile.is_none()
+                && simplebrush_two_pixels_per_page_unit
+                && stroke.points.len() == 3
+                && stroke.rendering.as_ref().is_some_and(|rendering| {
+                    rendering.tool_type_raw == 2
+                        && rendering.advanced_settings.is_none()
+                        && rendering
+                            .style
+                            .pen_size
+                            .is_some_and(|size| (8.0..=20.0).contains(&size))
+                })
+                && slice.is_none()))
         && viewport.iter().all(|dimension| *dimension > 0)
         && let Ok(paint) = crate::ink::simplebrush::prepare_stroke(
             stroke,
             true,
             simplebrush_remaining_stamps.get(),
         )
-        && simplebrush::render(
+        && simplebrush::render_at_scale(
             svg,
             &paint.samples,
             &theme.foreground(Some(paint.color)),
+            if simplebrush_two_pixels_per_page_unit {
+                2.0
+            } else {
+                1.0
+            },
             slice.map(|slice| {
                 let top = f64::from(slice.y());
                 (top, top + f64::from(slice.height()))

@@ -129,6 +129,17 @@ fallback in those outputs. Texture behavior across versions, raster precision, a
 transforms, saved-note and device parity remain unverified. The profile is unavailable without the
 `pdf` feature. See the [Marker findings](reverse-engineering/stroke-rendering-findings.md#legacy-marker-source-to-mesh-controls).
 
+A separate experimental `simplebrush_two_pixels_per_page_unit` assertion selects
+scale-adjusted SimpleBrush fringe for three-point, tool-2, null-setting strokes
+with sizes 8 through 20. The caller asserts two output pixels per page unit;
+combining it with `simplebrush_profile`, replay, sliced output, and unsupported
+inputs uses generic paint. Synthetic 2× host controls support the approximation,
+with other paths and intermediate sizes extrapolated. A [public SVG and direct
+PDF comparison](../conformance/simplebrush-scale-2x-host.json) improves error
+against a fractional host-Mesa capture over the unit-scale route; device and
+saved-note parity remain unverified. The [capture and comparison instructions](../tools/simplebrush-scale/README.md)
+require local native inputs.
+
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null or empty settings, tools 2 and 3,
 curve-enabled strokes without saved stylus channels, with two through 224 points and finite sizes from 3 through 32; unsupported

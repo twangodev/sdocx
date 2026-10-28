@@ -15,10 +15,21 @@ const MAX_COORDINATE: f64 = 10_000_000.0;
 /// Draw `[x, y, radius]` samples and return false without changing the scene
 /// when their geometry, color, or estimated output exceeds the supported bounds.
 /// Replay is intentionally left to the caller's fallback route.
+#[cfg(test)]
 pub(super) fn render(
     scene: &mut Scene,
     samples: &[[f32; 3]],
     color: &str,
+    page_slice: Option<(f64, f64)>,
+) -> bool {
+    render_at_scale(scene, samples, color, 1.0, page_slice)
+}
+
+pub(super) fn render_at_scale(
+    scene: &mut Scene,
+    samples: &[[f32; 3]],
+    color: &str,
+    scale: f64,
     page_slice: Option<(f64, f64)>,
 ) -> bool {
     let Some(color) = ColorValue::from_hex(color) else {
@@ -52,7 +63,7 @@ pub(super) fn render(
         if page_slice.is_some_and(|(top, bottom)| y + radius < top || y - radius > bottom) {
             continue;
         }
-        let inner = (radius - 1.0).max(0.0) / radius;
+        let inner = (radius - 1.0 / scale).max(0.0) / radius;
         let id = scene.definition::<Gradient>();
         let gradient = RadialGradient::new(&id)
             .cx(x)
