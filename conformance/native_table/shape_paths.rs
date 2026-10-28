@@ -13,7 +13,7 @@ const RECTANGLE: u64 = MODEL + 0x1100;
 const ITERATOR: u64 = MODEL + 0x1200;
 const OUTPUT: u64 = MODEL + 0x2000;
 const FILLS: [u8; 5] = [0, 85, 165, 255, 0];
-const SYMBOLS: [&str; 17] = [
+const SYMBOLS: [&str; 23] = [
     "_ZdlPv",
     "_Znwm",
     "free",
@@ -31,6 +31,7 @@ const SYMBOLS: [&str; 17] = [
     "emutls",
     "strlen",
     "pow",
+    "uuid_create", "uuid_make", "uuid_export", "uuid_destroy", "memcmp", "acosf",
 ];
 
 #[link(name = "m")]
@@ -38,6 +39,7 @@ unsafe extern "C" {
     fn sincosf(value: f32, sine: *mut f32, cosine: *mut f32);
     fn sinf(value: f32) -> f32;
     fn cosf(value: f32) -> f32;
+    fn acosf(value: f32) -> f32;
     fn tanf(value: f32) -> f32;
     fn atan2f(y: f32, x: f32) -> f32;
     fn sincos(value: f64, sine: *mut f64, cosine: *mut f64);
@@ -56,6 +58,7 @@ unsafe extern "C" {
 }
 pub(super) fn verify_host_math() {
     for address in [
+        acosf as *const c_void,
         sincosf as *const c_void,
         sinf as *const c_void,
         cosf as *const c_void,
@@ -96,6 +99,8 @@ struct HostState {
     cursor: u64,
     allocations: BTreeMap<u64, usize>,
     calls: BTreeMap<&'static str, usize>,
+    audit_events: *mut Vec<(bool,u64,usize)>,
+    uuid_sequence: u64,
 }
 impl HostState {
     fn allocate(&mut self, engine: Engine, length: u64) -> u64 {
@@ -106,6 +111,7 @@ impl HostState {
         assert!(self.cursor < TLS);
         write(engine, pointer, &vec![self.fill; length]);
         self.allocations.insert(pointer, length);
+        if !self.audit_events.is_null() { unsafe { &mut *self.audit_events }.push((true,pointer,length)); }
         pointer
     }
     fn reset(&mut self, fill: u8) {
@@ -123,6 +129,11 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, context: *mu
     let second = read_register(engine, REGISTER_X0 + 1);
     let third = read_register(engine, REGISTER_X0 + 2);
     match name {
+        "acosf" => { let x = f32::from_bits(read_register(engine, 136) as u32); register(engine, 136, u64::from(unsafe { acosf(x) }.to_bits())); },
+        "memcmp" => { let a = bytes(engine, first, third as usize); let b = bytes(engine, second, third as usize); let cmp = a.iter().zip(b.iter()).find_map(|(x,y)| if x != y { Some(i32::from(*x)-i32::from(*y)) } else { None }).unwrap_or(0); register(engine, REGISTER_X0, cmp as u32 as u64); },
+        "uuid_create" => { write(engine, first, &(MODEL + 0x7d000).to_le_bytes()); register(engine, REGISTER_X0, 0); },
+        "uuid_make" | "uuid_destroy" => register(engine, REGISTER_X0, 0),
+        "uuid_export" => { let out = read_u64(engine, third); state.uuid_sequence += 1; write(engine, out, format!("00000000-0000-4000-8000-{:012x}\0", state.uuid_sequence).as_bytes()); register(engine, REGISTER_X0, 0); },
         "recursive-mutex" => register(engine, REGISTER_X0, 0),
         "emutls" => register(engine, REGISTER_X0, TLS + 0x100),
         "pow" => {
@@ -155,6 +166,7 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, context: *mu
             register(engine, REGISTER_X0, pointer);
         }
         "free" | "_ZdlPv" => {
+            if first != 0 && !state.audit_events.is_null() { unsafe { &mut *state.audit_events }.push((false,first,0)); }
             assert!(first == 0 || state.allocations.remove(&first).is_some());
         }
         "memcpy" | "memmove" => {
@@ -717,6 +729,8 @@ pub(super) fn capture(machine: &mut Machine, model: &Path, base: &Path, skia: &P
         cursor: HEAP,
         allocations: BTreeMap::new(),
         calls: BTreeMap::new(),
+        audit_events: ptr::null_mut(),
+        uuid_sequence: 0,
     });
     let _hooks = Hooks::new(machine.engine, state.as_mut());
     let mut canonical = None;
@@ -821,6 +835,8 @@ pub(super) fn capture_model_quad_arcs(model: &Path, base: &Path, skia: &Path) {
         cursor: HEAP,
         allocations: BTreeMap::new(),
         calls: BTreeMap::new(),
+        audit_events: ptr::null_mut(),
+        uuid_sequence: 0,
     });
     let _hooks = Hooks::new(machine.engine, state.as_mut());
 
@@ -910,6 +926,8 @@ fn capture_drawing_arc_case(
         cursor: HEAP,
         allocations: BTreeMap::new(),
         calls: BTreeMap::new(),
+        audit_events: ptr::null_mut(),
+        uuid_sequence: 0,
     });
     let _hooks = Hooks::new(machine.engine, state.as_mut());
     const SEGMENTS: u64 = MODEL + 0x3000;
@@ -1363,6 +1381,8 @@ fn capture_normalize_case(
         cursor: HEAP,
         allocations: BTreeMap::new(),
         calls: BTreeMap::new(),
+        audit_events: ptr::null_mut(),
+        uuid_sequence: 0,
     });
     let _hooks = Hooks::new(machine.engine, state.as_mut());
     let mut source_bytes = Vec::with_capacity(case.segments.len() * 28);
@@ -1946,3 +1966,7 @@ pub(super) fn capture_normalization(model: &Path, base: &Path, skia: &Path) {
 #[path = "../../tools/named_arc/capture.rs"]
 mod named_arc;
 pub(super) use named_arc::capture_named;
+
+#[path = "../../tools/named_arc_saved/capture.rs"]
+mod named_arc_saved;
+pub(super) use named_arc_saved::capture_named as capture_saved;

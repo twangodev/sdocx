@@ -1,0 +1,464 @@
+NUMERIC MODEL BINDINGS: PLT imported symbol -> destination; alias status
+0x47ab10 0x4a44e8 _ZN4SPen6Bezier9ConstructEPNS_6PointFEi -> 0x27359c model MATCH
+0x47ab20 0x4a44f0 _ZN4SPen6Bezier6UpdateEPNS_6PointFEi -> 0x273654 model MATCH
+0x47ab30 0x4a44f8 _ZNK4SPen6Bezier21GetControlPointsCountEv -> 0x27377c model MATCH
+0x47ab60 0x4a4510 _ZN4SPen6Bezier19GenerateBoundingBoxEv -> 0x274410 model MATCH
+0x47ab80 0x4a4520 _ZN4SPen6Bezier8GetPointEf -> 0x274948 model MATCH
+0x47ab90 0x4a4528 _ZN4SPen6Bezier10GetTangentEf -> 0x2749dc model MATCH
+0x47aba0 0x4a4530 _ZN4SPen6Bezier9GetNormalEf -> 0x274aa0 model MATCH
+0x47abc0 0x4a4540 _ZN4SPen6Bezier12SetCurveTypeENS_15BezierCurveTypeE -> 0x274c7c model MATCH
+0x47abe0 0x4a4550 _ZN4SPen6BezierC1Ev -> 0x27351c model MATCH
+0x47abf0 0x4a4558 _ZN4SPen6BezierD1Ev -> 0x273524 model MATCH
+0x47ac00 0x4a4560 _ZdlPv -> 0x80ba7b4 cxx MATCH
+0x47ac20 0x4a4570 _ZN4SPen5Error8SetErrorEmiPKc -> 0x40c6ba8 base MATCH
+0x47ac30 0x4a4578 _ZnwmRKSt9nothrow_t -> 0x80ba73c cxx MATCH
+0x47ac40 0x4a4580 _ZnamRKSt9nothrow_t -> 0x80ba77c cxx MATCH
+0x47ac50 0x4a4588 _ZdaPv -> 0x80ba7cc cxx MATCH
+0x47ac80 0x4a45a0 _ZNSt6__ndk16__sortIRNS_6__lessIffEEPfEEvT0_S5_T_ -> 0x80c1a1c cxx MATCH
+0x47ac90 0x4a45a8 _Znwm -> 0x80ba6cc cxx MATCH
+0x47aca0 0x4a45b0 _ZN4SPen6UnionFEPNS_5RectFES1_S1_ -> 0x275630 model MATCH
+0x47aea0 0x4a46b0 _ZN4SPen15CheckReadBufferEiRi -> 0x2784a4 model MATCH
+0x47afa0 0x4a4730 _ZN4SPen6StringC1Ev -> 0x40c2a18 base MATCH
+0x47b0e0 0x4a47d0 _ZN4SPen6String9ConstructEv -> 0x40c3298 base MATCH
+0x47b1e0 0x4a4850 _ZNSt6__ndk115recursive_mutex4lockEv -> 0x80e0610 cxx MATCH
+0x47b1f0 0x4a4858 _ZNSt6__ndk115recursive_mutex6unlockEv -> 0x80e063c cxx MATCH
+0x47b420 0x4a4970 _ZNK4SPen4List8GetCountEv -> 0x409d120 base MATCH
+0x47b430 0x4a4978 _ZN4SPen4List7GetDataEl -> 0x409e894 base MATCH
+0x47b440 0x4a4980 _ZNK4SPen4List8NextDataEl -> 0x409d4f0 base MATCH
+0x47b450 0x4a4988 _ZN4SPen4List9RemoveAllEv -> 0x409e2ec base MATCH
+0x47b460 0x4a4990 _ZN4SPen4List3AddEPv -> 0x409d000 base MATCH
+0x47b470 0x4a4998 _ZNK4SPen4List14BeginTraversalEv -> 0x409d1c8 base MATCH
+0x47b480 0x4a49a0 _ZNK4SPen4List12EndTraversalEl -> 0x409d73c base MATCH
+0x47b6c0 0x4a4ac0 _ZNSt6__ndk115recursive_mutexC1Ev -> 0x80e0528 cxx MATCH
+0x47b6d0 0x4a4ac8 _ZNSt6__ndk115recursive_mutexD1Ev -> 0x80e05f0 cxx MATCH
+0x47bed0 0x4a4ec8 _ZN4SPen4ListC1Ev -> 0x409c868 base MATCH
+0x47bee0 0x4a4ed0 _ZN4SPen10ObjectList9ConstructEv -> 0x2dc9cc model MATCH
+0x47bef0 0x4a4ed8 _ZN4SPen4List9ConstructEv -> 0x409c928 base MATCH
+0x47bf10 0x4a4ee8 _ZN4SPen4ListD1Ev -> 0x409c87c base MATCH
+0x47bf40 0x4a4f00 _ZNK4SPen4List3GetEi -> 0x409d608 base MATCH
+0x47bfe0 0x4a4f50 _ZNK4SPen10ObjectBase16IsPdfDummyObjectEv -> 0x2d48dc model MATCH
+0x47c0f0 0x4a4fd8 _ZNK4SPen10ObjectList7GetDataEl -> 0x2dd518 model MATCH
+0x47c110 0x4a4fe8 _ZNK4SPen10ObjectList8GetCountEv -> 0x2dcf94 model MATCH
+0x47c160 0x4a5010 _ZNK4SPen10ObjectBase7GetTypeEv -> 0x2c9fec model MATCH
+0x47c170 0x4a5018 _ZNK4SPen10ObjectList14BeginTraversalEv -> 0x2dd374 model MATCH
+0x47c190 0x4a5028 _ZNK4SPen10ObjectList12EndTraversalEl -> 0x2dd3c8 model MATCH
+0x47c2a0 0x4a50b0 _ZN4SPen21ObjectInstanceManager8RegisterEPNS_10ObjectBaseE -> 0x2a1c38 model MATCH
+0x47c2c0 0x4a50c0 _ZNK4SPen10ObjectBase7GetUuidEv -> 0x2ca24c model MATCH
+0x47c2d0 0x4a50c8 _ZNK4SPen4Uuid8ToStringEv -> 0x40aaa48 base MATCH
+0x47cb10 0x4a54e8 _ZN4SPen11ImageCommon9ConstructEv -> 0x2b4f70 model MATCH
+0x47d160 0x4a5810 _ZN4SPen6BundleC1Ev -> 0x409edc4 base MATCH
+0x47d170 0x4a5818 _ZN4SPen6Bundle9ConstructEv -> 0x409f0bc base MATCH
+0x47d1e0 0x4a5850 _ZN4SPen6Bundle7IsEmptyEv -> 0x40a10c8 base MATCH
+0x47d820 0x4a5b70 _ZN4SPen4List6InsertEPvi -> 0x409dbbc base MATCH
+0x47d850 0x4a5b88 _ZN4SPen10ObjectBaseC2Ev -> 0x2c92ac model MATCH
+0x47d860 0x4a5b90 _ZN4SPen10ObjectBase9ConstructENS_6Object4TypeEb -> 0x2c93a8 model MATCH
+0x47d870 0x4a5b98 _ZN4SPen10ObjectBase22v_SetDefaultLayoutTypeEv -> 0x2c9768 model MATCH
+0x47d920 0x4a5bf0 _ZNK4SPen10ObjectBase7GetRectEv -> 0x2caa60 model MATCH
+0x47db80 0x4a5d20 _ZN4SPen10ObjectBase21OnCoeditObjectChangedEi -> 0x2cce14 model MATCH
+0x47dd60 0x4a5e10 _ZN4SPen10ObjectBase12ClearChangedEv -> 0x2cf210 model MATCH
+0x47dda0 0x4a5e30 _ZN4SPen10ObjectBase10SetChangedEv -> 0x2cf380 model MATCH
+0x47df20 0x4a5ef0 _ZNK4SPen10ObjectBase16NewGetBinarySizeENS_12DocumentTypeE -> 0x2d11ac model MATCH
+0x47df30 0x4a5ef8 _ZNK4SPen10ObjectBase12NewGetBinaryEPhNS_12DocumentTypeE -> 0x2d1248 model MATCH
+0x47df40 0x4a5f00 _ZN4SPen10ObjectBase14NewApplyBinaryEPhiNS_11OrientationEi -> 0x2d1320 model MATCH
+0x47e020 0x4a5f70 _ZNK4SPen10ObjectBase16GetFormatVersionEv -> 0x2d1df8 model MATCH
+0x47e040 0x4a5f80 _ZNK4SPen10ObjectBase20GetLoadFormatVersionEv -> 0x2d1edc model MATCH
+0x47e090 0x4a5fa8 _ZNK4SPen10ObjectBase16IsFloatDrawnRectEv -> 0x2d2190 model MATCH
+0x47e140 0x4a6000 _ZNK4SPen10ObjectBase17t_SetRectOnlyDataENS_5RectFE -> 0x2d2b18 model MATCH
+0x47e150 0x4a6008 _ZNK4SPen10ObjectBase21t_SetRotationOnlyDataEf -> 0x2d2bcc model MATCH
+0x47e160 0x4a6010 _ZNK4SPen10ObjectBase20GetLoadMagnificationEv -> 0x2d2d18 model MATCH
+0x47e200 0x4a6060 _ZN4SPen10ObjectBase15SetRectDataOnlyENS_5RectFE -> 0x2d3474 model MATCH
+0x47e260 0x4a6090 _ZN4SPen10ObjectBase14IsLoadByCoeditEv -> 0x2d4674 model MATCH
+0x47e300 0x4a60e0 _ZN4SPen14ObjectBaseImplC1EPNS_10ObjectBaseE -> 0x2d7134 model MATCH
+0x47e310 0x4a60e8 _ZN4SPen4UuidC1Ev -> 0x40aa964 base MATCH
+0x47e340 0x4a6100 _ZN4SPen6PointFneERKS0_ -> 0x40b1058 base MATCH
+0x47e370 0x4a6118 _ZN4SPen5RectFeqERKS0_ -> 0x40b1a0c base MATCH
+0x47e380 0x4a6120 _ZN4SPen14ObjectBaseImpl7SetRectENS_5RectFE -> 0x2d7324 model MATCH
+0x47e3d0 0x4a6148 _ZNK4SPen5RectF15GetRotatedBoundEf -> 0x40b1850 base MATCH
+0x47e3e0 0x4a6150 _ZN4SPen14ObjectBaseImpl10SetChangedEv -> 0x2d74f4 model MATCH
+0x47e3f0 0x4a6158 _ZN4SPen14ObjectBaseImpl21OnCoeditObjectChangedEi -> 0x2d7598 model MATCH
+0x47e5a0 0x4a6230 _ZN4SPen14ObjectBaseImpl12ClearChangedEv -> 0x2d7f78 model MATCH
+0x47e680 0x4a62a0 _ZN4SPen23ObjectBaseBinaryHandler16GetOwnBinarySizeENS_12DocumentTypeE -> 0x2da87c model MATCH
+0x47e690 0x4a62a8 _ZN4SPen23ObjectBaseBinaryHandler12GetOwnBinaryEPhNS_12DocumentTypeEj -> 0x2daad8 model MATCH
+0x47e6a0 0x4a62b0 _ZN4SPen23ObjectBaseBinaryHandler14ApplyOwnBinaryEPhiNS_11OrientationEi -> 0x2db0e0 model MATCH
+0x47e6d0 0x4a62c8 _ZN4SPen5RectF8SetEmptyEv -> 0x40b10ec base MATCH
+0x47e760 0x4a6310 _ZN4SPen6Bundle9RemoveAllEv -> 0x409ee50 base MATCH
+0x47e7c0 0x4a6340 _ZNK4SPen5RectF5WidthEv -> 0x40b108c base MATCH
+0x47e7d0 0x4a6348 _ZNK4SPen5RectF6HeightEv -> 0x40b109c base MATCH
+0x47e800 0x4a6360 _ZN4SPen14ObjectBaseImpl12setDrawnRectENS_5RectFE -> 0x2d740c model MATCH
+0x47e870 0x4a6398 _ZN4SPen23ObjectBaseBinaryHandler25m_ApplyOwnBinary_PropertyERPhRi -> 0x2db510 model MATCH
+0x47e880 0x4a63a0 _ZN4SPen23ObjectBaseBinaryHandler29m_ApplyOwnBinary_FlexibleAreaERPhii -> 0x2db6c4 model MATCH
+0x47e8c0 0x4a63c0 _ZNK4SPen4Uuid13GetBinarySizeEv -> 0x40aaa4c base MATCH
+0x47e8e0 0x4a63d0 _ZNK4SPen4Uuid9GetBinaryEPh -> 0x40aaa54 base MATCH
+0x47e8f0 0x4a63d8 _ZN4SPen4Uuid11ApplyBinaryEPhi -> 0x40aacdc base MATCH
+0x47e900 0x4a63e0 _ZN4SPen5RectF3SetEffff -> 0x40b10e0 base MATCH
+0x47ef40 0x4a6700 _ZNK4SPen5RectF6CenterEv -> 0x40b1808 base MATCH
+0x47ef80 0x4a6720 _ZNK4SPen6PointF15GetRotatedPointES0_f -> 0x40b0f10 base MATCH
+0x47f240 0x4a6880 _ZN4SPen4Path9ConstructEv -> 0x2ef320 model MATCH
+0x47f250 0x4a6888 _ZN4SPen4Path9ConstructEPKNS0_7SegmentEi -> 0x2ef414 model MATCH
+0x47f260 0x4a6890 _ZNK4SPen4Path6IsSameEPKS0_ -> 0x2ef52c model MATCH
+0x47f270 0x4a6898 _ZN4SPen4Path10SetSegmentEPKNS0_7SegmentEi -> 0x2ef584 model MATCH
+0x47f280 0x4a68a0 _ZNK4SPen4Path10GetSegmentEv -> 0x2ef5d8 model MATCH
+0x47f290 0x4a68a8 _ZNK4SPen4Path15GetSegmentCountEv -> 0x2ef630 model MATCH
+0x47f2a0 0x4a68b0 _ZNK4SPen4Path13GetBinarySizeENS_12DocumentTypeE -> 0x2efae0 model MATCH
+0x47f2b0 0x4a68b8 _ZNK4SPen4Path9GetBinaryEPhNS_12DocumentTypeE -> 0x2efbb8 model MATCH
+0x47f2c0 0x4a68c0 _ZN4SPen4Path11ApplyBinaryERPhRijiNS_12DocumentTypeE -> 0x2effe8 model MATCH
+0x47f2d0 0x4a68c8 _ZN4SPen4Path4CopyEPKS0_ -> 0x2f0530 model MATCH
+0x47f320 0x4a68f0 _ZNK4SPen4Path10GetBoundsFEfNS0_8JoinTypeE -> 0x2f07c8 model MATCH
+0x47f3a0 0x4a6930 _ZN4SPen4PathC1Ev -> 0x2ef2d8 model MATCH
+0x47f3b0 0x4a6938 _ZN4SPen4PathD1Ev -> 0x2ef2e0 model MATCH
+0x47f3c0 0x4a6940 _ZN4SPen8PathImpl7SetPathEPKNS_4Path7SegmentEi -> 0x2f1730 model MATCH
+0x47f3d0 0x4a6948 _ZN4SPen8PathImpl6IsSameEPKNS_4PathE -> 0x2f14e4 model MATCH
+0x47f3f0 0x4a6958 _ZN4SPen6PointD3SetEdd -> 0x40b1074 base MATCH
+0x47f420 0x4a6970 _ZN4SPen8PathImpl9GetBoundsEv -> 0x2f274c model MATCH
+0x47f490 0x4a69a8 _ZN4SPen8PathImpl5ClearEv -> 0x2f1424 model MATCH
+0x47f4a0 0x4a69b0 _ZN4SPen8PathImpl12UpdateBezierEv -> 0x2f1a04 model MATCH
+0x47f4c0 0x4a69c0 _ZN4SPen8PathImpl13IsSameSegmentEPKNS_4Path7SegmentES4_ -> 0x2f1578 model MATCH
+0x47f4d0 0x4a69c8 _ZN4SPen8PathImpl13m_UpdateGroupEv -> 0x2f1ff4 model MATCH
+0x47f4e0 0x4a69d0 _ZN4SPen8PathImpl18m_UpdateClosedPathEi -> 0x2f2120 model MATCH
+0x47f500 0x4a69e0 _ZN4SPen8PathImpl11sm_GetAngleENS_6PointFES1_ -> 0x2f2d98 model MATCH
+0x4812a0 0x4a78b0 _ZN4SPen15FillColorEffect19AppendGradientColorENS0_13GradientColorE -> 0x3b588c model MATCH
+0x481350 0x4a7908 _ZNK4SPen14FillEffectBase7GetTypeEv -> 0x3b7e08 model MATCH
+0x481530 0x4a79f8 _ZNK4SPen15LineColorEffect12GetColorTypeEv -> 0x392fb8 model MATCH
+0x481540 0x4a7a00 _ZNK4SPen15LineColorEffect13GetSolidColorEv -> 0x393074 model MATCH
+0x481550 0x4a7a08 _ZNK4SPen15LineStyleEffect8GetWidthEv -> 0x39557c model MATCH
+0x481560 0x4a7a10 _ZNK4SPen15LineStyleEffect15GetCompoundTypeEv -> 0x395638 model MATCH
+0x481570 0x4a7a18 _ZNK4SPen15LineStyleEffect11GetDashTypeEv -> 0x3956f4 model MATCH
+0x481580 0x4a7a20 _ZNK4SPen15LineStyleEffect10GetCapTypeEv -> 0x3957b0 model MATCH
+0x481590 0x4a7a28 _ZNK4SPen15LineStyleEffect11GetJoinTypeEv -> 0x39586c model MATCH
+0x4815a0 0x4a7a30 _ZNK4SPen15LineStyleEffect17GetBeginArrowTypeEv -> 0x395928 model MATCH
+0x4815b0 0x4a7a38 _ZNK4SPen15LineStyleEffect17GetBeginArrowSizeEv -> 0x395980 model MATCH
+0x4815c0 0x4a7a40 _ZNK4SPen15LineStyleEffect15GetEndArrowTypeEv -> 0x395a3c model MATCH
+0x4815d0 0x4a7a48 _ZNK4SPen15LineStyleEffect15GetEndArrowSizeEv -> 0x395a94 model MATCH
+0x4816b0 0x4a7ab8 _ZN4SPen20FillBackgroundEffect9ConstructEv -> 0x3b50d0 model MATCH
+0x481700 0x4a7ae0 _ZN4SPen15FollowerManager13SetLeaderRectENS_5RectFE -> 0x321244 model MATCH
+0x481710 0x4a7ae8 _ZN4SPen15FollowerManager15m_LeadFollowersENS_5RectFES1_ -> 0x3212d8 model MATCH
+0x481830 0x4a7b78 _ZN4SPen15FollowerManagerC1Ev -> 0x321118 model MATCH
+0x481850 0x4a7b88 _ZNK4SPen5RectF5EqualEPKS0_ -> 0x40b1460 base MATCH
+0x481ac0 0x4a7cc0 _ZNK4SPen15ObjectShapeBase21GetConnectedInfoCountEv -> 0x3788dc model MATCH
+0x4834c0 0x4a89c0 _ZN4SPen5RectFneERKS0_ -> 0x40b1a58 base MATCH
+0x483aa0 0x4a8cb0 _ZN4SPen15LineStyleEffect9ConstructEv -> 0x3953e4 model MATCH
+0x483ab0 0x4a8cb8 _ZNK4SPen15ObjectShapeBase18GetLineStyleEffectEPNS_15LineStyleEffectE -> 0x376128 model MATCH
+0x483ac0 0x4a8cc0 _ZNK4SPen15ObjectShapeBase18GetLineColorEffectEPNS_15LineColorEffectE -> 0x375b10 model MATCH
+0x483af0 0x4a8cd8 _ZN4SPen15LineColorEffectD1Ev -> 0x392ee0 model MATCH
+0x483e30 0x4a8e78 _ZN4SPen15ObjectShapeBase19RejectAllConnectionEv -> 0x3795b4 model MATCH
+0x484240 0x4a9080 _ZN4SPen15ObjectShapeBase9ConstructENS_6Object4TypeEb -> 0x3751a8 model MATCH
+0x484260 0x4a9090 _ZNK4SPen15ObjectShapeBase16HasVisibleEffectEv -> 0x3762bc model MATCH
+0x484270 0x4a9098 _ZN4SPen15ObjectShapeBase26SetMagneticConnectionPointEPKNS_6PointFEib -> 0x37637c model MATCH
+0x484320 0x4a90f0 _ZN4SPen15ObjectShapeBase24GetChainConnectedObjectsEv -> 0x379654 model MATCH
+0x4843e0 0x4a9150 _ZNK4SPen15ObjectShapeBase16NewGetBinarySizeENS_12DocumentTypeE -> 0x37c400 model MATCH
+0x4843f0 0x4a9158 _ZNK4SPen15ObjectShapeBase12NewGetBinaryEPhNS_12DocumentTypeE -> 0x37c5cc model MATCH
+0x484400 0x4a9160 _ZN4SPen15ObjectShapeBase14NewApplyBinaryEPhiNS_11OrientationEi -> 0x37cb34 model MATCH
+0x484410 0x4a9168 _ZN4SPen15ObjectShapeBase15SetRectDataOnlyENS_5RectFE -> 0x37d104 model MATCH
+0x4844a0 0x4a91b0 _ZN4SPen15ObjectShapeBase25SendOnCoeditObjectChangedEi -> 0x37e388 model MATCH
+0x4844c0 0x4a91c0 _ZN4SPen15ObjectShapeBase10t_SetCauseENS0_5CauseE -> 0x37e4b8 model MATCH
+0x484520 0x4a91f0 _ZN4SPen15LineColorEffect4CopyEPS0_ -> 0x393d3c model MATCH
+0x484530 0x4a91f8 _ZN4SPen15LineStyleEffect4CopyEPS0_ -> 0x395d74 model MATCH
+0x484550 0x4a9208 _ZNK4SPen15LineColorEffect6IsSameEPKS0_ -> 0x393f18 model MATCH
+0x484560 0x4a9210 _ZNK4SPen15LineStyleEffect6IsSameEPKS0_ -> 0x395e4c model MATCH
+0x484590 0x4a9228 _ZNK4SPen15LineColorEffect13GetBinarySizeEv -> 0x3938d8 model MATCH
+0x4845a0 0x4a9230 _ZNK4SPen15LineColorEffect9GetBinaryEPh -> 0x393968 model MATCH
+0x4845b0 0x4a9238 _ZNK4SPen15LineStyleEffect13GetBinarySizeEv -> 0x395aec model MATCH
+0x4845c0 0x4a9240 _ZNK4SPen15LineStyleEffect9GetBinaryEPh -> 0x395b44 model MATCH
+0x4845f0 0x4a9258 _ZN4SPen15FillImageEffect9ConstructEv -> 0x3b8030 model MATCH
+0x484600 0x4a9260 _ZN4SPen17FillPatternEffect9ConstructEv -> 0x3ba0b0 model MATCH
+0x484640 0x4a9280 _ZN4SPen15FillColorEffectD1Ev -> 0x3b5a98 model MATCH
+0x484d30 0x4a95f8 _ZN4SPen15LineColorEffect9ConstructENS0_9ColorTypeE -> 0x392e08 model MATCH
+0x484d40 0x4a9600 _ZNK4SPen15LineColorEffect15GetGradientTypeEv -> 0x393130 model MATCH
+0x484d70 0x4a9618 _ZNK4SPen15LineColorEffect21GetGradientColorCountEv -> 0x39341c model MATCH
+0x484d90 0x4a9628 _ZNK4SPen15LineColorEffect22GetLinearGradientAngleEv -> 0x3937c0 model MATCH
+0x484da0 0x4a9630 _ZNK4SPen15LineColorEffect19GetGradientPositionEv -> 0x39387c model MATCH
+0x484db0 0x4a9638 _ZNK4SPen15LineColorEffect19IsGradientRotatableEv -> 0x393e50 model MATCH
+0x484dc0 0x4a9640 _ZN4SPen11ObjectShape9ConstructENS_6Object4TypeENS0_9ShapeTypeEb -> 0x3961c0 model MATCH
+0x484de0 0x4a9650 _ZN4SPen11ObjectShape16InitialComponentEv -> 0x39641c model MATCH
+0x484e20 0x4a9670 _ZNK4SPen11ObjectShape16HasVisibleEffectEv -> 0x396c48 model MATCH
+0x484ee0 0x4a96d0 _ZNK4SPen11ObjectShape20GetControlPointCountEv -> 0x397344 model MATCH
+0x484f70 0x4a9718 _ZN4SPen11ObjectShape7SetRectENS_5RectFEbbb -> 0x397714 model MATCH
+0x485140 0x4a9800 _ZN4SPen15ObjectShapeImplC1EPNS_11ObjectShapeE -> 0x3a55f0 model MATCH
+0x485150 0x4a9808 _ZN4SPen15ObjectShapeData20SetShapeTypeDataOnlyENS_11ObjectShape9ShapeTypeENS_5RectFEf -> 0x3ad5fc model MATCH
+0x485220 0x4a9870 _ZNK4SPen5RectF19IsHorizontalFlippedEv -> 0x40b1438 base MATCH
+0x485230 0x4a9878 _ZNK4SPen5RectF17IsVerticalFlippedEv -> 0x40b144c base MATCH
+0x485240 0x4a9880 _ZN4SPen15ObjectShapeImpl7SetRectENS_5RectFEb -> 0x3a6a60 model MATCH
+0x485260 0x4a9890 _ZNK4SPen15ObjectShapeImpl12GetDrawnRectEi -> 0x3a63e8 model MATCH
+0x485270 0x4a9898 _ZNK4SPen13ComponentText19HasDrawablePropertyEv -> 0x39e220 model MATCH
+0x485280 0x4a98a0 _ZNK4SPen14ComponentImage19HasDrawablePropertyEv -> 0x3a42b4 model MATCH
+0x485330 0x4a98f8 _ZN4SPen15FillImageEffect7SetFlipEbb -> 0x3b8aec model MATCH
+0x485430 0x4a9978 _ZNK4SPen24ObjectShapeBinaryHandler16GetOwnBinarySizeEv -> 0x3a8bb0 model MATCH
+0x485440 0x4a9980 _ZN4SPen24ObjectShapeBinaryHandler12GetOwnBinaryEPh -> 0x3a8dd0 model MATCH
+0x485450 0x4a9988 _ZN4SPen24ObjectShapeBinaryHandler14ApplyOwnBinaryEPhijfNS_11OrientationEi -> 0x3a9228 model MATCH
+0x485460 0x4a9990 _ZNK4SPen13ComponentText17GetObjectSpanListERNS_4ListE -> 0x39d598 model MATCH
+0x4855a0 0x4a9a30 _ZNK4SPen13ComponentText16GetFormatVersionEv -> 0x39eb2c model MATCH
+0x485a20 0x4a9c70 _ZN4SPen15ObjectShapeText23GetShapeBinary_HintTextEPhRiRj -> 0x3b1fec model MATCH
+0x485a30 0x4a9c78 _ZN4SPen15ObjectShapeText26GetShapeBinary_TextBoxInfoEPhRiRj -> 0x3b2120 model MATCH
+0x485ca0 0x4a9db0 _ZN4SPen15ObjectShapeText15SetTextEditableEb -> 0x3b3108 model MATCH
+0x486050 0x4a9f88 _ZN4SPen15ObjectShapeDataC1EPNS_11ObjectShapeE -> 0x3ab708 model MATCH
+0x486060 0x4a9f90 _ZN4SPen16ObjectShapeImageC1EPNS_11ObjectShapeE -> 0x3b38d0 model MATCH
+0x486070 0x4a9f98 _ZN4SPen15ObjectShapeTextC1EPNS_11ObjectShapeE -> 0x3af0b0 model MATCH
+0x4860d0 0x4a9fc8 _ZN4SPen15ObjectShapeData12SetShapeTypeENS_11ObjectShape9ShapeTypeE -> 0x3ad1f0 model MATCH
+0x486170 0x4aa018 _ZN4SPen16ObjectShapeImage12FlipCropRectEbbNS_6PointFE -> 0x3b3ee4 model MATCH
+0x486180 0x4aa020 _ZNK4SPen15FillImageEffect8GetWidthEv -> 0x3b89f4 model MATCH
+0x486190 0x4aa028 _ZNK4SPen15FillImageEffect9GetHeightEv -> 0x3b8a70 model MATCH
+0x4861a0 0x4aa030 _ZN4SPen15ObjectShapeData41UpdateMagneticConnectionPointFromTemplateEb -> 0x3abc7c model MATCH
+0x4861b0 0x4aa038 _ZN4SPen15ObjectShapeData12CreateEffectEi -> 0x3abfe0 model MATCH
+0x486210 0x4aa068 _ZN4SPen24ObjectShapeBinaryHandler27GetShapeBinary_PropertyFlagEPh -> 0x3a7f84 model MATCH
+0x486220 0x4aa070 _ZN4SPen24ObjectShapeBinaryHandler29ApplyShapeBinary_Format28DataEi -> 0x3a8674 model MATCH
+0x486250 0x4aa088 _ZN4SPen24ObjectShapeBinaryHandler27ApplyOwnBinary_ShapeRefreshEfNS_5RectFES1_f -> 0x3a9af0 model MATCH
+0x486270 0x4aa098 _ZN4SPen15ObjectShapeData17GetBinary_PenDataEPhRiRj -> 0x3ac284 model MATCH
+0x4862e0 0x4aa0d0 _ZN4SPen15FillColorEffect9ConstructENS0_9ColorTypeE -> 0x3b579c model MATCH
+0x4866f0 0x4aa2d8 _ZN4SPen14FillEffectBase9ConstructENS0_4TypeE -> 0x3b7d08 model MATCH
+0x486700 0x4aa2e0 _ZNK4SPen14FillEffectBase6IsSameEPKS0_ -> 0x3b7e60 model MATCH
+
+TRACED PLT ENTRIES: address GOT symbol (original ELF; later patches may change destination)
+model 0x47aaf0 0x4a44d8 __cxa_atexit
+model 0x47ab10 0x4a44e8 _ZN4SPen6Bezier9ConstructEPNS_6PointFEi
+model 0x47ab20 0x4a44f0 _ZN4SPen6Bezier6UpdateEPNS_6PointFEi
+model 0x47ab30 0x4a44f8 _ZNK4SPen6Bezier21GetControlPointsCountEv
+model 0x47ab60 0x4a4510 _ZN4SPen6Bezier19GenerateBoundingBoxEv
+model 0x47ab80 0x4a4520 _ZN4SPen6Bezier8GetPointEf
+model 0x47ab90 0x4a4528 _ZN4SPen6Bezier10GetTangentEf
+model 0x47aba0 0x4a4530 _ZN4SPen6Bezier9GetNormalEf
+model 0x47abc0 0x4a4540 _ZN4SPen6Bezier12SetCurveTypeENS_15BezierCurveTypeE
+model 0x47abe0 0x4a4550 _ZN4SPen6BezierC1Ev
+model 0x47abf0 0x4a4558 _ZN4SPen6BezierD1Ev
+model 0x47ac00 0x4a4560 _ZdlPv
+model 0x47ac10 0x4a4568 __android_log_print
+model 0x47ac20 0x4a4570 _ZN4SPen5Error8SetErrorEmiPKc
+model 0x47ac30 0x4a4578 _ZnwmRKSt9nothrow_t
+model 0x47ac40 0x4a4580 _ZnamRKSt9nothrow_t
+model 0x47ac50 0x4a4588 _ZdaPv
+model 0x47ac60 0x4a4590 atan2f
+model 0x47ac80 0x4a45a0 _ZNSt6__ndk16__sortIRNS_6__lessIffEEPfEEvT0_S5_T_
+model 0x47ac90 0x4a45a8 _Znwm
+model 0x47aca0 0x4a45b0 _ZN4SPen6UnionFEPNS_5RectFES1_S1_
+model 0x47ad70 0x4a4618 memcmp
+model 0x47aea0 0x4a46b0 _ZN4SPen15CheckReadBufferEiRi
+model 0x47afa0 0x4a4730 _ZN4SPen6StringC1Ev
+model 0x47b0e0 0x4a47d0 _ZN4SPen6String9ConstructEv
+model 0x47b1e0 0x4a4850 _ZNSt6__ndk115recursive_mutex4lockEv
+model 0x47b1f0 0x4a4858 _ZNSt6__ndk115recursive_mutex6unlockEv
+model 0x47b290 0x4a48a8 strlen
+model 0x47b420 0x4a4970 _ZNK4SPen4List8GetCountEv
+model 0x47b430 0x4a4978 _ZN4SPen4List7GetDataEl
+model 0x47b440 0x4a4980 _ZNK4SPen4List8NextDataEl
+model 0x47b450 0x4a4988 _ZN4SPen4List9RemoveAllEv
+model 0x47b460 0x4a4990 _ZN4SPen4List3AddEPv
+model 0x47b470 0x4a4998 _ZNK4SPen4List14BeginTraversalEv
+model 0x47b480 0x4a49a0 _ZNK4SPen4List12EndTraversalEl
+model 0x47b6c0 0x4a4ac0 _ZNSt6__ndk115recursive_mutexC1Ev
+model 0x47b6d0 0x4a4ac8 _ZNSt6__ndk115recursive_mutexD1Ev
+model 0x47bed0 0x4a4ec8 _ZN4SPen4ListC1Ev
+model 0x47bee0 0x4a4ed0 _ZN4SPen10ObjectList9ConstructEv
+model 0x47bef0 0x4a4ed8 _ZN4SPen4List9ConstructEv
+model 0x47bf10 0x4a4ee8 _ZN4SPen4ListD1Ev
+model 0x47bf40 0x4a4f00 _ZNK4SPen4List3GetEi
+model 0x47bfe0 0x4a4f50 _ZNK4SPen10ObjectBase16IsPdfDummyObjectEv
+model 0x47c0f0 0x4a4fd8 _ZNK4SPen10ObjectList7GetDataEl
+model 0x47c110 0x4a4fe8 _ZNK4SPen10ObjectList8GetCountEv
+model 0x47c160 0x4a5010 _ZNK4SPen10ObjectBase7GetTypeEv
+model 0x47c170 0x4a5018 _ZNK4SPen10ObjectList14BeginTraversalEv
+model 0x47c190 0x4a5028 _ZNK4SPen10ObjectList12EndTraversalEl
+model 0x47c2a0 0x4a50b0 _ZN4SPen21ObjectInstanceManager8RegisterEPNS_10ObjectBaseE
+model 0x47c2c0 0x4a50c0 _ZNK4SPen10ObjectBase7GetUuidEv
+model 0x47c2d0 0x4a50c8 _ZNK4SPen4Uuid8ToStringEv
+model 0x47cb10 0x4a54e8 _ZN4SPen11ImageCommon9ConstructEv
+model 0x47d160 0x4a5810 _ZN4SPen6BundleC1Ev
+model 0x47d170 0x4a5818 _ZN4SPen6Bundle9ConstructEv
+model 0x47d1e0 0x4a5850 _ZN4SPen6Bundle7IsEmptyEv
+model 0x47d820 0x4a5b70 _ZN4SPen4List6InsertEPvi
+model 0x47d850 0x4a5b88 _ZN4SPen10ObjectBaseC2Ev
+model 0x47d860 0x4a5b90 _ZN4SPen10ObjectBase9ConstructENS_6Object4TypeEb
+model 0x47d870 0x4a5b98 _ZN4SPen10ObjectBase22v_SetDefaultLayoutTypeEv
+model 0x47d920 0x4a5bf0 _ZNK4SPen10ObjectBase7GetRectEv
+model 0x47db80 0x4a5d20 _ZN4SPen10ObjectBase21OnCoeditObjectChangedEi
+model 0x47dd60 0x4a5e10 _ZN4SPen10ObjectBase12ClearChangedEv
+model 0x47dda0 0x4a5e30 _ZN4SPen10ObjectBase10SetChangedEv
+model 0x47df20 0x4a5ef0 _ZNK4SPen10ObjectBase16NewGetBinarySizeENS_12DocumentTypeE
+model 0x47df30 0x4a5ef8 _ZNK4SPen10ObjectBase12NewGetBinaryEPhNS_12DocumentTypeE
+model 0x47df40 0x4a5f00 _ZN4SPen10ObjectBase14NewApplyBinaryEPhiNS_11OrientationEi
+model 0x47e020 0x4a5f70 _ZNK4SPen10ObjectBase16GetFormatVersionEv
+model 0x47e040 0x4a5f80 _ZNK4SPen10ObjectBase20GetLoadFormatVersionEv
+model 0x47e090 0x4a5fa8 _ZNK4SPen10ObjectBase16IsFloatDrawnRectEv
+model 0x47e140 0x4a6000 _ZNK4SPen10ObjectBase17t_SetRectOnlyDataENS_5RectFE
+model 0x47e150 0x4a6008 _ZNK4SPen10ObjectBase21t_SetRotationOnlyDataEf
+model 0x47e160 0x4a6010 _ZNK4SPen10ObjectBase20GetLoadMagnificationEv
+model 0x47e200 0x4a6060 _ZN4SPen10ObjectBase15SetRectDataOnlyENS_5RectFE
+model 0x47e260 0x4a6090 _ZN4SPen10ObjectBase14IsLoadByCoeditEv
+model 0x47e300 0x4a60e0 _ZN4SPen14ObjectBaseImplC1EPNS_10ObjectBaseE
+model 0x47e310 0x4a60e8 _ZN4SPen4UuidC1Ev
+model 0x47e340 0x4a6100 _ZN4SPen6PointFneERKS0_
+model 0x47e370 0x4a6118 _ZN4SPen5RectFeqERKS0_
+model 0x47e380 0x4a6120 _ZN4SPen14ObjectBaseImpl7SetRectENS_5RectFE
+model 0x47e3d0 0x4a6148 _ZNK4SPen5RectF15GetRotatedBoundEf
+model 0x47e3e0 0x4a6150 _ZN4SPen14ObjectBaseImpl10SetChangedEv
+model 0x47e3f0 0x4a6158 _ZN4SPen14ObjectBaseImpl21OnCoeditObjectChangedEi
+model 0x47e5a0 0x4a6230 _ZN4SPen14ObjectBaseImpl12ClearChangedEv
+model 0x47e680 0x4a62a0 _ZN4SPen23ObjectBaseBinaryHandler16GetOwnBinarySizeENS_12DocumentTypeE
+model 0x47e690 0x4a62a8 _ZN4SPen23ObjectBaseBinaryHandler12GetOwnBinaryEPhNS_12DocumentTypeEj
+model 0x47e6a0 0x4a62b0 _ZN4SPen23ObjectBaseBinaryHandler14ApplyOwnBinaryEPhiNS_11OrientationEi
+model 0x47e6d0 0x4a62c8 _ZN4SPen5RectF8SetEmptyEv
+model 0x47e760 0x4a6310 _ZN4SPen6Bundle9RemoveAllEv
+model 0x47e7c0 0x4a6340 _ZNK4SPen5RectF5WidthEv
+model 0x47e7d0 0x4a6348 _ZNK4SPen5RectF6HeightEv
+model 0x47e800 0x4a6360 _ZN4SPen14ObjectBaseImpl12setDrawnRectENS_5RectFE
+model 0x47e870 0x4a6398 _ZN4SPen23ObjectBaseBinaryHandler25m_ApplyOwnBinary_PropertyERPhRi
+model 0x47e880 0x4a63a0 _ZN4SPen23ObjectBaseBinaryHandler29m_ApplyOwnBinary_FlexibleAreaERPhii
+model 0x47e8c0 0x4a63c0 _ZNK4SPen4Uuid13GetBinarySizeEv
+model 0x47e8e0 0x4a63d0 _ZNK4SPen4Uuid9GetBinaryEPh
+model 0x47e8f0 0x4a63d8 _ZN4SPen4Uuid11ApplyBinaryEPhi
+model 0x47e900 0x4a63e0 _ZN4SPen5RectF3SetEffff
+model 0x47ef40 0x4a6700 _ZNK4SPen5RectF6CenterEv
+model 0x47ef80 0x4a6720 _ZNK4SPen6PointF15GetRotatedPointES0_f
+model 0x47f240 0x4a6880 _ZN4SPen4Path9ConstructEv
+model 0x47f250 0x4a6888 _ZN4SPen4Path9ConstructEPKNS0_7SegmentEi
+model 0x47f260 0x4a6890 _ZNK4SPen4Path6IsSameEPKS0_
+model 0x47f270 0x4a6898 _ZN4SPen4Path10SetSegmentEPKNS0_7SegmentEi
+model 0x47f280 0x4a68a0 _ZNK4SPen4Path10GetSegmentEv
+model 0x47f290 0x4a68a8 _ZNK4SPen4Path15GetSegmentCountEv
+model 0x47f2a0 0x4a68b0 _ZNK4SPen4Path13GetBinarySizeENS_12DocumentTypeE
+model 0x47f2b0 0x4a68b8 _ZNK4SPen4Path9GetBinaryEPhNS_12DocumentTypeE
+model 0x47f2c0 0x4a68c0 _ZN4SPen4Path11ApplyBinaryERPhRijiNS_12DocumentTypeE
+model 0x47f2d0 0x4a68c8 _ZN4SPen4Path4CopyEPKS0_
+model 0x47f320 0x4a68f0 _ZNK4SPen4Path10GetBoundsFEfNS0_8JoinTypeE
+model 0x47f3a0 0x4a6930 _ZN4SPen4PathC1Ev
+model 0x47f3b0 0x4a6938 _ZN4SPen4PathD1Ev
+model 0x47f3c0 0x4a6940 _ZN4SPen8PathImpl7SetPathEPKNS_4Path7SegmentEi
+model 0x47f3d0 0x4a6948 _ZN4SPen8PathImpl6IsSameEPKNS_4PathE
+model 0x47f3f0 0x4a6958 _ZN4SPen6PointD3SetEdd
+model 0x47f420 0x4a6970 _ZN4SPen8PathImpl9GetBoundsEv
+model 0x47f490 0x4a69a8 _ZN4SPen8PathImpl5ClearEv
+model 0x47f4a0 0x4a69b0 _ZN4SPen8PathImpl12UpdateBezierEv
+model 0x47f4c0 0x4a69c0 _ZN4SPen8PathImpl13IsSameSegmentEPKNS_4Path7SegmentES4_
+model 0x47f4d0 0x4a69c8 _ZN4SPen8PathImpl13m_UpdateGroupEv
+model 0x47f4e0 0x4a69d0 _ZN4SPen8PathImpl18m_UpdateClosedPathEi
+model 0x47f500 0x4a69e0 _ZN4SPen8PathImpl11sm_GetAngleENS_6PointFES1_
+model 0x47f520 0x4a69f0 acosf
+model 0x4812a0 0x4a78b0 _ZN4SPen15FillColorEffect19AppendGradientColorENS0_13GradientColorE
+model 0x481350 0x4a7908 _ZNK4SPen14FillEffectBase7GetTypeEv
+model 0x481530 0x4a79f8 _ZNK4SPen15LineColorEffect12GetColorTypeEv
+model 0x481540 0x4a7a00 _ZNK4SPen15LineColorEffect13GetSolidColorEv
+model 0x481550 0x4a7a08 _ZNK4SPen15LineStyleEffect8GetWidthEv
+model 0x481560 0x4a7a10 _ZNK4SPen15LineStyleEffect15GetCompoundTypeEv
+model 0x481570 0x4a7a18 _ZNK4SPen15LineStyleEffect11GetDashTypeEv
+model 0x481580 0x4a7a20 _ZNK4SPen15LineStyleEffect10GetCapTypeEv
+model 0x481590 0x4a7a28 _ZNK4SPen15LineStyleEffect11GetJoinTypeEv
+model 0x4815a0 0x4a7a30 _ZNK4SPen15LineStyleEffect17GetBeginArrowTypeEv
+model 0x4815b0 0x4a7a38 _ZNK4SPen15LineStyleEffect17GetBeginArrowSizeEv
+model 0x4815c0 0x4a7a40 _ZNK4SPen15LineStyleEffect15GetEndArrowTypeEv
+model 0x4815d0 0x4a7a48 _ZNK4SPen15LineStyleEffect15GetEndArrowSizeEv
+model 0x4816b0 0x4a7ab8 _ZN4SPen20FillBackgroundEffect9ConstructEv
+model 0x481700 0x4a7ae0 _ZN4SPen15FollowerManager13SetLeaderRectENS_5RectFE
+model 0x481710 0x4a7ae8 _ZN4SPen15FollowerManager15m_LeadFollowersENS_5RectFES1_
+model 0x481830 0x4a7b78 _ZN4SPen15FollowerManagerC1Ev
+model 0x481850 0x4a7b88 _ZNK4SPen5RectF5EqualEPKS0_
+model 0x481ac0 0x4a7cc0 _ZNK4SPen15ObjectShapeBase21GetConnectedInfoCountEv
+model 0x4834c0 0x4a89c0 _ZN4SPen5RectFneERKS0_
+model 0x483aa0 0x4a8cb0 _ZN4SPen15LineStyleEffect9ConstructEv
+model 0x483ab0 0x4a8cb8 _ZNK4SPen15ObjectShapeBase18GetLineStyleEffectEPNS_15LineStyleEffectE
+model 0x483ac0 0x4a8cc0 _ZNK4SPen15ObjectShapeBase18GetLineColorEffectEPNS_15LineColorEffectE
+model 0x483af0 0x4a8cd8 _ZN4SPen15LineColorEffectD1Ev
+model 0x483e30 0x4a8e78 _ZN4SPen15ObjectShapeBase19RejectAllConnectionEv
+model 0x484240 0x4a9080 _ZN4SPen15ObjectShapeBase9ConstructENS_6Object4TypeEb
+model 0x484260 0x4a9090 _ZNK4SPen15ObjectShapeBase16HasVisibleEffectEv
+model 0x484270 0x4a9098 _ZN4SPen15ObjectShapeBase26SetMagneticConnectionPointEPKNS_6PointFEib
+model 0x484320 0x4a90f0 _ZN4SPen15ObjectShapeBase24GetChainConnectedObjectsEv
+model 0x4843e0 0x4a9150 _ZNK4SPen15ObjectShapeBase16NewGetBinarySizeENS_12DocumentTypeE
+model 0x4843f0 0x4a9158 _ZNK4SPen15ObjectShapeBase12NewGetBinaryEPhNS_12DocumentTypeE
+model 0x484400 0x4a9160 _ZN4SPen15ObjectShapeBase14NewApplyBinaryEPhiNS_11OrientationEi
+model 0x484410 0x4a9168 _ZN4SPen15ObjectShapeBase15SetRectDataOnlyENS_5RectFE
+model 0x4844a0 0x4a91b0 _ZN4SPen15ObjectShapeBase25SendOnCoeditObjectChangedEi
+model 0x4844c0 0x4a91c0 _ZN4SPen15ObjectShapeBase10t_SetCauseENS0_5CauseE
+model 0x484520 0x4a91f0 _ZN4SPen15LineColorEffect4CopyEPS0_
+model 0x484530 0x4a91f8 _ZN4SPen15LineStyleEffect4CopyEPS0_
+model 0x484550 0x4a9208 _ZNK4SPen15LineColorEffect6IsSameEPKS0_
+model 0x484560 0x4a9210 _ZNK4SPen15LineStyleEffect6IsSameEPKS0_
+model 0x484590 0x4a9228 _ZNK4SPen15LineColorEffect13GetBinarySizeEv
+model 0x4845a0 0x4a9230 _ZNK4SPen15LineColorEffect9GetBinaryEPh
+model 0x4845b0 0x4a9238 _ZNK4SPen15LineStyleEffect13GetBinarySizeEv
+model 0x4845c0 0x4a9240 _ZNK4SPen15LineStyleEffect9GetBinaryEPh
+model 0x4845f0 0x4a9258 _ZN4SPen15FillImageEffect9ConstructEv
+model 0x484600 0x4a9260 _ZN4SPen17FillPatternEffect9ConstructEv
+model 0x484640 0x4a9280 _ZN4SPen15FillColorEffectD1Ev
+model 0x484d30 0x4a95f8 _ZN4SPen15LineColorEffect9ConstructENS0_9ColorTypeE
+model 0x484d40 0x4a9600 _ZNK4SPen15LineColorEffect15GetGradientTypeEv
+model 0x484d70 0x4a9618 _ZNK4SPen15LineColorEffect21GetGradientColorCountEv
+model 0x484d90 0x4a9628 _ZNK4SPen15LineColorEffect22GetLinearGradientAngleEv
+model 0x484da0 0x4a9630 _ZNK4SPen15LineColorEffect19GetGradientPositionEv
+model 0x484db0 0x4a9638 _ZNK4SPen15LineColorEffect19IsGradientRotatableEv
+model 0x484dc0 0x4a9640 _ZN4SPen11ObjectShape9ConstructENS_6Object4TypeENS0_9ShapeTypeEb
+model 0x484de0 0x4a9650 _ZN4SPen11ObjectShape16InitialComponentEv
+model 0x484e20 0x4a9670 _ZNK4SPen11ObjectShape16HasVisibleEffectEv
+model 0x484ee0 0x4a96d0 _ZNK4SPen11ObjectShape20GetControlPointCountEv
+model 0x484f70 0x4a9718 _ZN4SPen11ObjectShape7SetRectENS_5RectFEbbb
+model 0x485140 0x4a9800 _ZN4SPen15ObjectShapeImplC1EPNS_11ObjectShapeE
+model 0x485150 0x4a9808 _ZN4SPen15ObjectShapeData20SetShapeTypeDataOnlyENS_11ObjectShape9ShapeTypeENS_5RectFEf
+model 0x485220 0x4a9870 _ZNK4SPen5RectF19IsHorizontalFlippedEv
+model 0x485230 0x4a9878 _ZNK4SPen5RectF17IsVerticalFlippedEv
+model 0x485240 0x4a9880 _ZN4SPen15ObjectShapeImpl7SetRectENS_5RectFEb
+model 0x485260 0x4a9890 _ZNK4SPen15ObjectShapeImpl12GetDrawnRectEi
+model 0x485270 0x4a9898 _ZNK4SPen13ComponentText19HasDrawablePropertyEv
+model 0x485280 0x4a98a0 _ZNK4SPen14ComponentImage19HasDrawablePropertyEv
+model 0x485330 0x4a98f8 _ZN4SPen15FillImageEffect7SetFlipEbb
+model 0x485430 0x4a9978 _ZNK4SPen24ObjectShapeBinaryHandler16GetOwnBinarySizeEv
+model 0x485440 0x4a9980 _ZN4SPen24ObjectShapeBinaryHandler12GetOwnBinaryEPh
+model 0x485450 0x4a9988 _ZN4SPen24ObjectShapeBinaryHandler14ApplyOwnBinaryEPhijfNS_11OrientationEi
+model 0x485460 0x4a9990 _ZNK4SPen13ComponentText17GetObjectSpanListERNS_4ListE
+model 0x4855a0 0x4a9a30 _ZNK4SPen13ComponentText16GetFormatVersionEv
+model 0x485a20 0x4a9c70 _ZN4SPen15ObjectShapeText23GetShapeBinary_HintTextEPhRiRj
+model 0x485a30 0x4a9c78 _ZN4SPen15ObjectShapeText26GetShapeBinary_TextBoxInfoEPhRiRj
+model 0x485ca0 0x4a9db0 _ZN4SPen15ObjectShapeText15SetTextEditableEb
+model 0x486050 0x4a9f88 _ZN4SPen15ObjectShapeDataC1EPNS_11ObjectShapeE
+model 0x486060 0x4a9f90 _ZN4SPen16ObjectShapeImageC1EPNS_11ObjectShapeE
+model 0x486070 0x4a9f98 _ZN4SPen15ObjectShapeTextC1EPNS_11ObjectShapeE
+model 0x4860d0 0x4a9fc8 _ZN4SPen15ObjectShapeData12SetShapeTypeENS_11ObjectShape9ShapeTypeE
+model 0x486170 0x4aa018 _ZN4SPen16ObjectShapeImage12FlipCropRectEbbNS_6PointFE
+model 0x486180 0x4aa020 _ZNK4SPen15FillImageEffect8GetWidthEv
+model 0x486190 0x4aa028 _ZNK4SPen15FillImageEffect9GetHeightEv
+model 0x4861a0 0x4aa030 _ZN4SPen15ObjectShapeData41UpdateMagneticConnectionPointFromTemplateEb
+model 0x4861b0 0x4aa038 _ZN4SPen15ObjectShapeData12CreateEffectEi
+model 0x486210 0x4aa068 _ZN4SPen24ObjectShapeBinaryHandler27GetShapeBinary_PropertyFlagEPh
+model 0x486220 0x4aa070 _ZN4SPen24ObjectShapeBinaryHandler29ApplyShapeBinary_Format28DataEi
+model 0x486250 0x4aa088 _ZN4SPen24ObjectShapeBinaryHandler27ApplyOwnBinary_ShapeRefreshEfNS_5RectFES1_f
+model 0x486270 0x4aa098 _ZN4SPen15ObjectShapeData17GetBinary_PenDataEPhRiRj
+model 0x4862e0 0x4aa0d0 _ZN4SPen15FillColorEffect9ConstructENS0_9ColorTypeE
+model 0x4866f0 0x4aa2d8 _ZN4SPen14FillEffectBase9ConstructENS0_4TypeE
+model 0x486700 0x4aa2e0 _ZNK4SPen14FillEffectBase6IsSameEPKS0_
+model 0x48b3e0 0x4ac950 memcpy
+model 0x48b3f0 0x4ac958 memset
+model 0x48b420 0x4ac970 sincosf
+model 0x48b430 0x4ac978 tanf
+model 0x48b480 0x4ac9a0 pow
+model 0x48b560 0x4aca10 memmove
+base 0x40e55d0 0xef280 _ZdlPv
+base 0x40e55f0 0xef290 _ZnamRKSt9nothrow_t
+base 0x40e5600 0xef298 _ZNK4SPen6String7GetUTF8EPci
+base 0x40e5620 0xef2a8 __android_log_print
+base 0x40e5650 0xef2c0 _ZdaPv
+base 0x40e56f0 0xef310 _ZnwmRKSt9nothrow_t
+base 0x40e5710 0xef320 _ZN4SPen6String9ConstructEv
+base 0x40e5740 0xef338 _ZN4SPen4List3AddEPv
+base 0x40e5cd0 0xef600 _ZN4SPen6String9ConstructEPKc
+base 0x40e5d00 0xef618 _ZN4SPen6StringD1Ev
+base 0x40e5f20 0xef728 _ZNSt6__ndk115recursive_mutexD1Ev
+base 0x40e5f30 0xef730 _ZNSt6__ndk115recursive_mutexC1Ev
+base 0x40e5f40 0xef738 _ZNSt6__ndk115recursive_mutex4lockEv
+base 0x40e5f50 0xef740 _ZNSt6__ndk115recursive_mutex6unlockEv
+base 0x40e6090 0xef7e0 _ZN4SPen6String5ClearEv
+base 0x40e6130 0xef830 strlen
+base 0x40e6450 0xef9c0 _ZN4SPen4Uuid7isValidEPhi
+base 0x40e6460 0xef9c8 uuid_create
+base 0x40e6470 0xef9d0 uuid_make
+base 0x40e6480 0xef9d8 uuid_export
+base 0x40e6490 0xef9e0 uuid_destroy
+base 0x40e66b0 0xefaf0 _ZNK4SPen6PointF15GetRotatedPointES0_f
+base 0x40e6cc0 0xefdf8 _ZN4SPen14StringImplBase16AllocateCapacityEi
+base 0x40e6cd0 0xefe00 _ZN4SPen14StringImplBase14ExpandCapacityEi
+base 0x40e6cf0 0xefe10 _ZN4SPen14StringImplBase7WcsncmpEPKtS2_i
+base 0x40e6e80 0xefed8 _ZN4SPen6String12SetSubstringEPKS0_ii
+base 0x40e6e90 0xefee0 _ZN4SPen6String12SetSubstringEPKtii
+base 0x40e6ea0 0xefee8 _ZNK4SPen6String11ReverseFindEPKc
+base 0x40e6ef0 0xeff10 _Z15ExtractFileNamePKcPci
+base 0x40e7bb0 0xf0570 __emutls_get_address
+base 0x40e7be0 0xf0588 memcpy
+base 0x40e7c50 0xf05c0 sincos
+cxx 0x8132890 0x142020 pthread_mutex_lock
+cxx 0x81339a0 0x1425d0 pthread_mutexattr_settype
+cxx 0x81339d0 0x1425e0 pthread_mutexattr_destroy

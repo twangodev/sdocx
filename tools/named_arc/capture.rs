@@ -69,6 +69,8 @@ pub(crate) fn capture_named(model: &Path, base: &Path, skia: &Path) {
         cursor: HEAP,
         allocations: BTreeMap::new(),
         calls: BTreeMap::new(),
+        audit_events: ptr::null_mut(),
+        uuid_sequence: 0,
     });
     let _hooks = Hooks::new(machine.engine, state.as_mut());
     let object = MODEL + 0x3000;

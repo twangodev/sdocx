@@ -2504,3 +2504,22 @@ mod gradient_transport_tests {
         }
     }
 }
+
+#[test]
+fn native_arc_roundtrip_frame_parses() {
+    let frame = include_bytes!("fixtures/native-arc-frame.bin");
+    let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(shape.shape_type, 20);
+    assert_eq!(shape.control_points, [[110.0, 20.0], [210.0, 70.0]]);
+    assert_eq!(
+        [
+            shape.geometry_bbox.x_min,
+            shape.geometry_bbox.y_min,
+            shape.geometry_bbox.x_max,
+            shape.geometry_bbox.y_max
+        ],
+        [10.0, 20.0, 210.0, 120.0]
+    );
+    assert_eq!(shape.path_data.len(), 87);
+}

@@ -367,6 +367,8 @@ struct Heap {
     allocations: usize,
     fills: usize,
     deletes: usize,
+    deleted_pointers: Vec<u64>,
+    audit_events: *mut Vec<(bool,u64,usize)>,
 }
 unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *mut c_void) {
     let heap = unsafe { &mut *data.cast::<Heap>() };
@@ -391,10 +393,13 @@ unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *
                 &vec![heap.allocation_fill; allocation as usize],
             );
             register(engine, REGISTER_X0, pointer);
+            if !heap.audit_events.is_null() { unsafe { &mut *heap.audit_events }.push((true, pointer, allocation as usize)); }
             heap.allocations += 1;
         }
         DELETE => {
             heap.deletes += 1;
+            heap.deleted_pointers.push(first);
+            if first != 0 && !heap.audit_events.is_null() { unsafe { &mut *heap.audit_events }.push((false, first, 0)); }
         }
         MEMSET => {
             let byte = read_register(engine, REGISTER_X0 + 1) as u8;
@@ -450,6 +455,8 @@ impl Machine {
                 allocations: 0,
                 fills: 0,
                 deletes: 0,
+                deleted_pointers: Vec::new(),
+                audit_events: ptr::null_mut(),
             }),
             stack_pointer: STACK,
             stop_address: STOP,
@@ -1930,6 +1937,12 @@ fn main() {
             let base = std::env::args_os().nth(3).unwrap();
             let skia = std::env::args_os().nth(4).unwrap();
             shape_paths::capture_named(Path::new(&path), Path::new(&base), Path::new(&skia));
+            return;
+        }
+        Some("--named-arc-saved") => {
+            let base = std::env::args_os().nth(3).unwrap();
+            let skia = std::env::args_os().nth(4).unwrap();
+            shape_paths::capture_saved(Path::new(&path), Path::new(&base), Path::new(&skia));
             return;
         }
         Some("--shape-paths") => {
