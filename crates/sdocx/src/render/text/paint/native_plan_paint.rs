@@ -34,6 +34,8 @@ struct NativePaintGroup {
     retained: Option<super::super::native::NativeTextBlock>,
     #[cfg(feature = "pdf")]
     inkless_carrier: bool,
+    #[cfg(feature = "pdf")]
+    paper_line: Option<(usize, usize, usize, f64, f64)>,
 }
 
 struct ProjectedPaintRun {
@@ -56,6 +58,7 @@ pub(in crate::render) struct NativePaintTarget {
     pub conservative_clip: Option<Definition<Clip>>,
     native_lines: Option<NativePageLineRange>,
     cell: Option<NativeCellPaintRequest>,
+    paper_body: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -72,6 +75,7 @@ impl NativePaintTarget {
             conservative_clip: None,
             native_lines: None,
             cell: None,
+            paper_body: false,
         }
     }
 
@@ -81,6 +85,17 @@ impl NativePaintTarget {
         } else {
             draw(scene);
         }
+    }
+
+    #[cfg(feature = "pdf")]
+    pub fn is_paper_body(self) -> bool {
+        self.paper_body
+    }
+
+    #[cfg(feature = "pdf")]
+    pub fn with_paper_body(mut self) -> Self {
+        self.paper_body = true;
+        self
     }
 
     pub fn with_native_lines(mut self, lines: NativePageLineRange) -> Self {
@@ -197,6 +212,7 @@ impl NativePaintDispatcher {
             layout,
             visible_lines,
             target.viewport,
+            target.paper_body,
             &clips,
         )
         .and_then(|runs| {
@@ -230,6 +246,17 @@ impl NativePaintDispatcher {
                     .entry(first_line)
                     .or_default()
                     .push(groups.len());
+                #[cfg(feature = "pdf")]
+                let paper_line = target.paper_body.then(|| {
+                    let line = &layout.lines[first_line];
+                    (
+                        first_line,
+                        run.source.characters().start,
+                        run.source.characters().end,
+                        line.top,
+                        line.bottom,
+                    )
+                });
                 groups.push(NativePaintGroup {
                     run,
                     clip,
@@ -238,6 +265,8 @@ impl NativePaintDispatcher {
                     retained,
                     #[cfg(feature = "pdf")]
                     inkless_carrier,
+                    #[cfg(feature = "pdf")]
+                    paper_line,
                 });
             }
             Ok((groups, groups_by_line))
@@ -283,7 +312,13 @@ impl NativePaintDispatcher {
                     .native_text()
                     .register(group.run.source.characters().start, block)
                 {
-                    Ok(id) => node.native_id(id),
+                    Ok(id) => {
+                        if let Some((line, start, end, top, bottom)) = group.paper_line {
+                            svg.native_text()
+                                .set_paper_line(id, line, start, end, top, bottom);
+                        }
+                        node.native_id(id)
+                    }
                     Err(error) => {
                         svg.reject_native_text(error.to_string());
                         continue;
@@ -397,6 +432,7 @@ fn project_groups(
     layout: &TextLayout,
     visible_lines: &[bool],
     viewport: Option<Viewport>,
+    paper_body: bool,
     clips: &[Option<NativeRunClip>],
 ) -> Result<Vec<ProjectedPaintRun>, ()> {
     let mut windows: Vec<Range<usize>> = Vec::new();
@@ -405,7 +441,8 @@ fn project_groups(
             continue;
         }
         let source = &line.line.source;
-        if let Some(previous) = windows.last_mut()
+        if !paper_body
+            && let Some(previous) = windows.last_mut()
             && previous.end == source.start
         {
             previous.end = source.end;

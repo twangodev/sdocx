@@ -845,12 +845,15 @@ accepted at document density 1 when the native measured-layout certificate
 admits its source, font, geometry and flow settings; space-only measured lines
 remain unsupported. Native line-range and
 visibility controls cover this subset, with a changed host libc; public PDF
-tests check source resources, overlay clipping and text placement. Boundary lines
-can have duplicated clipped text operations: in a 160-line public export fixture,
-MuPDF and PDFium each extract 161 lines. Marking the duplicate as an artifact
-or giving it empty ActualText does not suppress it in PDFium. One possible fix is
-stable source-line ownership and outline-only painting for the duplicate while
-preserving the clipped appearance and selectable text on the owning page. This does not establish native PDF appearance or support density 3 text. The real quiz exports seven pages with an
+tests check source resources, overlay clipping and text placement. Boundary text
+uses stable source ranges and physical-clip ownership; duplicate visible pieces
+are painted as outlines when supported. MuPDF and PDFium each extract all 160
+lines once in a repeated-line public export fixture. Against the previous PDF,
+MuPDF rasters at 1x and 3x differed only in a small number of antialiased color
+channels around an outlined boundary glyph. Unsupported outlines or uncertain
+ink geometry use a conservative text fallback and can still produce duplicates.
+This does not establish device pixel parity, native PDF appearance, or density 3
+text support. The real quiz exports seven pages with an
 explicit 1080 load width. MuPDF and PDFium render every page; its image pixels
 are preserved and its page-5 bounds match native model placement within
 0.00002 points. Two-image and blank-gap controls match native line geometry and

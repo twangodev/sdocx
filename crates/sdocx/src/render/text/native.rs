@@ -90,7 +90,11 @@ pub(crate) struct NativeTextRegistry {
 struct RegisteredText {
     block: NativeTextBlock,
     order: Vec<usize>,
+    source_start: usize,
     visual_transform: Option<NativeTextVisualTransform>,
+    paper_line: Option<(usize, usize, usize, f64, f64)>,
+    visual_only: bool,
+    omit: bool,
 }
 
 pub(crate) use super::NativeTextVisualTransform;
@@ -210,9 +214,69 @@ impl NativeTextRegistry {
         self.blocks.push(RegisteredText {
             block,
             order,
+            source_start,
             visual_transform,
+            paper_line: None,
+            visual_only: false,
+            omit: false,
         });
         Ok(id)
+    }
+
+    pub fn set_new_paper_lines(&mut self, first: usize, line: usize, top: f64, bottom: f64) {
+        for block in &mut self.blocks[first..] {
+            let start = block.source_start;
+            let end = start + block.block.source.chars().count();
+            let (top, bottom) = block.block.paper_ink_bounds().unwrap_or((top, bottom));
+            block.paper_line = Some((line, start, end, top, bottom));
+        }
+    }
+
+    pub fn set_paper_line(
+        &mut self,
+        id: NativeTextId,
+        line: usize,
+        start: usize,
+        end: usize,
+        top: f64,
+        bottom: f64,
+    ) {
+        let block = &mut self.blocks[id.0];
+        let (top, bottom) = block.block.paper_ink_bounds().unwrap_or((top, bottom));
+        block.paper_line = Some((line, start, end, top, bottom));
+    }
+
+    pub fn paper_lines(
+        &self,
+    ) -> impl Iterator<Item = (NativeTextId, usize, usize, usize, f64, f64)> + '_ {
+        self.blocks.iter().enumerate().filter_map(|(index, block)| {
+            block.paper_line.map(|(line, start, end, top, bottom)| {
+                (NativeTextId(index), line, start, end, top, bottom)
+            })
+        })
+    }
+
+    pub fn set_visual_only(&mut self, id: NativeTextId) {
+        self.blocks[id.0].visual_only = true;
+    }
+
+    pub fn omit_outside_paper_clip(&mut self, id: NativeTextId) -> bool {
+        let entry = &mut self.blocks[id.0];
+        if entry.block.runs.iter().any(|run| run.paint.bold)
+            || entry.block.paper_ink_bounds().is_none()
+        {
+            return false;
+        }
+        entry.omit = true;
+        true
+    }
+
+    pub fn omitted(&self, id: NativeTextId) -> bool {
+        self.blocks[id.0].omit
+    }
+
+    pub fn visual_only(&self, id: NativeTextId) -> bool {
+        self.blocks[id.0].visual_only
     }
 
     pub fn visual_transform(&self, id: NativeTextId) -> Option<NativeTextVisualTransform> {
@@ -306,6 +370,25 @@ impl<'a> NativePaintBridge<'a> {
 }
 
 impl NativeTextBlock {
+    fn paper_ink_bounds(&self) -> Option<(f64, f64)> {
+        let mut top = f64::INFINITY;
+        let mut bottom = f64::NEG_INFINITY;
+        for run in &self.runs {
+            let scale = run.font_size / f64::from(run.face.metrics.units_per_em);
+            if !scale.is_finite() || scale <= 0.0 {
+                return None;
+            }
+            for glyph in &run.glyphs {
+                if let Some(bounds) = run.face.glyph_ink_bounds(glyph.glyph_id).ok()? {
+                    let stroke = if run.paint.bold { 0.25 } else { 0.0 };
+                    top = top.min(glyph.origin[1] - f64::from(bounds.y_max) * scale - stroke);
+                    bottom = bottom.max(glyph.origin[1] - f64::from(bounds.y_min) * scale + stroke);
+                }
+            }
+        }
+        (top.is_finite() && bottom.is_finite() && bottom > top).then_some((top, bottom))
+    }
+
     fn validate(&self) -> Result<(), NativeTextError> {
         if self.runs.is_empty() || self.runs.iter().all(|run| run.glyphs.is_empty()) {
             return Err(NativeTextError::Empty);
@@ -448,6 +531,77 @@ impl NativePdfPainter {
         surface.set_stroke(old_stroke);
         surface.end_tagged();
         Ok(TagGroup::with_children(Tag::Span, vec![identifier.into()]))
+    }
+
+    pub fn paint_visual_or_text(
+        &mut self,
+        block: &NativeTextBlock,
+        surface: &mut Surface<'_>,
+    ) -> Result<Option<TagGroup>, NativeTextError> {
+        match self.paint_visual_only(block, surface) {
+            Ok(()) => Ok(None),
+            Err(NativeTextError::UnsupportedOutline(_)) => self.paint(block, surface).map(Some),
+            Err(error) => Err(error),
+        }
+    }
+
+    pub fn paint_visual_only(
+        &mut self,
+        block: &NativeTextBlock,
+        surface: &mut Surface<'_>,
+    ) -> Result<(), NativeTextError> {
+        block.validate()?;
+        if block.runs.iter().any(|run| run.paint.bold) && !positive_native(self.stroke_width) {
+            return Err(NativeTextError::InvalidGeometry);
+        }
+        let prepared = block
+            .runs
+            .iter()
+            .filter(|run| !run.glyphs.is_empty())
+            .map(|run| {
+                let opacity = NormalizedF32::new(f32::from(run.paint.alpha) / 255.0)
+                    .ok_or(NativeTextError::InvalidGeometry)?;
+                let paths = run
+                    .glyphs
+                    .iter()
+                    .map(|glyph| {
+                        let outline = self.outline(&run.face, glyph.glyph_id)?;
+                        outline_path(&outline, run, glyph)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok((run, paths, opacity))
+            })
+            .collect::<Result<Vec<_>, NativeTextError>>()?;
+        let old_fill = surface.get_fill().cloned();
+        let old_stroke = surface.get_stroke().cloned();
+        for (run, paths, opacity) in prepared {
+            let color = rgb::Color::new(run.paint.color.r, run.paint.color.g, run.paint.color.b);
+            if run.paint.bold {
+                surface.set_fill(None);
+                surface.set_stroke(Some(Stroke {
+                    paint: color.into(),
+                    opacity,
+                    width: self.stroke_width as f32,
+                    miter_limit: 4.0,
+                    ..Stroke::default()
+                }));
+                for path in paths.iter().flatten() {
+                    surface.draw_path(path);
+                }
+            }
+            surface.set_fill(Some(Fill {
+                paint: color.into(),
+                opacity,
+                ..Fill::default()
+            }));
+            surface.set_stroke(None);
+            for path in paths.iter().flatten() {
+                surface.draw_path(path);
+            }
+        }
+        surface.set_fill(old_fill);
+        surface.set_stroke(old_stroke);
+        Ok(())
     }
 
     fn font(&mut self, face: &ResolvedFace) -> Result<Font, NativeTextError> {
@@ -647,6 +801,20 @@ mod tests {
             source: Arc::from(source),
             runs: vec![run],
         }
+    }
+
+    #[test]
+    fn paper_clip_omission_requires_known_unstroked_ink() {
+        let mut registry = NativeTextRegistry::default();
+        let visible_ink = registry.register(0, block("A", run())).unwrap();
+        assert!(registry.omit_outside_paper_clip(visible_ink));
+        assert!(registry.omitted(visible_ink));
+
+        let mut bold = run();
+        bold.paint.bold = true;
+        let uncertain = registry.register(1, block("A", bold)).unwrap();
+        assert!(!registry.omit_outside_paper_clip(uncertain));
+        assert!(!registry.omitted(uncertain));
     }
 
     fn paint_plan(text: &str) -> NativePaintPlan {

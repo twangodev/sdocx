@@ -1167,8 +1167,7 @@ fn public_pdf_paper_places_ascii_body_across_source_page_boundary() {
                 .any(|operation| operation.operator == "BT")
         })
         .expect("imported page text overlay");
-    // Whole lines that intersect a slice can be emitted on both sides; each
-    // page clips them. Check source-line coverage and bound that overlap.
+    // Each repeated source line must have exactly one extractable owner.
     let mut baselines = [&imported, &continuation, &next]
         .iter()
         .flat_map(|content| {
@@ -1183,9 +1182,9 @@ fn public_pdf_paper_places_ascii_body_across_source_page_boundary() {
     baselines.sort_by(f64::total_cmp);
     baselines.dedup();
     assert_eq!(baselines.len(), 160, "every source line must reach a slice");
-    assert!(
-        total_painted <= 162,
-        "only lines crossing a clip may be emitted twice"
+    assert_eq!(
+        total_painted, 160,
+        "each source line must be extractable once"
     );
     assert_eq!(baselines[0], 17.0);
     assert!(

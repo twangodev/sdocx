@@ -923,6 +923,8 @@ struct PreparedBodyText {
     object_index: usize,
     page_top: f64,
     viewport: Viewport,
+    #[cfg(feature = "pdf")]
+    paper_body: bool,
 }
 
 struct PreparedBodyPlan {
@@ -1011,6 +1013,8 @@ impl PreparedBodyText {
             source_page_index: page.source_page_index,
             object_index: body.object_index,
             page_top,
+            #[cfg(feature = "pdf")]
+            paper_body: cache.paper_body_query,
             viewport: Viewport::new(BoundingBox {
                 x_min: 0.0,
                 x_max: f64::from(page.page.width),
@@ -1067,6 +1071,10 @@ impl PreparedBodyText {
                         text::NativePaintTarget::new(svg.retains_text(), Some(self.viewport));
                     if let Some(lines) = native_lines {
                         target = target.with_native_lines(lines);
+                    }
+                    #[cfg(feature = "pdf")]
+                    if self.paper_body {
+                        target = target.with_paper_body();
                     }
                     paint_text_layout_with_target(
                         svg,
@@ -2785,6 +2793,9 @@ fn paint_text_foreground(
                 if let Some(native) = &mut native_paint {
                     native.paint_line(svg, styled, index, line, theme, renderer);
                 } else {
+                    #[cfg(feature = "pdf")]
+                    let first_block = (target.is_paper_body() && svg.retains_text())
+                        .then(|| svg.native_text().len());
                     target.paint_conservative(svg, |svg| {
                         render_measured_line(
                             svg,
@@ -2799,6 +2810,15 @@ fn paint_text_foreground(
                             renderer,
                         );
                     });
+                    #[cfg(feature = "pdf")]
+                    if let Some(first_block) = first_block {
+                        svg.native_text().set_new_paper_lines(
+                            first_block,
+                            index,
+                            line.top,
+                            line.bottom,
+                        );
+                    }
                 }
             }
             target.paint_conservative(svg, |svg| {

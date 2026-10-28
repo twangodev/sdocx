@@ -1123,6 +1123,25 @@ fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
             })
 }
 
+type PaperRunOwners = std::collections::HashMap<(usize, usize, usize), (usize, f64)>;
+
+fn consider_paper_run_owner(
+    owners: &mut PaperRunOwners,
+    key: (usize, usize, usize),
+    page_index: usize,
+    ink: (f64, f64),
+    clip: (f64, f64),
+) {
+    let overlap = (ink.1.min(clip.1) - ink.0.max(clip.0)).max(0.0);
+    if overlap <= 0.0 {
+        return;
+    }
+    let owner = owners.entry(key).or_insert((page_index, overlap));
+    if overlap > owner.1 {
+        *owner = (page_index, overlap);
+    }
+}
+
 /// Render complete admitted objects into physical-covering per-page scenes, then
 /// graft each scene once over its retained vector source page or continuation page.
 #[allow(clippy::too_many_arguments)]
@@ -1194,13 +1213,47 @@ pub(super) fn render_singlex_pdf_paper_plan(
         })
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| super::PdfError::InvalidPageSize { page_index: 0 })?;
-    let scenes = cache.render_layout_page_scene_requests(
+    let mut scenes = cache.render_layout_page_scene_requests(
         document,
         &requests,
         render_options,
         fonts,
         observer,
     );
+    // The scene viewport rounds up to cover the physical page. Choose one
+    // extraction owner per source line using the actual physical clip, while
+    // retaining every intersecting scene's visible glyph outlines.
+    let mut owners = PaperRunOwners::new();
+    for (page_index, (scene, output)) in scenes.iter().zip(&plan.output_pages).enumerate() {
+        let clip_top = f64::from(output.query_y);
+        let clip_bottom =
+            clip_top + output.physical_height * f64::from(plan.note_width) / output.physical_width;
+        for (_, line, start, end, top, bottom) in scene.text.paper_lines() {
+            consider_paper_run_owner(
+                &mut owners,
+                (line, start, end),
+                page_index,
+                (top, bottom),
+                (clip_top, clip_bottom),
+            );
+        }
+    }
+    for (page_index, scene) in scenes.iter_mut().enumerate() {
+        let nonowners = scene
+            .text
+            .paper_lines()
+            .filter_map(|(id, line, start, end, _, _)| {
+                let owner = owners.get(&(line, start, end)).map(|owner| owner.0);
+                (owner != Some(page_index)).then_some((id, owner.is_none()))
+            })
+            .collect::<Vec<_>>();
+        for (id, outside_all_clips) in nonowners {
+            if outside_all_clips && scene.text.omit_outside_paper_clip(id) {
+                continue;
+            }
+            scene.text.set_visual_only(id);
+        }
+    }
     let overlay_bytes = super::render_scenes_pdf_with_progress(&scenes, pdf_options, observer)?;
     let overlay_units = 72.0 / f64::from(pdf_options.dpi);
     let mut output_overlay = Document::load_mem(&overlay_bytes)
@@ -3236,6 +3289,24 @@ fn transform_point(matrix: [f64; 6], point: [f64; 2]) -> [f64; 2] {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn paper_run_owners_follow_each_runs_actual_clip_and_ignore_empty_overlap() {
+        let mut owners = super::PaperRunOwners::new();
+        let first = (7, 10, 11);
+        let second = (7, 11, 12);
+        let repeated_line = (8, 12, 13);
+        let fringe = (9, 13, 14);
+        for (page, clip) in [(0, (0.0, 10.0)), (1, (10.0, 20.0))] {
+            super::consider_paper_run_owner(&mut owners, first, page, (8.0, 11.0), clip);
+            super::consider_paper_run_owner(&mut owners, second, page, (9.0, 13.0), clip);
+            super::consider_paper_run_owner(&mut owners, repeated_line, page, (12.0, 13.0), clip);
+            super::consider_paper_run_owner(&mut owners, fringe, page, (20.0, 21.0), clip);
+        }
+        assert_eq!(owners.get(&first).map(|owner| owner.0), Some(0));
+        assert_eq!(owners.get(&second).map(|owner| owner.0), Some(1));
+        assert_eq!(owners.get(&repeated_line).map(|owner| owner.0), Some(1));
+        assert!(!owners.contains_key(&fringe));
+    }
     use super::*;
     use crate::{
         ArchiveResource, ArchiveResourceContent, MediaManifest, MediaManifestEntry, PdfOptions,

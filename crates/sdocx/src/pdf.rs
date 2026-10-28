@@ -1005,21 +1005,25 @@ fn draw_retained_page(
             if tags.contains_key(&id) {
                 return Err("retained text was painted more than once".into());
             }
+            if registry.omitted(id) {
+                tags.insert(id, None);
+                return Ok(true);
+            }
             if let Some(transform) = visual_transform {
                 let [a, b, c, d, e, f] = transform.inverse();
                 surface.push_transform(&krilla::geom::Transform::from_row(
                     a as f32, b as f32, c as f32, d as f32, e as f32, f as f32,
                 ));
-                let result = painter.paint(block, surface);
-                surface.pop();
-                let tag = result.map_err(|error| error.to_string())?;
-                tags.insert(id, tag);
-                return Ok(true);
             }
-            let tag = painter
-                .paint(block, surface)
-                .map_err(|error| error.to_string())?;
-            tags.insert(id, tag);
+            let result = if registry.visual_only(id) {
+                painter.paint_visual_or_text(block, surface)
+            } else {
+                painter.paint(block, surface).map(Some)
+            };
+            if visual_transform.is_some() {
+                surface.pop();
+            }
+            tags.insert(id, result.map_err(|error| error.to_string())?);
             Ok(true)
         },
         &ink_ids,
@@ -1038,7 +1042,8 @@ fn draw_retained_page(
                 SvgError::Text("retained text was skipped by an unsupported SVG effect".into())
             })
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()
+        .map(|tags| tags.into_iter().flatten().collect())
 }
 
 fn count_node_ids(group: &usvg::Group, id: &str) -> usize {

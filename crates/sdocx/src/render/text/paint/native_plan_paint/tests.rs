@@ -273,7 +273,7 @@ fn visible_source_projection_keeps_the_original_cached_run_clip() {
     let visible = (0..layout.lines.len())
         .map(|index| index % 2 == 0)
         .collect::<Vec<_>>();
-    let projected = project_groups(&plan, &styled, &layout, &visible, None, &clips).unwrap();
+    let projected = project_groups(&plan, &styled, &layout, &visible, None, false, &clips).unwrap();
     assert!(!projected.is_empty());
     assert!(projected.len() < plan.runs.len());
     for ProjectedPaintRun { run, clip, .. } in projected {
