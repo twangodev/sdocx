@@ -1,0 +1,97 @@
+{
+  "schema": "brushpen-translated-paint-v1",
+  "geometry_fixture_sha256": "1daa319db795ed173356762e7ddae1fa5759d3c2b1a5237be81c578dabea45d5",
+  "native_frame_sha256": "ad97859ee0aac108d9906732346f300c7e87a20366b35580be7254dc98057f12",
+  "native_frame_dimensions": [
+    321,
+    228
+  ],
+  "native_nonzero_alpha_pixels": 16,
+  "crop_origin": [
+    100,
+    97
+  ],
+  "crop_dimensions": [
+    5,
+    7
+  ],
+  "crop_sha256": "6f1902c428cbbdef782aa4a66d873419e1956f0f00ddd64dc700911aa5b41375",
+  "draw_time_uniforms": [
+    {
+      "count": 1,
+      "location": 0,
+      "transpose": 0,
+      "values": [
+        0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "phase": "native PenGLRenderMsg task2",
+      "raw_f32_le": "d9d8d83ededd5d3f908f0f3f0000803f",
+      "uniform4fv_location": 4,
+      "values": [
+        0.42352941632270813,
+        0.8666666746139526,
+        0.5607843399047852,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 5,
+      "values": [
+        321.0,
+        228.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 6,
+      "values": [
+        101.0,
+        98.0
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    }
+  ],
+  "host_boundary": "Synthetic source through native Model, Drawing, BrushPen GLV10/RTV1 and native queue tasks, with Unicorn ARM64, host adapters and Mesa GLES; not Samsung device or saved-note pixels. Target starts transparent RGBA8.",
+  "comparison": {
+    "rust_frame_sha256": "815c5e17a6757b8b422a2247745e1a750ebef0dd9b280f3b70850cc77ab6cc53",
+    "different_channels": 1,
+    "l1": 1,
+    "different_pixel_xy": [
+      103,
+      101
+    ],
+    "channel": "alpha",
+    "native": 223,
+    "rust": 222
+  }
+}

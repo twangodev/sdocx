@@ -1077,6 +1077,92 @@ mod tests {
         );
     }
     #[test]
+    fn translated_native_source_paint_matches_with_one_alpha_step() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-translation-native.json"
+        ))
+        .unwrap();
+        let hex = fixture["producer"]["buffer_hex"].as_str().unwrap();
+        let bytes: Vec<u8> = hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let records: Vec<[f32; 11]> = bytes
+            .chunks_exact(44)
+            .map(|row| {
+                std::array::from_fn(|i| {
+                    f32::from_le_bytes(row[i * 4..i * 4 + 4].try_into().unwrap())
+                })
+            })
+            .collect();
+        assert_eq!(records.len(), 26);
+        let (atlas, grain) = source_textures();
+        let mut actual = vec![0; 321 * 228 * 4];
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: [
+                    0.0062305294,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.00877193,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    -0.00003051851,
+                    0.0,
+                    -1.0,
+                    -1.0,
+                    0.0,
+                    1.0,
+                ],
+                rgb: [108.0 / 255.0, 221.0 / 255.0, 143.0 / 255.0],
+                grain_period: [321.0, 228.0],
+                grain_offset: [101.0, 98.0],
+                num_tiles: 3.0,
+            },
+            &mut actual,
+        )
+        .unwrap();
+        let crop = include_bytes!(
+            "../../../../../conformance/brushpen-translation-paint/native-crop-5x7.rgba"
+        );
+        let mut native = vec![0; actual.len()];
+        for y in 0..7 {
+            let offset = ((97 + y) * 321 + 100) * 4;
+            native[offset..offset + 20].copy_from_slice(&crop[y * 20..(y + 1) * 20]);
+        }
+        assert_eq!(
+            sha256(&native),
+            "ad97859ee0aac108d9906732346f300c7e87a20366b35580be7254dc98057f12"
+        );
+        let differences: Vec<_> = actual
+            .iter()
+            .zip(&native)
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .collect();
+        assert_eq!(differences.len(), 1);
+        assert_eq!(differences[0], (130099, (&222, &223)));
+    }
+
+    #[test]
     fn second_native_control_compares_geometry_and_paint() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-second-native/receipt.json"
