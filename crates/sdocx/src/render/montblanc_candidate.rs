@@ -2,7 +2,7 @@
 pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64)> {
     let mut result = Vec::new();
     for (program, buffer) in [3, 4, 5].into_iter().zip(buffers) {
-        for t in buffer.chunks_exact(3) {
+        for t in buffer.as_chunks::<3>().0 {
             let triangle = [
                 t[0].map(f64::from),
                 t[1].map(f64::from),
