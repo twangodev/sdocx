@@ -1082,6 +1082,66 @@ mod tests {
         ZlibDecoder::new(&include_bytes!("../../../../../conformance/brushpen-second-native/frame-rgba8.zlib")[..]).read_to_end(&mut native).unwrap();
         assert_eq!(sha256(&native), fixture["paint"]["full_rgba_sha256"]);
         assert_eq!(painted, native);
+        let pair: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-version-paint-pair.json"
+        ))
+        .unwrap();
+        for setting in ["10", "11"] {
+            literal_stroke.rendering.as_mut().unwrap().advanced_settings =
+                Some(format!("{setting};"));
+            let sampled = super::super::sample_native_stroke_with_size(
+                &literal_stroke,
+                context,
+                7.0_f32.to_bits(),
+                0x806e_42d1,
+            )
+            .unwrap();
+            let records: Vec<_> = sampled
+                .output
+                .instances
+                .iter()
+                .map(|instance| instance.values)
+                .collect();
+            let geometry: Vec<_> = records
+                .iter()
+                .flatten()
+                .flat_map(|value| value.to_le_bytes())
+                .collect();
+            assert_eq!(
+                sha256(&geometry),
+                pair["results"][setting]["geometry_sha256"]
+            );
+            let mut version_paint = vec![0; native.len()];
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width: 321,
+                    height: 228,
+                    projection: values("location", 0).try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+                    grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut version_paint,
+            )
+            .unwrap();
+            assert_eq!(
+                sha256(&version_paint),
+                pair["results"][setting]["frame_sha256"]
+            );
+            assert_eq!(version_paint, native);
+        }
     }
     #[test]
     fn long_native_control_public_svg_overlaps_native_paint() {

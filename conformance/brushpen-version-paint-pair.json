@@ -1,0 +1,52 @@
+{
+  "schema": "brushpen-version-paint-pair-v1",
+  "scope": "One synthetic eight-point Model ObjectStroke through native Drawing, GLV10/RTV1, host Unicorn queue/canvas adapters and Mesa GLES; no Samsung device or saved-note parity.",
+  "input_receipt": "conformance/brushpen-second-native/receipt.json",
+  "capture_script": "conformance/brushpen-version-paint-pair.py",
+  "retained_probe": "tmp/vector-parity-plan/brushpen-same-drawing-queue/second_mapdraw.py",
+  "retained_probe_sha256": "2679513acc120bb6f013b3ce3dfa469942694b4ba2e81619bf220dc0d7287811",
+  "command": "BRUSHPEN_RUN_CREATE_CANVAS_TASK=1 BRUSHPEN_NATIVE_PEN_DATA_MANAGER=1 PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin python3 conformance/brushpen-version-paint-pair.py VERSION",
+  "output_dimensions": [
+    321,
+    228
+  ],
+  "results": {
+    "10": {
+      "geometry_sha256": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+      "geometry_bytes": 9724,
+      "frame_sha256": "39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2",
+      "frame_bytes": 292752,
+      "nonzero_alpha_pixels": 539,
+      "preclear_verified": true,
+      "gl_error_after_readback": 0,
+      "input_color_f32": [
+        0.4313725531101227,
+        0.25882354378700256,
+        0.8196078538894653,
+        0.501960813999176
+      ]
+    },
+    "11": {
+      "geometry_sha256": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+      "geometry_bytes": 9724,
+      "frame_sha256": "39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2",
+      "frame_bytes": 292752,
+      "nonzero_alpha_pixels": 539,
+      "preclear_verified": true,
+      "gl_error_after_readback": 0,
+      "input_color_f32": [
+        0.4313725531101227,
+        0.25882354378700256,
+        0.8196078538894653,
+        0.501960813999176
+      ]
+    }
+  },
+  "limitations": [
+    "The capture relies on ignored project-local probe helpers and native libraries.",
+    "This single paired paint control does not establish general version equivalence or portable SVG/PDF behavior."
+  ],
+  "prerequisite_command": "PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin python3 tmp/vector-parity-plan/brushpen-same-drawing-queue/second_geometry_capture.py --print-capture > /tmp/brushpen-second-geometry.json",
+  "prerequisite_use": "The paint probe compares the native upload to producer.buffer_hex from this default-empty-setting geometry capture before drawing.",
+  "setting_provenance": "The wrapper substitutes the supplied literal into the retained probe before the native SetAdvancedPenSetting call. These paint runs did not trace a native getter to independently verify the setting."
+}
