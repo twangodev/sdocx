@@ -1,0 +1,72 @@
+{
+  "scope": "Synthetic native Drawing SimpleBrush host Mesa captures; not device or saved-note parity. Captures reproduce the tool-2 controls in simplebrush-scale-2x-host.json under the same 2x matrix. Full public SVG and direct PDF comparisons use the paired captured frame, resvg 0.45.1, and MuPDF 1.28.2.",
+  "capture": [
+    {
+      "case": "fraction12",
+      "tool": 0,
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "fraction12",
+      "tool": 3,
+      "geometry_sha256": "83a8f38950832c1c13fd68371457c5cc5889fc207eafc1d26ef2d864b5dcb0a7",
+      "frame_sha256": "f041323f2308bba6e9d8900d1ae5147943dcfc1078014c1333ae1ba77acb73c9",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 0,
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    },
+    {
+      "case": "reverse20",
+      "tool": 3,
+      "geometry_sha256": "c008dd6b9bc574a3ad1a4dca70d2af3ea8d178d8a2bc82ada5172a2db9ab1d25",
+      "frame_sha256": "27bf2a9b300fd5fe92d7f0486676763174b5635cd80f9b6378dc081df2ff6730",
+      "paint_clean": true
+    }
+  ],
+  "export": {
+    "fraction12": {
+      "svg_alpha_l1": [
+        246586,
+        11887,
+        3524
+      ],
+      "matched_paper_pdf_rgb_l1": [
+        267060,
+        18686,
+        15152
+      ],
+      "svg_support_two": [
+        1287,
+        1287
+      ]
+    },
+    "reverse20": {
+      "svg_alpha_l1": [
+        620780,
+        19916,
+        6715
+      ],
+      "matched_paper_pdf_rgb_l1": [
+        677779,
+        30138,
+        25780
+      ],
+      "svg_support_two": [
+        3311,
+        3311
+      ]
+    },
+    "order": [
+      "generic",
+      "one",
+      "two"
+    ]
+  }
+}

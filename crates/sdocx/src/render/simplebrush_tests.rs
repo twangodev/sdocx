@@ -917,8 +917,10 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
     };
     assert_eq!(render_document_svg(&doc, &conflict)[0].svg, baseline);
     for (tool, size, setting) in [
-        (0, 8.0, None),
-        (3, 8.0, None),
+        (0, 7.0, None),
+        (3, 21.0, None),
+        (0, 8.0, Some("1;")),
+        (3, 8.0, Some("1;")),
         (2, 7.0, None),
         (2, 21.0, None),
         (2, 8.0, Some("1;")),
@@ -943,6 +945,37 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
         render_document_svg(&unsupported, &two)[0].svg,
         render_document_svg(&unsupported, &RenderOptions::default())[0].svg
     );
+}
+
+#[test]
+fn two_pixel_tool_zero_and_three_match_two() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for size in [8.0, 12.0, 20.0] {
+        let mut source = stroke();
+        source.pen_width = size;
+        source.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        let reference = document(source.clone());
+        let svg = render_document_svg(&reference, &two)[0].svg.clone();
+        #[cfg(feature = "pdf")]
+        let pdf = crate::render_document_pdf(&reference, &two, &Default::default()).unwrap();
+        assert_ne!(
+            svg,
+            render_document_svg(&reference, &RenderOptions::default())[0].svg
+        );
+        for tool in [0, 3] {
+            source.rendering.as_mut().unwrap().tool_type_raw = tool;
+            let doc = document(source.clone());
+            assert_eq!(render_document_svg(&doc, &two)[0].svg, svg);
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+                pdf
+            );
+        }
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -979,21 +1012,24 @@ fn two_pixel_profile_falls_back_for_replay_and_slices() {
             .svg
     };
     assert_eq!(replay(&two), replay(&baseline));
-    let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
-    let scene = |options: &RenderOptions| {
-        super::DocumentTextCache::default()
-            .render_layout_page_scene_requests(
-                &doc,
-                &[request],
-                options,
-                &super::fonts::FontBook::default(),
-                &mut |_| {},
-            )
-            .remove(0)
-            .page
-            .svg
-    };
-    assert_eq!(scene(&two), scene(&baseline));
+    #[cfg(feature = "pdf")]
+    {
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
+        let scene = |options: &RenderOptions| {
+            super::DocumentTextCache::default()
+                .render_layout_page_scene_requests(
+                    &doc,
+                    &[request],
+                    options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0)
+                .page
+                .svg
+        };
+        assert_eq!(scene(&two), scene(&baseline));
+    }
 }
 
 #[cfg(feature = "pdf")]
@@ -1024,13 +1060,29 @@ fn two_pixel_native_export_fixture() {
         Point { x: 42.0, y: 224.0 },
         Point { x: 52.0, y: 219.0 },
     ];
-    source.pen_width = 12.0;
-    source.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+    if std::env::var_os("SDOCX_REVERSE").is_some() {
+        source.points = vec![
+            Point { x: 80.0, y: 186.0 },
+            Point { x: 65.0, y: 178.0 },
+            Point { x: 48.0, y: 189.0 },
+        ];
+    }
+    let size = if std::env::var_os("SDOCX_REVERSE").is_some() {
+        20.0
+    } else {
+        12.0
+    };
+    source.pen_width = size;
+    source.rendering.as_mut().unwrap().style.pen_size = Some(size);
     source.color = Some(Color {
         r: 0x44,
         g: 0xaa,
         b: 0xee,
     });
+    source.rendering.as_mut().unwrap().tool_type_raw = std::env::var("SDOCX_TOOL")
+        .unwrap_or("2".into())
+        .parse()
+        .unwrap();
     let mut doc = document(source);
     doc.pages[0].width = 256;
     doc.pages[0].height = 256;

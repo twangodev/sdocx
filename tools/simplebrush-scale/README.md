@@ -31,3 +31,12 @@ Source, paint runner, and SimpleBrush DSO hashes are checked; dynamically loaded
 helper and renderer inputs are not all independently pinned. It writes a
 transient SVG and PNG to the supplied export directory. It does not establish
 arbitrary scale, transforms, device rendering, or saved-note parity.
+
+For the paired tool-0 and tool-3 2× controls, pass `--tool 0` or `--tool 3`
+to `capture.py` with `fraction12` and `reverse20`. The wrapper validates each
+frame and geometry against the corresponding tool-2 control. Public exports can
+be generated with `SDOCX_TOOL=0` or `SDOCX_TOOL=3`; add `SDOCX_REVERSE=1` for
+reverse20, and pass `reverse20` as the second argument to `compare.py`. See
+`conformance/simplebrush-scale-2x-tools-host.json` for the paired results. The
+comparator reuses the tool-2 crop because the paired native geometry and full
+frames match tool 2 exactly.

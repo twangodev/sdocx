@@ -11,7 +11,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[2]
 b = Path(sys.argv[1]).resolve()
 receipt = json.loads((root / "conformance/simplebrush-scale-2x-host.json").read_text())
-case = next(c for c in receipt["capture"]["cases"] if c["case"] == "fraction12")
+case = next(c for c in receipt["capture"]["cases"] if c["case"] == (sys.argv[2] if len(sys.argv) > 2 else "fraction12"))
 x0, y0, x1, y1 = case["alpha_bounds"]
 crop = (root / "conformance" / case["crop"]["file"]).read_bytes()
 
@@ -32,6 +32,8 @@ expected = {
     "one": (1287, 1287, 11887, 147406, 20902, 18686),
     "two": (1287, 1287, 3524, 143910, 17406, 15152),
 }
+if case["case"] == "reverse20":
+    expected = {"generic": (824, 3311, 620780, 802213, 682309, 677779), "one": (3311, 3311, 19916, 154798, 34894, 30138), "two": (3311, 3311, 6715, 150498, 30594, 25780)}
 for mode in ("generic", "one", "two"):
     s = (b / f"{mode}.svg").read_text()
     body = s[s.index(">") + 1 : s.rindex("</svg>")]

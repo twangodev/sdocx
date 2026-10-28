@@ -4238,7 +4238,7 @@ fn render_stroke(
                 && simplebrush_two_pixels_per_page_unit
                 && stroke.points.len() == 3
                 && stroke.rendering.as_ref().is_some_and(|rendering| {
-                    rendering.tool_type_raw == 2
+                    matches!(rendering.tool_type_raw, 0 | 2 | 3)
                         && rendering.advanced_settings.is_none()
                         && rendering
                             .style

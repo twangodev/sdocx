@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("case", choices=["clipped8", "fraction12", "reverse20"])
     parser.add_argument("output", type=Path)
+    parser.add_argument("--tool", type=int, choices=[0, 2, 3], default=2)
     args = parser.parse_args()
     original = SOURCE / "simplebrush-source-capture.py"
     receipt = json.loads(
@@ -106,6 +107,7 @@ def main():
         ]
         if args.case in ("fraction12", "reverse20"):
             command += ["--pen-size", "12" if args.case == "fraction12" else "20"]
+        command += ["--tool-type", str(args.tool)]
         for seq in range(8):
             command += ["--dispatch-task-seq", str(seq)]
         with args.output.open("w") as output:
