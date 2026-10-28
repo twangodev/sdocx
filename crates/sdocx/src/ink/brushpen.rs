@@ -89,11 +89,11 @@ const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile
 pub(super) struct Cubic {
     p: [P; 4],
     segments: Vec<(f32, u16)>,
-    length: f32,
+    pub(super) length: f32,
 }
 
 impl Cubic {
-    fn new(p: [P; 4]) -> Self {
+    pub(super) fn new(p: [P; 4]) -> Self {
         let mut path = Self {
             p,
             segments: Vec::new(),
@@ -148,7 +148,7 @@ impl Cubic {
         t0 + (distance - start) * (t1 - t0) / (end - start)
     }
 
-    fn at(&self, distance: f32) -> P {
+    pub(super) fn at(&self, distance: f32) -> P {
         let t = self.parameter(distance);
         let eval = |a: f32, b: f32, c: f32, d: f32| {
             if t == 0.0 {
@@ -167,7 +167,7 @@ impl Cubic {
         }
     }
 
-    fn normalized_tangent(&self, distance: f32) -> P {
+    pub(super) fn normalized_tangent(&self, distance: f32) -> P {
         let t = self.parameter(distance);
         // Native cubic getPosTan uses its expanded derivative polynomial,
         // without the common factor three.

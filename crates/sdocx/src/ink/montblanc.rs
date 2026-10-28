@@ -555,13 +555,13 @@ pub(crate) mod tests {
     }
 
     #[derive(Debug)]
-    struct EndAlpha {
-        start: i32,
-        step: f32,
+    pub(super) struct EndAlpha {
+        pub(super) start: i32,
+        pub(super) step: f32,
     }
 
     // The no-move and upper-clamp paths remain disassembly-derived.
-    fn end_alpha(
+    pub(super) fn end_alpha(
         prior: i32,
         target: i32,
         last_move_distance: Option<f32>,
@@ -862,3 +862,7 @@ pub(crate) mod tests {
 #[cfg(test)]
 #[path = "montblanc_width_test.rs"]
 mod width_state_tests;
+
+#[cfg(test)]
+#[path = "montblanc_four_test.rs"]
+mod four_point_tests;
