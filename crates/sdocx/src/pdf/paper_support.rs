@@ -193,7 +193,9 @@ fn contents_bytes(doc: &Document, page: &Dictionary) -> Result<Vec<u8>, String> 
         }
     }
     let mut out = Vec::new();
-    if let Ok(contents) = page.get(b"Contents") {
+    if let Ok(contents) = page.get(b"Contents")
+        && !matches!(deref(doc, contents)?, Object::Null)
+    {
         append(doc, contents, &mut out, 0)?;
     }
     Ok(out)
@@ -242,7 +244,11 @@ fn content_items(doc: &Document, object: &Object) -> Result<Vec<Object>, String>
             _ => Err("invalid page Contents object".into()),
         }
     }
-    flatten(doc, object, 0)
+    if matches!(deref(doc, object)?, Object::Null) {
+        Ok(Vec::new())
+    } else {
+        flatten(doc, object, 0)
+    }
 }
 
 /// Graft one overlay PDF page onto a page in the original source PDF.
@@ -4666,6 +4672,43 @@ mod tests {
             "SDK opacity/mask resources must remain reachable"
         );
         assert_eq!(images, 0, "test overlay should remain vector-only");
+    }
+
+    #[test]
+    fn graft_accepts_null_page_contents() {
+        for indirect in [false, true] {
+            let mut source = Document::load_mem(&source_pdf()).unwrap();
+            let page_id = source.get_pages()[&2];
+            let contents = if indirect {
+                Object::Reference(source.add_object(Object::Null))
+            } else {
+                Object::Null
+            };
+            source
+                .get_dictionary_mut(page_id)
+                .unwrap()
+                .set("Contents", contents);
+            let mut bytes = Vec::new();
+            source.save_to(&mut bytes).unwrap();
+            let output = graft_overlay_page(
+                &bytes,
+                2,
+                &sdk_overlay_pdf(),
+                1,
+                [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 100.0, 100.0],
+            )
+            .unwrap();
+            let output = Document::load_mem(&output).unwrap();
+            assert!(
+                !contents_bytes(
+                    &output,
+                    output.get_dictionary(output.get_pages()[&2]).unwrap()
+                )
+                .unwrap()
+                .is_empty()
+            );
+        }
     }
 
     #[test]

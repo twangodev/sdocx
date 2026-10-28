@@ -890,7 +890,8 @@ recovered contracts to the Rust model and verified vector PDF transport.
 Rust assembly tests cover scoped resources, overlay tags, reordered/duplicate
 pages and ordinary tails; public export tests cover source preservation,
 cross-band whole-stroke admission and DPI-independent physical page sizes.
-Page-box geometry accepts either corner order while preserving the source values.
+Page-box geometry accepts either corner order while preserving the source values;
+blank source pages with direct or indirect null content can receive overlays.
 Overlay grafts clear unfinished source paths before clipping; a synthetic manual
 check in MuPDF and PDFium confirmed that this prevents paint outside the clip.
 The real `cs61bl_su22` note exports 20 pages: both MuPDF and PDFium render them,

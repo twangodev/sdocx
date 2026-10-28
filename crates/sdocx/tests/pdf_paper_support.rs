@@ -1898,6 +1898,56 @@ fn public_pdf_paper_accepts_indirect_page_box_coordinates() {
 }
 
 #[test]
+fn public_pdf_paper_imports_blank_pages_with_null_contents() {
+    for indirect in [false, true] {
+        let mut note = document(true, None, 0, 1);
+        let ArchiveResourceContent::Opaque { data } =
+            &mut note.metadata.archive_resources[0].content
+        else {
+            unreachable!()
+        };
+        let mut source = PdfDocument::load_mem(data).unwrap();
+        let page_id = source.get_pages()[&1];
+        let contents = if indirect {
+            Object::Reference(source.add_object(Object::Null))
+        } else {
+            Object::Null
+        };
+        source
+            .get_dictionary_mut(page_id)
+            .unwrap()
+            .set("Contents", contents);
+        data.clear();
+        source.save_to(data).unwrap();
+
+        let output = export(&note, &[0], 96.0).unwrap();
+        let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+        assert!(page_invokes_crossing_stroke_form(&pdf, 1));
+        let page = pdf.get_dictionary(pdf.get_pages()[&1]).unwrap();
+        let contents = page.get(b"Contents").unwrap().as_array().unwrap();
+        let mut depth = 0;
+        let mut found_overlay = false;
+        for item in contents {
+            let stream = pdf.dereference(item).unwrap().1.as_stream().unwrap();
+            let content = Content::decode(&stream.decompressed_content().unwrap()).unwrap();
+            for operation in content.operations {
+                match operation.operator.as_str() {
+                    "q" => depth += 1,
+                    "Q" => {
+                        depth -= 1;
+                        assert!(depth >= 0);
+                    }
+                    "Do" => found_overlay = true,
+                    _ => {}
+                }
+            }
+        }
+        assert_eq!(depth, 0);
+        assert!(found_overlay);
+    }
+}
+
+#[test]
 fn public_pdf_paper_imports_multiple_page_tree_only_sources_in_record_order() {
     let records = [
         [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485],
