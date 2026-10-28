@@ -317,3 +317,13 @@ media lookup, decoded pixels, saved-document loading, or the canvas transform.
 
 Run the standalone harness with `--plot-registration` and the Model library,
 using the build command above. The receipt identifies the exact library digest.
+
+A separate [negative-ID control](../../conformance/plot-registration-negative-native.json)
+connects that field loader to the actual `ImageCommon::AddImage(int, ...)`
+at `0x2b548c`. Hooks record one entry with ID -7 and the signed return -1;
+the loader consumes four field bytes and stores -1. Android logging and
+`SPen::Error::SetError` are observed and stubbed, as is the buffer check;
+the error-state side effect is therefore omitted. The control uses synthetic
+base state with previous index -1. It does not run a saved document or a
+positive-ID media lookup or bitmap decode.
+Run the same harness with `SDOCX_PLOT_NATIVE_ADD=1` to reproduce this case.
