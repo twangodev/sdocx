@@ -2794,11 +2794,12 @@ fn assemble_overlay_only(
     Ok(bytes)
 }
 
-fn is_annotation_dictionary(dict: &Dictionary) -> bool {
-    dict.get(b"Type")
-        .and_then(Object::as_name)
-        .is_ok_and(|kind| kind == b"Annot")
-        || (dict.has(b"Subtype") && dict.has(b"Rect"))
+fn is_annotation_dictionary(doc: &Document, dict: &Dictionary) -> bool {
+    match dict.get(b"Type").ok().map(|kind| deref(doc, kind)) {
+        None | Some(Ok(Object::Null)) => dict.has(b"Subtype") && dict.has(b"Rect"),
+        Some(Ok(Object::Name(kind))) => kind == b"Annot",
+        _ => false,
+    }
 }
 
 #[derive(Default)]
@@ -2820,7 +2821,9 @@ fn collect_annotation_ids(doc: &Document, object: &Object, ids: &mut Vec<ObjectI
             Object::Array(items) => pending.extend(items.iter().rev()),
             Object::Reference(id) if seen.insert(*id) => match doc.objects.get(id) {
                 Some(Object::Array(items)) => pending.extend(items.iter().rev()),
-                Some(Object::Dictionary(dict)) if is_annotation_dictionary(dict) => ids.push(*id),
+                Some(Object::Dictionary(dict)) if is_annotation_dictionary(doc, dict) => {
+                    ids.push(*id)
+                }
                 Some(next @ Object::Reference(_)) => pending.push(next),
                 _ => {}
             },
@@ -3008,7 +3011,7 @@ impl<'a> GraphCloner<'a> {
                     .objects
                     .get(id)
                     .and_then(|o| o.as_dict().ok())
-                    .is_some_and(is_annotation_dictionary);
+                    .is_some_and(|dict| is_annotation_dictionary(self.source, dict));
                 if is_annotation && let Some(plan) = &mut self.plan {
                     let mapped = current_page
                         .and_then(|page| plan.occurrences.get(&(page, *id)).copied())
@@ -3099,7 +3102,7 @@ impl<'a> GraphCloner<'a> {
             }
             Object::Dictionary(dict) => {
                 let mut copied = Dictionary::new();
-                let is_annotation = is_annotation_dictionary(dict);
+                let is_annotation = is_annotation_dictionary(self.source, dict);
                 for (key, value) in dict.iter() {
                     if key == b"P" && is_annotation && current_page.is_some() {
                         continue;

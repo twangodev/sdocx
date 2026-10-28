@@ -1711,6 +1711,100 @@ fn public_pdf_paper_route_rejects_unproven_objects_transforms_and_partial_select
 }
 
 #[test]
+fn public_pdf_paper_preserves_non_annotation_dictionary_reference() {
+    let mut document = document(true, None, 0, 1);
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("expected PDF resource")
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let pages = source.get_pages();
+    let value = source.add_object(dictionary! { "Value" => 42 });
+    let kind = source.add_object(Object::Name(b"Example".to_vec()));
+    let payload = source.add_object(dictionary! {
+        "Type" => kind, "Subtype" => "Custom",
+        "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()],
+        "P" => value,
+    });
+    let direct_payload = source.add_object(dictionary! {
+        "Type" => "Example", "Subtype" => "Custom",
+        "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()],
+        "P" => value,
+    });
+    source
+        .get_dictionary_mut(pages[&1])
+        .unwrap()
+        .set("Example", payload);
+    source
+        .get_dictionary_mut(pages[&1])
+        .unwrap()
+        .set("DirectExample", direct_payload);
+    data.clear();
+    source.save_to(data).unwrap();
+
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let page = pdf.get_dictionary(pdf.get_pages()[&1]).unwrap();
+    for key in [b"Example".as_slice(), b"DirectExample"] {
+        let payload = pdf
+            .get_dictionary(page.get(key).unwrap().as_reference().unwrap())
+            .unwrap();
+        let value = pdf
+            .get_dictionary(payload.get(b"P").unwrap().as_reference().unwrap())
+            .unwrap();
+        assert_eq!(value.get(b"Value").unwrap().as_i64().unwrap(), 42);
+    }
+}
+
+#[test]
+fn public_pdf_paper_resolves_annotation_types() {
+    let mut document = document(true, None, 0, 1);
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("expected PDF resource")
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page = source.get_pages()[&1];
+    let null = source.add_object(Object::Null);
+    let annot = source.add_object(Object::Name(b"Annot".to_vec()));
+    let mut ids = Vec::new();
+    for kind in [
+        Object::Null,
+        Object::Reference(null),
+        Object::Reference(annot),
+    ] {
+        ids.push(source.add_object(dictionary! {
+            "Type" => kind, "Subtype" => "Text",
+            "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()],
+        }));
+    }
+    source.get_dictionary_mut(page).unwrap().set(
+        "Annots",
+        ids.into_iter().map(Object::Reference).collect::<Vec<_>>(),
+    );
+    data.clear();
+    source.save_to(data).unwrap();
+
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let page = pdf.get_pages()[&1];
+    let annots = pdf
+        .get_dictionary(page)
+        .unwrap()
+        .get(b"Annots")
+        .unwrap()
+        .as_array()
+        .unwrap();
+    assert_eq!(annots.len(), 3);
+    for annot in annots {
+        let annot = pdf.get_dictionary(annot.as_reference().unwrap()).unwrap();
+        assert_eq!(annot.get(b"P").unwrap().as_reference().unwrap(), page);
+    }
+}
+
+#[test]
 fn public_pdf_paper_preserves_cross_page_annotation_reply_identity() {
     let records = [
         [PDF_BINDING as i32, 0, 0, 0, NOTE_WIDTH as i32, 1485],
@@ -1733,7 +1827,7 @@ fn public_pdf_paper_preserves_cross_page_annotation_reply_identity() {
     let mut source = PdfDocument::load_mem(data).unwrap();
     let pages = source.get_pages();
     let original = source.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()] });
-    let reply = source.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()], "IRT" => original });
+    let reply = source.add_object(dictionary! { "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()], "IRT" => original });
     source
         .get_dictionary_mut(pages[&1])
         .unwrap()
