@@ -1606,7 +1606,7 @@ mod tests {
             }
         }
         let mut unsupported = defaultpen_stroke();
-        unsupported.rendering.as_mut().unwrap().tool_type_raw = 4;
+        unsupported.rendering.as_mut().unwrap().tool_type_raw = 5;
         assert!(
             prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
                 .ordered_disk_replay

@@ -188,7 +188,7 @@ pub(super) fn saved_with_boundaries(
     {
         return None;
     }
-    if !matches!(tool, 0..=3) {
+    if !matches!(tool, 0..=4) {
         return None;
     }
     // Coordinates are bounded so float32 squared-distance calculations cannot
@@ -304,12 +304,12 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
 /// Canonical-page admission for the native DefaultPen profile. The pinned
 /// DefaultPen::SetAdvancedSetting is a no-op and GetStrokeDrawableGL always
 /// constructs/reuses the same unsuffixed drawable. Saved geometry is observed
-/// for tool types 0..=3; tools 1..=3 also have curve-on/off witnesses. Other
+/// for tool types 0..=4; tools 1..=4 also have curve-on/off witnesses. Other
 /// style/effect states fall back until their Drawing behavior is established.
 pub(super) fn prepare(stroke: &crate::Stroke) -> Option<DefaultInk> {
     let rendering = stroke.rendering.as_ref()?;
     if rendering.pen_name.as_deref()? != "com.samsung.android.sdk.pen.pen.preload.DefaultPen"
-        || !matches!(rendering.tool_type_raw, 0..=3)
+        || !matches!(rendering.tool_type_raw, 0..=4)
         || rendering.properties.fixed_width
         || rendering.properties.replay_only
         || rendering.properties.eraser
@@ -455,6 +455,40 @@ mod tests {
                         expected
                     );
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn tool_four_matches_native_drawing_streams() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/defaultpen-tool4-native.json"
+        ))
+        .unwrap();
+        let float = |value: &Value| {
+            let hex = value.as_str().unwrap();
+            f32::from_le_bytes(std::array::from_fn(|i| {
+                u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).unwrap()
+            }))
+        };
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let input = &case["input"];
+            let points: Vec<_> = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: f64::from(float(&p[0])),
+                    y: f64::from(float(&p[1])),
+                })
+                .collect();
+            let actual = saved(&points, float(&input["pen_size_f32_bits"]), 4, 0).unwrap();
+            let expected = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+                .as_array()
+                .unwrap();
+            assert_eq!(actual.len() * 3, expected.len(), "{name}");
+            for (actual, expected) in actual.iter().flatten().zip(expected) {
+                assert_eq!(actual.to_bits(), float(expected).to_bits(), "{name}");
             }
         }
     }

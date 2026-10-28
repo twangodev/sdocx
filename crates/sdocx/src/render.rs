@@ -6967,6 +6967,36 @@ mod tests {
     }
 
     #[test]
+    fn defaultpen_tool_four_uses_the_captured_tool_three_paint() {
+        let mut stroke = inkpen_v1_stroke();
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into());
+        rendering.tool_type_raw = 3;
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.clone().into()];
+        let tool_three = document(page.clone());
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 4;
+        page.objects = vec![stroke.into()];
+        let tool_four = document(page);
+        let options = RenderOptions::default();
+        let svg_three = &render_document_svg(&tool_three, &options)[0].svg;
+        let svg_four = &render_document_svg(&tool_four, &options)[0].svg;
+        assert_eq!(svg_three, svg_four);
+        assert!(svg_four.contains("<circle"));
+        #[cfg(feature = "pdf")]
+        {
+            let contents = |source: &Document| {
+                let bytes =
+                    crate::render_document_pdf(source, &options, &Default::default()).unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                pdf.get_page_content(*pdf.get_pages().values().next().unwrap())
+                    .unwrap()
+            };
+            assert_eq!(contents(&tool_three), contents(&tool_four));
+        }
+    }
+
+    #[test]
     fn defaultpen_public_replay_keeps_each_native_instance_in_source_order() {
         let native: serde_json::Value = serde_json::from_str(include_str!(
             "../../../conformance/defaultpen-saved-caller-native.json"
