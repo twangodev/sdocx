@@ -13,7 +13,7 @@ const RECTANGLE: u64 = MODEL + 0x1100;
 const ITERATOR: u64 = MODEL + 0x1200;
 const OUTPUT: u64 = MODEL + 0x2000;
 const FILLS: [u8; 5] = [0, 85, 165, 255, 0];
-const SYMBOLS: [&str; 14] = [
+const SYMBOLS: [&str; 17] = [
     "_ZdlPv",
     "_Znwm",
     "free",
@@ -28,6 +28,9 @@ const SYMBOLS: [&str; 14] = [
     "atan2f",
     "sincos",
     "recursive-mutex",
+    "emutls",
+    "strlen",
+    "pow",
 ];
 
 #[link(name = "m")]
@@ -38,6 +41,7 @@ unsafe extern "C" {
     fn tanf(value: f32) -> f32;
     fn atan2f(y: f32, x: f32) -> f32;
     fn sincos(value: f64, sine: *mut f64, cosine: *mut f64);
+    fn pow(a: f64, b: f64) -> f64;
 }
 #[repr(C)]
 struct DynamicSymbol {
@@ -58,6 +62,7 @@ pub(super) fn verify_host_math() {
         tanf as *const c_void,
         atan2f as *const c_void,
         sincos as *const c_void,
+        pow as *const c_void,
     ] {
         let mut information = DynamicSymbol {
             filename: ptr::null(),
@@ -119,6 +124,20 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, context: *mu
     let third = read_register(engine, REGISTER_X0 + 2);
     match name {
         "recursive-mutex" => register(engine, REGISTER_X0, 0),
+        "emutls" => register(engine, REGISTER_X0, TLS + 0x100),
+        "pow" => {
+            let a = f64::from_bits(read_register(engine, 40));
+            let b = f64::from_bits(read_register(engine, 41));
+            register(engine, 40, unsafe { pow(a, b) }.to_bits());
+        }
+        "strlen" => {
+            let mut len = 0;
+            while bytes(engine, first + len, 1)[0] != 0 {
+                len += 1;
+                assert!(len < 4096);
+            }
+            register(engine, REGISTER_X0, len);
+        }
         "_Znwm" | "malloc" => register(engine, REGISTER_X0, state.allocate(engine, first)),
         "realloc" => {
             let pointer = state.allocate(engine, second);
@@ -1923,3 +1942,7 @@ pub(super) fn capture_normalization(model: &Path, base: &Path, skia: &Path) {
         cases.join(",")
     );
 }
+
+#[path = "../../tools/named_arc/capture.rs"]
+mod named_arc;
+pub(super) use named_arc::capture_named;

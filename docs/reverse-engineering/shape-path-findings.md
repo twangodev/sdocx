@@ -801,3 +801,9 @@ Rust retains `control_points`, but `render_shape` immediately paints a supported
 nonempty `path_data` and returns. That branch does not apply named template
 control setters or derive their separate fill path. Raw data retention therefore
 does not establish equivalence to the native regeneration stage above.
+
+A reconstructed [named Arc geometry replay](../../tools/named_arc/README.md)
+executes the constructor and retains post-rectangle and moved-control path
+observations for one ellipse. Four allocation fills agree in active segment fields. The existing
+Rust Model arc helper matches the native default outline bit-for-bit; saved-file
+loading, drawing and appearance remain outside this replay.

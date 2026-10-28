@@ -225,6 +225,28 @@ mod tests {
     }
 
     #[test]
+    fn named_arc_constructor_default_matches_native_outline() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/named-arc-native.json"
+        ))
+        .unwrap();
+        let segments = fixture["results"]["path 32"].as_array().unwrap();
+        let verbs: Vec<u32> = segments.iter().map(|segment| bits(&segment[0])).collect();
+        assert_eq!(verbs, [1, 3, 3]);
+        let native: Vec<u32> = segments
+            .iter()
+            .flat_map(|segment| segment.as_array().unwrap().iter().skip(1).map(bits))
+            .collect();
+        let actual: Vec<u32> = expand([10.0, 20.0, 210.0, 120.0, 270.0, 90.0])
+            .unwrap()
+            .into_iter()
+            .flatten()
+            .map(f32::to_bits)
+            .collect();
+        assert_eq!(actual, native);
+    }
+
+    #[test]
     fn direct_model_arc_helpers_match_numeric_vectors() {
         let fixture: Value =
             serde_json::from_str(include_str!("../../../../conformance/shape-paths.json")).unwrap();

@@ -1926,6 +1926,12 @@ fn main() {
             shape_styles::capture(&mut machine, Path::new(&drawing));
             return;
         }
+        Some("--named-arc") => {
+            let base = std::env::args_os().nth(3).unwrap();
+            let skia = std::env::args_os().nth(4).unwrap();
+            shape_paths::capture_named(Path::new(&path), Path::new(&base), Path::new(&skia));
+            return;
+        }
         Some("--shape-paths") => {
             let base = std::env::args_os()
                 .nth(3)
