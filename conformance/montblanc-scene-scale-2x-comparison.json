@@ -1,0 +1,16 @@
+{
+  "schema": "montblanc-scene-scale-2x-comparison-v1",
+  "scope": "One synthetic baseline stroke, native host Mesa RGBA8 capture with explicit RTV1 call sequence and Draw XY scale 2, compared with test-only Rust Scene candidate SVG and native PDF exports. Not device, saved-note, PDF native, or general transform parity.",
+  "method": "Both modes apply 2x XY scale about (128,128) to output geometry. Fixed computes analytic derivatives in unit-scale coordinates as in the existing candidate; aware computes them in 2x screen coordinates. Only that derivative input changes between modes; the same subdivision, alpha formula, Scene export and raster comparison are used. The isolated patch removes unit-scale path-count assertions because the scale-aware alpha cutoff changes emitted counts.",
+  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel. resvg SVG and PyMuPDF PDF raster at 256x256; PDF 96dpi page rasterized at 4/3.",
+  "source_sha256": "a12773a0032e7e63bca09a0f425e59488f2337e2a7465e87da55b0dd5140f11e",
+  "patch_sha256": "20c79a3718f7161daafd8e9fd5fcb9ddf5c18c0821149215045eafc46c72f1bd",
+  "native_crop_sha256": "7277bbf40a7c6d7920d4ae9a1122c89ee6ec5acb39557b888753a7faa0277218",
+  "native_receipt": "conformance/montblanc-native-scale-2x.json",
+  "cases": {
+    "fixed": {"svg": [395, 440, 395, 440, 46150], "pdf": [395, 446, 395, 446, 42261]},
+    "aware": {"svg": [395, 462, 395, 462, 32769], "pdf": [395, 465, 395, 465, 27846]}
+  },
+  "renderers": {"resvg": "0.45.1", "pymupdf": "1.28.2", "pillow": "12.1.1"},
+  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/scale_2x_compare.py"
+}
