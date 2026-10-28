@@ -554,6 +554,89 @@ pub(crate) mod tests {
         );
     }
 
+    #[derive(Debug)]
+    struct EndAlpha {
+        start: i32,
+        step: f32,
+    }
+
+    // The no-move and upper-clamp paths remain disassembly-derived.
+    fn end_alpha(
+        prior: i32,
+        target: i32,
+        last_move_distance: Option<f32>,
+        repeat: u32,
+    ) -> EndAlpha {
+        assert!(repeat > 0);
+        let (start, target) = if last_move_distance.is_none_or(|distance| distance < 15.0) {
+            let boosted = ((prior as f32 * 1.5).min(255.0)).trunc() as i32;
+            (boosted, boosted)
+        } else {
+            (prior, target)
+        };
+        EndAlpha {
+            start,
+            step: (target - start) as f32 / repeat as f32,
+        }
+    }
+
+    #[test]
+    fn end_alpha_interpolation_matches_native_registers() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/montblanc-end-alpha-trace.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 9);
+        for (name, case) in cases {
+            let rows = case["rows"].as_array().unwrap();
+            let row = |rva: &str| rows.iter().find(|r| r["rva"] == rva).unwrap();
+            let integer = |r: &serde_json::Value, reg: &str| {
+                u32::from_str_radix(
+                    r["x_registers"][reg]
+                        .as_str()
+                        .unwrap()
+                        .trim_start_matches("0x"),
+                    16,
+                )
+                .unwrap() as i32
+            };
+            let float = |r: &serde_json::Value, reg: &str| {
+                let hex = r["s_registers"][reg].as_str().unwrap();
+                let bytes = std::array::from_fn(|i| {
+                    u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).unwrap()
+                });
+                f32::from_bits(u32::from_le_bytes(bytes))
+            };
+            let branch = row("0x1dc68");
+            let end = row("0x1dc8c");
+            let distance = float(row("0x1d8dc"), "s0_f32_bits");
+            let samples: Vec<_> = rows.iter().filter(|r| r["rva"] == "0x1dcfc").collect();
+            let repeat = samples[0]["loop_repeat"].as_u64().unwrap() as u32;
+            let alpha = end_alpha(
+                integer(branch, "x8"),
+                integer(branch, "x9"),
+                Some(distance),
+                repeat,
+            );
+            assert_eq!(alpha.start, integer(end, "x8"), "{name}");
+            assert_eq!(
+                alpha.step.to_bits(),
+                float(row("0x1dcc0"), "s11_f32_bits").to_bits(),
+                "{name}"
+            );
+            for sample in samples {
+                let iteration = sample["loop_iteration"].as_u64().unwrap() as u32;
+                let actual = (iteration as f32).mul_add(alpha.step, alpha.start as f32);
+                assert_eq!(
+                    actual.to_bits(),
+                    float(sample, "s0_f32_bits").to_bits(),
+                    "{name} iteration {iteration}"
+                );
+            }
+        }
+    }
+
     // Synthetic five-point redraw path only; the <4.2 and output-clamp branches
     // are inferred from disassembly and remain unobserved in these controls.
     fn redraw_alpha_candidate(prior: i32, pressure: f32, distance: f32) -> (f32, f32, i32) {

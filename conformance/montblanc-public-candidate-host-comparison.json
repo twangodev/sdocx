@@ -15,7 +15,7 @@
     "source_fixture_sha256": "b0233b505f42a2a875e60ee3d2aee0d6e0f4e0db3ce8e5536a8f2b68e75d91e1"
   },
   "source_sha256": {
-    "crates/sdocx/src/ink/montblanc.rs": "3002389aee59b0decc52471e0aa26fed2163a9ccdf2eab2a019bafef22319b75",
+    "crates/sdocx/src/ink/montblanc.rs": "a7bdcc2a8901b40b99aaab71d26e8f4dc1158d3350d3b3c0e8461e6592ec66e0",
     "crates/sdocx/src/ink/path.rs": "1eb781fc613cc10039caf3065c10d578c6ffffbfae4f9433cf1e161b804fc019",
     "tools/montblanc/public-candidate/main.rs": "a4e1fe45e1e9df1298ea9ef8d84467195e986c238d7f3e63eb8e16b78a7649d6",
     "tools/montblanc/public-candidate/compare.py": "8e2c797d80d1081f127fb723bb726bf63221cc13e9446001704d0973aade7cc7",
