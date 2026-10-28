@@ -506,6 +506,63 @@ pub(crate) mod tests {
         );
     }
 
+    // Synthetic five-point redraw path only; the <4.2 and output-clamp branches
+    // are inferred from disassembly and remain unobserved in these controls.
+    fn redraw_alpha_candidate(prior: i32, pressure: f32, distance: f32) -> (f32, f32, i32) {
+        let factor = if distance < 4.2 {
+            1.0_f32
+        } else if distance < 9.5 {
+            ((distance - 4.2) / -5.3).mul_add(0.4, 0.4) + 0.6
+        } else if distance < 35.0 {
+            ((distance - 9.5) / -25.5).mul_add(0.5, 0.5) + 0.1
+        } else {
+            0.1
+        };
+        let original_factor = factor;
+        let factor = (factor - 1.0) + 1.0;
+        let seed = (170.0 + ((pressure * 0.5) * 170.0) * 0.5).trunc();
+        let candidate = seed * factor;
+        let next = candidate.trunc() as i32;
+        let target = if (prior - next).abs() >= 11 {
+            prior + if prior > next { -10 } else { 10 }
+        } else {
+            next
+        };
+        (original_factor, candidate, target.clamp(60, 255))
+    }
+
+    #[test]
+    fn redraw_alpha_thresholds_match_native_registers() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/montblanc-alpha-thresholds.json"
+        ))
+        .unwrap();
+        let cases = receipt["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 11);
+        for (name, case) in cases {
+            let points = case["input"]["points"].as_array().unwrap();
+            let coordinate =
+                |point: usize, axis: usize| points[point][axis].as_f64().unwrap() as f32;
+            let dx = coordinate(3, 0) - coordinate(2, 0);
+            let dy = coordinate(3, 1) - coordinate(2, 1);
+            let distance = dx.mul_add(dx, dy * dy).sqrt();
+            let pressure = case["input"]["pressure"][3].as_f64().unwrap() as f32;
+            let word = |field: &str| {
+                let bytes = case[field].as_str().unwrap();
+                let bytes: Vec<u8> = (0..8)
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&bytes[i..i + 2], 16).unwrap())
+                    .collect();
+                u32::from_le_bytes(bytes.try_into().unwrap())
+            };
+            let prior = f32::from_bits(word("prior_f32_bits")) as i32;
+            let (factor, candidate, target) = redraw_alpha_candidate(prior, pressure, distance);
+            assert_eq!(factor.to_bits(), word("factor_f32_bits"), "{name}");
+            assert_eq!(candidate.to_bits(), word("candidate_f32_bits"), "{name}");
+            assert_eq!(target, case["target"].as_i64().unwrap() as i32, "{name}");
+        }
+    }
+
     #[test]
     fn repeat_width_branches_match_native_length_control() {
         let receipt: serde_json::Value = serde_json::from_str(include_str!(

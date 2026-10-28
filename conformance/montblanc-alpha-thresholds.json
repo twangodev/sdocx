@@ -1,0 +1,426 @@
+{
+  "boundary": "Synthetic ObjectStroke native ARM64 Unicorn execution. Candidate and factor are pre-instruction f32 register words, target is native w9 after bounding and clamp. No device or render parity.",
+  "binary_sha256": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+  "capture_script_sha256": "7df433dc00d67317d98b42fef17d7c27b37440c4c1092e472e578fc7316b96e3",
+  "threshold_script_sha256": "8897a12db1f3eee8addc5d7a1b09a9fcf4139ba89caa41ecc9bc854205018fec",
+  "cases": {
+    "distance_9.49": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            29.490000000000002,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "b319ef42",
+      "factor_f32_bits": "10cb193f",
+      "target": 119,
+      "prior_f32_bits": "0000dc42"
+    },
+    "distance_9.5": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            29.5,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "cdccee42",
+      "factor_f32_bits": "9a99193f",
+      "target": 119,
+      "prior_f32_bits": "0000dc42"
+    },
+    "distance_9.51": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            29.509999999999998,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "d2b8ee42",
+      "factor_f32_bits": "c08c193f",
+      "target": 119,
+      "prior_f32_bits": "0000dc42"
+    },
+    "distance_34.99": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            54.99,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "1b839f41",
+      "factor_f32_bits": "9533cd3d",
+      "target": 100,
+      "prior_f32_bits": "0000dc42"
+    },
+    "distance_35.0": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            55.0,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "36339f41",
+      "factor_f32_bits": "cdcccc3d",
+      "target": 100,
+      "prior_f32_bits": "0000dc42"
+    },
+    "distance_35.01": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            55.01,
+            2
+          ],
+          [
+            80,
+            2
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "36339f41",
+      "factor_f32_bits": "cdcccc3d",
+      "target": 100,
+      "prior_f32_bits": "0000dc42"
+    },
+    "pressure_1_0.46": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            1
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.46,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "415ae942",
+      "factor_f32_bits": "9b18163f",
+      "target": 114,
+      "prior_f32_bits": "0000d042"
+    },
+    "pressure_1_0.48": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            1
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.48,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "415ae942",
+      "factor_f32_bits": "9b18163f",
+      "target": 115,
+      "prior_f32_bits": "0000d242"
+    },
+    "pressure_1_0.5": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            1
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.5,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "415ae942",
+      "factor_f32_bits": "9b18163f",
+      "target": 116,
+      "prior_f32_bits": "0000d442"
+    },
+    "pressure_1_down_0.625": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            1
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.625,
+          1,
+          0.05,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "10b1c942",
+      "factor_f32_bits": "9b18163f",
+      "target": 101,
+      "prior_f32_bits": "0000de42"
+    },
+    "pressure_1_down_0.65": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ],
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            1
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.65,
+          1,
+          0.05,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "candidate_f32_bits": "10b1c942",
+      "factor_f32_bits": "9b18163f",
+      "target": 102,
+      "prior_f32_bits": "0000e042"
+    }
+  }
+}
