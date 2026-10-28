@@ -1085,11 +1085,15 @@ mod tests {
         let hex = fixture["producer"]["buffer_hex"].as_str().unwrap();
         let bytes: Vec<u8> = hex
             .as_bytes()
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect();
         let records: Vec<[f32; 11]> = bytes
-            .chunks_exact(44)
+            .as_chunks::<44>()
+            .0
+            .iter()
             .map(|row| {
                 std::array::from_fn(|i| {
                     f32::from_le_bytes(row[i * 4..i * 4 + 4].try_into().unwrap())
