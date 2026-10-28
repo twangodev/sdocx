@@ -253,6 +253,19 @@ it does not apply an object rotation in that branch. Together with the focused
 DrawObject control, this bounds those two functions only: it does not establish
 the incoming canvas matrix or the result of every preview and export path.
 
+The drawing control also runs the Model scale fragment followed by the Drawing
+function for both orientation branches at a requested dimension of 333 and a
+selected owner dimension of 127. It manually transfers the four resulting f32
+bounds into the stubbed rectangle getter. In both cases the stubbed canvas receives
+`[26.875984, -14.42126, 133.0689, 209.76378]`. This is a controlled composition
+of two native fragments, not an execution of the saved-object loader or proof
+that a real getter returns those bounds. The bitmap, canvas and getter remain
+stubbed; it establishes neither media decoding nor pixel or export parity.
+Both handoff cases deliberately select the same denominator; the earlier
+load-scale controls exercise selection of width versus height with distinct
+owner dimensions. The receipt records and checks the f32 bits at both ends of
+the manual handoff and the complete ordered Drawing event sequence.
+
 Run the capture with:
 
 ```sh

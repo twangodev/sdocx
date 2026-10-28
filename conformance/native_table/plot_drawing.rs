@@ -13,6 +13,7 @@ const GPU_BITMAP: u64 = MODEL + 0xb600;
 struct Observation {
     present: bool,
     bounds: [f32; 4],
+    draw_bits: Option<[u32; 4]>,
     events: Vec<String>,
 }
 
@@ -57,6 +58,7 @@ unsafe extern "C" fn callback(engine: Engine, address: u64, _: u32, data: *mut c
         10 => {
             let rect =
                 std::array::from_fn::<_, 4, _>(|i| read_float(engine, arg(2) + 4 * i as u64));
+            o.draw_bits = Some(rect.map(f32::to_bits));
             o.events.push(format!("draw:{:#x}:{rect:?}", arg(1)));
         }
         11 => o.events.push(format!("restore:{}", arg(1) as u32)),
@@ -158,9 +160,66 @@ pub(super) fn capture(machine: &Machine) {
             o.events
         ));
     }
+    // Bridge the two native fragments explicitly: the saved-object loader and
+    // the rectangle getter are not part of this control.
+    let data = MODEL + 0xb800;
+    let original_log = read_bytes(e, 0x47ac10, 4);
+    write(e, 0x47ac10, &0xd65f03c0_u32.to_le_bytes());
+    let mut handoffs = Vec::new();
+    for (orientation, owner, dimension) in [(0_u64, [127_i32, 200], 333_u64), (1, [200, 127], 333)]
+    {
+        let bounds = [10.25_f32, -5.5, 50.75, 80.0];
+        write(e, data, &[0; 256]);
+        for (i, value) in bounds.iter().enumerate() {
+            write(e, data + 8 + 4 * i as u64, &value.to_le_bytes());
+        }
+        for (i, value) in owner.iter().enumerate() {
+            write(e, data + 176 + 4 * i as u64, &value.to_le_bytes());
+        }
+        register(e, REGISTER_X0 + 21, dimension);
+        register(e, REGISTER_X0 + 22, orientation);
+        register(e, REGISTER_X0 + 27, data);
+        check(unsafe { uc_emu_start(e, 0x2db434, 0x2db4f8, 1_000_000, 1000) });
+        assert_eq!(read_register(e, 260), 0x2db4f8);
+        let scaled = std::array::from_fn::<_, 4, _>(|i| read_float(e, data + 8 + 4 * i as u64));
+        assert_eq!(scaled, bounds.map(|v| v * (333.0_f32 / 127.0)));
+        o.present = true;
+        o.bounds = scaled;
+        o.events.clear();
+        o.draw_bits = None;
+        machine.call(DRAWING_BASE + 0x89f60, &[DRAWING_OBJECT, CANVAS]);
+        let scaled_bits = scaled.map(f32::to_bits);
+        assert_eq!(
+            scaled_bits,
+            [0x41d70204, 0xc166bd7b, 0x430511a3, 0x4351c387]
+        );
+        assert_eq!(o.draw_bits, Some(scaled_bits));
+        assert_eq!(
+            o.events,
+            [
+                format!("thumbnail:{OBJECT:#x}"),
+                "queue".into(),
+                "width".into(),
+                "height".into(),
+                "buffer".into(),
+                format!("create:17,11,{BUFFER:#x}"),
+                "save:0".into(),
+                "rect".into(),
+                "paint".into(),
+                "antialias:1".into(),
+                format!("draw:{GPU_BITMAP:#x}:{scaled:?}"),
+                "restore:4294967295".into(),
+                format!("release:{GPU_BITMAP:#x}"),
+                "paint_drop".into(),
+            ]
+        );
+        handoffs.push(format!("{{\"orientation\":{orientation},\"owner\":{owner:?},\"load_dimension\":{dimension},\"input_bounds\":{bounds:?},\"scaled_bounds\":{scaled:?},\"scaled_bits\":{scaled_bits:?},\"draw_bits\":{:?},\"events\":{:?}}}", o.draw_bits.unwrap(), o.events));
+    }
+    write(e, 0x47ac10, &original_log);
     println!(
-        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"model_sha256\":\"{LIBRARY_SHA256}\",\"drawing_sha256\":\"{DRAWING_SHA256}\",\"address\":\"0x89f60\",\"cases\":[{}]}}",
-        cases.join(",")
+        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"model_sha256\":\"{LIBRARY_SHA256}\",\"drawing_sha256\":\"{DRAWING_SHA256}\",\"address\":\"0x89f60\",\"handoff_boundary\":\"injected model base data; scaled bounds manually supplied to stubbed rectangle getter; stubbed bitmap and canvas\",\"cases\":[{}],\"scaled_handoffs\":[{}]}}",
+        cases.join(","),
+        handoffs.join(",")
     );
     for hook in hooks {
         check(unsafe { uc_hook_del(e, hook) });
