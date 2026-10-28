@@ -23,6 +23,9 @@ impl NativeInkId {
 
 #[derive(Debug, Clone)]
 pub(crate) enum NativeInkPayload {
+    LegacyMarker {
+        form: Box<super::legacy_marker_vector::pdf::Prepared>,
+    },
     Mesh {
         mesh: CoverageMesh,
         color: [u8; 3],
@@ -114,6 +117,22 @@ impl NativeInkRegistry {
             opacity,
         });
         Ok(id)
+    }
+
+    pub(crate) fn register_legacy_marker(
+        &mut self,
+        form: super::legacy_marker_vector::pdf::Prepared,
+        bounds: BoundingBox,
+    ) -> NativeInkId {
+        let id = NativeInkId(self.entries.len());
+        self.entries.push(NativeInk {
+            payload: NativeInkPayload::LegacyMarker {
+                form: Box::new(form),
+            },
+            bounds,
+            opacity: 1.,
+        });
+        id
     }
 
     pub(crate) fn register_radial(

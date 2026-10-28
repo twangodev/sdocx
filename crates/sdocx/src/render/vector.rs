@@ -578,6 +578,11 @@ impl Rectangle {
     }
 }
 impl Path {
+    #[cfg(feature = "pdf")]
+    pub(super) fn even_odd_fill(mut self) -> Self {
+        self.0.attr("fill-rule", "evenodd");
+        self
+    }
     /// Hide decorative vector paths from the SVG accessibility tree.
     pub(in crate::render) fn aria_hidden(mut self) -> Self {
         self.0.attr("aria-hidden", "true");

@@ -59,6 +59,7 @@ pub(crate) struct PdfInkField<'a> {
 }
 
 pub(crate) enum PdfInkPayload<'a> {
+    LegacyMarker(&'a crate::render::legacy_marker_vector::pdf::Prepared),
     Mesh {
         mesh: &'a CoverageMesh,
         color: [u8; 3],
@@ -75,6 +76,18 @@ pub(crate) enum PdfInkPayload<'a> {
 }
 
 impl<'a> PdfInkField<'a> {
+    pub(crate) fn legacy_marker(
+        marker_id: u64,
+        form: &'a crate::render::legacy_marker_vector::pdf::Prepared,
+        bounds: BoundingBox,
+    ) -> Self {
+        Self {
+            marker_id,
+            bounds,
+            payload: PdfInkPayload::LegacyMarker(form),
+        }
+    }
+
     pub(crate) fn mesh(
         marker_id: u64,
         mesh: &'a CoverageMesh,
@@ -1196,6 +1209,29 @@ fn field_form_with_policy(
     mask_override: &RadialMaskOverride,
 ) -> Result<Object, String> {
     match &field.payload {
+        PdfInkPayload::LegacyMarker(prepared) => {
+            let (mut source, root) = prepared.detached();
+            let start = document
+                .max_id
+                .checked_add(1)
+                .ok_or("marker PDF object ID overflow")?;
+            let new_id = (
+                start
+                    .checked_add(root.0)
+                    .and_then(|v| v.checked_sub(1))
+                    .ok_or("marker PDF object ID overflow")?,
+                root.1,
+            );
+            source.trailer.set("Root", root);
+            source.renumber_objects_with(start);
+            let result = source
+                .objects
+                .remove(&new_id)
+                .ok_or("missing prepared Marker form")?;
+            document.max_id = source.max_id;
+            document.objects.extend(source.objects);
+            Ok(result)
+        }
         PdfInkPayload::Mesh { mesh, color } => {
             mesh_field_form_with_limits(document, mesh, *color, field.bounds, limits)
         }

@@ -675,6 +675,9 @@ fn render_pages_pdf_with_progress<'a>(
     let fields = ink_fields
         .iter()
         .map(|(marker_id, payload, bounds)| match payload {
+            NativeInkPayload::LegacyMarker { form } => {
+                ink_field::PdfInkField::legacy_marker(*marker_id, form, *bounds)
+            }
             NativeInkPayload::Mesh { mesh, color } => {
                 ink_field::PdfInkField::mesh(*marker_id, mesh, *color, *bounds)
             }

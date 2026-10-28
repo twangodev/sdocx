@@ -1,0 +1,294 @@
+{
+  "scope": "Synthetic host captures; candidate is explicit pdf-feature vector profile. Matched-background RGB; 2x scales and crops the public 1920x1080 exports. No device or saved-note parity.",
+  "cases": [
+    {
+      "case": "long-turns",
+      "capture_sha256": "56a7ccdefd8021763dc4d7d3f424569b4edd3e8ebab11172f4a79faf3df6890a",
+      "native_frame_sha256": "99041997f323842cbbb09c945f5061aad03af74568ac566a24cd151b53bfc694",
+      "scale": 1,
+      "modes": {
+        "candidate": {
+          "gradient_nodes": 148,
+          "pdf_bytes": 95555,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 3085,
+            "max": 44
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 4933,
+            "max": 57
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 5342,
+            "max": 51
+          }
+        },
+        "fallback": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 2994,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 20065,
+            "max": 143
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 19515,
+            "max": 142
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 20654,
+            "max": 143
+          }
+        }
+      }
+    },
+    {
+      "case": "varied-screen-confirmed",
+      "capture_sha256": "69b2f66e6305cfec4738aca152e023458a136d2a5379f0824c7ed0b5a919e346",
+      "native_frame_sha256": "3c6029a8ff6fa85e3ac815b1f26fd965e1aacdcec5e698cd0f8c823ecceff5ea",
+      "scale": 1,
+      "modes": {
+        "candidate": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 3072,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 24117,
+            "max": 186
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 23904,
+            "max": 185
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 23671,
+            "max": 186
+          }
+        },
+        "fallback": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 3072,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 24117,
+            "max": 186
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 23904,
+            "max": 185
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 23671,
+            "max": 186
+          }
+        }
+      }
+    },
+    {
+      "case": "self-overlap-confirmed",
+      "capture_sha256": "63135813951f5a4821430cdbe7628ebec3befd5aadd96154df9d06b82cbd5aba",
+      "native_frame_sha256": "a8efb40b6ee8817cbc1f62591f8e5b880b7b5dfcf4a1b2c36f690c4c7dcd3529",
+      "scale": 1,
+      "modes": {
+        "candidate": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 2995,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 25199,
+            "max": 143
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 25098,
+            "max": 142
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 26880,
+            "max": 143
+          }
+        },
+        "fallback": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 2995,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 25199,
+            "max": 143
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 25098,
+            "max": 142
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 26880,
+            "max": 143
+          }
+        }
+      }
+    },
+    {
+      "case": "bend-null-scale2",
+      "capture_sha256": "d739615d3cd7e3a9d677b03cfe14677e85cbf8bf0775d0f65ab7d46c2fdcdab0",
+      "native_frame_sha256": "dc348aaf592876716cb497be3692c7c305cbc82f1a795321f3dcc16de8a3da4a",
+      "scale": 2,
+      "modes": {
+        "candidate": {
+          "gradient_nodes": 83,
+          "pdf_bytes": 53767,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 7683,
+            "max": 89
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 11516,
+            "max": 86
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 12906,
+            "max": 85
+          }
+        },
+        "fallback": {
+          "gradient_nodes": 0,
+          "pdf_bytes": 2990,
+          "svg": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 69138,
+            "max": 145
+          },
+          "mupdf": {
+            "background": [
+              251,
+              252,
+              251
+            ],
+            "l1": 68167,
+            "max": 144
+          },
+          "pdfium": {
+            "background": [
+              252,
+              252,
+              252
+            ],
+            "l1": 70092,
+            "max": 145
+          }
+        }
+      }
+    }
+  ],
+  "schema": "sdocx-marker-vector-public-comparison-v1",
+  "generation": {
+    "capture_test_sha256": "1b056f3227291228348b4ed5cdccad62cb207da3df26b5b575b1ce14f5728e13",
+    "comparison_script_sha256": "8edf45957698818fbd0291c0790ed7ca18ad66f80fbce90913b668965a758ac7",
+    "pymupdf": "1.28.2",
+    "numpy": "2.4.2",
+    "pillow": "12.3.0",
+    "pypdfium2": "5.14.0"
+  }
+}

@@ -2,12 +2,12 @@
 use super::path::{P, Quad};
 
 type Point = [f32; 2];
-#[cfg(test)]
+#[cfg(any(test, feature = "pdf"))]
 #[derive(Default)]
-pub(super) struct Mesh {
-    pub(super) body: Vec<Point>,
-    pub(super) fringe: [Vec<[f32; 3]>; 2],
-    pub(super) caps: [Vec<[f32; 4]>; 2],
+pub(crate) struct Mesh {
+    pub(crate) body: Vec<Point>,
+    pub(crate) fringe: [Vec<[f32; 3]>; 2],
+    pub(crate) caps: [Vec<[f32; 4]>; 2],
 }
 fn add(a: Point, b: Point) -> Point {
     [a[0] + b[0], a[1] + b[1]]
@@ -25,7 +25,7 @@ fn normal(a: Point) -> Option<(Point, f32)> {
     let length = a[0].hypot(a[1]);
     (length > 0.000001).then(|| ([a[1] / length, -a[0] / length], length))
 }
-#[cfg(test)]
+#[cfg(any(test, feature = "pdf"))]
 fn subdivide(
     p: [Point; 3],
     lo: usize,
@@ -49,7 +49,7 @@ fn subdivide(
     subdivide([a, mid(a, b), center], lo, m, radius, edge)?;
     subdivide([center, mid(b, c), c], m, hi, radius, edge)
 }
-#[cfg(test)]
+#[cfg(any(test, feature = "pdf"))]
 fn cap(mesh: &mut Mesh, index: usize, corners: [Point; 4], outward: [Point; 2]) {
     mesh.caps[index] = [
         (0, 0., 0.),
@@ -760,5 +760,228 @@ fn repeated_final_centerline_matches_native_finished_stroke() {
                 "{a:?} vs {b:?}"
             );
         }
+    }
+}
+
+#[cfg(feature = "pdf")]
+mod native_vector {
+    use super::*;
+    pub(crate) fn generate_bounded_mesh(
+        points: &[Point],
+        size: f32,
+        pen_data_dimensions: [u32; 2],
+    ) -> Option<Mesh> {
+        if points.len() < 3
+            || points.len() > 256
+            || !size.is_finite()
+            || size <= 1.0
+            || size > 800.0
+            || pen_data_dimensions.contains(&0)
+            || points
+                .iter()
+                .flatten()
+                .any(|v| !v.is_finite() || v.abs() > 1_000_000.0)
+        {
+            return None;
+        }
+        let threshold = size.clamp(0.4, 800.0) * 0.4;
+        let cap_length = size.clamp(0.4, 800.0).trunc() * 0.4;
+        let mut moves = Vec::new();
+        let mut last = points[0];
+        for &point in &points[1..points.len() - 1] {
+            let delta = sub(point, last);
+            // This models the observed bool=false call path; dimensions come from
+            // PenData and must not be inferred from an arbitrary export viewport.
+            let short_side = pen_data_dimensions[0].min(pen_data_dimensions[1]);
+            let display_factor = if short_side == 0 {
+                1.0
+            } else {
+                short_side as f32 / 360.0
+            };
+            let move_threshold = if moves.is_empty() {
+                threshold
+            } else {
+                1.5 * display_factor
+            };
+            if delta[0].abs() > move_threshold || delta[1].abs() > move_threshold {
+                moves.push(point);
+                last = point;
+            }
+        }
+        let first = *moves.first()?;
+        let first_delta = sub(first, points[0]);
+        let (mut previous_normal, mut previous_length) = normal(first_delta)?;
+        let start = add(points[0], scale(first_delta, cap_length / previous_length));
+        let mut curve_end = mid(start, first);
+        let mut curves = vec![[start, mid(start, curve_end), curve_end]];
+        let mut normals = vec![[previous_normal, previous_normal]];
+        let mut lengths = vec![[0.0, previous_length]];
+        let mut current = first;
+        let mut path = [points[0], points[0], curve_end];
+        for &next in moves.iter().skip(1) {
+            let (next_normal, next_length) = normal(sub(next, current))?;
+            let next_end = mid(current, next);
+            path = [curve_end, current, next_end];
+            curves.push(path);
+            normals.push([previous_normal, next_normal]);
+            lengths.push([previous_length, next_length]);
+            previous_normal = next_normal;
+            previous_length = next_length;
+            current = next;
+            curve_end = next_end;
+        }
+        let q = Quad::new(
+            P {
+                x: path[0][0],
+                y: path[0][1],
+            },
+            P {
+                x: path[1][0],
+                y: path[1][1],
+            },
+            P {
+                x: path[2][0],
+                y: path[2][1],
+            },
+        );
+        if q.length <= 1.0 {
+            return None;
+        }
+        let tail = q.at(q.length - 1.0);
+        let final_point = *points.last()?;
+        let tail_point = [tail.x, tail.y];
+        let (end_normal, end_length, end_control) = if final_point == current {
+            if points.len() < 4 {
+                return None;
+            }
+            // EndPen retains the previous normal for a zero-length final movement
+            // and uses the midpoint of its sampled tail and endpoint as control.
+            (previous_normal, 0.0, mid(tail_point, final_point))
+        } else {
+            let (normal, length) = normal(sub(final_point, current))?;
+            (normal, length, current)
+        };
+        curves.push([tail_point, end_control, final_point]);
+        normals.push([previous_normal, end_normal]);
+        lengths.push([previous_length, end_length]);
+        let radius = (size - 1.) * 0.5;
+        let width = size * 0.5;
+        let mut mesh = Mesh::default();
+        let n0 = normals[0][0];
+        cap(
+            &mut mesh,
+            0,
+            [
+                sub(start, scale(n0, width)),
+                add(start, scale(n0, width)),
+                sub(points[0], scale(n0, width)),
+                add(points[0], scale(n0, width)),
+            ],
+            [scale(n0, -1.), n0],
+        );
+        for i in 0..curves.len() {
+            let dot = normals[i][0][0] * normals[i][1][0] + normals[i][0][1] * normals[i][1][1];
+            let circle = dot <= -0.7 && normal(sub(curves[i][0], curves[i][1]))?.1 > 0.6;
+            if circle {
+                return None;
+            }
+            let count = ((((lengths[i][0] + lengths[i][1]) * 0.5) as i32 as f32 * (dot - 1.).abs())
+                as usize
+                + 3)
+            .min(20);
+            let mut edge = [vec![[0.; 2]; count + 1], vec![[0.; 2]; count + 1]];
+            for (j, (point, n)) in [(curves[i][0], normals[i][0]), (curves[i][2], normals[i][1])]
+                .into_iter()
+                .enumerate()
+            {
+                let k = if j == 0 { 0 } else { count };
+                edge[0][k] = add(point, scale(n, radius));
+                edge[1][k] = sub(point, scale(n, radius));
+            }
+            subdivide(curves[i], 0, count, radius, &mut edge)?;
+            for (first, second) in edge[0].iter().zip(&edge[1]) {
+                mesh.body.extend([*second, *first]);
+                let delta = scale(sub(*first, *second), 1. / (2. * radius));
+                let out = [sub(*second, delta), add(*first, delta)];
+                for (side, p) in [*second, *first].into_iter().enumerate() {
+                    mesh.fringe[side].extend([[p[0], p[1], 0.], [out[side][0], out[side][1], 1.]]);
+                }
+            }
+        }
+        if end_length <= 0.0 {
+            return None;
+        }
+        let tail = add(
+            final_point,
+            scale(sub(final_point, current), cap_length / end_length),
+        );
+        cap(
+            &mut mesh,
+            1,
+            [
+                add(final_point, scale(end_normal, width)),
+                sub(final_point, scale(end_normal, width)),
+                add(tail, scale(end_normal, width)),
+                sub(tail, scale(end_normal, width)),
+            ],
+            [end_normal, scale(end_normal, -1.)],
+        );
+        Some(mesh)
+    }
+}
+#[cfg(feature = "pdf")]
+pub(crate) use native_vector::generate_bounded_mesh;
+
+#[cfg(all(test, feature = "pdf"))]
+#[test]
+fn bounded_vector_mesh_matches_long_native_streams() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/legacy-marker-long-native-controls.json"
+    ))
+    .unwrap();
+    let decode = |hex: &str| -> Vec<f32> {
+        let bytes = hex
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| u8::from_str_radix(std::str::from_utf8(p).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>();
+        bytes
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| f32::from_le_bytes(*p))
+            .collect()
+    };
+    let control = &fixture["cases"][1];
+    let raw = decode(
+        control["input"]["source_arrays_hex"]["points"]
+            .as_str()
+            .unwrap(),
+    );
+    let points = raw
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|p| [p[0], p[1]])
+        .collect::<Vec<_>>();
+    let mesh = generate_bounded_mesh(&points, 12., [1920, 1080]).unwrap();
+    let rows = &control["native_mesh_vector_outputs"];
+    for (index, actual) in [
+        (15, mesh.body.iter().flatten().copied().collect::<Vec<_>>()),
+        (19, mesh.fringe[0].iter().flatten().copied().collect()),
+        (20, mesh.fringe[1].iter().flatten().copied().collect()),
+        (0, mesh.caps[0].iter().flatten().copied().collect()),
+        (18, mesh.caps[1].iter().flatten().copied().collect()),
+    ] {
+        let native = decode(rows[index]["after_hex"].as_str().unwrap());
+        assert_eq!(actual.len(), native.len());
+        let max = actual
+            .iter()
+            .zip(native)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0f32, f32::max);
+        assert!(max < 0.00005, "stream {index}: {max}");
     }
 }

@@ -46,6 +46,8 @@ pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 mod harfrust;
 #[cfg(all(test, feature = "serde"))]
 mod inkpen2;
+#[cfg(feature = "pdf")]
+pub(crate) mod legacy_marker_vector;
 mod marker;
 #[cfg(all(test, feature = "serde"))]
 mod marker3;
@@ -368,6 +370,10 @@ pub struct RenderOptions {
     /// Opt into the experimental saved Marker centerline approximation.
     #[cfg_attr(feature = "serde", serde(default))]
     pub legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    /// Opt into experimental bounded Marker vector paint with explicit native screen dimensions.
+    #[cfg(feature = "pdf")]
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
     /// Native display profile used to size point-list artwork.
@@ -856,6 +862,8 @@ impl DocumentTextCache {
             options.airbrush_profile,
             options.simplebrush_profile,
             options.legacy_marker_centerline_profile,
+            #[cfg(feature = "pdf")]
+            options.legacy_marker_vector_profile,
             slice,
             observer,
         );
@@ -1297,6 +1305,7 @@ fn render_page_contents_svg(
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    #[cfg(feature = "pdf")] legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
@@ -1368,6 +1377,12 @@ fn render_page_contents_svg(
         airbrush_profile,
         simplebrush_profile,
         legacy_marker_centerline_profile,
+        #[cfg(feature = "pdf")]
+        legacy_marker_vector_profile,
+        #[cfg(feature = "pdf")]
+        legacy_marker_budget: std::cell::RefCell::new(
+            legacy_marker_vector::SourcePageBudget::default(),
+        ),
         simplebrush_remaining_stamps: Cell::new(32_768),
         slice,
     };
@@ -1414,6 +1429,10 @@ struct CompositionContext<'a> {
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    #[cfg(feature = "pdf")]
+    legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
+    #[cfg(feature = "pdf")]
+    legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
     simplebrush_remaining_stamps: Cell<usize>,
     slice: Option<PageSlice>,
@@ -1469,6 +1488,24 @@ fn render_object(
         native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
     match object.content.leaf() {
         PageObjectContent::Stroke(stroke) => {
+            #[cfg(feature = "pdf")]
+            if native_allowed
+                && !context.replay
+                && context.slice.is_none()
+                && let Some(profile) = context.legacy_marker_vector_profile
+                && legacy_marker_vector::render(
+                    svg,
+                    stroke,
+                    context.theme,
+                    [context.page.width, context.page.height],
+                    profile,
+                    &mut context.legacy_marker_budget.borrow_mut(),
+                )
+            {
+                *stroke_index += 1;
+                progress.advance(1);
+                return;
+            }
             render_stroke(
                 svg,
                 stroke,
