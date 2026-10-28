@@ -226,10 +226,26 @@ width. In the supplied nonzero load-dimension cases, a zero selected owner dimen
 is replaced with the requested load dimension.
 The native fragment divides those signed integers as f32, multiplies all four
 current f32 bounds by the resulting scale, and scales both owner dimensions,
-converting them back to integers. The captured ratios are exactly 1 and 2;
-other ratios and rounding boundaries were not tested. These controls do not execute the complete
-saved-note loader or determine the load dimension or orientation supplied by a
-page caller.
+converting them back to integers. The earlier controls use ratios of 1 and 2;
+the additional 333/127 controls produce an f32 scale of 2.6220472 and convert
+the other owner dimension 200 to 524. This single fractional ratio does not
+establish general rounding behavior. These controls do not execute the complete
+saved-note loader.
+
+Static WDoc and Model call tracing identifies the ordinary page caller's input.
+`WNote::ConstructLoad` stores its first integer argument at note implementation
+offset 128 (`0x90384`, `0x90674`). The note loader copies this value into
+`PageLoadInfo` at `0xa87f4–0xa8804`, and the page manager forwards it to
+`WPage::LoadHeader` at `0xb1e44–0xb1e5c`. `LoadHeader_Scale` stores it at
+page offset 180 (`0xd3794–0xd379c`) and compares it to page height when
+orientation is 1, otherwise page width (`0xd37a0–0xd3808`). Later
+`WPageImpl::LoadLayerForChild` supplies that stored dimension and
+`GetNoteOrientation()` to `WLayer::Load` (`0xd085c–0xd0894`). Model forwards
+them to the object-list reader (`0x34222c–0x342248`), and Plot forwards its
+incoming orientation and dimension to the base loader (`0x451a48–0x451a5c`).
+The dimension is therefore selected by the note-loading caller, not derived
+solely from the object's saved owner dimensions. These static paths do not
+establish the caller's choice for a particular document or export.
 
 Static disassembly shows the ordinary Drawing dispatcher plot branch at `0x7fbdc–0x7fc00` constructs
 its plot drawing object and directly calls `ObjectPlotDrawing::DrawObject`;
