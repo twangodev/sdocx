@@ -61,12 +61,31 @@ struct AlphaState {
 }
 
 fn repeat_count(path_length: f32, previous_full_width: f32) -> Result<usize, Error> {
-    // getRepeatEff(float,float), DSO RVA 0x1f3ec. For S1 <= 2.0, the
-    // 0x1f48c..0x1f4b0 path computes FCVTZS(length), max(count,2), +1,
-    // converts to f32, multiplies by the pinned 1.2f literal, then truncates.
-    if previous_full_width > 2.0 {
-        return Err(Error::UnsupportedWidthBranch);
-    }
+    // getRepeatEff(float,float), DSO RVA 0x1f3ec. Preserve the native
+    // f32 divisions and multiplications before truncating the length.
+    let path_length = if previous_full_width <= 2.0 {
+        path_length
+    } else if previous_full_width <= 3.0 {
+        path_length / 1.5
+    } else if previous_full_width <= 5.0 {
+        path_length * 0.5
+    } else if previous_full_width <= 10.0 {
+        path_length / 3.0
+    } else if previous_full_width <= 15.0 {
+        path_length * 0.25
+    } else if previous_full_width <= 20.0 {
+        path_length / 5.0
+    } else if previous_full_width <= 30.0 {
+        path_length / 6.0
+    } else if previous_full_width <= 40.0 {
+        path_length / 7.0
+    } else if previous_full_width <= 55.0 {
+        path_length * 0.125
+    } else if previous_full_width <= 80.0 {
+        path_length / 9.0
+    } else {
+        path_length / 10.0
+    };
     let count = (path_length.trunc() as i32)
         .max(2)
         .checked_add(1)
@@ -121,6 +140,10 @@ fn sample(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         || input.pen_size <= 0.0
     {
         return Err(Error::InvalidInput);
+    }
+
+    if input.pen_size > 2.0 {
+        return Err(Error::UnsupportedWidthBranch);
     }
 
     // redrawLine copies PenGLData[0] through drawable+72 into drawable+104.
@@ -484,7 +507,59 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn rejects_unobserved_point_and_repeat_branches() {
+    fn repeat_width_branches_match_native_length_control() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/montblanc-width-branches-native.json"
+        ))
+        .unwrap();
+        let cases = receipt["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 12);
+        for width in [
+            "2", "2.01", "3", "5", "10", "15", "20", "30", "40", "55", "80", "81",
+        ] {
+            let case = &cases[width];
+            let input_width = case["input"]["pen_size"].as_f64().unwrap() as f32;
+            let length = case["length"].as_f64().unwrap() as f32;
+            let repeat = case["repeat"].as_u64().unwrap() as usize;
+            assert_eq!(
+                repeat_count(length, input_width).unwrap(),
+                repeat,
+                "width {width}"
+            );
+        }
+    }
+
+    #[test]
+    fn repeat_width_boundaries_match_direct_native_probes() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/montblanc-repeat-probe-native.json"
+        ))
+        .unwrap();
+        let cases = receipt["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 40);
+        for case in cases {
+            let length = f32::from_bits(case["length_bits"].as_u64().unwrap() as u32);
+            let width = f32::from_bits(case["width_bits"].as_u64().unwrap() as u32);
+            let repeat = case["repeat"].as_u64().unwrap() as usize;
+            assert_eq!(
+                repeat_count(length, width).unwrap(),
+                repeat,
+                "length {length}, width {width}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_unobserved_point_branches() {
+        assert_eq!(
+            sample(Input {
+                points: &[[0.0, 0.0], [10.0, 0.0], [20.0, 2.0]],
+                pressure: &[0.3, 0.6, 1.0],
+                pen_size: 2.5,
+            })
+            .unwrap_err(),
+            Error::UnsupportedWidthBranch
+        );
         assert_eq!(
             sample(Input {
                 points: &[[0.0, 0.0], [1.0, 0.0]],
@@ -493,10 +568,6 @@ pub(crate) mod tests {
             })
             .unwrap_err(),
             Error::PointCount
-        );
-        assert_eq!(
-            repeat_count(20.0, 2.5).unwrap_err(),
-            Error::UnsupportedWidthBranch
         );
     }
     pub(crate) fn captured_control_buffers(

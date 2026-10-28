@@ -1,0 +1,209 @@
+{
+  "dso_sha256": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+  "harness_sha256": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+  "entry_rva": "0x1f3ec",
+  "cases": [
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1073741824,
+      "repeat": 242
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1073741824,
+      "repeat": 217
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1073741825,
+      "repeat": 162
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1073741825,
+      "repeat": 145
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1077936128,
+      "repeat": 162
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1077936128,
+      "repeat": 145
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1077936129,
+      "repeat": 121
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1077936129,
+      "repeat": 109
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1084227584,
+      "repeat": 121
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1084227584,
+      "repeat": 109
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1084227585,
+      "repeat": 81
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1084227585,
+      "repeat": 73
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1092616192,
+      "repeat": 81
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1092616192,
+      "repeat": 73
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1092616193,
+      "repeat": 61
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1092616193,
+      "repeat": 55
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1097859072,
+      "repeat": 61
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1097859072,
+      "repeat": 55
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1097859073,
+      "repeat": 49
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1097859073,
+      "repeat": 44
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1101004800,
+      "repeat": 49
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1101004800,
+      "repeat": 44
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1101004801,
+      "repeat": 40
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1101004801,
+      "repeat": 37
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1106247680,
+      "repeat": 40
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1106247680,
+      "repeat": 37
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1106247681,
+      "repeat": 34
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1106247681,
+      "repeat": 31
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1109393408,
+      "repeat": 34
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1109393408,
+      "repeat": 31
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1109393409,
+      "repeat": 31
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1109393409,
+      "repeat": 27
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1113325568,
+      "repeat": 31
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1113325568,
+      "repeat": 27
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1113325569,
+      "repeat": 27
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1113325569,
+      "repeat": 25
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1117782016,
+      "repeat": 27
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1117782016,
+      "repeat": 25
+    },
+    {
+      "length_bits": 1128872935,
+      "width_bits": 1117782017,
+      "repeat": 25
+    },
+    {
+      "length_bits": 1127481344,
+      "width_bits": 1117782017,
+      "repeat": 22
+    }
+  ],
+  "capture_script": "tools/montblanc/extended-streams/repeat-probe.py",
+  "boundary": "Direct ARM64 getRepeatEff calls under the pinned Unicorn host harness; not full stroke, paint, or device parity."
+}
