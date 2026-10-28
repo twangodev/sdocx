@@ -1,0 +1,807 @@
+{
+  "schema": "montblanc-five-point-shapes-trace-v1",
+  "boundary": "Selected native symbol entries in synthetic ObjectStroke execution under pinned ARM64 Unicorn host adapters. Symbol coverage is limited by the harness; missing path construction symbols do not identify the curve. No saved-note, device or pixel parity.",
+  "source_harness_sha256": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8",
+  "binary_sha256": {
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "MontblancFountainPen": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350"
+  },
+  "trace_script_sha256": "b3b279997f1a140ea5e4ab74b000195dac1b83d611aa46ee955b6fa2de3ffed1",
+  "receipt_script_sha256": "2152e468ce698bc7785b9f6668b2f2e63cea5c6569ecff104e235b8f1349130f",
+  "cases": {
+    "bent": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            8
+          ],
+          [
+            11,
+            -1
+          ],
+          [
+            15,
+            6
+          ],
+          [
+            22,
+            -3
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "result": {
+        "return": 1,
+        "model_count": 5,
+        "size": "00000040",
+        "add_count": 39,
+        "events": [
+          {
+            "id": 1,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+            "caller_rva": "0x1ee58",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000040",
+              "cdcccc3e",
+              "00000000"
+            ]
+          },
+          {
+            "id": 2,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1ee10",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 3,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "0000a040",
+              "00000041",
+              "9a99193f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 4,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00003041",
+              "000080bf",
+              "0000803f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 5,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00007041",
+              "0000c040",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 6,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1eae4",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "00007041",
+              "0000c040"
+            ]
+          },
+          {
+            "id": 7,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1eaf4",
+            "s0_s3_f32_bits": [
+              "0000a040",
+              "00000041",
+              "00002041",
+              "0000e040"
+            ]
+          },
+          {
+            "id": 8,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1eb00",
+            "s0_s3_f32_bits": [
+              "0000a040",
+              "00000041",
+              "00002041",
+              "0000e040"
+            ]
+          },
+          {
+            "id": 9,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1eb6c",
+            "s0_s3_f32_bits": [
+              "6bb0da3f",
+              "0000a040",
+              "00000040",
+              "0000803f"
+            ]
+          },
+          {
+            "id": 10,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1eb78",
+            "s0_s3_f32_bits": [
+              "a3ca4e41",
+              "00000040",
+              "0020c840",
+              "00000000"
+            ],
+            "result_x0": 15
+          },
+          {
+            "id": 13,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1ec78",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "0000803f",
+              "03ae073f"
+            ]
+          },
+          {
+            "id": 56,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1e7a0",
+            "s0_s3_f32_bits": [
+              "204c0110",
+              "0b000000",
+              "00000041",
+              "000080bf"
+            ]
+          },
+          {
+            "id": 57,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1daf0",
+            "s0_s3_f32_bits": [
+              "00002041",
+              "0000e040",
+              "0000a040",
+              "0000c040"
+            ]
+          },
+          {
+            "id": 58,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1db40",
+            "s0_s3_f32_bits": [
+              "00007041",
+              "0000c040",
+              "0000b041",
+              "000040c0"
+            ]
+          },
+          {
+            "id": 59,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1db4c",
+            "s0_s3_f32_bits": [
+              "00007041",
+              "0000c040",
+              "0000b041",
+              "000040c0"
+            ]
+          },
+          {
+            "id": 60,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1dbc8",
+            "s0_s3_f32_bits": [
+              "00008040",
+              "0000a040",
+              "0000a040",
+              "00008040"
+            ]
+          },
+          {
+            "id": 61,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1dbd4",
+            "s0_s3_f32_bits": [
+              "5a147d41",
+              "0000a040",
+              "0080b642",
+              "00000000"
+            ],
+            "result_x0": 9
+          },
+          {
+            "id": 88,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1dd08",
+            "s0_s3_f32_bits": [
+              "fed4a541",
+              "e0b5b4bf",
+              "00002040",
+              "5ae3223f"
+            ]
+          },
+          {
+            "id": 89,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::drawLine(float, float, float, float)",
+            "caller_rva": "0x1dd90",
+            "s0_s3_f32_bits": [
+              "00007041",
+              "0000c040",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 90,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1f02c",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 91,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1f03c",
+            "s0_s3_f32_bits": [
+              "0000a040",
+              "00000041",
+              "00002041",
+              "0000e040"
+            ]
+          },
+          {
+            "id": 92,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1f048",
+            "s0_s3_f32_bits": [
+              "0000a040",
+              "00000041",
+              "00002041",
+              "0000e040"
+            ]
+          },
+          {
+            "id": 93,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1f0b4",
+            "s0_s3_f32_bits": [
+              "6bb0da3f",
+              "0000a040",
+              "00000040",
+              "0000803f"
+            ]
+          },
+          {
+            "id": 94,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1f0c0",
+            "s0_s3_f32_bits": [
+              "a3ca4e41",
+              "00000040",
+              "0020c840",
+              "00000000"
+            ],
+            "result_x0": 15
+          }
+        ]
+      }
+    },
+    "reverse": {
+      "input": {
+        "points": [
+          [
+            35,
+            3
+          ],
+          [
+            28,
+            -2
+          ],
+          [
+            22,
+            7
+          ],
+          [
+            16,
+            2
+          ],
+          [
+            8,
+            6
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "result": {
+        "return": 1,
+        "model_count": 5,
+        "size": "00000040",
+        "add_count": 41,
+        "events": [
+          {
+            "id": 1,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+            "caller_rva": "0x1ee58",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000040",
+              "cdcccc3e",
+              "00000000"
+            ]
+          },
+          {
+            "id": 2,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1ee10",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 3,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "0000e041",
+              "000000c0",
+              "9a99193f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 4,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "0000b041",
+              "0000e040",
+              "0000803f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 5,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00008041",
+              "00000040",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 6,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1eae4",
+            "s0_s3_f32_bits": [
+              "00000c42",
+              "00004040",
+              "00008041",
+              "00000040"
+            ]
+          },
+          {
+            "id": 7,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1eaf4",
+            "s0_s3_f32_bits": [
+              "0000e041",
+              "000000c0",
+              "0000b041",
+              "00000000"
+            ]
+          },
+          {
+            "id": 8,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1eb00",
+            "s0_s3_f32_bits": [
+              "0000e041",
+              "000000c0",
+              "0000b041",
+              "00000000"
+            ]
+          },
+          {
+            "id": 9,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1eb6c",
+            "s0_s3_f32_bits": [
+              "a61fdd3f",
+              "0000a040",
+              "00000040",
+              "0000803f"
+            ]
+          },
+          {
+            "id": 10,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1eb78",
+            "s0_s3_f32_bits": [
+              "52f25b41",
+              "00000040",
+              "00801c42",
+              "00000000"
+            ],
+            "result_x0": 16
+          },
+          {
+            "id": 13,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1ec78",
+            "s0_s3_f32_bits": [
+              "00000c42",
+              "00004040",
+              "0000803f",
+              "d65050bf"
+            ]
+          },
+          {
+            "id": 59,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1e7a0",
+            "s0_s3_f32_bits": [
+              "004c0110",
+              "0b000000",
+              "0000e040",
+              "000000c0"
+            ]
+          },
+          {
+            "id": 60,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1daf0",
+            "s0_s3_f32_bits": [
+              "0000b041",
+              "00000000",
+              "00004040",
+              "00000000"
+            ]
+          },
+          {
+            "id": 61,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1db40",
+            "s0_s3_f32_bits": [
+              "00008041",
+              "00000040",
+              "00000041",
+              "0000c040"
+            ]
+          },
+          {
+            "id": 62,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1db4c",
+            "s0_s3_f32_bits": [
+              "00008041",
+              "00000040",
+              "00000041",
+              "0000c040"
+            ]
+          },
+          {
+            "id": 63,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1dbc8",
+            "s0_s3_f32_bits": [
+              "00008040",
+              "0000a040",
+              "0000a040",
+              "00008040"
+            ]
+          },
+          {
+            "id": 64,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1dbd4",
+            "s0_s3_f32_bits": [
+              "6ab47341",
+              "0000a040",
+              "00006843",
+              "00000000"
+            ],
+            "result_x0": 9
+          },
+          {
+            "id": 91,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1dd08",
+            "s0_s3_f32_bits": [
+              "a90c1c41",
+              "7a58a440",
+              "00002040",
+              "2a4666bf"
+            ]
+          },
+          {
+            "id": 92,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::drawLine(float, float, float, float)",
+            "caller_rva": "0x1dd90",
+            "s0_s3_f32_bits": [
+              "00008041",
+              "00000040",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 93,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1f02c",
+            "s0_s3_f32_bits": [
+              "00000c42",
+              "00004040",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 94,
+            "symbol": "SPen::SmPath::quadTo(float, float, float, float)",
+            "caller_rva": "0x1f03c",
+            "s0_s3_f32_bits": [
+              "0000e041",
+              "000000c0",
+              "0000b041",
+              "00000000"
+            ]
+          },
+          {
+            "id": 95,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1f048",
+            "s0_s3_f32_bits": [
+              "0000e041",
+              "000000c0",
+              "0000b041",
+              "00000000"
+            ]
+          },
+          {
+            "id": 96,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1f0b4",
+            "s0_s3_f32_bits": [
+              "a61fdd3f",
+              "0000a040",
+              "00000040",
+              "0000803f"
+            ]
+          },
+          {
+            "id": 97,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1f0c0",
+            "s0_s3_f32_bits": [
+              "52f25b41",
+              "00000040",
+              "00801c42",
+              "00000000"
+            ],
+            "result_x0": 16
+          }
+        ]
+      }
+    },
+    "uneven": {
+      "input": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            9,
+            4
+          ],
+          [
+            18,
+            0
+          ],
+          [
+            40,
+            6
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.6,
+          1,
+          0.7,
+          0.5
+        ],
+        "pen_size": 2
+      },
+      "result": {
+        "return": 1,
+        "model_count": 5,
+        "size": "00000040",
+        "add_count": 49,
+        "events": [
+          {
+            "id": 1,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+            "caller_rva": "0x1ee58",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000040",
+              "cdcccc3e",
+              "00000000"
+            ]
+          },
+          {
+            "id": 2,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1ee10",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 3,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00000040",
+              "0000803f",
+              "9a99193f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 4,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00001041",
+              "00008040",
+              "0000803f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 5,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::redrawLine(float, float, float, float)",
+            "caller_rva": "0x1e668",
+            "s0_s3_f32_bits": [
+              "00009041",
+              "00000000",
+              "3333333f",
+              "00000000"
+            ]
+          },
+          {
+            "id": 6,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+            "caller_rva": "0x1e7a0",
+            "s0_s3_f32_bits": [
+              "803a0110",
+              "0b000000",
+              "00008040",
+              "00000000"
+            ]
+          },
+          {
+            "id": 7,
+            "symbol": "SPen::SmPath::moveTo(float, float)",
+            "caller_rva": "0x1daf0",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "0000a0c0",
+              "00000000"
+            ]
+          },
+          {
+            "id": 8,
+            "symbol": "SPen::SmPath::resetPath(bool)",
+            "caller_rva": "0x1db4c",
+            "s0_s3_f32_bits": [
+              "00001041",
+              "00008040",
+              "0000c441",
+              "0000a040"
+            ]
+          },
+          {
+            "id": 9,
+            "symbol": "SPen::SmPath::getLength()",
+            "caller_rva": "0x1dbc8",
+            "s0_s3_f32_bits": [
+              "0000803f",
+              "00000040",
+              "0000a040",
+              "0000803f"
+            ]
+          },
+          {
+            "id": 10,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableGLV1::getRepeatEff(float, float) [pinned hidden RVA 0x1f3ec]",
+            "caller_rva": "0x1dbd4",
+            "s0_s3_f32_bits": [
+              "db672242",
+              "00000040",
+              "b46c0543",
+              "00000000"
+            ],
+            "result_x0": 49
+          },
+          {
+            "id": 13,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddStartPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1dd08",
+            "s0_s3_f32_bits": [
+              "00000000",
+              "00000000",
+              "0000803f",
+              "8def693f"
+            ]
+          },
+          {
+            "id": 157,
+            "symbol": "SPen::MontblancFountainPenStrokeDrawableRTV1::AddEndPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+            "caller_rva": "0x1dd08",
+            "s0_s3_f32_bits": [
+              "12aa1c42",
+              "1847be40",
+              "700a1e40",
+              "bc777f3f"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
