@@ -15140,6 +15140,62 @@ mod tests {
         let generic = render_document_svg(&document, &RenderOptions::default())
             .remove(0)
             .svg;
+        let mut empty_setting = document.clone();
+        empty_setting.pages[0]
+            .strokes_mut()
+            .find(|stroke| {
+                stroke.rendering.as_ref().is_some_and(|rendering| {
+                    rendering.pen_name.as_deref()
+                        == Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+                        && rendering.advanced_settings.as_deref() == Some("3;")
+                })
+            })
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some(String::new());
+        assert_eq!(
+            render_document_svg(&empty_setting, &options).remove(0).svg,
+            paint
+        );
+        let mut unsupported_setting = empty_setting.clone();
+        unsupported_setting.pages[0]
+            .strokes_mut()
+            .find(|stroke| {
+                stroke.rendering.as_ref().is_some_and(|rendering| {
+                    rendering.pen_name.as_deref()
+                        == Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+                })
+            })
+            .unwrap()
+            .rendering
+            .as_mut()
+            .unwrap()
+            .advanced_settings = Some("5;".into());
+        assert_eq!(
+            render_document_svg(&empty_setting, &RenderOptions::default())
+                .remove(0)
+                .svg,
+            render_document_svg(&unsupported_setting, &RenderOptions::default())
+                .remove(0)
+                .svg
+        );
+        let pdf_options = crate::PdfOptions::default();
+        assert_eq!(
+            crate::render_document_pdf(&empty_setting, &options, &pdf_options).unwrap(),
+            crate::render_document_pdf(&document, &options, &pdf_options).unwrap()
+        );
+        assert_eq!(
+            crate::render_document_pdf(&empty_setting, &RenderOptions::default(), &pdf_options)
+                .unwrap(),
+            crate::render_document_pdf(
+                &unsupported_setting,
+                &RenderOptions::default(),
+                &pdf_options
+            )
+            .unwrap()
+        );
         let generic_xml = roxmltree::Document::parse(&generic).unwrap();
         assert_eq!(
             generic_xml

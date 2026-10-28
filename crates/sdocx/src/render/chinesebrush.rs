@@ -83,7 +83,7 @@ fn gl_version(setting: &str) -> Option<i32> {
     match setting {
         "1;" => Some(1),
         "2;" => Some(2),
-        "3;" => Some(3),
+        "" | "3;" => Some(3),
         "4;" => Some(3),
         _ => None,
     }

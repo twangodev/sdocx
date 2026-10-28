@@ -1,0 +1,160 @@
+{
+  "scope": "Synthetic saved ObjectStroke native Drawing and source-ordered queue tasks, host Mesa 256x256; not device or saved-note parity. Compares accumulated raw movements against the accepted-point subsequence, not direct Rust output.",
+  "capture_script": "scratch/simplebrush-tool3-multi/simplebrush-5-paint-capture.py",
+  "capture_script_sha256": "804b9cc87a5692e428eb48f7828c1d05627d37397c3fd210300979dd99a8c4e4",
+  "source_script": "scratch/simplebrush-tool3-multi/simplebrush-5-source-capture.py",
+  "source_script_sha256": "f1c27d31edc8b1afbcbc107ccca5f17c31f1d40afce5711d51779faedf4e9eb5",
+  "arguments": [
+    "--tool-type",
+    "0",
+    "--width",
+    "256",
+    "--height",
+    "256",
+    "--dispatch-task-seq",
+    "0",
+    "--dispatch-task-seq",
+    "1",
+    "--dispatch-task-seq",
+    "2",
+    "--dispatch-task-seq",
+    "3",
+    "--dispatch-task-seq",
+    "4",
+    "--dispatch-task-seq",
+    "5",
+    "--dispatch-task-seq",
+    "6",
+    "--dispatch-task-seq",
+    "7"
+  ],
+  "cases": [
+    {
+      "points": [
+        [
+          20,
+          20
+        ],
+        [
+          20.5,
+          20
+        ],
+        [
+          21,
+          20
+        ],
+        [
+          21.6,
+          20
+        ],
+        [
+          22.1,
+          20
+        ],
+        [
+          30,
+          20
+        ]
+      ],
+      "pressures": [
+        0.25,
+        0.4,
+        0.7,
+        0.5,
+        0.9,
+        0.6
+      ],
+      "geometry": {
+        "sha256": "91b446e348c7eb9dc0a692e522ed27f15e621378fdf7bf48e8dc2a0ba0ee8cf9",
+        "vector_bytes": "0000a0410000a0419a9961400bb6a0410000a0419a9961402dd8a2410000a0419a9961406666a6410000a0419a9961406666a6410000a0419c996140f4b2b3410000a04153b86240c45dbf410000a0410ad763406466ce410000a041c1f564406666ce410000a041c8f56440161dca410000a0415fd666404366dc410000a041f6b66840fcffef410000a0418d976a40",
+        "vector_count": 12
+      },
+      "frame_sha256": "c61520090a8d4c2d549df9999edce597f6cb512f4cd0f0b270e7a122e1bd354b",
+      "gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      }
+    },
+    {
+      "points": [
+        [
+          20,
+          20
+        ],
+        [
+          21.6,
+          20
+        ],
+        [
+          30,
+          20
+        ]
+      ],
+      "pressures": [
+        0.25,
+        0.5,
+        0.6
+      ],
+      "geometry": {
+        "sha256": "91b446e348c7eb9dc0a692e522ed27f15e621378fdf7bf48e8dc2a0ba0ee8cf9",
+        "vector_bytes": "0000a0410000a0419a9961400bb6a0410000a0419a9961402dd8a2410000a0419a9961406666a6410000a0419a9961406666a6410000a0419c996140f4b2b3410000a04153b86240c45dbf410000a0410ad763406466ce410000a041c1f564406666ce410000a041c8f56440161dca410000a0415fd666404366dc410000a041f6b66840fcffef410000a0418d976a40",
+        "vector_count": 12
+      },
+      "frame_sha256": "c61520090a8d4c2d549df9999edce597f6cb512f4cd0f0b270e7a122e1bd354b",
+      "gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      }
+    }
+  ],
+  "observation": "Native vectors and transparent host frames are byte-identical. These controls support accepted-point filtering for this specific input; arbitrary paths and device output remain unverified.",
+  "crop": {
+    "sha256": "5e4e27bbfc4de3b369c8dba0f86ff2b13b88f760baef4cf22d1223e6924bd529",
+    "width": 144,
+    "height": 32
+  },
+  "geometry_count": 12,
+  "geometry_sha256": "91b446e348c7eb9dc0a692e522ed27f15e621378fdf7bf48e8dc2a0ba0ee8cf9",
+  "native_libraries": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "SimpleBrush": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "input_details": {
+    "size": 8,
+    "color_argb": "0x8044aaee",
+    "curve_enabled": true,
+    "advanced_setting": null,
+    "timestamps": "sequential integer indices",
+    "tilt_and_orientation": "zero"
+  },
+  "construction": "Native DrawingFactory::CreateDrawing and ObjectDrawing::drawObjectStroke; ObjectStroke implementation and SimpleBrush GL manager attached by harness. Context, queue and GLES adapters supplied by host."
+}

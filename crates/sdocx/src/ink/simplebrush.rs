@@ -1109,6 +1109,7 @@ mod tests {
     fn tool0_short_and_six_point_native_paint_controls() {
         v25_paint_control_for_tool(8, false, false, false, 203, 0);
         v25_paint_control_for_tool(8, false, false, false, 6, 0);
+        v25_paint_control_for_tool(8, false, false, false, 218, 0);
     }
 
     #[cfg(feature = "pdf")]
@@ -1156,6 +1157,9 @@ mod tests {
                 (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
             );
         let native: &[u8] = match (four, size) {
+            _ if tool == 0 && probe == 218 => {
+                include_bytes!("../../../../conformance/simplebrush-tool0-accumulated-crop.rgba")
+            }
             _ if tool == 0 && probe == 203 => {
                 include_bytes!("../../../../conformance/simplebrush-tool0-short-crop.rgba")
             }
@@ -1300,6 +1304,9 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if tool == 0 && probe == 218 => {
+                include_str!("../../../../conformance/simplebrush-tool0-accumulated-control.json")
+            }
             _ if tool == 0 && probe == 203 => {
                 include_str!("../../../../conformance/simplebrush-tool0-short.json")
             }
@@ -1434,7 +1441,16 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if matches!(probe, 216 | 217) {
+        let points: &[[f32; 2]] = if probe == 218 {
+            &[
+                [20., 20.],
+                [20.5, 20.],
+                [21., 20.],
+                [21.6, 20.],
+                [22.1, 20.],
+                [30., 20.],
+            ]
+        } else if matches!(probe, 216 | 217) {
             &[[0., 0.], [10., 0.], [20., 5.]]
         } else if probe == 215 {
             &[
@@ -1510,7 +1526,9 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if matches!(probe, 216 | 217) {
+        let pressures: &[f32] = if probe == 218 {
+            &[0.25, 0.4, 0.7, 0.5, 0.9, 0.6]
+        } else if matches!(probe, 216 | 217) {
             &[0.75, 0.25, 1.0]
         } else if matches!(probe, 214 | 215) {
             &[
@@ -1536,6 +1554,7 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 218 => 116,
             _ if tool == 0 && probe == 6 => 337,
             _ if probe == 216 => 612,
             _ if probe == 217 => 522,
@@ -1584,7 +1603,9 @@ mod tests {
             _ => unreachable!(),
         };
         let size = if size == 55 { 5.5 } else { size as f32 };
-        let (crop_width, crop_height) = if matches!(probe, 216 | 217) {
+        let (crop_width, crop_height) = if probe == 218 {
+            (144, 32)
+        } else if matches!(probe, 216 | 217) {
             (64, 32)
         } else if extra || probe != 0 {
             (
@@ -1634,6 +1655,11 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if tool == 0 && probe == 218 => {
+                    include_bytes!(
+                        "../../../../conformance/simplebrush-tool0-accumulated-geometry.bin"
+                    )
+                }
                 _ if tool == 0 && probe == 203 => {
                     include_bytes!("../../../../conformance/simplebrush-tool0-short-geometry.bin")
                 }

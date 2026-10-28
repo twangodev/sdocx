@@ -1,0 +1,129 @@
+{
+  "schema": "chinesebrush-empty-setting-paired-host-paint-v1",
+  "scope": "Synthetic Model/Drawing input under Unicorn and host Mesa GLES; native pair comparison only, not device or SDK-deserialized stroke parity.",
+  "source_case": {
+    "case_id": "curve-v3",
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+    "size_f32_bits": "4c374940",
+    "color_argb_u32": "0xff6cdd8f",
+    "tool_type": 2,
+    "stroke_type": 0,
+    "curve_enabled": true,
+    "source_arrays": {
+      "orientations": {
+        "count": 5,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3fec51383e3333333f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 5,
+        "data_hex": "00000000000000000000c04000004040000010410000404100008841000050410000b84100007041",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 5,
+        "data_hex": "9a99993ecdcc0c3f0000403f3333b33e3333733f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 5,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3fae47613e6666263f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 5,
+        "data_hex": "2c01000037010000440100005201000063010000",
+        "element_size": 4
+      }
+    },
+    "explicit_setting_selected_version": 3,
+    "explicit_setting_redraw_target": [
+      "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ]
+  },
+  "native_libraries_sha256": {
+    "Base": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+      "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+    },
+    "BrushPen": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so",
+      "sha256": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce"
+    },
+    "ChineseBrush": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenChineseBrush.so",
+      "sha256": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5"
+    },
+    "Composer": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+      "sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+    },
+    "Drawing": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+      "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+    },
+    "FountainPen": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+      "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+    },
+    "Graphics": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+      "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+    },
+    "Model": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+      "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+    },
+    "PenCommon": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+      "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+    },
+    "Renderer": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so",
+      "sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+    },
+    "libSPenCxx.so": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenCxx.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "libc++_shared.so": {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    }
+  },
+  "host_gles_sha256": {
+    "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0": {
+      "sha256": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6"
+    },
+    "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0": {
+      "sha256": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+    }
+  },
+  "settings": [
+    "3;",
+    ""
+  ],
+  "producer_vector_sha256": "5f9b53b73a77a8bb0cff79b684215c15d3102cf74e54ec29059adeebe923c5d7",
+  "readback": {
+    "byte_count": 292752,
+    "full_rgba8_sha256": "c5e10fefbfcf65775da4fc03c83af42f0cc2ee21d0d035adbad8c20309b19394",
+    "dimensions": [
+      321,
+      228
+    ]
+  },
+  "baseline_harness_git": "2ffac9f^:conformance/chinesebrush_paint_native.py",
+  "baseline_fixture_git": "2ffac9f^:conformance/chinesebrush-paint-native.json",
+  "capture_script_sha256": "7425f3dfc578450053f74b7d09af7d544d4351bff342142a301e546540dc49e5",
+  "boundary": "The synthetic object setting is the only input changed; both runs passed the original producer-to-upload and paint assertions. Host guest addresses and trace hashes differ.",
+  "compared_assertions": [
+    "Identical native producer vector and queued upload bytes",
+    "Identical full RGBA8 host Mesa framebuffer SHA-256",
+    "Framebuffer complete and native draw executed"
+  ],
+  "empty_setting_selection": {
+    "version": 3,
+    "drawable": "GLV3",
+    "evidence": "Separate synthetic caller matrix case empty, git 2ffac9f^:conformance/chinesebrush-saved-caller-native.json; geometry inputs differ from the paint control."
+  }
+}

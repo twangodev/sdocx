@@ -1,0 +1,110 @@
+{
+  "schema": "sdocx-pencil2-v14-prefix-point-boundary-v1",
+  "scope": "Controlled 192x192 host Mesa RTV4 replay of ordered prefixes of 84 native Drawing records; not device, saved-note, public renderer or PDF evidence.",
+  "capture_wrapper": "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-prefix-probe/capture_prefix.py",
+  "capture_command": "PYTHONPATH=scratch/apk-analysis-runtime/python python3 tmp/vector-parity-plan/pen-family-audit/pencil2-v14-prefix-probe/capture_prefix.py N",
+  "inputs": "conformance/pencil2-v14-device-profile/receipt.json",
+  "captures": [
+    {
+      "prefix": 7,
+      "frame_sha256": "b1d01087c4d44aa5212bcea9128c505e82c7d4586199d2560f33a8098c888915",
+      "alpha_3_191": 0,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 8,
+      "frame_sha256": "5b3fe54b755258f1a2f5a8a08b79c528802d40030b9239c62049524c7c958a05",
+      "alpha_3_191": 4,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 9,
+      "frame_sha256": "073b300839c140a010dcea8422209d3ca4fb38738e2284fcd4ed74547585fe34",
+      "alpha_3_191": 17,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 10,
+      "frame_sha256": "53ccb9f1ddb31c6017c353fb6225d9d8c7d6b76f061f989122e75857a62f3358",
+      "alpha_3_191": 30,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 11,
+      "frame_sha256": "eda07ea6ed17b811ef5059bb1051a3a1eb832a4bf842624e268eafaa19aa2d40",
+      "alpha_3_191": 33,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 18,
+      "frame_sha256": "4661c73507a39b31797eac762206a55322f8ccbdbd28782ee427d477bfd09e6e",
+      "alpha_3_191": 33,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 19,
+      "frame_sha256": "d6a4fec9d2c82adc13a2af04d65f497402f85c7a2c9c8f4e15418c15501a700a",
+      "alpha_3_191": 33,
+      "alpha_8_191": 0
+    },
+    {
+      "prefix": 20,
+      "frame_sha256": "7528e8bdf0ca9507d716d34b3ff26d3441a27844d6ab08264f7388bfbeca6d76",
+      "alpha_3_191": 33,
+      "alpha_8_191": 14
+    },
+    {
+      "prefix": 21,
+      "frame_sha256": "243e2f7ace1fcd08c99179a55dd9010b487e70b3038998733511ca34c7344a45",
+      "alpha_3_191": 33,
+      "alpha_8_191": 42
+    },
+    {
+      "prefix": 22,
+      "frame_sha256": "62521b6bc8d7e1755714c6b0bb49660437f26f8bb7bbd20da5b56e79ee0e19b8",
+      "alpha_3_191": 33,
+      "alpha_8_191": 62
+    },
+    {
+      "prefix": 23,
+      "frame_sha256": "4e4c0b69aa7bd98210677227bc4135d562f21b19331ed341e7966f3f1f13c359",
+      "alpha_3_191": 33,
+      "alpha_8_191": 67
+    }
+  ],
+  "scalar_model_alpha": {
+    "prefix_10": [
+      30,
+      0
+    ],
+    "prefix_11": [
+      30,
+      0
+    ],
+    "prefix_20": [
+      30,
+      14
+    ],
+    "prefix_21": [
+      30,
+      43
+    ],
+    "prefix_22": [
+      30,
+      63
+    ],
+    "prefix_23": [
+      30,
+      63
+    ]
+  },
+  "observations": [
+    "At (3,191), native prefix 10 to 11 changes alpha 30 to 33, but scalar stays 30. At (8,191), native prefix 22 to 23 changes alpha 62 to 67, but scalar stays 63.",
+    "Both corresponding source records 10 and 22 have pointOffset 1. The scalar model computes point texture y coordinate 175 in a 300 row nearest texture, with x coordinates 13 and 15 respectively. Texels at y=175 are both zero; adjacent y=174 values are 5 and 16."
+  ],
+  "interpretation": "The zero/nonzero neighboring texels are consistent with a point texture boundary or varying interpolation difference causing the missed native contributions. Prefix 21 and 22 differ by one alpha byte before the second missed contribution, so sampling boundary is not a complete explanation. Native texture indices or interpolants were not observed; this does not justify forcing a universal boundary bias.",
+  "limitations": [
+    "Prefix replay modifies the host adapter selection, not native Drawing.",
+    "The exact texture sample and GPU arithmetic were not traced. Other transforms and devices are unverified."
+  ]
+}
