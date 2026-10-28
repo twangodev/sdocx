@@ -604,7 +604,11 @@ An additional [filter ablation](../conformance/brushpen-second-native/filter-abl
 compares the retained source-cell prototype with native host frames and PDFium.
 Removing its grain filter improves PDF agreement in both synthetic controls,
 but changes the image; removing coverage while retaining the filter triggers a
-resvg assertion. These observations do not establish a production transport fix.
+resvg assertion. A separate fixed-pixel-grid vector candidate was close to one
+host frame at 1×, but its alpha errors rose sharply under half-pixel translation
+and 2× projection. The local control is retained under
+`tmp/vector-parity-plan/brushpen-e62/`; it uses a standalone vector export, not
+the public pipeline, and does not establish a production transport fix.
 The [MagicPen Drawing caller](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/magicpen-saved-caller-native.json)
 checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
 RTV1 vectors separately from callback arguments for synthetic Model inputs;
