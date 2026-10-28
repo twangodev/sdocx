@@ -917,7 +917,10 @@ fn sample_native_stroke_with_size(
     let style = &rendering.style;
     let properties = rendering.properties;
     if rendering.pen_name.as_deref() != Some(NATIVE_PEN_NAME)
-        || !matches!(rendering.advanced_settings.as_deref(), Some("" | "10;"))
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            Some("" | "10;" | "11;")
+        )
         || rendering.tool_type_raw != 2
         || !properties.compressed
         || !properties.stylus_channels

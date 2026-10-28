@@ -978,6 +978,37 @@ mod tests {
         .flat_map(f32::to_le_bytes)
         .collect();
         assert_eq!(literal_geometry, native_geometry);
+        let dispatch: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-version-dispatch-native.json"
+        ))
+        .unwrap();
+        for (index, setting) in ["10;", "11;"].iter().enumerate() {
+            assert_eq!(dispatch["cases"][index]["setting"], *setting);
+            assert_eq!(
+                dispatch["cases"][index]["redraw_symbols"][0],
+                "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            );
+        }
+        assert_eq!(dispatch["cases"][1]["version"], 11);
+        assert_eq!(
+            dispatch["cases"][1]["buffer_sha256"],
+            fixture["geometry"]["sha256"]
+        );
+        literal_stroke.rendering.as_mut().unwrap().advanced_settings = Some("11;".into());
+        let version_11_geometry: Vec<_> = super::super::sample_native_stroke_with_size(
+            &literal_stroke,
+            context,
+            7.0_f32.to_bits(),
+            0x806e_42d1,
+        )
+        .unwrap()
+        .output
+        .instances
+        .iter()
+        .flat_map(|instance| instance.values)
+        .flat_map(f32::to_le_bytes)
+        .collect();
+        assert_eq!(version_11_geometry, native_geometry);
         let portrait: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-portrait-geometry-native.json"
         ))
