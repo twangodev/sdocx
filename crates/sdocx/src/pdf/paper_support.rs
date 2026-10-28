@@ -5060,6 +5060,79 @@ mod tests {
     }
 
     #[test]
+    fn assembler_preserves_cross_page_popup_identity() {
+        let mut doc = Document::load_mem(&source_pdf()).unwrap();
+        let pages = doc.get_pages();
+        let parent = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Text", "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()], "P" => pages[&1] });
+        let popup = doc.add_object(dictionary! { "Type" => "Annot", "Subtype" => "Popup", "Rect" => vec![0.into(), 0.into(), 20.into(), 20.into()], "P" => pages[&2], "Parent" => parent });
+        doc.get_dictionary_mut(parent).unwrap().set("Popup", popup);
+        doc.get_dictionary_mut(pages[&1])
+            .unwrap()
+            .set("Annots", vec![parent.into()]);
+        doc.get_dictionary_mut(pages[&2])
+            .unwrap()
+            .set("Annots", vec![popup.into()]);
+        let mut source = Vec::new();
+        doc.save_to(&mut source).unwrap();
+        let overlay = sdk_noop_overlay_pdf();
+        let specs = [1, 0, 1]
+            .into_iter()
+            .map(|source_page_index| OutputPage::Imported {
+                source_key: "paper-a",
+                source_page_index,
+                overlay_bytes: &overlay,
+                overlay_page_number: 1,
+                display_to_source: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                clip: [0.0, 0.0, 100.0, 100.0],
+            })
+            .collect::<Vec<_>>();
+        let sources = [SourcePdf {
+            key: "paper-a",
+            bytes: &source,
+        }];
+        let output = Document::load_mem(&assemble_output_pages(&sources, &specs).unwrap()).unwrap();
+        let pages = output.get_pages();
+        let annot = |page| {
+            deref(
+                &output,
+                output
+                    .get_dictionary(pages[&page])
+                    .unwrap()
+                    .get(b"Annots")
+                    .unwrap(),
+            )
+            .unwrap()
+            .as_array()
+            .unwrap()[0]
+                .as_reference()
+                .unwrap()
+        };
+        for page in [1, 3] {
+            let popup = output.get_dictionary(annot(page)).unwrap();
+            assert_eq!(
+                popup.get(b"Parent").unwrap().as_reference().unwrap(),
+                annot(2)
+            );
+            assert_eq!(
+                popup.get(b"P").unwrap().as_reference().unwrap(),
+                pages[&page]
+            );
+        }
+        assert_ne!(annot(1), annot(3));
+        let parent = output.get_dictionary(annot(2)).unwrap();
+        assert_eq!(
+            parent.get(b"Popup").unwrap().as_reference().unwrap(),
+            annot(1)
+        );
+        assert_eq!(parent.get(b"P").unwrap().as_reference().unwrap(), pages[&2]);
+        let error = assemble_output_pages(&sources, &specs[..1]).unwrap_err();
+        assert!(
+            error.contains("annotation references an unselected page"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn assembler_preserves_annotation_aliases_cycles_and_shared_objects() {
         let mut doc = Document::load_mem(&source_pdf()).unwrap();
         let pages = doc.get_pages();

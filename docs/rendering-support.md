@@ -897,14 +897,15 @@ Source annotation identities are reserved across selected pages before graph
 cloning. A cross-page `/IRT` now points to the annotation in its selected owner's
 `/Annots`, with `/P` set to that output page. Repeated output pages receive
 separate page-bound annotations; references from other pages use the first
-selected occurrence. Assembly tests cover cyclic replies, indirect annotation
-arrays and aliases, shared intermediary objects, and rejection of references to
-annotations on unselected pages, including those without `/P`. A public export
+selected occurrence. Assembly tests cover cyclic replies, cross-page `/Popup`
+and `/Parent` identity with reordered and duplicate pages, indirect annotation
+arrays and aliases, shared intermediary objects, and rejection of references
+to annotations on unselected pages, including those without `/P`. A public export
 test also checks cross-page reply identity. For that public export, MuPDF
 1.27.2.3 reports the second-page reply's `/IRT` as the first-page annotation;
 PDFium 150.0.7869.0 opens and renders both pages and reports their text
-annotations. Interactive annotation behavior and cross-page `/Popup` behavior
-remain unverified. Cyclic references in an annotation list are rejected.
+annotations. Cross-page `/Popup` reader behavior and interactive annotation
+behavior remain unverified. Cyclic references in an annotation list are rejected.
 Page-box geometry accepts either corner order while preserving the source values;
 blank source pages with direct or indirect null content can receive overlays.
 Overlay grafts clear unfinished source paths before clipping; a synthetic manual
