@@ -1,5 +1,5 @@
 {
-  "scope": "Synthetic 221-record BrushPen Drawing and queued RT host Mesa capture; uniform uploads only.",
+  "scope": "Synthetic 221-record BrushPen Drawing and queued RT host Mesa capture; grain and projection uniform uploads and full RGBA8 frame readbacks.",
   "capture_recipe": "See comparison.json capture_recipe in this directory.",
   "script_sha256": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
   "cases": {
@@ -86,6 +86,49 @@
             "matches": true
           }
         ]
+      },
+      "frame_sha256": "726ba0eaa5f05b121a831b0220a8046954078acce236e3e81d6febb06fd653dc",
+      "frame_nonzero_alpha_pixels": 3204,
+      "projection_matrix": [
+        0.012461058795452118,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.02631578966975212,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9190031290054321,
+        -1.061403512954712,
+        0.0,
+        1.0
+      ],
+      "projection_upload": {
+        "count": 1,
+        "location": 0,
+        "transpose": 0,
+        "values": [
+          0.012461058795452118,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02631578966975212,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          -0.9190031290054321,
+          -1.061403512954712,
+          0.0,
+          1.0
+        ]
       }
     },
     "shear": {
@@ -170,6 +213,49 @@
             "method": "PenDrawableRT::SendDataToGPU",
             "matches": true
           }
+        ]
+      },
+      "frame_sha256": "a6a4f0b357db1eb99cc36d157477699053e128c96f89c723ddc23f3ef2f28fdc",
+      "frame_nonzero_alpha_pixels": 476,
+      "projection_matrix": [
+        0.006230529397726059,
+        0.003508772002533078,
+        0.0,
+        0.0,
+        0.0018691589357331395,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9190031290054321,
+        -1.061403512954712,
+        0.0,
+        1.0
+      ],
+      "projection_upload": {
+        "count": 1,
+        "location": 0,
+        "transpose": 0,
+        "values": [
+          0.006230529397726059,
+          0.003508772002533078,
+          0.0,
+          0.0,
+          0.0018691589357331395,
+          0.008771929889917374,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          -0.9190031290054321,
+          -1.061403512954712,
+          0.0,
+          1.0
         ]
       }
     },
@@ -256,6 +342,49 @@
             "matches": true
           }
         ]
+      },
+      "frame_sha256": "31c14fcd4cb385addce112a05240f40db699dcf45e4ba1440ae32d556c36fdf8",
+      "frame_nonzero_alpha_pixels": 539,
+      "projection_matrix": [
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        -0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.557632327079773,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "projection_upload": {
+        "count": 1,
+        "location": 0,
+        "transpose": 0,
+        "values": [
+          0.0,
+          0.008771929889917374,
+          0.0,
+          0.0,
+          -0.006230529397726059,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          0.557632327079773,
+          -1.0,
+          0.0,
+          1.0
+        ]
       }
     },
     "flip-visible": {
@@ -341,11 +470,54 @@
             "matches": true
           }
         ]
+      },
+      "frame_sha256": "f90320de55dabeebcc1203d4021ac063df23d371742eae4fae6861b08c5acfec",
+      "frame_nonzero_alpha_pixels": 539,
+      "projection_matrix": [
+        -0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.8691588640213013,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "projection_upload": {
+        "count": 1,
+        "location": 0,
+        "transpose": 0,
+        "values": [
+          -0.006230529397726059,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.008771929889917374,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          0.8691588640213013,
+          -1.0,
+          0.0,
+          1.0
+        ]
       }
     }
   },
   "inference": "For this fixture, grain is the baseline grain vector transformed by the affine linear part, and grain_offset is the baseline offset transformed as a point. Signed components are retained.",
-  "limitations": "Does not establish the native producer implementation, arbitrary input dimensions or transforms, rendered frame parity, device parity, or public SVG/PDF transport.",
+  "limitations": "Does not establish the native producer implementation, arbitrary input dimensions or transforms, device parity, or public SVG/PDF transport. The conditional paint model has been compared only with the nonuniform frame; shear, rotation, and reflection readbacks are retained without paint parity claims.",
   "input_sha256": {
     "tools/brushpen-transform/second_mapdraw.py": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
     "tools/brushpen-transform/long_probe.py": "77e48b4625361cd14eb5aa4637e31af5e7e3da52794547e93681f5b0e6bbeb40",
@@ -361,5 +533,5 @@
     "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
     "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
   },
-  "extraction": "For each case run comparison.json capture_recipe with BRUSHPEN_CANVAS_MATRIX set to canvas_matrix and redirect stdout/stderr to a log. Parse the JSON after UNIFORM_NATIVE_IMPORT_TRACE, select uniform2fv_location 5 and 6; copy complete rows as uniform_uploads. Parse TASK2_STATE returned and gl_calls_during_task2 error_after, NATIVE_TASK2_FRAMEBUFFER_STATUS, NATIVE_TASK3_CLEANUP result, and NATIVE_CALLBACK_RECEIVER_GUARDS. The runner aborts if Drawing geometry differs from /tmp/brushpen-second-geometry.json producer buffer. Log hashes identify these exact captures; logs are temporary and not retained."
+  "extraction": "For each case run comparison.json capture_recipe with BRUSHPEN_CANVAS_MATRIX set to canvas_matrix and redirect stdout/stderr to a log. From UNIFORM_NATIVE_IMPORT_TRACE select uniform2fv_location 5 and 6, and the last location 0 matrix upload; preserve those complete rows as uniform_uploads and projection_upload. From TASK2_STATE.native_canvas_rgba_target decode after_task2_base64 as full RGBA8, verify after_task2_sha256, and compress the bytes as the corresponding *-frame.rgba.zlib. Record the reported nonzero alpha count. Parse TASK2_STATE returned and gl_calls_during_task2 error_after, NATIVE_TASK2_FRAMEBUFFER_STATUS, NATIVE_TASK3_CLEANUP result, and NATIVE_CALLBACK_RECEIVER_GUARDS. The runner aborts if Drawing geometry differs from /tmp/brushpen-second-geometry.json producer buffer. Log hashes identify these exact captures; logs are temporary and not retained. The target summary projection_matrix_after_draw_f32 is stale initial-control metadata and is not used for the draw-time projection."
 }

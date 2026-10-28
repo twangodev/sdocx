@@ -291,3 +291,12 @@ The quarter turn and reflection produce negative period components, so these are
 signed values rather than scale magnitudes. A test checks this prediction against
 the captured uploads. These observations do not identify the producer's native
 implementation or prove arbitrary transform or rendered-frame parity.
+
+The same affine captures also retain full host RGBA8 readbacks and draw-time
+projection uploads. The conditional paint model reproduces the nonuniform-scale
+frame with an RGBA absolute-error sum at most 4. This comparison uses the
+intercepted draw-time matrix, not the stale target-summary projection. Shear,
+rotation, and reflection frames are retained with hashes and support counts for
+future comparisons; the current painter rejects non-axis-aligned projections and
+negative grain periods, so these frames do not establish paint parity. This is a
+synthetic host-Mesa profile and does not establish device or SVG/PDF parity.

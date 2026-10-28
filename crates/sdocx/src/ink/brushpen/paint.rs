@@ -316,6 +316,48 @@ mod tests {
         .unwrap();
         let cases = receipt["cases"].as_object().unwrap();
         assert_eq!(cases.len(), 4);
+        for (name, compressed) in [
+            (
+                "nonuniform",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/nonuniform-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "shear",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/shear-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "rotate-visible",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/rotate-visible-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                "flip-visible",
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/flip-visible-frame.rgba.zlib"
+                )[..],
+            ),
+        ] {
+            let mut frame = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 321 * 228 * 4);
+            assert_eq!(sha256(&frame), cases[name]["frame_sha256"]);
+            assert_eq!(
+                frame
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .filter(|pixel| pixel[3] != 0)
+                    .count(),
+                cases[name]["frame_nonzero_alpha_pixels"].as_u64().unwrap() as usize
+            );
+        }
         for name in ["nonuniform", "shear", "rotate-visible", "flip-visible"] {
             let case = &cases[name];
             let read = |key: &str| -> Vec<f32> {
@@ -1205,6 +1247,59 @@ mod tests {
                 .sum();
             assert!(l1 <= if name == "matrix" { 0 } else { 4 }, "{name}: {l1}");
         }
+        let affine: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-second-native/affine-uniforms.json"
+        ))
+        .unwrap();
+        let case = &affine["cases"]["nonuniform"];
+        let read = |key: &str| -> Vec<f32> {
+            case[key]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect()
+        };
+        let mut reference = Vec::new();
+        ZlibDecoder::new(
+            &include_bytes!(
+                "../../../../../conformance/brushpen-second-native/nonuniform-frame.rgba.zlib"
+            )[..],
+        )
+        .read_to_end(&mut reference)
+        .unwrap();
+        assert_eq!(sha256(&reference), case["frame_sha256"]);
+        let mut actual = vec![0; reference.len()];
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas_rgba,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain_rgba,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: read("projection_matrix").try_into().unwrap(),
+                rgb: color[..3].try_into().unwrap(),
+                grain_period: read("grain").try_into().unwrap(),
+                grain_offset: read("grain_offset").try_into().unwrap(),
+                num_tiles: 3.0,
+            },
+            &mut actual,
+        )
+        .unwrap();
+        let l1: u64 = actual
+            .iter()
+            .zip(&reference)
+            .map(|(a, b)| u64::from(a.abs_diff(*b)))
+            .sum();
+        assert!(l1 <= 4, "nonuniform: {l1}");
         let pair: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-version-paint-pair.json"
         ))
