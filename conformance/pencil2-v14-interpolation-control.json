@@ -1,0 +1,101 @@
+{
+  "schema": "sdocx.pencil2-v14-interpolation-control.v1",
+  "scope": "Instrumented native RTV4 host Mesa replay of isolated records 10 and 22 from the existing 84-record synthetic stroke, not device, saved-note or SVG/PDF parity.",
+  "scripts": {
+    "scratch/pencil2-projection-control/control.py": "008811151308bc0663790a216d31bad674b39db7bce34264e742e7bf3e003b14",
+    "scratch/pencil2-projection-control/prefix-template.py": "edb7cd62f93bca5fbbc56b74c4d8a7cd9f8cdcd3597f89ab7c804a62f1d81306",
+    "scratch/pencil2-projection-control/single.py": "c6db76c8c212c5286382274666def8052cee6ba3347c37773fbc848faab15474"
+  },
+  "commands": [
+    "PENCIL_CONTROL=color PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/control.py 11 x",
+    "PENCIL_CONTROL=default PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/control.py 11 x",
+    "PENCIL_CONTROL=highp PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/control.py 11 x",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/single.py 11 x",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/single.py 11 y",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/single.py 23 x",
+    "PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/single.py 23 y"
+  ],
+  "controls": {
+    "constant_rgba": {
+      "rgba": [
+        17,
+        73,
+        149,
+        255
+      ],
+      "frame_sha256": "39ecd156754f73a38f488e924b590c29c108a93b4d4dedd365f55d8f8c4385a2"
+    },
+    "constant_bits_0x3e800028_default_uint": {
+      "rgba": [
+        40,
+        0,
+        40,
+        255
+      ],
+      "frame_sha256": "efe34f7af39788640ae23a44757c8c3b24ba228a737c2eb4f67454aab9c04a22"
+    },
+    "constant_bits_0x3e800028_highp_uint": {
+      "rgba": [
+        40,
+        0,
+        128,
+        255
+      ],
+      "frame_sha256": "914f53fe5af5c71dc91e5fadf206646f2d6fd8f7f59da8d8a1122f94dd7de5e3"
+    }
+  },
+  "isolated": [
+    {
+      "record": 10,
+      "pixel_top": [
+        3,
+        191
+      ],
+      "x_rgb": [
+        80,
+        58,
+        9
+      ],
+      "y_rgb": [
+        40,
+        0,
+        128
+      ],
+      "x_frame_sha256": "fe9c842b00bec7487b0c20079fcec00ade59b0f8e1913db70224e8ed63ea88d6",
+      "y_frame_sha256": "4b9020790ed81ccabf3010e1f9c3dfc286cc3d28e428b16f1aca3be68686975d",
+      "projected_scalar_bits": [
+        "0x3e093a49",
+        "0x3e800028"
+      ]
+    },
+    {
+      "record": 22,
+      "pixel_top": [
+        8,
+        191
+      ],
+      "x_rgb": [
+        128,
+        153,
+        25
+      ],
+      "y_rgb": [
+        40,
+        0,
+        128
+      ],
+      "x_frame_sha256": "ee18fbd8f9162c6f0347bee0d34fc980976fcb93e2f9663c760eea8d50e6876a",
+      "y_frame_sha256": "c1dfc1e9de0073677a970871c2044a4e754dc814f998904235e4e78a46626fc5",
+      "projected_scalar_bits": [
+        "0x3e19998a",
+        "0x3e800028"
+      ]
+    }
+  ],
+  "interpretation": "RGB encodes only the low three bytes. Assuming the unmeasured most significant byte is 0x3e, the x results differ from the candidate by +7 and -10 binary32 ULP, and y matches. The assumption is consistent with the projected local coordinates but is not established by this capture. Default-precision encoding was invalid for the third byte; highp fixes the known-value control.",
+  "limitations": [
+    "The control does not validate every integer input or the missing fourth byte.",
+    "Diagnostic shader changes may alter interpolation or compilation.",
+    "Two points and one host do not establish triangle interpolation or scalable SVG/PDF correction."
+  ]
+}

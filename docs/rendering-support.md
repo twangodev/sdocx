@@ -539,6 +539,7 @@ the comparison from PDFs captured by the focused test. This is one viewer and
 resolution, not evidence of general PDF or device parity.
 A first-stamp triangle-clip experiment with the second stamp unchanged still rendered center alpha 22 versus native 52 in PyMuPDF at 96 dpi.
 In PyMuPDF alone, higher-resolution center sampling reduced 3×3 alpha error from 81 at 1× to 37 at 8×, while removing both stamps’ masks gave 80 at 1×; sampling and coverage remain possible causes rather than isolated findings.
+A further [texture probe](../conformance/airbrush-v1-pdf-texture-probe.json) found identical MuPDF output with interpolation enabled or disabled and with nearest-neighbor texture upsampling; sampling, transformed coverage, and alpha compositing remain unresolved for this one synthetic control.
 Admitted source-owned tool-2 profiles preserve saved RGB or native omitted-color
 black in generic rendering. Native per-stamp alpha is not applied as whole-stroke opacity.
 The [color oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/airbrush-color-native.json) checks all 256 source
