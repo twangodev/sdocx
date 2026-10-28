@@ -290,7 +290,7 @@ impl NativePageLayout {
             indent_paragraphs.next(),
         ) {
             (Some(first), None, None, None) => !first.is_empty(),
-            (Some(first), Some(_), None, None) => !first.is_empty(),
+            (Some(first), Some(second), None, None) => !first.is_empty() || !second.is_empty(),
             (Some(first), Some(_), Some(last), None) => !first.is_empty() && !last.is_empty(),
             _ => false,
         };
@@ -427,7 +427,11 @@ impl NativePageLayout {
             } else {
                 0.0
             };
-            if line.width != content_width - indent || line.x != f64::from(margins[0]) + indent {
+            let empty_leading_indent =
+                paper_indent && paragraph_index == 0 && paragraphs[0].content.is_empty();
+            let expected_x =
+                f64::from(margins[0]) + if empty_leading_indent { 0.0 } else { indent };
+            if line.width != content_width - indent || line.x != expected_x {
                 return Err(Error::OutsideCertificate);
             }
             for placement in &line.line.placements {
@@ -564,15 +568,20 @@ impl NativePageLayout {
             if source.margins.is_some_and(|margins| margins != [0.0; 4]) {
                 return Err(Error::OutsideCertificate);
             }
-            [0.0, 0.0, width as f32, caret_height]
+            [
+                if paper_indent { 48.0 } else { 0.0 },
+                0.0,
+                width as f32,
+                caret_height,
+            ]
         } else {
             [0.0; 4]
         };
         let cursor_offset = (((first_empty[3] - first_empty[1]) - caret_height) * 0.5).trunc();
         let default_cursor = [
-            0.0,
+            first_empty[0],
             first_empty[1] + cursor_offset,
-            0.0,
+            first_empty[0],
             first_empty[1] + caret_height + cursor_offset,
         ];
         Ok(Self {

@@ -607,6 +607,14 @@ fn tool_zero_native_controls_reach_public_exports() {
         .as_object_mut()
         .unwrap()
         .extend(size32["controls"].as_object().unwrap().clone());
+    let terminal: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool0-terminal-native.json"
+    ))
+    .unwrap();
+    receipt["controls"]
+        .as_object_mut()
+        .unwrap()
+        .extend(terminal["controls"].as_object().unwrap().clone());
     let decode = |value: &serde_json::Value| {
         let hex = value.as_str().unwrap();
         let mut bytes = [0_u8; 4];
@@ -616,8 +624,22 @@ fn tool_zero_native_controls_reach_public_exports() {
         f32::from_le_bytes(bytes)
     };
     for name in [
-        "vertical", "reverse", "curve", "two-4", "two-12", "curve-4", "curve-12", "short", "seven",
-        "sixteen", "two-20", "two-32", "curve-20", "curve-32",
+        "vertical",
+        "reverse",
+        "curve",
+        "two-4",
+        "two-12",
+        "curve-4",
+        "curve-12",
+        "short",
+        "seven",
+        "sixteen",
+        "two-20",
+        "two-32",
+        "curve-20",
+        "curve-32",
+        "short-terminal",
+        "boundary",
     ] {
         let input = &receipt["controls"][name]["input"];
         let size = decode(&input["pen_size_f32_bits"]);
@@ -763,17 +785,90 @@ fn tool_zero_large_curve_svg_improves_against_native_frame() {
     }
 }
 
+#[cfg(feature = "pdf")]
+#[test]
+fn tool_zero_short_terminal_svg_improves_against_native_frame() {
+    for (second_x, third_x, third_y, native) in [
+        (
+            20.0,
+            20.5,
+            10.5,
+            include_bytes!("../../../../conformance/simplebrush-tool0-short-terminal-crop.rgba"),
+        ),
+        (
+            11.5,
+            12.0,
+            10.0,
+            include_bytes!("../../../../conformance/simplebrush-tool0-boundary-crop.rgba"),
+        ),
+    ] {
+        let mut input = stroke();
+        input.rendering.as_mut().unwrap().tool_type_raw = 0;
+        input.color = Some(Color {
+            r: 0x44,
+            g: 0xaa,
+            b: 0xee,
+        });
+        input.points = [(10.0, 10.0), (second_x, 10.0), (third_x, third_y)]
+            .into_iter()
+            .map(|(x, y)| Point { x, y: 256.0 - y })
+            .collect();
+        input.pressures = vec![0.75, 0.25, 1.0];
+        let mut doc = document(input);
+        doc.pages[0].width = 256;
+        doc.pages[0].height = 256;
+        let error = |options: &RenderOptions| {
+            let layout = crate::layout_document(&doc);
+            let request =
+                crate::render::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let svg = crate::render::DocumentTextCache::default()
+                .render_layout_page_scene_requests(
+                    &doc,
+                    &[request],
+                    options,
+                    &crate::render::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0)
+                .page
+                .svg;
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            (0..48)
+                .flat_map(|y| (0..48).map(move |x| (x, y)))
+                .map(|(x, y)| {
+                    u64::from(
+                        native[(y * 48 + x) * 4 + 3]
+                            .abs_diff(pixmap.data()[((255 - y) * 256 + x) * 4 + 3]),
+                    )
+                })
+                .sum::<u64>()
+        };
+        let profile = error(&options());
+        let fallback = error(&RenderOptions::default());
+        eprintln!("profile {profile}, fallback {fallback}");
+        assert!(profile < fallback);
+    }
+}
+
 #[test]
 fn tool_zero_unsupported_size_and_terminal_step_fall_back() {
     let mut input = stroke();
     input.rendering.as_mut().unwrap().tool_type_raw = 0;
-    input.points[2] = Point { x: 20.5, y: 20.5 };
+    input.points.push(Point { x: 30.5, y: 25.5 });
+    input.pressures.push(0.5);
     let terminal = document(input.clone());
     assert_eq!(
         render_document_svg(&terminal, &options())[0].svg,
         render_document_svg(&terminal, &RenderOptions::default())[0].svg
     );
-    input.points[2] = Point { x: 30.0, y: 25.0 };
+    input.points.pop();
+    input.pressures.pop();
     input.pen_width = 33.0;
     input.rendering.as_mut().unwrap().style.pen_size = Some(33.0);
     let size = document(input);

@@ -429,7 +429,10 @@ pub(crate) fn prepare_stroke(
             || (points.len() > 2
                 && points.windows(2).last().is_some_and(|pair| {
                     (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
-                })))
+                })
+                && (points.len() != 3
+                    || ((points[1][0] - points[0][0]).abs() < 1.5
+                        && (points[1][1] - points[0][1]).abs() < 1.5))))
     {
         return Err("unsupported SimpleBrush tool 0 input");
     }

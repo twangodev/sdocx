@@ -85,7 +85,7 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
                 f32::from_bits(input["requested_width_bits"].as_u64().unwrap() as u32) as i32;
             let styled =
                 StyledText::new(&content, super::super::super::TextContext::Flow, settings);
-            let admitted = case["name"] != "scale3-leading";
+            let admitted = true;
             if !content.text.contains('\n') {
                 assert!(NativePageLayout::checked_source_length(&styled, width, false).is_err());
                 let mut variants = Vec::new();

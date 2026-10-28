@@ -1315,7 +1315,15 @@ fn try_layout_text_with_context(
                 let style = styled.style_at(line.source.start, theme, layout.predefined_style);
                 renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
             }
-            let mut line_x = x;
+            let leading_empty_indent = styled.settings.paper_indent_placement
+                && paragraph_number == 0
+                && paragraph.content.is_empty()
+                && layout.indent_level == 1;
+            let mut line_x = if leading_empty_indent {
+                content_left
+            } else {
+                x
+            };
             let mut line_alignment = layout.alignment;
             if native_cell_measurement.is_some()
                 && frame.bbox.x_min == 0.0
@@ -1326,7 +1334,9 @@ fn try_layout_text_with_context(
             {
                 match line.place_native_cell(styled, x, width, layout.alignment) {
                     Ok(Some(origin)) => {
-                        line_x = origin;
+                        if !leading_empty_indent {
+                            line_x = origin;
+                        }
                         line_alignment = None;
                     }
                     Ok(None) => {}

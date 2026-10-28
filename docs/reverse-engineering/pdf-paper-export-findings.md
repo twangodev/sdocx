@@ -588,15 +588,19 @@ latter boundary follows the retained
 `AV\n\nTo` and `AV\n` controls: line geometry, source ownership, first-empty
 and cursor rectangles, and page sections match the native capture. In this
 indent profile the implicit empty-line caret is scaled; the default profile uses
-an unscaled caret. The leading-empty control remains rejected because its native
-line background starts at x=0 while the measured Rust line starts at x=48. The
+an unscaled caret. The
 [additional density-3 capture](../../conformance/pdf-paper-parsed-indent-multiple-native.json)
 adds three short nonempty paragraphs and two wrapped paragraphs, producing 18
 lines in the latter. Their rectangles and UTF-16 ownership match Rust, as do
 the six and 23 supplied page sections, respectively. The wrapped sections
 cover the second paragraph transition and the end of the text. The certificate also admits two nonempty paragraphs and
 three with a nonempty first and last paragraph for the same record. The controls
-are synthetic. The hash-verified real `01-basic-formatting` note has the same
+are synthetic. The leading-empty two-paragraph control is also admitted: its
+first line starts at x=0, while the first-empty and cursor rectangles start at
+x=48. Its line bounds, ownership and page sections match the native capture.
+For a synthetic public export containing `\nAV`, MuPDF and PDFium each extract
+`AV` once on the first of eleven pages; the other pages contain no text.
+The hash-verified real `01-basic-formatting` note has the same
 level-1 LTR payload at paragraph ordinals 54 and 57 among many other records;
 its full content is not admitted by this certificate. Other indent records and
 more paragraphs remain unsupported.

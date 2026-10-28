@@ -1253,6 +1253,7 @@ fn public_pdf_paper_density_three_accepts_level_one_ltr_indent() {
 #[test]
 fn public_pdf_paper_density_three_accepts_indent_with_multiple_paragraphs() {
     for text in [
+        "\nAV",
         "AV\n\nTo",
         "AV\n",
         "AV\nTo\nlast",
@@ -1284,7 +1285,19 @@ fn public_pdf_paper_density_three_accepts_indent_with_multiple_paragraphs() {
                     .is_ok_and(|content| content.operations.iter().any(|op| op.operator == "BT"))
                 })
         );
-        document.metadata.note_text.as_mut().unwrap().text = "\nAV".into();
+    }
+    for text in ["\n\n", "\nAV\nTo"] {
+        let mut document = document(true, None, 0, 1);
+        document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+        document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+        let mut body = parsed_body_optional_size(text, None);
+        body.paragraphs = vec![RichTextParagraph {
+            kind: RichTextParagraphType::IndentLevel,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32.to_le_bytes(), 1_u32.to_le_bytes()].concat(),
+        }];
+        document.metadata.note_text = Some(body);
         assert!(matches!(
             export(&document, &[0], 96.0),
             Err(PdfError::UnsupportedPdfPaper { .. })
