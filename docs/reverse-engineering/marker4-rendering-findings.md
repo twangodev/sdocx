@@ -104,3 +104,12 @@ The comparison includes narrow ruled paper (template 1). Observed differences
 include native mask filtering and typed-text placement/size. Other Marker4
 versions, rainbow effects and live prediction remain unsupported by this path;
 [V7 stylus geometry](marker4-v7.md) has separate evidence.
+
+Host-controlled V7/V8 tool-0 redraw matched XY, angle and sample boundaries for 414 stamps across 36 synthetic cases at unit scale
+(`conformance/marker4-v7-finger-native.json`); recorded V7 radius and tip bounds are checked against their native formula, not Rust V7 output. Pressure and tilt effects are untested.
+RTV3 `getRotatedVertices` (`0x5c1a8`) uses the SVG rotation convention. The V7 finger route remains excluded: native filtered paint,
+archive loading and PDF output are unverified. Reproduce with `tools/marker4_v7/finger_controls.py` and its documented `PYTHONPATH`;
+this requires untracked Unicorn and native libraries, `tmp/conformance-cleanup/native-capture-a241793/conformance/fountain_native.py`
+and `scratch/defaultpen-native/native_marker4_v8.py`. Host adapters supply object and motion-event channels and intercept AddPoint.
+For one rotated V7 finger curve, native RTV3/Mesa and standalone resvg/MuPDF vector controls differ in alpha coverage; see
+`conformance/marker4-v7-finger-paint-host.json` and `tools/marker4_v7/` for the bounded receipt and capture recipe.

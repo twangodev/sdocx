@@ -390,4 +390,72 @@ mod tests {
         stroke.pressures.clear();
         assert!(prepare(&stroke).is_none());
     }
+
+    #[test]
+    fn v8_finger_sampler_matches_native_v7_finger_geometry() {
+        let controls: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-native.json"
+        ))
+        .unwrap();
+        for case in controls["cases"].as_array().unwrap() {
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some("8;".into());
+            rendering.tool_type_raw = 0;
+            rendering.style.pen_size = Some(case["size"].as_f64().unwrap() as f32);
+            for sample in case["samples"].as_array().unwrap() {
+                stroke.points.push(Point {
+                    x: sample[0].as_f64().unwrap(),
+                    y: sample[1].as_f64().unwrap(),
+                });
+            }
+            let actual = prepare(&stroke).unwrap();
+            let dots = case["dots"].as_array().unwrap();
+            let radius = (case["size"].as_f64().unwrap() as f32 * 0.5).max(1.0);
+            let half_height = f64::from(radius + 0.5);
+            let bounds = case["tip_bounds"].as_array().unwrap();
+            for (value, expected) in bounds.iter().zip([
+                -0.77 * half_height,
+                -half_height,
+                0.77 * half_height,
+                half_height,
+            ]) {
+                assert!(
+                    (value.as_f64().unwrap() - expected).abs() < 1e-4,
+                    "{} tip",
+                    case["name"]
+                );
+            }
+            let ends: Vec<usize> = case["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(actual.sample_ends, ends, "{}", case["name"]);
+            assert_eq!(actual.points.len(), dots.len(), "{}", case["name"]);
+            for (point, dot) in actual.points.iter().zip(dots) {
+                assert!(
+                    (dot[2].as_f64().unwrap() - f64::from(radius)).abs() < 1e-4,
+                    "{} radius",
+                    case["name"]
+                );
+                assert!(
+                    (point.x - dot[0].as_f64().unwrap()).abs() < 1e-4,
+                    "{} x",
+                    case["name"]
+                );
+                assert!(
+                    (point.y - dot[1].as_f64().unwrap()).abs() < 1e-4,
+                    "{} y",
+                    case["name"]
+                );
+                assert!(
+                    (actual.stamp.angle - dot[3].as_f64().unwrap()).abs() < 1e-4,
+                    "{} angle",
+                    case["name"]
+                );
+            }
+        }
+    }
 }

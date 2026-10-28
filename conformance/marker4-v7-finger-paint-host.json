@@ -1,0 +1,24 @@
+{
+  "scope": "Native V7 RTV3 host Unicorn/Mesa redraw of captured synthetic tool-0 turn-9.5 geometry; standalone SVG/PDF construction is not public export or device parity.",
+  "case": "turn-9.5",
+  "size": 9.5,
+  "native_rgba_sha256": "ca90cb1d61b58adea465e5dbc5f41bd323e22b544cf14ddf92fed4024466839f",
+  "native_nonzero_alpha": 282,
+  "native_max_alpha": 128,
+  "resvg_nonzero_alpha": 316,
+  "resvg_alpha_l1": 5440,
+  "mupdf_nonzero_alpha": 322,
+  "mupdf_alpha_l1": 5603,
+  "frame_center_doc": [
+    23.744105078957297,
+    28.172126683321867
+  ],
+  "target": [
+    1024,
+    512
+  ],
+  "native_gl_error": 0,
+  "geometry_fixture_sha256": "5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77",
+  "notes": "resvg uses manually constructed rounded-rectangle vector, MuPDF renders PDF produced by converting that SVG. Both use 1px per document unit and same target. Alpha L1 over entire frame.",
+  "recipe": "Run tools/marker4_v7/mesa_capture.py --capture-output /tmp/m4v7-stroke30.json using the PYTHONPATH in its docstring, then .venv/bin/python tools/marker4_v7/vector_comparison.py. The capture writes the requested JSON and sibling RGBA and mask files."
+}
