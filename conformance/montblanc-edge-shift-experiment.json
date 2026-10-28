@@ -1,0 +1,124 @@
+{
+  "schema": "montblanc-edge-shift-experiment-v1",
+  "scope": "Isolated test-only Scene approximation against four native host Mesa 1x frames and one 2x baseline; no device or saved-note parity claim.",
+  "method": "Apply scale to geometry and derivatives, and move the smoothstep edge inward by shift times local fwidth. Compare support and RGB L1; shift 0 is the existing 1x or scale-aware 2x candidate. PDF uses 4/3 raster scale. Other controls at shift 0.25 also increased RGB L1.",
+  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel",
+  "source_sha256": "a12773a0032e7e63bca09a0f425e59488f2337e2a7465e87da55b0dd5140f11e",
+  "patch_sha256": "4f0397fbc3777cd1b2b2e090bb9267d0b2b6a2d022b1336fe8a059cfd936e403",
+  "cases": {
+    "1x_baseline_shift_0": {
+      "svg": [
+        101,
+        117,
+        101,
+        117,
+        7323
+      ],
+      "pdf": [
+        101,
+        121,
+        101,
+        121,
+        5048
+      ]
+    },
+    "1x_baseline_shift_0.25": {
+      "svg": [
+        101,
+        105,
+        101,
+        105,
+        10726
+      ],
+      "pdf": [
+        101,
+        99,
+        98,
+        102,
+        9206
+      ]
+    },
+    "1x_pressure_shift_0.25": {
+      "svg": [
+        101,
+        105,
+        101,
+        105,
+        10599
+      ],
+      "pdf": [
+        101,
+        99,
+        98,
+        102,
+        8942
+      ]
+    },
+    "1x_size_shift_0.25": {
+      "svg": [
+        90,
+        95,
+        87,
+        98,
+        10566
+      ],
+      "pdf": [
+        90,
+        88,
+        87,
+        91,
+        9312
+      ]
+    },
+    "1x_far_endpoint_shift_0.25": {
+      "svg": [
+        141,
+        149,
+        139,
+        151,
+        15468
+      ],
+      "pdf": [
+        141,
+        136,
+        135,
+        142,
+        13106
+      ]
+    },
+    "2x_baseline_shift_0": {
+      "svg": [
+        395,
+        462,
+        395,
+        462,
+        32769
+      ],
+      "pdf": [
+        395,
+        465,
+        395,
+        465,
+        27846
+      ]
+    },
+    "2x_baseline_shift_0.25": {
+      "svg": [
+        395,
+        434,
+        394,
+        435,
+        37432
+      ],
+      "pdf": [
+        395,
+        441,
+        395,
+        441,
+        32848
+      ]
+    }
+  },
+  "conclusion": "Inward shift narrows support but worsens color error and can lose native pixels. This experiment does not justify adopting the model.",
+  "reproduce": ".venv/bin/python tools/montblanc/public-candidate/edge_shift_experiment.py"
+}
