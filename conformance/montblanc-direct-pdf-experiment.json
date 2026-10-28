@@ -1,0 +1,163 @@
+{
+  "cases": {
+    "baseline": {
+      "capture_sha256": "84b12c69f047527f5f3bea87ea82b89c356dd4e0007f72b0598f45f0529b03af",
+      "direct_pdf": {
+        "4": {
+          "metrics": [
+            101,
+            128,
+            101,
+            128,
+            7248
+          ],
+          "pdf_bytes": 29398
+        },
+        "8": {
+          "metrics": [
+            101,
+            120,
+            101,
+            120,
+            5035
+          ],
+          "pdf_bytes": 101971
+        }
+      },
+      "svg_to_pdf": {
+        "metrics": [
+          101,
+          135,
+          101,
+          135,
+          53421
+        ],
+        "opaque_black_fill_operators": 26,
+        "pdf_shading_operators": 0,
+        "pdf_shading_resources": false,
+        "svg_linear_gradients": 749
+      }
+    },
+    "far_endpoint": {
+      "capture_sha256": "62ff0a279fcb6fa003382d20ff4bd2e9c9230838e29e4a74c94fd6fcf2563c67",
+      "direct_pdf": {
+        "4": {
+          "metrics": [
+            141,
+            180,
+            141,
+            180,
+            10718
+          ],
+          "pdf_bytes": 41856
+        },
+        "8": {
+          "metrics": [
+            141,
+            170,
+            141,
+            170,
+            7309
+          ],
+          "pdf_bytes": 145101
+        }
+      },
+      "svg_to_pdf": {
+        "metrics": [
+          141,
+          192,
+          141,
+          192,
+          76533
+        ],
+        "opaque_black_fill_operators": 38,
+        "pdf_shading_operators": 0,
+        "pdf_shading_resources": false,
+        "svg_linear_gradients": 1109
+      }
+    },
+    "pressure": {
+      "capture_sha256": "a66367bcce64d0ab6962668920f3b4e516d5213fdd74186906e4987bd7dd08aa",
+      "direct_pdf": {
+        "4": {
+          "metrics": [
+            101,
+            128,
+            101,
+            128,
+            7019
+          ],
+          "pdf_bytes": 29311
+        },
+        "8": {
+          "metrics": [
+            101,
+            120,
+            101,
+            120,
+            4839
+          ],
+          "pdf_bytes": 101499
+        }
+      },
+      "svg_to_pdf": {
+        "metrics": [
+          101,
+          135,
+          101,
+          135,
+          52802
+        ],
+        "opaque_black_fill_operators": 26,
+        "pdf_shading_operators": 0,
+        "pdf_shading_resources": false,
+        "svg_linear_gradients": 749
+      }
+    },
+    "size": {
+      "capture_sha256": "660fa05e91d87d39bce96d679a85b29c3360b2643780c37a13fd2b928c2b861b",
+      "direct_pdf": {
+        "4": {
+          "metrics": [
+            90,
+            124,
+            90,
+            124,
+            7516
+          ],
+          "pdf_bytes": 30631
+        },
+        "8": {
+          "metrics": [
+            90,
+            113,
+            90,
+            113,
+            5246
+          ],
+          "pdf_bytes": 105602
+        }
+      },
+      "svg_to_pdf": {
+        "metrics": [
+          90,
+          133,
+          90,
+          133,
+          52553
+        ],
+        "opaque_black_fill_operators": 26,
+        "pdf_shading_operators": 0,
+        "pdf_shading_resources": false,
+        "svg_linear_gradients": 749
+      }
+    }
+  },
+  "metrics": "Native RGBA8 flipped vertically and composited on opaque #fcfcfc; SVG similarly composited. PDF background rectangle #fcfcfc before SVG-to-PDF conversion and rasterized RGB at 256x256. Values are [native support, export support, intersection, union, RGB L1 on union], support means any channel differs from 252 by more than 2. Generic direct PDF is a different generation route.",
+  "mupdf_version": "1.28.2",
+  "prototype_sha256": "e0e9bd69a4adf7d8bd94f45cdfa8656a126845ec79556e75a29554c8811b229d",
+  "pymupdf_version": "1.28.2",
+  "schema": "montblanc-direct-pdf-experiment-v1",
+  "scope": "Captured host-Mesa meshes and shader approximations; direct PDF centroid alpha triangles. No production integration or device parity.",
+  "script_sha256": "f32c062e1e18979504c19bc5f0033f5e9147027b7497fa358732611ace8f423c"
+}
