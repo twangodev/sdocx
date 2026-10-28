@@ -404,6 +404,7 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             None,
             profile.then_some(SimpleBrushRenderProfile::HostV25),
             None,
+            false,
             None,
             remaining,
             &std::cell::Cell::new(usize::MAX),

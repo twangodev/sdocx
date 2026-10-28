@@ -322,7 +322,7 @@ pub struct LegacyMarkerCenterlineProfile {
 }
 
 /// Experimental Montblanc approximation. The caller asserts a fresh drawable
-/// and one output pixel per page unit. The model extrapolates from synthetic
+/// and the stated output pixels per page unit. The model extrapolates from synthetic
 /// host controls; saved-note and device parity are unverified. Unsupported
 /// inputs, replay, and sliced output retain generic paint.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -389,6 +389,11 @@ pub struct RenderOptions {
     /// Opt into approximate fresh-state Montblanc paint at unit output scale.
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
+    /// Assert a fresh drawable and two output pixels per page unit for Montblanc.
+    /// Only three-point inputs are admitted. Combining this with a Montblanc
+    /// profile, or using unsupported inputs, falls back to generic paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub montblanc_two_pixels_per_page_unit: bool,
     /// Opt into the experimental saved Marker centerline approximation.
     #[cfg_attr(feature = "serde", serde(default))]
     pub legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -898,6 +903,7 @@ impl DocumentTextCache {
             options.airbrush_profile,
             options.simplebrush_profile,
             options.montblanc_profile,
+            options.montblanc_two_pixels_per_page_unit,
             options.legacy_marker_centerline_profile,
             #[cfg(feature = "pdf")]
             options.legacy_marker_vector_profile,
@@ -1408,6 +1414,7 @@ fn render_page_contents_svg(
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     montblanc_profile: Option<MontblancRenderProfile>,
+    montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")] legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     slice: Option<PageSlice>,
@@ -1483,6 +1490,7 @@ fn render_page_contents_svg(
         airbrush_profile,
         simplebrush_profile,
         montblanc_profile,
+        montblanc_two_pixels_per_page_unit,
         legacy_marker_centerline_profile,
         #[cfg(feature = "pdf")]
         legacy_marker_vector_profile,
@@ -1539,6 +1547,7 @@ struct CompositionContext<'a> {
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     montblanc_profile: Option<MontblancRenderProfile>,
+    montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")]
     legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1641,6 +1650,7 @@ fn render_object(
                 context.airbrush_profile,
                 context.simplebrush_profile,
                 context.montblanc_profile,
+                context.montblanc_two_pixels_per_page_unit,
                 context.legacy_marker_centerline_profile,
                 &context.simplebrush_remaining_stamps,
                 &context.montblanc_remaining_patches,
@@ -4064,6 +4074,7 @@ fn render_stroke(
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     montblanc_profile: Option<MontblancRenderProfile>,
+    montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     simplebrush_remaining_stamps: &Cell<usize>,
     montblanc_remaining_patches: &Cell<usize>,
@@ -4187,7 +4198,11 @@ fn render_stroke(
     if native_allowed
         && replay_index.is_none()
         && slice.is_none()
-        && montblanc_profile == Some(MontblancRenderProfile::HostUnitScale)
+        && ((montblanc_profile == Some(MontblancRenderProfile::HostUnitScale)
+            && !montblanc_two_pixels_per_page_unit)
+            || (montblanc_profile.is_none()
+                && montblanc_two_pixels_per_page_unit
+                && stroke.points.len() == 3))
         && viewport.iter().all(|d| *d > 0)
         && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
         && montblanc_candidate::render(
@@ -4195,6 +4210,11 @@ fn render_stroke(
             &buffers,
             &theme.foreground(Some(color)),
             montblanc_remaining_patches,
+            if montblanc_two_pixels_per_page_unit {
+                2.0
+            } else {
+                1.0
+            },
         )
     {
         return;

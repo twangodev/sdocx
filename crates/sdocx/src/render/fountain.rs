@@ -2859,6 +2859,7 @@ mod tests {
                 None,
                 None,
                 None,
+                false,
                 None,
                 &std::cell::Cell::new(32_768),
                 &std::cell::Cell::new(32_768),

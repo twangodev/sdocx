@@ -1,5 +1,5 @@
 // Analytic shader approximation for the three observed draw programs.
-pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64)> {
+pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<([[f64; 2]; 3], f64)> {
     let mut result = Vec::new();
     for (program, buffer) in [3, 4, 5].into_iter().zip(buffers) {
         for t in buffer.as_chunks::<3>().0 {
@@ -8,7 +8,7 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize) -> Vec<([[f64; 2]; 3], f64
                 t[1].map(f64::from),
                 t[2].map(f64::from),
             ];
-            let p = triangle.map(|v| [v[0], -v[1]]);
+            let p = triangle.map(|v| [scale * v[0], -scale * v[1]]);
             let det = (p[1][0] - p[0][0]) * (p[2][1] - p[0][1])
                 - (p[2][0] - p[0][0]) * (p[1][1] - p[0][1]);
             let mut derivative = [[0.0; 2]; 2];
@@ -101,6 +101,7 @@ pub(super) fn render(
     buffers: &[Vec<[f32; 5]>; 3],
     color: &str,
     remaining: &std::cell::Cell<usize>,
+    scale: f64,
 ) -> bool {
     use super::vector::{Data, Paint, Path, Styled};
     let Some(count) = buffers
@@ -114,7 +115,7 @@ pub(super) fn render(
     if count > remaining.get() || count > 32_768 {
         return false;
     }
-    let patches = pieces(buffers, 8);
+    let patches = pieces(buffers, 8, scale);
     if patches
         .iter()
         .any(|(p, a)| !a.is_finite() || p.iter().flatten().any(|v| !v.is_finite()))
@@ -186,7 +187,7 @@ fn captured_controls_shared_scene_exports() {
             vertex[0] += 128.0;
             vertex[1] -= 128.0;
         }
-        let triangles = pieces(&buffers, 8);
+        let triangles = pieces(&buffers, 8, 1.0);
         assert_eq!(triangles.len(), if case == 3 { 3700 } else { 2500 });
         assert!(
             triangles

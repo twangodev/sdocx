@@ -1,0 +1,225 @@
+{
+  "schema": "montblanc-public-optin-2x-v1",
+  "scope": "Four synthetic host Mesa frames compared to real public SVG and PDF exports. Caller asserts a fresh drawable and two output pixels per page unit. No device, saved-note or general-scale parity established.",
+  "metrics": "[native support, export support, intersection, union, RGB L1 on union]; support differs from 252 by more than 2 in any channel. Native premultiplied RGBA is composited over paper once.",
+  "native_variants_receipt_sha256": "df23a09c8dd05c7a0e295ec2087dc5429cc4a1f49d58ffe13777fe2cf096edb8",
+  "native_baseline_receipt_sha256": "3ebf5c91c896ec71f00b1eb6481bd1f4a58790d39fb0bf144399ef63860eabf0",
+  "compositor_sha256": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pillow": "12.1.1"
+  },
+  "cases": {
+    "pressure": {
+      "fallback": {
+        "svg": [
+          391,
+          88,
+          88,
+          391,
+          126936
+        ],
+        "pdf": [
+          391,
+          96,
+          96,
+          391,
+          125826
+        ]
+      },
+      "candidate": {
+        "svg": [
+          391,
+          441,
+          391,
+          441,
+          35093
+        ],
+        "pdf": [
+          391,
+          447,
+          391,
+          447,
+          31255
+        ]
+      },
+      "aware": {
+        "svg": [
+          391,
+          462,
+          391,
+          462,
+          23242
+        ],
+        "pdf": [
+          391,
+          465,
+          391,
+          465,
+          18636
+        ]
+      }
+    },
+    "size": {
+      "fallback": {
+        "svg": [
+          383,
+          80,
+          80,
+          383,
+          120810
+        ],
+        "pdf": [
+          383,
+          84,
+          84,
+          383,
+          119871
+        ]
+      },
+      "candidate": {
+        "svg": [
+          383,
+          415,
+          383,
+          415,
+          33680
+        ],
+        "pdf": [
+          383,
+          416,
+          383,
+          416,
+          30474
+        ]
+      },
+      "aware": {
+        "svg": [
+          383,
+          438,
+          383,
+          438,
+          20515
+        ],
+        "pdf": [
+          383,
+          440,
+          383,
+          440,
+          16258
+        ]
+      }
+    },
+    "far_endpoint": {
+      "fallback": {
+        "svg": [
+          571,
+          124,
+          124,
+          571,
+          179135
+        ],
+        "pdf": [
+          571,
+          132,
+          132,
+          571,
+          177546
+        ]
+      },
+      "candidate": {
+        "svg": [
+          571,
+          622,
+          571,
+          622,
+          47317
+        ],
+        "pdf": [
+          571,
+          623,
+          571,
+          623,
+          41705
+        ]
+      },
+      "aware": {
+        "svg": [
+          571,
+          659,
+          571,
+          659,
+          29551
+        ],
+        "pdf": [
+          571,
+          666,
+          571,
+          666,
+          22810
+        ]
+      }
+    },
+    "baseline": {
+      "fallback": {
+        "svg": [
+          391,
+          88,
+          88,
+          391,
+          125587
+        ],
+        "pdf": [
+          391,
+          88,
+          88,
+          391,
+          124431
+        ]
+      },
+      "candidate": {
+        "svg": [
+          391,
+          440,
+          391,
+          440,
+          34501
+        ],
+        "pdf": [
+          391,
+          446,
+          391,
+          446,
+          30936
+        ]
+      },
+      "aware": {
+        "svg": [
+          391,
+          462,
+          391,
+          462,
+          22619
+        ],
+        "pdf": [
+          391,
+          465,
+          391,
+          465,
+          18133
+        ]
+      }
+    }
+  },
+  "reproduce": ".venv/bin/python tools/montblanc/public-optin-2x/compare.py",
+  "native_baseline_frame_receipt_sha256": "8181f5a8b6a0aef47bd436aabdcd88d06639972639f21a87c4c7969046162e0e",
+  "source_sha256": {
+    "crates/sdocx/src/render.rs": "0805dcb5e7ebc91bee8d4e27fc9826336c61a048c8b9f3f9595a7029bdfe8e4b",
+    "crates/sdocx/src/render/montblanc_candidate.rs": "9fd951266ee1f7304136bdffd637d3808c5db7c63cc99a46509bc5ea0cb4fb4c",
+    "crates/sdocx/src/ink/montblanc.rs": "6c49ce383fd71aac2326dc1711815e73c3295f7e8387c0366fdcb910c7b4868e",
+    "crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx": "ec4476cba55a9e92e4d5c54eb5789e0842a223e120825009fffd004a952d7de5",
+    "tools/montblanc/public-optin-2x/src/main.rs": "c00807aa4bcc71df7a4a62da6038b7c98d00774769ee111d8b083d400914f87b",
+    "tools/montblanc/public-optin-2x/Cargo.lock": "3668fb1adb2aaef5f90571b03158e06e9e5e899fd52c11d1779bfa5dfdc3e2a7"
+  }
+}

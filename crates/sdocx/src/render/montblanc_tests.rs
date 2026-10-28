@@ -224,3 +224,111 @@ fn page_budget_falls_back_and_preserves_stroke_order() {
     assert!(!svg.contains("fill=\"#0000ff\""));
     assert_eq!(svg.matches("stroke=\"#0000ff\"").count(), 2);
 }
+
+#[test]
+fn two_pixel_profile_preserves_fallbacks() {
+    let opts = RenderOptions {
+        montblanc_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let stroke = source(&[[0., 0.], [10., 0.], [20., 2.]], &[0.3, 0.6, 1.]);
+    let doc = document(stroke.clone());
+    assert_ne!(
+        render_document_svg(&doc, &opts)[0].svg,
+        render_document_svg(&doc, &options())[0].svg
+    );
+    let layout = crate::layout_document(&doc);
+    assert_eq!(
+        render_layout_page_replay_svg(&doc, &layout, 0, &opts)
+            .unwrap()
+            .svg,
+        render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+            .unwrap()
+            .svg
+    );
+    let mut unsupported = stroke;
+    unsupported
+        .rendering
+        .as_mut()
+        .unwrap()
+        .properties
+        .fixed_width = true;
+    let doc = document(unsupported);
+    assert_eq!(
+        render_document_svg(&doc, &opts)[0].svg,
+        render_document_svg(&doc, &RenderOptions::default())[0].svg
+    );
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn two_pixel_profile_sliced_output_falls_back() {
+    let doc = document(source(&[[0., 0.], [10., 0.], [20., 2.]], &[0.3, 0.6, 1.]));
+    let layout = crate::layout_document(&doc);
+    let render = |options: &RenderOptions| {
+        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+        super::DocumentTextCache::default()
+            .render_layout_page_scene_requests(
+                &doc,
+                &[request],
+                options,
+                &super::fonts::FontBook::default(),
+                &mut |_| {},
+            )
+            .remove(0)
+            .page
+            .svg
+    };
+    let opts = RenderOptions {
+        montblanc_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    assert_eq!(render(&opts), render(&RenderOptions::default()));
+}
+
+#[test]
+fn two_pixel_profile_rejects_uncaptured_four_and_five_point_strokes() {
+    let opts = RenderOptions {
+        montblanc_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for (points, pressures) in [
+        (
+            &[[1., 3.], [10., 10.], [20., 2.], [30., 0.]][..],
+            &[0.3, 0.6, 1., 0.7][..],
+        ),
+        (
+            &[[0., 0.], [5., 8.], [11., -1.], [15., 6.], [22., -3.]][..],
+            &[0.3, 0.6, 1., 0.7, 0.5][..],
+        ),
+    ] {
+        let doc = document(source(points, pressures));
+        assert_eq!(
+            render_document_svg(&doc, &opts)[0].svg,
+            render_document_svg(&doc, &RenderOptions::default())[0].svg
+        );
+    }
+}
+
+#[test]
+fn conflicting_montblanc_assertions_fall_back() {
+    let mut opts = options();
+    opts.montblanc_two_pixels_per_page_unit = true;
+    let doc = document(source(&[[0., 0.], [10., 0.], [20., 2.]], &[0.3, 0.6, 1.]));
+    assert_eq!(
+        render_document_svg(&doc, &opts)[0].svg,
+        render_document_svg(&doc, &RenderOptions::default())[0].svg
+    );
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn older_render_options_deserialize_with_two_pixel_profile_disabled() {
+    let mut value = serde_json::to_value(RenderOptions::default()).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .remove("montblanc_two_pixels_per_page_unit");
+    let options: RenderOptions = serde_json::from_value(value).unwrap();
+    assert!(!options.montblanc_two_pixels_per_page_unit);
+}

@@ -1,0 +1,3 @@
+# Experimental public 2× Montblanc comparison
+
+Run `.venv/bin/python tools/montblanc/public-optin-2x/compare.py` with offline Cargo dependencies, resvg, Pillow and PyMuPDF. It checks a clean archive of committed HEAD, so uncommitted edits are not tested. It renders a 128-unit page at 256 pixels through the public SVG and PDF APIs, compares four hash-pinned synthetic host Mesa controls, and removes generated exports afterward. The opt-in asserts a fresh drawable and two output pixels per page unit. The receipt records renderer versions, error metrics, and limits; it does not establish general-scale, saved-note, or device parity. Native RGB is premultiplied and is composited over paper once.
