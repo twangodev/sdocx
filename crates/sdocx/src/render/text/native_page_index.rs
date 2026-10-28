@@ -282,10 +282,21 @@ impl NativePageLayout {
     ) -> Result<i32, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
         let source = styled.text_box;
+        let mut indent_paragraphs = source.text.split('\n');
+        let indent_shape = match (
+            indent_paragraphs.next(),
+            indent_paragraphs.next(),
+            indent_paragraphs.next(),
+            indent_paragraphs.next(),
+        ) {
+            (Some(first), None, None, None) => !first.is_empty(),
+            (Some(first), Some(""), None, None) => !first.is_empty(),
+            (Some(first), Some(""), Some(last), None) => !first.is_empty() && !last.is_empty(),
+            _ => false,
+        };
         let paper_indent = paper
             && styled.settings.scale == 3.0
-            && !source.text.is_empty()
-            && !source.text.contains('\n')
+            && indent_shape
             && source.font_size.is_none()
             && source.spans.is_empty()
             && matches!(source.paragraphs.as_slice(), [p]
@@ -310,7 +321,7 @@ impl NativePageLayout {
         let certified_empty_paragraph = empty_paragraphs == 1
             && ((whole_font_span
                 && (!source.text.starts_with('\n') || source.font_size == Some(50.0)))
-                || (styled.settings.unscaled_implicit_caret
+                || ((styled.settings.unscaled_implicit_caret || paper_indent)
                     && source.font_size.is_none()
                     && source.spans.is_empty()));
         if width <= 0
@@ -344,7 +355,7 @@ impl NativePageLayout {
                     || source.text.is_empty()
                     || (source.text.ends_with('\n')
                         && !(certified_empty_paragraph
-                            && styled.settings.unscaled_implicit_caret
+                            && (styled.settings.unscaled_implicit_caret || paper_indent)
                             && source.font_size.is_none()
                             && source.spans.is_empty()))
                     || (!certified_empty_paragraph
@@ -411,7 +422,11 @@ impl NativePageLayout {
             if bands.overflow || line.marker.is_some() || line.predefined.is_some() {
                 return Err(Error::OutsideCertificate);
             }
-            let indent = if paper_indent { 48.0 } else { 0.0 };
+            let indent = if paper_indent && paragraph_index == 0 {
+                48.0
+            } else {
+                0.0
+            };
             if line.width != content_width - indent || line.x != f64::from(margins[0]) + indent {
                 return Err(Error::OutsideCertificate);
             }
@@ -533,11 +548,12 @@ impl NativePageLayout {
         if paragraph_index != paragraphs.len() {
             return Err(Error::InvalidSource);
         }
-        let caret_height = if styled.settings.scale == 3.0 && source.font_size.is_none() {
-            17.0_f32 * 1.35
-        } else {
-            styled.caret_line_height(0) as f32
-        };
+        let caret_height =
+            if styled.settings.scale == 3.0 && source.font_size.is_none() && !paper_indent {
+                17.0_f32 * 1.35
+            } else {
+                styled.caret_line_height(0) as f32
+            };
         if !caret_height.is_finite() || caret_height <= 0.0 {
             return Err(Error::InvalidGeometry);
         }

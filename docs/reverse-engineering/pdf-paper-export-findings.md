@@ -582,9 +582,17 @@ The [density-3 manager controls](../../conformance/pdf-paper-parsed-indent-densi
 use local text scale 1 and place the indented line at x=48. Rust matches their
 line rectangles, ownership and page sections for three single-paragraph controls.
 The PDF-paper certificate admits this exact level-1 LTR record with an implicit
-font and a single nonempty ASCII paragraph, including wrapped text; other indent
-records remain unsupported. Admitting other text and widths is an inference from
-the limited captures. A public PDF control is readable by MuPDF and PDFium. The
+font and either a single nonempty ASCII paragraph, including wrapped text, or a
+trailing empty second paragraph or an empty middle paragraph among three. The
+latter boundary follows the retained
+`AV\n\nTo` and `AV\n` controls: line geometry, source ownership, first-empty
+and cursor rectangles, and page sections match the native capture. In this
+indent profile the implicit empty-line caret is scaled; the default profile uses
+an unscaled caret. The leading-empty control remains rejected because its native
+line background starts at x=0 while the measured Rust line starts at x=48. The
+multiple-paragraph cases are synthetic parsed records, not captured saved notes;
+other indent records and all-nonempty multiple paragraphs remain unsupported.
+Admitting other text and widths is an inference from the limited captures. A public PDF control is readable by MuPDF and PDFium. The
 controls supply page records and do not execute full archive loading, the native
 PDF writer or a device. The host libc digest differs from the pinned earlier
 controls and is recorded in the receipt. Capture mode sets `SDOCX_CAPTURE_PARSED_DEFAULT=1` and

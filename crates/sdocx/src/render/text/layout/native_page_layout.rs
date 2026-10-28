@@ -26,7 +26,11 @@ pub(in crate::render) fn layout_native_paper_text(
         paper_indent_placement: true,
         unscaled_implicit_caret: styled.settings.scale == 3.0
             && styled.text_box.font_size.is_none()
-            && styled.text_box.spans.is_empty(),
+            && styled.text_box.spans.is_empty()
+            && !matches!(styled.text_box.paragraphs.as_slice(), [p]
+                if p.kind == crate::RichTextParagraphType::IndentLevel
+                    && p.start_paragraph == 0 && p.end_paragraph == 1
+                    && p.payload == [1, 0, 0, 0, 1, 0, 0, 0]),
         ..styled.settings
     };
     let paper_styled = StyledText::new(styled.text_box, styled.context(), settings);

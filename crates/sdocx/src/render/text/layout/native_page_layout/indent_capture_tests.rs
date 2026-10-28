@@ -64,8 +64,8 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
                 f32::from_bits(input["requested_width_bits"].as_u64().unwrap() as u32) as i32;
             let styled =
                 StyledText::new(&content, super::super::super::TextContext::Flow, settings);
-            let admitted = !content.text.contains('\n');
-            if admitted {
+            let admitted = case["name"] != "scale3-leading";
+            if !content.text.contains('\n') {
                 assert!(NativePageLayout::checked_source_length(&styled, width, false).is_err());
                 let mut variants = Vec::new();
                 let mut other = content.clone();
@@ -121,39 +121,48 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
                     layout.lines.len(),
                     case["produced"]["lines"].as_array().unwrap().len()
                 );
-                for (line, expected) in layout
+                for (line, expected) in native
                     .lines
                     .iter()
                     .zip(case["produced"]["lines"].as_array().unwrap())
                 {
-                    let bands = line.native_bands.unwrap();
                     assert_eq!(
-                        [
-                            line.line.source.start as i32,
-                            line.line.source.end as i32 - 1
-                        ],
+                        line.source_inclusive_utf16,
                         serde_json::from_value::<[i32; 2]>(
                             expected["source_inclusive_utf16"].clone()
                         )
-                        .unwrap()
+                        .unwrap(),
+                        "{}",
+                        case["name"]
                     );
-                    let right = line
-                        .line
-                        .native_placed
-                        .as_ref()
-                        .unwrap()
-                        .positions
-                        .last()
-                        .unwrap()
-                        .right;
                     assert_eq!(
-                        [line.x as f32, bands.top, right, bands.bottom].map(f32::to_bits),
+                        line.background.map(f32::to_bits),
                         serde_json::from_value::<[u32; 4]>(
                             expected["background_rect_bits"].clone()
                         )
-                        .unwrap()
+                        .unwrap(),
+                        "{}",
+                        case["name"]
                     );
                 }
+                assert_eq!(
+                    native.first_empty.map(f32::to_bits),
+                    serde_json::from_value::<[u32; 4]>(
+                        case["produced"]["first_empty_rect_bits"].clone()
+                    )
+                    .unwrap(),
+                    "{}",
+                    case["name"]
+                );
+                assert_eq!(
+                    native.default_cursor.map(f32::to_bits),
+                    serde_json::from_value::<[u32; 4]>(
+                        case["produced"]["default_cursor_rect_bits"].clone()
+                    )
+                    .unwrap(),
+                    "{}",
+                    case["name"]
+                );
                 let pages: Vec<_> = case["input"]["page_records"]
                     .as_array()
                     .unwrap()
