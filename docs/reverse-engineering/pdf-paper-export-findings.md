@@ -590,8 +590,16 @@ and cursor rectangles, and page sections match the native capture. In this
 indent profile the implicit empty-line caret is scaled; the default profile uses
 an unscaled caret. The leading-empty control remains rejected because its native
 line background starts at x=0 while the measured Rust line starts at x=48. The
-multiple-paragraph cases are synthetic parsed records, not captured saved notes;
-other indent records and all-nonempty multiple paragraphs remain unsupported.
+[additional density-3 capture](../../conformance/pdf-paper-parsed-indent-multiple-native.json)
+adds three short nonempty paragraphs and two wrapped paragraphs, producing 18
+lines in the latter. Their rectangles and UTF-16 ownership match Rust, as do
+the six and 23 supplied page sections, respectively. The wrapped sections
+cover the second paragraph transition and the end of the text. The certificate also admits two nonempty paragraphs and
+three with a nonempty first and last paragraph for the same record. The controls
+are synthetic. The hash-verified real `01-basic-formatting` note has the same
+level-1 LTR payload at paragraph ordinals 54 and 57 among many other records;
+its full content is not admitted by this certificate. Other indent records and
+more paragraphs remain unsupported.
 Admitting other text and widths is an inference from the limited captures. A public PDF control is readable by MuPDF and PDFium. The
 controls supply page records and do not execute full archive loading, the native
 PDF writer or a device. The host libc digest differs from the pinned earlier

@@ -60,6 +60,22 @@ fn inputs() -> Vec<Input> {
             ..ordinary
         },
         Input {
+            name: "scale3-multiple",
+            text: "AV\nTo\nlast",
+            width: 270.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
+            name: "scale3-multiple-wrapped",
+            text: "AV abc AV abc AV abc\nTo abc To abc To abc",
+            width: 120.0,
+            page_height: 60,
+            text_scale: 3.0,
+            ..ordinary
+        },
+        Input {
             name: "scale3-narrow",
             width: 60.0,
             page_height: 60,
@@ -315,12 +331,12 @@ struct Pages {
 }
 
 impl Pages {
-    fn new(machine: &Machine, width: i32, height: i32) -> Self {
+    fn new(machine: &Machine, width: i32, height: i32, count: i32) -> Self {
         let mut pages = Self {
             engine: machine.engine,
             hooks: Vec::new(),
             inputs: Box::new(PageInputs {
-                pages: (0..6)
+                pages: (0..count)
                     .map(|index| [index * height, 0, 0, width, height])
                     .collect(),
             }),
@@ -371,7 +387,7 @@ impl Drop for Pages {
 fn ranges(machine: &Machine, vector: u64) -> Vec<[i32; 2]> {
     let start = read_u64(machine.engine, vector);
     let end = read_u64(machine.engine, vector + 8);
-    assert!(end >= start && end - start <= 128 && (end - start).is_multiple_of(8));
+    assert!(end >= start && end - start <= 256 && (end - start).is_multiple_of(8));
     (0..(end - start) / 8)
         .map(|index| {
             [
@@ -616,7 +632,8 @@ fn sample(
     let first_empty = returned_rect(machine, TEXT + 0x8ad54, &[wrapper, width as u32 as u64]);
     let cursor = returned_rect(machine, WIDGET + 0xa36fc, &[wrapper]);
     let observation_calls = recorder.take();
-    let pages = Pages::new(machine, width, input.page_height);
+    let page_count = if input.name == "scale3-multiple-wrapped" { 23 } else { 6 };
+    let pages = Pages::new(machine, width, input.page_height, page_count);
     let line_count = machine.call(TEXT + 0x8adb0, &[wrapper]);
     recorder.take();
     if std::env::var_os("SDOCX_CAPTURE_BODY_QUERY").is_some() {
@@ -730,6 +747,8 @@ pub(super) fn capture(
             return [
                 "scale3-wide",
                 "scale3-wrapped",
+                "scale3-multiple",
+                "scale3-multiple-wrapped",
                 "scale3-narrow",
                 "scale3-consecutive-newlines",
                 "scale3-leading",

@@ -1251,8 +1251,13 @@ fn public_pdf_paper_density_three_accepts_level_one_ltr_indent() {
 }
 
 #[test]
-fn public_pdf_paper_density_three_accepts_indent_with_empty_paragraph() {
-    for text in ["AV\n\nTo", "AV\n"] {
+fn public_pdf_paper_density_three_accepts_indent_with_multiple_paragraphs() {
+    for text in [
+        "AV\n\nTo",
+        "AV\n",
+        "AV\nTo\nlast",
+        "AV abc AV abc AV abc\nTo abc To abc To abc",
+    ] {
         let mut document = document(true, None, 0, 1);
         document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
         document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));

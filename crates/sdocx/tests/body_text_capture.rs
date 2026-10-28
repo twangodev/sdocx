@@ -62,6 +62,13 @@ fn native_last_page_capture_retains_the_overlapping_section_and_code_separator_s
     );
     let document = sdocx::parse_bytes(&source).unwrap();
     let body = document.metadata.note_text.as_ref().unwrap();
+    for index in [54, 57] {
+        assert!(body.paragraphs.iter().any(|paragraph| paragraph.kind
+            == sdocx::RichTextParagraphType::IndentLevel
+            && paragraph.start_paragraph == index
+            && paragraph.end_paragraph == index + 1
+            && paragraph.payload == [1, 0, 0, 0, 1, 0, 0, 0]));
+    }
     let full_utf16: Vec<_> = body.text.encode_utf16().collect();
     assert_eq!(full_utf16[1236], 0x000a);
     assert_eq!(

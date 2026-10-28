@@ -12,14 +12,35 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
         "../../../../../../../conformance/pdf-paper-parsed-indent-density3-native.json"
     ))
     .unwrap();
+    let multiple: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../../conformance/pdf-paper-parsed-indent-multiple-native.json"
+    ))
+    .unwrap();
     let record = &original["serialized_paragraph_record"];
     let settings = super::super::super::TextSettings {
         scale: 3.0,
         ..Default::default()
     };
-    for (receipt, expected_native_x) in [(&original, 16.0), (&density3, 48.0)] {
+    for (receipt, expected_native_x) in [(&original, 16.0), (&density3, 48.0), (&multiple, 48.0)] {
         for case in receipt["cases"].as_array().unwrap() {
             let input = &case["input"];
+            if case["name"] == "scale3-multiple-wrapped" {
+                let sections = case["stages"][0]["text_sections"].as_array().unwrap();
+                assert!(
+                    sections
+                        .iter()
+                        .any(|section| section == &serde_json::json!([19, 5]))
+                );
+                assert!(
+                    sections
+                        .iter()
+                        .any(|section| section == &serde_json::json!([38, 3]))
+                );
+                assert_eq!(
+                    case["produced"]["lines"][12]["source_inclusive_utf16"],
+                    serde_json::json!([20, 23])
+                );
+            }
             let content = RichTextBox {
                 text_area_type: None,
                 bbox: BoundingBox::default(),

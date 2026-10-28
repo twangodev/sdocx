@@ -290,8 +290,8 @@ impl NativePageLayout {
             indent_paragraphs.next(),
         ) {
             (Some(first), None, None, None) => !first.is_empty(),
-            (Some(first), Some(""), None, None) => !first.is_empty(),
-            (Some(first), Some(""), Some(last), None) => !first.is_empty() && !last.is_empty(),
+            (Some(first), Some(_), None, None) => !first.is_empty(),
+            (Some(first), Some(_), Some(last), None) => !first.is_empty() && !last.is_empty(),
             _ => false,
         };
         let paper_indent = paper

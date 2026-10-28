@@ -845,12 +845,11 @@ accepted at document density 1 when the native measured-layout certificate
 admits its source, font, geometry and flow settings; space-only measured lines
 remain unsupported. At density 3, a separate PDF-paper profile also accepts
 bounded ASCII body text with nonempty paragraphs and no supplied paragraph
-metadata, subject to the existing font, geometry and flow guards. A single
-nonempty ASCII paragraph also accepts the captured level-1 LTR indentation record
-with implicit font size. This indent profile also accepts two paragraphs with a
-trailing empty paragraph or three paragraphs with an interior empty paragraph;
-native controls cover limited text and widths, so broader input is an inference. Leading empty
-paragraphs and all-nonempty multiple paragraphs with indent remain unsupported.
+metadata, subject to the existing font, geometry and flow guards. The captured level-1 LTR indentation record with implicit font size is accepted
+for one nonempty paragraph, two paragraphs with a nonempty first paragraph, or
+three with nonempty first and last paragraphs. Native controls cover limited
+text and widths, so broader input is an inference. Leading empty paragraphs and
+other paragraph shapes with indent remain unsupported.
 A single leading, interior, or trailing empty paragraph is also accepted for a
 parsed implicit-default body. The captured 24-byte whole-text font-size span
 profile accepts a leading or interior empty paragraph; leading requires size 50
