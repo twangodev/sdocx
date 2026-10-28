@@ -1,0 +1,271 @@
+{
+  "schema": "sdocx.pencil2-v14-interpolation-field.v1",
+  "scope": "Instrumented isolated record replay on host Mesa; not device, saved-note or SVG/PDF parity.",
+  "script": "scratch/pencil2-projection-control/field.py",
+  "script_sha256": "85c70ae4c8c2f2b6494f21da30f6376d386cf7369b328438f4453f83acf9e17e",
+  "command": "for row in 10 22; do for axis in x y; do for part in low high; do PYTHONPATH=scratch/apk-analysis-runtime/python python3 scratch/pencil2-projection-control/field.py \"$row\" \"$axis\" \"$part\"; done; done; done",
+  "captures": [
+    {
+      "row": 10,
+      "axis": "x",
+      "part": "low",
+      "frame_sha256": "190061b0cf5e1746dd88334fccb5d500de0fef0aa72b710dc78e34d26ccccc69",
+      "samples": [
+        {
+          "xy": [
+            3,
+            191
+          ],
+          "rgba": [
+            80,
+            58,
+            9,
+            255
+          ]
+        },
+        {
+          "xy": [
+            4,
+            191
+          ],
+          "rgba": [
+            156,
+            78,
+            34,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 10,
+      "axis": "x",
+      "part": "high",
+      "frame_sha256": "347f48aef2700809206243589125dcc088fc5396792a7b9788c7dc2fda521969",
+      "samples": [
+        {
+          "xy": [
+            3,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "xy": [
+            4,
+            191
+          ],
+          "rgba": [
+            63,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 10,
+      "axis": "y",
+      "part": "low",
+      "frame_sha256": "86b55f9392bd6f6fd3c9a260916efd109a31eaf997b4cc2311d8991ec10b3baa",
+      "samples": [
+        {
+          "xy": [
+            3,
+            191
+          ],
+          "rgba": [
+            40,
+            0,
+            128,
+            255
+          ]
+        },
+        {
+          "xy": [
+            4,
+            191
+          ],
+          "rgba": [
+            40,
+            0,
+            128,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 10,
+      "axis": "y",
+      "part": "high",
+      "frame_sha256": "f0524e2320186324c06062c1f72437bbf90dfe702426dd2f622b1d9a971b0f73",
+      "samples": [
+        {
+          "xy": [
+            3,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "xy": [
+            4,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 22,
+      "axis": "x",
+      "part": "low",
+      "frame_sha256": "f923961955e37867d06dfcf606330d4a672bd086957a4016eae7330f575bfc59",
+      "samples": [
+        {
+          "xy": [
+            8,
+            191
+          ],
+          "rgba": [
+            128,
+            153,
+            25,
+            255
+          ]
+        },
+        {
+          "xy": [
+            9,
+            191
+          ],
+          "rgba": [
+            104,
+            102,
+            38,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 22,
+      "axis": "x",
+      "part": "high",
+      "frame_sha256": "65366e786885a7ab7fea75f84a24508fac3c31e5f95f55b3dc0a3e56289fb5dc",
+      "samples": [
+        {
+          "xy": [
+            8,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "xy": [
+            9,
+            191
+          ],
+          "rgba": [
+            63,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 22,
+      "axis": "y",
+      "part": "low",
+      "frame_sha256": "257f3c5fec8e583d44c75c492ab46252df164ff0f52b3fb7a4a0ce5d4582e48f",
+      "samples": [
+        {
+          "xy": [
+            8,
+            191
+          ],
+          "rgba": [
+            40,
+            0,
+            128,
+            255
+          ]
+        },
+        {
+          "xy": [
+            9,
+            191
+          ],
+          "rgba": [
+            40,
+            0,
+            128,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "row": 22,
+      "axis": "y",
+      "part": "high",
+      "frame_sha256": "a1202dafd5f5f8075950bd00c5000fdbae376f65c4772b122f6f1d3697d3d382",
+      "samples": [
+        {
+          "xy": [
+            8,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "xy": [
+            9,
+            191
+          ],
+          "rgba": [
+            62,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    }
+  ],
+  "interpretation": "The diagnostic emits the low three bytes and high byte in separate shader passes. Each pass covers two pixels. The previously assumed high byte 0x3e is observed for both original target x values and y values; the adjacent x values have high byte 0x3f. The two previous x deviations from projected scalar arithmetic are confirmed as +7 and -10 ULP. Diagnostic shader substitutions can change interpolation; separate passes do not establish exact unmodified shader behavior.",
+  "limitations": [
+    "Only four covered pixel locations in two records on one host; all are on the same target row.",
+    "Separate low and high byte shader programs may alter compiled interpolation independently.",
+    "Does not establish a triangle interpolation rule or scalable vector correction."
+  ]
+}
