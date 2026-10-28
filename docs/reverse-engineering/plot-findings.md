@@ -218,7 +218,9 @@ entry for the same media ID. A [native control](../../conformance/plot-bitmap-na
 executes `GetBitmap` with injected image data and stubbed path, factory and
 mutex calls. It confirms all four flip-byte combinations reach the factory in
 reverse byte order, and a second acquisition reuses the cached result. It does
-not execute media registration, image decoding, or a saved document.
+not execute media registration, image decoding, or a saved document. An
+additional empty-path control returns null without invoking the bitmap factory
+or incrementing the acquisition count; its path-empty predicate is stubbed.
 
 ## Validation and evidence limits
 

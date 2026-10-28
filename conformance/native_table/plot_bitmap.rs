@@ -8,6 +8,7 @@ const FLIPPED: u64 = MODEL + 0xb300;
 #[derive(Default)]
 struct Observation {
     events: Vec<String>,
+    empty_path: bool,
 }
 
 unsafe extern "C" fn callback(engine: Engine, address: u64, _: u32, data: *mut c_void) {
@@ -17,7 +18,7 @@ unsafe extern "C" fn callback(engine: Engine, address: u64, _: u32, data: *mut c
         0 | 1 => {}
         2 => {
             o.events.push(format!("empty:{:#x}", arg(0)));
-            register(engine, REGISTER_X0, 0);
+            register(engine, REGISTER_X0, u64::from(o.empty_path));
         }
         3 => {
             o.events.push(format!("create:{:#x}", arg(0)));
@@ -66,5 +67,12 @@ pub(super) fn capture(machine: &Machine) {
         assert_eq!(read_u32(e, DATA + 0x40), 2);
         cases.push(format!("{{\"flags\":[{a},{b}],\"events\":{first:?},\"cached_second_call\":true}}"));
     }
+    write(e, DATA, &[0; 128]);
+    o.events.clear();
+    o.empty_path = true;
+    assert_eq!(machine.call(0x2b8520, &[DATA]), 0);
+    assert_eq!(o.events, [format!("empty:{:#x}", DATA + 0x10)]);
+    assert_eq!(read_u32(e, DATA + 0x40), 0);
+    cases.push(format!("{{\"empty_path\":true,\"events\":{:?},\"result\":null}}", o.events));
     println!("{{\"model_sha256\":\"{LIBRARY_SHA256}\",\"function\":\"0x2b8520\",\"boundary\":\"injected image data; path test, bitmap factory, bitmap destruction and mutex stubbed\",\"cases\":[{}]}}", cases.join(","));
 }
