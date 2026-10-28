@@ -1,6 +1,6 @@
 {
   "schema": "marker2-composite-transparent-v1",
-  "scope": "Synthetic ARM64 Marker2 RTV2 under Unicorn with host Mesa, transparent destination. RGB 336699 at alphas 128 and 255, widths 1-3 and two phases at 1x; RGB 994422 at alpha 128, widths 1-3 and phases at 1x plus width 2 at 0.5x, 2x, 4x. Crop rows top-down. Not device or serialized-note parity.",
+  "scope": "Synthetic ARM64 Marker2 RTV2 under Unicorn with host Mesa, transparent destination. RGB 336699 at alphas 128 and 255, widths 1-3 and two phases at 1x; Additional RGB 336699 alpha 128 controls at 1x; RGB 994422 alpha 128 width 2 at 0.5x, 2x, 4x. Crop rows top-down. Not device or serialized-note parity.",
   "cases": [
     {
       "name": "w1-canonical-a128",
@@ -159,7 +159,7 @@
       "composite_rgba_zlib_base64": "eNpjYMAP2PnEVLhE5U3YeUUUGagAOIWkdcX1XIp0IlvvGafN/A/DSi7pqxUcEhdyCEpqkWomMxsnv5CKWZR+XN8b3ci2+8jmQvCMf0bJU3+oeORsEdNxzmfh5BVDdZOUjoiGbaqotkM2MysHL0ycV1rDWT+25yWyWRoB5ccVHOLny1pHTJazjZ6h5lO4Vz++7y1MXjeq/aG6X+lhNZ/i/SA5ZL0SBh4VbLzCCiC/gsxBNxckh+wuUFhIGHpWYfoHE4tq2qUbxPe/g7sDGA7qfmVHuERkDfGFHbe4kqWIhnUyyL0gt+vFdD8HhZe8XcwsRcekxez8YqogdchmCyqbhJMaR6zcAtIg/4Din4GBkRFZDuRvEXXrJHLinhAAAKDtjI8="
     },
     {
-      "name": "w1-translated-a128-scale1-rgb994422",
+      "name": "w1-translated-a128-scale1-rgb336699",
       "argb": "0x80336699",
       "crop_xywh": [
         128,
@@ -172,7 +172,7 @@
       "composite_rgba_zlib_base64": "eNpjYMANOAQkNPikNV3Y+cRUGCgArFwCUgKKhkFSxr4NyFjS0KtaSMUsiomFlZMU82D6eSRUbdHlmFjYuflktN3F9d1KQWpYOHhFkeU5haR0hNUs44VVLWJBfJDfYOaxcPCIEGO3hIFnJYgWUjaNQPYPG6+wAozNJSJnRGo4gdzKxiMkx84nooRuJyMjEzMDFQEARGce8w=="
     },
     {
-      "name": "w2-canonical-a128-scale1-rgb994422",
+      "name": "w2-canonical-a128-scale1-rgb336699",
       "argb": "0x80336699",
       "crop_xywh": [
         127,
@@ -185,7 +185,7 @@
       "composite_rgba_zlib_base64": "eNpjYMAPOPjF1TiFpHTYeUUUGSgEnIJS2uJ6rsVSxr4N6BgkzsjIxEyKeex8Yioi6tZJGGbpu5Vis4OJhY0LWT+PhLI1SFxU0y4dJsYno+mKrEfCwLOSAegwZH38cno+2MzHhrlE5I2R+UIqppFMLKyc+PwlIK/vh81fML8xs3LwIovxSKrakRJuTCzs3Gw8grIcgpJaIBolvgXE1fnl9XwZqAwAXSk6qg=="
     },
     {
-      "name": "w2-translated-a128-scale1-rgb994422",
+      "name": "w2-translated-a128-scale1-rgb336699",
       "argb": "0x80336699",
       "crop_xywh": [
         127,
@@ -198,7 +198,7 @@
       "composite_rgba_zlib_base64": "eNpjYMAOWLn4JMS0HXOkjH0bYFhAwSCAmY2Dj4ECgGweNiysZhnPxMLOjU0vCwePCCsXvyS6uKimXTqyGSIa1sncYgpmXCKyhjwSqrYiGjYpyPKShl7VIL9wCEhq8kiq2iHLMTIxsYDMBOkX03HMRZbjEJDQwOouTl4xQv4CYXS3Shh6VgnI6/sRE27AIBHil9fzBbldTMc5H6SfX07XG9lNyGYzUBkAAIU4O+s="
     },
     {
-      "name": "w3-canonical-a128-scale1-rgb994422",
+      "name": "w3-canonical-a128-scale1-rgb336699",
       "argb": "0x80336699",
       "crop_xywh": [
         126,
@@ -211,7 +211,7 @@
       "composite_rgba_zlib_base64": "eNpjYMANWDh4RXkklK35ZLTceKU1nPlktT04BMTVGZlY2BgoAKxc/JL8sjqeIpq2aeJ6LkVSxr4NkkY+dSBaVNMuXUzXuYBTSFqXkZGJGbu7uIWZmFk50MWZWNi5hdWtEkW1HLJAZoEwyHxxfbdSMW3HHJgdyJhLRM6IQ1BSi41HWJ6DX1xNWM0iDiQOUs/MziUIM5tLRNaQX07PR8LAvRxVv6whG6+wAisnnzg7n5iKpJFXDbod2LCkkXctyE6Q2SBzEeJeNSA3cApJ6WDzIyT8BKRAYSem45iLzWwJA48KTiEZPVhYI4eHoKJRMDu/mCpx8SQgJaBoGATCQqrmMSAMCiNmNg4+ZHU84spWAgoGAaC0wkBlAACklkby"
     },
     {
-      "name": "w3-translated-a128-scale1-rgb994422",
+      "name": "w3-translated-a128-scale1-rgb336699",
       "argb": "0x80336699",
       "crop_xywh": [
         127,

@@ -1,0 +1,25 @@
+{
+  "schema": "marker2-background-replay-host-control-v1",
+  "scope": "Synthetic native Marker2 RTV2 via ARM64 Unicorn and host Mesa; opaque destination, same drawable drawn twice; not distinct stroke objects, device, or saved note parity. Crop uses GL bottom-up rows.",
+  "case": "w2-canonical-a128-scale2-rgb994422",
+  "destination_rgba": [
+    51,
+    102,
+    153,
+    255
+  ],
+  "crop_gl_xywh": [
+    125,
+    126,
+    45,
+    13
+  ],
+  "mask_zlib_base64": "eNpjmPb//38GIoHUfxDoJU5xzn8IUMEhn5J8uG1jGlRWEar4/2IsKqf+h4PjQSCBZjg/C03prf8o4FMKSBDBV0VSOuk/BugBifsj+HIQldxN/7EBiOQ6JJG9F3ciK3h+ZtZrVMUMAk+xGnXSGSq/5h2QVwN3oztOayFg/jkvJB73FDSlingjiL/1D1zlV30iYtRlWdmFqjY17JIAlbv0HA==",
+  "first_rgba_zlib_base64": "eNozTpv5PzCm7H9aaCwcGwPFBjO2SJmM4l4YDogtH7Ru9ohrwOpmGLZKmUBT+93jm8A4KjL7v19s1f+wqIL/HgmNeO21SpmI180gHBJdTFV3oqdFfDg6Muu/S2Irhhl+cVVE6feIb6DIrXHh6US7FR2nhCWA4wPdTGL1WyVPJMmtATHlZLsVHfvHVmCY75zYRrR+y5RJON1pljbtv29sNdXcSky5FhZVSJI5kZG5/2MjMv5HROWS7Iak8KT/MRFZ/4NiSv8nhSWR7WZwWKVO/Z8YnkyTsIqJzPzvkNiF1/6w6AIMP/jE1RCVHp2SOugSt7hwcHQJMB4y/zsldpCkD5Q+Kc1LoHJ1IOogUHoBlf1pYXFEllHx/22S+gZVPQpKkyHRRf+94urA8QdKbyA/kVoekoIBKynpYw==",
+  "second_rgba_zlib_base64": "eNozTpv5Py009n+Djz0cGwPFBjO2TepDcS8Mp4bFD1o3R0bkYHUzDDsmddDU/vDIAjAuCvT/nxSe/D83OPR/ZHQeXnsdkjrxuhmEs0IiqepO9LSIDxcH+v4PiinFMCMpIpko/ZGRORS5tdzfi2i3ouM6XydwfKCbSax+x8ROktyaGhpPtlvRcXJYAob5AbFlROu3T+rG6U7LtMn/E8JSqeZWYsq13KAwkswpDAz8Xxbg/b8gKJBkN1T7ufwvCfD7nx4a87/G15VsN4PDKmXi/yp/V5qEVWmgz3/v2Fq89oPKEJB/kPXFR6QRlR7946roEre4cGZw9P9Sf9//frGVJOkDpc/U0DiK3AoqVweiDgKlF1DZ3+DnSFwZBVTnEt8yqOpRUJrMDo74HxORCcxHPuD0BvITqeUhKRgAahTcbw==",
+  "capture_script": "tmp/vector-parity-plan/marker2-empty-paint-scale2/background-control.py",
+  "capture_script_sha256": "0df6fabeebb7266f1fe75f367254bfb5775d6aee18bf0153e761e79d647334aa",
+  "receipt_sha256": "754ff36df6f2f2ed1f004004f7b0ba661f663890ea2d642d79da8ace81cb2bb9",
+  "native_mask_png_sha256": "7f0f3b0767c5833f1caa0e59a22859941e696bd16a39a13f0ea439c317f2a23c",
+  "comparison": "Rounded 8-bit effective alpha then source-over differs in 56 RGB channels on first draw and 60 on second, each by one; all alpha values remain 255."
+}

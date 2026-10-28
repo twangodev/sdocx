@@ -282,13 +282,19 @@ retains the inputs and expected masks; the experimental model check is in
 `scratch/marker2-thin-scale-control/`. A four-layer vector approximation reduced
 error at 1×–4× but regressed at 0.5× in the tested SVG and SVG-to-PDF renders.
 The [compact composite fixture](../../conformance/marker2-composite-transparent.json)
-retains 20 transparent-target host-Mesa crops across two RGB colors, alpha 128
-and 255, and scales 0.5×–4×. Every captured RGBA byte matches rounding the
-mask times packed alpha to an 8-bit alpha, then rounding each RGB channel
-times that alpha to premultiplied 8-bit color. This covers internal stamp
-overlap through the MAX mask, but does not test overlapping separate strokes
-or a nontransparent destination. The experimental check is in
+retains 20 transparent-target host-Mesa crops: RGB 336699 at alpha 128 and
+255 at 1×, plus RGB 994422 at alpha 128 at 0.5×, 2× and 4×. Every captured
+RGBA byte matches rounding the mask times packed alpha to an 8-bit alpha, then
+rounding each RGB channel times that alpha to premultiplied 8-bit color. This covers internal stamp
+overlap through the MAX mask. The experimental check is in
 `scratch/marker2-thin-scale-control/composite-check.py`.
+
+The [background replay fixture](../../conformance/marker2-background-replay-host-control.json)
+captures a 2× alpha 128 drawable over an opaque background, then repeats the
+same draw. Output remains opaque; rounded-alpha source-over differs by at most
+one RGB byte per channel (56 channels on the first draw, 60 on the second).
+Exact rounding and separately constructed overlapping strokes remain unverified.
+The local capture recipe is `tmp/vector-parity-plan/marker2-empty-paint-scale2/background-control.py`.
 
 These controls do not establish direct PDF, Android device, or arbitrary
 viewer-scale parity; the finite model is not production paint.
