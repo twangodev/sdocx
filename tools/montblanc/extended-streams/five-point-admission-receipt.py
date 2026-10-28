@@ -34,6 +34,10 @@ cases.update({
     'diagonal_rejected': [[0, 0], [4, 4], [10, 0], [20, 0], [30, 6]],
     'negative_y_boundary': [[0, 0], [4, -5], [14, -5], [24, -5], [34, 1]],
     'mixed_x_boundary': [[0, 0], [-5, 4], [-15, 4], [-25, 4], [-35, 10]],
+    'zero_accepted': [[0, 0], [1, 1], [2, 2], [3, 3], [20, 6]],
+    'one_first': [[0, 0], [10, 0], [11, 1], [12, 2], [20, 6]],
+    'one_far': [[0, 0], [1, 1], [2, 2], [20, 0], [30, 6]],
+    'one_boundary': [[0, 0], [1, 1], [2, 2], [5, 0], [20, 6]],
     'multiple_rejected': [[0, 0], [4, 4], [-4, -4], [10, 0], [20, 6]],
 })
 cases = [(name, {'points': points, 'pressure': [0.3, 0.6, 1, 0.7, 0.5], 'pen_size': 2}) for name, points in cases.items()]

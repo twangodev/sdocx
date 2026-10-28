@@ -40,6 +40,35 @@ fn five_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
             previous = index;
         }
     }
+    if accepted.is_empty() {
+        return Ok(vec![RtRecord {
+            call: RtCall::Start,
+            lanes: [
+                p(0).x,
+                p(0).y,
+                (input.pen_size * 0.5).max(1.0),
+                0.0,
+                1.0,
+                1.0,
+            ],
+        }]);
+    }
+    if accepted.len() == 1 {
+        let middle = accepted[0];
+        let records = sample(Input {
+            points: &[input.points[0], input.points[middle], input.points[4]],
+            pressure: &[input.pressure[0], input.pressure[middle], input.pressure[4]],
+            pen_size: input.pen_size,
+        })?;
+        if records
+            .iter()
+            .flat_map(|record| record.lanes)
+            .any(|v| !v.is_finite())
+        {
+            return Err(Error::InvalidInput);
+        }
+        return Ok(records);
+    }
     if accepted.len() == 2 {
         let first = accepted[0];
         let second = accepted[1];
@@ -288,25 +317,7 @@ fn five_point_matches_complete_native_streams() {
             pressure: &pressure,
             pen_size: number(&input["pen_size"]),
         });
-        let actual = match result {
-            Ok(records) => records,
-            Err(Error::InvalidInput)
-                if {
-                    let mut last = points[0];
-                    let mut accepted = 0;
-                    for point in &points[1..4] {
-                        if (point[0] - last[0]).abs() >= 5.0 || (point[1] - last[1]).abs() >= 5.0 {
-                            accepted += 1;
-                            last = *point;
-                        }
-                    }
-                    accepted < 2
-                } =>
-            {
-                continue;
-            }
-            Err(error) => panic!("{name}: {error}"),
-        };
+        let actual = result.unwrap_or_else(|error| panic!("{name}: {error}"));
         let expected = stream.as_array().unwrap();
         assert_eq!(actual.len(), expected.len(), "{name}");
         for (i, (a, e)) in actual.iter().zip(expected).enumerate() {
@@ -387,10 +398,10 @@ fn rejected_admission_and_nonfinite_intermediates_are_guarded() {
     for points in [
         [
             [0.0, 0.0],
-            [4.0, 4.0],
-            [-4.0, -4.0],
-            [10.0, 0.0],
-            [20.0, 6.0],
+            [5.0, 0.0],
+            [5.0, 1.0],
+            [5.0, 2.0],
+            [f32::MAX, 0.0],
         ],
         [
             [f32::MAX, 0.0],
