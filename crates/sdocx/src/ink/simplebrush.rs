@@ -393,7 +393,7 @@ pub(crate) fn prepare_stroke(
         return Err("unsupported SimpleBrush stroke metadata or channels");
     }
     let size = rendering.style.pen_size.ok_or("missing pen size")?;
-    if !(3.0..=24.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
+    if !(3.0..=32.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
     if !(2..=224).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
@@ -849,7 +849,9 @@ mod tests {
             (5.5, true),
             (20.0, true),
             (24.0, true),
-            (24.01, false),
+            (28.0, true),
+            (32.0, true),
+            (32.01, false),
             (f32::NAN, false),
             (f32::INFINITY, false),
         ] {
@@ -1091,11 +1093,18 @@ mod tests {
         // OpenGL bottom-up rows, cropped at x=0..crop_width, y=0..crop_height. Full-frame
         // See each receipt for the full-frame SHA-256;
         // all nonzero alpha lies in this crop. Source: V25 host-Mesa capture.
-        let extra = matches!(
-            (size, probe),
-            (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
-        );
+        let extra = matches!(probe, 216 | 217)
+            || matches!(
+                (size, probe),
+                (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
+            );
         let native: &[u8] = match (four, size) {
+            _ if probe == 216 => {
+                include_bytes!("../../../../conformance/simplebrush-size32-crop.rgba")
+            }
+            _ if probe == 217 => {
+                include_bytes!("../../../../conformance/simplebrush-size28-crop.rgba")
+            }
             _ if probe == 215 => {
                 include_bytes!("../../../../conformance/simplebrush-fractional-crop.rgba")
             }
@@ -1228,6 +1237,8 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if probe == 216 => include_str!("../../../../conformance/simplebrush-size32.json"),
+            _ if probe == 217 => include_str!("../../../../conformance/simplebrush-size28.json"),
             _ if probe == 215 => {
                 include_str!("../../../../conformance/simplebrush-fractional.json")
             }
@@ -1354,7 +1365,9 @@ mod tests {
                 }
             })
             .collect();
-        let points: &[[f32; 2]] = if probe == 215 {
+        let points: &[[f32; 2]] = if matches!(probe, 216 | 217) {
+            &[[0., 0.], [10., 0.], [20., 5.]]
+        } else if probe == 215 {
             &[
                 [0., 0.],
                 [10., 0.],
@@ -1428,7 +1441,9 @@ mod tests {
         } else {
             &[[0., 0.], [10., 0.], [20., 5.]]
         };
-        let pressures: &[f32] = if matches!(probe, 214 | 215) {
+        let pressures: &[f32] = if matches!(probe, 216 | 217) {
+            &[0.75, 0.25, 1.0]
+        } else if matches!(probe, 214 | 215) {
             &[
                 0.1, 0.9, 0.05, 0.95, 0.2, 0.8, 0.15, 1.0, 0.0, 0.85, 0.3, 0.9,
             ]
@@ -1452,6 +1467,8 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if probe == 216 => 612,
+            _ if probe == 217 => 522,
             _ if probe == 215 => 192,
             _ if probe == 214 => 194,
             _ if matches!(probe, 211..=213) => 48,
@@ -1497,7 +1514,9 @@ mod tests {
             _ => unreachable!(),
         };
         let size = if size == 55 { 5.5 } else { size as f32 };
-        let (crop_width, crop_height) = if extra || probe != 0 {
+        let (crop_width, crop_height) = if matches!(probe, 216 | 217) {
+            (64, 32)
+        } else if extra || probe != 0 {
             (
                 if probe > 16 && !(201..=215).contains(&probe) {
                     probe * 8 + 16
@@ -1545,6 +1564,12 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if probe == 216 => {
+                    include_bytes!("../../../../conformance/simplebrush-size32-geometry.bin")
+                }
+                _ if probe == 217 => {
+                    include_bytes!("../../../../conformance/simplebrush-size28-geometry.bin")
+                }
                 _ if probe == 215 => {
                     include_bytes!("../../../../conformance/simplebrush-fractional-geometry.bin")
                 }
@@ -1895,6 +1920,13 @@ mod tests {
         assert!(profiled_metrics.0 * fallback_metrics.1 > fallback_metrics.0 * profiled_metrics.1);
         assert!(profiled_metrics.3 < fallback_metrics.3);
         assert!(profiled_metrics.4 < fallback_metrics.4);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn larger_size_public_paint_controls() {
+        v25_paint_control(32, false, false, false, 216);
+        v25_paint_control(28, false, false, false, 217);
     }
 
     #[cfg(feature = "pdf")]

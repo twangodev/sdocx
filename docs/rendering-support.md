@@ -128,12 +128,13 @@ transforms, saved-note and device parity remain unverified. The profile is unava
 
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
 ordered radial-gradient paint. It currently admits null or empty settings, tools 2 and 3,
-curve-enabled strokes without saved stylus channels, with two through 224 points and finite sizes from 3 through 24; unsupported
+curve-enabled strokes without saved stylus channels, with two through 224 points and finite sizes from 3 through 32; unsupported
 inputs, transformed descendants and replay retain generic paint. The profile
 ignores saved alpha as the captured shader did, and assumes one page unit per
 output pixel for its fringe. Each scene has a shared stamp budget, and sliced
 exports omit off-slice stamps while retaining boundary intersections. It is not validated for general saved notes,
 other scales, device rendering, or replay parity.
+Two synthetic three-point controls at [size 28](../conformance/simplebrush-size28.json) and [size 32](../conformance/simplebrush-size32.json) match native geometry. Profile SVG overlaps all 522 and 612 native pixels, respectively, with lower alpha error than fallback. Direct document PDF rasterization overlaps 492/522 and 577/612 support-union pixels, versus 126/522 and 131/612 for fallback, and reduces RGB error. Other newly admitted sizes and stroke shapes are extrapolated from these host controls.
 Three synthetic [empty-setting controls](../conformance/simplebrush-empty-setting-host.json) match the corresponding null-setting native geometry and host-Mesa frames; broader combinations remain extrapolated. A separate [literal `1;` control](../conformance/simplebrush-literal-one-host.json) matches null-setting geometry and host-Mesa paint for one synthetic two-point stroke; the same opt-in accepts this setting for the existing bounded profile, extrapolating beyond that control.
 Short movements are skipped against the last accepted point for tool 2; all-short sequences emit one stamp, while short terminal movement after accepted points uses the captured terminal curve. Synthetic [first-skip](../conformance/simplebrush-first-skip.json), [repeated-skip](../conformance/simplebrush-repeat-skip.json), [terminal](../conformance/simplebrush-terminal.json), and [short-sequence](../conformance/simplebrush-short-large.json) controls match native geometry and improve SVG/PDF comparisons.
 Four synthetic controls at sizes 3 and 24 with seven and sixteen points also match native geometry; their SVG and PDF comparisons improve on generic paint. Admission between controls is extrapolated.
