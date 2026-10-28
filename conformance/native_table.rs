@@ -2,6 +2,9 @@ use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 
 #[path = "native_table/plot_drawing.rs"]
 mod plot_drawing;
+#[path = "native_table/plot_registration.rs"]
+mod plot_registration;
+
 #[path = "native_table/plot_bitmap.rs"]
 mod plot_bitmap;
 
@@ -1230,6 +1233,10 @@ fn main() {
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
     match mode.as_deref().and_then(|mode| mode.to_str()) {
+        Some("--plot-registration") => {
+            plot_registration::capture(&machine);
+            return;
+        }
         Some("--plot-bitmap") => {
             plot_bitmap::capture(&machine);
             return;

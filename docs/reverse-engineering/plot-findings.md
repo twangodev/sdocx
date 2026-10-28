@@ -299,3 +299,21 @@ rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
 
 The capture injects base data and registers at the fragment entry and stubs the
 Android log call to return. It stops before the rest of the loader continues.
+
+### Field 17 registration control
+
+The [registration control](../../conformance/plot-registration-native.json)
+executes the common base loader fragment `0x2dba24–0x2dbac0` on a synthetic
+four-byte field and injected base state. With a successful stubbed buffer check,
+it advances the field pointer by four bytes and passes the signed value and
+zero values in x2–x4 to `AddImage`. Static inspection identifies those arguments
+as a zero rectangle and final argument; the control does not inspect SIMD
+registers or rectangle memory. It calls `RemoveImage` for previous indices 0
+and 9, and skips removal for -1. The returned index replaces the previous one. The supplied cases include
+media IDs 77, -7 and 0; the negative ID is still forwarded to the stubbed
+`AddImage`, so this fragment alone does not establish whether registration
+accepts it. The control stubs both registration calls and does not establish
+media lookup, decoded pixels, saved-document loading, or the canvas transform.
+
+Run the standalone harness with `--plot-registration` and the Model library,
+using the build command above. The receipt identifies the exact library digest.
