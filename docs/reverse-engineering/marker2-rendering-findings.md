@@ -296,5 +296,12 @@ one RGB byte per channel (56 channels on the first draw, 60 on the second).
 Exact rounding and separately constructed overlapping strokes remain unverified.
 The local capture recipe is `tmp/vector-parity-plan/marker2-empty-paint-scale2/background-control.py`.
 
+Using captured masks, aligned pixel paths reproduced all 20 transparent crops
+exactly with resvg 0.45.1; direct PDF rectangles rendered by PDFium 150 differed
+by at most one RGB byte from those crops composited over white
+(`scratch/marker2-thin-scale-control/{svg,pdf}-pixel-check.py`). These checks
+use one path per nonzero pixel at the captured grid, not generated stroke masks
+or an integrated exporter.
+
 These controls do not establish direct PDF, Android device, or arbitrary
 viewer-scale parity; the finite model is not production paint.
