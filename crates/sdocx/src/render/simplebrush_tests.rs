@@ -573,3 +573,104 @@ fn simplebrush_pdf_slice_scene_matches_full_page_across_stamp() {
         );
     }
 }
+
+#[test]
+fn tool_zero_native_controls_reach_public_exports() {
+    use std::fmt::Write;
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool0-native.json"
+    ))
+    .unwrap();
+    let decode = |value: &serde_json::Value| {
+        let hex = value.as_str().unwrap();
+        let mut bytes = [0_u8; 4];
+        for (index, byte) in bytes.iter_mut().enumerate() {
+            *byte = u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap();
+        }
+        f32::from_le_bytes(bytes)
+    };
+    for name in [
+        "vertical", "reverse", "curve", "two-4", "two-12", "curve-4", "curve-12",
+    ] {
+        let input = &receipt["controls"][name]["input"];
+        let size = decode(&input["pen_size_f32_bits"]);
+        let points: Vec<[f32; 2]> = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| [decode(&point[0]), decode(&point[1])])
+            .collect();
+        let pressures: Vec<f32> = input["pressure_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(decode)
+            .collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size,
+            tool_type: 0,
+            curve_enabled: true,
+            max_samples: 100_000,
+        })
+        .unwrap();
+        let mut hex = String::new();
+        for value in samples.iter().flatten() {
+            for byte in value.to_le_bytes() {
+                write!(hex, "{byte:02x}").unwrap();
+            }
+        }
+        assert_eq!(
+            hex,
+            receipt["controls"][name]["geometry_hex"].as_str().unwrap()
+        );
+        let mut zero = stroke();
+        zero.pen_width = size;
+        zero.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        zero.points = points
+            .iter()
+            .map(|p| Point {
+                x: f64::from(p[0]),
+                y: f64::from(p[1]),
+            })
+            .collect();
+        zero.pressures = pressures.iter().copied().map(f64::from).collect();
+        zero.rendering.as_mut().unwrap().tool_type_raw = 0;
+        let mut two = zero.clone();
+        two.rendering.as_mut().unwrap().tool_type_raw = 2;
+        let zero_doc = document(zero);
+        let two_doc = document(two);
+        let zero_svg = render_document_svg(&zero_doc, &options())[0].svg.clone();
+        assert_eq!(zero_svg, render_document_svg(&two_doc, &options())[0].svg);
+        assert_ne!(
+            zero_svg,
+            render_document_svg(&zero_doc, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&zero_doc, &options(), &Default::default()).unwrap(),
+            crate::render_document_pdf(&two_doc, &options(), &Default::default()).unwrap()
+        );
+    }
+}
+
+#[test]
+fn tool_zero_uncaptured_size_and_short_steps_fall_back() {
+    let mut input = stroke();
+    input.rendering.as_mut().unwrap().tool_type_raw = 0;
+    input.points[1] = Point { x: 10.5, y: 20.5 };
+    let short = document(input.clone());
+    assert_eq!(
+        render_document_svg(&short, &options())[0].svg,
+        render_document_svg(&short, &RenderOptions::default())[0].svg
+    );
+    input.points[1] = Point { x: 20.0, y: 20.0 };
+    input.pen_width = 13.0;
+    input.rendering.as_mut().unwrap().style.pen_size = Some(13.0);
+    let size = document(input);
+    assert_eq!(
+        render_document_svg(&size, &options())[0].svg,
+        render_document_svg(&size, &RenderOptions::default())[0].svg
+    );
+}

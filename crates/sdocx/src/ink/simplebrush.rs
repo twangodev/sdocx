@@ -372,7 +372,7 @@ pub(crate) fn prepare_stroke(
             rendering.advanced_settings.as_deref(),
             None | Some("") | Some("1;")
         )
-        || !matches!(rendering.tool_type_raw, 2 | 3)
+        || !matches!(rendering.tool_type_raw, 0 | 2 | 3)
         || !p.compressed
         || p.replay_only
         || p.stylus_channels
@@ -423,6 +423,15 @@ pub(crate) fn prepare_stroke(
         .iter()
         .map(|&p| exact_float(p))
         .collect::<Result<Vec<_>, _>>()?;
+    if rendering.tool_type_raw == 0
+        && (!(4.0..=12.0).contains(&size)
+            || !(2..=5).contains(&points.len())
+            || points.windows(2).any(|pair| {
+                (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
+            }))
+    {
+        return Err("unsupported SimpleBrush tool 0 input");
+    }
     let stored_argb = rendering.style.color_argb;
     let color = stroke
         .color
@@ -1052,6 +1061,12 @@ mod tests {
         }
         v25_paint_control_for_tool(8, false, false, false, 0, 3);
         v25_paint_control_for_tool(12, false, false, false, 7, 3);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn tool0_two_point_native_paint_control() {
+        v25_paint_control_for_tool(8, false, false, false, 2, 0);
     }
 
     #[cfg(feature = "pdf")]
@@ -1766,7 +1781,7 @@ mod tests {
             }],
             metadata: Default::default(),
         };
-        if tool == 3 {
+        if matches!(tool, 0 | 3) {
             let mut paired_document = document.clone();
             paired_document.pages[0].objects = vec![paired_stroke.into()];
             let options = crate::RenderOptions {
