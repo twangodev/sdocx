@@ -101,7 +101,7 @@ fn run(
 ) -> Option<(pdf::Plan, [f32; 4])> {
     if m.body.len() < 3
         || m.caps.iter().any(|cap| cap.len() != 6)
-        || !matches!(grid, 10_000. | 100_000.)
+        || !matches!(grid, 10_000. | 100_000. | 300_000.)
         || page.iter().any(|v| !v.is_finite() || *v <= 0.0)
     {
         return None;
@@ -374,6 +374,11 @@ pub(super) fn execute(
         collapse = false;
         grid = 100000.;
         shapes = clip::run(&m, &mut budget.clip_ops, limit, &mut collapse, grid)
+    }
+    if shapes.is_none() && collapse && budget.clip_ops < limit {
+        collapse = false;
+        grid = 300_000.;
+        shapes = clip::run(&m, &mut budget.clip_ops, limit, &mut collapse, grid);
     }
     let (shape, vertices) = shapes?;
     let next_vertices = budget.visible_vertices.checked_add(vertices)?;

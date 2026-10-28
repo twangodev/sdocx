@@ -403,4 +403,31 @@ mod tests {
         );
         assert_eq!(exhausted, 0);
     }
+    #[test]
+    fn varied_native_mesh_needs_finer_checked_grid() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/legacy-marker-varied-screen-control.json"
+        ))
+        .unwrap();
+        let points = fixture["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+            .collect::<Vec<_>>();
+        let mesh =
+            crate::ink::legacy_marker_mesh::generate_bounded_mesh(&points, 8., [720, 480]).unwrap();
+        let mut work = 0;
+        for grid in [10_000., 100_000.] {
+            let mut collapsed = false;
+            assert!(run(&mesh, &mut work, 200_000, &mut collapsed, grid).is_none());
+            assert!(collapsed);
+        }
+        let prior = work;
+        let mut collapsed = false;
+        let result = run(&mesh, &mut work, 200_000, &mut collapsed, 300_000.);
+        assert!(result.is_some());
+        assert!(!collapsed);
+        assert!(work > prior && work <= 200_000);
+    }
 }

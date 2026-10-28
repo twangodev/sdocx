@@ -112,7 +112,10 @@ budget. Cap texture is represented as a binary nonzero-texel shape; vector
 boundary coverage approximates native nearest sampling. Unsupported inputs, replay, descendant strokes, sliced pages, and
 budget failures retain the existing fallback. On synthetic straight/bent host
 controls, matched-background SVG RGB L1 was 2993/2489; direct PDF L1 was
-4721/3796 in MuPDF and 5332/4230 in PDFium. This is an experimental
+4721/3796 in MuPDF and 5332/4230 in PDFium. A varied blue control at
+720×480 PenData dimensions passes a finer checked grid: SVG/MuPDF/PDFium L1 is
+5733/9650/9032 versus 24117/23904/23671 on fallback. All grid retries share the
+same per-stroke and per-page work limits. This is an experimental
 approximation: texture behavior across versions, raster precision, arbitrary
 transforms, saved-note and device parity remain unverified. The profile is unavailable without the
 `pdf` feature. See the [Marker findings](reverse-engineering/stroke-rendering-findings.md#legacy-marker-source-to-mesh-controls).

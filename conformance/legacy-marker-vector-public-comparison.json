@@ -86,7 +86,7 @@
             252,
             251
           ],
-          "l1": 4933,
+          "l1": 4900,
           "max": 57
         },
         "pdfium": {
@@ -95,10 +95,10 @@
             252,
             252
           ],
-          "l1": 5342,
+          "l1": 5344,
           "max": 51
         },
-        "pdf_bytes": 95555
+        "pdf_bytes": 92800
       }
     },
     {
@@ -108,16 +108,16 @@
       "scale": 1,
       "modes": {
         "candidate": {
-          "gradient_nodes": 0,
-          "pdf_bytes": 3072,
+          "gradient_nodes": 184,
+          "pdf_bytes": 118522,
           "svg": {
             "background": [
               252,
               252,
               252
             ],
-            "l1": 24117,
-            "max": 186
+            "l1": 5733,
+            "max": 103
           },
           "mupdf": {
             "background": [
@@ -125,8 +125,8 @@
               252,
               251
             ],
-            "l1": 23904,
-            "max": 185
+            "l1": 9650,
+            "max": 96
           },
           "pdfium": {
             "background": [
@@ -134,8 +134,8 @@
               252,
               252
             ],
-            "l1": 23671,
-            "max": 186
+            "l1": 9032,
+            "max": 98
           }
         },
         "fallback": {
@@ -386,7 +386,7 @@
             252,
             251
           ],
-          "l1": 11516,
+          "l1": 11515,
           "max": 86
         },
         "pdfium": {
@@ -395,10 +395,10 @@
             252,
             252
           ],
-          "l1": 12906,
+          "l1": 12905,
           "max": 85
         },
-        "pdf_bytes": 53767
+        "pdf_bytes": 53080
       }
     }
   ],
@@ -422,5 +422,20 @@
     "actual_svg_bytes": 148390,
     "actual_pdf_bytes": 105253,
     "limitations": "Host control only; budget limits unchanged."
+  },
+  "adaptive_grid_observation": {
+    "case": "varied-screen-confirmed",
+    "screen": [
+      720,
+      480
+    ],
+    "prior_grids": [
+      10000,
+      100000
+    ],
+    "admitted_grid": 300000,
+    "clip_operations": 85956,
+    "limits": "Retries share the unchanged 200000 per-stroke and 500000 per-page clipping limits.",
+    "scope": "One synthetic host control; general precision/device parity unverified."
   }
 }

@@ -300,3 +300,62 @@ fn top_layer_marker_keeps_order_after_base_stroke() {
                 .any(|w| w == b"/M1 gs /C1 Do"))
     );
 }
+
+#[test]
+fn finer_grid_admits_varied_blue_native_control() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/legacy-marker-varied-screen-control.json"
+    ))
+    .unwrap();
+    let mut doc = document("bend", 2, 1);
+    let crate::PageObjectContent::Stroke(stroke) = &mut doc.pages[0].objects[0].content else {
+        panic!("stroke")
+    };
+    stroke.points = fixture["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| Point {
+            x: p[0].as_f64().unwrap(),
+            y: p[1].as_f64().unwrap(),
+        })
+        .collect();
+    stroke.pen_width = 8.;
+    stroke.color = Some(Color {
+        r: 0x40,
+        g: 0x80,
+        b: 0xf0,
+    });
+    let style = &mut stroke.rendering.as_mut().unwrap().style;
+    style.pen_size = Some(8.);
+    style.color_argb = Some(0xc84080f0);
+    let mut opts = options();
+    opts.legacy_marker_vector_profile = Some(super::super::LegacyMarkerCenterlineProfile {
+        screen_width: 720,
+        screen_height: 480,
+    });
+    let svg = crate::render_document_svg(&doc, &opts).remove(0).svg;
+    let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
+        .remove(0)
+        .svg;
+    let native =
+        include_bytes!("../../../../../conformance/legacy-marker-varied-screen-sparse-rgba8.bin");
+    assert!(svg.contains("linearGradient"));
+    let actual = error(&svg, native);
+    let generic = error(&fallback, native);
+    assert!(
+        actual < 10_000 && actual < generic,
+        "vector {actual}, fallback {generic}"
+    );
+    let pdf = crate::render_document_pdf(&doc, &opts, &crate::PdfOptions::default()).unwrap();
+    let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    assert!(
+        pdf.objects
+            .values()
+            .filter_map(|o| o.as_stream().ok())
+            .filter_map(|s| s.decompressed_content().ok())
+            .any(|s| s
+                .windows(b"/M1 gs /C1 Do".len())
+                .any(|w| w == b"/M1 gs /C1 Do"))
+    );
+}
