@@ -248,7 +248,7 @@ fn generate_with_terminal(
     };
     let mut previous_width = half_width(size, previous_pressure).max(1.0);
     if points.len() == 2
-        && matches!(tool_type, 2 | 3)
+        && matches!(tool_type, 0 | 2 | 3)
         && (points[1][0] - points[0][0]).abs() < 1.5
         && (points[1][1] - points[0][1]).abs() < 1.5
     {
@@ -425,10 +425,11 @@ pub(crate) fn prepare_stroke(
         .collect::<Result<Vec<_>, _>>()?;
     if rendering.tool_type_raw == 0
         && (!(4.0..=12.0).contains(&size)
-            || !(2..=5).contains(&points.len())
-            || points.windows(2).any(|pair| {
-                (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
-            }))
+            || !(2..=6).contains(&points.len())
+            || (points.len() != 2
+                && points.windows(2).any(|pair| {
+                    (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
+                })))
     {
         return Err("unsupported SimpleBrush tool 0 input");
     }
@@ -846,6 +847,38 @@ mod tests {
     }
 
     #[test]
+    fn tool0_admission_bounds_remain_conservative() {
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let mut stroke = fixture_stroke(&fixture["cases"][0]["input"]);
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.tool_type_raw = 0;
+        rendering.style.color_argb = Some(0x80402010);
+        stroke.points = (0..6)
+            .map(|i| crate::Point {
+                x: f64::from(i * 8),
+                y: 0.,
+            })
+            .collect();
+        stroke.pressures = vec![0.5; 6];
+        stroke.timestamps.clear();
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.points.push(crate::Point { x: 48., y: 0. });
+        stroke.pressures.push(0.5);
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points.truncate(3);
+        stroke.pressures.truncate(3);
+        stroke.points[1].x = 0.5;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        stroke.points.truncate(2);
+        stroke.pressures.truncate(2);
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(13.0);
+        stroke.pen_width = 13.0;
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+    }
+
+    #[test]
     fn production_size_range_is_bounded_and_finite() {
         let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
         let mut stroke = fixture_stroke(&fixture["cases"][0]["input"]);
@@ -1071,6 +1104,13 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn tool0_short_and_six_point_native_paint_controls() {
+        v25_paint_control_for_tool(8, false, false, false, 203, 0);
+        v25_paint_control_for_tool(8, false, false, false, 6, 0);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn tool3_long_native_paint_controls() {
         for probe in [16, 64, 224] {
             v25_paint_control_for_tool(8, false, false, false, probe, 3);
@@ -1114,6 +1154,12 @@ mod tests {
                 (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
             );
         let native: &[u8] = match (four, size) {
+            _ if tool == 0 && probe == 203 => {
+                include_bytes!("../../../../conformance/simplebrush-tool0-short-crop.rgba")
+            }
+            _ if tool == 0 && probe == 6 => {
+                include_bytes!("../../../../conformance/simplebrush-tool0-six-crop.rgba")
+            }
             _ if probe == 216 => {
                 include_bytes!("../../../../conformance/simplebrush-size32-crop.rgba")
             }
@@ -1252,6 +1298,12 @@ mod tests {
             _ => unreachable!(),
         };
         let receipt: Value = serde_json::from_str(match (four, size) {
+            _ if tool == 0 && probe == 203 => {
+                include_str!("../../../../conformance/simplebrush-tool0-short.json")
+            }
+            _ if tool == 0 && probe == 6 => {
+                include_str!("../../../../conformance/simplebrush-tool0-six.json")
+            }
             _ if probe == 216 => include_str!("../../../../conformance/simplebrush-size32.json"),
             _ if probe == 217 => include_str!("../../../../conformance/simplebrush-size28.json"),
             _ if probe == 215 => {
@@ -1482,6 +1534,7 @@ mod tests {
             &[0.5, 0.25, 0.75]
         };
         let expected_support = match (four, size) {
+            _ if tool == 0 && probe == 6 => 337,
             _ if probe == 216 => 612,
             _ if probe == 217 => 522,
             _ if probe == 215 => 192,
@@ -1579,6 +1632,12 @@ mod tests {
             .collect();
         if extra || probe != 0 {
             let native_geometry: &[u8] = match (size, probe) {
+                _ if tool == 0 && probe == 203 => {
+                    include_bytes!("../../../../conformance/simplebrush-tool0-short-geometry.bin")
+                }
+                _ if tool == 0 && probe == 6 => {
+                    include_bytes!("../../../../conformance/simplebrush-tool0-six-geometry.bin")
+                }
                 _ if probe == 216 => {
                     include_bytes!("../../../../conformance/simplebrush-size32-geometry.bin")
                 }
@@ -1762,6 +1821,11 @@ mod tests {
             }),
             pen_width: size,
         };
+        assert!(
+            super::prepare_stroke(&stroke, true, 100000).is_ok(),
+            "tool {tool} probe {probe}: {:?}",
+            super::prepare_stroke(&stroke, true, 100000).err()
+        );
         // The native fragment shader ignores input alpha in this capture. The
         // generic Brush route also uses whole-stroke opacity 1, despite the
         // saved 0x80 alpha; compare the actual routes, not an assumed opacity.
