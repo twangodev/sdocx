@@ -20,5 +20,340 @@
   "native_gl_error": 0,
   "geometry_fixture_sha256": "5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77",
   "notes": "resvg uses manually constructed rounded-rectangle vector, MuPDF renders PDF produced by converting that SVG. Both use 1px per document unit and same target. Alpha L1 over entire frame.",
-  "recipe": "Run tools/marker4_v7/mesa_capture.py --capture-output /tmp/m4v7-stroke30.json using the PYTHONPATH in its docstring, then .venv/bin/python tools/marker4_v7/vector_comparison.py. The capture writes the requested JSON and sibling RGBA and mask files."
+  "recipe": "For each case below, choose a new output basename in /tmp. From the project root run PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/conformance-cleanup/native-capture-a241793/conformance:scratch/defaultpen-native .venv/bin/python tools/marker4_v7/mesa_capture.py --capture-output /tmp/NEW.json --case CASE --scale SCALE --phase-x PHASE_X --phase-y PHASE_Y, then .venv/bin/python tools/marker4_v7/vector_comparison.py /tmp/NEW.json --capture-sha256 SHA256, where SHA256 is obtained with sha256sum /tmp/NEW.json. Never reuse an output basename.",
+  "additional_controls": {
+    "scope": "Native Marker4 RTV3 saved tool 0 through host GLES/Mesa; compare rounded SVG tip and MuPDF SVG-to-PDF rasterization. Not device parity or direct PDF renderer evidence.",
+    "cases": [
+      {
+        "case": "tap-9.5",
+        "scale": 2.0,
+        "phase": [
+          0.25,
+          0.0
+        ],
+        "source_dots_sha256": "e2433b2020a2983a3920d081536d881f336214ba052ac7796f1b3031bad32d0d",
+        "producer_sha256": "9d5b293f09b5c155d7eabed762fb1ae93dee763c72323d053d482da53607c1b4",
+        "rgba_sha256": "4be9edad113b73768fcc4480e0b939c79a1704cbd4c4e1529cb4201071458794",
+        "matrix_f32": [
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          472.25,
+          296.0,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "tap-9.5",
+          "scale": 2.0,
+          "phase": [
+            0.25,
+            0.0
+          ],
+          "native": {
+            "support": 308,
+            "alpha_l1": 0,
+            "alpha_sum": 37730
+          },
+          "resvg": {
+            "support": 350,
+            "alpha_l1": 2894,
+            "alpha_sum": 40416
+          },
+          "mupdf": {
+            "support": 353,
+            "alpha_l1": 3096,
+            "alpha_sum": 39480
+          }
+        },
+        "capture_json_sha256": "3a0986d6f1c32b17b1786455cef040999c65a2b51e0c749ca785c6f216029f7d"
+      },
+      {
+        "case": "diagonal-0.4",
+        "scale": 2.0,
+        "phase": [
+          0.25,
+          0.25
+        ],
+        "source_dots_sha256": "7557fc09370315321fc64ec9677934520695919346761e5df1b5693feb6737aa",
+        "producer_sha256": "68505a2399d9b4be9e4ffa4c470b274ab5839ed8a3243bb5604a2bb43cc6bd48",
+        "rgba_sha256": "f62eb62c1b65372939df97713a399539878adb14783086149d605b62656fa51f",
+        "matrix_f32": [
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          446.3506774902344,
+          318.0826110839844,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "diagonal-0.4",
+          "scale": 2.0,
+          "phase": [
+            0.25,
+            0.25
+          ],
+          "native": {
+            "support": 419,
+            "alpha_l1": 0,
+            "alpha_sum": 40051
+          },
+          "resvg": {
+            "support": 494,
+            "alpha_l1": 13197,
+            "alpha_sum": 53248
+          },
+          "mupdf": {
+            "support": 506,
+            "alpha_l1": 13024,
+            "alpha_sum": 52285
+          }
+        },
+        "capture_json_sha256": "d265a1bb862bd799435b92bb978bceeaf8a0f30ff5747a2d7c8479d5a0f662e2"
+      },
+      {
+        "case": "line-9.5",
+        "scale": 1.0,
+        "phase": [
+          0.25,
+          0.5
+        ],
+        "source_dots_sha256": "8e119c67fae396631b19a9976089cedbc55ed0f218afec562feab3e169a70f45",
+        "producer_sha256": "f9449b4518fb03a36334400b5b5d40c7ef540ff793dec596018cb59895c9c532",
+        "rgba_sha256": "29dd55d87a5e659522697861dcd32bfc58764608c2a3e8cfa5528c0ba514776b",
+        "matrix_f32": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          479.3878173828125,
+          275.5,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "line-9.5",
+          "scale": 1.0,
+          "phase": [
+            0.25,
+            0.5
+          ],
+          "native": {
+            "support": 337,
+            "alpha_l1": 0,
+            "alpha_sum": 37091
+          },
+          "resvg": {
+            "support": 350,
+            "alpha_l1": 4533,
+            "alpha_sum": 41624
+          },
+          "mupdf": {
+            "support": 357,
+            "alpha_l1": 4565,
+            "alpha_sum": 40608
+          }
+        },
+        "capture_json_sha256": "d955b86a0917402e8ce9d9cb3c2ca7aa9748cfbddf86158481ed13c288522e79"
+      },
+      {
+        "case": "loop-9.5",
+        "scale": 2.0,
+        "phase": [
+          0.5,
+          0.25
+        ],
+        "source_dots_sha256": "0e69a6ba285ac7dd2bfb1156e7c67c5bff33ce5c3b1afc54c5d4639318eb5256",
+        "producer_sha256": "109453f53cdea97d2123f1be4b6df630f010b8e7425b9fa271de18e978add5ab",
+        "rgba_sha256": "3327ecf5d7936c3f9692d544ca098e0f4f1fce6c1200357cfe15e281bf70d779",
+        "matrix_f32": [
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          466.06121826171875,
+          302.18878173828125,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "loop-9.5",
+          "scale": 2.0,
+          "phase": [
+            0.5,
+            0.25
+          ],
+          "native": {
+            "support": 713,
+            "alpha_l1": 0,
+            "alpha_sum": 82002
+          },
+          "resvg": {
+            "support": 748,
+            "alpha_l1": 6500,
+            "alpha_sum": 88424
+          },
+          "mupdf": {
+            "support": 753,
+            "alpha_l1": 8034,
+            "alpha_sum": 87636
+          }
+        },
+        "capture_json_sha256": "d52bddcca6796847273db3fcebcd40a35ab55af48d4821622b27a407ec750fd2"
+      },
+      {
+        "case": "tap-35.50513458251953",
+        "scale": 0.5,
+        "phase": [
+          0.5,
+          0.5
+        ],
+        "source_dots_sha256": "2122ddb9a2710c17930e07a8b9b96fcbfe2d1d4f0ca52ded28932d77698dabef",
+        "producer_sha256": "119adb8ecee46a9a4dbe5e08ad17297b8208eaf805c21c0656c953a15e335146",
+        "rgba_sha256": "2bcbfdd69091075e8a1c2aa3b4d47b68ccbdcb94dc85513e1388c54860199fbe",
+        "matrix_f32": [
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          502.5,
+          265.5,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "tap-35.50513458251953",
+          "scale": 0.5,
+          "phase": [
+            0.5,
+            0.5
+          ],
+          "native": {
+            "support": 235,
+            "alpha_l1": 0,
+            "alpha_sum": 27992
+          },
+          "resvg": {
+            "support": 269,
+            "alpha_l1": 2608,
+            "alpha_sum": 30280
+          },
+          "mupdf": {
+            "support": 269,
+            "alpha_l1": 3010,
+            "alpha_sum": 29894
+          }
+        },
+        "capture_json_sha256": "a11b94a477588ff2d86a6a1effe42e0ad5c3be0db378f5a8b4fad655c3ac1b35"
+      },
+      {
+        "case": "turn-9.5",
+        "scale": 1.0,
+        "phase": [
+          0.0,
+          0.0
+        ],
+        "source_dots_sha256": "57a856213b4bed08d1f87eb476ba931cda2fb1b41595f99a352ffa47d725455c",
+        "producer_sha256": "32d82674673186a2cbfe50e6b9db947fbace2bb10a54a5841377e367332748e9",
+        "rgba_sha256": "ca90cb1d61b58adea465e5dbc5f41bd323e22b544cf14ddf92fed4024466839f",
+        "matrix_f32": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          488.2558898925781,
+          284.172119140625,
+          0.0,
+          1.0
+        ],
+        "gl_error": 0,
+        "comparison": {
+          "case": "turn-9.5",
+          "scale": 1.0,
+          "phase": [
+            0.0,
+            0.0
+          ],
+          "native": {
+            "support": 282,
+            "alpha_l1": 0,
+            "alpha_sum": 30208
+          },
+          "resvg": {
+            "support": 316,
+            "alpha_l1": 5440,
+            "alpha_sum": 35648
+          },
+          "mupdf": {
+            "support": 322,
+            "alpha_l1": 5603,
+            "alpha_sum": 35063
+          }
+        },
+        "capture_json_sha256": "70a31f11e6d7e769c1727633851aab9b93a1f3ffcf22d44ee9fc5b7ffab0cbb7"
+      }
+    ],
+    "renderer_versions": {
+      "resvg": "0.45.1",
+      "pymupdf": "1.28.2",
+      "mupdf": "1.28.2"
+    },
+    "recipe": "For each case below, choose a new output basename in /tmp. From the project root run PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/conformance-cleanup/native-capture-a241793/conformance:scratch/defaultpen-native .venv/bin/python tools/marker4_v7/mesa_capture.py --capture-output /tmp/NEW.json --case CASE --scale SCALE --phase-x PHASE_X --phase-y PHASE_Y, then .venv/bin/python tools/marker4_v7/vector_comparison.py /tmp/NEW.json --capture-sha256 SHA256, where SHA256 is obtained with sha256sum /tmp/NEW.json. Never reuse an output basename."
+  }
 }

@@ -41,9 +41,26 @@ verify_pin(LIB/'libc++_shared.so',EXPECTED_LIBCXX,'libc++')
 verify_pin(LIB/'libSPenMarker4.so','23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff','Marker4')
 cli=argparse.ArgumentParser(description='Capture the bounded native Marker4 V7 tool-0 paint control.')
 cli.add_argument('--capture-output', required=True, help='JSON receipt path; RGBA output uses the same stem')
+cli.add_argument('--case', default='turn-9.5')
+cli.add_argument('--scale', type=float, default=1.0)
+cli.add_argument('--phase-x', type=float, default=0.0)
+cli.add_argument('--phase-y', type=float, default=0.0)
 cli_args=cli.parse_args()
 output_path=Path(cli_args.capture_output)
+if output_path.suffix != '.json':
+ raise SystemExit('capture output must have a .json suffix')
+output_paths=[output_path,output_path.with_suffix('.rgba'),output_path.with_name(output_path.stem+'-mask.json'),output_path.with_name(output_path.stem+'-mask.rgba')]
+if len({p.resolve() for p in output_paths}) != len(output_paths):
+ raise SystemExit('capture output paths collide')
+if any(p.exists() or p.is_symlink() for p in output_paths):
+ raise SystemExit('capture output already exists')
 output_path.parent.mkdir(parents=True, exist_ok=True)
+fixture_path=Path('conformance/marker4-v7-finger-native.json')
+verify_pin(fixture_path,'5e6150ffe049ae9775d26724beb25174361b7bf234f448c955e7039dcc6f3c77','finger geometry fixture')
+def write_new(path,data):
+ with path.open('xb') as stream: stream.write(data)
+ if hashlib.sha256(path.read_bytes()).digest()!=hashlib.sha256(data).digest():
+  raise RuntimeError(f'output hash mismatch: {path}')
 sys.path[:0]=[str(ROOT/'conformance'),str(ROOT/'scratch/apk-analysis-runtime/python')]
 import airbrush_texture_native as at, inkpen_paint_native as ip, fountain_native as fn
 LIB=ROOT/'scratch/apk-analysis-native/arm64-v8a'
@@ -195,15 +212,15 @@ try:
  fb=C.c_uint();g['glGenFramebuffers'](1,C.byref(fb));g['glBindFramebuffer'](0x8D40,fb.value);g['glFramebufferTexture2D'](0x8D40,0x8CE0,0x0DE1,tex,0)
  status=g['glCheckFramebufferStatus'](0x8D40)
  raw=C.create_string_buffer(200*200*4);g['glReadPixels'](0,0,200,200,0x1908,0x1401,raw);err=g['glGetError']()
- out=output_path.with_name(output_path.stem + '-mask.rgba');out.write_bytes(raw.raw)
+ out=output_path.with_name(output_path.stem + '-mask.rgba');write_new(out,raw.raw)
  events=[e for e in p.gl_calls if e.get('call') in ('glTexImage2D','glFramebufferTexture2D','glBindFramebuffer','glCheckFramebufferStatus','glBindTexture','glActiveTexture','glDrawArrays','glUniform1i','glUniform1f','glTexParameteri','glSamplerParameteri','glBindSampler')]
  meta={'schema':'marker4-v7-native-canvas-mask-readback-v1','DSO':{'Marker4':'23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff'},'mask_bitmap_pointer':hex(p.get(rt+216,'Q')[0]),'texture_id':tex,'fbo_readback':fb.value,'fbo_status':hex(status),'gl_error':err,'width':200,'height':200,'format':'RGBA/UNSIGNED_BYTE','row_origin':'GL bottom-left','bytes':len(raw.raw),'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'file':str(out),'shader_sources':p.shader_source_calls,'texture_sampler_events':events,'host_gles':p.gles.identity}
- output_path.with_name(output_path.stem + '-mask.json').write_text(json.dumps(meta,indent=2)+'\n')
+ write_new(output_path.with_name(output_path.stem + '-mask.json'),(json.dumps(meta,indent=2)+'\n').encode())
  print('MASK_CAPTURE',json.dumps({k:v for k,v in meta.items() if k not in ('shader_sources','texture_sampler_events')}))
  print('TEXTURE_EVENTS',json.dumps(events,default=str))
  # Actual Marker4 task2: native saved V7 AddPoint stamps -> native Update/Draw -> Mesa.
  saved=json.loads(Path('conformance/marker4-v7-finger-native.json').read_text())['cases']
- case=next(x for x in saved if x['name']=='turn-9.5')
+ case=next(x for x in saved if x['name']==cli_args.case)
  dots=case['dots']
  # Native producer/upload vectors are host-owned storage adapters; all point expansion and paint are native.
  producer=p.alloc(24);upload=p.alloc(24);pdata=p.alloc(65536);udata=p.alloc(65536)
@@ -213,7 +230,7 @@ try:
  for x,y,r,a in dots: p.call(add,[rt],[x,y,r,a])
  b,e,c=p.get(producer,'3Q');stream=bytes(p.u.mem_read(b,e-b))
  p.call('SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)',[rt,producer,upload])
- p.call('SPen::PenDrawableRT::SetPenData(float, int)',[rt,0x80ffcb30],[9.5])
+ p.call('SPen::PenDrawableRT::SetPenData(float, int)',[rt,0x80ffcb30],[case['size']])
  p.call('SPen::Marker4StrokeDrawableRTV3::Update(bool)',[rt,0],instruction_limit=5_000_000)
  # Frame the saved horizontal stroke at native document coordinates, at 1 px/doc unit.
  w,h=1024,512; cx=sum(x for x,y,r,a in dots)/len(dots); cy=sum(y for x,y,r,a in dots)/len(dots)
@@ -223,13 +240,14 @@ try:
  p.call('SPen::SPTextureBitmap::AttachToCanvasRT(bool)',[ob,1],instruction_limit=5_000_000)
  p.call('SPen::SPTextureBitmap::GetSubBitmap(int)',[ob,0]);sub=p.x(0)
  # Matrix4 column-major transform: doc x remains +, doc y is flipped to raster top-down.
- mat=p.alloc(64);p.put(mat,'16f',1,0,0,0,0,-1,0,0,0,0,1,0,w/2-cx,h/2+cy,0,1)
+ mat=p.alloc(64);scale=cli_args.scale
+ p.put(mat,'16f',scale,0,0,0,0,-scale,0,0,0,0,1,0,w/2-scale*cx+cli_args.phase_x,h/2+scale*cy-cli_args.phase_y,0,1)
  p.call('SPen::PenDrawableRT::SetRedrawState(bool)',[rt,1]);p.call('SPen::PenDrawableRT::SetEnhancedAntiAlias(bool)',[rt,1])
  before=len(p.gl_calls);p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
  g=p.gles.f; rf=C.CFUNCTYPE(None,C.c_int,C.c_int,C.c_int,C.c_int,C.c_uint,C.c_uint,C.c_void_p)(p.gles.gl.glReadPixels)
  raw=C.create_string_buffer(w*h*4);rf(0,0,w,h,0x1908,0x1401,raw);err=g['glGetError']()
- out=output_path.with_suffix('.rgba');out.write_bytes(raw.raw)
- fm={'schema':'marker4-v7-native-task2-mesa-frame-v1','source_json_sha256':hashlib.sha256(Path('conformance/marker4-v7-finger-native.json').read_bytes()).hexdigest(),'case':'turn-9.5','tool':0,'source_dot_count':len(dots),'source_dots_sha256':hashlib.sha256(json.dumps(dots,separators=(',',':')).encode()).hexdigest(),'producer_bytes':len(stream),'producer_sha256':hashlib.sha256(stream).hexdigest(),'producer_float_count':(e-b)//4,'set_pen_size_f32':9.5,'set_pen_argb':hex(0x80ffcb30),'target':[w,h],'frame_center_doc':[cx,cy],'matrix_f32':p.get(mat,'16f'),'texture_id':None,'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'read_framebuffer':(lambda q:(p.gles.gl.glGetIntegerv(0x8CAA,C.byref(q)),q.value)[1])(C.c_int()),'gl_error':err,'draw_calls':p.gl_calls[before:],'image_path':str(out),'raw_input_boundary':'saved native V7 AddPoint outputs; GL/task callbacks use actual native render code'}
+ out=output_path.with_suffix('.rgba');write_new(out,raw.raw)
+ fm={'schema':'marker4-v7-native-task2-mesa-frame-v1','source_json_sha256':hashlib.sha256(Path('conformance/marker4-v7-finger-native.json').read_bytes()).hexdigest(),'case':cli_args.case,'tool':0,'source_dot_count':len(dots),'source_dots_sha256':hashlib.sha256(json.dumps(dots,separators=(',',':')).encode()).hexdigest(),'producer_bytes':len(stream),'producer_sha256':hashlib.sha256(stream).hexdigest(),'producer_float_count':(e-b)//4,'set_pen_size_f32':case['size'],'set_pen_argb':hex(0x80ffcb30),'scale':cli_args.scale,'phase':[cli_args.phase_x,cli_args.phase_y],'target':[w,h],'frame_center_doc':[cx,cy],'matrix_f32':p.get(mat,'16f'),'texture_id':None,'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'read_framebuffer':(lambda q:(p.gles.gl.glGetIntegerv(0x8CAA,C.byref(q)),q.value)[1])(C.c_int()),'gl_error':err,'draw_calls':p.gl_calls[before:],'image_path':str(out),'raw_input_boundary':'saved native V7 AddPoint outputs; GL/task callbacks use actual native render code'}
  fm['texture_id']=next((x.get('texture') for x in p.gl_calls[before:] if x.get('call')=='glFramebufferTexture2D'),None)
  fm['pre_draw_native_vbo_uploads']=[x for x in p.gl_calls if x.get('call')=='glBufferData' and x.get('size')==len(stream)]
  fm['target_texture_fbo_events']=[x for x in p.gl_calls if x.get('call') in ('glTexImage2D','glFramebufferTexture2D','glCheckFramebufferStatus')]
@@ -237,7 +255,7 @@ try:
  fm['native_producer_last_12_f32']=list(p.get(e-48,'12f')) if (e-b)>=48 else []
  fm['all_gl_buffer_data_small']=[x for x in p.gl_calls if x.get('call')=='glBufferData' and x.get('size',999999)<=1024]
 
- output_path.write_text(json.dumps(fm,indent=2)+'\n')
+ write_new(output_path,(json.dumps(fm,indent=2)+'\n').encode())
  print('TASK2_CAPTURE',json.dumps({k:v for k,v in fm.items() if k!='draw_calls'}))
  raise SystemExit(0)
 except Exception as e:
