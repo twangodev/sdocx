@@ -572,11 +572,22 @@ feed a synthetic type-2 record, ordinal range `[0,1)`, level 1 and LTR direction
 to native `ApplyBinary_TextData`. At text scale 3 the wide, wrapped and narrow
 cases place the first nonempty line background left edge at x=16; wrapped and
 narrow cases also produce overlapping page sections. The Rust measured-layout
-line origin for the wide control is x=48. The paper page-layout certificate therefore
-continues to reject indent records. These controls supply page records and do
-not execute full archive loading, the PDF writer or a device. The current host
-libc digest differs from the pinned earlier controls and is recorded in the
-receipt. Capture mode sets `SDOCX_CAPTURE_PARSED_DEFAULT=1` and
+line origin for the wide control is x=48. The harness uses the default device
+profile with density 1 and no text manager, then independently sets the Widget
+text scale to 3. The native indent increment uses document density rather than
+that text scale. Rust currently derives its text scale from document metadata
+density and uses the same setting for indent width, so the x=48 comparison does
+not by itself establish a mismatch for a production document with density 3.
+The [density-3 manager controls](../../conformance/pdf-paper-parsed-indent-density3-native.json)
+use local text scale 1 and place the indented line at x=48. Rust matches their
+line rectangles, ownership and page sections for three single-paragraph controls.
+The PDF-paper certificate admits this exact level-1 LTR record with an implicit
+font and a single nonempty ASCII paragraph, including wrapped text; other indent
+records remain unsupported. Admitting other text and widths is an inference from
+the limited captures. A public PDF control is readable by MuPDF and PDFium. The
+controls supply page records and do not execute full archive loading, the native
+PDF writer or a device. The host libc digest differs from the pinned earlier
+controls and is recorded in the receipt. Capture mode sets `SDOCX_CAPTURE_PARSED_DEFAULT=1` and
 `SDOCX_CAPTURE_PARSED_INDENT=1` for `--bodytext-page-ranges`; this replay used
 a temporary harness copy with its host-libc digest check updated to the
 recorded digest. Native Model getters verify the parsed level and direction.

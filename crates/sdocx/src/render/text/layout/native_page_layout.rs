@@ -23,6 +23,7 @@ pub(in crate::render) fn layout_native_paper_text(
     Result<NativePageLayout, NativePageIndexUnavailable>,
 ) {
     let settings = super::super::super::TextSettings {
+        paper_indent_placement: true,
         unscaled_implicit_caret: styled.settings.scale == 3.0
             && styled.text_box.font_size.is_none()
             && styled.text_box.spans.is_empty(),

@@ -846,6 +846,9 @@ admits its source, font, geometry and flow settings; space-only measured lines
 remain unsupported. At density 3, a separate PDF-paper profile also accepts
 bounded ASCII body text with nonempty paragraphs and no supplied paragraph
 metadata, subject to the existing font, geometry and flow guards. A single
+nonempty ASCII paragraph also accepts the captured level-1 LTR indentation record
+with implicit font size; native line and page-section controls cover limited
+text and widths, so broader input is an inference. A single
 leading, interior, or trailing empty paragraph is also accepted for a parsed implicit-default
 body. The captured 24-byte whole-text font-size span profile accepts a leading or interior empty paragraph; leading requires size 50 and interior size
 17 or 50. Other empty-paragraph styles remain unsupported. The prevalence of

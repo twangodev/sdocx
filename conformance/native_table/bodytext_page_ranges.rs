@@ -448,9 +448,13 @@ fn sample(
     machine.heap.cursor = MODEL + 0x80000;
     machine.heap.limit = MODEL + 0xc0000;
     write(machine.engine, SOURCE, &vec![0; 0x4000]);
-    widget_text_constructor::configure_context(
+    let density3 = std::env::var_os("SDOCX_CAPTURE_PARSED_INDENT_DENSITY3").is_some();
+    let (_, manager) = widget_text_constructor::configure_context(
         machine,
-        widget_text_constructor::DeviceProfile::default(),
+        widget_text_constructor::DeviceProfile {
+            manager: density3.then_some((1080, 3.0, 0)),
+            ..widget_text_constructor::DeviceProfile::default()
+        },
     );
     for (address, instructions) in [
         (COLOR, [0x2a0103e0_u32, 0xd65f03c0]),
@@ -581,9 +585,10 @@ fn sample(
         float_arguments(machine, margins);
         machine.call(0x39e678, &[SOURCE + 40]);
     }
-    machine.call(WIDGET + 0xd2fb4, &[WRAPPER, CONTEXT, 0]);
+    machine.call(WIDGET + 0xd2fb4, &[WRAPPER, CONTEXT, manager]);
     machine.call(WIDGET + 0xd3974, &[WRAPPER, SOURCE]);
-    float_arguments(machine, [input.text_scale, 0., 0., 0.]);
+    let local_scale = if density3 { 1.0 } else { input.text_scale };
+    float_arguments(machine, [local_scale, 0., 0., 0.]);
     machine.call(WIDGET + 0xd948c, &[WRAPPER]);
     machine.call(WIDGET + 0xd3e3c, &[WRAPPER]);
     float_arguments(machine, [input.width, 0., 0., 0.]);
@@ -675,7 +680,7 @@ fn sample(
         "{{\"name\":{},\"input\":{{\"source_utf8\":{},\"requested_text_scale_bits\":{},\"requested_width_bits\":{},\"requested_height_bits\":{},\"requested_font_size_bits\":{},\"requested_margin_bits\":{},\"page_records\":{:?}}},\"produced\":{{\"native_source_utf8\":{},\"text_length_utf16\":{length},\"layout_width\":{width},\"default_font_size_bits\":{},\"model_source\":{model},\"lines\":{lines},\"first_empty_rect_bits\":{first_empty:?},\"default_cursor_rect_bits\":{cursor:?},\"producer_calls\":{producer_calls},\"getter_observation_calls\":{observation_calls}}},\"boundaries\":[{}],\"boundary_calls\":{boundary_calls},\"stages\":[{}]}}",
         json_string(input.name),
         json_string(input.text),
-        input.text_scale.to_bits(),
+        local_scale.to_bits(),
         input.width.to_bits(),
         1000_f32.to_bits(),
         input

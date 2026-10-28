@@ -160,6 +160,7 @@ pub(super) struct TextSettings {
     pub scale: f32,
     pub font_size_delta: f32,
     pub(super) unscaled_implicit_caret: bool,
+    pub(super) paper_indent_placement: bool,
     pub(super) font_size_units: FontSizeUnits,
 }
 
@@ -175,6 +176,7 @@ impl Default for TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
             unscaled_implicit_caret: false,
+            paper_indent_placement: false,
             font_size_units: FontSizeUnits::Logical,
         }
     }

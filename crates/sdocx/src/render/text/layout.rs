@@ -1320,7 +1320,8 @@ fn try_layout_text_with_context(
             if native_cell_measurement.is_some()
                 && frame.bbox.x_min == 0.0
                 && native_cell_obstacles_supported
-                && layout.indent_level == 0
+                && (layout.indent_level == 0
+                    || (styled.settings.paper_indent_placement && layout.indent_level == 1))
                 && marker_width == 0.0
             {
                 match line.place_native_cell(styled, x, width, layout.alignment) {

@@ -282,6 +282,16 @@ impl NativePageLayout {
     ) -> Result<i32, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
         let source = styled.text_box;
+        let paper_indent = paper
+            && styled.settings.scale == 3.0
+            && !source.text.is_empty()
+            && !source.text.contains('\n')
+            && source.font_size.is_none()
+            && source.spans.is_empty()
+            && matches!(source.paragraphs.as_slice(), [p]
+                if p.kind == crate::RichTextParagraphType::IndentLevel
+                    && p.start_paragraph == 0 && p.end_paragraph == 1
+                    && p.payload == [1, 0, 0, 0, 1, 0, 0, 0]);
         let whole_font_span = matches!(source.spans.as_slice(), [span]
             if paper && styled.settings.scale == 3.0
                 && span.kind == crate::RichTextSpanType::FontSize
@@ -325,13 +335,12 @@ impl NativePageLayout {
             || source
                 .margins
                 .is_some_and(|margins| !margins.into_iter().all(f32::is_finite))
-            || source
-                .paragraphs
-                .iter()
-                .any(|paragraph| paragraph.kind != crate::RichTextParagraphType::ParsingState)
+            || source.paragraphs.iter().any(|paragraph| {
+                paragraph.kind != crate::RichTextParagraphType::ParsingState && !paper_indent
+            })
             || (styled.settings.scale != 1.0 && !(paper && styled.settings.scale == 3.0))
             || (styled.settings.scale == 3.0
-                && (!source.paragraphs.is_empty()
+                && ((!source.paragraphs.is_empty() && !paper_indent)
                     || source.text.is_empty()
                     || (source.text.ends_with('\n')
                         && !(certified_empty_paragraph
@@ -382,6 +391,12 @@ impl NativePageLayout {
             return Err(Error::OutsideCertificate);
         }
         let source = styled.text_box;
+        let paper_indent = paper
+            && styled.settings.paper_indent_placement
+            && matches!(source.paragraphs.as_slice(), [p]
+                if p.kind == crate::RichTextParagraphType::IndentLevel
+                    && p.start_paragraph == 0 && p.end_paragraph == 1
+                    && p.payload == [1, 0, 0, 0, 1, 0, 0, 0]);
         let paragraphs: Vec<_> = styled.index.display_paragraphs().collect();
         let margins = source.margins.unwrap_or([0.0; 4]);
         let content_width = f64::from(width) - f64::from(margins[0]) - f64::from(margins[2]);
@@ -396,7 +411,8 @@ impl NativePageLayout {
             if bands.overflow || line.marker.is_some() || line.predefined.is_some() {
                 return Err(Error::OutsideCertificate);
             }
-            if line.width != content_width || line.x != f64::from(margins[0]) {
+            let indent = if paper_indent { 48.0 } else { 0.0 };
+            if line.width != content_width - indent || line.x != f64::from(margins[0]) + indent {
                 return Err(Error::OutsideCertificate);
             }
             for placement in &line.line.placements {

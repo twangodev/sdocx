@@ -1215,6 +1215,42 @@ fn public_pdf_paper_density_three_places_body_across_source_page_cut() {
 }
 
 #[test]
+fn public_pdf_paper_density_three_accepts_level_one_ltr_indent() {
+    let mut document = document(true, None, 0, 1);
+    document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
+    document.metadata.flow_dimensions = Some((NOTE_WIDTH, NOTE_HEIGHT));
+    let mut body = parsed_body_optional_size("Hello", None);
+    body.paragraphs = vec![RichTextParagraph {
+        kind: RichTextParagraphType::IndentLevel,
+        start_paragraph: 0,
+        end_paragraph: 1,
+        payload: [1_u32.to_le_bytes(), 1_u32.to_le_bytes()].concat(),
+    }];
+    document.metadata.note_text = Some(body);
+    let output = export(&document, &[0], 96.0).unwrap();
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    assert!(
+        pdf.objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .any(|stream| {
+                Content::decode(
+                    &stream
+                        .decompressed_content()
+                        .unwrap_or_else(|_| stream.content.clone()),
+                )
+                .is_ok_and(|content| content.operations.iter().any(|op| op.operator == "BT"))
+            })
+    );
+    let body = document.metadata.note_text.as_mut().unwrap();
+    body.paragraphs[0].payload[4] = 2;
+    assert!(matches!(
+        export(&document, &[0], 96.0),
+        Err(PdfError::UnsupportedPdfPaper { .. })
+    ));
+}
+
+#[test]
 fn public_pdf_paper_density_three_accepts_parsed_font_span_empty_paragraph() {
     for (text, size) in [
         (format!("\n{}B", "A\n".repeat(20)), 50.0),
