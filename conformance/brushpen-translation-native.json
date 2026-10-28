@@ -1,0 +1,90 @@
+{
+  "host_boundaries": [
+    "Pen/model input arrays and IContext/canvas/resource/queue are explicit synthetic host inputs; native Model getters, ObjectDrawing route, BrushPen factory/admission, MotionEvent getter path, GLV10 geometry and RTV1 AddPoint execute in the pinned native DSOs.",
+    "The queue adapter synchronously dispatches task vslot+16; renderer/GLES callbacks and pixel rendering are outside this capture. sincosf and expf imports are serviced by Python math callbacks, so target libm math execution is not claimed.",
+    "The empty advanced setting is explicitly supplied to native ObjectStroke::SetAdvancedPenSetting; this is not an SDK-deserialized app stroke. No Samsung device or user-captured stroke is claimed."
+  ],
+  "input": {
+    "advanced_setting_ascii": "",
+    "color_argb_u32": "0xff6cdd8f",
+    "curve_enabled": true,
+    "native_model_getter_snapshot": {
+      "advanced_setting": "",
+      "color_argb_u32": "0xff6cdd8f",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+      "size": 3.1440000534057617,
+      "size_level": 30,
+      "tool_type": 2
+    },
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+    "point_count": 3,
+    "size_f32_bits": "4c374940",
+    "size_level": 30,
+    "source_arrays": {
+      "orientations": {
+        "count": 3,
+        "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+        "element_size": 4
+      },
+      "points": {
+        "count": 3,
+        "data_hex": "0000ca420000c4420000ce420000ca420000d4420000d042",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 3,
+        "data_hex": "9a99993e9a99193f9a99593f",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 3,
+        "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 3,
+        "data_hex": "2c0100003b01000054010000",
+        "element_size": 4
+      }
+    },
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "native_helper_sha256": {
+    "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "native_libraries_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "producer": {
+    "buffer_bytes": 1144,
+    "buffer_hex": "d2c7c942e899c4420000803f5c8f823eb4b8e0bd26e8993e000000000000000000000000000000000000000000c9c942ac9bc4420000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000f8ccc942a1a1c4420000803fec511040b4b8e0bd26e8993ed4000e3f3f01553f0000000000000000000000007fd4c942ebacc4420000803fec515040b4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000081e0c942efbec4420000803ff6288840b4b8e0bd26e8993ed5000e3f4001553f00000000000000000000000020f2c9425dd9c4420000803ff628a840b4b8e0bd26e8993ed6000e3f4001553f000000000000000000000000ba0aca4244fec4420000803ff628c840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000f52bca421d30c5420000803f5c8f823eb4b8e0bd26e8993ed5000e3f4101553f000000000000000000000000d157ca42e771c5420000803fd7a3a03fb4b8e0bd26e8993ed4000e3f3f01553f000000000000000000000000b790ca423fc7c5420000803fec511040b4b8e0bd26e8993ed5000e3f4001553f0000000000000000000000008cd9ca427f34c6420000803fec515040b4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000ce35cb42e3bec6420000803ff6288840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000d06ccb4212f0c7420000803ff628a840513093be2712f03ed5000e3f4001553f0000000000000000000000001aadcb422f56c8426d03823ff628c840513093be2712f03e971a113fa6e7523f0000000000000000000000008cf0cb42e5bdc842f50e843f5c8f823e513093be2712f03ee628143ffac4503f0000000000000000000000004637cc423e27c942b922863fd7a3a03f513093be2712f03e512b173fca994e3f0000000000000000000000006581cc423f92c942db3e883fec511040513093be2712f03e6c211a3fa8664c3f0000000000000000000000000dcfcc42eefec9427c638a3fec515040513093be2712f03ed50a1d3f282c4a3f0000000000000000000000005a20cd42536dca42be908c3ff6288840513093be2712f03e2fe71f3fe2ea473f0000000000000000000000007275cd4275ddca42c4c68e3ff628a840513093be2712f03e2db6223f6ca3453f00000000000000000000000079cecd425b4fcb42b105913ff628c840513093be2712f03e8777253f6156433f000000000000000000000000912bce420bc3cb42a94d933f5c8f823e513093be2712f03efd2a283f5804413f000000000000000000000000e38cce428d38cc42d09e953fd7a3a03f513093be2712f03e5ad02a3fe9ad3e3f00000000000000000000000093f2ce42e7afcc424cf9973fec511040513093be2712f03e74672d3fb0533c3f000000000000000000000000cf5ccf422329cd42425d9a3fec515040513093be2712f03e24f02f3f3cf6393f000000000000000000000000bccbcf4247a4cd42d8ca9c3ff6288840513093be2712f03e506a323f2396373f000000000000000000000000",
+    "buffer_sha256": "d8589df5da6e70ddb71f1e2c299ac9b84cc1437eeceec5912bbd37525338b218",
+    "callback_count": 26
+  },
+  "profile": {
+    "canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "height": 1080,
+    "width": 1920
+  },
+  "schema": "brushpen-saved-caller-native-v1"
+}

@@ -2186,6 +2186,12 @@ mod tests {
     fn glv10_drawing_caller_screen_limits_reconstruct_full_native_buffer() {
         for (fixture_text, width, height, hash) in [
             (
+                include_str!("../../../../conformance/brushpen-translation-native.json"),
+                1920,
+                1080,
+                "d8589df5da6e70ddb71f1e2c299ac9b84cc1437eeceec5912bbd37525338b218",
+            ),
+            (
                 include_str!("../../../../conformance/brushpen-saved-caller-native.json"),
                 1920,
                 1080,
