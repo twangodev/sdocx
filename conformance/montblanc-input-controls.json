@@ -1,0 +1,239 @@
+{
+  "binary_sha256": {
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "MontblancFountainPen": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350"
+  },
+  "boundary": "Controlled synthetic ObjectStroke setters and ARM64 Drawing executed through pinned Unicorn host harness. Runtime adapters include loader, allocator, context, queue and GLES. Stream digest covers native Add* entry names and six float lanes, not final pixels or complete render state. Omitted setters do not establish serialized field presence semantics. No device verification.",
+  "capture_script_sha256": "de0f0ce0116f821043a30f467e133dbd4601d048995912225ba57579bfa45628",
+  "cases": {
+    "baseline": {
+      "error": null,
+      "input": {},
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "color_red": {
+      "error": null,
+      "input": {
+        "color": 4292686865
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "color_transparent": {
+      "error": null,
+      "input": {
+        "color": 0
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "omitted_size": {
+      "error": null,
+      "input": {
+        "omit_size": true
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000000",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000000"
+        ],
+        "stream_sha256": "7a44a74f2b7ff54e98a3f2e68a3ee45d1370fa3a6cc53ee6df8ede5dd1385a02"
+      },
+      "status": 0
+    },
+    "setting0": {
+      "error": null,
+      "input": {
+        "setting": "0;"
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "setting2": {
+      "error": null,
+      "input": {
+        "setting": "2;"
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "setting_bad": {
+      "error": "host atoi adapter raised ValueError parsing bad; no native result; not evidence of native rejection",
+      "input": {
+        "setting": "bad"
+      },
+      "result": null,
+      "status": 1
+    },
+    "setting_empty": {
+      "error": null,
+      "input": {
+        "setting": ""
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "tool0": {
+      "error": null,
+      "input": {
+        "tool": 0
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "tool1": {
+      "error": null,
+      "input": {
+        "tool": 1
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    },
+    "tool3": {
+      "error": null,
+      "input": {
+        "tool": 3
+      },
+      "result": {
+        "add_count": 25,
+        "model_size_f32_le": "00000040",
+        "montblanc_factory_selected": true,
+        "redraw_entries": [
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "SPen::MontblancFountainPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)"
+        ],
+        "return": 1,
+        "set_size_f32_le": [
+          "00000040",
+          "00000040"
+        ],
+        "stream_sha256": "9e6f08412623ccfa19a803113d8b66d230cf983bfe269865cff58fca3dc454a8"
+      },
+      "status": 0
+    }
+  },
+  "schema": "sdocx-montblanc-input-control-v1",
+  "source_harness_sha256": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+}
