@@ -663,3 +663,7 @@ pub(crate) mod tests {
         buffers
     }
 }
+
+#[cfg(test)]
+#[path = "montblanc_width_test.rs"]
+mod width_state_tests;
