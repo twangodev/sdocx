@@ -421,7 +421,12 @@ fn model_source(machine: &Machine, length: u64) -> String {
         let start = machine.call(0x413e48, &[paragraph]) as u32 as i32;
         let end = machine.call(0x413f04, &[paragraph]) as u32 as i32;
         let alignment = if kind == 3 { machine.call(0x40e5e4, &[paragraph]).to_string() } else { "null".into() };
-        format!("{{\"kind\":{kind},\"paragraph_index_range\":[{start},{end}],\"alignment\":{alignment}}}")
+        let indent = if kind == 2 {
+            let level = machine.call(0x40ed00, &[paragraph]) as u32;
+            let direction = machine.call(0x40edbc, &[paragraph]) as u32;
+            format!(",\"indent\":{{\"level\":{level},\"direction\":{direction}}}")
+        } else { String::new() };
+        format!("{{\"kind\":{kind},\"paragraph_index_range\":[{start},{end}],\"alignment\":{alignment}{indent}}}")
     }).collect::<Vec<_>>();
     if begin != 0 {
         machine.call(0x47ac00, &[begin]);
@@ -477,7 +482,15 @@ fn sample(
             common.extend_from_slice(&unit.to_le_bytes());
         }
         common.extend_from_slice(&0_u32.to_le_bytes());
-        common.extend_from_slice(&0_u32.to_le_bytes());
+        if std::env::var_os("SDOCX_CAPTURE_PARSED_INDENT").is_some() {
+            common.extend_from_slice(&1_u32.to_le_bytes());
+            common.extend_from_slice(&20_u16.to_le_bytes());
+            for word in [2_u32, 0, 1, 1, 1] {
+                common.extend_from_slice(&word.to_le_bytes());
+            }
+        } else {
+            common.extend_from_slice(&0_u32.to_le_bytes());
+        }
         common.extend_from_slice(&[0; 16]);
         common.push(0);
         common.extend_from_slice(&0_u16.to_le_bytes());
@@ -708,6 +721,17 @@ pub(super) fn capture(
     environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
     let mut output = Vec::new();
     for input in inputs().into_iter().filter(|input| {
+        if std::env::var_os("SDOCX_CAPTURE_PARSED_INDENT").is_some() {
+            return [
+                "scale3-wide",
+                "scale3-wrapped",
+                "scale3-narrow",
+                "scale3-consecutive-newlines",
+                "scale3-leading",
+                "scale3-trailing",
+            ]
+            .contains(&input.name);
+        }
         if std::env::var_os("SDOCX_CAPTURE_PARSED_DEFAULT").is_some() {
             return [
                 "scale3-consecutive-newlines",

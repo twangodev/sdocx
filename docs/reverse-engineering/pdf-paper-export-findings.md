@@ -567,6 +567,20 @@ pair to `updatePage` (`0x35e220–0x35e23c`). PDF-record rectangles therefore
 participate in single-mode segmentation even though they are not arguments to
 the final PDF import operation.
 
+The [parsed indent controls](../../conformance/pdf-paper-parsed-indent-native.json)
+feed a synthetic type-2 record, ordinal range `[0,1)`, level 1 and LTR direction
+to native `ApplyBinary_TextData`. At text scale 3 the wide, wrapped and narrow
+cases place the first nonempty line background left edge at x=16; wrapped and
+narrow cases also produce overlapping page sections. The Rust measured-layout
+line origin for the wide control is x=48. The paper page-layout certificate therefore
+continues to reject indent records. These controls supply page records and do
+not execute full archive loading, the PDF writer or a device. The current host
+libc digest differs from the pinned earlier controls and is recorded in the
+receipt. Capture mode sets `SDOCX_CAPTURE_PARSED_DEFAULT=1` and
+`SDOCX_CAPTURE_PARSED_INDENT=1` for `--bodytext-page-ranges`; this replay used
+a temporary harness copy with its host-libc digest check updated to the
+recorded digest. Native Model getters verify the parsed level and direction.
+
 Blank-body admission has a separate native predicate: Bodytext `HasVisibleText`
 (`0xcbe84`) obtains a line range, then Widget `HasVisibleTextNParagraph`
 (`0xde170`) scans source UTF-16 and paragraph bullet fields. LF-only text with

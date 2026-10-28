@@ -111,3 +111,6 @@ fn checked_width(
 
 #[cfg(all(test, feature = "serde"))]
 mod tests;
+
+#[cfg(all(test, feature = "serde", feature = "pdf"))]
+mod indent_capture_tests;
