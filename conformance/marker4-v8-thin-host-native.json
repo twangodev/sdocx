@@ -1,0 +1,44 @@
+{
+  "schema": "marker4-v8-thin-host-replay-v1",
+  "date": "2026-10-28",
+  "target": "Samsung Notes 4.4.45.37 libSPenMarker4.so",
+  "target_sha256": "23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff",
+  "runner_sha256": "187ccdb582218ea898d1fbe7b536e25bd8241bc2518ed7efc6110ba84cb9851f",
+  "source": "HF04 stroke 35 native saved AddPoint stream",
+  "canvas_pixels": [
+    1024,
+    512
+  ],
+  "renderer": "Mesa llvmpipe OpenGL ES",
+  "boundary": "Native RTV4 Update and Draw with host adapters; not a Samsung device or Standard PDF export. Other stroke geometry, phase, and scales are unverified.",
+  "cases": [
+    {
+      "size": 0.4,
+      "output_scale": 1,
+      "nonzero_alpha_pixels": 0,
+      "max_alpha": 0,
+      "rgba_sha256": "5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee"
+    },
+    {
+      "size": 0.4,
+      "output_scale": 2,
+      "nonzero_alpha_pixels": 0,
+      "max_alpha": 0,
+      "rgba_sha256": "5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee"
+    },
+    {
+      "size": 0.4,
+      "output_scale": 4,
+      "nonzero_alpha_pixels": 0,
+      "max_alpha": 0,
+      "rgba_sha256": "5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee"
+    },
+    {
+      "size": 2.0,
+      "output_scale": 1,
+      "nonzero_alpha_pixels": 1015,
+      "max_alpha": 128,
+      "rgba_sha256": "e99c099d5ca5fff5528a84afcab80f201ead9c13a016d7db56cbdea00b3942a7"
+    }
+  ]
+}

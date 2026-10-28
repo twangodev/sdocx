@@ -66,6 +66,11 @@ for placement. This allocation rule does not establish per-stroke size handling.
 An actual Standard export must identify the selected Marker4 drawable and size
 before the private callback can justify changing the public vector profile.
 
+At the minimum native Drawing size of 0.4, a controlled RTV4/Mesa replay of
+HF04 stroke 35 produced no visible pixels at 1×, 2× or 4×; the size-2 positive
+control produced 1,015. The [receipt](../../conformance/marker4-v8-thin-host-native.json)
+covers this host replay only, not device or Standard PDF output.
+
 ## Real-file comparison
 
 At 600×848, Chromium SVG output was compared with the Samsung PDF rendered
