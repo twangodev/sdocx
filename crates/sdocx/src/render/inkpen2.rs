@@ -101,7 +101,7 @@ mod tests {
     #[derive(Deserialize)]
     struct Readback {
         stage: String,
-        rgba_bytes: String,
+        rgba_zlib_base64: String,
     }
 
     #[derive(Deserialize)]
@@ -571,7 +571,7 @@ mod tests {
     }
 
     fn assert_capture_contract(fixture: &Fixture, case: &Case) {
-        assert_eq!(fixture.schema, "sdocx.inkpen2.paint.native.v1");
+        assert_eq!(fixture.schema, "sdocx.inkpen2.paint.native.v2");
         assert!(fixture.paint_model.contains_key("final_composite"));
         if case.input.set_pen_setting_data.branch_flag == 0 {
             let program = &case.shader_programs["5"];
@@ -729,7 +729,7 @@ mod tests {
                     "{} {stage_name}: complete framebuffer extent",
                     case.id
                 );
-                let captured_bytes = decode_hex(&captured.rgba_bytes);
+                let captured_bytes = decode_base64_zlib(&captured.rgba_zlib_base64);
                 assert_eq!(captured_bytes.len(), modeled_bytes.len());
                 for (index, (modeled_pixel, captured_pixel)) in modeled_bytes
                     .as_chunks::<4>()
@@ -765,7 +765,7 @@ mod tests {
                     .iter()
                     .find(|readback| readback.stage == "max_alpha_mask")
                     .unwrap();
-                let bytes = decode_hex(&capture.rgba_bytes);
+                let bytes = decode_base64_zlib(&capture.rgba_zlib_base64);
                 let offset = (y * single.input.canvas_width + x) * 4;
                 assert_eq!(&bytes[offset..offset + 4], &[modeled_alpha, 0, 0, 255]);
                 assert_eq!(modeled_alpha, 126);
