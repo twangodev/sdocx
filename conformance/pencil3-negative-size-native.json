@@ -1,0 +1,41 @@
+{
+  "schema": "pencil3-negative-size-native-v1",
+  "boundary": "Synthetic native Model setters and Drawing under Unicorn with host adapters; no serialized parser or device output.",
+  "saved_caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+  "pencil3_sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+  "cases": [
+    {
+      "input_size": -10.0,
+      "input_size_f32_bits_le": "000020c1",
+      "native_pen_size_f32_bits_le": "cdcccc3e",
+      "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+      "record_count": 1048,
+      "drawing_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "redraw_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "drawing_and_redraw_match": true,
+      "model_getter_size_f32_bits_le": "00000000"
+    },
+    {
+      "input_size": -0.1,
+      "input_size_f32_bits_le": "cdccccbd",
+      "native_pen_size_f32_bits_le": "cdcccc3e",
+      "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+      "record_count": 1048,
+      "drawing_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "redraw_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "drawing_and_redraw_match": true,
+      "model_getter_size_f32_bits_le": "00000000"
+    },
+    {
+      "input_size": 0.4,
+      "input_size_f32_bits_le": "cdcccc3e",
+      "native_pen_size_f32_bits_le": "cdcccc3e",
+      "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+      "record_count": 1048,
+      "drawing_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "redraw_sha256": "e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4",
+      "drawing_and_redraw_match": true,
+      "model_getter_size_f32_bits_le": "cdcccc3e"
+    }
+  ]
+}

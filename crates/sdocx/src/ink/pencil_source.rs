@@ -102,7 +102,6 @@ fn saved_pencil3_v3_inputs(stroke: &Stroke) -> Option<(u32, f32)> {
     // saved style omits size, so it must not replace that native zero.
     let raw_size = rendering.style.pen_size.unwrap_or(0.0);
     if !raw_size.is_finite()
-        || raw_size < 0.0
         || rendering.style.pen_size.is_some()
             && (!stroke.pen_width.is_finite() || stroke.pen_width.to_bits() != raw_size.to_bits())
         || stroke.points.iter().any(|point| {
@@ -703,6 +702,32 @@ mod tests {
                 expected_hash,
                 "raw size {raw_size:?} complete native stream"
             );
+        }
+
+        let negative_sizes: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-negative-size-native.json"
+        ))
+        .unwrap();
+        for case in negative_sizes["cases"].as_array().unwrap() {
+            let size = case["input_size"].as_f64().unwrap() as f32;
+            let mut stroke = fixture_stroke(profile);
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.pen_width = size;
+            let prepared = prepare_pencil3_v3_source(&stroke, 2560, 1440).unwrap();
+            let bytes = prepared
+                .records
+                .iter()
+                .flat_map(|record| record.iter().flat_map(|value| value.to_le_bytes()))
+                .collect::<Vec<_>>();
+            assert_eq!(
+                prepared.records.len(),
+                case["record_count"].as_u64().unwrap() as usize
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                case["drawing_sha256"].as_str().unwrap()
+            );
+            assert_eq!(case["drawing_sha256"], case["redraw_sha256"]);
         }
 
         let mut zero_tolerance = fixture_stroke(profile);

@@ -189,6 +189,17 @@ complete 1,048- and 7-record streams respectively in Rust. Supplied and omitted
 optional axes remain distinct. The strict ordinary-style gate does not establish
 native behavior for the rejected effects or all property combinations.
 
+The [negative-size Drawing probe](../../conformance/pencil3_negative_size_capture.py)
+and its [receipt](../../conformance/pencil3-negative-size-native.json)
+also captures -10 and -0.1. The native Model setter's getter returns 0 for
+both; Drawing's Pen setter then clamps that to 0.4. Both produce the same complete
+1,048-record stream (SHA-256 `e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4`)
+as 0.4; Drawing and saved redraw agree. This supports finite negative sizes in
+manually constructed public strokes under the native setter's clamp. The Rust
+serialized-stroke parser rejects negative pen sizes before this renderer is
+reached. Native serialized-input acceptance remains unverified; these captures
+are synthetic Model inputs, not serialized notes or device output.
+
 Four identical saved points produce seven particles at each tested constant
 pressure (0, 0.5 and 1), rather than an empty stream. The complete native
 Drawing and saved-redraw streams match each other and the Rust adapter in the
