@@ -978,6 +978,9 @@ mod four_point_tests;
 
 #[path = "montblanc_five_test.rs"]
 mod five_point_tests;
+#[cfg(test)]
+#[path = "montblanc_many_test.rs"]
+mod many_point_tests;
 
 pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], crate::Color)> {
     let rendering = stroke.rendering.as_ref()?;
