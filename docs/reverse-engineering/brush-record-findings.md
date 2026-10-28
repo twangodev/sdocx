@@ -282,3 +282,12 @@ has scaled RGBA absolute-error sum 4, versus 8,954 using baseline grain uniforms
 receipt includes the capture recipe; capture scripts are retained under
 `tools/brushpen-transform`; native inputs and host helpers remain in scratch and ignored
 helper trees. Public SVG/PDF transport and device parity remain unverified.
+
+Additional [affine uniform controls](../../conformance/brushpen-second-native/affine-uniforms.json)
+cover nonuniform scale, shear, a quarter turn, and reflection. For this fixture,
+the observed grain period equals the affine linear transform of `[321, 228]`,
+and the offset equals the affine point transform of approximately `[125, 30]`.
+The quarter turn and reflection produce negative period components, so these are
+signed values rather than scale magnitudes. A test checks this prediction against
+the captured uploads. These observations do not identify the producer's native
+implementation or prove arbitrary transform or rendered-frame parity.

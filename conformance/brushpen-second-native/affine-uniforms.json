@@ -1,0 +1,365 @@
+{
+  "scope": "Synthetic 221-record BrushPen Drawing and queued RT host Mesa capture; uniform uploads only.",
+  "capture_recipe": "See comparison.json capture_recipe in this directory.",
+  "script_sha256": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+  "cases": {
+    "nonuniform": {
+      "canvas_matrix": [
+        2,
+        0,
+        0,
+        0,
+        3,
+        0,
+        13,
+        -7,
+        1
+      ],
+      "grain": [
+        642.0,
+        684.0
+      ],
+      "grain_offset": [
+        263.0,
+        83.0
+      ],
+      "capture_log_sha256": "5ead37003437db28e24aabae78069c418239c736a4bfdfdd92c7aacee4f26197",
+      "uniform_uploads": [
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            642.0,
+            684.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            263.0,
+            83.0
+          ]
+        }
+      ],
+      "guards": {
+        "task2_returned": true,
+        "task2_gl_error_after_nonzero_count": 0,
+        "framebuffer_status": [
+          {
+            "bound_draw_framebuffer": 2,
+            "is_framebuffer_complete": true,
+            "phase": "native PenGLRenderMsg task2",
+            "status_enum": 36053,
+            "status_hex": "0x8cd5",
+            "target_enum": 36160
+          }
+        ],
+        "task3_cleanup_result": {
+          "entry": "0x1045e6c",
+          "returned": true,
+          "status": "executed after native task2 returned"
+        },
+        "receiver_matches_expected_object": [
+          {
+            "method": "PenReturnCallback::constructor",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::GetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::SetPenRect",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::destructor",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SendDataToGPU",
+            "matches": true
+          }
+        ]
+      }
+    },
+    "shear": {
+      "canvas_matrix": [
+        1,
+        0.4,
+        0,
+        0.3,
+        1,
+        0,
+        13,
+        -7,
+        1
+      ],
+      "grain": [
+        389.3999938964844,
+        356.3999938964844
+      ],
+      "grain_offset": [
+        147.0,
+        73.0
+      ],
+      "capture_log_sha256": "1064c7b4fbb4699f729b3807300d49f97fa1149235a3ec3898fbc48f2d72bbc4",
+      "uniform_uploads": [
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            389.3999938964844,
+            356.3999938964844
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            147.0,
+            73.0
+          ]
+        }
+      ],
+      "guards": {
+        "task2_returned": true,
+        "task2_gl_error_after_nonzero_count": 0,
+        "framebuffer_status": [
+          {
+            "bound_draw_framebuffer": 2,
+            "is_framebuffer_complete": true,
+            "phase": "native PenGLRenderMsg task2",
+            "status_enum": 36053,
+            "status_hex": "0x8cd5",
+            "target_enum": 36160
+          }
+        ],
+        "task3_cleanup_result": {
+          "entry": "0x1045e6c",
+          "returned": true,
+          "status": "executed after native task2 returned"
+        },
+        "receiver_matches_expected_object": [
+          {
+            "method": "PenReturnCallback::constructor",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::GetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::SetPenRect",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::destructor",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SendDataToGPU",
+            "matches": true
+          }
+        ]
+      }
+    },
+    "rotate-visible": {
+      "canvas_matrix": [
+        0,
+        1,
+        0,
+        -1,
+        0,
+        0,
+        250,
+        0,
+        1
+      ],
+      "grain": [
+        -228.0,
+        321.0
+      ],
+      "grain_offset": [
+        219.99998474121094,
+        125.0
+      ],
+      "capture_log_sha256": "0781f08fe842d3503582a7820797f19da787808667bafa4f32fb359bf5a0b039",
+      "uniform_uploads": [
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            -228.0,
+            321.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            219.99998474121094,
+            125.0
+          ]
+        }
+      ],
+      "guards": {
+        "task2_returned": true,
+        "task2_gl_error_after_nonzero_count": 0,
+        "framebuffer_status": [
+          {
+            "bound_draw_framebuffer": 2,
+            "is_framebuffer_complete": true,
+            "phase": "native PenGLRenderMsg task2",
+            "status_enum": 36053,
+            "status_hex": "0x8cd5",
+            "target_enum": 36160
+          }
+        ],
+        "task3_cleanup_result": {
+          "entry": "0x1045e6c",
+          "returned": true,
+          "status": "executed after native task2 returned"
+        },
+        "receiver_matches_expected_object": [
+          {
+            "method": "PenReturnCallback::constructor",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::GetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::SetPenRect",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::destructor",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SendDataToGPU",
+            "matches": true
+          }
+        ]
+      }
+    },
+    "flip-visible": {
+      "canvas_matrix": [
+        -1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        300,
+        0,
+        1
+      ],
+      "grain": [
+        -321.0,
+        228.0
+      ],
+      "grain_offset": [
+        175.00001525878906,
+        30.000001907348633
+      ],
+      "capture_log_sha256": "e6f67673ecdd8df41cf04bd54fc3985e4d440829d6e3832a4c83888b7ace224e",
+      "uniform_uploads": [
+        {
+          "count": 1,
+          "uniform2fv_location": 5,
+          "values": [
+            -321.0,
+            228.0
+          ]
+        },
+        {
+          "count": 1,
+          "uniform2fv_location": 6,
+          "values": [
+            175.00001525878906,
+            30.000001907348633
+          ]
+        }
+      ],
+      "guards": {
+        "task2_returned": true,
+        "task2_gl_error_after_nonzero_count": 0,
+        "framebuffer_status": [
+          {
+            "bound_draw_framebuffer": 2,
+            "is_framebuffer_complete": true,
+            "phase": "native PenGLRenderMsg task2",
+            "status_enum": 36053,
+            "status_hex": "0x8cd5",
+            "target_enum": 36160
+          }
+        ],
+        "task3_cleanup_result": {
+          "entry": "0x1045e6c",
+          "returned": true,
+          "status": "executed after native task2 returned"
+        },
+        "receiver_matches_expected_object": [
+          {
+            "method": "PenReturnCallback::constructor",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::GetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SetBuffer",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::SetPenRect",
+            "matches": true
+          },
+          {
+            "method": "PenReturnCallback::destructor",
+            "matches": true
+          },
+          {
+            "method": "PenDrawableRT::SendDataToGPU",
+            "matches": true
+          }
+        ]
+      }
+    }
+  },
+  "inference": "For this fixture, grain is the baseline grain vector transformed by the affine linear part, and grain_offset is the baseline offset transformed as a point. Signed components are retained.",
+  "limitations": "Does not establish the native producer implementation, arbitrary input dimensions or transforms, rendered frame parity, device parity, or public SVG/PDF transport.",
+  "input_sha256": {
+    "tools/brushpen-transform/second_mapdraw.py": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+    "tools/brushpen-transform/long_probe.py": "77e48b4625361cd14eb5aa4637e31af5e7e3da52794547e93681f5b0e6bbeb40",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/brushpen_queue_native.py": "8d9672741385b77c02445e039e5982e0deb744a01ae51c77b1dc2c554baf5e26",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/brushpen_paint_positive_native.py": "3223d0d0d85a2d228c6e348253c6c90c7bcc1944304a8de15b0a760bf0234242",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/brushpen-handoff-native.json": "626ac51b248fafcaec37ea7a5a99f33b932779815d8acfd3f340cc9ebc1c70ae",
+    "/tmp/brushpen-second-geometry.json": "663f50f383fe4bedb09738f085eab4edcaefcb415fe72fe6a20e0a63a3b97518",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+  },
+  "extraction": "For each case run comparison.json capture_recipe with BRUSHPEN_CANVAS_MATRIX set to canvas_matrix and redirect stdout/stderr to a log. Parse the JSON after UNIFORM_NATIVE_IMPORT_TRACE, select uniform2fv_location 5 and 6; copy complete rows as uniform_uploads. Parse TASK2_STATE returned and gl_calls_during_task2 error_after, NATIVE_TASK2_FRAMEBUFFER_STATUS, NATIVE_TASK3_CLEANUP result, and NATIVE_CALLBACK_RECEIVER_GUARDS. The runner aborts if Drawing geometry differs from /tmp/brushpen-second-geometry.json producer buffer. Log hashes identify these exact captures; logs are temporary and not retained."
+}

@@ -308,6 +308,51 @@ mod tests {
     use sha2::{Digest, Sha256};
     use std::io::Read;
 
+    #[test]
+    fn affine_grain_prediction_matches_native_uniforms() {
+        let receipt: Value = serde_json::from_slice(include_bytes!(
+            "../../../../../conformance/brushpen-second-native/affine-uniforms.json"
+        ))
+        .unwrap();
+        let cases = receipt["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 4);
+        for name in ["nonuniform", "shear", "rotate-visible", "flip-visible"] {
+            let case = &cases[name];
+            let read = |key: &str| -> Vec<f32> {
+                case[key]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap() as f32)
+                    .collect()
+            };
+            let m: [f32; 9] = read("canvas_matrix").try_into().unwrap();
+            let transform = |[x, y]: [f32; 2], point: bool| {
+                [
+                    m[0] * x + m[3] * y + if point { m[6] } else { 0.0 },
+                    m[1] * x + m[4] * y + if point { m[7] } else { 0.0 },
+                ]
+            };
+            for (predicted, observed) in [
+                (
+                    transform([321.0, 228.0], false),
+                    <[f32; 2]>::try_from(read("grain")).unwrap(),
+                ),
+                (
+                    transform([124.999_99, 30.000_002], true),
+                    <[f32; 2]>::try_from(read("grain_offset")).unwrap(),
+                ),
+            ] {
+                for (actual, expected) in predicted.into_iter().zip(observed) {
+                    assert!(
+                        (actual - expected).abs() < 0.000_1,
+                        "{name}: {actual} != {expected}"
+                    );
+                }
+            }
+        }
+    }
+
     const FIXTURE_JSON: &[u8] = include_bytes!(
         "../../../../../conformance/brushpen-native-paint-v1/brushpen-native-paint.json"
     );
