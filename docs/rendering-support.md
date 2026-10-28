@@ -130,14 +130,14 @@ transforms, saved-note and device parity remain unverified. The profile is unava
 `pdf` feature. See the [Marker findings](reverse-engineering/stroke-rendering-findings.md#legacy-marker-source-to-mesh-controls).
 
 A separate experimental `simplebrush_two_pixels_per_page_unit` assertion selects
-scale-adjusted SimpleBrush fringe for three-point, tool-0, tool-2, and tool-3 null-setting strokes
-with sizes 8 through 20 for tools 0 and 3, and 3 through 32 for tool 2. Five synthetic tool-2 controls at sizes 3, 4 and 32 across two paths improve SVG alpha error and matched-paper direct-PDF RGB error over fallback and the unit-scale approximation; see the [size controls](../conformance/simplebrush-scale-2x-size-host.json). Intermediate values and other paths extrapolate from these host controls. The caller asserts two output pixels per page unit;
+scale-adjusted SimpleBrush fringe for two- to sixteen-point, tool-0, tool-2, and tool-3 null-setting strokes
+with sizes 8 through 20. Three-point tool-2 strokes also admit sizes 3 through 32. Five synthetic tool-2 controls at sizes 3, 4 and 32 across two paths improve SVG alpha error and matched-paper direct-PDF RGB error over fallback and the unit-scale approximation; see the [size controls](../conformance/simplebrush-scale-2x-size-host.json). Intermediate values and other paths extrapolate from these host controls. The caller asserts two output pixels per page unit;
 combining it with `simplebrush_profile`, replay, sliced output, and unsupported
 inputs uses generic paint. Synthetic 2× host controls support the approximation,
 with other paths and intermediate sizes extrapolated. A [public SVG and direct
 PDF comparison](../conformance/simplebrush-scale-2x-host.json) improves error
 against a fractional host-Mesa capture over the unit-scale route; device and
-saved-note parity remain unverified. Two paired [tool-0 and tool-3 controls](../conformance/simplebrush-scale-2x-tools-host.json) match tool-2 native geometry and complete frames at sizes 12 and 20. Their public SVG and direct PDF comparisons improve over generic and unit-scale paint; other admitted inputs extrapolate from these controls. The [capture and comparison instructions](../tools/simplebrush-scale/README.md)
+saved-note parity remain unverified. Two paired [tool-0 and tool-3 controls](../conformance/simplebrush-scale-2x-tools-host.json) match tool-2 native geometry and complete frames at sizes 12 and 20. Their public SVG and direct PDF comparisons improve over generic and unit-scale paint; other admitted inputs extrapolate from these controls. Four [point-count controls](../conformance/simplebrush-scale-2x-points.json) at size 12 match native geometry and improve SVG alpha and matched-paper PDF RGB error over generic and unit-scale outputs. A 32-point diagnostic improves SVG but increases PDF RGB error slightly against unit-scale paint; it remains outside the gate. Other point counts, sizes and tools within the gate extrapolate from these synthetic host controls. The [point-count reproduction instructions](../tools/simplebrush-points/README.md) retain the comparison boundary. The [capture and comparison instructions](../tools/simplebrush-scale/README.md)
 require local native inputs.
 
 An experimental `SimpleBrushRenderProfile::HostV25` opts eligible strokes into
