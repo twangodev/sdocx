@@ -1,0 +1,55 @@
+--- tools/marker4_v7/mesa_capture.py
++++ tools/marker4_v7/mesa_capture.py
+@@ -46,7 +46,11 @@
+ cli.add_argument('--phase-x', type=float, default=0.0)
+ cli.add_argument('--phase-y', type=float, default=0.0)
+ cli.add_argument('--draw-count', type=int, choices=(1, 2), default=1)
++cli.add_argument('--colors', default='80ffcb30,800040ff')
++cli.add_argument('--background', default='00000000')
+ cli_args=cli.parse_args()
++colors=[int(v,16) for v in cli_args.colors.split(',')]
++background=bytes.fromhex(cli_args.background)
+ output_path=Path(cli_args.capture_output)
+ if output_path.suffix != '.json':
+  raise SystemExit('capture output must have a .json suffix')
+@@ -231,11 +235,11 @@
+  for x,y,r,a in dots: p.call(add,[rt],[x,y,r,a])
+  b,e,c=p.get(producer,'3Q');stream=bytes(p.u.mem_read(b,e-b))
+  p.call('SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)',[rt,producer,upload])
+- p.call('SPen::PenDrawableRT::SetPenData(float, int)',[rt,0x80ffcb30],[case['size']])
++ p.call('SPen::PenDrawableRT::SetPenData(float, int)',[rt,colors[0]],[case['size']])
+  p.call('SPen::Marker4StrokeDrawableRTV3::Update(bool)',[rt,0],instruction_limit=5_000_000)
+  # Frame the saved horizontal stroke at native document coordinates, at 1 px/doc unit.
+  w,h=1024,512; cx=sum(x for x,y,r,a in dots)/len(dots); cy=sum(y for x,y,r,a in dots)/len(dots)
+- tag=p.alloc(32);p.u.mem_write(tag,b'm4-task2-output\0'); pixels=p.alloc(w*h*4);p.u.mem_write(pixels,bytes(w*h*4))
++ tag=p.alloc(32);p.u.mem_write(tag,b'm4-task2-output\0'); pixels=p.alloc(w*h*4);p.u.mem_write(pixels,background*(w*h))
+  fac='SPen::SPGraphicsFactory::CreateBitmap(SPen::IGLMsgQueue*, int, int, char const*, void const*, bool, int, bool, SPen::TextureMemoryLayout, SPen::TextureTargetLayout)'
+  p.call_stack_args(fac,[queue,w,h,tag,pixels,0,0,0],[6,2]);ob=p.x(0)
+  p.call('SPen::SPTextureBitmap::AttachToCanvasRT(bool)',[ob,1],instruction_limit=5_000_000)
+@@ -246,12 +250,23 @@
+  p.call('SPen::PenDrawableRT::SetRedrawState(bool)',[rt,1]);p.call('SPen::PenDrawableRT::SetEnhancedAntiAlias(bool)',[rt,1])
+  before=len(p.gl_calls);p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
+  if cli_args.draw_count == 2:
+-  p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,sub,mat],instruction_limit=5_000_000)
++  rt2=p.alloc(512);p.call('SPen::Marker4StrokeDrawableRTV3::Marker4StrokeDrawableRTV3(SPen::PenGLDataManager*)',[rt2,mgr])
++  p.call('SPen::Marker4StrokeDrawableRTV3::Init()',[rt2],instruction_limit=5_000_000)
++  p.call('SPen::Marker4StrokeDrawableRTV3::CreatePenCanvas(int, int, SPen::IGLMsgQueue*)',[rt2,1024,512,queue],instruction_limit=5_000_000)
++  producer2=p.alloc(24);upload2=p.alloc(24);pdata2=p.alloc(65536);udata2=p.alloc(65536)
++  p.put(producer2,'3Q',pdata2,pdata2,pdata2+65536);p.put(upload2,'3Q',udata2,udata2,udata2+65536)
++  p.call('SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)',[rt2,producer2,upload2])
++  for x,y,r,a in dots: p.call(add,[rt2],[x,y,r,a])
++  p.call('SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)',[rt2,producer2,upload2])
++  p.call('SPen::PenDrawableRT::SetPenData(float, int)',[rt2,colors[1]],[case['size']])
++  p.call('SPen::Marker4StrokeDrawableRTV3::Update(bool)',[rt2,0],instruction_limit=5_000_000)
++  p.call('SPen::PenDrawableRT::SetRedrawState(bool)',[rt2,1]);p.call('SPen::PenDrawableRT::SetEnhancedAntiAlias(bool)',[rt2,1])
++  p.call('SPen::Marker4StrokeDrawableRTV3::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt2,sub,mat],instruction_limit=5_000_000)
+  g=p.gles.f; rf=C.CFUNCTYPE(None,C.c_int,C.c_int,C.c_int,C.c_int,C.c_uint,C.c_uint,C.c_void_p)(p.gles.gl.glReadPixels)
+  raw=C.create_string_buffer(w*h*4);rf(0,0,w,h,0x1908,0x1401,raw);err=g['glGetError']()
+  out=output_path.with_suffix('.rgba');write_new(out,raw.raw)
+- fm={'schema':'marker4-v7-native-task2-mesa-frame-v1','source_json_sha256':hashlib.sha256(Path('conformance/marker4-v7-finger-native.json').read_bytes()).hexdigest(),'case':cli_args.case,'tool':0,'source_dot_count':len(dots),'source_dots_sha256':hashlib.sha256(json.dumps(dots,separators=(',',':')).encode()).hexdigest(),'producer_bytes':len(stream),'producer_sha256':hashlib.sha256(stream).hexdigest(),'producer_float_count':(e-b)//4,'set_pen_size_f32':case['size'],'set_pen_argb':hex(0x80ffcb30),'scale':cli_args.scale,'phase':[cli_args.phase_x,cli_args.phase_y],'target':[w,h],'frame_center_doc':[cx,cy],'matrix_f32':p.get(mat,'16f'),'texture_id':None,'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'read_framebuffer':(lambda q:(p.gles.gl.glGetIntegerv(0x8CAA,C.byref(q)),q.value)[1])(C.c_int()),'gl_error':err,'draw_calls':p.gl_calls[before:],'image_path':str(out),'raw_input_boundary':'saved native V7 AddPoint outputs; GL/task callbacks use actual native render code'}
+- fm['draw_count']=cli_args.draw_count
++ fm={'schema':'marker4-v7-native-task2-mesa-frame-v1','source_json_sha256':hashlib.sha256(Path('conformance/marker4-v7-finger-native.json').read_bytes()).hexdigest(),'case':cli_args.case,'tool':0,'source_dot_count':len(dots),'source_dots_sha256':hashlib.sha256(json.dumps(dots,separators=(',',':')).encode()).hexdigest(),'producer_bytes':len(stream),'producer_sha256':hashlib.sha256(stream).hexdigest(),'producer_float_count':(e-b)//4,'set_pen_size_f32':case['size'],'set_pen_argb':hex(colors[0]),'scale':cli_args.scale,'phase':[cli_args.phase_x,cli_args.phase_y],'target':[w,h],'frame_center_doc':[cx,cy],'matrix_f32':p.get(mat,'16f'),'texture_id':None,'rgba_sha256':hashlib.sha256(raw.raw).hexdigest(),'read_framebuffer':(lambda q:(p.gles.gl.glGetIntegerv(0x8CAA,C.byref(q)),q.value)[1])(C.c_int()),'gl_error':err,'draw_calls':p.gl_calls[before:],'image_path':str(out),'raw_input_boundary':'saved native V7 AddPoint outputs; GL/task callbacks use actual native render code'}
++ fm['draw_count']=cli_args.draw_count;fm['colors']=cli_args.colors;fm['background']=cli_args.background
+  fm['texture_id']=next((x.get('texture') for x in p.gl_calls[before:] if x.get('call')=='glFramebufferTexture2D'),None)
+  fm['pre_draw_native_vbo_uploads']=[x for x in p.gl_calls if x.get('call')=='glBufferData' and x.get('size')==len(stream)]
+  fm['target_texture_fbo_events']=[x for x in p.gl_calls if x.get('call') in ('glTexImage2D','glFramebufferTexture2D','glCheckFramebufferStatus')]

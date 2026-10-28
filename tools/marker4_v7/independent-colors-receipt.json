@@ -1,0 +1,51 @@
+{
+  "description": "Mesa native independent Marker4 V7 drawable compositing control, coincident turn-9.5 saved geometry, scale 1 and phase 0. Each stroke constructs and uploads independent native drawable and point buffers. RGBA8 is premultiplied; background hex is RGBA. Patch is applied to mesa_capture.py; draw-count 1 or 2 selects stroke count.",
+  "stroke_colors_argb": [
+    "80ffcb30",
+    "800040ff"
+  ],
+  "background_rgba": "204080ff",
+  "source_over": "round(source + destination * (1 - source alpha / 255)) per channel",
+  "comparison": "all 2097152 RGBA channel bytes exactly match source-over for AB, BA, A on opaque background, and B on A over opaque background; AB and BA differ at 819 channel bytes.",
+  "frames": {
+    "a": {
+      "rgba_sha256": "ca90cb1d61b58adea465e5dbc5f41bd323e22b544cf14ddf92fed4024466839f"
+    },
+    "b": {
+      "rgba_sha256": "f01bb99c50ebabf57ca1dae4323a9a496958c8fadba7c73f4497415c35c08890"
+    },
+    "ab": {
+      "rgba_sha256": "a5e1bd75a457f3a8a12185143d251c64f29fe06e3ce942e8cb7b00d3801e4b83"
+    },
+    "ba": {
+      "rgba_sha256": "ba844376afaec8ef6fa8d1b2090a65809eee7e1a9d45d0e579204b1e32252e02"
+    },
+    "bg": {
+      "rgba_sha256": "de425b0d0fa1e499edccadeb52e6f60f570d7db68ad6325b5aad2d2be52b54a3"
+    },
+    "bg0": {
+      "rgba_sha256": "36e98451828d09df2cd421f18da6ec6db5e2d3af22f30e5e1f69addbe5301578"
+    }
+  },
+  "scope": "single saved geometry and host Mesa GLES setup; not Android device or full application rendering parity",
+  "compact_fixture": {
+    "path": "conformance/marker4-v7-independent-colors.rgba",
+    "sha256": "a34feb33d90592ba5722856c6cc93efa0cb951b299fa28bb49d4959fcb297853",
+    "layout": "282 records in native frame scan order; 6 RGBA8 pixels per record: A, B, AB, BA, background AB, background A; retain pixels with A or B alpha nonzero"
+  },
+  "reproduce": {
+    "setup": "From project root: cp tools/marker4_v7/mesa_capture.py /tmp/m4-independent.py; patch /tmp/m4-independent.py < tools/marker4_v7/independent-colors.patch. Use a fresh output directory and the PYTHONPATH/dependencies described in mesa_capture.py; native helper files and DSOs under tmp/vector-parity-plan are temporary project-local dependencies.",
+    "captures": {
+      "a": "--colors 80ffcb30 --background 00000000 --draw-count 1",
+      "b": "--colors 800040ff --background 00000000 --draw-count 1",
+      "ab": "--colors 80ffcb30,800040ff --background 00000000 --draw-count 2",
+      "ba": "--colors 800040ff,80ffcb30 --background 00000000 --draw-count 2",
+      "bg": "--colors 80ffcb30,800040ff --background 204080ff --draw-count 2",
+      "bg0": "--colors 80ffcb30 --background 204080ff --draw-count 1"
+    },
+    "output": "Pass --capture-output <directory>/m4-independent-<name>.json for each capture. Run python3 tools/marker4_v7/extract_independent_colors.py <directory> <new-output-path> to verify frame hashes and regenerate the compact fixture."
+  },
+  "full_frames": "Original full frames were temporary and are not retained; their hashes identify the measured inputs and can be checked by recapture and the extraction script. Capture JSON receipts also were temporary; their old hashes are omitted because their path-dependent content is not retained.",
+  "capture_script_base_sha256": "f1ff217a5d835c28078cf22d7fefd9bb1f0d0af1462094d9cbfce587ff402b5f",
+  "regression_dependency": "crates/sdocx/tests/marker4_host_compositing.rs imports crates/sdocx/src/ink/host_rgba8.rs, a currently uncommitted shared host arithmetic module authored in parallel."
+}

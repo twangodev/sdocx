@@ -117,3 +117,7 @@ The test-only [pixel model](../../conformance/marker4-v7-finger-pixel-model-host
 matches native alpha support within the retained crops and two-pixel borders across
 seven host controls, with at most one alpha level of error. It depends on the
 declared output grid and does not establish public export or device parity.
+For one coincident two-stroke host control, independently constructed colored
+drawables composite in order over transparent and opaque backgrounds. The
+[receipt](../../tools/marker4_v7/independent-colors-receipt.json) and compact
+pixel fixture do not establish arbitrary-color or device parity.
