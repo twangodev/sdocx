@@ -2692,3 +2692,82 @@ fn arc_with_changed_owner_bounds_retains_generic_path_fallback() {
         1
     );
 }
+
+#[cfg(feature = "render")]
+#[test]
+fn native_moved_arcs_render_sector_and_open_outline() {
+    for (frame, expected_count) in [
+        (
+            include_bytes!("fixtures/native-arc-moved-both-20.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-both-100.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-both-150.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-seam-0.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-seam-1.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-0.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-1.bin").as_slice(),
+            1,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-2.bin").as_slice(),
+            1,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-3.bin").as_slice(),
+            1,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-4.bin").as_slice(),
+            1,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-moved-edge-5.bin").as_slice(),
+            2,
+        ),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), expected_count, "{svg}");
+        if expected_count == 1 {
+            continue;
+        }
+        assert!(paths[0].attribute("d").unwrap().ends_with("L110,70 z"));
+        assert!(!paths[1].attribute("d").unwrap().contains('L'));
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        let names: Vec<_> = ops
+            .operations
+            .iter()
+            .map(|op| op.operator.as_str())
+            .collect();
+        assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
+        assert!(names.contains(&"f") && names.contains(&"S"));
+    }
+}

@@ -1941,10 +1941,10 @@ fn native_svg_commands(
     Ok(data)
 }
 
-// Native Drawing records a center-closed fill and open outline for default
-// unrotated Arc controls. The matching path and default outline checks keep
-// moved controls, nonmatching paths and unobserved line styles on the fallback.
-fn default_arc_sector(
+// Native Drawing records a center-closed fill and open outline for captured
+// unrotated Arc controls. Require the reconstructed outline to match the saved
+// path exactly; unobserved styles and nonmatching geometry use the fallback.
+fn matching_arc_sector(
     shape: &crate::NativeShape,
     commands: &[crate::shape::NativePathCommand],
 ) -> Option<Data> {
@@ -1991,17 +1991,23 @@ fn default_arc_sector(
     }
     let cx = (left + right) * 0.5;
     let cy = (top + bottom) * 0.5;
-    if !cx.is_finite()
-        || !cy.is_finite()
-        || shape.control_points
-            != [
-                [f64::from(cx), f64::from(top)],
-                [f64::from(right), f64::from(cy)],
-            ]
-    {
+    if !cx.is_finite() || !cy.is_finite() || shape.control_points.len() != 2 {
         return None;
     }
-    let points = crate::shape::model_arc::expand([left, top, right, bottom, 270.0, 90.0])?;
+    let mut angles = [0.0_f32; 2];
+    for (angle, point) in angles.iter_mut().zip(&shape.control_points) {
+        let x = point[0] as f32 - cx;
+        let y = point[1] as f32 - cy;
+        if !x.is_finite() || !y.is_finite() || (x == 0.0 && y == 0.0) {
+            return None;
+        }
+        *angle = libm::atan2f(y, x).to_degrees().rem_euclid(360.0);
+    }
+    let sweep = (angles[1] - angles[0]).rem_euclid(360.0);
+    if sweep == 0.0 {
+        return None;
+    }
+    let points = crate::shape::model_arc::expand([left, top, right, bottom, angles[0], sweep])?;
     let mut expected = vec![NativePathCommand::Move(points.first()?.map(f64::from))];
     for pair in points[1..].as_chunks::<2>().0 {
         expected.push(NativePathCommand::Quadratic([
@@ -2073,7 +2079,7 @@ fn render_shape(
                 GeometryDiagnosticKind::UnrepresentablePath
             });
         };
-        arc_fill = default_arc_sector(shape, &normalized.commands);
+        arc_fill = matching_arc_sector(shape, &normalized.commands);
         Some(native_svg_commands(normalized.commands)?)
     };
     let bbox = shape.geometry_bbox;
