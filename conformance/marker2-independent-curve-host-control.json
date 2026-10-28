@@ -1,0 +1,169 @@
+{
+  "schema": "marker2-independent-curve-host-control-v1",
+  "scope": "Synthetic native Marker2 RTV2 via ARM64 Unicorn and host Mesa; independent source curve, not saved-note or device parity. Crops are top-down. Source callback vectors are native saved redraw; host replays and materializes vector.",
+  "capture_scripts": [
+    "scratch/marker2-thin-scale-control/native-scale2/paint.py",
+    "scratch/marker2-thin-scale-control/native-scale15/paint.py"
+  ],
+  "cases": [
+    {
+      "case": "w2-canonical-a128",
+      "scale": 2,
+      "width": 2,
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        107.83,
+        87.17,
+        0,
+        1
+      ],
+      "source_points_f32_bits": [
+        [
+          "00002041",
+          "0000a041"
+        ],
+        [
+          "00008041",
+          "0000e041"
+        ],
+        [
+          "0000d841",
+          "0000f841"
+        ],
+        [
+          "00001042",
+          "00008841"
+        ]
+      ],
+      "source_callback_vector_hex": "000020410000a041f5ad2741a41ea5417f473141ff84ab4110d039416035b1418f0d44410a09b841feff4f41feffbf413e195a41c141c6412f036541281bcc41d5bd7041358cd1412d497d41e994d641ea4c85419b31db412de38b412b23df41f8d3924135bae241471f9a41b8f6e5411ec5a141b6d8e8417ac5a9412d60eb415be9b141c14fed419ee6b9419119ee41a5c0c14125b8ed41af76c941b72bec418c09d1414c74e9414528d841b4c2e5419d88de41f276e14139cee441ec47dc412ab6ea41b37cd6415cb5ef4156dcd04179a2f4414ca2ca41847df94197cec341",
+      "native_mask_png_sha256": "a930a77405dfa2d651107d348a69c2a7a5c9dafc973ed9a7d06925be99c617f4",
+      "native_composite_png_sha256": "06118d02a0bdc84d21004c4bc0d13420faaa621558388525e6064ae7a31ace06",
+      "receipt_sha256": "796d8d3296b82dd50a5dc50d688bd449e24cf91c4979fb5da35b5bb25c8704c0",
+      "crop_xywh": [
+        125,
+        106,
+        48,
+        26
+      ],
+      "mask_top_down_zlib_base64": "eJxjYMAN5P0YVPFIo4D+U/+hYAYTIbU86f9RgQA+1eYz/2OAQzhVG1/EVA0CXtiV78WuGgjSsKh2RJLfHwYW8loME8jAUN6AUK2LJHwbKlaNphyu+ByahAVUvBBFdD1U9CEbpkP/QaT4ME3/6oA1HO5BZBEC0Ohcg1U13LhpMO4kCH8BLuUMIhAFzRBeNoTXglM5A0MAkosEIewsPMoZGELBgYHkuCa8yiGqwMliEVj5RwLKGRgyJyiAqEj0sMIPDCDKw4hVvx+sfAOxyh+BlW8jVjk05EWIVQ9Rrk+scgbUZEEY6BAV8kiAozqWFOUAcAkvTA==",
+      "composite_top_down_zlib_base64": "eJzNl0tPwkAQgLt90i19WaAIiECCkCCoETSYiIoeBCFRD8bEg3owxovGo/GgP93uwaQh3W1LH8uXbEJCd+YrbGemDJMukGcNGwot9FkROCvl9KHpWPDyuKy+zBvmL2n1cnAGGAbQ9uVZIG5qUt/Pl7QEFmTS9jYlvtLLw3kUb/c6KqnPaXgbElc6qWhvcXkvrgIUmkm5D9fVx6S83cs5j/txeudkvh7yLDyVFLHjFQv9vnsF5TbAPfTjcN8y5dOg3prI2WFijzf0d1K8ppkZRXEP4jwqa69RcqA6QIrf0DPDZeIO7Ow9Ke5FVf9kAcNFcXcza5g/uFxOjZbCxCJ5T+vGtyXztbi83ZxX9Q9c3qAxSL2zbyt3SXi7weXu5uCV395tC05w+3fzynXS7giRAxDn0F6Tx7h9NU06WGZfEhQVoR3mHDnzh4y73rmvQZru/6D+4VUzvK7FubdM+Sxtb5KX12zh9MIbL/dJzfii4bwI+v/RTI7eIxa/K2fFbtR6RQun1xdx7rjZZZVAM5aXO+q7tN38QM+xl/thMftA280PUp1HvYO2nx84d/Q80HYLwrKzxaqgilxhFet8GFgAePRuU1HFHdouYfkD3BwwfA=="
+    },
+    {
+      "case": "w3-translated-a128",
+      "scale": 2,
+      "width": 3,
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        118.37,
+        108.23,
+        0,
+        1
+      ],
+      "source_points_f32_bits": [
+        [
+          "00002041",
+          "0000a041"
+        ],
+        [
+          "00008041",
+          "0000e041"
+        ],
+        [
+          "0000d841",
+          "0000f841"
+        ],
+        [
+          "00001042",
+          "00008841"
+        ]
+      ],
+      "source_callback_vector_hex": "000020410000a041f5ad2741a41ea5417f473141ff84ab4110d039416035b1418f0d44410a09b841feff4f41feffbf413e195a41c141c6412f036541281bcc41d5bd7041358cd1412d497d41e994d641ea4c85419b31db412de38b412b23df41f8d3924135bae241471f9a41b8f6e5411ec5a141b6d8e8417ac5a9412d60eb415be9b141c14fed419ee6b9419119ee41a5c0c14125b8ed41af76c941b72bec418c09d1414c74e9414528d841b4c2e5419d88de41f276e14139cee441ec47dc412ab6ea41b37cd6415cb5ef4156dcd04179a2f4414ca2ca41847df94197cec341",
+      "native_mask_png_sha256": "fd29b343a6c7f304adb746d865026253e6e5b41951fb0316044966551d244db2",
+      "native_composite_png_sha256": "0b592bc5258ac01c619d242f84572b8df395bd979bfe8179a511afd333bedaf3",
+      "receipt_sha256": "05744ee5dcdecf1f32addb071271b7170edf48dd40476a91b032e280f4e9978c",
+      "crop_xywh": [
+        134,
+        84,
+        51,
+        28
+      ],
+      "mask_top_down_zlib_base64": "eJxjYMANuFmsjVQk8ChAAzYdbX+//AeCrUssiFFvVP3gwX84+PEiiQW/er6Ymf/RwI9rgXg0cKWsR9cAAi8WyOPS4TkdmwYQ6DfB7qZ6XBqA4JkDFh3Wh38hq3l0e9OqE/sQ/OUeGDqyjyGkf7/PiOQACbKZ1l+CCT7WQtMR/A6u4cZ2TyQJ+26Y+GJlFB1tb2ASV3vNUA1jLjkHlZrJgSQc+xIq+nM/ltiO/QmVzUYS+woV+xLPjiVgGBKh/vwYBBOxPAXVccQNmwYgKIYqWM0MFdgJFVilj0MHA0PVP4gSqLNbHkO42/AkWtmVEDW6YF4Y1I7j5rh1ALPDTaCSf90QNtRZn6Lw6WBgyACmhH5w6pTeBtHxjoAOBgZRLysIoxTqrO2EdMBB4QeIjqVqxOqAx0gE0ZZAvf6ugGgdUtAYmclJtBaeQ2AdB9BzAj7QREyMoAL29rP/n5KkAwgUrUkoRIEAAFdjiGk=",
+      "composite_top_down_zlib_base64": "eJzVWGlv00AUjO/bXickaQ7nJEAbCG1p6UVL05akLa2EuAQCxC2EOMR9Q/npeD5EsqJ441w2HWm/2btvdt97M7uxWLjgWUZkmBgbl/mCJXEZTWDjEsfqIYcxNBD3dFzZORNXtg8q9tFemfw4rNh/vWNpSr83l9Ku2xKfjzrebmDPa7a8sV2w3mF0x+439sv2r1bR+uQY0hzOL6r43fyR8rrYaCTVw6Cx0zhtOuYrNwmnw+TAMYxQMKT5xbR+Z1QO3QNnNJvUrqk8SybNI6UKtcYJ9WDcHLpHPaHuEonLToID8umUrWxOmoN3XClaHxMKXxonD/Sltazx5GrZ/j1oPDsF6/2WY71dnNLvXkhrty7ljGcrGeNh0P/nU9pNNxdOjoNHyZQuujyeBl3b7cF/dkvkW9GUFnK6eI5lGL57TpaJcUTiczjny3nzZYD9+GCIXHIUHhlNnGmXyNcgHJqO+Xopo99HPQ2yBnJoJqG0+s0PLYLODsMDOtcuki/91kAfrSeUNvZ5mHUA6ErVklc3cuYL2lro/b3OmYa8IZ5vFcln2ryondWs8Wicuo11+9Ukcn6Q+fbL5CdtPngSxxBnB92jIID+0+pzr0S+B9FTW+ad9ZzxnMYD/SypCNVxc/AC+UaLYSGt3e7nd5Yz+gPaHOippshNTZJHBzUir8OX+sVCy2231rfQ+/z+ha8N09MqPGth7/zicfc03eu/rCbWaecBfYvCm0Ojm471pku/jtDD/b6n5RZqDZoXNo8OoLlenwCf1st3yjxrInf8eEAno+TRgcQxGjQYvcnvmyqR12i5BR0PM+ZhUbHkFfgmPx6up7uhCVwi6jj7IYiOZHXxbNRxBgGt1lEjFUtajjrGIJA51qDpCPwb7sBRxxkEeK9yPeHjXjzgFUe9J4SN07bS/N90ZFjA3+ItrnNfwL36OPLwQhVYG7p/nN5EvfgHnS+J7A=="
+    },
+    {
+      "case": "w1-canonical-a128",
+      "scale": 1.5,
+      "width": 1,
+      "matrix": [
+        1.5,
+        0,
+        0,
+        0,
+        0,
+        1.5,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        107.83,
+        87.17,
+        0,
+        1
+      ],
+      "source_points_f32_bits": [
+        [
+          "00002041",
+          "0000a041"
+        ],
+        [
+          "00008041",
+          "0000e041"
+        ],
+        [
+          "0000d841",
+          "0000f841"
+        ],
+        [
+          "00001042",
+          "00008841"
+        ]
+      ],
+      "source_callback_vector_hex": "000020410000a041f5ad2741a41ea5417f473141ff84ab4110d039416035b1418f0d44410a09b841feff4f41feffbf413e195a41c141c6412f036541281bcc41d5bd7041358cd1412d497d41e994d641ea4c85419b31db412de38b412b23df41f8d3924135bae241471f9a41b8f6e5411ec5a141b6d8e8417ac5a9412d60eb415be9b141c14fed419ee6b9419119ee41a5c0c14125b8ed41af76c941b72bec418c09d1414c74e9414528d841b4c2e5419d88de41f276e14139cee441ec47dc412ab6ea41b37cd6415cb5ef4156dcd04179a2f4414ca2ca41847df94197cec341",
+      "native_mask_png_sha256": "ffc83ae8ee890fb1fb1dcb452799a5e8fc3ff16ecf4a0a7e760c44231dee1ae2",
+      "native_composite_png_sha256": "14d240aa1960d71658814ea2954995a8554e03b52a0d886a496885d0eaf6a8a7",
+      "receipt_sha256": "9d1701ae41644682616d4bd5e029e44902032afa189f8d9570ebf9dcbe8c3c70",
+      "crop_xywh": [
+        121,
+        123,
+        35,
+        17
+      ],
+      "mask_top_down_zlib_base64": "eJxjYEAHaSf+/99/ZrYahgQUVP5HgAhsCtr/gqSmT/VW9j0HZMyTQldQDJLfrAPj5r75f3Mqqop+oIIGZAGTy///OyDxjZb///8U3dwL///7wzl+5/+/weK8h///w5ia//9vF8Dmgf9wNY8RqlFB0P//66BqT7BiV8KQ9f8miKr9/98ThwoGBj0QkfPhvwdOFTAnZRBQceX/OwIqJv3/n4lfhc3///kEDGHFFSIIAAD97F3e",
+      "composite_top_down_zlib_base64": "eJxjYKAOkOdjN7aR5k3xVRJsAGErKd4EW2m+NH1RLj9uVmZhKlmDE6gKcNjC7CYGS/Gw6VDbDZpCnC4+SoL16HbpiXD56IpweYtzsapxszIJAWl1O2m+dGQ1+qLc/hzMTLyUukGZn8MK3X4zCZ4oXjZmMUJ6FfnZzd3lBcpAehxl+XNBbibXHdrCXB7IblAT5HQg1QwBdmYpBxm+LJgZwpwsCqTo52dnljQS4w6B6XeV5y8m1Q3owE6GLwNmngQ3qwYxesDxDdUHCl9qpj0XOf5CmHsIqQWmAVGYWnNJnhhWJkYOarkDBpDjHJ86oLuLiHU3uUCSm1UTZoeJOE84NjUweVDZxcTIwEwrt4CAAh+7KSxvocupCXLYw9wixsWqSkt3wAAfG7M4FjeaeSgIVEDdoUIPd+ACsPAA1i0mA+kOWBnkriBQPpDu0BHm8oSFCSgtDZQ7hDhY5GDuUOJntxgod4AAKM/SuhwhFgAAfCZeOg=="
+    }
+  ]
+}

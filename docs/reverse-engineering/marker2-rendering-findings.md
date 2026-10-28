@@ -303,5 +303,12 @@ by at most one RGB byte from those crops composited over white
 use one path per nonzero pixel at the captured grid, not generated stroke masks
 or an integrated exporter.
 
-These controls do not establish direct PDF, Android device, or arbitrary
+An [independent synthetic curve](../../conformance/marker2-independent-curve-host-control.json)
+matched the bounded raster model at widths 1–3 and scales 1.5× and 2×. Its
+standalone SVG matched native transparent composites in resvg; PDFium over white
+differed by at most one RGB level. [Scripts](../../scratch/marker2-thin-scale-control/)
+reproduce the controls. These host-Mesa results do not establish public-export or
+device parity; enlarging the raster produces pixelation.
+
+These controls do not establish direct PDF public export, Android device, or arbitrary
 viewer-scale parity; the finite model is not production paint.
