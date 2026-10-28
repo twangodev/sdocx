@@ -365,6 +365,36 @@ mod tests {
     }
 
     #[test]
+    fn short_strokes_match_native_admission_and_particles() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-short-stroke-native.json"
+        ))
+        .unwrap();
+        for (count, case) in fixture["cases"].as_object().unwrap() {
+            let prepared =
+                prepare_pencil3_v3_source(&fixture_stroke(&case["input_profile"]), 1920, 1080);
+            if count == "1" {
+                assert!(prepared.is_none());
+                continue;
+            }
+            let actual = prepared
+                .unwrap()
+                .records
+                .iter()
+                .flatten()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>();
+            let expected = case["packed_words_le"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(little_word)
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected, "{count} source points");
+        }
+    }
+
+    #[test]
     fn stationary_strokes_match_native_particles() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/pencil3-stationary-native.json"

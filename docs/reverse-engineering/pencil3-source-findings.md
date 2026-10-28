@@ -195,6 +195,13 @@ Drawing and saved-redraw streams match each other and the Rust adapter in the
 [stationary controls](../../conformance/pencil3-stationary-native.json). These
 are synthetic Model inputs under the same host adapters, not device frames.
 
+A [short-stroke control](../../conformance/pencil3-short-stroke-native.json)
+found that native Drawing returns failure without selecting a Pencil3 drawable
+for one source point. Two and three points produce 19 and 31 particles,
+respectively, with matching Drawing and saved-redraw streams. These synthetic
+host controls support the existing two-point admission boundary; they do not
+establish behavior for every input or device.
+
 Single-stamp transport probes also separate source sampling from export
 rasterization. Nearest texel selection matched all 25/100 tested fragment
 centers at 1×/2×, but vectorizing one brush row required 4,354 source-texel
