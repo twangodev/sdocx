@@ -1540,10 +1540,7 @@ mod tests {
             );
             if let Some(dir) = std::env::var_os("SDOCX_INKPEN_CROSSING_EXPORT_DIR") {
                 let dir = std::path::Path::new(&dir);
-                let rendered = crate::RenderedPage::new(0, 128, 64, svg.clone());
-                let pdf = crate::render_svg_pages_pdf(&[rendered], &crate::PdfOptions::default())
-                    .unwrap();
-                for (extension, bytes) in [("svg", svg.as_bytes()), ("pdf", pdf.as_slice())] {
+                let write_export = |extension, bytes: &[u8]| {
                     std::fs::File::options()
                         .write(true)
                         .create_new(true)
@@ -1551,6 +1548,15 @@ mod tests {
                         .unwrap()
                         .write_all(bytes)
                         .unwrap();
+                };
+                write_export("svg", svg.as_bytes());
+                #[cfg(feature = "pdf")]
+                {
+                    let rendered = crate::RenderedPage::new(0, 128, 64, svg.clone());
+                    let pdf =
+                        crate::render_svg_pages_pdf(&[rendered], &crate::PdfOptions::default())
+                            .unwrap();
+                    write_export("pdf", &pdf);
                 }
             }
             let tree = resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
