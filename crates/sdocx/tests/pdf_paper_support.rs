@@ -2440,6 +2440,7 @@ fn public_pdf_paper_density_three_parsed_implicit_default_empty_paragraph() {
     for text in [
         format!("\n{}B", "A\n".repeat(80)),
         format!("{}\nB", "A\n".repeat(80)),
+        format!("{}B\n", "A\n".repeat(80)),
     ] {
         let mut document = document(true, None, 0, 1);
         document.metadata.default_page_dimensions = Some((1080, SEGMENT_HEIGHT));
@@ -2530,7 +2531,7 @@ fn public_pdf_paper_density_three_parsed_implicit_default_empty_paragraph() {
             gaps.iter()
                 .filter(|&&gap| (gap - 91.8).abs() < 0.02)
                 .count(),
-            usize::from(!text.starts_with('\n'))
+            usize::from(!text.starts_with('\n') && !text.ends_with('\n'))
         );
         assert!(
             pages

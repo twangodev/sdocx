@@ -333,7 +333,11 @@ impl NativePageLayout {
             || (styled.settings.scale == 3.0
                 && (!source.paragraphs.is_empty()
                     || source.text.is_empty()
-                    || source.text.ends_with('\n')
+                    || (source.text.ends_with('\n')
+                        && !(certified_empty_paragraph
+                            && styled.settings.unscaled_implicit_caret
+                            && source.font_size.is_none()
+                            && source.spans.is_empty()))
                     || (!certified_empty_paragraph
                         && (source.text.starts_with('\n') || source.text.contains("\n\n")))))
             || styled.settings.font_size_delta != 0.0

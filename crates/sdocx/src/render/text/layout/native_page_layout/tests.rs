@@ -576,12 +576,7 @@ fn parsed_implicit_default_empty_lines_match_native_paper_profile() {
         ..Default::default()
     };
     let renderer = TextRenderer::new(settings, &fonts);
-    for case in capture["cases"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|case| case["name"] != "scale3-trailing")
-    {
+    for case in capture["cases"].as_array().unwrap().iter() {
         let mut content = source(&case["input"]);
         content.font_size = None;
         let styled = StyledText::new(&content, super::super::super::TextContext::Flow, settings);
@@ -656,7 +651,8 @@ fn parsed_implicit_default_empty_lines_match_native_paper_profile() {
 #[test]
 #[cfg(feature = "pdf")]
 fn rejected_paper_implicit_default_uses_original_fallback() {
-    let content = source(&serde_json::json!({"source_utf8":"AV\n", "requested_margin_bits":null}));
+    let content =
+        source(&serde_json::json!({"source_utf8":"AV\n\n", "requested_margin_bits":null}));
     let mut content = content;
     content.font_size = None;
     let settings = super::super::super::TextSettings {
