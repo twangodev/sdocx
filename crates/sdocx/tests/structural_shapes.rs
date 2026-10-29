@@ -1212,7 +1212,12 @@ mod arrow_transport_tests {
     }
 
     fn document(width: f32, kind: u8, size: u8) -> sdocx::Document {
+        parsed_document(width, kind, size, 0).document
+    }
+
+    fn parsed_document(width: f32, kind: u8, size: u8, compound: u8) -> sdocx::ParsedDocument {
         let mut settings = style(width);
+        settings[4] = compound;
         settings[5] = 3;
         settings[8..10].copy_from_slice(&[kind, size]);
         let mut effects = sized(&color(true, 0, 0x800000ff));
@@ -1224,9 +1229,7 @@ mod arrow_transport_tests {
             frame(8, 8, &line_fixed(0), &path),
         ]
         .concat();
-        let parsed = sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap();
-        assert!(!has_shape_warning(&parsed));
-        parsed.document
+        sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap()
     }
 
     #[test]
@@ -1417,6 +1420,13 @@ mod arrow_transport_tests {
                     .objects
                     .push(self::document(3.5, kind, 0).pages[0].objects.remove(0));
             }
+            let baseline = document.clone();
+            for (index, element) in document.pages[0].elements_mut().enumerate() {
+                let PageElement::Line(line) = element else {
+                    unreachable!()
+                };
+                line.style.compound = [0, 1, 2, 4, 255][index];
+            }
             let fonts = sdocx::fonts::FontBook::default();
             let mut options = sdocx::RenderOptions::default();
             options.color_mode = mode;
@@ -1429,6 +1439,16 @@ mod arrow_transport_tests {
                 &fonts,
             )
             .unwrap();
+            let reference = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+                &baseline,
+                &sdocx::layout_document(&baseline),
+                &[0],
+                &options,
+                &sdocx::PdfOptions::from_font_book(&fonts),
+                &fonts,
+            )
+            .unwrap();
+            assert_eq!(output.bytes, reference.bytes);
             assert!(output.pages[0].paint_diagnostics.is_empty());
             let pdf = lopdf::Document::load_mem(&output.bytes).unwrap();
             let content = pdf
@@ -1454,6 +1474,21 @@ mod arrow_transport_tests {
                             .is_ok_and(|name| name == b"Image"))))
             );
         }
+    }
+
+    #[test]
+    fn arrowed_line_ignores_saved_compound_type() {
+        let baseline = document(3.5, 1, 0);
+        let expected = sdocx::render_document_svg(&baseline, &Default::default());
+        for compound in [1, 2, 3, 4, 255] {
+            let parsed = parsed_document(3.5, 1, 0, compound);
+            assert!(has_shape_warning(&parsed));
+            let candidate = parsed.document;
+            let actual = sdocx::render_document_svg(&candidate, &Default::default());
+            assert!(actual[0].paint_diagnostics.is_empty());
+            assert_eq!(actual[0].svg, expected[0].svg, "compound {compound}");
+        }
+        assert!(has_shape_warning(&parsed_document(3.5, 0, 0, 1)));
     }
 }
 

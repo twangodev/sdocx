@@ -29,7 +29,7 @@ impl Plan {
         if style.begin_arrow[0] == 0 && style.end_arrow[0] == 0 {
             return Ok(None);
         }
-        if line.line_type != 0 || !style.has_supported_arrow_settings() || style.compound != 0 {
+        if line.line_type != 0 || !style.has_supported_arrow_settings() {
             return Err(());
         }
         let mut endpoints = [line.begin, line.end];
