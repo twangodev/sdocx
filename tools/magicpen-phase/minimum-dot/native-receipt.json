@@ -1,0 +1,446 @@
+{
+  "schema": "magicpen-minimum-dot-native-v1",
+  "scope": "Synthetic Drawing host Mesa transparent, 1x, even square page",
+  "cases": [
+    {
+      "input": {
+        "id": "p32-3.25-3.25",
+        "points": [
+          [
+            3.25,
+            3.25
+          ],
+          [
+            3.25,
+            3.25
+          ],
+          [
+            3.25,
+            3.25
+          ]
+        ],
+        "pressure": [
+          0,
+          0,
+          0
+        ],
+        "size": 0.4,
+        "argb": "0xff336699",
+        "page": [
+          32,
+          32
+        ]
+      },
+      "readback": {
+        "bytes": 4096,
+        "changed_from_background_bbox": [
+          3,
+          28,
+          3,
+          28
+        ],
+        "changed_from_background_pixels": 1,
+        "height": 32,
+        "pixel_format": "RGBA8",
+        "rgba8_zlib_base64": "eNrt0CEBAAAIAzAsEksF+vcjyLcIqwIAACBNz56FLA/IxgBg",
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              16,
+              16
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              20
+            ]
+          },
+          {
+            "rgba": [
+              9,
+              17,
+              26,
+              43
+            ],
+            "xy": [
+              3,
+              28
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              67,
+              28
+            ]
+          }
+        ],
+        "sha256": "bd7d7cda9fe06391df9d8b369bf528d5f8feab98fb717a349cc6456c79857a0c",
+        "storage_origin": "OpenGL lower-left row first",
+        "width": 32
+      },
+      "native_vector_hex": "00005040000050400000003f",
+      "native_vector_sha256": "add5c646341fb566198b5e95037aaa404b990d980f3a7e112d3ea113dbb78e03"
+    },
+    {
+      "input": {
+        "id": "p32-16.5-16.5",
+        "points": [
+          [
+            16.5,
+            16.5
+          ],
+          [
+            16.5,
+            16.5
+          ],
+          [
+            16.5,
+            16.5
+          ]
+        ],
+        "pressure": [
+          0,
+          0,
+          0
+        ],
+        "size": 0.4,
+        "argb": "0xff336699",
+        "page": [
+          32,
+          32
+        ]
+      },
+      "readback": {
+        "bytes": 4096,
+        "changed_from_background_bbox": [
+          16,
+          15,
+          16,
+          15
+        ],
+        "changed_from_background_pixels": 1,
+        "height": 32,
+        "pixel_format": "RGBA8",
+        "rgba8_zlib_base64": "eNrt0MEQAAAIALAEEgggjvypYujZ3YawCADgm6weCwDAxQKaVgCO",
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              16,
+              16
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              20
+            ]
+          },
+          {
+            "rgba": [
+              13,
+              26,
+              38,
+              64
+            ],
+            "xy": [
+              16,
+              15
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              80,
+              15
+            ]
+          }
+        ],
+        "sha256": "f77665a1fd9685a80bd147ef0f3d614dd4c22155840a5f79c8e20228ab577948",
+        "storage_origin": "OpenGL lower-left row first",
+        "width": 32
+      },
+      "native_vector_hex": "00008441000084410000003f",
+      "native_vector_sha256": "9c338916bed3e1cd6dfcab1a6ab8e0a033da1d477b522cd36144a95b6b1a4c91"
+    },
+    {
+      "input": {
+        "id": "p64-33.25-50.75",
+        "points": [
+          [
+            33.25,
+            50.75
+          ],
+          [
+            33.25,
+            50.75
+          ],
+          [
+            33.25,
+            50.75
+          ]
+        ],
+        "pressure": [
+          0,
+          0,
+          0
+        ],
+        "size": 0.4,
+        "argb": "0xff336699",
+        "page": [
+          64,
+          64
+        ]
+      },
+      "readback": {
+        "bytes": 16384,
+        "changed_from_background_bbox": [
+          33,
+          13,
+          33,
+          13
+        ],
+        "changed_from_background_pixels": 1,
+        "height": 64,
+        "pixel_format": "RGBA8",
+        "rgba8_zlib_base64": "eNrt0CEBAAAIACCr0eoF///zgNkEE4gAAADgS1aPBQAAAAAAAAAAAAAAAC4L/EwAYA==",
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              32,
+              32
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              20
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              33,
+              12
+            ]
+          },
+          {
+            "rgba": [
+              9,
+              17,
+              26,
+              43
+            ],
+            "xy": [
+              97,
+              12
+            ]
+          }
+        ],
+        "sha256": "6e7a4378649fd197327b1531d271c04a67afd267d85fe3834be47af548e62099",
+        "storage_origin": "OpenGL lower-left row first",
+        "width": 64
+      },
+      "native_vector_hex": "0000054200004b420000003f",
+      "native_vector_sha256": "aa78e81544537581a219b0ae5d9bc52f8ce82a144859fc909d85c9836faf4ad6"
+    },
+    {
+      "input": {
+        "id": "p256-200.5-150.5",
+        "points": [
+          [
+            200.5,
+            150.5
+          ],
+          [
+            200.5,
+            150.5
+          ],
+          [
+            200.5,
+            150.5
+          ]
+        ],
+        "pressure": [
+          0,
+          0,
+          0
+        ],
+        "size": 0.4,
+        "argb": "0xff336699",
+        "page": [
+          256,
+          256
+        ]
+      },
+      "readback": {
+        "bytes": 262144,
+        "changed_from_background_bbox": [
+          200,
+          105,
+          200,
+          105
+        ],
+        "changed_from_background_pixels": 1,
+        "height": 256,
+        "pixel_format": "RGBA8",
+        "rgba8_zlib_base64": "eNrt0MEQAAAIALAEEgggjvypcujZbQiLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAvsrqsQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXCwF2wCO",
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              20
+            ]
+          },
+          {
+            "rgba": [
+              13,
+              26,
+              38,
+              64
+            ],
+            "xy": [
+              200,
+              105
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              264,
+              105
+            ]
+          }
+        ],
+        "sha256": "1a3152244d93dd70bfae366f28bec3f9491cf9a29b8b685ff576882442de8f82",
+        "storage_origin": "OpenGL lower-left row first",
+        "width": 256
+      },
+      "native_vector_hex": "00804843008016430000003f",
+      "native_vector_sha256": "9fccef8192772e91a4ded6e015a4b5f058a9313b6620628cd60163e4cefcc5a9"
+    }
+  ]
+}

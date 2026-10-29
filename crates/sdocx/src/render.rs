@@ -377,6 +377,18 @@ pub struct RenderOptions {
     /// Invalid or absent profiles preserve the existing V14 vector output.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    /// Experimental MagicPen contour for a caller-asserted uniform output
+    /// scale in pixels per page unit (1, 2, or 4), with an axis-aligned
+    /// output grid and no rotation. Other values, replay, and sliced scenes
+    /// use the canonical contour. Viewer zoom changes coverage.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub magicpen_output_scale: Option<u32>,
+    /// Opt in to host-derived minimum-dot cells at 1x. The caller asserts
+    /// the page origin maps to the output pixel origin with even 2x2 quad
+    /// phase, without translation, rotation, or later viewer scaling.
+    /// Requires `magicpen_output_scale: Some(1)`.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub magicpen_host_minimum_dot_grid: bool,
     /// Explicit fresh Pencil3 V3 canvas and intrinsic texture policy.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pencil3_profile: Option<Pencil3RenderProfile>,
@@ -904,6 +916,8 @@ impl DocumentTextCache {
             options.fountain_v17_output_scale_profile,
             options.fountain_v16_output_scale_profile,
             options.fountain_v14_output_scale_profile,
+            options.magicpen_output_scale,
+            options.magicpen_host_minimum_dot_grid,
             options.pencil3_profile,
             options.airbrush_profile,
             options.simplebrush_profile,
@@ -1416,6 +1430,8 @@ fn render_page_contents_svg(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    magicpen_output_scale: Option<u32>,
+    magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -1493,6 +1509,8 @@ fn render_page_contents_svg(
         fountain_v17_output_scale_profile,
         fountain_v16_output_scale_profile,
         fountain_v14_output_scale_profile,
+        magicpen_output_scale,
+        magicpen_host_minimum_dot_grid,
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
@@ -1551,6 +1569,8 @@ struct CompositionContext<'a> {
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    magicpen_output_scale: Option<u32>,
+    magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -1655,6 +1675,8 @@ fn render_object(
                 context.fountain_v17_output_scale_profile,
                 context.fountain_v16_output_scale_profile,
                 context.fountain_v14_output_scale_profile,
+                context.magicpen_output_scale,
+                context.magicpen_host_minimum_dot_grid,
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
@@ -4122,7 +4144,87 @@ fn argb_color(argb: u32) -> Color {
     }
 }
 
-fn magicpen_v1_vector_path(ink: &crate::ink::PreparedMagicPenV1, replay: bool) -> Option<Path> {
+fn magicpen_minimum_dot_cell(
+    records: &[[u32; 3]],
+    viewport: [u32; 2],
+) -> Option<Option<(i32, i32, f64)>> {
+    let [record] = records else { return None };
+    let [x, y, radius] = record.map(|word| f64::from(f32::from_bits(word)));
+    if radius != 0.5
+        || viewport[0] != viewport[1]
+        || !(32..=256).contains(&viewport[0])
+        || !viewport[1].is_multiple_of(2)
+        || !x.is_finite()
+        || !y.is_finite()
+        || x < 2.0
+        || y < 2.0
+        || x + 2.0 >= f64::from(viewport[0])
+        || y + 2.0 >= f64::from(viewport[1])
+        || (x * 4.0).fract() != 0.0
+        || (y * 4.0).fract() != 0.0
+        || x > 200.5
+        || y > 150.5
+    {
+        return None;
+    }
+    let ix = x.floor() as i32;
+    let iy = y.floor() as i32;
+    let distance = |px: i32, py: i32| (f64::from(px) + 0.5 - x).hypot(f64::from(py) + 0.5 - y);
+    let remaining = radius - distance(ix, iy);
+    if remaining <= 0.0 {
+        return Some(None);
+    }
+    let qx = ix.div_euclid(2) * 2;
+    let qy = iy.div_euclid(2) * 2;
+    let width = (distance(qx + 1, iy) - distance(qx, iy)).abs()
+        + (distance(ix, qy + 1) - distance(ix, qy)).abs();
+    let alpha = if width == 0.0 {
+        1.0
+    } else {
+        (remaining / width).clamp(0.0, 1.0)
+    };
+    Some(Some((ix, iy, (alpha * 255.0).round() / 255.0)))
+}
+
+#[cfg(test)]
+#[test]
+fn magicpen_minimum_dot_cell_is_bounded_to_captured_grid() {
+    let record = |x: f32, y: f32, r: f32| [x.to_bits(), y.to_bits(), r.to_bits()];
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(8.0, 8.0, 0.5)], [32, 32]),
+        Some(None)
+    );
+    assert!(matches!(
+        magicpen_minimum_dot_cell(&[record(8.5, 8.5, 0.5)], [32, 32]),
+        Some(Some((8, 8, _)))
+    ));
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(8.1, 8.5, 0.5)], [32, 32]),
+        None
+    );
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(8.5, 8.5, 0.5)], [32, 31]),
+        None
+    );
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(1.5, 8.5, 0.5)], [32, 32]),
+        None
+    );
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(8.5, 8.5, 1.0)], [32, 32]),
+        None
+    );
+    assert_eq!(
+        magicpen_minimum_dot_cell(&[record(8.5, 8.5, 0.5); 2], [32, 32]),
+        None
+    );
+}
+
+fn magicpen_v1_vector_path(
+    ink: &crate::ink::PreparedMagicPenV1,
+    replay: bool,
+    scale: u32,
+) -> Option<Path> {
     const MAX_PATH_BYTES: usize = 8 * 1024 * 1024;
     if ink.records.is_empty()
         || ink.records.len() > 65_536
@@ -4144,7 +4246,7 @@ fn magicpen_v1_vector_path(ink: &crate::ink::PreparedMagicPenV1, replay: bool) -
     // ReplaySvg resolves saved samples through PreparedStroke::sample_ends,
     // then indexes these prefixes by emitted stamp count, not source event.
     for record in &ink.records {
-        let data = crate::ink::magicpen_source_contour_path(std::slice::from_ref(record))?;
+        let data = crate::ink::magicpen_source_contour_path(std::slice::from_ref(record), scale)?;
         if !path.push_serialized(&data, replay, MAX_PATH_BYTES) {
             return None;
         }
@@ -4176,6 +4278,8 @@ fn render_stroke(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    magicpen_output_scale: Option<u32>,
+    magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -4392,10 +4496,36 @@ fn render_stroke(
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
         && let Some(ink) = crate::ink::prepare_magicpen_v1_source(stroke)
-        && let Some(path) = magicpen_v1_vector_path(&ink, replay_index.is_some())
+        && let Some(path) = magicpen_v1_vector_path(
+            &ink,
+            replay_index.is_some(),
+            magicpen_output_scale
+                .filter(|scale| matches!(scale, 1 | 2 | 4))
+                .filter(|_| replay_index.is_none() && slice.is_none())
+                .unwrap_or(1),
+        )
     {
         let color = theme.foreground(magicpen_source_color(stroke, ink.argb));
         let opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        if magicpen_host_minimum_dot_grid
+            && magicpen_output_scale == Some(1)
+            && replay_index.is_none()
+            && slice.is_none()
+            && let Some(cell) = magicpen_minimum_dot_cell(&ink.records, viewport)
+        {
+            if let Some((x, y, alpha)) = cell {
+                svg.push(
+                    Rectangle::new()
+                        .x(f64::from(x))
+                        .y(f64::from(y))
+                        .width(1.0)
+                        .height(1.0)
+                        .fill(Paint::from_hex(&color))
+                        .fill_opacity(alpha * opacity),
+                );
+            }
+            return;
+        }
         let draw = |svg: &mut Scene| {
             svg.push(path.fill(Paint::from_hex(&color)));
         };
@@ -4668,7 +4798,7 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
         crate::ink::InkRenderContext::CanonicalPage,
     );
     if let Some(ink) = crate::ink::prepare_magicpen_v1_source(stroke)
-        && magicpen_v1_vector_path(&ink, false).is_some()
+        && magicpen_v1_vector_path(&ink, false, 1).is_some()
     {
         let color =
             RenderTheme::for_canvas(dark_mode).foreground(magicpen_source_color(stroke, ink.argb));
@@ -8409,6 +8539,93 @@ mod tests {
         stroke
     }
 
+    #[test]
+    fn magicpen_minimum_dot_grid_requires_explicit_pixel_origin() {
+        let mut stroke = magicpen_v1_stroke();
+        stroke.points = vec![Point { x: 8.5, y: 8.5 }; 3];
+        stroke.pressures = vec![0.0; 3];
+        stroke.pen_width = 0.4;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.4);
+        let mut page = page_with_uncolored_stroke();
+        page.width = 32;
+        page.height = 32;
+        page.objects = vec![stroke.into()];
+        let source = document(page);
+        let svg = |scale, grid| {
+            render_document_svg(
+                &source,
+                &RenderOptions {
+                    magicpen_output_scale: scale,
+                    magicpen_host_minimum_dot_grid: grid,
+                    ..Default::default()
+                },
+            )[0]
+            .svg
+            .clone()
+        };
+        assert_eq!(svg(None, false), svg(None, true));
+        assert_ne!(svg(Some(1), false), svg(Some(1), true));
+        assert_eq!(svg(Some(2), false), svg(Some(2), true));
+        #[cfg(feature = "pdf")]
+        {
+            let pdf = |grid| {
+                crate::render_document_pdf(
+                    &source,
+                    &RenderOptions {
+                        magicpen_output_scale: Some(1),
+                        magicpen_host_minimum_dot_grid: grid,
+                        ..Default::default()
+                    },
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap()
+            };
+            assert_ne!(pdf(false), pdf(true));
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn magicpen_minimum_dot_matches_translated_native_alpha_controls() {
+        use base64::Engine as _;
+        use std::io::Read as _;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tools/magicpen-phase/minimum-dot/native-receipt.json"
+        ))
+        .unwrap();
+        for case in receipt["cases"].as_array().unwrap() {
+            let input = &case["input"];
+            let point = &input["points"][0];
+            let x = point[0].as_f64().unwrap() as f32;
+            let y = point[1].as_f64().unwrap() as f32;
+            let size = input["page"][0].as_u64().unwrap() as u32;
+            let record = [x.to_bits(), y.to_bits(), 0.5f32.to_bits()];
+            let (ix, iy, alpha) = super::magicpen_minimum_dot_cell(&[record], [size, size])
+                .unwrap()
+                .unwrap();
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case["readback"]["rgba8_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut bytes = Vec::new();
+            flate2::read::ZlibDecoder::new(&compressed[..])
+                .read_to_end(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes.len(), size as usize * size as usize * 4);
+            let expected = (alpha * 255.0).round() as u8;
+            for (index, pixel) in bytes.as_chunks::<4>().0.iter().enumerate() {
+                let native_x = index % size as usize;
+                let native_y = size as usize - 1 - index / size as usize;
+                let at_cell = native_x == ix as usize && native_y == iy as usize;
+                assert_eq!(
+                    pixel[3],
+                    if at_cell { expected } else { 0 },
+                    "{}",
+                    input["id"]
+                );
+            }
+        }
+    }
+
     #[cfg(feature = "pdf")]
     #[test]
     fn dump_magicpen_public_candidate_and_generic_fallback() {
@@ -8536,6 +8753,100 @@ mod tests {
     }
 
     #[test]
+    fn magicpen_output_scale_is_opt_in_and_replay_stays_canonical() {
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![magicpen_v1_stroke().into()];
+        let source = document(page);
+        let svg = |scale| {
+            render_document_svg(
+                &source,
+                &RenderOptions {
+                    magicpen_output_scale: scale,
+                    ..Default::default()
+                },
+            )[0]
+            .svg
+            .clone()
+        };
+        let canonical = svg(None);
+        assert_eq!(svg(Some(1)), canonical);
+        assert_eq!(svg(Some(3)), canonical);
+        assert_eq!(svg(Some(0)), canonical);
+        assert_ne!(svg(Some(2)), canonical);
+        assert_ne!(svg(Some(4)), svg(Some(2)));
+        let replay = |scale| {
+            super::render_layout_page_replay_svg(
+                &source,
+                &layout_document(&source),
+                0,
+                &RenderOptions {
+                    magicpen_output_scale: scale,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .svg
+        };
+        assert_eq!(replay(None), replay(Some(4)));
+        #[cfg(feature = "pdf")]
+        {
+            let slice = |scale| {
+                let layout = layout_document(&source);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, false).unwrap();
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &source,
+                        &[request],
+                        &RenderOptions {
+                            magicpen_output_scale: scale,
+                            ..Default::default()
+                        },
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            assert_eq!(slice(None), slice(Some(4)));
+        }
+        let mut child = crate::PageObject::from(magicpen_v1_stroke());
+        child.content = crate::PageObjectContent::Descendant(Box::new(child.content));
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![child];
+        let descendant = document(page);
+        let descendant_svg = |scale| {
+            render_document_svg(
+                &descendant,
+                &RenderOptions {
+                    magicpen_output_scale: scale,
+                    ..Default::default()
+                },
+            )[0]
+            .svg
+            .clone()
+        };
+        assert_eq!(descendant_svg(None), descendant_svg(Some(4)));
+        #[cfg(feature = "pdf")]
+        {
+            let pdf = |scale| {
+                crate::render_document_pdf(
+                    &source,
+                    &RenderOptions {
+                        magicpen_output_scale: scale,
+                        ..Default::default()
+                    },
+                    &crate::PdfOptions::default(),
+                )
+                .unwrap()
+            };
+            assert_eq!(pdf(None), pdf(Some(0)));
+            assert_ne!(pdf(None), pdf(Some(4)));
+        }
+    }
+
+    #[test]
     fn canonical_magicpen_v1_page_export_uses_source_contours_and_event_prefixes() {
         let stroke = magicpen_v1_stroke();
         let prepared = crate::prepare_stroke_for_page(&stroke, false);
@@ -8633,7 +8944,24 @@ mod tests {
         budget.tilts = vec![0.0; count];
         budget.orientations = vec![0.0; count];
         let ink = crate::ink::prepare_magicpen_v1_source(&budget).unwrap();
-        assert!(super::magicpen_v1_vector_path(&ink, false).is_none());
+        assert!(super::magicpen_v1_vector_path(&ink, false, 1).is_none());
+        assert!(super::magicpen_v1_vector_path(&ink, false, 4).is_none());
+        let mut budget_page = page_with_uncolored_stroke();
+        budget_page.objects = vec![budget.clone().into()];
+        let budget_document = document(budget_page);
+        let baseline = render_document_svg(&budget_document, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let scaled = render_document_svg(
+            &budget_document,
+            &RenderOptions {
+                magicpen_output_scale: Some(4),
+                ..Default::default()
+            },
+        )[0]
+        .svg
+        .clone();
+        assert_eq!(baseline, scaled);
         let prepared = crate::prepare_stroke_for_page(&budget, false);
         assert_eq!(prepared.support, crate::InkSupport::Approximate);
         assert!(prepared.sample_ends.is_none());

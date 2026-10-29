@@ -9,7 +9,10 @@ const CONTOUR_VERTICES: usize = 192;
 const MAX_RECORDS: usize = 65_536;
 const MAX_PATH_BYTES: usize = 8 * 1024 * 1024;
 
-pub(super) fn source_contour_path(records: &[[u32; 3]]) -> Option<String> {
+pub(super) fn source_contour_path(records: &[[u32; 3]], scale: u32) -> Option<String> {
+    if !matches!(scale, 1 | 2 | 4) {
+        return None;
+    }
     if records.is_empty() || records.len() > MAX_RECORDS {
         return None;
     }
@@ -29,7 +32,7 @@ pub(super) fn source_contour_path(records: &[[u32; 3]]) -> Option<String> {
             // Preserve the radial integral of the canonical linear coverage
             // ramp. This retains small stamps whose half-coverage contour
             // has zero area, without fitting a captured pixel boundary.
-            let edge = cos.abs() + sin.abs();
+            let edge = (cos.abs() + sin.abs()) / f64::from(scale);
             let rho2 = if radius >= edge {
                 radius * radius - radius * edge + edge * edge / 3.0
             } else {
@@ -103,7 +106,7 @@ mod tests {
             paint["native_vector_sha256"].as_str(),
             Some("48fab498fb7b870d2fb0ebcf3d725efbcf1352324592286aa9082df635b1377d")
         );
-        let path = source_contour_path(&records).unwrap();
+        let path = source_contour_path(&records, 1).unwrap();
         assert_eq!(path.matches('M').count(), records.len());
         assert_eq!(path.matches('Z').count(), records.len());
         assert!(path.len() <= MAX_PATH_BYTES);
@@ -132,10 +135,10 @@ mod tests {
                     .unwrap()
             })
             .collect::<Vec<[u32; 3]>>();
-        assert_eq!(source_contour_path(&native), Some(path));
+        assert_eq!(source_contour_path(&native, 1), Some(path));
 
-        assert!(source_contour_path(&[]).is_none());
-        assert!(source_contour_path(&[[0, 0, f32::NAN.to_bits()]]).is_none());
-        assert!(source_contour_path(&[[0, 0, (-1.0_f32).to_bits()]]).is_none());
+        assert!(source_contour_path(&[], 1).is_none());
+        assert!(source_contour_path(&[[0, 0, f32::NAN.to_bits()]], 1).is_none());
+        assert!(source_contour_path(&[[0, 0, (-1.0_f32).to_bits()]], 1).is_none());
     }
 }

@@ -179,6 +179,8 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
             None,
             None,
             None,
+            false,
+            None,
             None,
             None,
             false,

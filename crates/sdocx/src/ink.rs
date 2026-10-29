@@ -41,8 +41,8 @@ pub(crate) use magicpen_glv1::{
     PreparedMagicPenV1, prepare_source_v1 as prepare_magicpen_v1_source,
 };
 
-pub(crate) fn magicpen_source_contour_path(records: &[[u32; 3]]) -> Option<String> {
-    magicpen_glv1_vector::source_contour_path(records)
+pub(crate) fn magicpen_source_contour_path(records: &[[u32; 3]], scale: u32) -> Option<String> {
+    magicpen_glv1_vector::source_contour_path(records, scale)
 }
 mod marker2;
 pub(crate) mod marker3;
