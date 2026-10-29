@@ -990,6 +990,9 @@ fn v113_rotated_filled_mask_from_source() {
             }
         }
     }
+    if let Ok(path) = std::env::var("SDOCX_TAPE_V114_MASK_OUT") {
+        std::fs::write(path, &mask).unwrap();
+    }
     let errors: Vec<_> = mask
         .iter()
         .zip(oracle.as_chunks::<4>().0)
@@ -1049,5 +1052,53 @@ fn v113_profile512_size12_filled_mask_from_source() {
             };
             assert_eq!(value, oracle[(y * 512 + x) * 4 + 3], "at {x}, {y}");
         }
+    }
+}
+
+#[test]
+fn v115_translated_source_mask() {
+    let points = tape_curve(
+        &[
+            P { x: 64.0, y: 64.0 },
+            P { x: 73.0, y: 72.0 },
+            P { x: 85.0, y: 61.0 },
+            P { x: 98.0, y: 71.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let aa = tape_aa_width(tape_size_level(12.0, 256, 256));
+    let (sin, cos) = f32::from_bits(0x3f06_0a92).sin_cos();
+    let (hx, hy) = (1.6800001_f32, 6.7200003_f32);
+    let (bx, by) = (
+        (cos * hx).abs() + (sin * hy).abs(),
+        (sin * hx).abs() + (cos * hy).abs(),
+    );
+    let mut mask = vec![0u8; 256 * 256];
+    for p in points {
+        let (px, py) = (f32::from_bits(p[0]), f32::from_bits(p[1]));
+        for y in (py - by).floor().max(0.0) as usize..((py + by).ceil() as usize).min(256) {
+            for x in (px - bx).floor().max(0.0) as usize..((px + bx).ceil() as usize).min(256) {
+                let (sx, sy) = (x as f32 + 0.5 - px, y as f32 + 0.5 - py);
+                let (dx, dy) = (cos * sx + sin * sy, -sin * sx + cos * sy);
+                if dx.abs() > hx || dy.abs() > hy {
+                    continue;
+                }
+                let dist = (dx / 1.5).powi(2) + (dy / 6.0).powi(2);
+                let t = ((dist - (1.0 - aa)) / aa).clamp(0.0, 1.0);
+                let value = ((1.0 - t * t * (3.0 - 2.0 * t)) * 255.0).round() as u8;
+                let i = y * 256 + x;
+                mask[i] = mask[i].max(value);
+            }
+        }
+    }
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&mask)),
+        "590fd4f32840d5dad3c218a67881eabe78f06df661732906449b335d9dd38531"
+    );
+    if let Ok(path) = std::env::var("SDOCX_TAPE_V115_MASK_OUT") {
+        std::fs::write(path, mask).unwrap();
     }
 }
