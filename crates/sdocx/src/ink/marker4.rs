@@ -283,6 +283,74 @@ mod tests {
     }
 
     #[test]
+    fn v7_finger_adapter_matches_wide_native_saved_geometry() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-wide-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = 0;
+            rendering.advanced_settings = Some("7;".into());
+            rendering.style.pen_size = Some(case["size"].as_f64().unwrap() as f32);
+            for sample in case["samples"].as_array().unwrap() {
+                stroke.points.push(Point {
+                    x: sample[0].as_f64().unwrap(),
+                    y: sample[1].as_f64().unwrap(),
+                });
+                stroke.pressures.push(sample[2].as_f64().unwrap());
+                stroke.tilts.push(sample[3].as_f64().unwrap());
+                stroke.timestamps.push(stroke.timestamps.len() as i64 * 8);
+            }
+            let actual = prepare_v7_finger(&stroke).unwrap();
+            let dots = case["dots"].as_array().unwrap();
+            let name = case["name"].as_str().unwrap();
+            let ends: Vec<_> = case["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(actual.sample_ends, ends, "{name}");
+            assert_eq!(actual.points.len(), dots.len(), "{name}");
+            let bounds = case["tip_bounds"].as_array().unwrap();
+            assert!(
+                (actual.stamp.width - (bounds[2].as_f64().unwrap() - bounds[0].as_f64().unwrap()))
+                    .abs()
+                    < 1e-4,
+                "{name} width"
+            );
+            assert!(
+                (actual.stamp.height - (bounds[3].as_f64().unwrap() - bounds[1].as_f64().unwrap()))
+                    .abs()
+                    < 1e-4,
+                "{name} height"
+            );
+            for (point, dot) in actual.points.iter().zip(dots) {
+                assert!(
+                    (point.x - dot[0].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} x"
+                );
+                assert!(
+                    (point.y - dot[1].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} y"
+                );
+                assert!(
+                    (actual.stamp.angle - dot[3].as_f64().unwrap()).abs() < 1e-4,
+                    "{name} angle"
+                );
+                let radius = dot[2].as_f64().unwrap();
+                assert!(
+                    (actual.stamp.width - 1.54 * (radius + 0.5)).abs() < 1e-4,
+                    "{name} radius"
+                );
+            }
+            assert!(prepare(&stroke).is_none(), "{name} stays on fallback");
+        }
+    }
+
+    #[test]
     fn v7_finger_adapter_rejects_unsupported_inputs() {
         let mut valid = reference().stroke;
         valid.rendering.as_mut().unwrap().tool_type_raw = 0;
