@@ -1,0 +1,64 @@
+{
+  "attachment_template_sha256": "4dbb6400cfe0032471aa61091f2035f86530e8f5086c9d24b7a448f3eab531c1",
+  "boundary": "native string table, ModelContext, binary handler, OnAttach, getters and Drawing execute under host Unicorn adapters; no complete note loader or device paint",
+  "caller_sha256": "66f4790e8eeb1ca867f3273a796303b6ffb108286916e1e245fc063cbd744ae0",
+  "comparison": "Native 11; stream equals retained v10-native-stream.zlib; host Mesa paint, uniforms, texture uploads and callback stream match paint-receipt.json.",
+  "drawing": {
+    "factory_count": 1,
+    "native_arrays": {
+      "orientation": {
+        "count": 204,
+        "sha256": "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+      },
+      "points": {
+        "count": 204,
+        "sha256": "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4"
+      },
+      "pressure": {
+        "count": 204,
+        "sha256": "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9"
+      },
+      "tilt": {
+        "count": 204,
+        "sha256": "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6"
+      },
+      "timestamps": {
+        "count": 204,
+        "sha256": "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a"
+      }
+    },
+    "native_color": "0xff000000",
+    "native_snapshot": {
+      "curve_enabled": 1,
+      "fixed_width_bits": "6ade1141",
+      "fixed_width_enabled": 0,
+      "label": "serialized",
+      "line_type": 0,
+      "point_count": 204,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "6ade1141",
+      "stroke_type": 0,
+      "tool_type": 2
+    },
+    "redraw_entries": [
+      "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+      "SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+    ],
+    "return": 1,
+    "stream_count": 63,
+    "stream_sha256": "becc134bf38d9c9c3488d7d9163eee94d56a6ef94456e66c61248d0fce65888a"
+  },
+  "frame_sha256": "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3",
+  "input": "synthetic FountainPen-derived serialized frame, BrushPen name and explicit 11; and black",
+  "replay_limit": "Direct DSOs and principal inputs pinned by existing receipt and replay helpers; transitive host adapters and toolchain are not pinned. No complete note loader or device paint.",
+  "resolved_advanced_setting": "11;",
+  "resolved_pen_name": "com.samsung.android.sdk.pen.pen.preload.BrushPen",
+  "string_ids": {
+    "advanced_setting": 1,
+    "pen_name": 2
+  },
+  "table_sha256": "fc83e379d20450fb10d9ffe5e45bbd55c0a98cdd301b6fff21348bef8ae29cbc"
+}

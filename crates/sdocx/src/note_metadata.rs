@@ -438,3 +438,53 @@ impl NoteMetadataDecoder<'_> {
         })
     }
 }
+
+#[cfg(test)]
+mod brushpen_setting11_tests {
+    use super::*;
+
+    #[test]
+    fn synthetic_setting11_string_table_resolves_stroke() {
+        use sha2::{Digest, Sha256};
+        let mut table =
+            include_bytes!("../../../conformance/brushpen-serialized/v10-table.bin").to_vec();
+        let old = [b'1', 0, b'0', 0, b';', 0];
+        let matches: Vec<_> = table
+            .windows(old.len())
+            .enumerate()
+            .filter_map(|(index, bytes)| (bytes == old).then_some(index))
+            .collect();
+        assert_eq!(matches.len(), 1);
+        table[matches[0] + 2] = b'1';
+        let receipt: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../tools/brushpen-transform/setting11-receipt.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&table)),
+            receipt["table_sha256"].as_str().unwrap()
+        );
+        let mut encoded = (table.len() as u32).to_le_bytes().to_vec();
+        encoded.extend_from_slice(&table);
+        let limits = crate::ParseLimits::default();
+        let mut decoder = NoteMetadataDecoder {
+            limits: &limits,
+            entries: 0,
+        };
+        let table = decoder
+            .string_table(&mut Reader::new(&encoded, "string table"))
+            .unwrap();
+        let mut stroke = crate::decode::decode_stroke(
+            include_bytes!("../../../conformance/brushpen-serialized/v10-payload.bin"),
+            &limits,
+        )
+        .unwrap();
+        crate::StrokeResources::new(&table).resolve(&mut stroke);
+        let rendering = stroke.rendering.unwrap();
+        assert_eq!(
+            rendering.pen_name.as_deref(),
+            Some(receipt["resolved_pen_name"].as_str().unwrap())
+        );
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("11;"));
+    }
+}
