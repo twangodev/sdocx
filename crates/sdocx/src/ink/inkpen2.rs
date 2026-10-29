@@ -714,6 +714,254 @@ mod tests {
     }
 
     #[test]
+    fn null_v1_landscape_matches_native_geometry() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-landscape/receipt.json"
+        ))
+        .unwrap();
+        let points = [
+            P { x: 0., y: 0. },
+            P { x: 8., y: 0. },
+            P { x: 16., y: 3. },
+            P { x: 24., y: 3. },
+        ];
+        for (profile, native) in receipt["cases"].as_object().unwrap() {
+            let resolution_min = native["profile"][0]
+                .as_i64()
+                .unwrap()
+                .min(native["profile"][1].as_i64().unwrap())
+                as i32;
+            let output = super::redraw_v1_bounded(
+                Input {
+                    points: &points,
+                    times: &[0, 10, 20, 30],
+                    pressures: &[0.2, 0.4, 0.6, 0.8],
+                    tools: &[2; 4],
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: 4.,
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min,
+                        initial_alternation: false,
+                        initial_time: 0,
+                    },
+                },
+                10000,
+            )
+            .unwrap();
+            let actual: Vec<u8> = output
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            assert_eq!(
+                actual,
+                hex_bytes(native["pair"]["2"]["geometry_hex"].as_str().unwrap()),
+                "{profile}"
+            );
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn half_grid_from_source_geometry_matches_retained_phases() {
+        use base64::Engine as _;
+        use std::io::Read as _;
+        mod experiment {
+            #![allow(dead_code)]
+            include!("../../../../tools/inkpen2-v1-tablet-half/bounded_grid.rs");
+        }
+        let captures: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+        ))
+        .unwrap();
+        let phases: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-tablet-half/multi-phase-model.json"
+        ))
+        .unwrap();
+        let mut count = 0;
+        for row in phases["cases"].as_array().unwrap() {
+            let name = row["case"].as_str().unwrap();
+            let case = &captures["cases"][name];
+            let input = &case["input"];
+            let points: Vec<P> = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: number(&p[0]),
+                    y: number(&p[1]),
+                })
+                .collect();
+            let output = super::redraw_v1_bounded(
+                Input {
+                    points: &points,
+                    times: &[0, 10, 20, 30],
+                    pressures: &[0.2, 0.4, 0.6, 0.8],
+                    tools: &[3; 4],
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: number(&input["size"]),
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min: 1440,
+                        initial_alternation: false,
+                        initial_time: 0,
+                    },
+                },
+                10000,
+            )
+            .unwrap();
+            let geometry: Vec<u8> = output
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            assert_eq!(
+                geometry,
+                hex_bytes(case["geometry_hex"].as_str().unwrap()),
+                "{name}"
+            );
+            let dx = row["phase"][0].as_f64().unwrap();
+            let dy = row["phase"][1].as_f64().unwrap();
+            let pixels = experiment::grid(
+                &geometry,
+                64,
+                48,
+                0.5,
+                16. + dx,
+                16. + dy,
+                [1000, 100000, 3072],
+            )
+            .unwrap();
+            let mut actual = vec![0; 64 * 48];
+            for ((x, y), alpha) in pixels {
+                actual[y as usize * 64 + x as usize] = alpha;
+            }
+            if let Some(directory) = std::env::var_os("SDOCX_SOURCE_GRID_CAPTURE") {
+                let path = std::path::Path::new(&directory).join(format!("{name}-{dx}-{dy}"));
+                std::fs::write(path, &actual).unwrap();
+            }
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(row["predicted_alpha_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut expected = Vec::new();
+            flate2::read::ZlibDecoder::new(&compressed[..])
+                .read_to_end(&mut expected)
+                .unwrap();
+            assert_eq!(actual, expected, "{name} {dx} {dy}");
+            count += 1;
+        }
+        assert_eq!(count, 18);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn half_grid_zero_width_from_source_geometry_matches_retained_phases() {
+        use sha2::{Digest, Sha256};
+        mod experiment {
+            #![allow(dead_code)]
+            include!("../../../../tools/inkpen2-v1-tablet-half/bounded_grid_zero_width.rs");
+        }
+        let captures: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+        ))
+        .unwrap();
+        let phases: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-tablet-half/zero-width-model.json"
+        ))
+        .unwrap();
+        let mut count = 0;
+        for row in phases["cases"].as_array().unwrap() {
+            let name = row["case"].as_str().unwrap();
+            let case = &captures["cases"][name];
+            let input = &case["input"];
+            let points: Vec<P> = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| P {
+                    x: number(&p[0]),
+                    y: number(&p[1]),
+                })
+                .collect();
+            let output = super::redraw_v1_bounded(
+                Input {
+                    points: &points,
+                    times: &[0, 10, 20, 30],
+                    pressures: &[0.2, 0.4, 0.6, 0.8],
+                    tools: &[3; 4],
+                    rgb: [0; 3],
+                    rainbow: None,
+                    size: number(&input["size"]),
+                    curve_enabled: true,
+                    is_shape: false,
+                    runtime: Runtime {
+                        inverse_scale: [1.; 2],
+                        spacing: 1.,
+                        tolerance: 2.,
+                        tool_threshold: 20.,
+                        resolution_min: 1440,
+                        initial_alternation: false,
+                        initial_time: 0,
+                    },
+                },
+                10000,
+            )
+            .unwrap();
+            let geometry: Vec<u8> = output
+                .vertices
+                .iter()
+                .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
+                .collect();
+            assert_eq!(
+                geometry,
+                hex_bytes(case["geometry_hex"].as_str().unwrap()),
+                "{name}"
+            );
+            let dx = row["phase"][0].as_f64().unwrap();
+            let dy = row["phase"][1].as_f64().unwrap();
+            let pixels = experiment::grid(
+                &geometry,
+                64,
+                48,
+                0.5,
+                16. + dx,
+                16. + dy,
+                [1000, 100000, 3072],
+            )
+            .unwrap();
+            let mut actual = vec![0; 64 * 48];
+            for ((x, y), alpha) in pixels {
+                actual[y as usize * 64 + x as usize] = alpha;
+            }
+            if let Some(directory) = std::env::var_os("SDOCX_ZERO_WIDTH_GRID_CAPTURE") {
+                let path = std::path::Path::new(&directory).join(format!("{name}-{dx}-{dy}"));
+                std::fs::write(path, &actual).unwrap();
+            }
+            let digest = format!("{:x}", Sha256::digest(&actual));
+            assert_eq!(
+                digest,
+                row["candidate_sha256"].as_str().unwrap(),
+                "{name} {dx} {dy}"
+            );
+            count += 1;
+        }
+        assert_eq!(count, 26);
+    }
+
+    #[test]
     fn null_v1_screen_shapes_match_candidate_geometry() {
         let shapes: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen2-null-v1-shapes-paint-native.json"
@@ -2281,3 +2529,7 @@ mod tests {
         assert_eq!(total, 87);
     }
 }
+
+#[cfg(all(test, feature = "pdf"))]
+#[path = "inkpen2_grid_transport_tests.rs"]
+mod grid_transport_tests;

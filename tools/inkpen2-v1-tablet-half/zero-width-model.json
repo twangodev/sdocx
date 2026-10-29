@@ -1,0 +1,557 @@
+{
+  "scope": "Experimental mathematical limit for zero derivative; boundary remains unsupported.",
+  "source_sha256": {
+    "receipt.json": "ff4a42391828bf32d21675fc993a85f29d0f2407d976681551934f5733b7ccc0",
+    "multi-phase-model.json": "0d444f976834d357125d0b8894c7fe69e2082d615d9dc383c6c3545f54d1b817",
+    "integer-phase.json": "a75a09524307896b3edf78e80ef361a633540b12c44cf23150e41a9421aed5eb"
+  },
+  "script_sha256": "7247341a4bf14c96441fff3f247ef6c271c19f01f0cc3111b05feb63b21bffb2",
+  "cases": [
+    {
+      "source": "multi-phase-model.json",
+      "case": "short",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "50b94d6a63e83a15443ca246510172ce431a4f5c03b99aa322900c779bfeb8fd"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "short",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "0c869549d286c1b1cf0820cf6d90adedeb83a3df71d85226019d8015c8574ee7"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "short",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "6e02b99ce0afca3b9da63b56a066e8748e7a83a1138a1a25c9c6cc1b9f4af09f"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "stationary",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "bf73bdda47623d0c055502e15ee971e3421013ba3ecfc5d343585c40bf667417"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "stationary",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "beb1597ec8b46d3ce1b089a0e433d4816bec61cd546612f471772ae810ac4a1b"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "stationary",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "d3238e98b42525f5cf3b8114f43adc1c20397dc2cf6f9d80d62f504313d715a4"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "turn",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 4,
+        "absolute_error": 4,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 4,
+        "absolute_error": 4,
+        "max_error": 1
+      },
+      "candidate_sha256": "22853739b31b6d1d3673b2fc041e1ab6b379af7c4292ce27b61363181f59e22e"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "turn",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 3,
+        "absolute_error": 3,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 3,
+        "absolute_error": 3,
+        "max_error": 1
+      },
+      "candidate_sha256": "3027f53a460b562184a1987b8aed7f111e7219fc1e80d7f93a47dee98068c551"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "turn",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate_sha256": "7197a55e0ca6dc1f59264471f2b076e80154b87ccd72815260d7e816bef5d04d"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "reverse",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "2028f49936ec8d34fec074946f6f13744220cd3d9a136df08eb7f20b8a79bfee"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "reverse",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 2,
+        "absolute_error": 2,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 2,
+        "absolute_error": 2,
+        "max_error": 1
+      },
+      "candidate_sha256": "baaeba1edcc2a32af025ecab688458a216b305ad970202da2120a14473e678b5"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "reverse",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate_sha256": "25463d5f959a4ff21e80c83b0179fed59a8f7bb18a7fe285eae0639aefffbf17"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "large",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate_sha256": "59b67b34cba50cbbb4766c1d98639b156a367c995972d9edd85a0424e6e3e0fc"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "large",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 7,
+        "absolute_error": 7,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 7,
+        "absolute_error": 7,
+        "max_error": 1
+      },
+      "candidate_sha256": "e518ebdfbcf72ddaac906c7279e148a8a139539e5528ddbad12d7adc7079c7ae"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "large",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 6,
+        "max_error": 2
+      },
+      "candidate": {
+        "mismatches": 5,
+        "absolute_error": 6,
+        "max_error": 2
+      },
+      "candidate_sha256": "def8d1869e5bed1c41c0ee35242c83e953bc9b8fe6ce7e9e3280ba049f061ba0"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "small",
+      "phase": [
+        0,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 7,
+        "absolute_error": 7,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 7,
+        "absolute_error": 7,
+        "max_error": 1
+      },
+      "candidate_sha256": "0f1875387ff47f5ee2c3e5eb94c68e71b87b83db8eca6f65630859976916c259"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "small",
+      "phase": [
+        0.25,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 2,
+        "absolute_error": 2,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 2,
+        "absolute_error": 2,
+        "max_error": 1
+      },
+      "candidate_sha256": "f12dec46e79c911a7f4bdf61d9745322c4a991ecd1c68146bde613ca2a266713"
+    },
+    {
+      "source": "multi-phase-model.json",
+      "case": "small",
+      "phase": [
+        0.5,
+        0.5
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 5,
+        "absolute_error": 5,
+        "max_error": 1
+      },
+      "candidate_sha256": "f8f3004c0592bcd506c65d8e82c7c6c866833037c4783c9210b4718e285d1c39"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "short",
+      "phase": [
+        1,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "686d86ab71a231ac3d9d9c8eb123bcbcf134aa252a2ec0afcb468523b544229d"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "short",
+      "phase": [
+        0,
+        1
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "e3ac8616af75fe589801995d3cb3cf2e11a6c0a7d4a4436a2d6a98b469e4e4e0"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "short",
+      "phase": [
+        1,
+        1
+      ],
+      "zero_width_inside": 4,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 4,
+        "absolute_error": 1020,
+        "max_error": 255
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "690ab39d98cdc1f253ae35af7bcedd16ae669c0ba8c455a7a08e3a7787671cc9"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "short",
+      "phase": [
+        2,
+        2
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "555e0a6da2b67cb0af13c7b3d0aa7b19a7c7d77eaa3666a3d4b7dc4f48e368aa"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "turn",
+      "phase": [
+        1,
+        0
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 3,
+        "absolute_error": 3,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 3,
+        "absolute_error": 3,
+        "max_error": 1
+      },
+      "candidate_sha256": "73cb8ed5b44a4792df773b6f40fd399f64895aea6f507025af013a6a04f8a285"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "turn",
+      "phase": [
+        0,
+        1
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate": {
+        "mismatches": 0,
+        "absolute_error": 0,
+        "max_error": 0
+      },
+      "candidate_sha256": "ec558e99b0ce8f191ececcda6199569ddc4fe96b05c05f5a52a762b5f29d2440"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "turn",
+      "phase": [
+        1,
+        1
+      ],
+      "zero_width_inside": 4,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 5,
+        "absolute_error": 375,
+        "max_error": 186
+      },
+      "candidate": {
+        "mismatches": 3,
+        "absolute_error": 3,
+        "max_error": 1
+      },
+      "candidate_sha256": "e9ff0419bee6a9ee0876bbd33dfb71291f524f69792a7475936e844571d4d362"
+    },
+    {
+      "source": "integer-phase.json",
+      "case": "turn",
+      "phase": [
+        2,
+        2
+      ],
+      "zero_width_inside": 0,
+      "zero_width_outside": 0,
+      "original": {
+        "mismatches": 4,
+        "absolute_error": 4,
+        "max_error": 1
+      },
+      "candidate": {
+        "mismatches": 4,
+        "absolute_error": 4,
+        "max_error": 1
+      },
+      "candidate_sha256": "d2129e0ad5e9a0aa47663be27bce56f63761f3ad07550ee1e1aaa5e771ad426e"
+    }
+  ]
+}
