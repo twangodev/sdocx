@@ -103,7 +103,7 @@ pub(super) fn render(
     remaining: &std::cell::Cell<usize>,
     scale: f64,
 ) -> bool {
-    use super::vector::{Data, Paint, Path, Styled};
+    use super::vector::{Data, Group, Paint, Path, Styled};
     let Some(count) = buffers
         .iter()
         .map(|b| b.len() / 3)
@@ -122,9 +122,10 @@ pub(super) fn render(
     {
         return false;
     }
+    let mut group = Group::new().fill(Paint::from_hex(color));
     for (p, alpha) in patches {
         let [a, b, c] = p;
-        scene.push(
+        group = group.add(
             Path::new()
                 .data(
                     Data::new()
@@ -133,12 +134,82 @@ pub(super) fn render(
                         .line_to((c[0], c[1]))
                         .close(),
                 )
-                .fill(Paint::from_hex(color))
                 .fill_opacity(alpha),
         );
     }
+    scene.push(group);
     remaining.set(remaining.get() - count);
     true
+}
+
+#[test]
+fn shared_fill_preserves_individual_patch_opacity() {
+    use super::vector::{Scene, Svg};
+    let triangle = vec![
+        [0., 0., 0.3, 0.3, 0.8],
+        [8., 0., 0.7, 0.3, 0.8],
+        [0., 8., 0.3, 0.7, 0.8],
+    ];
+    let buffers = [triangle.clone(), triangle, vec![]];
+    let expected = pieces(&buffers, 8, 1.0).len();
+    let mut scene = Scene::new(Svg::new().width(16).height(16));
+    let budget = std::cell::Cell::new(128);
+    assert!(render(&mut scene, &buffers, "#336699", &budget, 1.0));
+    let svg = scene.finish();
+    assert_eq!(budget.get(), 0);
+    assert_eq!(svg.matches("fill=\"#336699\"").count(), 1);
+    assert_eq!(svg.matches("<path").count(), expected);
+    assert_eq!(svg.matches("fill-opacity=").count(), expected);
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn inherited_fill_matches_separate_overlapping_patches_under_transform() {
+    use super::vector::{Data, Paint, Path, Scene, Styled, Svg};
+    let triangle = vec![
+        [1., -1., 0.3, 0.3, 0.8],
+        [9., -1., 0.7, 0.3, 0.8],
+        [1., -9., 0.3, 0.7, 0.8],
+    ];
+    let buffers = [triangle.clone(), triangle, vec![]];
+    let mut grouped = Scene::new(Svg::new().width(32).height(32));
+    assert!(render(
+        &mut grouped,
+        &buffers,
+        "#336699",
+        &std::cell::Cell::new(128),
+        1.0
+    ));
+    let mut separate = Scene::new(Svg::new().width(32).height(32));
+    for (points, alpha) in pieces(&buffers, 8, 1.0) {
+        let [a, b, c] = points;
+        separate.push(
+            Path::new()
+                .data(
+                    Data::new()
+                        .move_to((a[0], a[1]))
+                        .line_to((b[0], b[1]))
+                        .line_to((c[0], c[1]))
+                        .close(),
+                )
+                .fill(Paint::from_hex("#336699"))
+                .fill_opacity(alpha),
+        );
+    }
+    let raster = |svg: String| {
+        let svg = svg
+            .replacen('>', "><g transform=\"translate(5 4) scale(1.4)\">", 1)
+            .replace("</svg>", "</g></svg>");
+        let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+        let mut pixels = resvg::tiny_skia::Pixmap::new(32, 32).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixels.as_mut(),
+        );
+        pixels.data().to_vec()
+    };
+    assert_eq!(raster(grouped.finish()), raster(separate.finish()));
 }
 
 #[cfg(feature = "pdf")]

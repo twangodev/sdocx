@@ -130,6 +130,8 @@ fn unsupported_inputs_keep_generic_output() {
     s.pressures.push(0.5);
     s.points.push(Point { x: 200., y: 130. });
     s.pressures.push(0.5);
+    s.points.push(Point { x: 210., y: 130. });
+    s.pressures.push(0.5);
     cases.push(s);
     let mut s = base.clone();
     s.points[1].x = 1_000_001.;
@@ -316,7 +318,8 @@ fn two_pixel_profile_admits_bounded_four_and_five_point_strokes() {
         let unit = render_document_svg(&doc, &options())[0].svg.clone();
         assert_ne!(aware, generic);
         assert_ne!(aware, unit);
-        assert!(aware.matches("fill=\"#336699\"").count() > 100);
+        assert!(aware.contains("fill=\"#336699\""));
+        assert!(aware.matches("fill-opacity=").count() > 100);
         let layout = crate::layout_document(&doc);
         assert_eq!(
             render_layout_page_replay_svg(&doc, &layout, 0, &opts)
@@ -458,8 +461,13 @@ fn six_and_seven_point_profiles_and_boundaries() {
                 render(&RenderOptions::default())
             );
         }
-        stroke.pen_width = 0.49;
-        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.49);
+        for size in [0.1, 0.2, 0.25, 0.3, 0.4, 0.49] {
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            assert!(crate::ink::montblanc::prepare(&stroke).is_some());
+        }
+        stroke.pen_width = 0.09;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.09);
         assert!(crate::ink::montblanc::prepare(&stroke).is_none());
         stroke.pen_width = 2.;
         stroke.rendering.as_mut().unwrap().style.pen_size = Some(2.);

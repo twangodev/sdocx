@@ -27,7 +27,7 @@ impl Curve {
 
 pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     let n = input.points.len();
-    if !(6..=7).contains(&n) {
+    if !(6..=8).contains(&n) {
         return Err(Error::PointCount);
     }
     if input.pressure.len() != n {
@@ -73,7 +73,8 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         return Err(Error::InvalidInput);
     }
     let mut alpha = (170 + ((input.pressure[accepted[1]] * 0.5) * 170.0).trunc() as i32) / 2;
-    let mut width = input.pen_size;
+    let selected_size = input.pen_size.max(0.4);
+    let mut width = selected_size;
     let mut segments = Vec::new();
     let mut begin = p(0);
     let mut control = p(accepted[1]);
@@ -89,7 +90,7 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         let (_, _, target_width, repeat_width) = width_state(
             input.points[prior],
             input.points[next],
-            input.pen_size,
+            selected_size,
             input.pressure[next],
             width,
         );
@@ -134,7 +135,7 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     let (_, _, target_width, repeat_width) = width_state(
         input.points[last],
         input.points[n - 1],
-        input.pen_size,
+        selected_size,
         input.pressure[n - 1],
         width,
     );
@@ -241,11 +242,31 @@ fn many_point_matches_native_streams() {
         "../../../../conformance/montblanc-many-point-independent-streams.json"
     ))
     .unwrap();
+    let eight: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-eight-probe.json"
+    ))
+    .unwrap();
+    let narrow: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-narrow-probe.json"
+    ))
+    .unwrap();
+    let narrow_independent: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-narrow-independent-streams.json"
+    ))
+    .unwrap();
+    let narrow_diverse: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/narrow-probe/diverse-v8-receipt.json"
+    ))
+    .unwrap();
     for (name, case) in fixture["cases"]
         .as_object()
         .unwrap()
         .iter()
         .chain(independent["cases"].as_object().unwrap().iter())
+        .chain(eight["cases"].as_object().unwrap().iter())
+        .chain(narrow["cases"].as_object().unwrap().iter())
+        .chain(narrow_independent["cases"].as_object().unwrap().iter())
+        .chain(narrow_diverse["cases"].as_object().unwrap().iter())
     {
         let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
         let points: Vec<[f32; 2]> = case["input"]["points"]
