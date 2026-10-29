@@ -56,6 +56,8 @@ pub(super) fn render_at_scale(
         return false;
     }
 
+    let mut group = Group::new();
+    let mut any = false;
     for &[x, y, radius] in samples {
         let (x, y, radius) = (f64::from(x), f64::from(y), f64::from(radius));
         // Keep touching discs as well: their antialiased fringe can contribute
@@ -72,15 +74,17 @@ pub(super) fn render_at_scale(
             .add(Stop::new(0, color))
             .add(Stop::new(inner, color))
             .add(Stop::new(1, color).opacity(0));
-        scene.push(
-            Group::new().add(Definitions::new().add(gradient)).add(
-                Circle::new()
-                    .cx(x)
-                    .cy(y)
-                    .r(radius)
-                    .fill(Paint::Gradient(id)),
-            ),
+        group = group.add(Definitions::new().add(gradient)).add(
+            Circle::new()
+                .cx(x)
+                .cy(y)
+                .r(radius)
+                .fill(Paint::Gradient(id)),
         );
+        any = true;
+    }
+    if any {
+        scene.push(group);
     }
     true
 }
@@ -156,5 +160,75 @@ mod tests {
                 .count(),
             2
         );
+        assert_eq!(xml.descendants().filter(|n| n.has_tag_name("g")).count(), 1);
+    }
+
+    #[test]
+    fn overlapping_strokes_match_individual_stamp_groups_under_opacity() {
+        fn draw(baseline: bool, scale: f64) -> String {
+            let mut scene = Scene::new(Svg::new().width(64).height(64));
+            for samples in [
+                [[15.25, 20.0, 5.0], [18.0, 20.5, 6.0], [20.5, 22.0, 4.5]],
+                [[18.5, 19.0, 5.0], [21.0, 21.5, 6.0], [23.0, 23.0, 4.0]],
+            ] {
+                scene.scope(Group::new().opacity(0.5), |scene| {
+                    if baseline {
+                        let color = ColorValue::from_hex("#44aaee").unwrap();
+                        for [x, y, radius] in samples {
+                            let (x, y, radius) = (f64::from(x), f64::from(y), f64::from(radius));
+                            let id = scene.definition::<Gradient>();
+                            let gradient = RadialGradient::new(&id)
+                                .cx(x)
+                                .cy(y)
+                                .r(radius)
+                                .add(Stop::new(0, color))
+                                .add(Stop::new((radius - 1.0 / scale).max(0.0) / radius, color))
+                                .add(Stop::new(1, color).opacity(0));
+                            scene.push(
+                                Group::new().add(Definitions::new().add(gradient)).add(
+                                    Circle::new()
+                                        .cx(x)
+                                        .cy(y)
+                                        .r(radius)
+                                        .fill(Paint::Gradient(id)),
+                                ),
+                            );
+                        }
+                    } else {
+                        assert!(render_at_scale(scene, &samples, "#44aaee", scale, None));
+                    }
+                });
+            }
+            scene.finish()
+        }
+
+        fn pixels(svg: &str, output_scale: f32) -> Vec<u8> {
+            let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 128).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::from_scale(output_scale, output_scale),
+                &mut pixmap.as_mut(),
+            );
+            pixmap.data().to_vec()
+        }
+
+        for scale in [1.0, 2.0] {
+            assert_eq!(
+                pixels(&draw(false, scale), scale as f32),
+                pixels(&draw(true, scale), scale as f32)
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let pdf = |svg| {
+                    crate::render_svg_pages_pdf(
+                        &[crate::RenderedPage::new(0, 64, 64, svg)],
+                        &Default::default(),
+                    )
+                    .unwrap()
+                };
+                assert_eq!(pdf(draw(false, scale)), pdf(draw(true, scale)));
+            }
+        }
     }
 }
