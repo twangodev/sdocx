@@ -930,3 +930,124 @@ fn v112_size6_filled_mask_from_source() {
             .all(|(a, p)| *a == p[3])
     );
 }
+
+#[test]
+fn v113_rotated_filled_mask_from_source() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let points = tape_curve(
+        &[
+            P { x: 13.0, y: 21.0 },
+            P { x: 22.0, y: 29.0 },
+            P { x: 34.0, y: 18.0 },
+            P { x: 47.0, y: 28.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "d448a37f1d7f7f596504492fbd346c06a892a307dc8fd016d9d01c375da69146"
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v107/rotation30-size12-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "8dbd375b1bc140fcc8a6be8fc24cc1511f3d20e94ab7d192c79446f42c64619a"
+    );
+    let aa = tape_aa_width(tape_size_level(12.0, 256, 256));
+    let (sin, cos) = f32::from_bits(0x3f06_0a92).sin_cos();
+    let (hx, hy) = (1.6800001_f32, 6.7200003_f32);
+    let (bx, by) = (
+        (cos * hx).abs() + (sin * hy).abs(),
+        (sin * hx).abs() + (cos * hy).abs(),
+    );
+    let mut mask = vec![0u8; 256 * 256];
+    for p in points {
+        let (px, py) = (f32::from_bits(p[0]), f32::from_bits(p[1]));
+        for y in (py - by).floor().max(0.0) as usize..((py + by).ceil() as usize).min(256) {
+            for x in (px - bx).floor().max(0.0) as usize..((px + bx).ceil() as usize).min(256) {
+                let (sx, sy) = (x as f32 + 0.5 - px, y as f32 + 0.5 - py);
+                let (dx, dy) = (cos * sx + sin * sy, -sin * sx + cos * sy);
+                if dx.abs() > hx || dy.abs() > hy {
+                    continue;
+                }
+                let dist = (dx / 1.5).powi(2) + (dy / 6.0).powi(2);
+                let t = ((dist - (1.0 - aa)) / aa).clamp(0.0, 1.0);
+                let value = ((1.0 - t * t * (3.0 - 2.0 * t)) * 255.0).round() as u8;
+                let i = y * 256 + x;
+                mask[i] = mask[i].max(value);
+            }
+        }
+    }
+    let errors: Vec<_> = mask
+        .iter()
+        .zip(oracle.as_chunks::<4>().0)
+        .filter_map(|(a, p)| (*a != p[3]).then_some(a.abs_diff(p[3])))
+        .collect();
+    assert!(errors.is_empty());
+}
+
+#[test]
+fn v113_profile512_size12_filled_mask_from_source() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let points = tape_curve(
+        &[
+            P { x: 13.0, y: 21.0 },
+            P { x: 22.0, y: 29.0 },
+            P { x: 34.0, y: 18.0 },
+            P { x: 47.0, y: 28.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "d448a37f1d7f7f596504492fbd346c06a892a307dc8fd016d9d01c375da69146"
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v107/profile512-size12-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "ad1ccc047092f3d9405caa1ded122623d53ddfb7866c847a0bd52b43038ba859"
+    );
+    let level = tape_size_level(12.0, 512, 512);
+    assert_eq!(level, 10);
+    let actual = filled_mask(
+        &points,
+        [1.5, 6.0],
+        [1.6800001, 6.7200003],
+        tape_aa_width(level),
+    );
+    for y in 0..512 {
+        for x in 0..512 {
+            let value = if x < 256 && y < 256 {
+                actual[y * 256 + x]
+            } else {
+                0
+            };
+            assert_eq!(value, oracle[(y * 512 + x) * 4 + 3], "at {x}, {y}");
+        }
+    }
+}
