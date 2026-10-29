@@ -80,10 +80,18 @@ fn rect_value(doc: &Document, value: &Object) -> Result<[f64; 4], String> {
     let mut out = [0.0; 4];
     for (dst, value) in out.iter_mut().zip(arr) {
         let value = deref(doc, value)?;
-        *dst = value
-            .as_float()
-            .or_else(|_| value.as_i64().map(|v| v as f32))
-            .map_err(|e| e.to_string())? as f64;
+        *dst = match value {
+            Object::Integer(number) => {
+                let magnitude = number.unsigned_abs();
+                let discarded = (u64::BITS - magnitude.leading_zeros()).saturating_sub(53);
+                if discarded > 0 && magnitude & ((1_u64 << discarded) - 1) != 0 {
+                    return Err("page box integer cannot be represented exactly as f64".into());
+                }
+                *number as f64
+            }
+            Object::Real(number) => f64::from(*number),
+            _ => return Err("page box coordinate must be a number".into()),
+        };
     }
     if !out.iter().all(|value| value.is_finite()) {
         return Err("page box contains non-finite coordinates".into());
@@ -434,6 +442,24 @@ fn content_items(doc: &Document, object: &Object) -> Result<Vec<Object>, String>
     }
 }
 
+fn form_number(value: f64) -> Result<Object, String> {
+    if value.fract() == 0.0 && value >= i64::MIN as f64 && value < -(i64::MIN as f64) {
+        Ok(Object::Integer(value as i64))
+    } else {
+        let real = value as f32;
+        if !real.is_finite() {
+            return Err("overlay Form coordinate exceeds finite f32 range".into());
+        }
+        if value != 0.0 && real == 0.0 {
+            return Err("overlay Form coordinate underflows f32 range".into());
+        }
+        if f64::from(real) < i64::MIN as f64 || f64::from(real) >= -(i64::MIN as f64) {
+            return Err("overlay Form coordinate exceeds serializable integer range".into());
+        }
+        Ok(Object::Real(real))
+    }
+}
+
 /// Graft one overlay PDF page onto a page in the original source PDF.
 /// `display_to_source` maps origin-normalized overlay display coordinates
 /// (including the overlay page's CropBox/Rotate/UserUnit) into source page user
@@ -529,15 +555,15 @@ fn graft_overlay_page(
         "BBox",
         overlay_crop
             .iter()
-            .map(|v| Object::Real(*v as f32))
-            .collect::<Vec<_>>(),
+            .map(|v| form_number(*v))
+            .collect::<Result<Vec<_>, _>>()?,
     );
     form_dict.set(
         "Matrix",
         overlay_matrix
             .iter()
-            .map(|v| Object::Real(*v as f32))
-            .collect::<Vec<_>>(),
+            .map(|v| form_number(*v))
+            .collect::<Result<Vec<_>, _>>()?,
     );
     form_dict.set("Resources", remapped_resources);
     if let Some(group) = remapped_group {
@@ -3357,15 +3383,15 @@ fn add_overlay_form(
         "BBox",
         overlay_crop
             .iter()
-            .map(|v| Object::Real(*v as f32))
-            .collect::<Vec<_>>(),
+            .map(|v| form_number(*v))
+            .collect::<Result<Vec<_>, _>>()?,
     );
     form.set(
         "Matrix",
         overlay_matrix
             .iter()
-            .map(|v| Object::Real(*v as f32))
-            .collect::<Vec<_>>(),
+            .map(|v| form_number(*v))
+            .collect::<Result<Vec<_>, _>>()?,
     );
     form.set("Resources", resources);
     if let Some(key) = struct_parent_key {
@@ -4057,6 +4083,127 @@ mod tests {
         let (matrix, crop) = page_to_display(&doc, page).unwrap();
         assert_eq!(crop, [10.0, 10.0, 180.0, 90.0]);
         assert_eq!(matrix, [0.0, -1.0, 1.0, 0.0, -10.0, 180.0]);
+    }
+
+    #[test]
+    fn graft_form_retains_large_integer_overlay_origin() {
+        let mut overlay = Document::load_mem(&sdk_overlay_pdf()).unwrap();
+        let page_id = overlay.get_pages()[&1];
+        overlay.get_dictionary_mut(page_id).unwrap().set(
+            "MediaBox",
+            vec![
+                16_777_217_i64.into(),
+                0.into(),
+                16_777_317_i64.into(),
+                100.into(),
+            ],
+        );
+        let mut bytes = Vec::new();
+        overlay.save_to(&mut bytes).unwrap();
+        let result = graft_overlay_page(
+            &source_pdf(),
+            2,
+            &bytes,
+            1,
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 100.0, 100.0],
+        )
+        .unwrap();
+        let doc = Document::load_mem(&result).unwrap();
+        let page = doc.get_dictionary(doc.get_pages()[&2]).unwrap();
+        let resources = as_dict(&doc, page.get(b"Resources").unwrap());
+        let xobjects = as_dict(&doc, resources.get(b"XObject").unwrap());
+        let form = doc
+            .get_object(
+                xobjects
+                    .get(b"SDOCXOverlay")
+                    .unwrap()
+                    .as_reference()
+                    .unwrap(),
+            )
+            .unwrap()
+            .as_stream()
+            .unwrap();
+        assert_eq!(
+            form.dict.get(b"BBox").unwrap().as_array().unwrap()[0],
+            Object::Integer(16_777_217)
+        );
+        assert_eq!(
+            form.dict.get(b"Matrix").unwrap().as_array().unwrap()[4],
+            Object::Integer(-16_777_217)
+        );
+    }
+
+    #[test]
+    fn form_numbers_preserve_large_exact_integer_coordinates() {
+        for value in [
+            16_777_217.0,
+            -16_777_217.0,
+            ((1_u64 << 53) + 2) as f64,
+            i64::MIN as f64,
+        ] {
+            assert_eq!(form_number(value).unwrap(), Object::Integer(value as i64));
+        }
+        assert_eq!(form_number(0.5).unwrap(), Object::Real(0.5));
+        assert!(form_number(-(i64::MIN as f64)).is_err());
+        assert!(form_number((i64::MIN as f64) * 2.0).is_err());
+        assert_eq!(form_number(1.0 / 3.0).unwrap(), Object::Real(1.0 / 3.0));
+        assert!(form_number(f64::from(f32::from_bits(1)) / 2.0).is_err());
+        assert!(form_number(f64::MAX).is_err());
+    }
+
+    #[test]
+    fn form_numbers_survive_pdf_serialization_and_reload() {
+        let values = [16_777_217.0, i64::MIN as f64, 0.5, 1.0 / 3.0];
+        let mut doc = Document::with_version("1.7");
+        let root = doc.add_object(dictionary! {
+            "Values" => values.iter().map(|value| form_number(*value)).collect::<Result<Vec<_>, _>>().unwrap(),
+        });
+        doc.trailer.set("Root", root);
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+        let reloaded = Document::load_mem(&bytes).unwrap();
+        let stored = reloaded
+            .get_dictionary(root)
+            .unwrap()
+            .get(b"Values")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        assert_eq!(stored[0], Object::Integer(16_777_217));
+        assert_eq!(stored[1], Object::Integer(i64::MIN));
+        assert_eq!(stored[2], Object::Real(0.5));
+        assert_eq!(stored[3], Object::Real(1.0 / 3.0));
+    }
+
+    #[test]
+    fn page_box_integer_coordinates_keep_precision_above_f32_range() {
+        let doc = Document::with_version("1.7");
+        let page = dictionary! {
+            "MediaBox" => vec![16_777_217_i64.into(), 0.into(), 16_777_317_i64.into(), 200.into()],
+        };
+        let (matrix, crop) = page_to_display(&doc, &page).unwrap();
+        assert_eq!(crop, [16_777_217.0, 0.0, 16_777_317.0, 200.0]);
+        assert_eq!(matrix, [1.0, 0.0, 0.0, 1.0, -16_777_217.0, 0.0]);
+        let too_large = Object::Array(vec![
+            0.into(),
+            0.into(),
+            ((1_i64 << 53) + 1).into(),
+            1.into(),
+        ]);
+        assert!(rect_value(&doc, &too_large).is_err());
+        for n in [-(1_i64 << 53), 1_i64 << 53] {
+            let value = Object::Array(vec![n.into(), 0.into(), 1.into(), 1.into()]);
+            assert!(rect_value(&doc, &value).is_ok());
+        }
+        for n in [(1_i64 << 53) + 2, i64::MIN] {
+            let value = Object::Array(vec![n.into(), 0.into(), 1.into(), 1.into()]);
+            assert!(rect_value(&doc, &value).is_ok());
+        }
+        for n in [-(1_i64 << 53) - 1, i64::MAX] {
+            let value = Object::Array(vec![n.into(), 0.into(), 1.into(), 1.into()]);
+            assert!(rect_value(&doc, &value).is_err());
+        }
     }
 
     #[test]

@@ -2347,6 +2347,65 @@ fn public_pdf_paper_maps_contiguous_records_to_their_source_pages_and_physical_b
 }
 
 #[test]
+fn public_pdf_paper_keeps_large_integer_origin_in_overlay_commands() {
+    let mut document = document(true, None, 0, 1);
+    let ArchiveResourceContent::Opaque { data } =
+        &mut document.metadata.archive_resources[0].content
+    else {
+        panic!("test source PDF must be retained bytes");
+    };
+    let mut source = PdfDocument::load_mem(data).unwrap();
+    let page_id = source.get_pages()[&1];
+    source.get_dictionary_mut(page_id).unwrap().set(
+        "MediaBox",
+        vec![
+            16_777_217_i64.into(),
+            0.into(),
+            16_777_943_i64.into(),
+            595.into(),
+        ],
+    );
+    let content_id = source.add_object(Stream::new(
+        Dictionary::new(),
+        b"1 0 0 rg 16777317 100 100 100 re f\n".to_vec(),
+    ));
+    source
+        .get_dictionary_mut(page_id)
+        .unwrap()
+        .set("Contents", content_id);
+    let mut bytes = Vec::new();
+    source.save_to(&mut bytes).unwrap();
+    *data = bytes;
+
+    let output = export(&document, &[0], 96.0).unwrap();
+    if let Some(path) = env::var_os("SDOCX_LARGE_ORIGIN_PROBE") {
+        fs::write(path, &output.bytes).unwrap();
+    }
+    let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
+    let content = pdf.get_page_content(pdf.get_pages()[&1]).unwrap();
+    let commands = String::from_utf8(content).unwrap();
+    let overlay = commands
+        .lines()
+        .find(|line| line.contains("/SDOCXOverlay Do"))
+        .unwrap();
+    let tokens: Vec<_> = overlay.split_whitespace().collect();
+    let re = tokens.iter().position(|token| *token == "re").unwrap();
+    let clip: Vec<f64> = tokens[re - 4..re]
+        .iter()
+        .map(|token| token.parse().unwrap())
+        .collect();
+    assert_eq!(clip, [16_777_217.0, 0.0, 726.0, 595.0]);
+    assert_eq!(&tokens[re + 1..re + 3], ["W", "n"]);
+    let cm = tokens.iter().position(|token| *token == "cm").unwrap();
+    let matrix: Vec<f64> = tokens[cm - 6..cm]
+        .iter()
+        .map(|token| token.parse().unwrap())
+        .collect();
+    assert_eq!(matrix[4], 16_777_217.0);
+    assert_eq!(&tokens[cm + 1..cm + 3], ["/SDOCXOverlay", "Do"]);
+}
+
+#[test]
 fn public_pdf_paper_accepts_reversed_inherited_page_boxes() {
     let mut document = document(true, None, 90, 1);
     let ArchiveResourceContent::Opaque { data } =
