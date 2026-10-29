@@ -8,6 +8,51 @@
 // Shared Quad implements the source-recovered SmPath 15-bit subdivision.
 use super::path::{P, Quad};
 
+// PenCommon ConvertSizeToSizeLevel (0x53a64), with TapePen's native
+// GetMinPxSize/GetMaxPxSize values (6 and 30). Restrict the profile to
+// finite sizes and positive screen dimensions; other native inputs are untested.
+fn tape_size_level(size: f32, width: i32, height: i32) -> i32 {
+    assert!(size.is_finite() && width > 0 && height > 0);
+    let screen = width.min(height) as f32;
+    let min = (6.0_f32 * screen) / 360.0;
+    let max = (30.0_f32 * screen) / 360.0;
+    if size <= min {
+        1
+    } else if size >= max {
+        100
+    } else {
+        (((size - min) / (max - min) * 100.0).round() as i32).clamp(1, 100)
+    }
+}
+
+// TapePen SetSizeLevel (0x3c594), including its single fused operation.
+fn tape_aa_width(level: i32) -> f32 {
+    if level < 2 {
+        f32::from_bits(0x3e4c_cccd)
+    } else if level > 99 {
+        f32::from_bits(0x3ca3_d70a)
+    } else {
+        ((level - 1) as f32).mul_add(f32::from_bits(0xbaee_5010), f32::from_bits(0x3e4c_cccd))
+    }
+}
+
+#[test]
+fn v110_size_conversion_and_aa_uniforms() {
+    for (size, level, aa) in [
+        (2.0, 1, 0x3e4c_cccd),
+        (6.0, 10, 0x3e3c_0b2c),
+        (8.0, 22, 0x3e25_b3aa),
+        (10.0, 34, 0x3e0f_5c29),
+        (12.0, 45, 0x3df5_c28f),
+        (16.0, 69, 0x3d9c_6489),
+    ] {
+        assert_eq!(tape_size_level(size, 256, 256), level);
+        assert_eq!(tape_aa_width(level).to_bits(), aa);
+    }
+    assert_eq!(tape_aa_width(1).to_bits(), 0x3e4c_cccd);
+    assert_eq!(tape_aa_width(100).to_bits(), 0x3ca3_d70a);
+}
+
 fn sample_quad(
     curve: &Quad,
     carry: &mut f32,
@@ -702,4 +747,186 @@ fn compare_independent_native_uniform_words() {
             expected
         );
     }
+}
+
+// Filled-stroke shader under the captured axis-aligned host raster profile.
+// The input stream is generated from source points; no captured pixels are used.
+fn filled_mask(points: &[[u32; 5]], radii: [f32; 2], extent: [f32; 2], aa: f32) -> Vec<u8> {
+    let mut mask = vec![0; 256 * 256];
+    for p in points {
+        let px = f32::from_bits(p[0]);
+        let py = f32::from_bits(p[1]);
+        for y in
+            (py - extent[1]).floor().max(0.0) as usize..((py + extent[1]).ceil() as usize).min(256)
+        {
+            for x in (px - extent[0]).floor().max(0.0) as usize
+                ..((px + extent[0]).ceil() as usize).min(256)
+            {
+                let dx = x as f32 + 0.5 - px;
+                let dy = y as f32 + 0.5 - py;
+                if dx.abs() > extent[0] || dy.abs() > extent[1] {
+                    continue;
+                }
+                let dist = (dx / radii[0]).powi(2) + (dy / radii[1]).powi(2);
+                let t = ((dist - (1.0 - aa)) / aa).clamp(0.0, 1.0);
+                let value = ((1.0 - t * t * (3.0 - 2.0 * t)) * 255.0).round() as u8;
+                let i = y * 256 + x;
+                mask[i] = mask[i].max(value);
+            }
+        }
+    }
+    mask
+}
+
+#[test]
+fn v107_filled_mask_from_source_matches_native_size4() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let points = tape_curve(
+        &[
+            P { x: 13.0, y: 21.0 },
+            P { x: 22.0, y: 29.0 },
+            P { x: 34.0, y: 18.0 },
+            P { x: 47.0, y: 28.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "d448a37f1d7f7f596504492fbd346c06a892a307dc8fd016d9d01c375da69146"
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v107/size4-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "ab8787a247a7cfa866f6ddd0d55cc25ccb169da24ae5c6780ca76a8380b5b88f"
+    );
+    assert_eq!(oracle.len(), 256 * 256 * 4);
+    let actual = filled_mask(
+        &points,
+        [0.5, 2.0],
+        [0.6, 2.4],
+        tape_aa_width(tape_size_level(4.0, 256, 256)),
+    );
+    assert!(
+        actual
+            .iter()
+            .zip(oracle.as_chunks::<4>().0.iter())
+            .all(|(a, p)| *a == p[3])
+    );
+}
+
+#[test]
+fn v109_size12_requires_size_specific_antialiasing() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let points = tape_curve(
+        &[
+            P { x: 13.0, y: 21.0 },
+            P { x: 22.0, y: 29.0 },
+            P { x: 34.0, y: 18.0 },
+            P { x: 47.0, y: 28.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "d448a37f1d7f7f596504492fbd346c06a892a307dc8fd016d9d01c375da69146"
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v107/size12-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "85b6c8bfea61ce8de48800b683a088c86dd363ae413a61e0356a3f6964f141f8"
+    );
+    assert_eq!(oracle.len(), 256 * 256 * 4);
+    let actual = filled_mask(&points, [1.5, 6.0], [1.6800001, 6.7200003], 0.2);
+    let different = actual
+        .iter()
+        .zip(oracle.as_chunks::<4>().0.iter())
+        .filter(|(a, p)| **a != p[3])
+        .count();
+    assert_eq!(different, 44);
+    let actual = filled_mask(
+        &points,
+        [1.5, 6.0],
+        [1.6800001, 6.7200003],
+        tape_aa_width(tape_size_level(12.0, 256, 256)),
+    );
+    assert!(
+        actual
+            .iter()
+            .zip(oracle.as_chunks::<4>().0.iter())
+            .all(|(a, p)| *a == p[3])
+    );
+}
+
+#[test]
+fn v112_size6_filled_mask_from_source() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let points = tape_curve(
+        &[
+            P { x: 13.0, y: 21.0 },
+            P { x: 22.0, y: 29.0 },
+            P { x: 34.0, y: 18.0 },
+            P { x: 47.0, y: 28.0 },
+        ],
+        0.5,
+        0.0,
+        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
+    );
+    let bytes: Vec<u8> = points
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "d448a37f1d7f7f596504492fbd346c06a892a307dc8fd016d9d01c375da69146"
+    );
+    let mut oracle = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("fixtures/tapepen-v107/size6-mask.rgba.zlib")[..],
+    )
+    .read_to_end(&mut oracle)
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&oracle)),
+        "784fbd4b20ee23f544fd940b3a2968260d75c1465c3ab2a59b846e88080b13fe"
+    );
+    let actual = filled_mask(
+        &points,
+        [0.75, 3.0],
+        [0.8877273201942444, 3.5509092807769775],
+        tape_aa_width(tape_size_level(6.0, 256, 256)),
+    );
+    assert!(
+        actual
+            .iter()
+            .zip(oracle.as_chunks::<4>().0.iter())
+            .all(|(a, p)| *a == p[3])
+    );
 }
