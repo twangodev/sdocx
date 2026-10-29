@@ -4340,6 +4340,10 @@ fn render_stroke(
                     ) && rendering.style.pen_size.is_some_and(|size| {
                         match rendering.tool_type_raw {
                             2 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
+                            1 => {
+                                (3..=32).contains(&stroke.points.len())
+                                    && (8.0..=12.0).contains(&size)
+                            }
                             2 => (8.0..=20.0).contains(&size),
                             0 => stroke.points.len() <= 16 && (8.0..=20.0).contains(&size),
                             3 => (8.0..=20.0).contains(&size),
@@ -4349,10 +4353,11 @@ fn render_stroke(
                 })
                 && slice.is_none()))
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke(
+        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke_for_scale(
             stroke,
             true,
             simplebrush_remaining_stamps.get(),
+            simplebrush_two_pixels_per_page_unit,
         )
         && simplebrush::render_at_scale(
             svg,

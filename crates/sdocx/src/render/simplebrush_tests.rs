@@ -1193,6 +1193,35 @@ fn two_pixel_native_export_fixture() {
         .unwrap_or("2".into())
         .parse()
         .unwrap();
+    if let Ok(native_file) = std::env::var("SDOCX_V62_NATIVE") {
+        let native: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(native_file).unwrap()).unwrap();
+        let points: Vec<[f32; 2]> = source
+            .points
+            .iter()
+            .map(|p| [p.x as f32, (256.0 - p.y) as f32])
+            .collect();
+        let pressures: Vec<f32> = source.pressures.iter().map(|p| *p as f32).collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size,
+            tool_type: source.rendering.as_ref().unwrap().tool_type_raw.into(),
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(
+            hex,
+            native["drawing_vector"]["vector_bytes"].as_str().unwrap()
+        );
+    }
     let mut doc = document(source);
     doc.pages[0].width = 256;
     doc.pages[0].height = 256;
@@ -1423,5 +1452,128 @@ fn two_pixel_setting_aliases_match_null_svg_and_pdf() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn tool1_two_pixel_profile_matches_native_geometry_and_keeps_short_fallback() {
+    for (count, size, reverse, native) in [
+        (
+            3,
+            12.0,
+            false,
+            &include_bytes!("../ink/fixtures/simplebrush-tool1/3.vbo")[..],
+        ),
+        (
+            16,
+            8.0,
+            false,
+            &include_bytes!("../ink/fixtures/simplebrush-tool1/capture.vbo")[..],
+        ),
+        (
+            32,
+            12.0,
+            true,
+            &include_bytes!("../ink/fixtures/simplebrush-tool1/32.vbo")[..],
+        ),
+    ] {
+        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+        let mut points: Vec<[f32; 2]> = (0..count)
+            .map(|i| {
+                if count >= 16 {
+                    [25.0 + i as f32 * 2.0, 40.0 + heights[i % 8] as f32]
+                } else {
+                    [32.0 + i as f32 * 6.0, 32.0 + (i % 3) as f32 * 3.0]
+                }
+            })
+            .collect();
+        let mut pressures: Vec<f32> = (0..count)
+            .map(|i| {
+                if count >= 16 {
+                    [0.25, 0.5, 0.75, 1.0][i % 4]
+                } else {
+                    0.5
+                }
+            })
+            .collect();
+        if reverse {
+            points.reverse();
+            pressures.reverse();
+        }
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size,
+            tool_type: 1,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let bytes: Vec<u8> = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        assert_eq!(bytes, native);
+    }
+    let mut short = stroke();
+    short.rendering.as_mut().unwrap().tool_type_raw = 1;
+    short.points = vec![
+        Point { x: 32.0, y: 224.0 },
+        Point { x: 32.25, y: 224.0 },
+        Point { x: 32.5, y: 224.0 },
+    ];
+    short.pressures = vec![0.5; 3];
+    assert!(crate::ink::simplebrush::prepare_stroke_for_scale(&short, true, 32_768, true).is_err());
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn tool1_two_pixel_public_dispatch_and_boundaries() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let fallback = RenderOptions::default();
+    for (count, size, admitted) in [
+        (3, 8.0, true),
+        (32, 12.0, true),
+        (2, 8.0, false),
+        (33, 8.0, false),
+        (3, 7.0, false),
+        (3, 13.0, false),
+    ] {
+        let mut source = stroke();
+        source.points = (0..count)
+            .map(|i| Point {
+                x: 30.0 + i as f64 * 2.0,
+                y: 50.0 + (i % 3) as f64 * 2.0,
+            })
+            .collect();
+        source.pressures = vec![0.5; count];
+        source.pen_width = size;
+        let rendering = source.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 1;
+        rendering.style.pen_size = Some(size);
+        let doc = document(source);
+        let svg = |options: &RenderOptions| render_document_svg(&doc, options).remove(0).svg;
+        let pdf = |options: &RenderOptions| {
+            crate::render_document_pdf(&doc, options, &Default::default()).unwrap()
+        };
+        assert_eq!(
+            svg(&two) != svg(&fallback),
+            admitted,
+            "SVG count {count}, size {size}"
+        );
+        assert_eq!(
+            pdf(&two) != pdf(&fallback),
+            admitted,
+            "PDF count {count}, size {size}"
+        );
+        let one = RenderOptions {
+            simplebrush_profile: Some(SimpleBrushRenderProfile::HostV25),
+            ..Default::default()
+        };
+        assert_eq!(svg(&one), svg(&fallback));
     }
 }

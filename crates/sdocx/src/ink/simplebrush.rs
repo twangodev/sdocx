@@ -357,10 +357,20 @@ pub(crate) struct PreparedStroke {
 /// capture. The caller must establish that coordinates are already native;
 /// this function does not apply or infer a page/model transform. The captured
 /// vectors establish geometry, not shader, color, or compositing parity.
+#[cfg(test)]
 pub(crate) fn prepare_stroke(
     stroke: &crate::Stroke,
     native_coordinates: bool,
     max_samples: usize,
+) -> Result<PreparedStroke, &'static str> {
+    prepare_stroke_for_scale(stroke, native_coordinates, max_samples, false)
+}
+
+pub(crate) fn prepare_stroke_for_scale(
+    stroke: &crate::Stroke,
+    native_coordinates: bool,
+    max_samples: usize,
+    two_pixels_per_page_unit: bool,
 ) -> Result<PreparedStroke, &'static str> {
     if !native_coordinates {
         return Err("unsupported SimpleBrush coordinate context");
@@ -372,7 +382,8 @@ pub(crate) fn prepare_stroke(
             rendering.advanced_settings.as_deref(),
             None | Some("") | Some("1;")
         )
-        || !matches!(rendering.tool_type_raw, 0 | 2 | 3)
+        || !matches!(rendering.tool_type_raw, 0..=3)
+        || (rendering.tool_type_raw == 1 && !two_pixels_per_page_unit)
         || !p.compressed
         || p.replay_only
         || p.stylus_channels

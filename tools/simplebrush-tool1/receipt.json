@@ -1,0 +1,69 @@
+{
+  "scope": "Synthetic Drawing host-Mesa, fractional 2x matrix, translucent saved color; no device or saved-note claim. Public SVG and direct PDF use an isolated candidate source gate; comparator uses native transparent framebuffer and matched PDF paper. MuPDF 1.28.2, resvg 0.45.1. Other runtime dependencies are not fully pinned.",
+  "cases": {
+    "3": {
+      "geometry_sha256": "662e7b7a8bf556f48d8e06f01f2dadbc8faa67a86ad701d6f999fdcc76dbab66",
+      "frame_sha256": "b724cabd2dda0fd16eb51bcd2d3f55e0f7f268aa4af90fa9cbecf0bbd1242228",
+      "paint_clean": true,
+      "native_geometry_matches_rust_bytes": true,
+      "candidate_svg_support_intersection_union": [
+        964,
+        964
+      ],
+      "candidate_svg_alpha_error": 2984,
+      "fallback_svg_alpha_error": 179037,
+      "candidate_mupdf_matched_rgb_error": 11701,
+      "fallback_mupdf_matched_rgb_error": 195841
+    },
+    "capture": {
+      "geometry_sha256": "6c5c5399525679ab51fe9ea713b45f560828f84eff16d0cfe4329d1fd2aae8c2",
+      "frame_sha256": "ae25873835959fe3705e6541c6ae47d512561ddccb1e9c01ae288f1910a4596a",
+      "paint_clean": true,
+      "native_geometry_matches_rust_bytes": true,
+      "candidate_svg_support_intersection_union": [
+        1532,
+        1532
+      ],
+      "candidate_svg_alpha_error": 3405,
+      "fallback_svg_alpha_error": 253436,
+      "candidate_mupdf_matched_rgb_error": 20505,
+      "fallback_mupdf_matched_rgb_error": 277881
+    },
+    "32": {
+      "geometry_sha256": "d3429925b6673b671833ed8408440cd7f75025cfc108d63aeddc67fac0155edb",
+      "frame_sha256": "7a6ddf599a28c91c0d88deb63047c19c1eb8e7ffa3d0b249a7818667b2287c6f",
+      "paint_clean": true,
+      "native_geometry_matches_rust_bytes": true,
+      "candidate_svg_support_intersection_union": [
+        4085,
+        4085
+      ],
+      "candidate_svg_alpha_error": 5591,
+      "fallback_svg_alpha_error": 613680,
+      "candidate_mupdf_matched_rgb_error": 37836,
+      "fallback_mupdf_matched_rgb_error": 674890
+    },
+    "edge": {
+      "geometry_sha256": "c8a4218018859c1eabfeaa11820ef8fddeadf4e3efd72c9a14a63cd1e324b83c",
+      "frame_sha256": "877f7ccb087360c3f4e137a655d740f4769f2f91149f842d5077e75584091c33",
+      "paint_clean": true,
+      "native_geometry_matches_rust_bytes": false,
+      "candidate_svg_support_intersection_union": [
+        1340,
+        1340
+      ],
+      "candidate_svg_alpha_error": 2798,
+      "fallback_svg_alpha_error": 214032,
+      "candidate_mupdf_matched_rgb_error": 17290,
+      "fallback_mupdf_matched_rgb_error": 234783,
+      "result": "Native and Rust geometry differ in low floating-point bits; byte equality fails."
+    },
+    "short": {
+      "geometry_sha256": "994c0c9bac4f501ea066ae7633a2351b4fa6642de9d0f7aff8aaa089d764c22e",
+      "frame_sha256": "aaab13ecddf6dff47fb011accd032b79a65bb190cc66b7a09e8069a84f8fdf1e",
+      "paint_clean": true,
+      "native_geometry_matches_rust_bytes": false,
+      "result": "Rust native movement gate rejects input; production falls back."
+    }
+  }
+}
