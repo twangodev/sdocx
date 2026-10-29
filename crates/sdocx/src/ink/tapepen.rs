@@ -920,7 +920,7 @@ fn v112_size6_filled_mask_from_source() {
     let actual = filled_mask(
         &points,
         [0.75, 3.0],
-        [0.8877273201942444, 3.5509092807769775],
+        [f32::from_bits(0x3f63_4219), f32::from_bits(0x4063_4219)],
         tape_aa_width(tape_size_level(6.0, 256, 256)),
     );
     assert!(
