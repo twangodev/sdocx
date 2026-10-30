@@ -529,7 +529,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
             };
             assert_eq!(
                 render_document_svg(&doc, &two)[0].svg != generic,
-                n <= 20 && size == 1.5
+                n <= 20 && (0.5..=2.0).contains(&size)
             );
         }
     }

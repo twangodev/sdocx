@@ -4689,7 +4689,8 @@ fn render_stroke(
         && viewport.iter().all(|d| *d > 0)
         && (!montblanc_two_pixels_per_page_unit
             || stroke.points.len() <= 11
-            || ((12..=20).contains(&stroke.points.len()) && stroke.pen_width == 1.5))
+            || ((12..=20).contains(&stroke.points.len())
+                && (0.5..=2.0).contains(&stroke.pen_width)))
         && (!montblanc_two_pixels_per_page_unit
             || !(10..=11).contains(&stroke.points.len())
             || (0.5..=2.0).contains(&stroke.pen_width))
