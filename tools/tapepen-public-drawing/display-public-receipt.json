@@ -1,0 +1,11 @@
+{
+  "scope": "Synthetic host-Mesa display controls; public generic SVG and direct document PDF; RGB on white, 256x256 crop; not saved-document or device parity",
+  "resvg": "0.45.1",
+  "mupdf": "1.28.2",
+  "public_sha256": {"svg": "20d922ff9257e27b381912ffb78135015b730c0b7bbe6f82d60ac26c3d218a2b", "pdf": "a8f74be8bcb7d729e976508bc318e01bae3da24d6141e6d5e9dee01761c372ee"},
+  "compressed_native_sha256": {"256": "394bf2aa231f18050ab1ef901f53166c1838d11b9dbd29ed9ce7f0dadcf612dd", "512": "9dbe155b55c68c7e93147f281cf0b302bd36d89deb8e5e2a8863bbe78b4e2465"},
+  "metrics": {
+    "256": {"svg": {"l1": 70165, "max": 204, "different_channels": 1284}, "mupdf_direct_pdf": {"l1": 70043, "max": 204, "different_channels": 1283}},
+    "512": {"svg": {"l1": 72480, "max": 204, "different_channels": 1281}, "mupdf_direct_pdf": {"l1": 72378, "max": 204, "different_channels": 1280}}
+  }
+}
