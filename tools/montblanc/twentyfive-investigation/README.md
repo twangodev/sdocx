@@ -23,3 +23,26 @@ The clean Git HEAD at capture was `a03df32d0eea4ea119622c1f02fd2e0ffe8ad81b`, bu
 A second run used clean Git revision `a03df32d0eea4ea119622c1f02fd2e0ffe8ad81b`, the retained `clean-candidate.patch` (SHA-256 `1aa1340bae12bb5ddc48002de61d54638f365673b68a377a5775cbcd55cc2220`) and the retained stream fixture. The native stream test passed, and all four export document hashes, sizes and all nine metrics above matched the dirty-tree run exactly. This clean run supersedes the dirty-tree replay as the reproducible evidence. The candidate patch widens the sampler and prepare gates only within the archive, adds the stream test, and changes the public driver input; it is not a production change.
 
 From the repository root, create a fresh `/tmp/sdocx-mb25-clean`, run `git archive a03df32d0eea4ea119622c1f02fd2e0ffe8ad81b | tar -x -C /tmp/sdocx-mb25-clean`, apply the patch there with `patch -p1 < /home/jding/RustroverProjects/sdocx/tools/montblanc/twentyfive-investigation/clean-candidate.patch`, and run `python3 tools/montblanc/twentyfive-investigation/clean-fixture.py /tmp/sdocx-mb25-clean` from the repository root. From the archive run the shared-target Cargo test command above, then `mkdir output` and the public-driver Cargo run command above. For the metrics script, decompress `native.json.gz` to `/tmp/sdocx-montblanc-25.json` and substitute `/tmp/sdocx-mb25-clean/output` for `/tmp/sdocx-mb25-run/output` in a temporary copy of `metrics.py`. The offline Cargo cache and listed renderer versions remain required; native recapture still requires its separately pinned runtime. The earlier manifest and dirty-tree instructions document the first run and are not dependencies for this clean replay.
+
+## Subdivision control
+
+These additional controls are exploratory measurements, not conformance evidence.
+
+Using the clean-revision replay, changing only `pieces(buffers, 8, scale)` to 4 or 16 isolates the subdivision tradeoff. Every source triangle becomes up to n² independently painted paths, with alpha sampled at each patch centroid. That serialization explains the size growth; the finite centroid approximation also paints whole patches at one alpha, so its support can extend beyond the shader's actual boundary. These controls do not isolate all causes of raster error, including overlap and renderer antialiasing.
+
+| n | SVG/PDF bytes | resvg | MuPDF | PDFium |
+| --- | --- | --- | --- | --- |
+| 4 | 250288 / 75523 | [556, 653, 556, 653, 33430] | [556, 666, 556, 666, 29557] | [556, 655, 556, 655, 29272] |
+| 8 | 966260 / 248025 | [556, 636, 556, 636, 24716] | [556, 635, 556, 635, 18318] | [556, 621, 556, 621, 17755] |
+| 16 | 3895592 / 833213 | [556, 601, 556, 601, 25086] | [556, 590, 552, 594, 22110] | [556, 579, 551, 584, 22275] |
+
+The columns use the same support and RGB metric as above. Lower subdivision reduces size but worsens both metrics; higher subdivision reduces excess support but increases RGB error and size. Neither change supports widening production admission. Reproduce by changing that one call in the clean archive, rebuilding the public driver with the settings above, and rerunning the same metrics script.
+
+A coordinate quantization control rounded each emitted patch vertex in page coordinates immediately before constructing its path, leaving sampler and centroid alpha unchanged:
+
+| Decimal places | SVG/PDF bytes | resvg | MuPDF | PDFium |
+| --- | --- | --- | --- | --- |
+| 3 | 848714 / 231671 | [556, 636, 556, 636, 24726] | [556, 634, 556, 634, 18294] | [556, 621, 556, 621, 17765] |
+| 2 | 790993 / 220730 | [556, 636, 556, 636, 24728] | [556, 634, 556, 634, 18267] | [556, 621, 556, 621, 17780] |
+
+This saves 12.2% / 18.1% of SVG bytes and 6.6% / 11.0% of PDF bytes on this example, with small metric changes at unit scale. It is lossy, and this one control does not establish an acceptable error bound for arbitrary transforms, zoom levels, or other strokes; no production rounding was introduced. Reproduce in the clean replay by replacing `let [a, b, c] = p;` in `crates/sdocx/src/render/montblanc_candidate.rs` with `let [a, b, c] = p.map(|point| point.map(|v| (v * 1000.0).round() / 1000.0));` for three decimal places, or use `100.0` in both positions for two decimal places. Rebuild and run the metrics as above.
