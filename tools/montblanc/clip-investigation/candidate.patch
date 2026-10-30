@@ -1,0 +1,51 @@
+--- a/crates/sdocx/src/render/montblanc_candidate.rs
++++ b/crates/sdocx/src/render/montblanc_candidate.rs
+@@ -41,10 +41,32 @@
+                     .into_iter()
+                     .flatten()
+                     {
+-                        let centre = std::array::from_fn::<_, 5, _>(|k| {
+-                            (patch[0][k] + patch[1][k] + patch[2][k]) / 3.0
++                        let mut poly = patch.to_vec();
++                        for side in 0..32 {
++                            let angle = std::f64::consts::TAU * (side as f64 + 0.5) / 32.0;
++                            let (sn, cs) = angle.sin_cos();
++                            let limit = 0.5 * (std::f64::consts::PI / 32.0).cos();
++                            let distance = |v: &[f64; 5]| limit - ((v[2] - 0.5) * cs + (v[3] - 0.5) * sn);
++                            let mut next = Vec::new();
++                            if !poly.is_empty() {
++                                for i in 0..poly.len() {
++                                    let a = poly[i]; let b = poly[(i + 1) % poly.len()];
++                                    let da = distance(&a); let db = distance(&b);
++                                    if da >= 0.0 { next.push(a); }
++                                    if (da >= 0.0) != (db >= 0.0) {
++                                        let t = da / (da - db);
++                                        next.push(std::array::from_fn(|k| a[k] + t * (b[k] - a[k])));
++                                    }
++                                }
++                            }
++                            poly = next;
++                        }
++                        for index in 1..poly.len().saturating_sub(1) {
++                            let clipped = [poly[0], poly[index], poly[index + 1]];
++                            let centre = std::array::from_fn::<_, 5, _>(|k| {
++                            (clipped[0][k] + clipped[1][k] + clipped[2][k]) / 3.0
+                         });
+-                        let u = centre[2];
++                            let u = centre[2];
+                         let v = centre[3];
+                         let d = (u - 0.5).hypot(v - 0.5);
+                         let fw = if d == 0.0 {
+@@ -84,10 +106,11 @@
+                         .clamp(0.0, 1.0);
+                         if alpha > 0.0 {
+                             result.push((
+-                                patch.map(|v| [v[0], -v[1]]),
++                                clipped.map(|v| [v[0], -v[1]]),
+                                 (alpha * 10000.0).round() / 10000.0,
+                             ));
+                         }
++                        }
+                     }
+                 }
+             }
