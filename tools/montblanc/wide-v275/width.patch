@@ -1,0 +1,23 @@
+--- a/crates/sdocx/src/ink/montblanc.rs
++++ b/crates/sdocx/src/ink/montblanc.rs
+@@ -1008,7 +1008,7 @@
+         || !p.binary_added
+         || !matches!(rendering.style.stroke_type_raw, None | Some(0))
+         || !matches!(rendering.style.color_type_raw, None | Some(0))
+-        || !(0.1..=2.0).contains(&size)
++        || !(0.1..=2.4).contains(&size)
+         || stroke.pen_width.to_bits() != size.to_bits()
+         || !(3..=24).contains(&stroke.points.len())
+         || stroke.pressures.len() != stroke.points.len()
+--- a/crates/sdocx/src/ink/montblanc_many.rs
++++ b/crates/sdocx/src/ink/montblanc_many.rs
+@@ -45,9 +45,6 @@
+     {
+         return Err(Error::InvalidInput);
+     }
+-    if input.pen_size > 2.0 {
+-        return Err(Error::UnsupportedWidthBranch);
+-    }
+     // Bound intermediate coordinate arithmetic before constructing adaptive curves.
+     if input.points.iter().flatten().any(|v| v.abs() > 1_000_000.0) {
+         return Err(Error::InvalidInput);
