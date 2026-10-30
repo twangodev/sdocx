@@ -1,0 +1,23 @@
+{
+  "base_commit": "082a195935b39ea189db9d147b07135bf6a6b4b9",
+  "source_sha256": {
+    "crates/sdocx/src/render.rs": "a270d6a930f9db56b908b11d6e6017a355017c3683c28d87cca1601109350c28",
+    "crates/sdocx/src/render/marker3.rs": "340dcb641de4f090af305647f26e2dfb2eab27cdedf6a0aaddb186bfc332d16d"
+  },
+  "scope": "Clean base plus only the StraightMarker 4x gate and corresponding Marker3 test change; historical and unrelated workspace changes excluded.",
+  "validation": {
+    "marker3_tests_passed": 22,
+    "fresh_native_cases": 4,
+    "native_receipt_exact": true,
+    "same_input_float_bits_verified": true,
+    "clean_svg_direct_pdf_reader_receipts_exact": 4
+  },
+  "reader_versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pdfium": "156.0.8076.0",
+    "numpy": "2.4.2",
+    "pillow": "12.1.1"
+  }
+}

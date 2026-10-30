@@ -1383,11 +1383,11 @@ mod tool_one_export_control {
                 crate::render_document_svg(&document, &double)[0].svg,
                 crate::render_document_svg(&straight, &double)[0].svg
             );
+            assert_eq!(
+                crate::render_document_svg(&document, &quadruple)[0].svg,
+                crate::render_document_svg(&straight, &quadruple)[0].svg
+            );
         }
-        assert_eq!(
-            crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
-            crate::render_document_svg(&straight, &quadruple)[0].svg
-        );
         for (size, color) in [
             (Some(3.99), Some(0x8033cc55)),
             (Some(8.01), Some(0x8033cc55)),

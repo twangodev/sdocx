@@ -335,6 +335,8 @@ error against the existing source SVG in a one-dab control and required 6,043
 rectangles; it is not selected as a rendering fix.
 An intrinsic cropped-row alternative reduced average error in the host control
 but added PDF support pixels in MuPDF, so the atlas transport remains unchanged.
+The bounded `marker3_output_scale` tool-1 profile also admits StraightMarker at 4×. Four [native and paired SVG/direct-PDF controls](../tools/marker3-tool1-scale4-alias/README.md) match the corresponding Marker3 frames and reduce reader error. Empty settings at 4× extrapolate from the 2× alias capture; these synthetic host controls do not establish saved-note or device parity.
+
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 and [tool-3](../conformance/marker3-tool3-native.json) base-pen profiles with explicit saved size/color and ordinary
 style. Marker3 tool 1 with explicit `5;`, size 4–8 and explicit ARGB also uses this route; intermediate sizes are interpolated from host controls. Other profiles retain the approximation. The sampler checks stamp

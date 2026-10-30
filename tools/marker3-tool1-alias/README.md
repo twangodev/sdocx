@@ -19,4 +19,4 @@ To reproduce the export comparison, build `export.rs` as a temporary example aga
 PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/marker3-tool1-alias/compare-exports.py <exports> <receipt.json>
 ```
 
-The comparator requires the reader versions recorded in the receipt (resvg, PyMuPDF, pypdfium2), NumPy and Pillow. The native controls establish synthetic host alias equivalence at size 8; existing admitted size bounds remain 4–8. StraightMarker 4× remains excluded.
+The comparator requires the reader versions recorded in the receipt (resvg, PyMuPDF, pypdfium2), NumPy and Pillow. The native controls establish synthetic host alias equivalence at size 8; existing admitted size bounds remain 4–8. StraightMarker 4× is admitted by the [separate 4× controls](../marker3-tool1-scale4-alias/README.md).
