@@ -1,0 +1,43 @@
+--- a/crates/sdocx/src/ink/montblanc_many.rs
++++ b/crates/sdocx/src/ink/montblanc_many.rs
+@@ -27,7 +27,7 @@
+ 
+ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+     let n = input.points.len();
+-    if !(6..=9).contains(&n) {
++    if !(6..=32).contains(&n) {
+         return Err(Error::PointCount);
+     }
+     if input.pressure.len() != n {
+@@ -167,6 +167,9 @@
+         for (seg_index, (q, count, initial_width, target_width, alpha_start, alpha_step, redraw)) in
+             segments.iter().enumerate()
+         {
++            if replay && seg_index < accepted.len().saturating_sub(7) / 2 {
++                continue;
++            }
+             if replay && !redraw {
+                 break;
+             }
+@@ -413,3 +416,21 @@
+         }
+     }
+ }
++
++#[test]
++fn irregular_window_candidate() {
++ let data: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(std::env::var("MONTBLANC_WINDOW_NATIVE").unwrap()).unwrap()).unwrap();
++ let num = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
++ let points: Vec<[f32;2]> = data["input"]["points"].as_array().unwrap().iter().map(|p| [num(&p[0]),num(&p[1])]).collect();
++ let pressure: Vec<f32> = data["input"]["pressure"].as_array().unwrap().iter().map(num).collect();
++ let actual = many_point(Input {points: &points, pressure: &pressure, pen_size: num(&data["input"]["pen_size"])}).unwrap();
++ let expected = data["stream"].as_array().unwrap();
++ println!("actual {} native {}",actual.len(),expected.len());
++ for (i,(a,e)) in actual.iter().zip(expected).enumerate() {
++  let method=e[0].as_str().unwrap();
++  let call=match method.strip_prefix("SPen::MontblancFountainPenStrokeDrawableRTV1::").and_then(|s| s.strip_suffix("(SPen::Vector3<float>, SPen::Vector2<float>, float)")).unwrap() { "AddStartPoint" => RtCall::Start, "AddEndPoint" => RtCall::End, "AddPoint" => RtCall::Point, _ => panic!("unexpected method {method}") };
++  assert_eq!(a.call,call,"call {i}");
++  for (lane,word) in e[1].as_array().unwrap().iter().enumerate() {let s=word.as_str().unwrap();let bits=u32::from_le_bytes(std::array::from_fn(|j|u8::from_str_radix(&s[j*2..j*2+2],16).unwrap()));assert_eq!(a.lanes[lane].to_bits(),bits,"record {i} lane {lane}");}
++ }
++ assert_eq!(actual.len(),expected.len());
++}
