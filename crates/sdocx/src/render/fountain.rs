@@ -2858,6 +2858,8 @@ mod tests {
                 None,
                 None,
                 None,
+                &std::cell::Cell::new(65_536),
+                None,
                 false,
                 None,
                 None,

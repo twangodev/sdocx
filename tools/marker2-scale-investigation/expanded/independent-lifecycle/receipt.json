@@ -1,0 +1,1954 @@
+{
+  "calls": [
+    {
+      "call": "glDrawArraysInstanced",
+      "framebuffer": 1,
+      "texture2d": 0
+    },
+    {
+      "call": "glDrawArrays",
+      "framebuffer": 3,
+      "texture2d": 1
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "framebuffer": 2,
+      "texture2d": 1
+    },
+    {
+      "call": "glDrawArrays",
+      "framebuffer": 3,
+      "texture2d": 2
+    }
+  ],
+  "changed_pixels": 429,
+  "first_sha256": "cd25aad338b58809a9234208e323f4b2ddbe91c2a31a3ed26998fb579e683df6",
+  "gl_error_checks": [
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glLinkProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramBinary",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindAttribLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glLinkProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramBinary",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenTextures",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenSamplers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glTexImage2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenFramebuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glFramebufferTexture2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glShaderSource",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCompileShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetShaderiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCreateProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glAttachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindAttribLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glLinkProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDetachShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDeleteShader",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramBinary",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetProgramiv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetActiveUniform",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetUniformLocation",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenTextures",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenSamplers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glTexImage2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenFramebuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glFramebufferTexture2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenTextures",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenSamplers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glSamplerParameteri",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glTexImage2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glPixelStorei",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glFenceSync",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glFlush",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenFramebuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glFramebufferTexture2D",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetString",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGenBuffers",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostBindOutputFbo",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostBindOutputFbo",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostCheckOutputFbo",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostCheckOutputFbo",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostOutputViewport",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostOutputViewport",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostClearColor",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostClearColor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostClearOutput",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostClearOutput",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "hostReadOutputAfterClear",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "hostReadOutputAfterClear",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glViewport",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnable",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glColorMask",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUseProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1f",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "draw-state-queries",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDisableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDisableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glInvalidateFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glViewport",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnable",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glColorMask",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUseProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glActiveTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindSampler",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1i",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1i",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform4fv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDrawArrays",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glInvalidateFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "firstBind",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "firstBind",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "firstFinish",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "firstFinish",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "firstRead",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "firstRead",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glViewport",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnable",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glColorMask",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUseProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1f",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "draw-state-queries",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDisableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribDivisor",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDisableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glInvalidateFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glViewport",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBufferData",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnable",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glColorMask",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUseProgram",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glActiveTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindTexture",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindSampler",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1i",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform1i",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glUniform4fv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glEnableVertexAttribArray",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glVertexAttribPointer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glDrawArrays",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glBindBuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glGetIntegerv",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "glInvalidateFramebuffer",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "secondBind",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "secondBind",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "secondFinish",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "secondFinish",
+      "error": 0,
+      "when": "after"
+    },
+    {
+      "call": "secondRead",
+      "error": 0,
+      "when": "before"
+    },
+    {
+      "call": "secondRead",
+      "error": 0,
+      "when": "after"
+    }
+  ],
+  "independent_drawings": true,
+  "independent_object_strokes": true,
+  "independent_pens": true,
+  "independent_renderers": true,
+  "input_case": "w2-translated-a128",
+  "limitations": [
+    "GL error checks begin after Drawing admission and Renderer initialization; independent teardown is not exercised.",
+    "Both lifecycles use identical synthetic source stroke data, shared context and queue, and explicit host callback-vector bridges.",
+    "ARM64 guest executes under Unicorn; host Mesa and explicit RT vector bridge; not Android device or complete Samsung page."
+  ],
+  "matrices": [
+    [
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      118.37,
+      108.23,
+      0,
+      1
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      122.37,
+      111.23,
+      0,
+      1
+    ]
+  ],
+  "native_vector_sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594",
+  "nonzero_gl_errors": [],
+  "output_fbo": 3,
+  "output_texture": 3,
+  "scope": "Two independent native ObjectStroke, ObjectDrawing, pen, and RTV2 lifecycles using the same input and overlapping translated transforms into one host Mesa framebuffer.",
+  "second_native_vector_sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594",
+  "second_sha256": "487420e8d961873c53ac75307dcbb82aea76dc26e09a0d33b3ffa36b5084609a",
+  "source_runner_sha256": "a76bae278f64e70457f495d32c8e9572f82266f74eb63ed9d6c46c8e9ecff824"
+}

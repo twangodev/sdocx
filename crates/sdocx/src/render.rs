@@ -34,6 +34,7 @@ mod image_crop;
 mod inkpen2_vector;
 #[cfg(all(test, feature = "pdf"))]
 mod legacy_marker_alpha_tests;
+mod marker2_scale;
 mod marker3_scale;
 mod simplebrush;
 #[cfg(test)]
@@ -409,6 +410,10 @@ pub struct RenderOptions {
     /// Replay and sliced scenes preserve the canonical route.
     #[cfg_attr(feature = "serde", serde(default))]
     pub marker3_output_scale: Option<Marker3OutputScale>,
+    /// Experimental Marker2 fringe for an axis-aligned 2x output grid.
+    /// Viewer zoom or other transforms change its coverage.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub marker2_output_scale: Option<u32>,
     /// Experimental MagicPen contour for a caller-asserted uniform output
     /// scale in pixels per page unit (1, 2, or 4), with an axis-aligned
     /// output grid and no rotation. Other values, replay, and sliced scenes
@@ -959,6 +964,7 @@ impl DocumentTextCache {
             options.fountain_v14_output_scale_profile,
             options.defaultpen_output_scale,
             options.marker3_output_scale,
+            options.marker2_output_scale,
             options.magicpen_output_scale,
             options.magicpen_host_minimum_dot_grid,
             options.pencil3_profile,
@@ -1477,6 +1483,7 @@ fn render_page_contents_svg(
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
+    marker2_output_scale: Option<u32>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -1560,6 +1567,8 @@ fn render_page_contents_svg(
         fountain_v14_output_scale_profile,
         defaultpen_output_scale,
         marker3_output_scale,
+        marker2_output_scale,
+        marker2_remaining_vertices: Cell::new(65_536),
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
         pencil3_profile,
@@ -1626,6 +1635,8 @@ struct CompositionContext<'a> {
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
+    marker2_output_scale: Option<u32>,
+    marker2_remaining_vertices: Cell<usize>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -1738,6 +1749,8 @@ fn render_object(
                 context.fountain_v14_output_scale_profile,
                 context.defaultpen_output_scale,
                 context.marker3_output_scale,
+                context.marker2_output_scale,
+                &context.marker2_remaining_vertices,
                 context.magicpen_output_scale,
                 context.magicpen_host_minimum_dot_grid,
                 context.pencil3_profile,
@@ -4458,6 +4471,8 @@ fn render_stroke(
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
     defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
+    marker2_output_scale: Option<u32>,
+    marker2_remaining_vertices: &Cell<usize>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -4812,6 +4827,35 @@ fn render_stroke(
             .dot_radii
             .as_ref()
             .is_some_and(|radii| !radii.is_empty() && radii.iter().all(|&radius| radius == 0.0))
+    {
+        return;
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && slice.is_none()
+        && marker2_output_scale == Some(2)
+        && paint.profile == Some("Marker2")
+        && stroke.points.len() >= 2
+        && stroke
+            .points
+            .iter()
+            .all(|p| p.x.is_finite() && p.y.is_finite() && p.x.abs() <= 256.0 && p.y.abs() <= 256.0)
+        && stroke.rendering.as_ref().is_some_and(|r| {
+            r.tool_type_raw == 2
+                && r.advanced_settings.as_deref() == Some("")
+                && r.properties.compressed
+                && r.style.stroke_type_raw == Some(0)
+        })
+        && paint.dot_radii.as_ref().is_some_and(|r| {
+            !r.is_empty()
+                && (r.iter().all(|&radius| radius == 1.0) || r.iter().all(|&radius| radius == 1.5))
+        })
+        && marker2_scale::render(
+            svg,
+            &paint,
+            Marker3OutputScale::Two,
+            marker2_remaining_vertices,
+        )
     {
         return;
     }
@@ -22172,3 +22216,6 @@ mod montblanc_candidate;
 
 #[cfg(test)]
 mod montblanc_tests;
+
+#[cfg(all(test, feature = "pdf"))]
+mod marker2_guard_tests;

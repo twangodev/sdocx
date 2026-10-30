@@ -1,0 +1,46 @@
+{
+  "scope": "Two synthetic independent native Drawing/RTV lifecycles per width; host Mesa, not Android device or saved-page parity.",
+  "exporter_sha256": "3be680e750062a5dbfb423a311b5cfaf2b6baaae905177e40ee2ac204e3e36e3",
+  "exporter_source_sha256": "927f14ed739e72aeffd0fc7d48c1d0459895f76c107d91b94857b5faa896200a",
+  "comparator_sha256": "5873ae9823e2766af4f8e9faf0474bda1210cb30fc6ebd7de38450a1695d31a9",
+  "cases": {
+    "width2": {
+      "source_sha256": "3855b96ee0a39a1f24c6853f0af8e765a7820283f004a6cb8551be624903dded",
+      "native_receipt_sha256": "2897535340da643d019f42590a25b0a2e7b2e850ca1ebd5369ad3debb5ec4a88",
+      "native_frame_sha256": "5bf03df07f611f3146cfb9809dd77a915ee012e0838d5301fc0a860f0de37ddc",
+      "baseline": {
+        "svg_sha256": "99679c6f55bf0f1b7f4fe610f0242e97586d90d7ded51d0c38aca88d49129926",
+        "pdf_sha256": "bdff3de32a886451b29b19d9bbc2ab1bbc59ef72b7e78ae8945c261877c40ff8",
+        "resvg_rgb_absolute_error_sum": 47455,
+        "mupdf_rgb_absolute_error_sum": 47222,
+        "pdfium_rgb_absolute_error_sum": 42824
+      },
+      "candidate": {
+        "svg_sha256": "8fbb196b2ed11775cdfe6e5dbedf95506e27833ba8a4db94602d848e60db750b",
+        "pdf_sha256": "8a0339e7e1010a9c208e3921a516d97408d475aa14d1846c236cc25e79f810c5",
+        "resvg_rgb_absolute_error_sum": 7019,
+        "mupdf_rgb_absolute_error_sum": 7584,
+        "pdfium_rgb_absolute_error_sum": 7757
+      }
+    },
+    "width3": {
+      "source_sha256": "8689de71d4da3cff3bc9f4e9510a438feaa15f7b13cf63f646b08dea5dbdf145",
+      "native_receipt_sha256": "2b44034dd9cbf29677c8ebdca86f24851addbd37fa4ffce723bc0136f3baca21",
+      "native_frame_sha256": "1a08114be71dc2ced529ea6b756b4dbf0463861abb730793c2863f1adabac331",
+      "baseline": {
+        "svg_sha256": "ebe953e55130100b328c009fefc11663687c628f4a94059774fe8732e92416e6",
+        "pdf_sha256": "732a8f4f39cf4fea9761909617354a40ac23867352c8425f947758c58619907a",
+        "resvg_rgb_absolute_error_sum": 24434,
+        "mupdf_rgb_absolute_error_sum": 22333,
+        "pdfium_rgb_absolute_error_sum": 18977
+      },
+      "candidate": {
+        "svg_sha256": "62bdfb6f95df2dd3c7363196fb0c8d1a4f745dc37af2a905efa9809aeb78bfc9",
+        "pdf_sha256": "7683df84610fdcecbd9abd08fdaa8fa5483105c25a528d9fe0f55bba03d99bc2",
+        "resvg_rgb_absolute_error_sum": 7787,
+        "mupdf_rgb_absolute_error_sum": 8555,
+        "pdfium_rgb_absolute_error_sum": 10752
+      }
+    }
+  }
+}

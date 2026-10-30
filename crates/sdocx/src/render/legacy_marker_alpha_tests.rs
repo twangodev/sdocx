@@ -181,6 +181,8 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
             None,
             None,
             None,
+            &std::cell::Cell::new(65_536),
+            None,
             false,
             None,
             None,

@@ -1,0 +1,430 @@
+{
+  "case": "w2-translated-a255",
+  "composite": {
+    "bbox_gl_bottom_up": [
+      135,
+      137,
+      182,
+      168
+    ],
+    "channels": 4,
+    "file": "w2-translated-a255-composite-rgba.png",
+    "height": 256,
+    "nonzero_pixels": 429,
+    "png_sha256": "b0adbb763d161af2def0acad4fcc31fbb904f6c5011083860de23a54cdd5c0ea",
+    "raw_gl_sha256": "29c11d94e41b63f1651f88b40e2b4d6bcd1c849b3b1fdc19fbc89b72f6e2de68",
+    "width": 256
+  },
+  "limits": [
+    "Pinned ARM64 native Marker2 methods execute under Unicorn; host Mesa provides GL rasterization.",
+    "ObjectDrawing selects RTV2 through native factory; original saved-redraw callbacks are captured.",
+    "The host eglGetCurrentContext callback returns guest token 0xabc; this is not an Android EGL context observation.",
+    "Queue hooks and RT+88 vector materialization are explicit host services; Captured saved-redraw samples are replayed once through native AddPoint.",
+    "The subpixel phase is applied by the Draw caller Matrix4, leaving source callback bytes and native RT bounds unchanged.",
+    "This is not Android device GPU, archive deserialization, or complete Samsung page composition."
+  ],
+  "mask": {
+    "bbox_gl_bottom_up": [
+      135,
+      137,
+      182,
+      168
+    ],
+    "channels": 1,
+    "file": "w2-translated-a255-mask-red.png",
+    "height": 256,
+    "nonzero_pixels": 429,
+    "png_sha256": "69cc44f4e3b4c416dac2da4dd9522cead1ca21031a2c3e1ac9192b7fdee30a06",
+    "raw_gl_sha256": "efa285ecd543d4fe9d1fc99ddacd4b5d5c61c6d8c6209e629579c48f7316c1aa",
+    "width": 256
+  },
+  "native_input": {
+    "advanced_setting": "",
+    "color_argb": "0xff994422",
+    "curve_enabled": true,
+    "draw_caller_matrix_column_major_f32": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      118.37,
+      108.23,
+      0,
+      1
+    ],
+    "native_caller_host_boundaries": [
+      "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+      "context vslot +80 is a host identity ARGB callback (entry input and returned W0 captured)",
+      "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+      "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods, Drawing selection, Marker2 wrapper, and saved geometry execute natively"
+    ],
+    "phase": "translated",
+    "rt_width_u32": 2,
+    "size_f32": 2.0,
+    "source_case": {
+      "advanced_setting": "",
+      "color_argb": "0xff994422",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker2",
+      "pen_size_f32_bits": "00000040",
+      "points_f32_bits": [
+        [
+          "00002041",
+          "0000a041"
+        ],
+        [
+          "00004041",
+          "00000442"
+        ],
+        [
+          "0000e041",
+          "00004041"
+        ],
+        [
+          "00000842",
+          "0000c841"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "cdcc4c3d",
+        "cdcc4c3f",
+        "cdcccc3e"
+      ],
+      "size_input": 2.0,
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "tool_type": 2
+    },
+    "tool_type": 2,
+    "translation_f32": [
+      118.37,
+      108.23
+    ]
+  },
+  "paint": {
+    "aa_scaler_expected_and_uploaded": 0.5,
+    "draw_caller_matrix_column_major_f32": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      118.37,
+      108.23,
+      0,
+      1
+    ],
+    "draws": [
+      {
+        "blend_dst_rgb": 1,
+        "blend_equation_rgb": 32776,
+        "blend_src_rgb": 1,
+        "call": "glDrawArraysInstanced",
+        "framebuffer": 1,
+        "texture2d": 0,
+        "values": [
+          5,
+          0,
+          4,
+          35
+        ],
+        "viewport": [
+          0,
+          0,
+          256,
+          256
+        ]
+      },
+      {
+        "blend_dst_rgb": 771,
+        "blend_equation_rgb": 32774,
+        "blend_src_rgb": 770,
+        "call": "glDrawArrays",
+        "framebuffer": 2,
+        "texture2d": 1,
+        "values": [
+          4,
+          0,
+          6
+        ],
+        "viewport": [
+          0,
+          0,
+          256,
+          256
+        ]
+      }
+    ],
+    "gl_error_checks": 274,
+    "gl_errors_zero": true,
+    "gles_scope": "Real host GLES/Mesa rasterization; no Android device EGL/GPU claim.",
+    "guest_egl_callback": {
+      "is_native_android_egl_evidence": false,
+      "returned_guest_token": "0xabc",
+      "symbol": "eglGetCurrentContext"
+    },
+    "height": 256,
+    "host_gles": {
+      "egl_version": "1.5",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "shading_language": "OpenGL ES GLSL ES 3.20",
+      "vendor": "Mesa",
+      "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+    },
+    "host_services": [
+      "Task queue registration/unregistration uses explicit host hooks.",
+      "Captured saved-redraw callback points are explicitly replayed with native AddPoint.",
+      "The exact vector bytes are explicitly materialized at native RT+88 by the host."
+    ],
+    "instance_upload": {
+      "matches_submitted_vector": true,
+      "sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594",
+      "size": 280
+    },
+    "preclear_all_zero": true,
+    "preclear_rgba_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+    "resources": {
+      "composite_fbo": 2,
+      "composite_samples_mask_texture": 1,
+      "feedback_alias": false,
+      "mask_attachment": {
+        "args": [
+          36160,
+          36064,
+          3553,
+          1,
+          0
+        ],
+        "call": "glFramebufferTexture2D",
+        "framebuffer": 1
+      },
+      "mask_fbo": 1,
+      "mask_fbo_status": 36053,
+      "mask_texture": 1,
+      "mask_texture_allocation": {
+        "boundTexture": 1,
+        "call": "glTexImage2D",
+        "format": 6408,
+        "hasPixels": false,
+        "height": 256,
+        "internalFormat": 32856,
+        "pixelBytes": 0,
+        "pixelsSha256": null,
+        "target": 3553,
+        "type": 5121,
+        "width": 256
+      },
+      "output_fbo": 2,
+      "output_texture": 2
+    },
+    "task_queue_host_hook_events": [],
+    "uniform_bindings": [
+      {
+        "call": "glGetUniformLocation",
+        "location": 0,
+        "name": "uProjectionMatrix",
+        "program": 3
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 1,
+        "name": "aaScaler",
+        "program": 3
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 0,
+        "name": "OrigTexture",
+        "program": 4
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 1,
+        "name": "StrokeTexture",
+        "program": 4
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 2,
+        "name": "inputColor",
+        "program": 4
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 3,
+        "name": "Alpha",
+        "program": 4
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 4,
+        "name": "uIsEraserMode",
+        "program": 4
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 0,
+        "name": "uProjectionMatrix",
+        "program": 5
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 1,
+        "name": "uColor",
+        "program": 5
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 2,
+        "name": "uTintColor",
+        "program": 5
+      },
+      {
+        "call": "glGetUniformLocation",
+        "location": 3,
+        "name": "uHasTintColor",
+        "program": 5
+      },
+      {
+        "call": "glUniform1f",
+        "location": 1,
+        "value": 0.5
+      },
+      {
+        "call": "glUniform1i",
+        "location": 1,
+        "value": 0
+      },
+      {
+        "call": "glUniform1i",
+        "location": 4,
+        "value": 0
+      },
+      {
+        "call": "glUniform4fv",
+        "location": 2,
+        "values": [
+          0.6000000238418579,
+          0.2666666805744171,
+          0.13333334028720856,
+          1.0
+        ]
+      }
+    ],
+    "width": 256
+  },
+  "schema": "marker2-rtv2-mask-matrix-case-v2",
+  "source": {
+    "caller_fixture_sha256": "3f8ae6cc90ddc6bcef07809ea22ad9bd5b41b55b6fc53804b3a4a296972cfd43",
+    "caller_script_sha256": "01dc7f77dff725d5959d0c4a7533bee0cd0c8df948a5b1dbf7203569eb29a2c9",
+    "caller_script_transform_sha256": "9bbab5f57a597c3144e420db238b45a018063d45d6bdecb93d2d0a4dd0717825",
+    "explicit_addpoint_replay_count": 35,
+    "host_rt_plus88_materialization": "0x10086fe0",
+    "libraries_sha256": {
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "libSPenMarker2.so": "f1b2ceea921baac78b722cbd5423732f42d7bec19ccb63d428cf429582412269",
+      "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_saved_redraw_boundaries": [
+      7,
+      20,
+      35
+    ],
+    "no_extra_addpoint_replays": true,
+    "replay_boundary": "captured native saved-redraw AddPoint stream is replayed once without changing its XY bytes; caller Matrix4 applies phase to the subbitmap projection and native bounds; host materializes the exact source vector at RT+88; native ownership transfer is not claimed",
+    "rt_plus_88_after_native_draw": "0x10086fe0",
+    "rt_plus_88_preserved_by_native_draw": true,
+    "saved_redraw_callback_snapshot_count": 35,
+    "saved_redraw_callback_snapshot_counts": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35
+    ],
+    "selected_drawable_version": "2",
+    "selected_rt": "0x100357f0",
+    "source_callback_vector_hex": "000020410000a041cc7a214118cfa441099924415ef1ae414e8026410021b541c4bb28413e62bc416a4b2b4118b5c4413f2f2e418f19ce412aa531417a5bd841e14937417b82e041e8873f41eeb5e541a9f94d414adde74173795e410d6be541e1fd6941baf9e1419eba76412d0ddd41d657824164a5d641606987419778d14113458c41372bcc41105c9141da4dc64155ae964180e0bf41e63b9c4129e3b84139f7a1419c70b1418f90a741d15faa41ca00ad41c9daa341eb47b24184e19d41ef65b74102749841d95abc4144929341a2fbc24137b08d41fcd4c9417a7e88417150d041fc8b84418fa6d64125c581413431df412e20804189e4e64143578141912bed41b9ee8441ac73f241667d8a41291df7415d279241",
+    "source_callback_vector_sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594",
+    "source_vector_pointer_slots_after_caller": [
+      "0x0",
+      "0x0"
+    ],
+    "source_vector_sample_count": 35,
+    "submitted_instance_vector_hex": "000020410000a041cc7a214118cfa441099924415ef1ae414e8026410021b541c4bb28413e62bc416a4b2b4118b5c4413f2f2e418f19ce412aa531417a5bd841e14937417b82e041e8873f41eeb5e541a9f94d414adde74173795e410d6be541e1fd6941baf9e1419eba76412d0ddd41d657824164a5d641606987419778d14113458c41372bcc41105c9141da4dc64155ae964180e0bf41e63b9c4129e3b84139f7a1419c70b1418f90a741d15faa41ca00ad41c9daa341eb47b24184e19d41ef65b74102749841d95abc4144929341a2fbc24137b08d41fcd4c9417a7e88417150d041fc8b84418fa6d64125c581413431df412e20804189e4e64143578141912bed41b9ee8441ac73f241667d8a41291df7415d279241",
+    "submitted_instance_vector_sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594",
+    "vbo_payload_matches_submitted_vector": true,
+    "vbo_payload_sha256": "c717ee8b976727c8bc66cb7d0ba954549b00370e0e34dcae3b394b7e697b0594"
+  }
+}
