@@ -1,0 +1,7 @@
+# Pencil2 deferred render-message execution
+
+Run `python3 tools/pencil2-worker-v247/probe.py`. This extends v244's synthetic EventLoop and renderer initialization: it retains the native deferred `PenGLRenderMsg`, explicitly initializes and updates its selected drawable, constructs and activates a native 192×192 sub-bitmap target, then calls the message's native Run. A fabricated canvas and bitmap hierarchy returns that target as its sole sub-bitmap. This replaces the task's original canvas pointer and is an explicit host intervention; it does not establish the normal bitmap contract or scheduling.
+
+The actual message dispatch reaches the selected native drawable's Draw with matrix `[1,0,0,0, 0,-1,0,0, 0,0,1,0, 6,183,0,1]`. The framebuffer has 322 nonzero bytes, SHA-256 `a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e`, matching v244's explicit raw-model control. The recorded GPU uniform is the native projection applied to that matrix. The message was run after a separate explicit Update, so the result does not establish the effect of Run's Update in isolation.
+
+The receipt records local harness addresses and a Mesa readback, not saved-page or device output. Replay inherits v244's pinned scripts and local native/runtime prerequisites; Mesa and its transitive dependencies are not pinned. `--write-receipt` refreshes the receipt after verifying the expected output.

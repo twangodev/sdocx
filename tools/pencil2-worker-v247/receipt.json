@@ -1,0 +1,84 @@
+{
+  "script_sha256": "5a37a89b9926251ed10b71373bb9d65e08387c839bf654ea704c7fba0cf4b2c9",
+  "scope": "Synthetic EventLoop and deferred native PenGLRenderMsg Run after explicit renderer Init and host-invoked Update, with fabricated canvas and bitmap hierarchy and host Mesa framebuffer. No normal scheduling, saved-page or device behavior established.",
+  "list": "Native ordered list dispatch, supplied Matrix3 and 84 AddPoint calls asserted by adapter",
+  "selected_rt": "0x1003b190",
+  "update_count": 84,
+  "matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "readback_sha256": "a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e",
+  "nonzero_bytes": 322,
+  "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "gl_error": 0,
+  "observed_run_draw": [
+    [
+      "run",
+      "0x10040ad0"
+    ],
+    [
+      "draw",
+      "0x1003b190",
+      "0x1007e360",
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        6.0,
+        183.0,
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "uniforms": [
+    [
+      "glUniformMatrix4fv",
+      0,
+      1,
+      0,
+      [
+        0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9375,
+        0.90625,
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "row_origin": "bottom",
+  "runtime_limitations": "Host EGL, GLES, Mesa drivers and transitive shared libraries are unpinned.",
+  "parent_sha256": {
+    "tools/pencil2-worker-v241/probe.py": "eea7a5e0c43b2e0e72c5c01679112dee5f6608e95bf9aba2ece8b1d628862222",
+    "tools/pencil2-async-route/draw-attempt.py": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+    "tools/pencil2-page-v219/no-replay.py": "3533e38ae7cf051d28dd07666b1b2c4319c35a24eb25e74cd909ac2f1af7c07d"
+  }
+}
