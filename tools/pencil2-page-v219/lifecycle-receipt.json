@@ -1,0 +1,50 @@
+{
+  "script_sha256": "b937399754aa0f20bf4435ddef7b42d3b17710a090b51b2d165654a4933b0bd8",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Synthetic one-object DrawObjectList with host adapters and three context-query interventions. Entry-point trace is limited to these three RTV4 methods during this synchronous call; it does not establish real-page scheduling or matrix conversion.",
+  "symbols": {
+    "SPen::Pencil2StrokeDrawableRTV4::Init()": "0x50984ac",
+    "SPen::Pencil2StrokeDrawableRTV4::Update(bool)": "0x50995f4",
+    "SPen::Pencil2StrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)": "0x5099660"
+  },
+  "entries": [],
+  "list_observations": {
+    "set_matrix_calls": 2,
+    "addpoint_calls": 84,
+    "input_matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ],
+    "observed_matrices": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ]
+    ]
+  }
+}
