@@ -1,0 +1,13 @@
+# Native manager canvas control
+
+Run `python3 tools/pencil2-worker-v271/probe.py` with the v219 dependencies. This transforms the pinned v254 probe using the v270 RT-canvas control and adds a manager call: a native `PenGLDataManager` and native `String` containing `RGBA8888` are constructed, then `CreatePenCanvas` is called with the host queue, 192 by 192 dimensions, zero extra integer, false, and zero texture layouts. The ninth argument is zero in the emulated stack slot. The inherited host PLT callbacks for Graphics `CreatePenCanvas` and `ReleaseBitmap` are removed and bound to the native Graphics entry points; the bitmap factory is also native. The probe asserts the native factory and release call sequence, a one-node manager map whose node value at offset 56 is the returned native canvas, and that `GetBitmap` after release returns the same bitmap created by the manager. The deferred message is manually switched to that canvas; native Run, Update and Draw use its subbitmap. The inherited framebuffer readback changes 72 bytes with the v254 hash.
+
+This is a synthetic host queue and manually substituted message, with explicit drawable initialization. The readback retains v254's framebuffer-binding limitation and is not proof that the manager canvas was the framebuffer read. Map membership and use after local bitmap release are bounded observations, not proof of reference counts, task destruction or complete safe teardown. The native String and manager are not destroyed by this diagnostic. It does not establish real page selection, device parity, SVG or PDF export. It retains the v270 external-input and host Mesa limitations.
+
+The node value offset is grounded in the pinned `scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so` (SHA-256 `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`). At `0x493c4` the manager stores the canvas at stack offset 72; `0x493cc` and `0x493d0` pass the record at stack offset 48 to the insertion helper. The helper loads the record's last two words at `0x49ae4` and stores them at node offset 48 at `0x49af8`, placing the canvas at node offset 56. The probe also checks the one-node root and child links at runtime.
+
+```sh
+export LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu
+scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump -d -C --start-address=0x493a4 --stop-address=0x493d8 scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so
+scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump -d -C --start-address=0x49adc --stop-address=0x49b38 scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so
+```
