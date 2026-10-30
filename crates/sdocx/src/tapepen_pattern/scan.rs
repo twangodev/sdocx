@@ -131,7 +131,7 @@ fn fill(row: &mut [u8], x0: i32, x1: i32) {
         row[at as usize] = row[at as usize].wrapping_add(amount as u8);
     };
     if i == j {
-        add(row, i, (x1 - x0) * 51 >> 10);
+        add(row, i, ((x1 - x0) * 51) >> 10);
     } else {
         if i >= 0 {
             add(row, i, ((1024 - (x0 & 1023)) * 51) >> 10);

@@ -31,7 +31,7 @@ pub fn blend(dst: &mut [u8], coverage: &[u8], color: u32, opacity: f32) {
     assert_eq!(dst.len(), coverage.len() * 4);
     assert!(opacity.is_finite());
     let alpha = ((color >> 24) * (opacity.clamp(0.0, 1.0) * 256.0) as u32) >> 8;
-    for (pixel, &cover) in dst.chunks_exact_mut(4).zip(coverage) {
+    for (pixel, &cover) in dst.as_chunks_mut::<4>().0.iter_mut().zip(coverage) {
         let a = div255(u32::from(cover) * alpha);
         let inverse = 255 - a;
         for (i, channel) in pixel[..3].iter_mut().enumerate() {
@@ -44,11 +44,11 @@ pub fn blend(dst: &mut [u8], coverage: &[u8], color: u32, opacity: f32) {
 
 pub fn finish(image: &mut [u8], width: usize, height: usize) {
     assert_eq!(image.len(), width * height * 4);
-    for p in image.chunks_exact_mut(4) {
+    for p in image.as_chunks_mut::<4>().0.iter_mut() {
         let a = u32::from(p[3]);
-        if a != 0 {
-            for c in &mut p[..3] {
-                *c = (u32::from(*c) * 255 / a) as u8;
+        for c in &mut p[..3] {
+            if let Some(value) = (u32::from(*c) * 255).checked_div(a) {
+                *c = value as u8;
             }
         }
     }
@@ -80,9 +80,9 @@ pub fn finish(image: &mut [u8], width: usize, height: usize) {
             if y + 1 < height {
                 add(i + width * 4);
             }
-            if count != 0 {
-                for c in 0..3 {
-                    image[i + c] = (sum[c] / count) as u8;
+            for c in 0..3 {
+                if let Some(value) = sum[c].checked_div(count) {
+                    image[i + c] = value as u8;
                 }
             }
         }

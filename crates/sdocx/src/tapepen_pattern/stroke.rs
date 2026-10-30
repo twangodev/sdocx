@@ -25,7 +25,8 @@
 //! This is not the original software and rejects curves and other stroke types.
 macro_rules! ensure {
     ($condition:expr $(,)?) => {
-        if !$condition {
+        let valid = $condition;
+        if !valid {
             return Err(());
         }
     };
