@@ -1,0 +1,154 @@
+{
+  "scope": "Synthetic native Model/Drawing with explicit host vector bridge and Mesa RGBA8, compared over #fcfcfc paper; no serialized-note or device parity.",
+  "inputs": {
+    "source_revision": "8ef491537f96154099e7c0c4066c25bba0f4aa0a",
+    "tool_dependencies_sha256": {
+      "tools/brushpen-transform/setting11-receipt.json": "8144643339a564f1f45684e396679df0090e8906947a1a2dcf0abf6a49ab15ee",
+      "tools/magicpen-phase/minimum-dot/native-receipt.json": "94f4eb0c29ae461c1ab3ab7839c20300d2c243fc7f0098574239bc2ed94541d5",
+      "tools/pen-capture/airbrush_v1_matrix_receipt.json": "ad380ca6d453a72cccf2c969953263241f878af545bd37cf9a4502c2b9278212",
+      "tools/inkpen2-v1-tool3/receipt.json": "cd18af41e7a44f2fa37a5464efb5d87634f7b2c1e6000add9020507fa9bf3098",
+      "tools/inkpen2-v1-tool3/extended-receipt.json": "5d7fc79ee16a7bec402a2c03038687cf30928745739422b2e3b232253f97cea3",
+      "tools/inkpen2-v1-landscape/receipt.json": "9d3a5498aa94f5b506e98160e3a491e54e8330633652940631a863cbb04114e9",
+      "tools/inkpen2-v1-landscape-expanded/receipt.json": "5f7710be5026e36851de2fdafc6dd7a4e86e1fd24aced7f430512ba6e8288d03",
+      "tools/watercolor_host/mixed_capture.py": "0b66220875649c591a41237b8f5e2b8e524145e183e4a782bb2101fbfcee8b8d",
+      "tools/watercolor_host/frame_capture.py": "d87055488b895e4ee6dce35ca06f615f69c04a2d2f1cf28d3b7ad9786618ffd8",
+      "tools/magicpen-phase/mask/receipt.json": "c3d280eed15be807eac86024b99a73083193f3578fe87fa9b3ad836e0390d2e5",
+      "tools/inkpen2-v1-tablet-half/bounded_grid.rs": "9d201696c3314a02d3877c2e89a14df265c102ce350de9654046a51fa92bfbd0",
+      "tools/inkpen2-v1-tablet-half/receipt.json": "ff4a42391828bf32d21675fc993a85f29d0f2407d976681551934f5733b7ccc0",
+      "tools/inkpen2-v1-tablet-half/multi-phase-model.json": "0d444f976834d357125d0b8894c7fe69e2082d615d9dc383c6c3545f54d1b817",
+      "tools/inkpen2-v1-tablet-half/bounded_grid_zero_width.rs": "ad1247554a8720dcac2661bdf5ed37e88b75e1f8b7d827d9666c3c6ee7ebff76",
+      "tools/inkpen2-v1-tablet-half/zero-width-model.json": "e18996bdb1602ff72b40d6f1badfe15e5335da7db65e4ad7ae0250372ca5c5b6",
+      "tools/montblanc/narrow-probe/diverse-v8-receipt.json": "3fdba03a744c07cb539fda64c2ff2e939ec40b5a2dd29e5f00a01535be894930",
+      "tools/montblanc/nine-narrow/streams.json": "05356685d38f190cfd16c0533b8991da87841018afc50f315c39e04ca4f2395d",
+      "tools/montblanc/long-paint/streams.json": "3c7a97a7c9609f84da6386cce9603a2b672d3a40e031c02049ed41e27982e760",
+      "tools/montblanc/long-holdout/streams.json": "89e0001d6323d34d184194a716b0b91e64104611a5fca0b40915569a9ba94236",
+      "tools/montblanc/long-2x/streams.json": "0cdb9219bef6cf733ea199d2de9248cb7e604356204245e554df7cc3a297e4e6",
+      "tools/montblanc/long-sizes/streams.json": "001b10b956ef46b122a4a6a4ae417a534f6fd8acb309ecdc112ba26095b68fa9",
+      "tools/montblanc/long-2x-sizes/streams.json": "313d209f10549e73cbf1c594ceed2dd18261aa95c20c71f5c5b753124243b2f9",
+      "tools/montblanc/long-fresh/streams.json": "beaae8d0b71150e9a101395fd2451d328e57cf2d1abe4cf6e92ef80a3233162a",
+      "tools/montblanc/long-size-v191/streams.json": "21bd4e7d09013ef364d98f86f082fcac698ab2e8495c3664c419ebbabcf1d85c",
+      "tools/montblanc/long-2x-independent/streams.json": "0eef7b25aef2247632b68112de267f063bf3f361aa0ab23796546f587565c237",
+      "tools/montblanc/longer-probe/streams.json": "c5d90245f0403fe090f432917365e089b844f280548ddb12e255950bad1200a8",
+      "tools/montblanc/long-2x-size-v192/streams.json": "ba681185164bb59edc2808553250b0483a63f6a9f07fcb4150bfe6b9b6ecd444",
+      "tools/montblanc/long-unit-size-v205/streams.json": "4639b9dec27b727456ee161e76802596188845177e600e18d274016b67402b76",
+      "tools/marker4_v7/public-finger/wide-extra/geometry.json": "8b8a8a684f11560a9587631ca089a4a29eec0752ee5eae6935daacfe2a8016a7",
+      "tools/brushpen-transform/curveoff_capture.py": "27df9ce5c8c4f705e57373c6dafe3042f5e25d20770781ae05848689afe02233",
+      "tools/simplebrush-v208/native-4.json": "47d32ab76524ff45a42bf0b1ebd761a48148479c7525ecdee9dc1fa1de245a7b",
+      "tools/simplebrush-v208/native-7.json": "bb2d34311ccae074523e3d583e4f63bd1b34f2de9160792b3dda4367e3794036",
+      "tools/chinesebrush-v5-matrix/receipt.json": "f2eb894c4abb7fc0a9b99f55838fe5c9db1505dc3268cd91c105e4f2471052ab",
+      "tools/oilbrush3-cadence/matrix-alternate-receipt.json": "3935593afc9d95dedcb9a23e564eed3166d58e872683217a9dfe0be37420d228",
+      "tools/oilbrush3-cadence/ratio-receipt.json": "e240455eaa15ab1801bab2ede3ecd590975e523cbff72f54f06861c6ebe59db8",
+      "tools/inkpen-v1/high-scale-native.json": "98401ccd51d896b44308e120c4c78c14754bc05e1babab50e2776d9192d63781",
+      "tools/pencil2-second-source/native-geometry.vbo": "1119d446324f6f3a61ff231b61b73a154010304e9bf8ebd4fc9e33cddbb1c9ab",
+      "tools/brushpen-independent/receipt.json": "0f53e275dcf1b781de9cd0887816b35478263d0bb879ecce82bce05e9407e547",
+      "tools/brushpen-independent/frame.bin": "b8bcce8eb1e40b828a7669e7856373e16a04d63c91dfcb64f594f0fdfc7275f4",
+      "tools/brushpen-third/receipt.json": "e15e092569cc3a8b1901394564f403ba7245c1113105d13444ea8dcf65c41a4f",
+      "tools/brushpen-third/frame.bin": "ee286f813b7e8cd7245a9843d7642d0c9655af5a885b6986cd5479822c4c7b4a"
+    },
+    "fixture_sha256": "176f9634a96d30ef2228c2d5a69c8fb4a85711f0be6dc8ece7dd3681ca3fcdbc",
+    "render_rs_sha256": "a270d6a930f9db56b908b11d6e6017a355017c3683c28d87cca1601109350c28",
+    "base_fixture_sha256": "1c697b01f297c7104617f2965d5dd498fe7f6b748a78d5d62077063e059c682f",
+    "script_sha256": "fd9a7182b0b8239210cd1268a5df50adb60ccbbb79fb3f1557bd0527433eed6b",
+    "cargo_lock_sha256": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "adapted_test_sha256": "e914ff8036ab3fee776ac71da44f9b1972d2bc2ffd060ffef9f39906766dcd50",
+    "subthreshold_loop_wrapper_sha256": "29d8221ccc8b01ee672415694655ccfe81e1a70efbb480e5c1d51b7c9c31551b",
+    "source_pins": {
+      "tool0_crossing_capture.py": "60198d57005d8cf45a1f33fcf5953cb16a55baf7a9bfc93d3d949a3c141e006f",
+      "tool0_diverse_capture.py": "c27b22bedd06a4d5634d49b120b25111bc55760529e584ae6d2b9992040d5a68",
+      "retain_tool0_crossing.py": "a9377ff3b86871a4a483f38fccf006981d48fb4326cd7a15f87e3782a0772161",
+      "compare_tool0_diverse.py": "fd9a7182b0b8239210cd1268a5df50adb60ccbbb79fb3f1557bd0527433eed6b"
+    },
+    "capture_sha256": "069dac5e2db51d206c6ae7a6261da882d028be91ad895146f5fbc87ec1ff48f1"
+  },
+  "readers": {
+    "mupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "results": {
+    "tool0-1": {
+      "svg_rgb_l1": [
+        2735,
+        1459
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          6922,
+          5552
+        ],
+        "pdfium": [
+          2866,
+          1547
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "fa70bcbc1993a1b5414325240245bdb40ccd02a65eb5f3949380d0417d617460",
+          "svg": "244efd77120b90d252e056f40c9305587a996370b5644fbe874777c93292421c"
+        },
+        "profile": {
+          "pdf": "ce50319c71d5382af51971b78ed2c41de5c3a333772a1a3aee69fc9cb22d525e",
+          "svg": "3d2d4ca46f193554ef25f0ddd1c439612a8fc5cd75eb829dbaf162a8f19716da"
+        }
+      },
+      "native_rgba_sha256": "0827bad9d303e8c297aad7984e30861bd98e99e72d2118b3d14c600713cfc114",
+      "native_stream_sha256": "ec1b39d6ff2ab6f0b3366186ae5d8a978554d7636b596a0eeb2f2011dc89a304"
+    },
+    "tool0-2": {
+      "svg_rgb_l1": [
+        5229,
+        2761
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          21985,
+          19460
+        ],
+        "pdfium": [
+          5672,
+          3157
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "fa70bcbc1993a1b5414325240245bdb40ccd02a65eb5f3949380d0417d617460",
+          "svg": "244efd77120b90d252e056f40c9305587a996370b5644fbe874777c93292421c"
+        },
+        "profile": {
+          "pdf": "6d44c81c01ae816142773dfa7052a600fe3c96039e35f26007339b2dd64ae236",
+          "svg": "61db076fbab6f949fac9bdf24b0bf69e6e99317f2dbe733ca11f1a51bab49f1f"
+        }
+      },
+      "native_rgba_sha256": "620760d681d9b99b704bfc1d3f986ea1278a975537e2df7aa9116c9e9774d22c",
+      "native_stream_sha256": "ec1b39d6ff2ab6f0b3366186ae5d8a978554d7636b596a0eeb2f2011dc89a304"
+    },
+    "tool0-4": {
+      "svg_rgb_l1": [
+        12447,
+        7254
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          78159,
+          72725
+        ],
+        "pdfium": [
+          12358,
+          7102
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "fa70bcbc1993a1b5414325240245bdb40ccd02a65eb5f3949380d0417d617460",
+          "svg": "244efd77120b90d252e056f40c9305587a996370b5644fbe874777c93292421c"
+        },
+        "profile": {
+          "pdf": "0623c09ab8a5da226187024dbf4d987d27896d771f0c5239d37db774859d2c69",
+          "svg": "7e4ed7ff253d6b88634b553b3ae50318e8130ac44e43f5d0eea93e4c458b4616"
+        }
+      },
+      "native_rgba_sha256": "5a81afb94bcd98278a6155cb6015d33f22cd47b7bf202c3300969fd3f87fcfc2",
+      "native_stream_sha256": "ec1b39d6ff2ab6f0b3366186ae5d8a978554d7636b596a0eeb2f2011dc89a304"
+    }
+  }
+}
