@@ -1,0 +1,131 @@
+{
+  "scope": "Synthetic cold native Drawing, host Mesa. An opaque 64x64 pattern is injected in the initialized page before native P4. First three P4 outputs, first P3 output, and the following P4 output are retained. This does not establish normal page initialization, Android or saved-note behavior.",
+  "source_points": [
+    [
+      500,
+      500
+    ],
+    [
+      504,
+      510
+    ],
+    [
+      515,
+      515
+    ],
+    [
+      525,
+      503
+    ]
+  ],
+  "injected_region": [
+    480,
+    480,
+    64,
+    64
+  ],
+  "injected_rgba": "[(7*x)%256,(5*y)%256,(3*(x xor y))%256,255]",
+  "native_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "replay": "tools/oilbrush3-cadence/independent_feedback.py",
+  "queue_end_mesa_error": 0,
+  "raw_sha256": [
+    "b0652f7b2f3486e1674c014978c01a5099396d157573dcd0e9c9811aded9a2d4",
+    "e39a4141d55c3be20908e9afce3f4c55468c73707c9246220b10753568713e5e",
+    "7535411549715bdd63fdab4e604a9ced6a962fb70bdb62cedee3c2636518fe64",
+    "d41eb34f82014b0fc8113036a92fe2db03d056195fcb8608f421411cbbbaeaf4",
+    "e0a8670b92c9fafc397ee334a2346d68c7269ec50847f0871ebd060ba1427d29"
+  ],
+  "replay_environment": {
+    "command": "/tmp/sdocx-unicorn-venv/bin/python tools/oilbrush3-cadence/independent_feedback.py",
+    "requirements": "Existing scratch/oilbrush3-public-drawing-v17 runner and preflight, its transitive tmp/vector-parity-plan helper tree and native libraries, Python with Unicorn, and host Mesa. Preflight checks pinned inputs; all transitive dependencies are not retained in this receipt."
+  },
+  "p3_ratio": "Explicit 0.4 from the earlier V17 state, not captured in this independent uniform event list.",
+  "input_sha256": {
+    "addpoints.bin": "9bbbf3aee9c42c97a56212d57dce8a33e8244a5104b9fde067be135b5074da0a",
+    "uniforms.json": "2090ad06a38176bfe70acd6c4498612e138e39fe110fe8c16327b3a623568610"
+  },
+  "draw_identity": [
+    {
+      "role": "P4",
+      "program": 5,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "framebuffer": 1,
+      "texture": 1,
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "role": "P4",
+      "program": 5,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "framebuffer": 1,
+      "texture": 1,
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "role": "P4",
+      "program": 5,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "framebuffer": 1,
+      "texture": 1,
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "role": "P3",
+      "program": 4,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "framebuffer": 3,
+      "texture": 10,
+      "size": [
+        16,
+        16
+      ]
+    },
+    {
+      "role": "P4",
+      "program": 5,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "framebuffer": 1,
+      "texture": 1,
+      "size": [
+        1920,
+        1080
+      ]
+    }
+  ],
+  "draw_identity_scope": "Host Mesa object names in this synthetic replay; roles follow the pinned V17 shader identification. Both before and after snapshots use the listed complete draw/read framebuffer and texture; readbacks are lower-left RGBA8."
+}

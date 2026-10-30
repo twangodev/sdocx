@@ -401,16 +401,173 @@ fn read_p4_state(bytes: &[u8], stamp: usize) -> P4State {
     }
 }
 
+fn model_from_addpoint(record: &[u8]) -> [f32; 16] {
+    let x = read_f32(record, 96);
+    let y = read_f32(record, 100);
+    let coefficient = read_f32(record, 104);
+    let angle = read_f32(record, 108);
+    let (sin, cos) = if angle >= 5.0 {
+        (0.0, 1.0)
+    } else {
+        (2.0 * angle).sin_cos()
+    };
+    let diagonal = coefficient * cos;
+    let off_diagonal = -coefficient * sin;
+    [
+        1.0 - diagonal,
+        off_diagonal,
+        0.0,
+        0.0,
+        off_diagonal,
+        1.0 + diagonal,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        x,
+        y,
+        0.0,
+        1.0,
+    ]
+}
+
+#[test]
+fn addpoint_reconstructs_native_p4_and_feedback_model_matrices() {
+    for state in [STATE, V17_STATE] {
+        for stamp in 0..ADDPOINT_COUNT {
+            let record = &ADDPOINTS[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+            let derived = model_from_addpoint(record);
+            let actual = read_p4_state(state, stamp).model;
+            for (lane, (derived, actual)) in derived.iter().zip(actual).enumerate() {
+                assert!(
+                    (derived - actual).abs() <= 2.0e-7,
+                    "stamp {stamp}, matrix lane {lane}: {derived} versus {actual}"
+                );
+            }
+        }
+        for (index, stamp) in [3, 7, 11].into_iter().enumerate() {
+            let actual = read_p3_state_from(state, index).model;
+            let record = &ADDPOINTS[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+            let derived = model_from_addpoint(record);
+            for (lane, (derived, actual)) in derived.iter().zip(actual).enumerate() {
+                assert!(
+                    (derived - actual).abs() <= 2.0e-7,
+                    "feedback {index}, matrix lane {lane}: {derived} versus {actual}"
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn addpoint_reconstructs_alternate_native_draw_matrices() {
+    use base64::Engine as _;
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../tools/oilbrush3-cadence/matrix-alternate-receipt.json"
+    ))
+    .unwrap();
+    let chunks = receipt["native_abi"]["chunks"].as_array().unwrap();
+    assert_eq!(chunks.len(), 26);
+    let records: Vec<Vec<u8>> = chunks
+        .iter()
+        .map(|chunk| {
+            let hex = chunk["append_bytes_hex"].as_str().unwrap();
+            assert_eq!(hex.len(), ADDPOINT_STRIDE * 2);
+            (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+                .collect()
+        })
+        .collect();
+    let digest = format!("{:x}", Sha256::digest(records.concat()));
+    assert_eq!(
+        digest,
+        "bd12afe70184df82cf55d3c71e0a983d72a8dee4a98b917004f924533ba2c59b"
+    );
+    assert_eq!(receipt["native_abi"]["final_stream_sha256"], digest);
+    let mut p4 = 0;
+    let mut feedback = 0;
+    let mut feedback_after = Vec::new();
+    for draw in receipt["draws"].as_array().unwrap() {
+        let stamp = p4;
+        if draw["kind"] == "P4" {
+            p4 += 1;
+        } else {
+            assert_eq!(draw["kind"], "P3");
+            feedback += 1;
+            feedback_after.push(p4);
+        }
+        assert_eq!(draw["p4_count"].as_u64().unwrap(), p4 as u64);
+        let uniform = draw["uniforms"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|u| u["name"] == "uModelMatrix")
+            .unwrap();
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(uniform["payload_base64"].as_str().unwrap())
+            .unwrap();
+        assert_eq!(bytes.len(), 64);
+        let derived = model_from_addpoint(&records[stamp]);
+        for (lane, derived) in derived.into_iter().enumerate() {
+            let actual = read_f32(&bytes, lane * 4);
+            assert!(
+                (derived - actual).abs() <= 2.0e-7,
+                "stamp {stamp}, lane {lane}: {derived} versus {actual}"
+            );
+        }
+        let captured = read_p4_state(V17_STATE, 0);
+        for (name, expected) in [
+            ("uProjectionMatrix", captured.projection.as_slice()),
+            ("uDepthMapScale", captured.depth_scale.as_slice()),
+        ] {
+            let uniform = draw["uniforms"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|u| u["name"] == name)
+                .unwrap();
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(uniform["payload_base64"].as_str().unwrap())
+                .unwrap();
+            assert_eq!(bytes.len(), expected.len() * 4);
+            for (lane, value) in expected.iter().enumerate() {
+                assert_eq!(
+                    read_f32(&bytes, lane * 4).to_bits(),
+                    value.to_bits(),
+                    "{name} lane {lane}"
+                );
+            }
+        }
+    }
+    assert_eq!((p4, feedback), (26, 6));
+    assert_eq!(feedback_after, [3, 7, 11, 15, 19, 23]);
+    assert_eq!(receipt["queue_end_error"], 0);
+}
+
 fn unpack_p4_triangle_for_page(
     stamp: usize,
     tri_indexes: [usize; 3],
     page: PageSize,
     state: P4State,
 ) -> P4Triangle {
+    unpack_p4_triangle_with_records(stamp, tri_indexes, page, state, ADDPOINTS)
+}
+
+fn unpack_p4_triangle_with_records(
+    stamp: usize,
+    tri_indexes: [usize; 3],
+    page: PageSize,
+    state: P4State,
+    records: &[u8],
+) -> P4Triangle {
     let model = state.model;
     let proj = state.projection;
     let depth_scale = state.depth_scale;
-    let record = &ADDPOINTS[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+    let record = &records[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
     let draw_params = [
         read_f32(record, 96),
         read_f32(record, 100),
@@ -427,10 +584,10 @@ fn unpack_p4_triangle_for_page(
     }; 6];
     for (row, vertex) in vertices.iter_mut().enumerate() {
         let o = stamp * ADDPOINT_STRIDE + row * 16;
-        let x = read_f32(ADDPOINTS, o);
-        let y = read_f32(ADDPOINTS, o + 4);
-        let u = read_f32(ADDPOINTS, o + 8);
-        let v = read_f32(ADDPOINTS, o + 12);
+        let x = read_f32(records, o);
+        let y = read_f32(records, o + 4);
+        let u = read_f32(records, o + 8);
+        let v = read_f32(records, o + 12);
         let world = mat_vec(&model, [x, y, 0.0, 1.0], true);
         let clip = mat_vec(&proj, world, false);
         let uv = [
@@ -494,10 +651,35 @@ fn render_p4_for_page(
     mask: &[u8],
     depth: &[u8],
 ) -> usize {
+    render_p4_with_records(
+        canvas,
+        page,
+        stamp,
+        state,
+        P4Textures { brush, mask, depth },
+        ADDPOINTS,
+    )
+}
+
+struct P4Textures<'a> {
+    brush: &'a [Rgba],
+    mask: &'a [u8],
+    depth: &'a [u8],
+}
+
+fn render_p4_with_records(
+    canvas: &mut [Rgba],
+    page: PageSize,
+    stamp: usize,
+    state: P4State,
+    textures: P4Textures<'_>,
+    records: &[u8],
+) -> usize {
+    let P4Textures { brush, mask, depth } = textures;
     assert_eq!(canvas.len(), page.width * page.height);
     let mut touched = std::collections::BTreeSet::new();
     for ids in [[0, 1, 2], [3, 4, 5]] {
-        let tri = unpack_p4_triangle_for_page(stamp, ids, page, state);
+        let tri = unpack_p4_triangle_with_records(stamp, ids, page, state, records);
         let min_x = ((tri
             .pos
             .iter()
@@ -671,6 +853,31 @@ fn render_p3_for_page(
         }
     }
     out
+}
+
+#[test]
+fn feedback_depends_on_prior_canvas_and_brush() {
+    let page = PageSize {
+        width: PAGE,
+        height: PAGE,
+    };
+    let state = read_p3_state(0);
+    let mask = vec![255; MASK_W * MASK_H];
+    let depth = vec![255; DEPTH_W * DEPTH_H];
+    let clear = vec![Rgba([0, 0, 0, 0]); PIXELS];
+    let painted = vec![Rgba([200, 40, 20, 255]); PIXELS];
+    let blue = vec![Rgba([20, 40, 200, 255]); FEEDBACK * FEEDBACK];
+    let green = vec![Rgba([20, 200, 40, 255]); FEEDBACK * FEEDBACK];
+    let unchanged = render_p3_for_page(&clear, page, state, &mask, &depth, &blue);
+    let mixed = render_p3_for_page(&painted, page, state, &mask, &depth, &blue);
+    let other_brush = render_p3_for_page(&painted, page, state, &mask, &depth, &green);
+    assert_eq!(unchanged, blue);
+    assert!(
+        mixed
+            .iter()
+            .all(|pixel| pixel.0[0] > 20 && pixel.0[2] < 200)
+    );
+    assert_ne!(mixed, other_brush);
 }
 
 fn read_u16_le(bytes: &[u8], offset: usize) -> u16 {
@@ -1459,4 +1666,540 @@ mod tests {
             assert_eq!(row.max, [0; 4], "V23 prefix {} channel maxima", i + 1);
         }
     }
+}
+
+#[cfg(all(test, feature = "pdf"))]
+mod public_fallback_comparison {
+    use super::*;
+    use crate::{BoundingBox, Color, Document, Page, RenderOptions, render_document_svg};
+
+    #[test]
+    fn public_svg_fallback_differs_from_v17_native_frame() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(super::super::tests::FIXTURE).unwrap();
+        let stroke = super::super::tests::public_stroke_from_fixture(&fixture);
+        let document = Document {
+            pages: vec![Page {
+                uuid: "oilbrush3-native-control".into(),
+                width: V17_PAGE_WIDTH as u32,
+                height: V17_PAGE_HEIGHT as u32,
+                objects: vec![stroke.into()],
+                background_color: Some(Color {
+                    r: 255,
+                    g: 255,
+                    b: 255,
+                }),
+                content_bbox: BoundingBox::default(),
+                template: None,
+                background: Default::default(),
+            }],
+            metadata: Default::default(),
+        };
+        let svg = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+        let mut pix =
+            resvg::tiny_skia::Pixmap::new(V17_PAGE_WIDTH as u32, V17_PAGE_HEIGHT as u32).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pix.as_mut(),
+        );
+        let prefixes = decode_v17_native_prefix_bundle(V17_PREFIX_BUNDLE);
+        let native = decode_v17_expected(prefixes[14], V17_PREFIX_SHA256[14]);
+        let pdf = crate::render_document_pdf(
+            &document,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        assert!(pdf.starts_with(b"%PDF-"));
+        if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_EXPORT_DIR") {
+            let dir = std::path::Path::new(&dir);
+            std::fs::write(dir.join("public.pdf"), pdf).unwrap();
+            std::fs::write(dir.join("public-svg.rgba"), pix.data()).unwrap();
+            let mut white = vec![255u8; V17_PIXELS * 3];
+            for (&index, rgba) in &native {
+                let x = index % V17_PAGE_WIDTH;
+                let y = V17_PAGE_HEIGHT - 1 - index / V17_PAGE_WIDTH;
+                for c in 0..3 {
+                    white[(y * V17_PAGE_WIDTH + x) * 3 + c] =
+                        (u16::from(rgba.0[c]) + u16::from(255 - rgba.0[3])).min(255) as u8;
+                }
+            }
+            std::fs::write(dir.join("native.rgb"), white).unwrap();
+        }
+        let mut diff_pixels = 0usize;
+        let mut sums = [0u64; 3];
+        let mut maxima = [0u8; 3];
+        for (index, pixel) in pix.data().as_chunks::<4>().0.iter().enumerate() {
+            let x = index % V17_PAGE_WIDTH;
+            let y = index / V17_PAGE_WIDTH;
+            let native_index = (V17_PAGE_HEIGHT - 1 - y) * V17_PAGE_WIDTH + x;
+            let rgba = native.get(&native_index).copied().unwrap_or_default().0;
+            let mut different = false;
+            for c in 0..3 {
+                let expected = u16::from(rgba[c]) + u16::from(255 - rgba[3]);
+                let delta = pixel[c].abs_diff(expected.min(255) as u8);
+                sums[c] += u64::from(delta);
+                maxima[c] = maxima[c].max(delta);
+                different |= delta != 0;
+            }
+            diff_pixels += usize::from(different);
+        }
+        eprintln!(
+            "native support={} public-vs-native differing_pixels={diff_pixels} RGB_abs_sums={sums:?} RGB_max={maxima:?}",
+            native.len()
+        );
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/oilbrush3-public-fallback-v17-comparison.json"
+        ))
+        .unwrap();
+        let expected = &receipt["public_svg_vs_native"];
+        assert_eq!(
+            native.len() as u64,
+            receipt["native_alpha_support_pixels"].as_u64().unwrap()
+        );
+        assert_eq!(
+            diff_pixels as u64,
+            expected["differing_pixels"].as_u64().unwrap()
+        );
+        for c in 0..3 {
+            assert_eq!(
+                sums[c],
+                expected["rgb_absolute_error_sum"][c].as_u64().unwrap()
+            );
+            assert_eq!(
+                u64::from(maxima[c]),
+                expected["rgb_maximum_error"][c].as_u64().unwrap()
+            );
+        }
+    }
+}
+
+fn feedback_ratio_for_rendering_level(level: i32) -> f32 {
+    let (threshold, factor) = match level {
+        1 => (5, 0.095_f32),
+        2 => (10, 0.085_f32),
+        _ => (3, 0.1_f32),
+    };
+    factor * (threshold + 1) as f32
+}
+
+fn source_draw_state(page: PageSize, screen: [u32; 2], record: &[u8]) -> P4State {
+    let mut projection = [0.0; 16];
+    projection[0] = 2.0 / page.width as f32;
+    projection[5] = 2.0 / page.height as f32;
+    projection[10] = -2.0 / 65534.0;
+    projection[12] = -1.0;
+    projection[13] = -1.0;
+    projection[15] = 1.0;
+    let background_scale = screen[0].min(screen[1]) as f32 / 1440.0;
+    P4State {
+        projection,
+        model: model_from_addpoint(record),
+        depth_scale: [
+            (page.width as f32 / DEPTH_W as f32) / background_scale,
+            (page.height as f32 / DEPTH_H as f32) / background_scale,
+        ],
+    }
+}
+
+#[test]
+fn feedback_ratio_matches_native_level_uniforms() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../tools/oilbrush3-cadence/ratio-receipt.json"
+    ))
+    .unwrap();
+    for level in 0..=2 {
+        let case = &receipt["cases"][level.to_string()];
+        let uniforms = case["scalars"].as_array().unwrap();
+        let feedback_draws = case["draws"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|draw| draw["viewport"] == serde_json::json!([0, 0, 16, 16]))
+            .count();
+        assert!(feedback_draws > 0);
+        assert_eq!(uniforms.len(), feedback_draws);
+        for uniform in uniforms {
+            assert_eq!(uniform["binding"]["name"], "uBlendRatio");
+            let bits = u32::from_le_bytes(
+                (0..4)
+                    .map(|i| {
+                        u8::from_str_radix(&uniform["bits"].as_str().unwrap()[i * 2..i * 2 + 2], 16)
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_eq!(feedback_ratio_for_rendering_level(level).to_bits(), bits);
+        }
+        assert_eq!(case["queue_end_error"], 0);
+    }
+    assert_eq!(
+        feedback_ratio_for_rendering_level(-1).to_bits(),
+        feedback_ratio_for_rendering_level(0).to_bits()
+    );
+    assert_eq!(
+        feedback_ratio_for_rendering_level(3).to_bits(),
+        feedback_ratio_for_rendering_level(0).to_bits()
+    );
+}
+
+#[test]
+fn nonuniform_native_page_feedback_control() {
+    let state =
+        include_bytes!("../../../../../conformance/oilbrush3-nonuniform-feedback/p3-state.bin");
+    let params = P3State {
+        projection: std::array::from_fn(|i| read_f32(state, i * 4)),
+        model: std::array::from_fn(|i| read_f32(state, 64 + i * 4)),
+        depth_scale: [read_f32(state, 128), read_f32(state, 132)],
+        ratio: feedback_ratio_for_rendering_level(0),
+    };
+    assert_eq!(params.ratio.to_bits(), read_f32(state, 136).to_bits());
+    let raw = decode_zlib(
+        include_bytes!(
+            "../../../../../conformance/oilbrush3-nonuniform-feedback/page-before.rgba.zlib"
+        ),
+        V17_PIXELS * 4,
+        "5a1a1a667b6311e5a154b1d0dabeb350352b0e602c5dcdce67e895b9d6424ade",
+    );
+    let (pixels, remainder) = raw.as_chunks::<4>();
+    assert!(remainder.is_empty());
+    let canvas: Vec<Rgba> = pixels.iter().copied().map(Rgba).collect();
+    let expected = decode_zlib(
+        include_bytes!(
+            "../../../../../conformance/oilbrush3-nonuniform-feedback/feedback-after.rgba.zlib"
+        ),
+        FEEDBACK * FEEDBACK * 4,
+        "1034ae6df012a113f3bda73aad765a2b06f6648c3f479712ba214702feb27cd6",
+    );
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
+    let actual = render_p3_for_page(
+        &canvas,
+        PageSize {
+            width: V17_PAGE_WIDTH,
+            height: V17_PAGE_HEIGHT,
+        },
+        params,
+        &mask,
+        &depth,
+        &brush,
+    );
+    let actual: Vec<u8> = actual.iter().flat_map(|p| p.0).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn nonuniform_source_p4_prefixes_and_feedback() {
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let mut stroke = super::tests::public_stroke_from_fixture(&fixture);
+    for point in &mut stroke.points {
+        point.x += 500.0;
+        point.y += 500.0;
+    }
+    let context = super::PublicStrokeContext {
+        selected_gl_version: 1,
+        source: 0,
+        screen_resolution: [1920, 1080],
+        model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+    };
+    let records = super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+    let bytes: Vec<u8> = records
+        .iter()
+        .flatten()
+        .flat_map(|x| x.to_le_bytes())
+        .collect();
+    let native =
+        include_bytes!("../../../../../conformance/oilbrush3-nonuniform-feedback/addpoints.bin");
+    assert_eq!(bytes, native);
+    let page = PageSize {
+        width: V17_PAGE_WIDTH,
+        height: V17_PAGE_HEIGHT,
+    };
+    let mut canvas = vec![Rgba::default(); V17_PIXELS];
+    for y in 0..64 {
+        for x in 0..64 {
+            canvas[(480 + y) * page.width + 480 + x] =
+                Rgba([(3 * x) as u8, (3 * y) as u8, (2 * (x + y)) as u8, 255]);
+        }
+    }
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
+    let fixtures: [(&[u8], &str); 3] = [
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-nonuniform-feedback/p4-1.rgba.zlib"
+            ),
+            "21ae040a9e0525050d1cdab1693ac0ad02c3e727ac3e89197ba31f8177f32d4b",
+        ),
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-nonuniform-feedback/p4-2.rgba.zlib"
+            ),
+            "8d280061c29da5448bbba4202c84251e9fa4f6754c391b8aa277bdbef78a99e1",
+        ),
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-nonuniform-feedback/page-before.rgba.zlib"
+            ),
+            "5a1a1a667b6311e5a154b1d0dabeb350352b0e602c5dcdce67e895b9d6424ade",
+        ),
+    ];
+    let uniforms: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/oilbrush3-nonuniform-feedback/p4-uniforms.json"
+    ))
+    .unwrap();
+    for stamp in 0..3 {
+        let rec = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+        let state = source_draw_state(page, context.screen_resolution, rec);
+        for (name, values) in [
+            ("uProjectionMatrix", state.projection.as_slice()),
+            ("uModelMatrix", state.model.as_slice()),
+            ("uDepthMapScale", state.depth_scale.as_slice()),
+        ] {
+            let hex = uniforms[stamp][name].as_str().unwrap();
+            let captured: Vec<u8> = (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+                .collect();
+            for (i, value) in values.iter().enumerate() {
+                assert!(
+                    (value - read_f32(&captured, i * 4)).abs() <= 2e-7,
+                    "stamp {stamp} {name} {i}"
+                );
+            }
+        }
+        render_p4_with_records(
+            &mut canvas,
+            page,
+            stamp,
+            state,
+            P4Textures {
+                brush: &brush,
+                mask: &mask,
+                depth: &depth,
+            },
+            &bytes,
+        );
+        let expected = decode_zlib(fixtures[stamp].0, V17_PIXELS * 4, fixtures[stamp].1);
+        let actual: Vec<u8> = canvas.iter().flat_map(|p| p.0).collect();
+        assert_eq!(actual, expected, "P4 prefix {}", stamp + 1);
+    }
+    let captured =
+        include_bytes!("../../../../../conformance/oilbrush3-nonuniform-feedback/p3-state.bin");
+    let state = source_draw_state(
+        page,
+        context.screen_resolution,
+        &bytes[3 * ADDPOINT_STRIDE..4 * ADDPOINT_STRIDE],
+    );
+    let params = P3State {
+        projection: state.projection,
+        model: state.model,
+        depth_scale: state.depth_scale,
+        ratio: feedback_ratio_for_rendering_level(0),
+    };
+    for (offset, values) in [
+        (0, params.projection.as_slice()),
+        (64, params.model.as_slice()),
+        (128, params.depth_scale.as_slice()),
+        (136, std::slice::from_ref(&params.ratio)),
+    ] {
+        for (i, value) in values.iter().enumerate() {
+            assert!(
+                (value - read_f32(captured, offset + i * 4)).abs() <= 2e-7,
+                "P3 uniform at {offset}, lane {i}"
+            );
+        }
+    }
+    let actual: Vec<u8> = render_p3_for_page(&canvas, page, params, &mask, &depth, &brush)
+        .iter()
+        .flat_map(|p| p.0)
+        .collect();
+    let expected = decode_zlib(
+        include_bytes!(
+            "../../../../../conformance/oilbrush3-nonuniform-feedback/feedback-after.rgba.zlib"
+        ),
+        FEEDBACK * FEEDBACK * 4,
+        "1034ae6df012a113f3bda73aad765a2b06f6648c3f479712ba214702feb27cd6",
+    );
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn independent_nonuniform_source_p4_prefixes_and_feedback() {
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let mut stroke = super::tests::public_stroke_from_fixture(&fixture);
+    for (point, (x, y)) in stroke.points.iter_mut().zip([
+        (500.0, 500.0),
+        (504.0, 510.0),
+        (515.0, 515.0),
+        (525.0, 503.0),
+    ]) {
+        point.x = x;
+        point.y = y;
+    }
+    let context = super::PublicStrokeContext {
+        selected_gl_version: 1,
+        source: 0,
+        screen_resolution: [1920, 1080],
+        model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+    };
+    let records = super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+    let bytes: Vec<u8> = records
+        .iter()
+        .flatten()
+        .flat_map(|x| x.to_le_bytes())
+        .collect();
+    let native =
+        include_bytes!("../../../../../conformance/oilbrush3-independent-feedback/addpoints.bin");
+    assert!(bytes == native, "independent source records differ");
+    let page = PageSize {
+        width: V17_PAGE_WIDTH,
+        height: V17_PAGE_HEIGHT,
+    };
+    let mut canvas = vec![Rgba::default(); V17_PIXELS];
+    for y in 0..64 {
+        for x in 0..64 {
+            canvas[(480 + y) * page.width + 480 + x] =
+                Rgba([(7 * x) as u8, (5 * y) as u8, (3 * (x ^ y)) as u8, 255]);
+        }
+    }
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
+    let fixtures: [(&[u8], &str); 3] = [
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-independent-feedback/after-0.zlib"
+            ),
+            "b0652f7b2f3486e1674c014978c01a5099396d157573dcd0e9c9811aded9a2d4",
+        ),
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-independent-feedback/after-1.zlib"
+            ),
+            "e39a4141d55c3be20908e9afce3f4c55468c73707c9246220b10753568713e5e",
+        ),
+        (
+            include_bytes!(
+                "../../../../../conformance/oilbrush3-independent-feedback/after-2.zlib"
+            ),
+            "7535411549715bdd63fdab4e604a9ced6a962fb70bdb62cedee3c2636518fe64",
+        ),
+    ];
+    let uniforms: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/oilbrush3-independent-feedback/uniforms.json"
+    ))
+    .unwrap();
+    for stamp in 0..3 {
+        let rec = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+        let state = source_draw_state(page, context.screen_resolution, rec);
+        for (name, values) in [
+            ("uProjectionMatrix", state.projection.as_slice()),
+            ("uModelMatrix", state.model.as_slice()),
+            ("uDepthMapScale", state.depth_scale.as_slice()),
+        ] {
+            let hex = uniforms[stamp][name].as_str().unwrap();
+            let captured: Vec<u8> = (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+                .collect();
+            for (i, value) in values.iter().enumerate() {
+                assert!(
+                    (value - read_f32(&captured, i * 4)).abs() <= 2e-7,
+                    "stamp {stamp} {name} {i}"
+                );
+            }
+        }
+        render_p4_with_records(
+            &mut canvas,
+            page,
+            stamp,
+            state,
+            P4Textures {
+                brush: &brush,
+                mask: &mask,
+                depth: &depth,
+            },
+            &bytes,
+        );
+        let expected = decode_zlib(fixtures[stamp].0, V17_PIXELS * 4, fixtures[stamp].1);
+        let actual: Vec<u8> = canvas.iter().flat_map(|p| p.0).collect();
+        assert!(
+            actual == expected,
+            "P4 prefix {} differs in {} channels",
+            stamp + 1,
+            actual.iter().zip(&expected).filter(|(a, b)| a != b).count()
+        );
+    }
+    let state = source_draw_state(
+        page,
+        context.screen_resolution,
+        &bytes[3 * ADDPOINT_STRIDE..4 * ADDPOINT_STRIDE],
+    );
+    let params = P3State {
+        projection: state.projection,
+        model: state.model,
+        depth_scale: state.depth_scale,
+        ratio: feedback_ratio_for_rendering_level(0),
+    };
+    for (name, values) in [
+        ("uProjectionMatrix", params.projection.as_slice()),
+        ("uModelMatrix", params.model.as_slice()),
+        ("uDepthMapScale", params.depth_scale.as_slice()),
+    ] {
+        let hex = uniforms[3][name].as_str().unwrap();
+        let captured: Vec<u8> = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect();
+        assert_eq!(captured.len(), values.len() * 4, "P3 {name} length");
+        for (i, value) in values.iter().enumerate() {
+            assert!(
+                (value - read_f32(&captured, i * 4)).abs() <= 2e-7,
+                "P3 {name} lane {i}"
+            );
+        }
+    }
+    let actual: Vec<u8> = render_p3_for_page(&canvas, page, params, &mask, &depth, &brush)
+        .iter()
+        .flat_map(|p| p.0)
+        .collect();
+    let expected = decode_zlib(
+        include_bytes!("../../../../../conformance/oilbrush3-independent-feedback/after-3.zlib"),
+        FEEDBACK * FEEDBACK * 4,
+        "d41eb34f82014b0fc8113036a92fe2db03d056195fcb8608f421411cbbbaeaf4",
+    );
+    assert!(
+        actual == expected,
+        "P3 differs in {} channels",
+        actual.iter().zip(&expected).filter(|(a, b)| a != b).count()
+    );
+    let feedback: Vec<Rgba> = actual.as_chunks::<4>().0.iter().map(|&p| Rgba(p)).collect();
+    render_p4_with_records(
+        &mut canvas,
+        page,
+        3,
+        state,
+        P4Textures {
+            brush: &feedback,
+            mask: &mask,
+            depth: &depth,
+        },
+        &bytes,
+    );
+    let expected = decode_zlib(
+        include_bytes!("../../../../../conformance/oilbrush3-independent-feedback/after-4.zlib"),
+        V17_PIXELS * 4,
+        "e0a8670b92c9fafc397ee334a2346d68c7269ec50847f0871ebd060ba1427d29",
+    );
+    let actual: Vec<u8> = canvas.iter().flat_map(|p| p.0).collect();
+    assert_eq!(actual, expected, "P4 after patterned feedback");
 }

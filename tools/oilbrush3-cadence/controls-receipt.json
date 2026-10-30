@@ -1,0 +1,181 @@
+{
+  "scope": "Synthetic cold Model ObjectStroke through native Drawing on host Mesa; input timestamps and path controls. P3/P4 roles inherited from pinned V17 shader identification and distinguished by viewport. Host clock remains live. This does not prove the trigger mechanism, Android device, or saved-note parity.",
+  "original_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "cases": {
+    "baseline": {
+      "points_source": "[[0.0,0.0],[10.0,0.0],[20.0,5.0],[30.0,5.0]]",
+      "timestamps_source": "[0,8,19,37]",
+      "derived_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+      "observed": {
+        "p4_count": 15,
+        "p3_after_p4": [
+          3,
+          7,
+          11
+        ],
+        "drawing_return": 1,
+        "queue_run_count": 15,
+        "queue_end_error": 0,
+        "guest_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "slow": {
+      "points_source": "[[0.0,0.0],[10.0,0.0],[20.0,5.0],[30.0,5.0]]",
+      "timestamps_source": "[0,800,1900,3700]",
+      "derived_runner_sha256": "3d2f5e78bd4d585ef842ea5b382236b1fb4fad217c1d9e76ca289d25da4a9904",
+      "observed": {
+        "p4_count": 15,
+        "p3_after_p4": [
+          3,
+          7,
+          11
+        ],
+        "drawing_return": 1,
+        "queue_run_count": 15,
+        "queue_end_error": 0,
+        "guest_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "stationary": {
+      "points_source": "[[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0]]",
+      "timestamps_source": "[0,8,19,37]",
+      "derived_runner_sha256": "d77fef05d1e9c491e04f3f0e51b3ea1777069d5faecbe39e44d8584d5bdddb58",
+      "observed": {
+        "p4_count": 13,
+        "p3_after_p4": [
+          3,
+          7,
+          11
+        ],
+        "drawing_return": 1,
+        "queue_run_count": 15,
+        "queue_end_error": 0,
+        "guest_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "long": {
+      "points_source": "[[0.0,0.0],[40.0,0.0],[80.0,20.0],[120.0,20.0]]",
+      "timestamps_source": "[0,8,19,37]",
+      "derived_runner_sha256": "c4cb7b33c3958e7f370a7074cb54c5535d52f152e2d2ff485a4aa797c4dac82a",
+      "observed": {
+        "p4_count": 49,
+        "p3_after_p4": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39,
+          43,
+          47
+        ],
+        "drawing_return": 1,
+        "queue_run_count": 15,
+        "queue_end_error": 0,
+        "guest_gl_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "shader_compile_status": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "program_link_status": [
+    1,
+    1,
+    1
+  ]
+}

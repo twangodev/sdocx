@@ -364,7 +364,7 @@ mod tests {
     use serde_json::Value;
     use sha2::{Digest, Sha256};
 
-    const FIXTURE: &str = include_str!("../../../../conformance/oilbrush3-native.json");
+    pub(super) const FIXTURE: &str = include_str!("../../../../conformance/oilbrush3-native.json");
 
     struct TestInput {
         points: Vec<Point>,
@@ -507,7 +507,7 @@ mod tests {
         }
     }
 
-    fn public_stroke_from_fixture(fixture: &Value) -> crate::Stroke {
+    pub(super) fn public_stroke_from_fixture(fixture: &Value) -> crate::Stroke {
         let case = &fixture["cases"][0];
         let values = input_from_fixture(fixture, case);
         let input = &fixture["input"];

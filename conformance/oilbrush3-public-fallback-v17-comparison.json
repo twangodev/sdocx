@@ -1,0 +1,16 @@
+{
+  "schema": "sdocx.oilbrush3.public-fallback-comparison.v1",
+  "scope": "Synthetic cold native Model ObjectStroke -> Drawing GLV1/RTV1 host-Mesa control compared to the default public SVG export, rasterized with resvg on a 1920x1080 white page at one pixel per page unit. Native transparent premultiplied RGBA was composited once over white; native lower-left readback was flipped vertically.",
+  "stroke_input": "conformance/oilbrush3-native.json",
+  "native_capture_provenance": "conformance/oilbrush3-v17-native-paint/provenance.json",
+  "native_prefix_bundle_sha256": "92e5080f149a59e8569301d3d0577b1df7d13f1d0dd71dc63037342e6470ba05",
+  "native_prefix": 15,
+  "native_alpha_support_pixels": 76,
+  "public_svg_vs_native": {
+    "differing_pixels": 161,
+    "rgb_absolute_error_sum": [17991, 8185, 1671],
+    "rgb_maximum_error": [187, 85, 17]
+  },
+  "reproduction": "CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --lib --features pdf,serde public_svg_fallback_differs_from_v17_native_frame -- --nocapture",
+  "limitations": "One synthetic host capture and one SVG rasterizer; this is not a saved-note, device, arbitrary-scale, or PDF comparison. It measures white-paper RGB, not intrinsic alpha."
+}

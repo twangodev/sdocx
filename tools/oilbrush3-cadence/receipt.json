@@ -1,0 +1,883 @@
+{
+  "scope": "Synthetic cold Model ObjectStroke through native Drawing on host Mesa, doubled V17 coordinates; original timestamps and style. Program roles inherited from the pinned V17 shader identification; viewport distinguishes the two programs in this control. This single alternate path does not prove feedback trigger, saved-note or device parity.",
+  "input": {
+    "advanced_setting": "",
+    "color_argb": "0x8044aaee",
+    "curve_enabled": true,
+    "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+    "native_ObjectStroke_address": "0x10034b90",
+    "orientation_f32_bits": [
+      "00000000",
+      "0000803e",
+      "0000003f",
+      "0000403f"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.OilBrush3",
+    "pen_size_f32_bits": "00000041",
+    "points_f32_bits": [
+      [
+        "00000000",
+        "00000000"
+      ],
+      [
+        "0000a041",
+        "00000000"
+      ],
+      [
+        "00002042",
+        "00002041"
+      ],
+      [
+        "00007042",
+        "00002041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcccc3d",
+      "3333b33e",
+      "3333333f",
+      "0000803f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "cdcc4c3e",
+      "cdcccc3e",
+      "9a99193f"
+    ],
+    "timestamps_i32": [
+      0,
+      8,
+      19,
+      37
+    ],
+    "tool_type": 2
+  },
+  "draws": [
+    {
+      "kind": "P4",
+      "p4_count": 1,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAP4AlKrIAAAAAAAAAAIAlKrIAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 2,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAP4AlKrIAAAAAAAAAAIAlKrIAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAADAPwAAAD8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 3,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAP4AlKrIAAAAAAAAAAIAlKrIAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAvwAAwD8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 3,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAP4AlKrIAAAAAAAAAAIAlKrIAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAvwAAwD8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 4,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAP4AlKrIAAAAAAAAAAIAlKrIAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAvwAAwD8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 5,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAMl4LQAAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 6,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "XaZ8PwAAAAAAAAAAAAAAAAAAAADRrIE/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAM2OLQAAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 7,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "Nfp4PwAAAAAAAAAAAAAAAAAAAADmgoM/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAALi3UQAAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 7,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "Dn11PwAAAAAAAAAAAAAAAAAAAAB5QYU/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAcjwOQQAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 8,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "Dn11PwAAAAAAAAAAAAAAAAAAAAB5QYU/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAcjwOQQAAAAAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 9,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "ZDNyP3hJW7sAAAAAAAAAAH5JW7tN5oY/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAATtgzQVyHnTwAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 10,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "y0hvP7wsO7wAAAAAAAAAAL4sO7ybW4g/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAA3JBXQdBgGj4AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 11,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "L9dsP02IsrwAAAAAAAAAAFCIsrxnlIk/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAaEl7QfFU0D4AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 11,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "eO9qP4ZAC70AAAAAAAAAAIlAC71DiIo/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAA+4CPQQajST8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 12,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "eO9qP4ZAC70AAAAAAAAAAIlAC71DiIo/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAA+4CPQQajST8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 13,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "apppP6KdQr0AAAAAAAAAAJmdQr3KMos/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAjEmhQcswpT8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 14,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "fcZoP5yYe70AAAAAAAAAAJiYe73CnIs/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAASCSyQYLL8D8AAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 15,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "4H1oP2s2m70AAAAAAAAAAGw2m70PwYs/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAABP/CQSxNJUAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 15,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "47loPxbPuL0AAAAAAAAAABXPuL0Oo4s/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAwNnTQaVOWUAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 16,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "47loPxbPuL0AAAAAAAAAABXPuL0Oo4s/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAwNnTQaVOWUAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 17,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "Y3BpP9by1b0AAAAAAAAAANPy1b3OR4s/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAfLTkQRg1ikAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 18,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "yO5oP1I36L0AAAAAAAAAAFg36L2biIs/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAJo/1QdnsqkAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 19,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "niBlP/fK4r0AAAAAAAAAAPjK4r2xb40/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAzzQDQoWvyUAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 19,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "fEJhP9le2L0AAAAAAAAAANde2L3CXo8/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAADKILQkbl5EAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 20,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "fEJhP9le2L0AAAAAAAAAANde2L3CXo8/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAADKILQkbl5EAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 21,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "J2pdP0nMyL0AAAAAAAAAAEbMyL3tSpE/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAASA8UQhyO/EAAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 22,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "B7BZP7AGtL0AAAAAAAAAALEGtL39J5M/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAhHwcQgNVCEEAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 23,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "thxWP0j5mL0AAAAAAAAAAEj5mL2k8ZQ/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAjUlQj/eEEEAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P3",
+      "p4_count": 23,
+      "viewport": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "M9hSP23Ub70AAAAAAAAAAGzUb73nk5Y/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAASCMuQq2jF0EAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 24,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "M9hSP23Ub70AAAAAAAAAAGzUb73nk5Y/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAASCMuQq2jF0EAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 25,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "YQ1QPwg0JL0AAAAAAAAAAAg0JL1P+Zc/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAkBE3QqZqHEEAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    },
+    {
+      "kind": "P4",
+      "p4_count": 26,
+      "viewport": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "uniforms": [
+        {
+          "name": "uProjectionMatrix",
+          "payload_base64": "iYiIOgAAAAAAAAAAAAAAAAAAAADWufI6AAAAAAAAAAAAAAAAAAAAAAABALgAAAAAAACAvwAAgL8AAAAAAACAPw=="
+        },
+        {
+          "name": "uModelMatrix",
+          "payload_base64": "09VNPzXxoLwAAAAAAAAAADbxoLwVFZk/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAA1v8/QiszH0EAAAAAAACAPw=="
+        },
+        {
+          "name": "uDepthMapScale",
+          "payload_base64": "l+kJQfC9d0A="
+        }
+      ]
+    }
+  ],
+  "native_return": 1,
+  "queue_end_error": {
+    "actual_mesa_error": 0,
+    "consumed_by_observer": true,
+    "does_not_run_per_draw": true,
+    "phase": "queue_end_observer",
+    "source": "single actual Mesa glGetError observer after complete native queue drain"
+  },
+  "raw_capture_sha256": "16b1bbbe5b640095ea6c3cfcee7dd52913c728366d7fefbbadf49d6f45743d0a",
+  "original_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "derived_runner_sha256": "2ce3fb5425bd74441fc66c026ba7e02051de779cd58f542758bbc7bce2ab599f",
+  "p3_after_p4": [
+    3,
+    7,
+    11,
+    15,
+    19,
+    23
+  ],
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "raw_capture_sha256_scope": "Original transient log identity only; log not retained, replay verifies extracted state.",
+  "queue_run_count": 15,
+  "guest_gl_errors": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "shader_compile_status": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "program_link_status": [
+    1,
+    1,
+    1
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "scope": "Synthetic cold native Drawing host Mesa control. A 64x64 opaque gradient is uploaded into the initialized 1920x1080 page attachment immediately before the first native P4 draw. The test reconstructs the first three P4 pages from that injected page and actual source input, followed by P3 feedback. It does not establish normal prior-page initialization, device behavior, or saved-note export parity.",
+  "source_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "input_points": [
+    [
+      500,
+      500
+    ],
+    [
+      510,
+      500
+    ],
+    [
+      520,
+      505
+    ],
+    [
+      530,
+      505
+    ]
+  ],
+  "injected_region": [
+    480,
+    480,
+    64,
+    64
+  ],
+  "injected_rgba": "[3*x,3*y,2*(x+y),255] for local x,y in [0,63]",
+  "first_page_before_nonzero": 4096,
+  "p4_page_texture": 1,
+  "first_p3_sampled_unit_0_texture": 1,
+  "first_p3_output_texture": 10,
+  "p3_output_unique_counts": [
+    49,
+    71,
+    73
+  ],
+  "queue_end_mesa_error": 0,
+  "page_before_raw_sha256": "5a1a1a667b6311e5a154b1d0dabeb350352b0e602c5dcdce67e895b9d6424ade",
+  "feedback_after_raw_sha256": "1034ae6df012a113f3bda73aad765a2b06f6648c3f479712ba214702feb27cd6",
+  "state_sha256": "9c7a6eee66d8f62ff11c386b0bff8d80cfedf279b0ec4eecf4172f4757d8eaa3",
+  "ratio_source": "0.4 retained from existing V17 captured state; this value is an explicit model input",
+  "replay": "tools/oilbrush3-cadence/nonuniform_feedback.py",
+  "addpoint_stream_sha256": "505a12f03f2a7c3cbfed617c8d695cd933b1bc74ee008eda6bb0dd1b4d65f1ce",
+  "p4_prefix_raw_sha256": [
+    "21ae040a9e0525050d1cdab1693ac0ad02c3e727ac3e89197ba31f8177f32d4b",
+    "8d280061c29da5448bbba4202c84251e9fa4f6754c391b8aa277bdbef78a99e1",
+    "5a1a1a667b6311e5a154b1d0dabeb350352b0e602c5dcdce67e895b9d6424ade"
+  ],
+  "p4_uniforms": "p4-uniforms.json",
+  "replay_environment": {
+    "python": "3.14.3",
+    "unicorn": "2.1.4",
+    "command": "/tmp/sdocx-unicorn-venv/bin/python tools/oilbrush3-cadence/nonuniform_feedback.py",
+    "requirements": "Existing scratch/oilbrush3-public-drawing-v17 runner and preflight, its transitive tmp/vector-parity-plan helper tree and native libraries, and host Mesa; preflight validates pinned inputs. These local dependencies are not all retained in this receipt."
+  },
+  "source_model": "The actual translated four-point input regenerates all 15 native AddPoint records using host atan2; the first three records drive P4 and the fourth drives P3. Captured projection and depth scale and explicit ratio 0.4 remain model inputs."
+}
