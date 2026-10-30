@@ -4,7 +4,7 @@ The pinned APK pattern 1 SVG is loaded into the native pattern store. A direct U
 
 Run `UV_CACHE_DIR=/tmp/sdocx-uv-cache uv run --offline --with unicorn==2.1.4 python tools/tapepen-public-drawing/native-pattern-source.py --run --shape64 --size12`. The wrapper verifies the capture harness inputs and their preflight contract, then exits after checking both direct calls. It requires the same locally extracted, hash-pinned APK resource, native libraries and host dependencies as the Drawing captures. The output hash checks compare against the retained capture payload identities; captured pixels are not inputs to the native call.
 
-This identifies a source-to-upload path for this asset at these sizes, under the capture's explicit host math and emulation adapters. It is a native test oracle, not a Rust, WASM or general SVG rasterizer. Changed SVG inputs, arbitrary dimensions, Android-device behavior and public export integration remain unverified.
+This identifies a source-to-upload path for this asset at these sizes, under the capture's explicit host math and emulation adapters. It is a native test oracle, not a Rust, WASM or general SVG rasterizer. Two changed SVG inputs were subsequently checked at 64 and 128; see `capsule-scan-control-README.md`. Arbitrary dimensions, Android-device behavior and public export integration remain unverified.
 
 This is a workspace probe, not a standalone checkout replay. It requires the
 local `capture_candidate.py`, `preflight_candidate.py`, `tapepen_canvas_native.py`,

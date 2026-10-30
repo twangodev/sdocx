@@ -1,0 +1,20 @@
+{
+  "source": "APK tape_pattern_01.svg; hash 9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+  "mutation_count_each": 136,
+  "cases": {
+    "color": {
+      "source_sha256": "198d1837f26336d46061936281addbff70f2d1e71c6d012ba748dfa564efbaf9",
+      "rgba_sha256": {
+        "64": "7243f4e9fb60d921b7dc94dac72a197bf5632582e23a7e0056e59baf24bdc5d5",
+        "128": "66b7258d7acb3abd69c1919f4b5739ed574f102badfe124f61340b6445647b37"
+      }
+    },
+    "geometry": {
+      "source_sha256": "6d00dbc4b62f0e793f0a1d781c4c4876069d9ae17dfbf618df11e5a541f2d547",
+      "rgba_sha256": {
+        "64": "9f19ac6ab3702de697d059ab6da77b91edf233f62584dfb2e6c23a5a56ef771e",
+        "128": "76d5e8064e7ab1b93f002d54095f514dc58ed06e180ddb580861a1f131beb6bf"
+      }
+    }
+  }
+}
