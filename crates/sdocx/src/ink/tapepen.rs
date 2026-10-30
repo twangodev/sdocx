@@ -1174,3 +1174,18 @@ fn v248_scaled_source_mask() {
     }
     std::fs::write(path, mask).unwrap();
 }
+
+#[test]
+fn v249_size_source_mask() {
+    let Ok(path) = std::env::var("SDOCX_TAPE_V249_MASK_OUT") else { return; };
+    let size: f32 = std::env::var("SDOCX_TAPE_V249_SIZE").unwrap().parse().unwrap();
+    assert!([2., 8., 16.].contains(&size));
+    let points = tape_curve(
+        &[P { x: 13., y: 21. }, P { x: 22., y: 29. }, P { x: 34., y: 18. }, P { x: 47., y: 28. }],
+        0.5, 0.0, [68. / 255., 170. / 255., 238. / 255.],
+    );
+    let aa = tape_aa_width(tape_size_level(size, 256, 256));
+    let radii = [size / 8., size / 2.];
+    let extent = radii.map(|r| r * (1. + aa));
+    std::fs::write(path, filled_mask(&points, radii, extent, aa)).unwrap();
+}

@@ -1,0 +1,432 @@
+{
+  "scope": "Three synthetic host-Mesa identity-viewport controls. Source-derived SVG and SVG-derived PDF only; not direct document export or device parity.",
+  "replay": "UV_CACHE_DIR=/tmp/sdocx-uv-cache uv run --offline --with unicorn==2.1.4 python tools/tapepen-public-drawing/phase-replay.py --run --shape --trace-size --sweep-size SIZE",
+  "cases": {
+    "2": {
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "color_type": 2,
+        "curve_enabled": true,
+        "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+        "native_ObjectStroke_address": "0x1003b070",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pattern_index": 1,
+        "pattern_scale_f32_bits": "0000803f",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00005041",
+            "0000a841"
+          ],
+          [
+            "0000b041",
+            "0000e841"
+          ],
+          [
+            "00000842",
+            "00009041"
+          ],
+          [
+            "00003c42",
+            "0000e041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcccc3d",
+          "3333b33e",
+          "3333333f",
+          "0000803f"
+        ],
+        "reveal_mode": 0,
+        "stroke_type": 0,
+        "tape_pattern_asset": {
+          "byte_count": 13182,
+          "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+          "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+          "store_call": {
+            "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+            "index": 1,
+            "return_abi": "void; return register is not interpreted",
+            "source_bytes": 13182,
+            "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+          }
+        },
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "tool_type": 2
+      },
+      "profile": {
+        "bitmap_target_dimensions": [
+          256,
+          256
+        ],
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 256,
+        "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+        "screen_resolution": [
+          256,
+          256
+        ],
+        "width": 256
+      },
+      "native_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+        "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "uniform_f32_le_hex": {
+        "uVertexHalfExtent": "9a99993e9a99993f",
+        "uEllipseRadii": "0000803e0000803f",
+        "uPosOffset": "0000000000000000",
+        "uShadowMaskOffsetUV": "0050383900d04c39",
+        "patternSize": "0000804200008042",
+        "grainOffset": "000050410000a841"
+      },
+      "native_sha256": "53fa24639a9beb113413715b83c9e84c7410ca16617eb62b0deeb60c4164ba3f",
+      "native_log_sha256": "d5c8bc565acd9cb243e3749f6f2c432c32b41c76305098062266c87316898fdc",
+      "mask_sha256": "5a707ee80f28249c433683f6dd0c03224f31c3cfdad3012d974ad73b702b018f",
+      "svg": {
+        "l1": 11,
+        "max": 1,
+        "different_channels": 11
+      },
+      "mupdf": {
+        "l1": 130,
+        "max": 3,
+        "different_channels": 105
+      },
+      "pdfium_white": {
+        "l1": 154,
+        "max": 2,
+        "different_channels": 145
+      },
+      "native_mask_alpha_sha256": "5a707ee80f28249c433683f6dd0c03224f31c3cfdad3012d974ad73b702b018f",
+      "mask": {
+        "l1": 0,
+        "max": 0,
+        "different_channels": 0
+      }
+    },
+    "8": {
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "color_type": 2,
+        "curve_enabled": true,
+        "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+        "native_ObjectStroke_address": "0x1003b070",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pattern_index": 1,
+        "pattern_scale_f32_bits": "0000803f",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00005041",
+            "0000a841"
+          ],
+          [
+            "0000b041",
+            "0000e841"
+          ],
+          [
+            "00000842",
+            "00009041"
+          ],
+          [
+            "00003c42",
+            "0000e041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcccc3d",
+          "3333b33e",
+          "3333333f",
+          "0000803f"
+        ],
+        "reveal_mode": 0,
+        "stroke_type": 0,
+        "tape_pattern_asset": {
+          "byte_count": 13182,
+          "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+          "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+          "store_call": {
+            "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+            "index": 1,
+            "return_abi": "void; return register is not interpreted",
+            "source_bytes": 13182,
+            "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+          }
+        },
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "tool_type": 2
+      },
+      "profile": {
+        "bitmap_target_dimensions": [
+          256,
+          256
+        ],
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 256,
+        "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+        "screen_resolution": [
+          256,
+          256
+        ],
+        "width": 256
+      },
+      "native_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+        "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "uniform_f32_le_hex": {
+        "uVertexHalfExtent": "75b6943f75b69440",
+        "uEllipseRadii": "0000803f00008040",
+        "uPosOffset": "0000000000000000",
+        "uShadowMaskOffsetUV": "0052383a00cc4c3a",
+        "patternSize": "0000804200008042",
+        "grainOffset": "000050410000a841"
+      },
+      "native_sha256": "9f5e7a3e05da0d4742fdf9639721317b1f4c1a0047a7ee6294499e88f6117e34",
+      "native_log_sha256": "713162fa1b4ba67066af04d6d928e1630f1983239026ffafe1066e3c2d986ff6",
+      "mask_sha256": "d0a4f0394a4352acdf795406edc842a74df6bbe144506fff01b8a354804fcee9",
+      "svg": {
+        "l1": 20,
+        "max": 1,
+        "different_channels": 20
+      },
+      "mupdf": {
+        "l1": 356,
+        "max": 2,
+        "different_channels": 335
+      },
+      "pdfium_white": {
+        "l1": 342,
+        "max": 1,
+        "different_channels": 342
+      },
+      "native_mask_alpha_sha256": "d0a4f0394a4352acdf795406edc842a74df6bbe144506fff01b8a354804fcee9",
+      "mask": {
+        "l1": 0,
+        "max": 0,
+        "different_channels": 0
+      }
+    },
+    "16": {
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0x8044aaee",
+        "color_type": 2,
+        "curve_enabled": true,
+        "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+        "native_ObjectStroke_address": "0x1003b070",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pattern_index": 1,
+        "pattern_scale_f32_bits": "0000803f",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+        "pen_size_f32_bits": "00008041",
+        "points_f32_bits": [
+          [
+            "00005041",
+            "0000a841"
+          ],
+          [
+            "0000b041",
+            "0000e841"
+          ],
+          [
+            "00000842",
+            "00009041"
+          ],
+          [
+            "00003c42",
+            "0000e041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcccc3d",
+          "3333b33e",
+          "3333333f",
+          "0000803f"
+        ],
+        "reveal_mode": 0,
+        "stroke_type": 0,
+        "tape_pattern_asset": {
+          "byte_count": 13182,
+          "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+          "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+          "store_call": {
+            "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+            "index": 1,
+            "return_abi": "void; return register is not interpreted",
+            "source_bytes": 13182,
+            "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+          }
+        },
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "tool_type": 2
+      },
+      "profile": {
+        "bitmap_target_dimensions": [
+          256,
+          256
+        ],
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 256,
+        "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+        "screen_resolution": [
+          256,
+          256
+        ],
+        "width": 256
+      },
+      "native_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+        "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "uniform_f32_le_hex": {
+        "uVertexHalfExtent": "49c6094049c60941",
+        "uEllipseRadii": "0000004000000041",
+        "uPosOffset": "0000000000000000",
+        "uShadowMaskOffsetUV": "0052b83a00cdcc3a",
+        "patternSize": "0000804200008042",
+        "grainOffset": "000050410000a841"
+      },
+      "native_sha256": "38cd03d7af5c3e5cc4c8674ca06c2760e65f428d6f69ce83c77565767c83d818",
+      "native_log_sha256": "7ef3ed605a4c4a05c222318ed679f573912d41c2c7f16e206c0995d6cef4ddae",
+      "mask_sha256": "505a71fd15a22a1b8eefadb404ce3466ad4829425dd4881cbd4c1b61138914cf",
+      "svg": {
+        "l1": 13,
+        "max": 1,
+        "different_channels": 13
+      },
+      "mupdf": {
+        "l1": 603,
+        "max": 2,
+        "different_channels": 599
+      },
+      "pdfium_white": {
+        "l1": 582,
+        "max": 1,
+        "different_channels": 582
+      },
+      "native_mask_alpha_sha256": "505a71fd15a22a1b8eefadb404ce3466ad4829425dd4881cbd4c1b61138914cf",
+      "mask": {
+        "l1": 0,
+        "max": 0,
+        "different_channels": 0
+      }
+    }
+  }
+}
