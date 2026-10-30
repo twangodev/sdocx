@@ -12,6 +12,8 @@ use std::fmt;
 
 use super::path::{P, Quad};
 mod source;
+#[allow(unused_imports)]
+pub(crate) use source::plan_stroke;
 pub(crate) use source::prepare_stroke;
 
 const MAX_SOURCE_POINTS: usize = 16_384;

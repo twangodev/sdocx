@@ -3,10 +3,7 @@ use super::{
 };
 use crate::{Stroke, StrokeStyle};
 
-pub(crate) fn prepare_stroke(
-    stroke: &Stroke,
-    inverse_scale: f32,
-) -> Result<Vec<SampledRecord>, SamplerError> {
+pub(crate) fn plan_stroke(stroke: &Stroke, inverse_scale: f32) -> Result<usize, SamplerError> {
     let rendering = stroke
         .rendering
         .as_ref()
@@ -113,13 +110,6 @@ pub(crate) fn prepare_stroke(
             Err(SamplerError::Invalid("nonfinite source channel"))
         }
     };
-    let channels = |values: &[f64]| {
-        values
-            .iter()
-            .copied()
-            .map(finite)
-            .collect::<Result<Vec<_>, _>>()
-    };
     if stroke
         .timestamps
         .iter()
@@ -144,10 +134,21 @@ pub(crate) fn prepare_stroke(
     if size <= 0.0 {
         return Err(SamplerError::Invalid("nonfinite or nonpositive geometry"));
     }
-    let planned = super::plan_records(count, |i| super::P {
+    super::plan_records(count, |i| super::P {
         x: stroke.points[i].x as f32,
         y: stroke.points[i].y as f32,
-    })?;
+    })
+}
+
+pub(crate) fn prepare_stroke(
+    stroke: &Stroke,
+    inverse_scale: f32,
+) -> Result<Vec<SampledRecord>, SamplerError> {
+    let planned = plan_stroke(stroke, inverse_scale)?;
+    let style = &stroke.rendering.as_ref().unwrap().style;
+    let color = style.color_argb.unwrap();
+    let size = style.pen_size.unwrap();
+    let channels = |values: &[f64]| values.iter().map(|&value| value as f32).collect();
     let alpha = AlphaState {
         alpha_byte: (color >> 24) as u8,
         square_pressure_flag: 0,
@@ -166,16 +167,14 @@ pub(crate) fn prepare_stroke(
         points: stroke
             .points
             .iter()
-            .map(|p| {
-                Ok(super::P {
-                    x: finite(p.x)?,
-                    y: finite(p.y)?,
-                })
+            .map(|p| super::P {
+                x: p.x as f32,
+                y: p.y as f32,
             })
-            .collect::<Result<Vec<_>, SamplerError>>()?,
-        pressure: channels(&stroke.pressures)?,
-        tilt: channels(&stroke.tilts)?,
-        orientation: channels(&stroke.orientations)?,
+            .collect(),
+        pressure: channels(&stroke.pressures),
+        tilt: channels(&stroke.tilts),
+        orientation: channels(&stroke.orientations),
         timestamps: stroke.timestamps.clone(),
     };
     let records = if inverse_scale == 1. {
@@ -253,7 +252,39 @@ mod serialized_fresh_native_test {
             prepare_stroke(&bad_channel, 0.75),
             Err(super::SamplerError::Invalid("nonfinite source channel"))
         ));
+        let mut bad_count = stroke.clone();
+        bad_count.pressures.pop();
+        let mut missing_settings = stroke.clone();
+        missing_settings.rendering = None;
+        assert!(matches!(
+            crate::ink::pencil2::plan_stroke(&bad_count, 1.0),
+            Err(super::SamplerError::Invalid("source channel counts"))
+        ));
+        assert!(matches!(
+            crate::ink::pencil2::plan_stroke(&missing_settings, 1.0),
+            Err(super::SamplerError::Unsupported("missing saved settings"))
+        ));
+        for (input, scale) in [
+            (&over_budget, 1.0),
+            (&over_budget, 0.75),
+            (&bad_size, 1.0),
+            (&bad_channel, 0.75),
+            (&bad_count, 1.0),
+            (&missing_settings, 1.0),
+        ] {
+            let plan = crate::ink::pencil2::plan_stroke(input, scale).unwrap_err();
+            let prepare = prepare_stroke(input, scale).unwrap_err();
+            assert_eq!(format!("{plan:?}"), format!("{prepare:?}"));
+        }
         let records = prepare_stroke(&stroke, 1.).unwrap();
+        assert_eq!(
+            crate::ink::pencil2::plan_stroke(&stroke, 1.).unwrap(),
+            records.len()
+        );
+        assert_eq!(
+            crate::ink::pencil2::plan_stroke(&stroke, 0.5).unwrap(),
+            prepare_stroke(&stroke, 0.5).unwrap().len()
+        );
         let bytes: Vec<u8> = records
             .iter()
             .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
