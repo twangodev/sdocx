@@ -1,0 +1,517 @@
+{
+  "scope": "Fresh host Mesa native captures; shaders and observed GL state do not isolate remaining SVG raster differences. No Android device or arbitrary page parity.",
+  "controls": {
+    "matched": {
+      "target": [
+        256,
+        256
+      ],
+      "source_argb": "0x80336699",
+      "native_vector_sha256": "a70a03345714235011fd28a90162b325f39e9ce28739181bae7941c39b0ed483",
+      "native_frame_sha256": "313e4d934db65d0d91428b07139ff9c999b69288a2270928b9f678de0b4669b9",
+      "shader_source_calls": [
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec4 aPointInfo; layout(location = 2) in vec2 aBGVertex; uniform mat4 uProjectionMatrix; out vec2 vPaperCanvasUV; out vec2 vBgCanvasUV; out vec2 vPointUV; void main(void) { vec4 position = uProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.z, 0.0, 1.0); vec4 bgPosition = uProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.z + aBGVertex.xy, 0.0, 1.0); vPaperCanvasUV = (position.xy / position.w + 1.0) * 0.5; vBgCanvasUV = (bgPosition.xy / bgPosition.w + 1.0) * 0.5; vPointUV = vec2(aRectPoint.z, 1.0 / 3.0 * (aPointInfo.w + aRectPoint.w)); gl_Position = position; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision highp float; uniform sampler2D pointPattern; uniform sampler2D paperTexture; uniform sampler2D bgTexture; uniform vec4 inputColor; uniform vec2 uPaperScale; uniform vec2 uBgTextureScale; uniform bool isEnablePaper; in vec2 vPaperCanvasUV; in vec2 vBgCanvasUV; in vec2 vPointUV; out vec4 FragColor; void main(void) { if (isEnablePaper) { float brushMask = texture(pointPattern, vPointUV).r; float paper = texture(paperTexture, vPaperCanvasUV * uPaperScale).r; float bgTextureAlpha = texture(bgTexture, vBgCanvasUV * uBgTextureScale).r; FragColor = vec4(inputColor.xyz, inputColor.w * brushMask * paper * bgTextureAlpha * 5.0); } else { float brushMask = texture(pointPattern, vPointUV).r; float bgTextureAlpha = texture(bgTexture, vBgCanvasUV * uBgTextureScale).r; FragColor = vec4(inputColor.xyz, inputColor.w * brushMask * bgTextureAlpha * 5.0); } }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        }
+      ],
+      "texture_allocations": [
+        {
+          "boundTexture": 1,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 150,
+          "internalFormat": 32856,
+          "pixelBytes": 90000,
+          "pixelsSha256": "958749651d67b7f935648ba3457e50047e20e2fe965a87f459334d4bde823246",
+          "target": 3553,
+          "type": 5121,
+          "width": 150
+        },
+        {
+          "boundTexture": 2,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 30,
+          "internalFormat": 32856,
+          "pixelBytes": 1200,
+          "pixelsSha256": "655a3ef0465a9f30fddf25f4dde0c19a05c6f9069b83961800c1944165955273",
+          "target": 3553,
+          "type": 5121,
+          "width": 10
+        }
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "count": 1,
+          "location": 5,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.6000000238418579,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 4,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 6,
+          "values": [
+            2.2755556106567383,
+            2.2755556106567383
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        },
+        {
+          "call": "glUniform1i",
+          "location": 7,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "blend_calls": [
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            770,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33985,
+            "blend_dst_alpha": 771,
+            "blend_dst_rgb": 771,
+            "blend_enabled": true,
+            "blend_equation_alpha": 32774,
+            "blend_equation_rgb": 32774,
+            "blend_src_alpha": 1,
+            "blend_src_rgb": 770,
+            "color_mask": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 2,
+            "vao": 0,
+            "viewport": [
+              0,
+              0,
+              256,
+              256
+            ]
+          },
+          "values": [
+            5,
+            0,
+            4,
+            303
+          ]
+        }
+      ],
+      "native_color_rgba": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        0.501960813999176
+      ],
+      "host_gl_identity": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      }
+    },
+    "independent": {
+      "target": [
+        192,
+        192
+      ],
+      "source_argb": "0xaab84c29",
+      "native_vector_sha256": "4c6abae2cb7e163e959a42a21c8962b7adc8b9add770c279bfb27f1164b35b6a",
+      "native_frame_sha256": "2dc7558f45bac784ad1ba3d5e40f028ad5c7a4e96f80e1462f37930f9f742a7f",
+      "shader_source_calls": [
+        {
+          "shader": 1,
+          "source": [
+            "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec4 aPointInfo; layout(location = 2) in vec2 aBGVertex; uniform mat4 uProjectionMatrix; out vec2 vPaperCanvasUV; out vec2 vBgCanvasUV; out vec2 vPointUV; void main(void) { vec4 position = uProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.z, 0.0, 1.0); vec4 bgPosition = uProjectionMatrix * vec4(aPointInfo.xy + aRectPoint.xy * aPointInfo.z + aBGVertex.xy, 0.0, 1.0); vPaperCanvasUV = (position.xy / position.w + 1.0) * 0.5; vBgCanvasUV = (bgPosition.xy / bgPosition.w + 1.0) * 0.5; vPointUV = vec2(aRectPoint.z, 1.0 / 3.0 * (aPointInfo.w + aRectPoint.w)); gl_Position = position; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "#version 300 es \n precision highp float; uniform sampler2D pointPattern; uniform sampler2D paperTexture; uniform sampler2D bgTexture; uniform vec4 inputColor; uniform vec2 uPaperScale; uniform vec2 uBgTextureScale; uniform bool isEnablePaper; in vec2 vPaperCanvasUV; in vec2 vBgCanvasUV; in vec2 vPointUV; out vec4 FragColor; void main(void) { if (isEnablePaper) { float brushMask = texture(pointPattern, vPointUV).r; float paper = texture(paperTexture, vPaperCanvasUV * uPaperScale).r; float bgTextureAlpha = texture(bgTexture, vBgCanvasUV * uBgTextureScale).r; FragColor = vec4(inputColor.xyz, inputColor.w * brushMask * paper * bgTextureAlpha * 5.0); } else { float brushMask = texture(pointPattern, vPointUV).r; float bgTextureAlpha = texture(bgTexture, vBgCanvasUV * uBgTextureScale).r; FragColor = vec4(inputColor.xyz, inputColor.w * brushMask * bgTextureAlpha * 5.0); } }"
+          ]
+        },
+        {
+          "shader": 1,
+          "source": [
+            "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+          ]
+        },
+        {
+          "shader": 2,
+          "source": [
+            "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+          ]
+        }
+      ],
+      "texture_allocations": [
+        {
+          "boundTexture": 1,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 150,
+          "internalFormat": 32856,
+          "pixelBytes": 90000,
+          "pixelsSha256": "958749651d67b7f935648ba3457e50047e20e2fe965a87f459334d4bde823246",
+          "target": 3553,
+          "type": 5121,
+          "width": 150
+        },
+        {
+          "boundTexture": 2,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": true,
+          "height": 30,
+          "internalFormat": 32856,
+          "pixelBytes": 1200,
+          "pixelsSha256": "655a3ef0465a9f30fddf25f4dde0c19a05c6f9069b83961800c1944165955273",
+          "target": 3553,
+          "type": 5121,
+          "width": 10
+        }
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.010416666977107525,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "count": 1,
+          "location": 5,
+          "values": [
+            0.7215686440467834,
+            0.2980392277240753,
+            0.16078431904315948,
+            0.6666666865348816
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 4,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 6,
+          "values": [
+            1.7066665887832642,
+            1.7066665887832642
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        },
+        {
+          "call": "glUniform1i",
+          "location": 7,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "blend_calls": [
+        {
+          "call": "glBlendEquationSeparate",
+          "values": [
+            32774,
+            32774
+          ]
+        },
+        {
+          "call": "glBlendFuncSeparate",
+          "values": [
+            770,
+            771,
+            1,
+            771
+          ]
+        },
+        {
+          "call": "glEnable",
+          "cap": 3042
+        },
+        {
+          "call": "glColorMask",
+          "values": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "call": "glDisable",
+          "cap": 2929
+        },
+        {
+          "call": "glDisable",
+          "cap": 2960
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33985,
+            "blend_dst_alpha": 771,
+            "blend_dst_rgb": 771,
+            "blend_enabled": true,
+            "blend_equation_alpha": 32774,
+            "blend_equation_rgb": 32774,
+            "blend_src_alpha": 1,
+            "blend_src_rgb": 770,
+            "color_mask": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 2,
+            "vao": 0,
+            "viewport": [
+              0,
+              0,
+              192,
+              192
+            ]
+          },
+          "values": [
+            5,
+            0,
+            4,
+            479
+          ]
+        }
+      ],
+      "native_color_rgba": [
+        0.7215686440467834,
+        0.2980392277240753,
+        0.16078431904315948,
+        0.6666666865348816
+      ],
+      "host_gl_identity": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      }
+    }
+  },
+  "independent_prefix_diagnostic": {
+    "method": "Native vector length shortened immediately before GPU upload; SVG retains first N painted rectangles from corrected scale source SVG. Source SVG definitions and original full geometry remain unchanged.",
+    "prefixes": {
+      "1": {
+        "native_frame_sha256": "bbb50f117eaa8f3d6e1c2e0055af25e1f08173e163e1cbc4eaa59b0b61860400",
+        "native_changed_pixels": 2,
+        "resvg_differing_rgb_pixels": 0,
+        "total_rgb_error": 0
+      },
+      "100": {
+        "native_frame_sha256": "77980d8aefce67d73172ca964148b783ae5aabc573d2578e53d2e3d14f7eeb19",
+        "resvg_differing_rgb_pixels": 74,
+        "total_rgb_error": 1541,
+        "example_top_down_xy": [
+          45,
+          154
+        ],
+        "example_native_rgb": [
+          110,
+          108,
+          134
+        ],
+        "example_resvg_rgb": [
+          172,
+          82,
+          55
+        ]
+      },
+      "10": {
+        "native_frame_sha256": "78fc67deeb67b503176f11494ace659ed2a536b5361794ff2abafedcb17c5676",
+        "resvg_differing_rgb_pixels": 8,
+        "maximum_channel_error": 48,
+        "total_rgb_error": 335
+      }
+    },
+    "isolated_stamp_1": {
+      "native_frame_sha256": "12e73708b50bcd25ac6af83c6cf4959c3578716e172e03784e53b6537b8adb94",
+      "record": [
+        36.25,
+        48.25,
+        0.7291666269302368,
+        2,
+        40,
+        45
+      ],
+      "differing_pixels": 1,
+      "total_rgb_error": 93,
+      "pixel_top_down_xy": [
+        36,
+        143
+      ],
+      "native_rgb": [
+        184,
+        76,
+        43
+      ],
+      "resvg_rgb": [
+        149,
+        92,
+        85
+      ],
+      "finding": "The pixel center is within the projected stamp rectangle; a single stamp exhibits substantial error. Texture sampling versus intermediate alpha and coverage are not isolated.",
+      "renderer_sha256": "4c1dd5928f75490d6e399c32b3c9fc25029852836ad04de0711c6d761174b980",
+      "renderer_version": "resvg 0.47.0 (local helper Cargo.toml claim; no runtime version interface)",
+      "renderer_source_sha256": "6a2fb811fad4dcc0ec969421b02d63c8c29050a949310bf3b537560a8844d2df",
+      "renderer_manifest_sha256": "c19980d6366aebf6331752afafc4087f9e1b76ff043fc1780439b3651e8dcdbd",
+      "renderer_lock_sha256": "4f4bffccb767f850a257dd3c369e462d687306f6111ec6c08f27a8d5adb75a53",
+      "retained_frame_compressed_sha256": "4293a278cd613f73cd093362197ce0a992af908d6b9da19b4296c88c1be23665",
+      "capture_script_sha256": "0ec5ea84d232fdf159f1a5c35ffd9c879f8c10f3726a34911091c5b5f55722ec",
+      "verifier_script_sha256": "af8d4f73e680a3ab69f0e66000be7a18d5e9397f415589f24e9084af56a1e608"
+    }
+  }
+}

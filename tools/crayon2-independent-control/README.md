@@ -65,3 +65,43 @@ input correction reduces the SVG error but does not explain the remaining
 error or establish a general paint fix. The matched 256-pixel control remains
 174 / 34 / 732 in resvg; its bounded SVG-page PDF comparison remains 357 / 92 /
 22490 in MuPDF and 314 / 75 / 15348 in PDFium.
+
+## Isolated stamp diagnostic
+
+`paint-state-receipt.json` retains shader sources, observed uniforms, uploaded
+texture hashes, blend state, and draw calls from fresh captures of both the
+matched and independent controls. Both fresh vectors and frames matched their
+retained controls. The isolated independent stamp 1 is selected by replacing
+and shortening the native vector immediately before upload; this intervention
+is not a normal full-stroke capture. Its pixel at top-down (36,143) differs
+from the corresponding standalone SVG stamp, showing the large residual does
+not require overlap. The point lies inside the projected stamp rectangle, but
+texture sampling, edge coverage and intermediate alpha remain unresolved.
+
+To reproduce the native isolated capture, use the environment from the capture
+instructions above and run:
+
+```sh
+.venv/bin/python tools/crayon2-independent-control/capture-stamp.py 1 > "$work_dir/stamp-1.json"
+```
+
+It depends on the same local native helpers and preserves the other wrapper
+hash checks. Generate the source SVG with the source-derived export command above, then run
+the strict comparator (the native capture is never passed to the renderer):
+
+```sh
+.venv/bin/python tools/crayon2-independent-control/verify-stamp.py \
+  "$work_dir/stamp-1.json" "$work_dir/host.svg" \
+  /tmp/sdocx-agent-target/debug/sdocx-render-svg-047
+```
+
+The comparator checks the source SVG digest and full stamp sequence, retains
+only painted rectangle 1, verifies native vector and framebuffer against the
+retained compressed frame, rasterizes the isolated SVG in a temporary directory,
+and compares RGBA readback after flipping GL rows. It requires the same local
+resvg 0.47 helper, and verifies its binary SHA-256 against the receipt. The
+helper is a local dependency: its temporary source and Cargo manifest/lock hashes
+are recorded in the receipt; the version is a manifest claim because the helper
+has no runtime version interface. The result is one differing RGB pixel, maximum channel
+error 42, total 93. This comparison is a host intervention, not a device or
+saved-note fidelity result.
