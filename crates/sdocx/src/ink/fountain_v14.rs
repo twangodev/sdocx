@@ -220,3 +220,7 @@ pub(crate) fn addpoint_record(
         width_alpha,
     ])
 }
+
+#[cfg(all(test, feature = "render", feature = "serde"))]
+#[path = "fountain_v14/scene_tests.rs"]
+mod scene_tests;

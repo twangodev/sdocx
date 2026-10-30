@@ -7,6 +7,9 @@ use crate::ink::{colored_pencil, pencil2, pencil2::device_raster, watercolor};
 use crate::{RenderedPage, Stroke};
 use base64::Engine as _;
 
+pub use crate::ink::fountain_v14::raster::{FountainV14Prepared, FountainV14Scene};
+mod fountain_page;
+
 const MAX_PIXELS: usize = 8 * 1024 * 1024;
 const MAX_WORK: usize = 64 * 1024 * 1024;
 const MAX_SUBMISSIONS: usize = 256;
@@ -309,6 +312,35 @@ impl InkRasterCanvas {
         self.pixels = pixels;
         Ok(())
     }
+    /// Paint a caller-owned direct Fountain snapshot over the current pixels.
+    /// The canvas scale must match the scale used to create the snapshot.
+    /// `source_origin` is the integer source-space crop origin; the context
+    /// chooses the output row orientation. The direct host shader ignores the
+    /// alpha component of `paint_argb`. Unsupported inputs leave pixels and
+    /// budgets unchanged.
+    pub fn paint_fountain_v14_prepared(
+        &mut self,
+        snapshot: &FountainV14Prepared,
+        source_origin: [i32; 2],
+        paint_argb: u32,
+    ) -> Result<(), InkRasterError> {
+        if self.remaining_submissions == 0 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        let plan = crate::ink::fountain_v14::raster::prepare_snapshot(
+            snapshot,
+            self.context,
+            source_origin,
+            paint_argb,
+            self.remaining_work,
+        )?;
+        let pixels = plan.render(&self.pixels)?;
+        self.remaining_work -= plan.work();
+        self.remaining_submissions -= 1;
+        self.pixels = pixels;
+        Ok(())
+    }
+
     /// Paint Pencil2 with a translation in framebuffer pixels, with positive X
     /// right and positive Y up, regardless of the source coordinate origin.
     /// Texture grain remains fixed to framebuffer coordinates. Geometry inverse
@@ -658,5 +690,118 @@ fn device_context(context: InkRasterContext) -> device_raster::Context {
         translation: [0., 0.],
         grain_offset: [0., 0.],
         y_up: context.origin == InkRasterOrigin::BottomLeft,
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod fountain_snapshot_budget_tests {
+    use super::*;
+
+    #[test]
+    fn page_dispatch_rejection_and_paint_failure_scene_contract() {
+        let inputs: serde_json::Value = serde_json::from_str(include_str!(
+            "../tests/assets/fountain-v14/scene-sources.json"
+        ))
+        .unwrap();
+        let stroke: Stroke =
+            serde_json::from_value(inputs["strokes"][0]["stroke"].clone()).unwrap();
+        let page = crate::Page {
+            uuid: String::new(),
+            width: 8,
+            height: 8,
+            content_bbox: Default::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![stroke.clone().into()],
+        };
+        let context = InkRasterContext {
+            width: 8,
+            height: 8,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let mut canvas = InkRasterCanvas::new(context, [0; 4]).unwrap();
+        let mut scene = FountainV14Scene::default();
+        let mut unsupported = page.clone();
+        if let crate::PageObjectContent::Stroke(stroke) = &mut unsupported.objects[0].content {
+            stroke.points.clear();
+        }
+        assert!(
+            canvas
+                .paint_fountain_v14_page_stroke(
+                    &mut scene,
+                    &unsupported,
+                    0,
+                    9,
+                    0,
+                    [0, 0],
+                    0xff000000
+                )
+                .is_err()
+        );
+        assert!(
+            canvas
+                .paint_fountain_v14_page_stroke(&mut scene, &page, 1, 9, 0, [0, 0], 0xff000000)
+                .is_err()
+        );
+        let mut control = FountainV14Scene::default();
+        let expected = control
+            .prepare(9, 0, &stroke, context)
+            .unwrap()
+            .outgoing_direction();
+        let actual = scene
+            .prepare(9, 0, &stroke, context)
+            .unwrap()
+            .outgoing_direction();
+        assert_eq!(actual, expected);
+        scene.reset();
+        canvas.remaining_submissions = 0;
+        assert!(
+            canvas
+                .paint_fountain_v14_page_stroke(&mut scene, &page, 0, 9, 0, [0, 0], 0xff000000)
+                .is_err()
+        );
+        assert!(canvas.pixels().iter().all(|pixel| *pixel == [0; 4]));
+        // A same-key cache hit retains the original snapshot despite this
+        // deliberately changed source, demonstrating the documented commit.
+        let mut changed = stroke.clone();
+        changed.points.clear();
+        assert_eq!(
+            scene
+                .prepare(9, 0, &changed, context)
+                .unwrap()
+                .outgoing_direction(),
+            expected
+        );
+    }
+
+    #[test]
+    fn rejected_prepared_paint_preserves_work_and_pixels() {
+        let inputs: serde_json::Value = serde_json::from_str(include_str!(
+            "../tests/assets/fountain-v14/scene-sources.json"
+        ))
+        .unwrap();
+        let stroke: Stroke =
+            serde_json::from_value(inputs["strokes"][0]["stroke"].clone()).unwrap();
+        let context = InkRasterContext {
+            width: 8,
+            height: 8,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let prepared =
+            FountainV14Prepared::new(&stroke, context, crate::Point { x: 0., y: 1. }).unwrap();
+        let mut canvas = InkRasterCanvas::new(context, [0; 4]).unwrap();
+        canvas.remaining_work = 0;
+        let before = canvas.pixels.clone();
+        let submissions = canvas.remaining_submissions;
+        assert!(matches!(
+            canvas.paint_fountain_v14_prepared(&prepared, [0, 0], 0xff000000),
+            Err(InkRasterError::WorkLimit)
+        ));
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(canvas.remaining_work, 0);
+        assert_eq!(canvas.remaining_submissions, submissions);
     }
 }

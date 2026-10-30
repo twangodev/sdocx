@@ -23,6 +23,178 @@ pub(crate) struct Plan {
     work: usize,
 }
 
+/// Caller-owned snapshot of Fountain V14 source geometry at one output scale.
+///
+/// Recreate this snapshot when the source or output scale changes, including
+/// source color, size, or object rectangle mutations. A changed paint origin can reuse it. The caller
+/// supplies the incoming direction and decides when to reuse the snapshot. Update
+/// the caller's direction from `outgoing_direction` only when generating a new
+/// snapshot; painting a cached snapshot does not advance it. A new native Drawing
+/// has its own direction and cache lifecycle; the caller must reset both. This
+/// does not infer
+/// native object identity or mutation invalidation. Scales
+/// 1 and 2, at most 4096 source samples and 8192 generated stamps, and the
+/// canvas work budget are host bounds. These are not native limits.
+pub struct FountainV14Prepared {
+    stroke: Stroke,
+    dots: super::super::fountain::Dots,
+    scale: u32,
+    outgoing_direction: crate::Point,
+}
+
+/// Caller-managed snapshots and direction for one observed Drawing lifecycle.
+///
+/// `object` identifies a caller-owned object; `revision` must change whenever
+/// its source, color, size or rectangle changes. Scale changes regenerate the
+/// snapshot automatically. A cache hit does not advance direction. Reset this
+/// state for a new Drawing. These caller-defined keys are not native cache keys.
+/// At most 256 distinct objects are retained; this is a host resource bound.
+pub struct FountainV14Scene {
+    direction: crate::Point,
+    entries: Vec<(u64, u64, u32, FountainV14Prepared)>,
+}
+
+impl Default for FountainV14Scene {
+    fn default() -> Self {
+        Self {
+            direction: crate::Point { x: 0., y: 1. },
+            entries: Vec::new(),
+        }
+    }
+}
+
+impl FountainV14Scene {
+    /// Start a new Drawing lifecycle, clearing snapshots and direction.
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+
+    /// Reuse or generate a snapshot. Failed generation leaves the scene intact.
+    /// Successful generation commits the snapshot and direction immediately;
+    /// a later paint failure does not roll either back.
+    pub fn prepare(
+        &mut self,
+        object: u64,
+        revision: u64,
+        stroke: &Stroke,
+        context: InkRasterContext,
+    ) -> Result<&FountainV14Prepared, InkRasterError> {
+        context.pixel_count()?;
+        let index = self.entries.iter().position(|entry| entry.0 == object);
+        if let Some(i) = index {
+            if self.entries[i].1 == revision && self.entries[i].2 == context.pixels_per_unit {
+                return Ok(&self.entries[i].3);
+            }
+        } else if self.entries.len() >= 256 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        if index.is_none() {
+            self.entries
+                .try_reserve(1)
+                .map_err(|_| InkRasterError::Allocation)?;
+        }
+        let prepared = FountainV14Prepared::new(stroke, context, self.direction)?;
+        let direction = prepared.outgoing_direction();
+        let entry = (object, revision, context.pixels_per_unit, prepared);
+        let i = match index {
+            Some(i) => {
+                self.entries[i] = entry;
+                i
+            }
+            None => {
+                self.entries.push(entry);
+                self.entries.len() - 1
+            }
+        };
+        self.direction = direction;
+        Ok(&self.entries[i].3)
+    }
+}
+
+impl FountainV14Prepared {
+    /// Generate a bounded snapshot. A single-stamp source uses `incoming_direction`.
+    pub fn new(
+        stroke: &Stroke,
+        context: InkRasterContext,
+        incoming_direction: crate::Point,
+    ) -> Result<Self, InkRasterError> {
+        if !incoming_direction.x.is_finite()
+            || !incoming_direction.y.is_finite()
+            || incoming_direction.x.abs() > 1.
+            || incoming_direction.y.abs() > 1.
+        {
+            return Err(InkRasterError::InvalidStroke(
+                "Fountain V14 incoming direction",
+            ));
+        }
+        if [
+            stroke.points.len(),
+            stroke.pressures.len(),
+            stroke.timestamps.len(),
+            stroke.tilts.len(),
+            stroke.orientations.len(),
+        ]
+        .into_iter()
+        .any(|len| len > 4096)
+        {
+            return Err(InkRasterError::WorkLimit);
+        }
+        validate_source(stroke, context)?;
+        let mut dots = super::super::fountain::prepare_v14_with_output_scale(
+            stroke,
+            context.pixels_per_unit as f32,
+        )
+        .ok_or(InkRasterError::UnsupportedStroke(
+            "saved Fountain V14 source",
+        ))?;
+        let directions = dots
+            .directions
+            .as_mut()
+            .ok_or(InkRasterError::UnsupportedStroke("Fountain V14 directions"))?;
+        if dots.points.len() == 1 {
+            directions[0] = incoming_direction;
+        }
+        let outgoing_direction = *directions.last().ok_or(InkRasterError::UnsupportedStroke(
+            "empty Fountain V14 source",
+        ))?;
+        if dots.points.len() > 8192 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        Ok(Self {
+            stroke: stroke.clone(),
+            dots,
+            scale: context.pixels_per_unit,
+            outgoing_direction,
+        })
+    }
+
+    /// Direction produced by generating this snapshot, for a subsequent source.
+    pub fn outgoing_direction(&self) -> crate::Point {
+        self.outgoing_direction
+    }
+}
+
+pub(crate) fn prepare_snapshot(
+    snapshot: &FountainV14Prepared,
+    context: InkRasterContext,
+    source_origin: [i32; 2],
+    paint_argb: u32,
+    budget: usize,
+) -> Result<Plan, InkRasterError> {
+    if context.pixels_per_unit != snapshot.scale {
+        return Err(InkRasterError::InvalidContext);
+    }
+    prepare_with_dots(
+        &snapshot.stroke,
+        context,
+        source_origin,
+        paint_argb,
+        true,
+        budget,
+        Some(&snapshot.dots),
+    )
+}
+
 pub(crate) fn prepare(
     stroke: &Stroke,
     context: InkRasterContext,
@@ -31,7 +203,15 @@ pub(crate) fn prepare(
     direct: bool,
     budget: usize,
 ) -> Result<Plan, InkRasterError> {
-    prepare_with_dots(stroke, context, source_origin, paint_argb, direct, budget)
+    prepare_with_dots(
+        stroke,
+        context,
+        source_origin,
+        paint_argb,
+        direct,
+        budget,
+        None,
+    )
 }
 
 fn validate_source(stroke: &Stroke, context: InkRasterContext) -> Result<(), InkRasterError> {
@@ -110,19 +290,26 @@ fn prepare_with_dots(
     paint_argb: u32,
     direct: bool,
     budget: usize,
+    supplied_dots: Option<&super::super::fountain::Dots>,
 ) -> Result<Plan, InkRasterError> {
     let count = context.pixel_count()?;
     if source_origin.iter().any(|v| v.unsigned_abs() > 16_384) {
         return Err(InkRasterError::InvalidContext);
     }
     validate_source(stroke, context)?;
-    let dots = super::super::fountain::prepare_v14_with_output_scale(
-        stroke,
-        context.pixels_per_unit as f32,
-    )
-    .ok_or(InkRasterError::UnsupportedStroke(
-        "saved Fountain V14 source",
-    ))?;
+    let generated;
+    let dots = if let Some(dots) = supplied_dots {
+        dots
+    } else {
+        generated = super::super::fountain::prepare_v14_with_output_scale(
+            stroke,
+            context.pixels_per_unit as f32,
+        )
+        .ok_or(InkRasterError::UnsupportedStroke(
+            "saved Fountain V14 source",
+        ))?;
+        &generated
+    };
     if dots.points.len() > 8192 {
         return Err(InkRasterError::WorkLimit);
     }
