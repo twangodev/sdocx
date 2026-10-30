@@ -49,3 +49,19 @@ the native framebuffer hash, and all three recorded metrics. Its exact export
 hashes make this a check of the recorded toolchain; changed encoders or source
 require a reviewed receipt update. On the fresh rerun the native vector and
 compressed framebuffer matched the retained artifacts byte for byte.
+
+## Corrected native texture scale
+
+A fresh native replay retained `glUniform2fv` at location 6: both background
+scale components are `1.7066665887832642`. The initial writer used the next
+float value, `1.7066667`, without capturing that uniform. The writer now uses
+the observed value. The native frame and geometry hashes are unchanged.
+
+The corrected source API results are 286 / 124 / 5572 for resvg, 647 / 148 /
+48085 for MuPDF, and 567 / 147 / 36679 for PDFium (differing pixels / maximum
+channel error / total RGB error). The original results and provenance remain in
+`receipt.json`; `corrected-scale-receipt.json` records the new exports. This
+input correction reduces the SVG error but does not explain the remaining
+error or establish a general paint fix. The matched 256-pixel control remains
+174 / 34 / 732 in resvg; its bounded SVG-page PDF comparison remains 357 / 92 /
+22490 in MuPDF and 314 / 75 / 15348 in PDFium.

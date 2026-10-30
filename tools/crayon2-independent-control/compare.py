@@ -11,7 +11,7 @@ import pypdfium2
 from PIL import Image, __version__ as pillow_version
 
 here = Path(__file__).resolve().parent
-receipt = json.loads((here / 'receipt.json').read_text())
+receipt = json.loads((here / 'corrected-scale-receipt.json').read_text())
 root = here.parents[1]
 for relative, expected in receipt['input_sha256'].items():
     actual = hashlib.sha256((root / relative).read_bytes()).hexdigest()

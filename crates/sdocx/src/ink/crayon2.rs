@@ -918,7 +918,7 @@ mod tests {
                 0.0,
                 1.0,
             ],
-            bg_scale: [1.7066667, 1.7066667],
+            bg_scale: [f32::from_bits(0x3fda_740d); 2],
         };
         let svg = render_crayon2_host_svg(
             &stroke,

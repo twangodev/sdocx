@@ -33,6 +33,10 @@ for old, new in changes.items():
     if count != expected:
         raise SystemExit(f'capture anchor {old!r}: expected {expected}, found {count}')
     source = source.replace(old, new)
+# Keep the native texture-scale uniform alongside the paint calls.
+old = "capture_calls={'glBufferData'"
+assert source.count(old) == 1
+source = source.replace(old, "capture_calls={'glUniform2fv','glBufferData'")
 os.environ['CRAYON2_ARGB'] = '0xaab84c29'
 sys.argv = [str(base), '--_capture-background', 'opaque', '--translated-source']
 exec(compile(source, str(base), 'exec'), {'__name__': '__main__', '__file__': str(base)})

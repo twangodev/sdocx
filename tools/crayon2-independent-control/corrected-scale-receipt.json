@@ -1,0 +1,106 @@
+{
+  "scope": "Synthetic native Model/Drawing/Crayon2 with host queue and Mesa GLES, standalone source SVG and SVG-page PDF; no Android device or saved-note parity; corrected texture-scale input from observed native glUniform2fv; previous receipt retained",
+  "points": [
+    [
+      40,
+      45
+    ],
+    [
+      53,
+      28
+    ],
+    [
+      75,
+      49
+    ]
+  ],
+  "pressure": [
+    0.3,
+    0.6,
+    1.0
+  ],
+  "argb": "0xaab84c29",
+  "target": [
+    192,
+    192
+  ],
+  "background": [
+    64,
+    128,
+    192,
+    255
+  ],
+  "native_vector_sha256": "4c6abae2cb7e163e959a42a21c8962b7adc8b9add770c279bfb27f1164b35b6a",
+  "native_frame_sha256": "2dc7558f45bac784ad1ba3d5e40f028ad5c7a4e96f80e1462f37930f9f742a7f",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "readers_vs_native": {
+    "resvg": [
+      286,
+      124,
+      5572
+    ],
+    "mupdf": [
+      647,
+      148,
+      48085
+    ],
+    "pdfium": [
+      567,
+      147,
+      36679
+    ]
+  },
+  "export_sha256": {
+    "svg": "bf20e396c38802985a235d254a1764ce61ae26e1a99eb6c2c701558433904c86",
+    "png": "ba1f147e590db9f58b3a6a812314ab6dd4a676e4254926b17ef256e6293c5ea6",
+    "pdf": "fb87b74dcbfc0f43f23b2e2bcca1545d4b10f4b1c64394d58b4557454180791d"
+  },
+  "capture_host": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "native_dso_sha256": {
+    "libSPenCrayon2.so": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+    "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "reader_versions": {
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0",
+    "pillow": "12.1.1"
+  },
+  "resvg_version": "0.47.0 (Cargo.lock)",
+  "input_sha256": {
+    "tools/crayon2-varied-path/capture.py": "a306d1524adb90f198882cb68ee53194a53938db2e35eb0e3140928634db5e4d",
+    "tools/crayon2-independent-control/capture.py": "7c4ef0580aaa165fe4ca427a664883b00cb4bd312ccc32e39ac8e8542e5768a6",
+    "tools/crayon2-independent-control/compare.py": "259a839a5258c99b9c1481d0e6c5c166ec6c93565a6b6f8e0d4e7a99d84691ec",
+    "tools/crayon2-independent-control/native-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a",
+    "tools/crayon2-independent-control/native-frame.z": "da2b32e482b5a15035691b2e4c1c8805c0e0794ae2900b2465377b9e0eced283",
+    "crates/sdocx/src/ink/crayon2.rs": "609884d13f8f61334050f9a55eed67afc4e5a7fadce6ee9af96e0771bc5a98f0",
+    "crates/sdocx/src/ink/crayon2/material.rs": "38f5671515ce53dfa3342fb43dbe1623adcd7442d76e8acfa60d4b4707b8c861",
+    "crates/sdocx/examples/crayon2_host_export.rs": "4e2483d4c5a9dbde4cf424cef935e6ebd61810097fdd812a4bf0cc24c9ea9088",
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "tools/crayon2-independent-control/verify_native.py": "e6eb228f3cc45200d13008f0d5b878040e8a3ad6b936b4d819b7c2a09de855c9",
+    "crates/sdocx/tests/assets/crayon2-v2-native/independent-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a"
+  },
+  "native_bg_scale": [
+    1.7066665887832642,
+    1.7066665887832642
+  ],
+  "previous_bg_scale": [
+    1.7066667,
+    1.7066667
+  ]
+}
