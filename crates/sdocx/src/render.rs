@@ -17749,20 +17749,23 @@ mod tests {
         let mut unsupported = document.clone();
         unsupported.pages[0]
             .strokes_mut()
-            .next()
+            .find(|stroke| {
+                stroke.rendering.as_ref().is_some_and(|rendering| {
+                    rendering.pen_name.as_deref()
+                        == Some("com.samsung.android.sdk.pen.pen.preload.ChineseBrush")
+                })
+            })
             .unwrap()
             .rendering
             .as_mut()
             .unwrap()
-            .advanced_settings = Some("5;".into());
+            .advanced_settings = Some("6;".into());
         let fallback = render_document_svg(&unsupported, &options).remove(0).svg;
-        let fallback_xml = roxmltree::Document::parse(&fallback).unwrap();
         assert_eq!(
-            fallback_xml
-                .descendants()
-                .filter(|node| node.has_tag_name("image"))
-                .count(),
-            0,
+            fallback,
+            render_document_svg(&unsupported, &RenderOptions::default())
+                .remove(0)
+                .svg,
             "unsupported settings fall back for the whole stroke"
         );
 
