@@ -23,29 +23,41 @@
  */
 //! Altered, restricted NanoSVG translation for a single flat cubic round-capped stroke.
 //! This is not the original software and rejects curves and other stroke types.
-use crate::scan::Edge;
+macro_rules! ensure {
+    ($condition:expr $(,)?) => {
+        if !$condition {
+            return Err(());
+        }
+    };
+}
+
+use super::scan::Edge;
 
 pub fn stroke(p: [f32; 8], width: f32, scale: f32) -> Vec<Edge> {
-    assert!(width.is_finite() && width > 0.0 && scale.is_finite() && scale > 0.0);
-    assert!(p.iter().all(|v| v.is_finite()));
+    try_stroke(p, width, scale).expect("invalid stroke geometry")
+}
+
+pub fn try_stroke(p: [f32; 8], width: f32, scale: f32) -> Result<Vec<Edge>, ()> {
+    ensure!(width.is_finite() && width > 0.0 && scale.is_finite() && scale > 0.0);
+    ensure!(p.iter().all(|v| v.is_finite()));
     let p = p.map(|v| v * scale);
     // Keep derived edge coordinates within the scan converter's bounds.
-    assert!(p.iter().all(|v| v.is_finite() && v.abs() <= 1000.0));
+    ensure!(p.iter().all(|v| v.is_finite() && v.abs() <= 1000.0));
     let dx = p[6] - p[0];
     let dy = p[7] - p[1];
     let d2 = ((p[2] - p[6]) * dy - (p[3] - p[7]) * dx).abs();
     let d3 = ((p[4] - p[6]) * dy - (p[5] - p[7]) * dx).abs();
-    assert!((d2 + d3) * (d2 + d3) < 0.25 * (dx * dx + dy * dy));
+    ensure!((d2 + d3) * (d2 + d3) < 0.25 * (dx * dx + dy * dy));
     let len = (dx * dx + dy * dy).sqrt();
-    assert!(len > 0.01);
+    ensure!(len > 0.01);
     let inv = 1.0 / len;
     let (dx, dy) = (dx * inv, dy * inv);
     let w = width * scale * 0.5;
-    assert!(w.is_finite() && w > 0.0 && w <= 1000.0);
+    ensure!(w.is_finite() && w > 0.0 && w <= 1000.0);
     let divisions = (std::f32::consts::PI / ((w / (w + 0.25)).acos() * 2.0))
         .ceil()
         .max(2.0);
-    assert!(divisions.is_finite() && divisions <= 128.0);
+    ensure!(divisions.is_finite() && divisions <= 128.0);
     let n = divisions as usize;
     let mut edges = Vec::new();
     fn add(edges: &mut Vec<Edge>, a: (f32, f32), b: (f32, f32)) {
@@ -90,7 +102,7 @@ pub fn stroke(p: [f32; 8], width: f32, scale: f32) -> Vec<Edge> {
     add(&mut edges, right, end_right);
     add(&mut edges, end_left, left);
     edges.sort_by(|a, b| a.y0.partial_cmp(&b.y0).unwrap());
-    edges
+    Ok(edges)
 }
 
 #[cfg(test)]

@@ -25,6 +25,14 @@
 //! fillActiveEdges and fillScanline. Not the original software. This module
 //! consumes already flattened, sorted edges; it is not an SVG rasterizer.
 
+macro_rules! ensure {
+    ($condition:expr $(,)?) => {
+        if !$condition {
+            return Err(());
+        }
+    };
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Edge { pub x0: f32, pub y0: f32, pub x1: f32, pub y1: f32, pub dir: i32 }
 #[derive(Clone, Copy)]
@@ -34,18 +42,22 @@ struct Active { x: i32, dx: i32, end: f32, dir: i32 }
 /// Rejects dimensions or edge coordinates outside the bounded experiment domain.
 /// The slope bound keeps fixed-point advancement inside the i32 range.
 pub fn coverage(edges: &[Edge], width: usize, height: usize) -> Vec<u8> {
-    assert!(width <= 1024 && height <= 1024);
-    assert!(edges.iter().all(|e| e.x0.is_finite() && e.x1.is_finite() && e.y0.is_finite() && e.y1.is_finite() && e.y0 < e.y1 && (e.dir == 1 || e.dir == -1)));
+    try_coverage(edges, width, height).expect("invalid scan geometry")
+}
+
+pub fn try_coverage(edges: &[Edge], width: usize, height: usize) -> Result<Vec<u8>, ()> {
+    ensure!(width <= 1024 && height <= 1024);
+    ensure!(edges.iter().all(|e| e.x0.is_finite() && e.x1.is_finite() && e.y0.is_finite() && e.y1.is_finite() && e.y0 < e.y1 && (e.dir == 1 || e.dir == -1)));
     let max_slope = 1_000_000.0_f64 / (height as f64 * 5.0 + 1.0);
     for e in edges {
-        assert!(e.x0.abs() <= 10_000.0 && e.x1.abs() <= 10_000.0
+        ensure!(e.x0.abs() <= 10_000.0 && e.x1.abs() <= 10_000.0
             && e.y0.abs() <= 10_000.0 && e.y1.abs() <= 10_000.0);
         let dy = f64::from(e.y1) - f64::from(e.y0);
         let slope = (f64::from(e.x1) - f64::from(e.x0)) / dy;
-        assert!(dy >= 0.0001 && slope.abs() <= max_slope);
+        ensure!(dy >= 0.0001 && slope.abs() <= max_slope);
     }
-    assert!(edges.windows(2).all(|pair| pair[0].y0 <= pair[1].y0));
-    let mut result = vec![0; width.checked_mul(height).unwrap()];
+    ensure!(edges.windows(2).all(|pair| pair[0].y0 <= pair[1].y0));
+    let mut result = vec![0; width.checked_mul(height).ok_or(())?];
     let mut active: Vec<Active> = Vec::new();
     let mut next = 0;
     for y in 0..height {
@@ -53,7 +65,7 @@ pub fn coverage(edges: &[Edge], width: usize, height: usize) -> Vec<u8> {
         for sample in 0..5 {
             let scan_y = (y * 5 + sample) as f32 + 0.5;
             active.retain(|edge| edge.end > scan_y);
-            for edge in &mut active { edge.x = edge.x.checked_add(edge.dx).expect("fixed-point edge overflow"); }
+            for edge in &mut active { edge.x = edge.x.checked_add(edge.dx).ok_or(())?; }
             active.sort_by_key(|edge| edge.x);
             while next < edges.len() && edges[next].y0 <= scan_y {
                 let e = edges[next];
@@ -78,7 +90,7 @@ pub fn coverage(edges: &[Edge], width: usize, height: usize) -> Vec<u8> {
             }
         }
     }
-    result
+    Ok(result)
 }
 fn fill(row: &mut [u8], x0: i32, x1: i32) {
     let mut i = x0 >> 10;
