@@ -83,6 +83,135 @@ impl Fixture {
     }
 }
 
+#[test]
+fn marker2_opt_in_accepts_pdf_and_rejects_png() {
+    let fixture = Fixture::new();
+    let pdf = fixture.run(&["--marker2-at-2x", "-o", "output.pdf"]);
+    assert!(
+        pdf.status.success(),
+        "{}",
+        String::from_utf8_lossy(&pdf.stderr)
+    );
+    assert!(
+        std::fs::read(fixture.0.join("output.pdf"))
+            .unwrap()
+            .starts_with(b"%PDF")
+    );
+    let png = fixture.run(&["--marker2-at-2x", "-o", "output.png"]);
+    assert!(!png.status.success());
+    assert!(String::from_utf8_lossy(&png.stderr).contains("PNG renders at 1 pixel per page unit"));
+}
+
+#[test]
+fn marker2_pdf_cli_propagates_scale_to_core() {
+    use std::io::{Cursor, Read};
+
+    // Adapt the retained synthetic stroke's name table and style to the guarded
+    // Marker2 route; the original serialized point channels remain unchanged.
+    let fixture = Fixture::new();
+    let bytes =
+        include_bytes!("../../../conformance/old-pencil-counterexample/resolved-synthetic.sdocx");
+    let mut input = zip::ZipArchive::new(Cursor::new(bytes)).unwrap();
+    let mut output =
+        zip::ZipWriter::new(std::fs::File::create(fixture.0.join("note.sdocx")).unwrap());
+    let old: Vec<_> = "com.samsung.android.sdk.pen.pen.preload.Pencil"
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    let new: Vec<_> = "com.samsung.android.sdk.pen.pen.preload.Marker2"
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    for index in 0..input.len() {
+        let mut entry = input.by_index(index).unwrap();
+        let mut data = Vec::new();
+        entry.read_to_end(&mut data).unwrap();
+        if entry.name() == "note.note" {
+            let pos = data
+                .windows(old.len())
+                .position(|bytes| bytes == old)
+                .unwrap();
+            let old_length = u16::from_le_bytes(data[pos - 2..pos].try_into().unwrap());
+            data[pos - 2..pos].copy_from_slice(&(old_length + 1).to_le_bytes());
+            let table_size = u32::from_le_bytes(data[765..769].try_into().unwrap());
+            assert_eq!(table_size, 232);
+            data[765..769].copy_from_slice(&(table_size + 2 - 18).to_le_bytes());
+            data.splice(pos..pos + old.len(), new.iter().copied());
+            assert_eq!(&data[771..777], &[1, 0, 0, 0, 9, 0]);
+            data[775..777].copy_from_slice(&0u16.to_le_bytes());
+            data.drain(777..795);
+        } else if entry.name().ends_with(".page") {
+            assert_eq!(
+                u32::from_le_bytes(data[2445..2449].try_into().unwrap()),
+                2514
+            );
+            data[2445..2449].copy_from_slice(&2520u32.to_le_bytes());
+            let object_size = u32::from_le_bytes(data[2304..2308].try_into().unwrap());
+            data[2304..2308].copy_from_slice(&(object_size + 6).to_le_bytes());
+            data[2459] |= 2;
+            data[2461] |= 1;
+            data[4939..4943].copy_from_slice(&2f32.to_le_bytes());
+            data.splice(4935..4935, 1i32.to_le_bytes());
+            data.splice(4963..4963, 0u16.to_le_bytes());
+        }
+        output
+            .start_file(entry.name(), zip::write::SimpleFileOptions::default())
+            .unwrap();
+        output.write_all(&data).unwrap();
+    }
+    output.finish().unwrap();
+    let doc = sdocx::parse(fixture.0.join("note.sdocx")).unwrap();
+    assert!(
+        doc.pages
+            .iter()
+            .flat_map(|page| page.strokes())
+            .any(|stroke| stroke
+                .rendering
+                .as_ref()
+                .and_then(|r| r.pen_name.as_deref())
+                .is_some_and(|name| name.ends_with("Marker2")))
+    );
+    let layout = sdocx::layout_document(&doc);
+    let fonts = sdocx::fonts::FontBook::default();
+    let indices: Vec<_> = (0..layout.pages.len()).collect();
+    let mut options = sdocx::RenderOptions::default();
+    let render = |options: &sdocx::RenderOptions| {
+        sdocx::render_layout_pages_pdf_detailed_with_fonts(
+            &doc,
+            &layout,
+            &indices,
+            options,
+            &sdocx::PdfOptions::from_font_book(&fonts),
+            &fonts,
+        )
+        .unwrap()
+        .bytes
+    };
+    let default = render(&options);
+    options.marker2_output_scale = Some(2);
+    let scaled = render(&options);
+    assert!(
+        default != scaled,
+        "fixture must exercise the Marker2 2x route"
+    );
+    for (args, name, expected) in [
+        (vec!["-o", "default.pdf"], "default.pdf", default),
+        (
+            vec!["--marker2-at-2x", "-o", "scaled.pdf"],
+            "scaled.pdf",
+            scaled,
+        ),
+    ] {
+        let result = fixture.run(&args);
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(std::fs::read(fixture.0.join(name)).unwrap(), expected);
+    }
+}
+
 fn text_object(value: &str) -> Vec<u8> {
     fn frame(kind: i16, fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
         let offset = 13 + fields.len() + fixed.len();

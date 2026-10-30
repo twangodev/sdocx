@@ -194,6 +194,15 @@ fn validate_pdf_only_options(
     Ok(())
 }
 
+fn validate_marker2_option(format: Format, enabled: bool) -> Result<(), &'static str> {
+    if enabled && format == Format::Png {
+        return Err(
+            "--marker2-at-2x requires SVG or PDF output; PNG renders at 1 pixel per page unit",
+        );
+    }
+    Ok(())
+}
+
 fn svg_to_png(svg: &str, options: &resvg::usvg::Options<'_>) -> Result<Vec<u8>, String> {
     let tree =
         resvg::usvg::Tree::from_str(svg, options).map_err(|e| format!("invalid SVG: {e}"))?;
@@ -252,6 +261,12 @@ struct Cli {
         help = "Samsung Notes load width for PDF-backed notes; preserves stored width by default"
     )]
     pdf_load_width: Option<u32>,
+
+    #[arg(
+        long,
+        help = "Experimental Marker2 fringe: assert final rasterization is axis-aligned at exactly 2 pixels per page unit (SVG/PDF only; zoom or transforms change coverage)"
+    )]
+    marker2_at_2x: bool,
 
     #[arg(
         long,
@@ -419,6 +434,12 @@ fn main() {
         eprintln!("Error: {message}");
         std::process::exit(1);
     }
+    if let Err(message) = validate_marker2_option(format, cli.marker2_at_2x) {
+        eprintln!("Error: {message}");
+        std::process::exit(1);
+    }
+    let mut render_options = RenderOptions::default();
+    render_options.marker2_output_scale = cli.marker2_at_2x.then_some(2);
     let fonts = load_fonts(&cli.font_files).unwrap_or_else(|error| {
         eprintln!("Error: {error}");
         std::process::exit(1);
@@ -448,7 +469,7 @@ fn main() {
             &doc,
             &layout,
             &page_indices,
-            &RenderOptions::default(),
+            &render_options,
             &options,
             &fonts,
         )
@@ -486,7 +507,7 @@ fn main() {
         .iter()
         .map(|&index| {
             text_cache
-                .render_layout_page_svg(&doc, &layout, index, &RenderOptions::default(), &fonts)
+                .render_layout_page_svg(&doc, &layout, index, &render_options, &fonts)
                 .expect("validated visible page index")
         })
         .collect();
@@ -524,6 +545,21 @@ fn main() {
 mod tests {
     use super::{Format, resolve_format, validate_pdf_only_options};
     use std::path::Path;
+
+    #[test]
+    fn marker2_scale_is_explicit_and_rejects_one_x_png() {
+        use clap::Parser;
+        let default = super::Cli::try_parse_from(["sdocx", "input.sdocx"]).unwrap();
+        let opted_in =
+            super::Cli::try_parse_from(["sdocx", "input.sdocx", "--marker2-at-2x"]).unwrap();
+        assert!(!default.marker2_at_2x);
+        assert!(opted_in.marker2_at_2x);
+        for format in [Format::Svg, Format::Pdf] {
+            assert!(super::validate_marker2_option(format, true).is_ok());
+        }
+        assert!(super::validate_marker2_option(Format::Png, false).is_ok());
+        assert!(super::validate_marker2_option(Format::Png, true).is_err());
+    }
 
     #[test]
     fn custom_pdf_template_display_preserves_negative_source_indices() {
