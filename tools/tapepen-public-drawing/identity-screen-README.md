@@ -13,3 +13,34 @@ A fresh paired capture's [native uniform comparison](identity-screen-state-recei
 A further source intervention regenerates the 512-display AA mask with both observed quad extents. The masks are byte-identical for this trajectory: changing the quad alone has no observable effect here. Using the captured shader's fragment-coordinate period of 128 instead of 64 in the diagnostic texture sampling reduces premultiplied RGBA L1 error against the 512-display crop from 11,123 to 5,303 (maximum channel error 113 to 73; differing channels 258 to 272). The period intervention samples at `(pixel + 0.5 - grainOffset) * 64 / 128 - 0.5`, retaining bilinear pixel-center semantics. This is a bounded diagnostic, not proof of the full material pipeline or a public rendering profile. Reproduce with `SDOCX_TAPE_PYTHON=/path/to/python-with-Pillow tools/tapepen-public-drawing/display-intervention-replay.sh`; it asserts the source masks, generated SVG identities and error metrics. It uses the same tools and retained native frame as the preceding source replay.
 
 Fresh paired native captures passed the existing 256 and 512 verifiers; their full log SHA-256 values were `9cf68e04038c11d0d289446693e020c8a1f346980d798be589f3166a24e128bc` and `0c4ce11b9303f473f02a4f56b23e78164622ff09177075f3a688e8e82ba2ffc4`, respectively. A fresh public generic SVG and direct document PDF, generated with `v173-public.rs`, were compared with their 256×256 native crops on white. Resvg RGB L1 was 70,165 and 72,480 for displays 256 and 512; MuPDF direct PDF RGB L1 was 70,043 and 72,378. Maximum RGB error was 204 in all four comparisons. Reproduce the public harness, pinned output hashes and all four metrics with `SDOCX_TAPE_PYTHON=/path/to/python-with-Pillow-and-PyMuPDF tools/tapepen-public-drawing/display-public-replay.sh`; the [receipt](display-public-receipt.json) binds the retained compressed native frames, generated SVG and direct PDF. These public fallback measurements and the diagnostic above have different alpha and white-background metrics and should not be ranked directly. The fresh log identities are recorded for provenance; the verifiers bind the captured frame and inputs, and the retained frames remain the reproducible oracle.
+
+The retained 512-display upload log resolves the remaining large texture discrepancy: event 6 is a native `glTexSubImage2D` of a 128×128 RGBA8 image, with native-owned input bytes SHA-256 `f290e56addf62df35c7fbd4bfb6bddaeccc047ab382c52aa9766cafb38b7d292`. It is a texture upload, not framebuffer readback. The capture loads the pinned pattern 1 SVG before drawing. Sampling this captured image at `(x - 77, y - 59)` with the source-generated 512-display mask gives a pixel-grid SVG with premultiplied RGBA L1 28 and maximum error 1 against the native crop; its SVG-derived MuPDF PDF gives L1 453 and maximum error 2. These are diagnostic outputs, not a direct document PDF or a general source asset rasterizer. The previously measured public SVG and direct document PDF remain the generic fallback. This one synthetic host control does not justify a general rendering profile or device parity.
+
+To reproduce, create a disposable source copy as `display-intervention-replay.sh` does: copy `Cargo.toml`, `Cargo.lock`, `crates` and `conformance`, link `tools`, apply `v173-source-mask.patch`, run `display-intervention-edit.py` with `aa`, then run `cargo test -p sdocx --features render v173_source_mask --lib --offline` with `SDOCX_TAPE_V173_MASK_OUT` set to `<workdir>/old.mask`. Use the agent Cargo environment shown in that script. Build the retained `svg_pdf.rs` harness as described below; its binary must be `/tmp/sdocx-agent-target/debug/svg_pdf`. Run `/path/to/python-with-Pillow-and-PyMuPDF tools/tapepen-public-drawing/display-texture-compare.py <workdir>`. The comparison pins the retained log and upload payload, mask, native framebuffer, SVG and PDF hashes, and error metrics. It requires resvg 0.45.1 and PyMuPDF 1.28.2. If the optional APK asset is missing, it explicitly reports that the source-asset comparison was skipped; the captured-texture comparison still runs. `SDOCX_TAPE_PATTERN_SVG` can point to the same hash-pinned asset elsewhere.
+
+The source-asset control in `display-texture-compare.py` additionally loads the locally extracted APK `tape_pattern_01.svg` only if its SHA-256 is `9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b`. The capture passes those bytes to native `SetTapePenPatternSvgUtf8Bytes(1, ...)`. The pinned TapePen library exports `SPen::RasterizeTapePenPatternFromSvg`, `nsvgParse`, and `nsvgRasterize`; the same capture records 540 parser `pow` calls and 136 `acosf` calls at pinned sites in that rasterization path. The 128×128 upload and its allocation are separately captured. This supports the source-to-upload route, although the log does not trace every byte through each intermediate. Rendering the packaged SVG at 128×128 with resvg 0.45.1 gives a texture whose RGBA L1 difference from the native upload is 58,560, maximum 33, across 3,072 channels. Feeding that source-generated image into the diagnostic gives SVG L1 612, maximum 25, and SVG-derived MuPDF L1 1,036, maximum 25. The optional source control is skipped explicitly when the locally extracted APK asset is absent.
+
+The shipped AArch64 library exports the NanoSVG entry points, but no NanoSVG source or headers were found in the local system includes or Cargo registry. A Rust implementation would need to reproduce the native parser, geometry/rasterizer, antialiasing and color conversion, as well as its dimensions and host math behavior; matching the two image sizes and changed SVG inputs against native uploads is needed before generalizing. The source-derived image is an approximation, and neither diagnostic PDF is a public direct document PDF.
+
+For the SVG-derived PDF harness, create `<workdir>/harness/src/bin`, copy
+`svg_pdf.rs` there, and copy `pdf-control-Cargo.lock` to
+`<workdir>/harness/Cargo.lock`. Write this `Cargo.toml`, replacing the absolute
+source path with the disposable source copy's `crates/sdocx` directory:
+
+```toml
+[workspace]
+[package]
+name = "tapepen-control-replay"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+sdocx = { path = "/absolute/source-copy/crates/sdocx", features = ["render", "pdf", "serde"] }
+serde_json = "1"
+sha2 = "0.10.9"
+lopdf = { version = "=0.42.0", default-features = false }
+```
+
+With the same agent Cargo environment, run
+`cargo build --offline --locked --manifest-path <workdir>/harness/Cargo.toml --bin svg_pdf`.
+The comparison script uses captured upload bytes only as diagnostic input; no
+captured framebuffer or texture is installed as a production rendering source.
