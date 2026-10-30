@@ -1,0 +1,17 @@
+{
+  "scope": "Native AsyncDrawingData constructor and list count using synthetic input and a host bitmap-reference callback; no bitmap ownership, destructor, object independence, queued execution, or cloned-stroke paint established.",
+  "script": "tools/pencil2-async-route/clone-probe.py",
+  "script_sha256": "f2c2ee591a33f12a4a37b52007ddac2c2a48d7803de423cc212173ecd312356f",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "matrix_hex": "0000803f000000000000000000000000000080bf000000000000c040000037430000803f",
+  "matrix_present": 1,
+  "list_count": 1,
+  "reference_calls": [
+    "nonnull",
+    "null",
+    "null",
+    "null"
+  ],
+  "reproduction": "python3 tools/pencil2-async-route/clone-probe.py"
+}
