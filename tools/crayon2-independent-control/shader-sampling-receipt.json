@@ -1,0 +1,93 @@
+{
+  "scope": "Recompiled fragment intervention and independent SVG raster stages; original shader intermediate is inferred",
+  "native": {
+    "point": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "background": [
+      76,
+      76,
+      76,
+      255
+    ],
+    "alpha": [
+      253,
+      253,
+      253,
+      255
+    ],
+    "xfrac": [
+      0,
+      0,
+      0,
+      255
+    ],
+    "xcoord": [
+      173,
+      173,
+      173,
+      255
+    ],
+    "ycoord": [
+      212,
+      212,
+      212,
+      255
+    ]
+  },
+  "svg": {
+    "point": [
+      184,
+      76,
+      41,
+      255
+    ],
+    "background": [
+      184,
+      76,
+      43,
+      54
+    ],
+    "product": [
+      184,
+      77,
+      41,
+      180
+    ]
+  },
+  "horizontal_shifts_pixels_max_total": {
+    "0.0": [
+      286,
+      124,
+      5572
+    ],
+    "1e-05": [
+      285,
+      124,
+      5452
+    ],
+    "0.0001": [
+      288,
+      141,
+      6445
+    ],
+    "0.001": [
+      288,
+      141,
+      6445
+    ]
+  },
+  "inputs_sha256": {
+    "tools/crayon2-independent-control/shader-sample-probe.py": "ed17f59089ed1fcd59740b2727f321248b9ecbbc4a6d6f43594431b295d0cf7e",
+    "tools/crayon2-independent-control/verify-shader-samples.py": "eaca38dc5f264886ca0b2d2c0950a1cc50cdc5983e5233eeba80fc5f130de78a",
+    "tools/crayon2-independent-control/capture-stamp.py": "0ec5ea84d232fdf159f1a5c35ffd9c879f8c10f3726a34911091c5b5f55722ec",
+    "tools/crayon2-independent-control/capture.py": "7c4ef0580aaa165fe4ca427a664883b00cb4bd312ccc32e39ac8e8542e5768a6",
+    "tools/crayon2-independent-control/native-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a",
+    "tools/crayon2-independent-control/native-frame.z": "da2b32e482b5a15035691b2e4c1c8805c0e0794ae2900b2465377b9e0eced283"
+  },
+  "source_svg_sha256": "bf20e396c38802985a235d254a1764ce61ae26e1a99eb6c2c701558433904c86",
+  "renderer_sha256": "4c1dd5928f75490d6e399c32b3c9fc25029852836ad04de0711c6d761174b980"
+}

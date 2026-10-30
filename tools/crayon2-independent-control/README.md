@@ -105,3 +105,31 @@ are recorded in the receipt; the version is a manifest claim because the helper
 has no runtime version interface. The result is one differing RGB pixel, maximum channel
 error 42, total 93. This comparison is a host intervention, not a device or
 saved-note fidelity result.
+
+## Isolated fragment sampling diagnostic
+
+`shader-sample-probe.py` replays isolated stamp 1 with a recompiled fragment
+shader, writing the selected intermediate as opaque grayscale. Small nonzero
+sentinel terms keep the original uniforms active; this is an intervention and
+is not a direct measurement of the original shader's intermediates. It uses
+the same environment and native capture dependencies above:
+
+```sh
+for stage in point background alpha xfrac xcoord ycoord; do
+  .venv/bin/python tools/crayon2-independent-control/shader-sample-probe.py "$stage" > "$work_dir/$stage.json"
+done
+.venv/bin/python tools/crayon2-independent-control/verify-shader-samples.py \
+  "$work_dir" "$work_dir/host.svg" /tmp/sdocx-agent-target/debug/sdocx-render-svg-047
+```
+
+At top-down pixel (36,143), the instrumented point and background samples are
+255 and 76, and the computed alpha is 253, in RGBA8 grayscale. Separate SVG
+filter-stage renders yield point 255, background 54, and product alpha 180.
+The [compact receipt](shader-sampling-receipt.json) retains the measurements
+and input hashes. The background mask image has 54 and 76 in adjacent columns 101 and 102;
+the SVG mapping lands at approximately 101.999995 texels. The recompiled
+shader's fractional-coordinate output rounds to zero at 8-bit precision,
+consistent with sampling the adjacent column. A 0.00001-pixel horizontal
+shift of all SVG background images reduces independent-control RGB error from
+5572 to 5452; shifts of 0.0001 or 0.001 increase it to 6445. This does not
+establish a general transform correction, and no production shift was applied.
