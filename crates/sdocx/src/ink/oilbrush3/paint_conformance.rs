@@ -8,6 +8,7 @@
 //! supplied shader LLVM IR does not include fixed-function blend lowering. This
 //! profile is not production dispatch.
 
+use crate::ink::host_rgba8::{over as host_over, quantize as quant};
 use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, io::Read};
@@ -177,26 +178,13 @@ fn fdiv(a: f32, b: f32) -> f32 {
 fn ffma(a: f32, b: f32, c: f32) -> f32 {
     ((f64::from(a) * f64::from(b)) + f64::from(c)) as f32
 }
-fn quant(x: f32) -> u8 {
-    // Mesa converts the shader's clamped F32 output before byte blending.
-    // CVTPS2DQ follows MXCSR; this host profile assumes nearest-even.
-    (x.clamp(0.0, 1.0) * 255.0).round_ties_even() as u8
-}
-
 // Captured P4 state uses FUNC_ADD with ONE / ONE_MINUS_SRC_ALPHA for color
 // and alpha on RGBA8 attachments. Quantize the shader result first, then model
 // the normalized-integer framebuffer blend from Mesa 25.0.7 lp_build_mul_norm.
 // This common driver path has captured Crayon2 IR corroboration; OilBrush3's
 // shader-only IR does not independently establish its active blend lowering.
 fn rgba8_source_over(src: [u8; 4], dst: [u8; 4]) -> [u8; 4] {
-    let inverse_alpha = 255 - u32::from(src[3]);
-    std::array::from_fn(|channel| {
-        let src = u32::from(src[channel]);
-        let dst = u32::from(dst[channel]);
-        let product = dst * inverse_alpha;
-        let contribution = (product + (product >> 8) + 128) >> 8;
-        (src + contribution).min(255) as u8
-    })
+    host_over(dst, src)
 }
 
 fn decode_zlib(bytes: &[u8], expected_len: usize, expected_sha: &str) -> Vec<u8> {
