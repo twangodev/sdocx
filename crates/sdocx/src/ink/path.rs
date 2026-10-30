@@ -58,6 +58,22 @@ pub(super) struct Quad {
     pub(super) length: f32,
 }
 
+fn visit_quad_chords(p: [P; 3], t0: u16, t1: u16, visit: &mut impl FnMut([P; 3], u16)) {
+    let mid = p[0].mid(p[2]);
+    let dx = p[1].x.mul_add(0.5, mid.x * -0.5).abs();
+    let dy = p[1].y.mul_add(0.5, mid.y * -0.5).abs();
+    if t1 - t0 >= 1024 && dx.max(dy) > 0.5 {
+        let a = p[0].mid(p[1]);
+        let b = p[1].mid(p[2]);
+        let c = a.mid(b);
+        let t = (t0 + t1) / 2;
+        visit_quad_chords([p[0], a, c], t0, t, visit);
+        visit_quad_chords([c, b, p[2]], t, t1, visit);
+    } else {
+        visit(p, t1);
+    }
+}
+
 impl Quad {
     pub(super) fn new(a: P, b: P, c: P) -> Self {
         let mut q = Self {
@@ -70,23 +86,25 @@ impl Quad {
     }
 
     fn split(&mut self, p: [P; 3], t0: u16, t1: u16) {
-        let mid = p[0].mid(p[2]);
-        let dx = p[1].x.mul_add(0.5, mid.x * -0.5).abs();
-        let dy = p[1].y.mul_add(0.5, mid.y * -0.5).abs();
-        if t1 - t0 >= 1024 && dx.max(dy) > 0.5 {
-            let a = p[0].mid(p[1]);
-            let b = p[1].mid(p[2]);
-            let c = a.mid(b);
-            let t = (t0 + t1) / 2;
-            self.split([p[0], a, c], t0, t);
-            self.split([c, b, p[2]], t, t1);
-        } else {
+        visit_quad_chords(p, t0, t1, &mut |p, t1| {
             let next = self.length + p[0].sub(p[2]).len();
             if next > self.length {
                 self.length = next;
                 self.segments.push((next, t1));
             }
-        }
+        });
+    }
+
+    /// Measure the same subdivision chords without retaining the lookup table.
+    pub(super) fn length_only(a: P, b: P, c: P) -> f32 {
+        let mut length = 0.0;
+        visit_quad_chords([a, b, c], 0, 32767, &mut |p, _| {
+            let next = length + p[0].sub(p[2]).len();
+            if next > length {
+                length = next;
+            }
+        });
+        length
     }
 
     fn parameter(&self, d: f32) -> f32 {

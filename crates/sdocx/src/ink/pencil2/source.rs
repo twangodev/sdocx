@@ -127,6 +127,27 @@ pub(crate) fn prepare_stroke(
     {
         return Err(SamplerError::Invalid("native timestamp range"));
     }
+    // Validate conversions before planning; planning does not allocate source vectors.
+    for point in &stroke.points {
+        finite(point.x)?;
+        finite(point.y)?;
+    }
+    for values in [&stroke.pressures, &stroke.tilts, &stroke.orientations] {
+        for &value in values {
+            finite(value)?;
+        }
+    }
+    // Match the sampler's validation before checking its record budget.
+    if inverse_scale != 1.0 && inverse_scale != 0.5 {
+        return Err(SamplerError::Unsupported("uncaptured inverse scale"));
+    }
+    if size <= 0.0 {
+        return Err(SamplerError::Invalid("nonfinite or nonpositive geometry"));
+    }
+    let planned = super::plan_records(count, |i| super::P {
+        x: stroke.points[i].x as f32,
+        y: stroke.points[i].y as f32,
+    })?;
     let alpha = AlphaState {
         alpha_byte: (color >> 24) as u8,
         square_pressure_flag: 0,
@@ -157,11 +178,13 @@ pub(crate) fn prepare_stroke(
         orientation: channels(&stroke.orientations)?,
         timestamps: stroke.timestamps.clone(),
     };
-    if inverse_scale == 1. {
-        sample(&input, alpha)
+    let records = if inverse_scale == 1. {
+        sample(&input, alpha)?
     } else {
-        sample_with_inverse_scale(&input, alpha, inverse_scale)
-    }
+        sample_with_inverse_scale(&input, alpha, inverse_scale)?
+    };
+    debug_assert_eq!(planned, records.len());
+    Ok(records)
 }
 
 #[cfg(all(test, feature = "serde"))]
@@ -200,6 +223,36 @@ mod serialized_fresh_native_test {
             let props = serde_json::json!({"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false});
             stroke.rendering = Some(serde_json::from_value(serde_json::json!({"metadata":null,"pen_name":"com.samsung.android.sdk.pen.pen.preload.Pencil2","advanced_settings":"14;","tool_type_raw":2,"properties":props,"style":style})).unwrap());
         }
+        let mut over_budget = stroke.clone();
+        let last = over_budget.points.len() - 1;
+        over_budget.points[last].x = 1_000_000.;
+        assert!(matches!(
+            prepare_stroke(&over_budget, 1.),
+            Err(super::SamplerError::WorkLimit)
+        ));
+        assert!(matches!(
+            prepare_stroke(&over_budget, 0.75),
+            Err(super::SamplerError::Unsupported("uncaptured inverse scale"))
+        ));
+        let mut bad_size = over_budget.clone();
+        bad_size.pen_width = 0.;
+        bad_size.rendering.as_mut().unwrap().style.pen_size = Some(0.);
+        assert!(matches!(
+            prepare_stroke(&bad_size, 1.),
+            Err(super::SamplerError::Invalid(
+                "nonfinite or nonpositive geometry"
+            ))
+        ));
+        assert!(matches!(
+            prepare_stroke(&bad_size, 0.75),
+            Err(super::SamplerError::Unsupported("uncaptured inverse scale"))
+        ));
+        let mut bad_channel = over_budget.clone();
+        bad_channel.pressures[0] = f64::NAN;
+        assert!(matches!(
+            prepare_stroke(&bad_channel, 0.75),
+            Err(super::SamplerError::Invalid("nonfinite source channel"))
+        ));
         let records = prepare_stroke(&stroke, 1.).unwrap();
         let bytes: Vec<u8> = records
             .iter()

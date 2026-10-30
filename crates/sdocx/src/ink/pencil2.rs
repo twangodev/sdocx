@@ -216,6 +216,140 @@ fn finite_input(input: &SavedInput) -> Result<(), SamplerError> {
     Ok(())
 }
 
+// Shared saved-path traversal for both allocation-free planning and sampling.
+struct GeometryPaths<F> {
+    point: F,
+    len: usize,
+    index: usize,
+    previous: P,
+    midpoint: P,
+    short_segment_toggle: bool,
+}
+impl<F: Fn(usize) -> P> GeometryPaths<F> {
+    fn new(len: usize, point: F) -> Self {
+        let previous = point(0);
+        Self {
+            point,
+            len,
+            index: 1,
+            previous,
+            midpoint: previous,
+            short_segment_toggle: true,
+        }
+    }
+    fn next(&mut self) -> Option<(usize, [P; 3])> {
+        while self.index < self.len {
+            let i = self.index;
+            self.index += 1;
+            let current = (self.point)(i);
+            let dx = f32sub(current.x, self.previous.x);
+            let dy = f32sub(current.y, self.previous.y);
+            let chord = dx.mul_add(dx, dy * dy).sqrt();
+            if chord < 5.0 {
+                self.short_segment_toggle = !self.short_segment_toggle;
+                if !self.short_segment_toggle {
+                    continue;
+                }
+            } else {
+                self.short_segment_toggle = true;
+            }
+            let end = P {
+                x: f32add(self.previous.x, current.x) * 0.5,
+                y: f32add(self.previous.y, current.y) * 0.5,
+            };
+            let path = [self.midpoint, self.previous, end];
+            self.previous = current;
+            self.midpoint = end;
+            return Some((i, path));
+        }
+        None
+    }
+    fn terminal(&self) -> [P; 3] {
+        [self.midpoint, self.previous, (self.point)(self.len - 1)]
+    }
+}
+
+fn advance_spacing(distance: f32, terminal: bool) -> Result<f32, SamplerError> {
+    let next = f32add(distance, 0.4);
+    if next <= distance {
+        return Err(SamplerError::Invalid(if terminal {
+            "terminal spacing failed to advance"
+        } else {
+            "spacing failed to advance"
+        }));
+    }
+    Ok(next)
+}
+
+fn for_each_distance(
+    mut distance: f32,
+    length: f32,
+    terminal: bool,
+    mut visit: impl FnMut(f32) -> Result<(), SamplerError>,
+) -> Result<f32, SamplerError> {
+    while distance <= length {
+        visit(distance)?;
+        distance = advance_spacing(distance, terminal)?;
+    }
+    Ok(distance)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TerminalAction {
+    Curve,
+    Point,
+    None,
+}
+
+fn terminal_action(length: f32, empty: bool) -> TerminalAction {
+    if length > 0.0 && length.is_finite() {
+        TerminalAction::Curve
+    } else if empty {
+        TerminalAction::Point
+    } else {
+        TerminalAction::None
+    }
+}
+
+// The source points must already be validated and f32-representable.
+fn plan_records<F: Fn(usize) -> P>(len: usize, point: F) -> Result<usize, SamplerError> {
+    let mut paths = GeometryPaths::new(len, point);
+    let mut residual = 0.4f32;
+    let mut records = 0usize;
+    while let Some((_, [a, b, c])) = paths.next() {
+        let length = Quad::length_only(a, b, c);
+        if !length.is_finite() {
+            return Err(SamplerError::Invalid("nonfinite SmPath length"));
+        }
+        let distance = for_each_distance(residual, length, false, |_| {
+            if records == MAX_RECORDS {
+                return Err(SamplerError::WorkLimit);
+            }
+            records += 1;
+            Ok(())
+        })?;
+        residual = f32sub(distance, length);
+    }
+    let [a, b, c] = paths.terminal();
+    let length = Quad::length_only(a, b, c);
+    if terminal_action(length, records == 0) == TerminalAction::Curve {
+        for_each_distance(residual, length, true, |_| {
+            if records == MAX_RECORDS {
+                return Err(SamplerError::WorkLimit);
+            }
+            records += 1;
+            Ok(())
+        })?;
+        if records == MAX_RECORDS {
+            return Err(SamplerError::WorkLimit);
+        }
+        records += 1;
+    } else if terminal_action(length, records == 0) == TerminalAction::Point {
+        records = 1;
+    }
+    Ok(records)
+}
+
 /// Reconstructs the captured curve-enabled saved redraw path and all 14 source-backed
 /// RTV4 lanes. It accepts only the captured style/context profile.
 pub fn sample(input: &SavedInput, alpha: AlphaState) -> Result<Vec<SampledRecord>, SamplerError> {
@@ -257,37 +391,11 @@ pub fn sample_with_inverse_scale(
     let mut residual = spacing; // startPen resets +92 to +88.
     let mut current_radius = base_radius; // startPen copies data_manager[0] to +248.
     let mut current_alpha = 0.0f32; // startPen clears +252.
-    let mut previous = P {
-        x: input.points[0].x,
-        y: input.points[0].y,
-    };
-    let mut midpoint = previous;
+    let mut paths = GeometryPaths::new(input.points.len(), |i| input.points[i]);
     let mut tile = 0u32;
-    let mut short_segment_toggle = true;
 
-    for i in 1..input.points.len() {
-        let current = P {
-            x: input.points[i].x,
-            y: input.points[i].y,
-        };
-        let dx = f32sub(current.x, previous.x);
-        let dy = f32sub(current.y, previous.y);
-        let squared = dx.mul_add(dx, dy * dy);
-        let chord = squared.sqrt();
-        if chord < 5.0 {
-            short_segment_toggle = !short_segment_toggle;
-            if !short_segment_toggle {
-                continue;
-            }
-        } else {
-            short_segment_toggle = true;
-        }
-
-        let end = P {
-            x: f32add(previous.x, current.x) * 0.5,
-            y: f32add(previous.y, current.y) * 0.5,
-        };
-        let path = Quad::new(midpoint, previous, end);
+    while let Some((i, [a, b, c])) = paths.next() {
+        let path = Quad::new(a, b, c);
         let length = path.length;
         if !length.is_finite() {
             return Err(SamplerError::Invalid("nonfinite SmPath length"));
@@ -306,10 +414,9 @@ pub fn sample_with_inverse_scale(
             .max(1);
         let radius_step = (target_radius - current_radius) / count as f32;
         let alpha_step = (target_alpha - current_alpha) / count as f32;
-        let mut distance = residual;
         let mut radius = current_radius;
         let mut opacity = current_alpha;
-        while distance <= length {
+        let distance = for_each_distance(residual, length, false, |distance| {
             let point = path.at(distance);
             emit_record(
                 &mut out,
@@ -323,17 +430,11 @@ pub fn sample_with_inverse_scale(
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
             tile = (tile + 1) % 3;
-            let next = f32add(distance, spacing);
-            if next <= distance {
-                return Err(SamplerError::Invalid("spacing failed to advance"));
-            }
-            distance = next;
-        }
+            Ok(())
+        })?;
         residual = f32sub(distance, length);
         current_radius = target_radius;
         current_alpha = target_alpha;
-        previous = current;
-        midpoint = end;
     }
 
     // endPen's final quadratic runs from the carried midpoint through the last
@@ -343,7 +444,8 @@ pub fn sample_with_inverse_scale(
         x: input.points.last().unwrap().x,
         y: input.points.last().unwrap().y,
     };
-    let path = Quad::new(midpoint, previous, terminal);
+    let [a, b, c] = paths.terminal();
+    let path = Quad::new(a, b, c);
     let pressure = finite_pressure(
         *input.pressure.last().unwrap(),
         input.tool_type,
@@ -358,16 +460,15 @@ pub fn sample_with_inverse_scale(
         tilt_factor.mul_add(-2.0, 1.0),
         (base_radius * 3.5) * tilt_factor,
     );
-    if path.length > 0.0 && path.length.is_finite() {
+    if terminal_action(path.length, out.is_empty()) == TerminalAction::Curve {
         let count = (((path.length - residual) / spacing) as i32)
             .saturating_add(1)
             .max(1);
         let radius_step = (target_radius - current_radius) / count as f32;
         let alpha_step = (target_alpha - current_alpha) / count as f32;
-        let mut distance = residual;
         let mut radius = current_radius;
         let mut opacity = current_alpha;
-        while distance <= path.length {
+        for_each_distance(residual, path.length, true, |distance| {
             emit_record(
                 &mut out,
                 path.at(distance),
@@ -380,12 +481,8 @@ pub fn sample_with_inverse_scale(
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
             tile = (tile + 1) % 3;
-            let next = f32add(distance, spacing);
-            if next <= distance {
-                return Err(SamplerError::Invalid("terminal spacing failed to advance"));
-            }
-            distance = next;
-        }
+            Ok(())
+        })?;
         emit_record(
             &mut out,
             terminal,
@@ -395,7 +492,7 @@ pub fn sample_with_inverse_scale(
             [tile, input.color_argb],
             inverse_scale,
         )?;
-    } else if out.is_empty() {
+    } else if terminal_action(path.length, out.is_empty()) == TerminalAction::Point {
         emit_record(
             &mut out,
             terminal,
@@ -746,7 +843,9 @@ mod tests {
         let alpha = native_alpha_state(case).unwrap();
         let input = saved_input(case).unwrap();
         assert_eq!(input.effective_size.to_bits(), alpha.base.to_bits());
+        let planned = plan_records(input.points.len(), |i| input.points[i]).unwrap();
         let got = sample(&input, alpha).unwrap();
+        assert_eq!(planned, got.len(), "{} planned", case["id"]);
         let desc = &case["expected_stream"];
         let offset = desc["offset"].as_u64().unwrap() as usize;
         let length = desc["length"].as_u64().unwrap() as usize;
@@ -939,6 +1038,60 @@ mod tests {
             bad = stroke.clone();
             bad.pressures.pop();
             assert!(public_adapter(&bad).is_err());
+        }
+    }
+
+    #[test]
+    fn plan_matches_sampling_at_spacing_and_record_boundaries() {
+        let f = fixture();
+        let mut input = saved_input(&f["cases"][0]).unwrap();
+        let alpha = native_alpha_state(&f["cases"][0]).unwrap();
+        for x in [
+            0.0, 0.39999998, 0.4, 0.40000004, 4.9999995, 5.0, 5.0000005, 6552.0, 6553.0, 6554.0,
+            1000000.0,
+        ] {
+            input.points = vec![P { x: 0.0, y: 0.0 }, P { x, y: 0.0 }];
+            input.pressure = vec![0.5; 2];
+            input.tilt = vec![0.0; 2];
+            input.orientation = vec![0.0; 2];
+            input.timestamps = vec![0; 2];
+            let plan = plan_records(2, |i| input.points[i]);
+            let actual = sample(&input, alpha);
+            match (plan, actual) {
+                (Ok(n), Ok(records)) => assert_eq!(n, records.len(), "x={x}"),
+                (Err(SamplerError::WorkLimit), Err(SamplerError::WorkLimit)) => {}
+                (p, a) => panic!("x={x} plan={p:?} actual={a:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn plan_matches_multisegment_and_terminal_sampling() {
+        let f = fixture();
+        let mut input = saved_input(&f["cases"][0]).unwrap();
+        let alpha = native_alpha_state(&f["cases"][0]).unwrap();
+        for xs in [
+            vec![0., 0., 0.],
+            vec![0., 0.4, 0.4],
+            vec![0., 4.9, 5., 5.4],
+            vec![0., 5., 5.4, 10., 10.4],
+            vec![0., 5., 10., 5., 0.],
+            vec![0., 3000., 6000., 6600.],
+            vec![0., 3000., 6000., 7000.],
+        ] {
+            let n = xs.len();
+            input.points = xs.iter().map(|&x| P { x, y: 0. }).collect();
+            input.pressure = vec![0.5; n];
+            input.tilt = vec![0.; n];
+            input.orientation = vec![0.; n];
+            input.timestamps = vec![0; n];
+            let plan = plan_records(n, |i| input.points[i]);
+            let actual = sample(&input, alpha);
+            match (plan, actual) {
+                (Ok(n), Ok(records)) => assert_eq!(n, records.len(), "{xs:?}"),
+                (Err(SamplerError::WorkLimit), Err(SamplerError::WorkLimit)) => {}
+                (p, a) => panic!("{xs:?} plan={p:?} actual={a:?}"),
+            }
         }
     }
 
