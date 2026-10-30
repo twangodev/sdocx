@@ -1,0 +1,70 @@
+{
+  "schema": "sdocx.airbrush-v1-tool1-backdrop.v1",
+  "scope": "Synthetic native Drawing and Mesa GLES; 256x256, identity transform, opaque uniform initial bitmap RGBA 40,90,160,255. Candidate images are generated from source geometry and texture; native frames only provide comparison targets. No ordering or scale claim.",
+  "cases": {
+    "reverse-1": {
+      "capture_sha256": "a3313e5bd67bfc2b50840d65bfc07e3e26933a88ed4142d2de0b5832ae7d3f65",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "c26d6f25c2d579ee727c25566788a3432d97a3539b16be376a4088c40ed785b7",
+        "nonzero_pixels": 65536,
+        "nonzero_channels": [
+          65536,
+          65536,
+          65536,
+          65536
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt1qFOw2AYheHbWTJAgEWBgHSsrUD8XYJC4REIEgwLIQhYgyJscKeHcQ+Uij3i8a85+b7J4jsTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAdt5h+cys6XN9/jR6C/A/DsomZfaS5fF9mnmfafc1ehMwrN/d1xer3Jw9pmpX2es2ozcBwzoqH7mqnnN3+pCmfst+tx69CRjWdLFOW7/mdrv7k8t3fz7skKrtU8+3977YPQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf+cHFE0g3Q==",
+        "compressed_bytes": 409,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "zigzag-1": {
+      "capture_sha256": "600ff853acf1a21b7a2938c1fac980ceca554a9830bde74e5db98edf01a57195",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d23c905f97c9785512935c821602433d1484791ff698ce0ef676aa04b922f972",
+        "nonzero_pixels": 65536,
+        "nonzero_channels": [
+          65536,
+          65536,
+          65536,
+          65536
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2ttSHFUUBuDXmenu6UEex0MSMBghByIohDPDqQBNICQhIeLhTZdrt3hhlYopUw5UfRdfwVBMVffFWvtfe+/ep79GDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/i+f/RLV1PuoZt5Ede9993vvi5+iP30R/bs/jv/5gI+u+vzn6GetN7Mvo566iMHjF1HNP49q7jSa7AXNl2+jenQa1fS76OX/jvt5gY+jn/Vc1vr6/nk03xxF9fgk2rVRDEdrMXi2E8Ol/Rgs70b96CSaB6+iKjkgc8K4nxv4b/ol29+5jDrrerBwFIOnx9F+dxDDrc2Y2F2JdrQa7eZWtBtbMSw/vz2IOjNCP/tFL2cCfQBur7KWNw9Po376fTTPdmO4sxoTGxtZ61n/+0sxub0eg5VRDFYzB2QPaBcOo8n/LT1gkDNBr/SBG/AewIcp+3n1g9eZ60+jzfqePF6Idmvjap0/jMF81vnjF9Es7UWzeBhtzgaTe8sxXNmJNntF2Qvolx4gA8Ct0837WeMl9w/XS77fiCprvGSBeuZN9OfOoir7fl+fRfMk+0CZC7bXMh9sxrDsDyzvRZ1/LzPEuN8F+Jdyve7PnEd/6iLX9Mz9OdO3m+vRZLYf5Of64cuo/9jjK+5lTph9FU05C8je8Mlo7WpvcLc7L+jOBu5cjv+9gGtVuV7Xmd2bJ89znj+Kiazldmm/y/x1mef/4py/nBHUWed1yQLZA8p+wGDpIAaLR5kR3kVP/cOtUOV6XpX9u5LnV0fd7N+sbee6f9KdA/b/bp4v54SZGbqcsHAc7eLh7/n//tvu7sC43wu4XnfeX9byuewB5Ww/c0A9/0PUX73u7vr903dLzi/7BuW71exZzgVnUeXn7hzRPiDceKVOq+mL7l5ft+Zn3VdlDS93+677ftk7KPeCZ867HlL2ELrMUO4Eqn+4HXLGL/Xe1W+Z3Utdf8i93vzOn2YFtQ+3x1W99u9edvf/xv48AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANxIvwGyHyMs",
+        "compressed_bytes": 969,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    }
+  },
+  "rgba_absolute_errors": {
+    "reverse-1": {
+      "pillow": 46,
+      "mupdf": 54,
+      "pdfium": 56
+    },
+    "zigzag-1": {
+      "pillow": 326,
+      "mupdf": 471,
+      "pdfium": 461
+    }
+  }
+}
