@@ -1638,6 +1638,91 @@ mod tests {
     }
 
     #[test]
+    fn oilbrush3_caller_page_survives_clear_zero_and_matches_native_prefixes() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(super::super::tests::FIXTURE).unwrap();
+        let stroke = super::super::tests::public_stroke_from_fixture(&fixture);
+        let context = super::super::PublicStrokeContext {
+            selected_gl_version: 1,
+            source: 0,
+            screen_resolution: [1920, 1080],
+            model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        };
+        let records =
+            super::super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+        let bytes: Vec<u8> = records
+            .iter()
+            .flatten()
+            .flat_map(|x| x.to_le_bytes())
+            .collect();
+        assert_eq!(bytes, ADDPOINTS);
+        let page = PageSize {
+            width: V17_PAGE_WIDTH,
+            height: V17_PAGE_HEIGHT,
+        };
+        let mut canvas = vec![Rgba::default(); page.width * page.height];
+        for y in 0..64 {
+            for x in 0..64 {
+                canvas[y * page.width + x] = Rgba([41, 83, 127, 255]);
+            }
+        }
+        let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+        let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+        let mut brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
+        let mut decoder = ZlibDecoder::new(
+            &include_bytes!("../../../../../conformance/oilbrush3-caller-page/prefixes.zlib")[..],
+        );
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/oilbrush3-caller-page/receipt.json"
+        ))
+        .unwrap();
+        let mut expected = vec![0; page.width * page.height * 4];
+        for stamp in 0..ADDPOINT_COUNT {
+            let record = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+            let state = source_draw_state(page, context.screen_resolution, record);
+            if matches!(stamp, 3 | 7 | 11) {
+                brush = render_p3_for_page(
+                    &canvas,
+                    page,
+                    P3State {
+                        projection: state.projection,
+                        model: state.model,
+                        depth_scale: state.depth_scale,
+                        ratio: feedback_ratio_for_rendering_level(0),
+                    },
+                    &mask,
+                    &depth,
+                    &brush,
+                );
+            }
+            render_p4_with_records(
+                &mut canvas,
+                page,
+                stamp,
+                state,
+                P4Textures {
+                    brush: &brush,
+                    mask: &mask,
+                    depth: &depth,
+                },
+                &bytes,
+            );
+            decoder.read_exact(&mut expected).unwrap();
+            assert_eq!(
+                sha256(&expected),
+                receipt["prefix_sha256"][stamp].as_str().unwrap()
+            );
+            let different = canvas
+                .iter()
+                .zip(expected.chunks_exact(4))
+                .filter(|(actual, expected)| actual.0 != *expected)
+                .count();
+            assert_eq!(different, 0, "caller-page prefix {}", stamp + 1);
+        }
+        assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
+    }
+
+    #[test]
     fn oilbrush3_v23_source_model_matches_native_prefixes_exactly() {
         let rows = simulate();
         assert_eq!(rows.len(), 15);
