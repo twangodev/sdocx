@@ -15349,6 +15349,121 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn saved_v1_curved_public_exports_match_native_control() {
+        let evidence: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-v1-curved-export-control.json"
+        ))
+        .unwrap();
+        assert_eq!(evidence["selected_profile"], 1);
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(evidence["native_frame"]["data_base64"].as_str().unwrap())
+            .unwrap();
+        let mut native_bottom_up = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut native_bottom_up)
+            .unwrap();
+        assert_eq!(native_bottom_up.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&native_bottom_up)),
+            evidence["native_frame"]["sha256"].as_str().unwrap()
+        );
+        let native: Vec<u8> = native_bottom_up
+            .as_chunks::<{ 256 * 4 }>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .copied()
+            .collect();
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = [
+            (120., 120.),
+            (120.125, 120.25),
+            (122., 121.),
+            (124., 118.),
+            (124.0625, 118.),
+            (126., 123.),
+        ]
+        .map(|(x, y)| Point { x, y })
+        .into();
+        stroke.pressures = vec![0., 0.1, 0.9, 0.3, 1., 0.5];
+        stroke.tilts = vec![0., 0.1, 0.5, 0.2, 0.7, 0.3];
+        stroke.orientations = vec![0., 0.2, 0.9, 0.4, 1.2, 0.6];
+        stroke.timestamps = vec![300, 301, 310, 450, 451, 900];
+        stroke.pen_width = 8.75;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.style.pen_size = Some(8.75);
+        rendering.style.color_argb = Some(0x8044ee11);
+        let layout = layout_document(&document);
+        for (name, options) in [
+            (
+                "candidate",
+                RenderOptions {
+                    airbrush_profile: Some(super::AirBrushRenderProfile::SavedV1),
+                    ..RenderOptions::default()
+                },
+            ),
+            ("generic", RenderOptions::default()),
+        ] {
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+            let mut cache = super::DocumentTextCache::default();
+            let scene = cache
+                .render_layout_page_scene_requests(
+                    &document,
+                    &[request],
+                    &options,
+                    &super::fonts::FontBook::default(),
+                    &mut |_| {},
+                )
+                .remove(0);
+            let tree =
+                resvg::usvg::Tree::from_str(&scene.page.svg, &resvg::usvg::Options::default())
+                    .unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            if name == "candidate" {
+                assert_eq!(pixmap.data(), native);
+            }
+            let error: u64 = pixmap
+                .data()
+                .iter()
+                .zip(&native)
+                .map(|(&a, &b)| a.abs_diff(b) as u64)
+                .sum();
+            assert_eq!(
+                error,
+                evidence["results"][name]["svg"]["sum_absolute_channel_error"]
+                    .as_u64()
+                    .unwrap()
+            );
+            if let Some(directory) = std::env::var_os("SDOCX_AIRBRUSH_CURVE_CAPTURE_DIR") {
+                let bytes = crate::pdf::render_scenes_pdf_with_progress(
+                    std::slice::from_ref(&scene),
+                    &crate::PdfOptions::default(),
+                    &mut |_| {},
+                )
+                .unwrap();
+                std::fs::write(
+                    std::path::Path::new(&directory).join(format!("{name}.pdf")),
+                    bytes,
+                )
+                .unwrap();
+            }
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn saved_v1_public_short_stroke_matches_native_frame() {
         use sha2::{Digest, Sha256};
         let evidence: serde_json::Value = serde_json::from_str(include_str!(

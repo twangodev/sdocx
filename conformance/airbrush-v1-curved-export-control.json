@@ -1,0 +1,138 @@
+{
+  "export_source_scope": "Rust sdocx sources, workspace and crate manifests, Cargo.lock; clean archive of e4f2c39f6007910f07cd526bd0fb89bb17f380a2 with curved regression patch. Other build inputs are not pinned.",
+  "export_source_tree_sha256": "e8a8b4485b6b3c85dca231d6dffd07a8f624d26f10ab9b251f10570ea49b7bc4",
+  "input": {
+    "argb": "0x8044ee11",
+    "orientation": [
+      0,
+      0.2,
+      0.9,
+      0.4,
+      1.2,
+      0.6
+    ],
+    "points": [
+      [
+        120,
+        120
+      ],
+      [
+        120.125,
+        120.25
+      ],
+      [
+        122,
+        121
+      ],
+      [
+        124,
+        118
+      ],
+      [
+        124.0625,
+        118
+      ],
+      [
+        126,
+        123
+      ]
+    ],
+    "pressure": [
+      0,
+      0.1,
+      0.9,
+      0.3,
+      1,
+      0.5
+    ],
+    "setting": null,
+    "size": 8.75,
+    "tilt": [
+      0,
+      0.1,
+      0.5,
+      0.2,
+      0.7,
+      0.3
+    ],
+    "timestamps": [
+      300,
+      301,
+      310,
+      450,
+      451,
+      900
+    ],
+    "tool": 2
+  },
+  "native_frame": {
+    "byte_length": 262144,
+    "data_base64": "eNrt2ctu00AUBuC52I5zaRJCWhRKb6GoCwpUomqVwIIdK97/dZiJFIknYOF8nzWS7eVIx+c/4xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4CbFcx9sUkg2BEyn9NrQxh1yqPuVxGMcmNHYFhtnna3+vK43CKHahy2dxnvrQp1L79V3Q/2GQ8iRMan/PszBryuo38X2/CZvpfX4Y36WP3Sq+bZfxzb/zADCM3p9K1m8Xcdlf57vuPF5MSt2vdvnn/HP+Mn9svo026bJmgcM84BsAwyj9mvdL1q91Pdmm+7PH5uvytfmxfG5369/dn+Vru++v0s34Nm0PGaHWPzCcub/UdDONs1HJ/JObvF28tPvlS7Nb7btfi6f2efwhXeeSDeoZoN4Pw8wAbZnx+8t0VWf/xVP+Pv2UHvpS+806rPMx+wODywCHM4B61l9Wt47n3UV818zDvKn/APR9OJlZ4LgOz21obQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/9tfJrAPYw==",
+    "data_encoding": "zlib+base64",
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "gl_errors_after": [],
+    "gl_errors_before": [],
+    "height": 256,
+    "nonzero_channels": [
+      80,
+      94,
+      40,
+      94
+    ],
+    "nonzero_pixels": 94,
+    "phase": "after_Drawing_return",
+    "row_origin": "GL lower-left",
+    "row_pitch_bytes": 1024,
+    "sha256": "4bd2dbd77dbc857e3848b9aa38d05fee405e247563b22df26d03ae385298f713",
+    "status": "ok",
+    "width": 256
+  },
+  "native_library_sha256": {
+    "AirBrushPen": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "pymupdf_version": "1.28.2",
+  "results": {
+    "candidate": {
+      "pdf": {
+        "different_pixels": 94,
+        "max_channel_error": 35,
+        "nonzero_pixels": 74,
+        "raster_sha256": "a5ff128e8f498e16d9efb70c245a114c7445a9fb8be52ed507dc4ac2fb3212b1",
+        "sum_absolute_channel_error": 1797
+      },
+      "svg": {
+        "different_pixels": 0,
+        "max_channel_error": 0,
+        "nonzero_pixels": 94,
+        "raster_sha256": "bf5a2d22f01dcdfb98583075c9f613fb2f78561aa8d6abcd9923b54ea8fed6e7",
+        "sum_absolute_channel_error": 0
+      }
+    },
+    "generic": {
+      "pdf": {
+        "different_pixels": 95,
+        "max_channel_error": 248,
+        "nonzero_pixels": 54,
+        "raster_sha256": "9445c01c950003ba259f0c23165d52714a087d6118d70b337f6323fe044a976c",
+        "sum_absolute_channel_error": 18764
+      },
+      "svg": {
+        "different_pixels": 95,
+        "max_channel_error": 248,
+        "nonzero_pixels": 54,
+        "raster_sha256": "a33872917c749bf1b4572fc94e45ba22c620c66edc9759eece6475184dc1d9ca",
+        "sum_absolute_channel_error": 20176
+      }
+    }
+  },
+  "schema": "sdocx.airbrush-v1-curved-export-control.v1",
+  "scope": "Synthetic native Model and Drawing, host Mesa GL; public SVG via resvg and direct PDF via PyMuPDF 96 dpi, transparent target, premultiplied RGBA. No device, saved-note, other scale or reader claim.",
+  "selected_profile": 1
+}
