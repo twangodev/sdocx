@@ -1,0 +1,540 @@
+{
+  "phase2": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "0000b141",
+          "0000cb41"
+        ],
+        [
+          "0000f941",
+          "00801142"
+        ],
+        [
+          "00802c42",
+          "0000d341"
+        ],
+        [
+          "00805442",
+          "00801d42"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "00000000",
+        "6666263f",
+        "0000803e"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 4,
+          "data_hex": "0000b1410000cb410000f9410080114200802c420000d3410080544200801d42",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 4,
+          "data_hex": "0000803f000000006666263f0000803e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 4,
+          "data_hex": "00000000080000001000000018000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "e60aae38b4f33b6c0c55bb4d58de19bbc0847451c6c53c53f990aed3ce3c200f",
+        "vector_bytes": "0000b1410000cb41383cb8413358cb4143d7bf41ebb4cb41be71c841cc1dcc4185afcf411276cc4167e6d74136dacc41e1d8e0414847cd41f8fce741559ecd4127a0ef4170fbcd4171c2f741975ece41ea310042cdc7ce41f56c0442713ccf41395d0842640cd041384b0c42674dd141f636104278ffd241702014429822d54182fa174258add74194911b42a470da41ba261f420094dd41f5b922426b17e141434b2642e5fae441a6da29426f3ee941233c2d4257a6ed411a5930421a04f24196743342e7abf641968e3642c19dfb411ba73942d36c004225be3c42ca2f0342b4d33f42c7170642258f424205cb08424c3645424a870b4258dc4742235f0e424b814a429052114222254d4292611442dfc74f42278c17428269524251d21a420080544200801d42",
+        "vector_count": 37
+      },
+      "saved_redraw": {
+        "sha256": "e60aae38b4f33b6c0c55bb4d58de19bbc0847451c6c53c53f990aed3ce3c200f",
+        "vector_bytes": "0000b1410000cb41383cb8413358cb4143d7bf41ebb4cb41be71c841cc1dcc4185afcf411276cc4167e6d74136dacc41e1d8e0414847cd41f8fce741559ecd4127a0ef4170fbcd4171c2f741975ece41ea310042cdc7ce41f56c0442713ccf41395d0842640cd041384b0c42674dd141f636104278ffd241702014429822d54182fa174258add74194911b42a470da41ba261f420094dd41f5b922426b17e141434b2642e5fae441a6da29426f3ee941233c2d4257a6ed411a5930421a04f24196743342e7abf641968e3642c19dfb411ba73942d36c004225be3c42ca2f0342b4d33f42c7170642258f424205cb08424c3645424a870b4258dc4742235f0e424b814a429052114222254d4292611442dfc74f42278c17428269524251d21a420080544200801d42",
+        "vector_count": 37
+      }
+    }
+  },
+  "phase4": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00009341",
+          "00009941"
+        ],
+        [
+          "0000cb41",
+          "0000e141"
+        ],
+        [
+          "00800942",
+          "0000a141"
+        ],
+        [
+          "00802d42",
+          "0000e941"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0ad7a33c",
+        "3333733f",
+        "9a99193e",
+        "cdcc4c3f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 4,
+          "data_hex": "00009341000099410000cb410000e141008009420000a14100802d420000e941",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 4,
+          "data_hex": "0ad7a33c3333733f9a99193ecdcc4c3f",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 4,
+          "data_hex": "00000000080000001000000018000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "0247d54106373bbc05c0150d9bfb737b940ae3ae85dcfd3b4ed3cdf1d7df2dfa",
+        "vector_bytes": "0000934100009941f4fb9641bf3f9941cfefa241fdfe994190bda841d95b9a416063af4136c69a41e0ebb641be3e9b410e57bf4171c59b41eca4c8414f5a9c4179d5d24158fd9c415da4da416ab79d419876e241ddef9e41c657ea416fa7a041e947f24122dea24161a0f941ed56a541a5730042732ea841371d0442ed6dab41e7cc07425915af418f630b421a01b34119ac0e428be6b6415ff91142731cbb41604b1542d3a2bf411ea21842a979c441c8f51b42a894c94163e81e424d56ce419ade21425a55d3416dd82442cc91d841ddd52742a60bde41ebd62a42e5c2e34100802d420000e941",
+        "vector_count": 29
+      },
+      "saved_redraw": {
+        "sha256": "0247d54106373bbc05c0150d9bfb737b940ae3ae85dcfd3b4ed3cdf1d7df2dfa",
+        "vector_bytes": "0000934100009941f4fb9641bf3f9941cfefa241fdfe994190bda841d95b9a416063af4136c69a41e0ebb641be3e9b410e57bf4171c59b41eca4c8414f5a9c4179d5d24158fd9c415da4da416ab79d419876e241ddef9e41c657ea416fa7a041e947f24122dea24161a0f941ed56a541a5730042732ea841371d0442ed6dab41e7cc07425915af418f630b421a01b34119ac0e428be6b6415ff91142731cbb41604b1542d3a2bf411ea21842a979c441c8f51b42a894c94163e81e424d56ce419ade21425a55d3416dd82442cc91d841ddd52742a60bde41ebd62a42e5c2e34100802d420000e941",
+        "vector_count": 29
+      }
+    }
+  },
+  "boundary": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "69001041",
+      "points_f32_bits": [
+        [
+          "0000ae41",
+          "0000f241"
+        ],
+        [
+          "00001f42",
+          "00002d42"
+        ],
+        [
+          "00005b42",
+          "0000da41"
+        ],
+        [
+          "00808742",
+          "00002142"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "6666663f",
+        "cdcccc3d",
+        "3333333f",
+        "9a99993e"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 4,
+          "data_hex": "0000ae410000f24100001f4200002d4200005b420000da410080874200002142",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 4,
+          "data_hex": "6666663fcdcccc3d3333333f9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 4,
+          "data_hex": "00000000080000001000000018000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "ce75de1b34eb24946fe82344b02a1c6f004a0998d68407a9cb257511833e0f79",
+        "vector_bytes": "0000ae410000f24189ebb3418d46f641fdeab9417e9bfa41ca2ec141afdaff41b6e9c64110ff01421164cd41ea550442dc9dd441e5f106426eceda41192e094225d8e041465c0b428843e741b8ad0d429810ee4170221042533ff5416dba12423d74fc41d63815428eca01426f6b174249530542885319424fd4084221f11a42a04d0c423b441c42a0491042c56f1d424449144286391e424a3e18429d9c1e42b1281c420c991e42da0b2042472e1e4214e62342ac5b1d4292b5274254211c42557a2b42407f1a42c2fa2e4212981842a6243242898b1642a8463542c5321442c6603842c18d114201733b42829c0e42b1843e42b1720b42dab14142709d08425dfc44423f3806423a6448421f43044270e94b4210be0242a1994f42e6a50142a2715342040001426f685742b5cf0042057e5b42f714014267b25f42cccf0142144863426ec4024267c6664215f9034207586a4270770542f4fc6d427e3f07422fb5714241510942b8807542b7ac0b42af9e784259c90d42df8f7b420deb0f42ed8b7e423b3612426bc98042e4aa14424f52824207491742a1e08342a5101a4262748542bc011d42910d87424f1c20420080874200002142",
+        "vector_count": 55
+      },
+      "saved_redraw": {
+        "sha256": "ce75de1b34eb24946fe82344b02a1c6f004a0998d68407a9cb257511833e0f79",
+        "vector_bytes": "0000ae410000f24189ebb3418d46f641fdeab9417e9bfa41ca2ec141afdaff41b6e9c64110ff01421164cd41ea550442dc9dd441e5f106426eceda41192e094225d8e041465c0b428843e741b8ad0d429810ee4170221042533ff5416dba12423d74fc41d63815428eca01426f6b174249530542885319424fd4084221f11a42a04d0c423b441c42a0491042c56f1d424449144286391e424a3e18429d9c1e42b1281c420c991e42da0b2042472e1e4214e62342ac5b1d4292b5274254211c42557a2b42407f1a42c2fa2e4212981842a6243242898b1642a8463542c5321442c6603842c18d114201733b42829c0e42b1843e42b1720b42dab14142709d08425dfc44423f3806423a6448421f43044270e94b4210be0242a1994f42e6a50142a2715342040001426f685742b5cf0042057e5b42f714014267b25f42cccf0142144863426ec4024267c6664215f9034207586a4270770542f4fc6d427e3f07422fb5714241510942b8807542b7ac0b42af9e784259c90d42df8f7b420deb0f42ed8b7e423b3612426bc98042e4aa14424f52824207491742a1e08342a5101a4262748542bc011d42910d87424f1c20420080874200002142",
+        "vector_count": 55
+      }
+    }
+  },
+  "inside": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00000041",
+      "points_f32_bits": [
+        [
+          "0000b141",
+          "0000cb41"
+        ],
+        [
+          "0000f941",
+          "00801142"
+        ],
+        [
+          "00802c42",
+          "0000d341"
+        ],
+        [
+          "00805442",
+          "00801d42"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "00000000",
+        "6666263f",
+        "0000803e"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 4,
+          "data_hex": "0000b1410000cb410000f9410080114200802c420000d3410080544200801d42",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 4,
+          "data_hex": "0000803f000000006666263f0000803e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 4,
+          "data_hex": "00000000000000000000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 4,
+          "data_hex": "00000000080000001000000018000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "e60aae38b4f33b6c0c55bb4d58de19bbc0847451c6c53c53f990aed3ce3c200f",
+        "vector_bytes": "0000b1410000cb41383cb8413358cb4143d7bf41ebb4cb41be71c841cc1dcc4185afcf411276cc4167e6d74136dacc41e1d8e0414847cd41f8fce741559ecd4127a0ef4170fbcd4171c2f741975ece41ea310042cdc7ce41f56c0442713ccf41395d0842640cd041384b0c42674dd141f636104278ffd241702014429822d54182fa174258add74194911b42a470da41ba261f420094dd41f5b922426b17e141434b2642e5fae441a6da29426f3ee941233c2d4257a6ed411a5930421a04f24196743342e7abf641968e3642c19dfb411ba73942d36c004225be3c42ca2f0342b4d33f42c7170642258f424205cb08424c3645424a870b4258dc4742235f0e424b814a429052114222254d4292611442dfc74f42278c17428269524251d21a420080544200801d42",
+        "vector_count": 37
+      },
+      "saved_redraw": {
+        "sha256": "e60aae38b4f33b6c0c55bb4d58de19bbc0847451c6c53c53f990aed3ce3c200f",
+        "vector_bytes": "0000b1410000cb41383cb8413358cb4143d7bf41ebb4cb41be71c841cc1dcc4185afcf411276cc4167e6d74136dacc41e1d8e0414847cd41f8fce741559ecd4127a0ef4170fbcd4171c2f741975ece41ea310042cdc7ce41f56c0442713ccf41395d0842640cd041384b0c42674dd141f636104278ffd241702014429822d54182fa174258add74194911b42a470da41ba261f420094dd41f5b922426b17e141434b2642e5fae441a6da29426f3ee941233c2d4257a6ed411a5930421a04f24196743342e7abf641968e3642c19dfb411ba73942d36c004225be3c42ca2f0342b4d33f42c7170642258f424205cb08424c3645424a870b4258dc4742235f0e424b814a429052114222254d4292611442dfc74f42278c17428269524251d21a420080544200801d42",
+        "vector_count": 37
+      }
+    }
+  },
+  "near": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00000041",
+      "points_f32_bits": [
+        [
+          "0000b141",
+          "0000cb41"
+        ],
+        [
+          "0000b541",
+          "0000cf41"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "9a99993e",
+        "cdcc4c3f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 2,
+          "data_hex": "0000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 2,
+          "data_hex": "0000b1410000cb410000b5410000cf41",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 2,
+          "data_hex": "9a99993ecdcc4c3f",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 2,
+          "data_hex": "0000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 2,
+          "data_hex": "0000000008000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "d3b9fbc2d44ec1e1f82d7a7567e45037a0ebbdcddb52a26408cbda2d34967792",
+        "vector_bytes": "0000b1410000cb410000b5410000cf41",
+        "vector_count": 2
+      },
+      "saved_redraw": {
+        "sha256": "d3b9fbc2d44ec1e1f82d7a7567e45037a0ebbdcddb52a26408cbda2d34967792",
+        "vector_bytes": "0000b1410000cb410000b5410000cf41",
+        "vector_count": 2
+      }
+    }
+  },
+  "two": {
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x8033cc55",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00000041",
+      "points_f32_bits": [
+        [
+          "0000b141",
+          "0000cb41"
+        ],
+        [
+          "0000f941",
+          "00801142"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "9a99993e",
+        "cdcc4c3f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        8
+      ],
+      "tool_type": 1
+    },
+    "native_calls": {
+      "source_ObjectStroke_arrays": {
+        "orientations": {
+          "count": 2,
+          "data_hex": "0000000000000000",
+          "element_size": 4
+        },
+        "points": {
+          "count": 2,
+          "data_hex": "0000b1410000cb410000f94100801142",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 2,
+          "data_hex": "9a99993ecdcc4c3f",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 2,
+          "data_hex": "0000000000000000",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 2,
+          "data_hex": "0000000008000000",
+          "element_size": 4
+        }
+      }
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "aa42aca9f63e228e294c44f33f9c3537c1af76f1fce1efd8b9b11f82b2ad5cb3",
+        "vector_bytes": "0000b1410000cb4163e2b54140f8d0416309ba41790bd641d774bf4140abdc41f6dac4418344e3410d57c941bbbfe841f247ce41b6c9ee41a4add3417462f541c185d9410887fc417ffbdd4140fd0042d6ace24167db0342c399e741f8dd06424ac2ec41f4040a426826f2415c500d421fc6f7412fc010420000f94100801142",
+        "vector_count": 16
+      },
+      "saved_redraw": {
+        "sha256": "aa42aca9f63e228e294c44f33f9c3537c1af76f1fce1efd8b9b11f82b2ad5cb3",
+        "vector_bytes": "0000b1410000cb4163e2b54140f8d0416309ba41790bd641d774bf4140abdc41f6dac4418344e3410d57c941bbbfe841f247ce41b6c9ee41a4add3417462f541c185d9410887fc417ffbdd4140fd0042d6ace24167db0342c399e741f8dd06424ac2ec41f4040a426826f2415c500d421fc6f7412fc010420000f94100801142",
+        "vector_count": 16
+      }
+    }
+  }
+}

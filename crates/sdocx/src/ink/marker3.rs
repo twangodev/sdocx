@@ -121,6 +121,10 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
         let distance = next.sub(previous).len();
         let draw = if distance < REJECT_BELOW {
             false
+        } else if last {
+            // The captured endPen route samples the terminal segment even
+            // when the tool-one alternation would skip a movement event.
+            true
         } else if r.tool_type_raw == 1 && distance < ALTERNATE_BELOW {
             let old = alternate;
             alternate = !alternate;
@@ -590,6 +594,26 @@ mod tests {
             "../../../../conformance/marker3-saved-caller-native.json"
         ))
         .unwrap()
+    }
+
+    #[test]
+    fn terminal_segment_matches_expanded_native_vectors() {
+        let cases: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-terminal-native.json"
+        ))
+        .unwrap();
+        for name in ["phase2", "phase4", "boundary"] {
+            let case = &cases[name];
+            let stroke = caller_stroke(case);
+            // These sizes remain outside the canonical page gate.
+            assert!(prepare_for_page(&stroke).is_none());
+            assert_caller_xy_matches(&prepare(&stroke).unwrap(), case);
+        }
+        for name in ["inside", "near", "two"] {
+            let case = &cases[name];
+            let stroke = caller_stroke(case);
+            assert_caller_xy_matches(&prepare_for_page(&stroke).unwrap(), case);
+        }
     }
 
     fn caller_stroke(case: &serde_json::Value) -> Stroke {
