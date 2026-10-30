@@ -2,12 +2,13 @@
   "schema": "sdocx-watercolor-public-canvas-export-v1",
   "capture": {
     "script": "tools/watercolor_host/export_compare.py",
-    "script_sha256": "955789757052c21923fd8e09d421b2704e0d1350288434910b7061f6002d6c9d",
-    "native_receipt_sha256": "77545656689b530ba46275e6e157b85b64ba4ffbe62be0d5a6eb181e48875f3a"
+    "script_sha256": "2f1a160c0833430e3af8d2806d50c783db40868a4f791c6250da363a88b9095e",
+    "native_receipt_sha256": "77545656689b530ba46275e6e157b85b64ba4ffbe62be0d5a6eb181e48875f3a",
+    "mixed_native_receipt_sha256": "f204d25b881d51d09db6c093d12b036938d7990d3f651997a6099225f849c04e"
   },
   "readers": {
     "mupdf": "1.28.2",
-    "pdfium": "150.0.7869.0",
+    "pdfium": "156.0.8076.0",
     "svg": "Rust integration test with resvg 0.47"
   },
   "dpi": 72,
@@ -269,7 +270,71 @@
         "maximum": 0,
         "absolute_sum": 0
       }
+    },
+    "mixed_scale1": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "mixed_scale2": {
+      "canvas": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      },
+      "png": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 2,
+        "maximum": 1,
+        "absolute_sum": 2
+      }
     }
   },
-  "scope": "Eight controlled source profiles, GLV1/GLV2, 1x/2x projection and two saved alpha values. All export readers must preserve canvas pixels exactly. SVG/PDF retain intrinsic destination pixel dimensions. Not normal document dispatch, saved-note page layout, Android GPU or device fidelity."
+  "scope": "Eight controlled source profiles plus two Pencil2/WaterColor pixel continuations at 1x/2x. Native WaterColor receives captured Pencil2 pixels; this is not a shared native Drawing lifecycle. Mixed 2x retains two one-byte channel errors inherited from Pencil2; export readers preserve canvas pixels exactly. Intrinsic pixel dimensions; not normal dispatch, saved-page or device fidelity."
 }

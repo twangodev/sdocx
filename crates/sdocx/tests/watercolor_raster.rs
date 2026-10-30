@@ -275,6 +275,156 @@ fn invalid_source_context_and_exhausted_work_preserve_the_canvas() {
     assert!(succeeded > 0);
 }
 
+fn pencil_stroke() -> Stroke {
+    let fixture: Value =
+        serde_json::from_str(include_str!("../../../conformance/pencil2-v14-native.json")).unwrap();
+    let input = &fixture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == "channel_baseline")
+        .unwrap()["input"];
+    let mut source = stroke(1, 0x80336699);
+    let size_bits = input["object_stroke_size_f32_bits"].as_str().unwrap();
+    let size = f32::from_le_bytes(std::array::from_fn(|i| {
+        u8::from_str_radix(&size_bits[i * 2..i * 2 + 2], 16).unwrap()
+    }));
+    source.pen_width = size;
+    let rendering = source.rendering.as_mut().unwrap();
+    rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Pencil2".into());
+    rendering.advanced_settings = Some("14;".into());
+    rendering.style.pen_size = Some(size);
+    source.points = input["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| Point {
+            x: p[0].as_f64().unwrap(),
+            y: p[1].as_f64().unwrap(),
+        })
+        .collect();
+    let channel = |key: &str| {
+        input[key]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect()
+    };
+    source.pressures = channel("pressure");
+    source.tilts = channel("tilt");
+    source.orientations = channel("orientation");
+    source.timestamps = input["timestamps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t.as_i64().unwrap())
+        .collect();
+    source
+}
+
+#[test]
+fn watercolor_continuation_matches_native_pixel_handoff_and_pencil_precision_limit() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../conformance/watercolor-pencil2-continuation-native.json"
+    ))
+    .unwrap();
+    let pencil: Value = serde_json::from_str(include_str!(
+        "../../../conformance/pencil2-v14-page-context-native.json"
+    ))
+    .unwrap();
+    for (key, bytes) in [
+        (
+            "pencil_receipt_sha256",
+            include_bytes!("../../../conformance/pencil2-v14-page-context-native.json").as_slice(),
+        ),
+        (
+            "script_sha256",
+            include_bytes!("../../../tools/watercolor_host/mixed_capture.py").as_slice(),
+        ),
+        (
+            "frame_helper_sha256",
+            include_bytes!("../../../tools/watercolor_host/frame_capture.py").as_slice(),
+        ),
+    ] {
+        assert_eq!(
+            fixture["capture"][key].as_str().unwrap(),
+            format!("{:x}", Sha256::digest(bytes))
+        );
+    }
+    assert_eq!(fixture["cases"].as_object().unwrap().len(), 2);
+    for scale in [1, 2] {
+        let context = InkRasterContext {
+            width: 192,
+            height: 192,
+            pixels_per_unit: scale,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let mut case = fixture["cases"][scale.to_string()].clone();
+        case["frame"] = json!([192, 192]);
+        case["background"] = json!([255, 255, 255, 255]);
+        case["version"] = json!(1);
+        case["argb"] = json!(0x8044aaeeu32);
+        let target = expected(&case);
+        let p = &pencil["results"][format!("colored_top_scale{scale}_white")];
+        let mut prior = vec![[255; 4]; 192 * 192];
+        for pixel in p["pixels"].as_array().unwrap() {
+            let x = pixel[0].as_u64().unwrap() as usize;
+            let y = pixel[1].as_u64().unwrap() as usize;
+            prior[(191 - y) * 192 + x] =
+                std::array::from_fn(|c| pixel[c + 2].as_u64().unwrap() as u8);
+        }
+        let bottom_origin: Vec<u8> = prior
+            .chunks_exact(192)
+            .rev()
+            .flatten()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bottom_origin)),
+            case["prior_sha256"].as_str().unwrap()
+        );
+        let water = stroke(1, 0x8044aaee);
+        let mut seeded = InkRasterCanvas::from_pixels(context, prior).unwrap();
+        seeded.paint(&water, profile()).unwrap();
+        assert!(
+            seeded.pixels() == target,
+            "scale {scale}: native-prior WaterColor differs"
+        );
+        let mut joined = InkRasterCanvas::new(context, [255; 4]).unwrap();
+        joined
+            .paint(
+                &pencil_stroke(),
+                InkRasterProfile::Pencil2V14 {
+                    inverse_scale: sdocx::InkRasterInverseScale::One,
+                },
+            )
+            .unwrap();
+        joined.paint(&water, profile()).unwrap();
+        let differences: Vec<_> = joined
+            .pixels()
+            .iter()
+            .zip(&target)
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .map(|(i, (a, b))| (i % 192, i / 192, *a, *b))
+            .collect();
+        let known = if scale == 1 {
+            Vec::new()
+        } else {
+            vec![(11, 1, [241, 244, 249, 255], [240, 243, 249, 255])]
+        };
+        assert_eq!(differences, known, "mixed scale {scale}");
+        #[cfg(feature = "pdf")]
+        assert!(
+            svg_pixels(&joined.rendered_page(0).unwrap()) == joined.pixels(),
+            "scale {scale}: mixed SVG transport differs"
+        );
+        artifacts(&format!("mixed_scale{scale}"), &joined, &case);
+    }
+}
+
 #[test]
 fn translucent_source_profiles_match_native_canvas_and_svg() {
     let fixture: Value = serde_json::from_str(include_str!(
@@ -282,10 +432,15 @@ fn translucent_source_profiles_match_native_canvas_and_svg() {
     ))
     .unwrap();
     assert_eq!(
-        fixture["capture"]["public_source_fixture_sha256"].as_str().unwrap(),
-        format!("{:x}", Sha256::digest(include_bytes!(
-            "../../../conformance/watercolor-native.json"
-        )))
+        fixture["capture"]["public_source_fixture_sha256"]
+            .as_str()
+            .unwrap(),
+        format!(
+            "{:x}",
+            Sha256::digest(include_bytes!(
+                "../../../conformance/watercolor-native.json"
+            ))
+        )
     );
     assert_eq!(fixture["cases"].as_object().unwrap().len(), 8);
     for (name, case) in fixture["cases"].as_object().unwrap() {

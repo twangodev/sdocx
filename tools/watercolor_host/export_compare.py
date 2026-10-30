@@ -45,6 +45,14 @@ def pdf_pixels(path, size):
     return mupdf, pdfium
 
 
+mixed_path = ROOT / "conformance/watercolor-pencil2-continuation-native.json"
+mixed = json.loads(mixed_path.read_text())
+for scale, case in mixed["cases"].items():
+    fixture["cases"]["mixed_scale" + scale] = {
+        **case,
+        "frame": [192, 192],
+        "background": [255] * 4,
+    }
 results = {}
 for name, case in fixture["cases"].items():
     w, h = case["frame"]
@@ -78,6 +86,9 @@ receipt = {
         "script": "tools/watercolor_host/export_compare.py",
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "native_receipt_sha256": hashlib.sha256(NATIVE.read_bytes()).hexdigest(),
+        "mixed_native_receipt_sha256": hashlib.sha256(
+            mixed_path.read_bytes()
+        ).hexdigest(),
     },
     "readers": {
         "mupdf": pymupdf.VersionBind,
@@ -86,16 +97,19 @@ receipt = {
     },
     "dpi": 72,
     "binding": kind,
-    "api": "Public Stroke + explicit WaterColorHostRtv1 -> InkRasterCanvas -> PNG/SVG plus "
-    + "SVG-page and retained-scene PDF APIs",
+    "api": "Public Stroke + explicit WaterColorHostRtv1 -> InkRasterCanvas -> PNG/SVG plus SVG-page and retained-scene PDF APIs",
     "results": results,
-    "scope": "Eight controlled source profiles, GLV1/GLV2, 1x/2x projection and two saved alpha values. All export readers must preserve canvas pixels exactly. SVG/PDF retain intrinsic destination pixel dimensions. Not normal document dispatch, saved-note page layout, Android GPU or device fidelity.",
+    "scope": "Eight controlled source profiles plus two Pencil2/WaterColor pixel continuations at 1x/2x. Native WaterColor receives captured Pencil2 pixels; this is not a shared native Drawing lifecycle. Mixed 2x retains two one-byte channel errors inherited from Pencil2; export readers preserve canvas pixels exactly. Intrinsic pixel dimensions; not normal dispatch, saved-page or device fidelity.",
 }
 path = ROOT / "conformance/watercolor-public-canvas-export.json"
 path.write_text(json.dumps(receipt, indent=2) + "\n")
 for name, readers in results.items():
     baseline = readers["canvas"]
-    expected = {"different_channels": 0, "maximum": 0, "absolute_sum": 0}
+    expected = (
+        {"different_channels": 2, "maximum": 1, "absolute_sum": 2}
+        if name == "mixed_scale2"
+        else {"different_channels": 0, "maximum": 0, "absolute_sum": 0}
+    )
     assert baseline == expected, f"Unexpected native raster difference: {name}"
     assert all(m == baseline for m in readers.values()), (
         f"Export transport differs from the canvas: {name}"
