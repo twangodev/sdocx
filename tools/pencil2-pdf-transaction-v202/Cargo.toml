@@ -1,0 +1,14 @@
+[package]
+name = "pencil2-pdf-transaction-probe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[[test]]
+name = "transaction"
+path = "transaction.rs"
+
+[dependencies]
+lopdf = { version = "=0.42.0", default-features = false }
