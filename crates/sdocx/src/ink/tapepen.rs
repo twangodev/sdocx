@@ -1140,6 +1140,7 @@ fn v247_scaled_source_mask() {
 }
 
 #[test]
+#[allow(clippy::excessive_precision)]
 fn v248_scaled_source_mask() {
     let Ok(path) = std::env::var("SDOCX_TAPE_V248_MASK_OUT") else {
         return;

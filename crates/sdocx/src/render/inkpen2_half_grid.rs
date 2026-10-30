@@ -1,6 +1,8 @@
 use super::{BoundingBox, InkPen2HalfGridViewport, Paint, Scene, Styled, rectangle};
 use std::{cell::Cell, collections::BTreeMap};
 
+type GridPixels = BTreeMap<(i32, i32), u8>;
+
 // Budget charges generated stamps, tested fragments and retained grid cells for
 // the entire page. A failed stroke does not consume budget or emit paint.
 pub(super) fn render(
@@ -36,7 +38,7 @@ fn sample(
     ink: &crate::PreparedInkPen2V9,
     view: InkPen2HalfGridViewport,
     limits: [usize; 3],
-) -> Option<(BTreeMap<(i32, i32), u8>, [usize; 3])> {
+) -> Option<(GridPixels, [usize; 3])> {
     if !(1..=8192).contains(&view.width)
         || !(1..=8192).contains(&view.height)
         || ink.records.len() > limits[0]
@@ -168,11 +170,11 @@ mod tests {
             let hex = case["geometry_hex"].as_str().unwrap();
             let bytes: Vec<_> = hex
                 .as_bytes()
-                .chunks_exact(2)
+                .as_chunks::<2>().0.iter()
                 .map(|v| u8::from_str_radix(std::str::from_utf8(v).unwrap(), 16).unwrap())
                 .collect();
             let records: Vec<_> = bytes
-                .chunks_exact(12)
+                .as_chunks::<12>().0.iter()
                 .map(|v| {
                     let f = |i| f32::from_le_bytes(v[i..i + 4].try_into().unwrap());
                     [f(0) + 32., f(4) + 32., f(8), f(8), 0., 1., 0., 0., 0.]
@@ -216,7 +218,7 @@ mod tests {
                 expected[y as usize * 64 + x as usize] = a;
             }
             let error: u64 = rgba
-                .chunks_exact(4)
+                .as_chunks::<4>().0.iter()
                 .zip(&expected)
                 .map(|(p, &a)| u64::from(p[3].abs_diff(a)))
                 .sum();

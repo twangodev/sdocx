@@ -111,7 +111,7 @@ pub fn render_crayon2_host_grid_svg(
     use std::fmt::Write;
     for fragment in fragments {
         let grid_test::GridFragment { x, y, rgb: [r, g, b], alpha } = fragment;
-        write!(fragment_svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>\n").unwrap();
+        writeln!(fragment_svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>").unwrap();
     }
     let background = context.background.map(|c| format!(
         "<rect width=\"{}\" height=\"{}\" fill=\"#{:02x}{:02x}{:02x}\"/>\n",
@@ -818,6 +818,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::excessive_precision)]
     fn public_host_material_accepts_source_and_rejects_invalid_inputs() {
         let points = [
             P { x: 64.0, y: 64.0 },
@@ -874,6 +875,7 @@ mod tests {
     #[cfg(feature = "render")]
     #[test]
     #[ignore = "requires local native texture inputs and writes candidate SVG"]
+    #[allow(clippy::excessive_precision)]
     fn write_stroke_material_svg() {
         let points = [
             P { x: 64.0, y: 64.0 },
@@ -1040,6 +1042,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::type_complexity)]
     fn grid_source_rejects_unsupported_flags() {
         let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
@@ -1083,6 +1086,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     #[ignore = "requires native textures and writes document exports"]
+    #[allow(clippy::excessive_precision)]
     fn write_independent_document_grid() {
         let points = [P { x: 40., y: 45. }, P { x: 53., y: 28. }, P { x: 75., y: 49. }];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
@@ -1112,6 +1116,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     #[ignore = "requires native textures and writes document exports"]
+    #[allow(clippy::excessive_precision)]
     fn write_fresh_document_grid() {
         let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
@@ -1142,6 +1147,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     #[ignore = "requires native textures and writes document exports"]
+    #[allow(clippy::excessive_precision)]
     fn write_translated_document_grid() {
         let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
@@ -1172,6 +1178,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     #[ignore = "requires native textures and writes document exports"]
+    #[allow(clippy::excessive_precision)]
     fn write_varied_document_grid() {
         let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
@@ -1202,6 +1209,7 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     #[ignore = "requires native textures and writes document exports"]
+    #[allow(clippy::excessive_precision)]
     fn write_mixed_document_grid() {
         let points = [P { x: 46., y: 37. }, P { x: 69., y: 65. }, P { x: 103., y: 48. }];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
@@ -1231,6 +1239,7 @@ mod tests {
 
     #[test]
     #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
+    #[allow(clippy::excessive_precision)]
     fn write_independent_rust_grid() {
         let points = [P { x: 40.0, y: 45.0 }, P { x: 53.0, y: 28.0 }, P { x: 75.0, y: 49.0 }];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
@@ -1252,6 +1261,7 @@ mod tests {
 
     #[test]
     #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
+    #[allow(clippy::excessive_precision)]
     fn write_matched_rust_grid() {
         let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
@@ -1291,6 +1301,7 @@ mod tests {
     #[cfg(feature = "render")]
     #[test]
     #[ignore = "requires local native texture inputs and writes candidate SVG"]
+    #[allow(clippy::excessive_precision)]
     fn write_independent_stroke_material_svg() {
         let points = [
             P { x: 40.0, y: 45.0 },

@@ -103,6 +103,7 @@ fn third_serialized_brushpen_native() {
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn verify_capture(
     name: &str,
     payload: &[u8],

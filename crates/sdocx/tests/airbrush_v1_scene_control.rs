@@ -88,7 +88,7 @@ fn two_ordered_objects_against_native_host_control() {
         format!("{:x}", Sha256::digest(&bottom)),
         "349699e5ae29169749bead92a1fd35ba4c34466a86b4fb89e85a83eea0bb71a8"
     );
-    let expected: Vec<u8> = bottom.chunks_exact(1024).rev().flatten().copied().collect();
+    let expected: Vec<u8> = bottom.as_chunks::<1024>().0.iter().rev().flatten().copied().collect();
     let error: u64 = pixmap
         .data()
         .iter()

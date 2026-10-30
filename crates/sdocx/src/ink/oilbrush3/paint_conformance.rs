@@ -1714,8 +1714,8 @@ mod tests {
             );
             let different = canvas
                 .iter()
-                .zip(expected.chunks_exact(4))
-                .filter(|(actual, expected)| actual.0 != *expected)
+                .zip(expected.as_chunks::<4>().0.iter())
+                .filter(|(actual, expected)| actual.0 != **expected)
                 .count();
             assert_eq!(different, 0, "caller-page prefix {}", stamp + 1);
         }
@@ -2344,7 +2344,7 @@ fn oilbrush3_source_model_public_canvas_export() {
         [0; 4],
     ).unwrap();
     production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
-    let expected: Vec<[u8; 4]> = pixels.chunks_exact(V17_PAGE_WIDTH).rev().flat_map(|row| row.iter().map(|pixel| pixel.0)).collect();
+    let expected: Vec<[u8; 4]> = pixels.as_chunks::<V17_PAGE_WIDTH>().0.iter().rev().flat_map(|row| row.iter().map(|pixel| pixel.0)).collect();
     assert_eq!(production.pixels(), expected);
     let before = production.pixels().to_vec();
     assert!(production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).is_err());
@@ -2453,9 +2453,9 @@ fn oilbrush3_fresh_trajectory_public_export() {
     }, [0; 4]).unwrap();
     canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
     let native = decode_zlib(include_bytes!("../../../../../conformance/oilbrush3-fresh-trajectory/frame.rgba.zlib"), V17_PIXELS * 4, "90f7dd672ca5b9c48840e74299cbf159ea05279f68c57aa69586a690535ea94d");
-    let expected: Vec<u8> = native.chunks_exact(V17_PAGE_WIDTH * 4).rev().flatten().copied().collect();
+    let expected: Vec<u8> = native.as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter().rev().flatten().copied().collect();
     let actual = canvas.pixels().as_flattened();
-    let differing = actual.chunks_exact(4).zip(expected.chunks_exact(4)).filter(|(a,b)| a != b).count();
+    let differing = actual.as_chunks::<4>().0.iter().zip(expected.as_chunks::<4>().0.iter()).filter(|(a,b)| a != b).count();
     assert_eq!(differing, 0, "native frame differs in {differing} pixels");
     let white: Vec<[u8; 4]> = canvas.pixels().iter().map(|p| {
         let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
@@ -2474,7 +2474,7 @@ fn oilbrush3_fresh_trajectory_public_export() {
         std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
         std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&PdfOptions::default()).unwrap()).unwrap();
         std::fs::write(dir.join("source-svg.pdf"), crate::render_svg_pages_pdf(&[svg], &PdfOptions::default()).unwrap()).unwrap();
-        let white_rgb: Vec<u8> = expected.chunks_exact(4).flat_map(|p| (0..3).map(move |c| (u16::from(p[c]) + u16::from(255-p[3])).min(255) as u8)).collect();
+        let white_rgb: Vec<u8> = expected.as_chunks::<4>().0.iter().flat_map(|p| (0..3).map(move |c| (u16::from(p[c]) + u16::from(255-p[3])).min(255) as u8)).collect();
         std::fs::write(dir.join("native.rgb"), white_rgb).unwrap();
     }
 }
@@ -2509,7 +2509,7 @@ fn oilbrush3_opaque_page_public_export() {
     }
     assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
     let native_top: Vec<u8> = native
-        .chunks_exact(V17_PAGE_WIDTH * 4)
+        .as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter()
         .rev()
         .flatten()
         .copied()
@@ -2543,7 +2543,7 @@ fn oilbrush3_opaque_page_public_export() {
         std::fs::write(
             dir.join("native.rgb"),
             native_top
-                .chunks_exact(4)
+                .as_chunks::<4>().0.iter()
                 .flat_map(|p| p[..3].iter().copied())
                 .collect::<Vec<_>>(),
         )
@@ -2590,7 +2590,7 @@ fn oilbrush3_opaque_fresh_public_export() {
     }
     assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
     let native_top: Vec<u8> = native
-        .chunks_exact(V17_PAGE_WIDTH * 4)
+        .as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter()
         .rev()
         .flatten()
         .copied()
@@ -2624,7 +2624,7 @@ fn oilbrush3_opaque_fresh_public_export() {
         std::fs::write(
             dir.join("native.rgb"),
             native_top
-                .chunks_exact(4)
+                .as_chunks::<4>().0.iter()
                 .flat_map(|p| p[..3].iter().copied())
                 .collect::<Vec<_>>(),
         )

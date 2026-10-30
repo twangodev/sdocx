@@ -5,6 +5,7 @@ use sha2::{Digest, Sha256};
 // This remaps decoded Fountain channels to a fresh setter-built Pencil2 host
 // profile. The native fixture is a pre-Update descriptor, not a device VBO.
 #[test]
+#[allow(clippy::filter_map_bool_then)]
 fn second_source_preserves_native_geometry_except_three_known_sincos_lanes() {
     let data: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../conformance/fountain-v14-saved-scene-inputs.json"
@@ -60,16 +61,16 @@ fn second_source_preserves_native_geometry_except_three_known_sincos_lanes() {
     );
     assert_eq!(bytes.len(), native.len());
     let differences: Vec<_> = native
-        .chunks_exact(4)
-        .zip(bytes.chunks_exact(4))
+        .as_chunks::<4>().0.iter()
+        .zip(bytes.as_chunks::<4>().0.iter())
         .enumerate()
         .filter_map(|(i, (a, b))| {
             (a != b).then(|| {
                 (
                     i / 14,
                     i % 14,
-                    u32::from_le_bytes(a.try_into().unwrap()),
-                    u32::from_le_bytes(b.try_into().unwrap()),
+                    u32::from_le_bytes(*a),
+                    u32::from_le_bytes(*b),
                 )
             })
         })

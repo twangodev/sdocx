@@ -203,7 +203,7 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
     let mut svg = String::new();
     for fragment in fragments {
         let GridFragment { x, y, rgb: [r, g, b], alpha } = fragment;
-        write!(svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>\n").unwrap();
+        writeln!(svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>").unwrap();
     }
     Ok(svg)
 }
