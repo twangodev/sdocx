@@ -1031,6 +1031,9 @@ pub(crate) mod device_raster;
 #[cfg(all(test, feature = "serde", feature = "render"))]
 mod terminal_zero_tests;
 
+#[cfg(all(test, feature = "serde"))]
+mod offset_lifecycle_tests;
+
 #[cfg(any(feature = "render", all(test, feature = "serde")))]
 pub(crate) mod offset_candidate;
 
