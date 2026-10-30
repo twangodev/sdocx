@@ -10529,6 +10529,27 @@ mod tests {
         )
         .unwrap()
         .svg;
+        let scale8 = RenderOptions {
+            inkpen_v1_output_scale: Some(8),
+            ..Default::default()
+        };
+        assert_eq!(normal, render_document_svg(&source, &scale8)[0].svg);
+        assert_eq!(
+            replay,
+            super::render_layout_page_replay_svg(&source, &layout_document(&source), 0, &scale8)
+                .unwrap()
+                .svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(
+                &source,
+                &RenderOptions::default(),
+                &crate::PdfOptions::default()
+            )
+            .unwrap(),
+            crate::render_document_pdf(&source, &scale8, &crate::PdfOptions::default()).unwrap()
+        );
         assert!(!normal.contains("data-replay-lengths"));
         assert!(!replay.contains("data-replay-lengths"));
         assert!(replay.contains("data-replay-stroke=\"0\""));
