@@ -1,0 +1,7 @@
+# Pencil2 synthetic guard identities
+
+Run `python3 tools/pencil2-worker-v287/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v287/probe.py` after the v219 preparation. This extends v286 with guard-entry, object-field, and caller-address observations, and pins the Base and Drawing libraries as well as Renderer. The mutex callbacks remain success-returning stubs.
+
+In the observed submission, the constructor and destructor use the same guard and `CriticalSection` pointer, which equals the synthetic request list head. Its first field changes from the head address to the queued node address between the two guard calls, matching the respective mutex callback arguments. The harness initializes that location as a list sentinel; this overlap explains the observed mismatch, although this trace does not identify the instruction that wrote the changed field. The EventLoop guards point to the synthetic object at `async_obj+16`, whose first field is zero, matching both null mutex arguments. These observations concern this fabricated context, not normal application objects.
+
+An isolated attempt to construct separate critical sections and pass a separate wrapper object did not reach the capture: the native call hit an unmapped read. Correct construction of the wrapper and singleton remains unresolved. The existing synthetic queue transplant, stubbed synchronization, and explicit drain mean neither actual threading nor normal scheduling is established. Draw and skip controls retain the v286 pixel and queue assertions.
