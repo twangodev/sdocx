@@ -468,6 +468,10 @@ fn long_independent_native_stream() {
         "../../../../tools/montblanc/long-unit-size-v205/streams.json"
     ))
     .unwrap();
+    let double_long_unit_sizes: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/long-2x-v217/streams.json"
+    ))
+    .unwrap();
     for case in receipt["cases"]
         .as_object()
         .unwrap()
@@ -483,6 +487,7 @@ fn long_independent_native_stream() {
         .chain(double_long_sizes.as_object().unwrap().values())
         .chain(longer.as_object().unwrap().values())
         .chain(long_unit_sizes.as_object().unwrap().values())
+        .chain(double_long_unit_sizes.as_object().unwrap().values())
     {
         let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
         let points: Vec<[f32; 2]> = case["input"]["points"]

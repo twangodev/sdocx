@@ -510,10 +510,10 @@ fn long_profiles_are_limited_to_supported_sizes() {
 
 #[test]
 fn longer_profiles_have_size_and_scale_boundaries() {
-    let points: Vec<[f32; 2]> = (0..24)
+    let points: Vec<[f32; 2]> = (0..25)
         .map(|i| [(i * 6) as f32, if i % 2 == 0 { 0. } else { 3. }])
         .collect();
-    for n in [12, 20, 21, 24] {
+    for n in [12, 20, 21, 24, 25] {
         for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01] {
             let mut stroke = source(&points[..n], &vec![0.5; n]);
             stroke.pen_width = size;
@@ -524,7 +524,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
                 .clone();
             assert_eq!(
                 render_document_svg(&doc, &options())[0].svg != generic,
-                (0.5..=2.0).contains(&size)
+                n <= 24 && (0.5..=2.0).contains(&size)
             );
             let two = RenderOptions {
                 montblanc_two_pixels_per_page_unit: true,
@@ -532,7 +532,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
             };
             assert_eq!(
                 render_document_svg(&doc, &two)[0].svg != generic,
-                n <= 20 && (0.5..=2.0).contains(&size)
+                n <= 24 && (0.5..=2.0).contains(&size)
             );
         }
     }
@@ -628,7 +628,7 @@ fn six_and_seven_point_profiles_and_boundaries() {
 }
 
 #[test]
-fn longer_unit_profile_admission_boundaries() {
+fn longer_profiles_preserve_point_count_boundaries() {
     let points: Vec<[f32; 2]> = (0..25)
         .map(|i| [i as f32 * 4.0, if i % 2 == 0 { -5.0 } else { 5.0 }])
         .collect();
@@ -646,6 +646,9 @@ fn longer_unit_profile_admission_boundaries() {
             montblanc_two_pixels_per_page_unit: true,
             ..Default::default()
         };
-        assert_eq!(render_document_svg(&doc, &double)[0].svg, fallback);
+        assert_eq!(
+            render_document_svg(&doc, &double)[0].svg != fallback,
+            count <= 24
+        );
     }
 }

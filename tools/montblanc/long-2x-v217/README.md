@@ -1,0 +1,7 @@
+# Montblanc 2× long-stroke controls
+
+Twelve fresh synthetic Drawing/host-Mesa captures exercise 21–24 points at sizes 0.5, 1 and 2, reusing the unit-scale hook, zigzag, skipped-move and loop trajectories. The capture adapter supplies points and pressures without independently reading them back. All captured callback streams equal their corresponding unit-scale streams; the Rust regression checks every lane against the sampler.
+
+The explicit 2× profile admits 21–24 points at sizes 0.5–2. All twelve candidates reduce union RGB absolute error versus generic fallback in SVG/resvg and direct PDF/MuPDF and PDFium while overcovering native support. Candidate SVGs are 913 KB–1.02 MB and PDFs 136–239 KB per stroke, versus roughly 2 KB generic exports. Intermediate sizes and arbitrary trajectories are extrapolations; saved-note, device, native-PDF and lifecycle parity remain unverified.
+
+Unpack `native.tar.gz` into a fresh directory, set `MB_CAPTURE_WORK` to it and `MB_EXPORT_WORK` to a different fresh empty directory outside the repository, then run `PYTHONPATH=/tmp/marker2-pdfium-python .venv/bin/python tools/montblanc/long-2x-v217/compare.py rebuild-verify`. The comparator verifies captured streams and frame hashes, selected source pins, output hashes, reader versions and metrics. The pins are partial and do not establish a complete build closure. Use `capture` with a fresh empty output directory to acquire native controls. Temporary outputs are reproducible intermediates.
