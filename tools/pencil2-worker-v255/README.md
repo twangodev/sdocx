@@ -1,0 +1,9 @@
+# Factory bitmap draw control
+
+First follow the [v219 runtime preparation](../pencil2-page-v219/README.md). The native libraries, Unicorn and ARM binutils remain local dependencies; this is not a clean-checkout reproduction.
+
+Run `python3 tools/pencil2-worker-v255/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v255/probe.py`. The latter returns immediately from the native Pencil2 Draw entry while leaving native Run and Update intact. Both runs retain compressed 192×192 RGBA readbacks, bottom row first. The receipt records the observed graphics calls and states. The script reconstructs the v254 probe from its v241, draw and base inputs, pins them and the guest native libraries directly, and invokes the capture script’s transitive pin checks. It compares temporary readbacks against retained fixtures and the receipt without overwriting them.
+
+The factory allocated R8 texture 4, attached it to complete framebuffer 2, and the read and draw framebuffer bindings were both 2 immediately before and after Run. Its color attachment was texture 4 at both snapshots and `glIsTexture(4)` returned true at both snapshots. Normal Run changed 72 red-channel pixels, with values 1–35 and bounds x=7–36, y=172–183; the Draw-skipping control changed no bytes. The opaque alpha in RGBA readback is the R8 attachment's readback behavior, not painted alpha. These observations establish Draw-dependent output on the factory-created bitmap within this harness.
+
+This is a synthetic request, manually substituted canvas, emulated ARM64, synthetic queue, host graphics callbacks and unpinned host Mesa dependencies. It does not establish saved-page rendering, production lifecycle, or device fidelity. A GL error check after readback returned zero; intervening calls could have consumed earlier errors. The probe terminates deliberately after observation. It does not compare this frame with Rust or exported output.
