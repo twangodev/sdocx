@@ -1,0 +1,275 @@
+{
+  "frame_sha256": "7a722f9b474f37401288906e18c09a70244b7db9e3b9ea0de42e9a02dc7228c9",
+  "callback": {
+    "native_update_draw_instanced_args": [
+      5,
+      0,
+      4,
+      44
+    ],
+    "producer_fields_cleared_after_task1": true,
+    "rt_plus_104_after_task1": "0x0",
+    "rt_plus_112_after_task1": "0x0",
+    "rt_plus_80_after_task1": "0x0",
+    "rt_plus_88_after_task1": "0x100ec2f0",
+    "task1_second_vector_argument_matches_rt_plus_112": true,
+    "task1_vector_argument_matches_rt_plus_88": true,
+    "vector_bytes": 1936,
+    "vector_sha256": "b49ea132058d9100d3e8f584a8b0df3d144de8f4afb56314ba7a68539e57ed68"
+  },
+  "uniforms": [
+    {
+      "count": 1,
+      "location": 0,
+      "transpose": 0,
+      "values": [
+        0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "phase": "native PenGLRenderMsg task2",
+      "raw_f32_le": "0000000000000000000000000000803f",
+      "uniform4fv_location": 4,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 5,
+      "values": [
+        321.0,
+        228.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 6,
+      "values": [
+        132.82395935058594,
+        211.38133239746094
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    }
+  ],
+  "target": {
+    "attachment_texture_id": 4,
+    "feedback_alias_with_pattern_or_grain": false,
+    "gl_error_after_readback": 0,
+    "actual_gl_blend_state_after_draw": {
+      "blend_enabled": true,
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "dst_alpha": 771,
+      "dst_rgb": 771,
+      "equation_alpha": 32774,
+      "equation_rgb": 32774,
+      "src_alpha": 1,
+      "src_rgb": 770
+    }
+  },
+  "native_pattern_material": {
+    "diagnostic_pattern_sentinel": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        2304,
+        2304
+      ]
+    ],
+    "initialized_pattern_tile_hashes": [
+      [
+        "ffd57f9ee646f24275657f37c36c110ecd1222057bf8e9be4edc7232d130f797",
+        "e9434ac19612b18993c2ffe9120087439ae71424da634ea3243c1db170987a33",
+        "34da0361a3b5bf7189a56a828cabf516888169453b89b838e42135378bdf01d9"
+      ],
+      [
+        "1ea0f6d77015268626d130f0e1afe0527da1e166a7945ee937dd92f4e16354b7",
+        "548f45eebd8ec2723e847cf1f8d4ac6893be2acae8700c12542b8a1f32153b86",
+        "81c9322348fe6d3a0edf38f98f84460a105b43864b03cceac3763166af0ae097"
+      ],
+      [
+        "8e866e40d2f17f017e61e315e1dcc07c076b9c3963992eb123a847f14ce73b58",
+        "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab",
+        "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab"
+      ]
+    ],
+    "pattern_and_grain_texture_ids": [
+      1,
+      2
+    ],
+    "sampler_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "shader_source_sha256": {
+      "fragment": "4c45b50596922acd7b14e5dd56df2301b8b652e25e89bf466172558e929d44aa",
+      "vertex": "44072299681d558389d5a7e94e2c70929b2cf1399a493df777302c30b609fc3e"
+    },
+    "texture_fixture_sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c",
+    "texture_uploads": [
+      {
+        "bytes": 0,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 82944,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": "f0cae1c3cf0c26f5eb5d3a6a1986263254718bb7ddf89b32d58edc0e4466fb89",
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 82944,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+        "type": 5121
+      }
+    ]
+  },
+  "scope": "Synthetic FountainPen-derived serialized frame with altered path delta and pressure seed, native Model/Drawing and RTV1 host Mesa; no saved BrushPen or device parity.",
+  "inputs": {
+    "frame.bin": "b8bcce8eb1e40b828a7669e7856373e16a04d63c91dfcb64f594f0fdfc7275f4",
+    "payload.bin": "92c0780d0484ff7dfa2135761a369cbee2c3c3673c34caa3abe240387f1bd8f6",
+    "geometry.bin": "b49ea132058d9100d3e8f584a8b0df3d144de8f4afb56314ba7a68539e57ed68"
+  },
+  "mutations": {
+    "path_delta_word_index": 40,
+    "path_delta_word": 96,
+    "pressure_seed": 0.45
+  },
+  "limitations": "Native libraries and principal helpers are pinned by capture.py; transitive host adapters are not pinned. Frame handler and string table execute, no complete archive loader.",
+  "metadata": {
+    "point_count": 204,
+    "pen_size": 9.116800308227539,
+    "tool_type": 2
+  }
+}

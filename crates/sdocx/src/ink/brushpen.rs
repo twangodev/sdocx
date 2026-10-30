@@ -3327,3 +3327,6 @@ mod serialized_native_controls {
         }
     }
 }
+
+#[cfg(all(test, feature = "serde"))]
+mod serialized_native_tests;
