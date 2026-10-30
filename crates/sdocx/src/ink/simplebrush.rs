@@ -439,7 +439,9 @@ pub(crate) fn prepare_stroke_for_scale(
         .collect::<Result<Vec<_>, _>>()?;
     if rendering.tool_type_raw == 0
         && (!((4.0..=32.0).contains(&size)
-            || (two_pixels_per_page_unit && points.len() == 3 && (3.0..=32.0).contains(&size)))
+            || (two_pixels_per_page_unit
+                && (points.len() == 3 || ((16..=64).contains(&points.len()) && size == 3.0))
+                && (3.0..=32.0).contains(&size)))
             || !(2..=if two_pixels_per_page_unit { 256 } else { 128 }).contains(&points.len())
             || (points.len() > 2
                 && points.windows(2).last().is_some_and(|pair| {

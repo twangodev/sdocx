@@ -1587,7 +1587,7 @@ fn two_pixel_point_and_size_boundaries() {
         simplebrush_two_pixels_per_page_unit: true,
         ..Default::default()
     };
-    for count in [2, 3, 4, 16, 17, 32, 33, 64, 65, 128, 129, 224, 256, 257] {
+    for count in [2, 3, 4, 15, 16, 17, 32, 33, 64, 65, 128, 129, 224, 256, 257] {
         for tool in [0, 2, 3] {
             for size in [3.0, 7.0, 8.0, 20.0, 21.0, 32.0] {
                 let mut source = stroke();
@@ -1603,7 +1603,10 @@ fn two_pixel_point_and_size_boundaries() {
                 rendering.tool_type_raw = tool;
                 rendering.style.pen_size = Some(size);
                 let doc = document(source);
-                let admitted = count <= 256 && (count == 3 || (8.0..=20.0).contains(&size));
+                let admitted = count <= 256
+                    && (count == 3
+                        || (8.0..=20.0).contains(&size)
+                        || (tool == 0 && size == 3.0 && (16..=64).contains(&count)));
                 let actual = &render_document_svg(&doc, &two)[0].svg;
                 let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
                 assert_eq!(
@@ -2482,5 +2485,113 @@ fn one_pixel_long_native_geometry_matches_captured_streams() {
             .flat_map(|v| v.to_le_bytes())
             .collect();
         assert_eq!(bytes, expected, "count={count}");
+    }
+}
+
+#[test]
+fn tool0_size3_32_point_native_control_and_dispatch_guards() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-size3-32-native.json"
+    ))
+    .unwrap();
+    let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+    let mut source = stroke();
+    source.points = (0..32)
+        .map(|i| Point {
+            x: 25.0 + 2.0 * i as f64,
+            y: 216.0 - heights[i % 8] as f64,
+        })
+        .collect();
+    source.pressures = (0..32).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+    source.pen_width = 3.0;
+    let rendering = source.rendering.as_mut().unwrap();
+    rendering.style.pen_size = Some(3.0);
+    rendering.tool_type_raw = 0;
+    let points: Vec<[f32; 2]> = source
+        .points
+        .iter()
+        .map(|p| [p.x as f32, (256.0 - p.y) as f32])
+        .collect();
+    let pressures: Vec<f32> = source.pressures.iter().map(|p| *p as f32).collect();
+    let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+        points: &points,
+        pressures: &pressures,
+        size: 3.0,
+        tool_type: 0,
+        curve_enabled: true,
+        max_samples: 32_768,
+    })
+    .unwrap();
+    let hex: String = samples
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .map(|v| format!("{v:02x}"))
+        .collect();
+    assert_eq!(hex, receipt["geometry"]["vector_bytes"].as_str().unwrap());
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let render =
+        |s: Stroke, opts: &RenderOptions| render_document_svg(&document(s), opts).remove(0).svg;
+    assert_ne!(
+        render(source.clone(), &two),
+        render(source.clone(), &RenderOptions::default())
+    );
+    let mut below = source.clone();
+    below.pen_width = 2.99;
+    below.rendering.as_mut().unwrap().style.pen_size = Some(2.99);
+    let mut settings = source.clone();
+    settings.rendering.as_mut().unwrap().advanced_settings = Some("unsupported".into());
+    let mut tool = source.clone();
+    tool.rendering.as_mut().unwrap().tool_type_raw = 1;
+    for rejected in [below, settings, tool] {
+        assert_eq!(
+            render(rejected.clone(), &two),
+            render(rejected, &RenderOptions::default())
+        );
+    }
+}
+
+#[test]
+fn tool0_size3_endpoint_native_geometry() {
+    for (count, json) in [
+        (
+            16,
+            include_str!("../../../../conformance/simplebrush-size3-16-native.json"),
+        ),
+        (
+            64,
+            include_str!("../../../../conformance/simplebrush-size3-64-native.json"),
+        ),
+    ] {
+        let receipt: serde_json::Value = serde_json::from_str(json).unwrap();
+        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+        let points: Vec<[f32; 2]> = (0..count)
+            .map(|i| {
+                [
+                    25.0 + i as f32 * if count >= 33 { 0.75 } else { 2.0 },
+                    40.0 + heights[i % 8] as f32,
+                ]
+            })
+            .collect();
+        let pressures: Vec<f32> = (0..count).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: 3.0,
+            tool_type: 0,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(hex, receipt["geometry"]["vector_bytes"].as_str().unwrap());
     }
 }
