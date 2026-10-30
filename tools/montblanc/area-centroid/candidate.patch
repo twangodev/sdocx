@@ -1,0 +1,23 @@
+--- a/crates/sdocx/src/render/montblanc_candidate.rs
++++ b/crates/sdocx/src/render/montblanc_candidate.rs
+@@ -81,7 +81,19 @@
+                                 if poly.len() == 3 {
+                                     (poly[0][k] + poly[1][k] + poly[2][k]) / 3.0
+                                 } else {
+-                                    poly.iter().map(|v| v[k]).sum::<f64>() / poly.len() as f64
++                                    {
++                                        let origin = poly[0];
++                                        let mut weighted = 0.0;
++                                        let mut area_sum = 0.0;
++                                        for i in 1..poly.len() - 1 {
++                                            let a = poly[i];
++                                            let b = poly[i + 1];
++                                            let area = ((a[0] - origin[0]) * (b[1] - origin[1]) - (a[1] - origin[1]) * (b[0] - origin[0])).abs();
++                                            weighted += area * (origin[k] + a[k] + b[k]) / 3.0;
++                                            area_sum += area;
++                                        }
++                                        if area_sum == 0.0 { poly.iter().map(|v| v[k]).sum::<f64>() / poly.len() as f64 } else { weighted / area_sum }
++                                    }
+                                 }
+                             });
+                             let u = centre[2];
