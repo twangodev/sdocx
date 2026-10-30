@@ -1,5 +1,14 @@
 // Analytic shader approximation for the three observed draw programs.
 pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<(Vec<[f64; 2]>, f64)> {
+    pieces_with_interior_fast_path(buffers, n, scale, true)
+}
+
+fn pieces_with_interior_fast_path(
+    buffers: &[Vec<[f32; 5]>; 3],
+    n: usize,
+    scale: f64,
+    interior_fast_path: bool,
+) -> Vec<(Vec<[f64; 2]>, f64)> {
     let mut result = Vec::new();
     let planes: [(f64, f64); 32] = std::array::from_fn(|side| {
         let angle = std::f64::consts::TAU * (side as f64 + 0.5) / 32.0;
@@ -50,7 +59,13 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<(Vec<[f
                     {
                         poly.clear();
                         poly.extend_from_slice(&patch);
-                        for &(sn, cs) in &planes {
+                        let wholly_inside = interior_fast_path
+                            && patch.iter().all(|v| {
+                                let u = v[2] - 0.5;
+                                let v = v[3] - 0.5;
+                                u * u + v * v < limit * limit * (1.0 - 1e-12)
+                            });
+                        for &(sn, cs) in planes.iter().filter(|_| !wholly_inside) {
                             let distance =
                                 |v: &[f64; 5]| limit - ((v[2] - 0.5) * cs + (v[3] - 0.5) * sn);
                             next.clear();
@@ -140,6 +155,36 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<(Vec<[f
         }
     }
     result
+}
+
+#[test]
+fn interior_fast_path_matches_clipping_at_cutoff() {
+    let mut buffers: [Vec<[f32; 5]>; 3] = Default::default();
+    for (program, buffer) in buffers.iter_mut().enumerate() {
+        for radius in [0.1_f32, 0.48, 0.497, 0.4975, 0.499, 0.5, 0.501, 0.55] {
+            for angle in [0.0_f32, 0.07, 0.4, 1.0, 2.0] {
+                for (index, offset) in [-0.04_f32, 0.0, 0.04].into_iter().enumerate() {
+                    let a = angle + offset;
+                    buffer.push([
+                        index as f32 * 4.0 + radius * 10.0,
+                        (index * index) as f32 * 3.0 + program as f32,
+                        0.5 + radius * a.cos(),
+                        0.5 + radius * a.sin(),
+                        0.2 + index as f32 * 0.3,
+                    ]);
+                }
+            }
+        }
+    }
+    for n in [1, 3, 8] {
+        for scale in [0.5, 1.0, 2.0] {
+            assert_eq!(
+                pieces_with_interior_fast_path(&buffers, n, scale, true),
+                pieces_with_interior_fast_path(&buffers, n, scale, false),
+                "n={n}, scale={scale}"
+            );
+        }
+    }
 }
 
 pub(super) fn render(
