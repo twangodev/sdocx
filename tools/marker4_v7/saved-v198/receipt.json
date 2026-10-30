@@ -1,0 +1,39 @@
+{
+  "scope": "quiz.sdocx stroke 70; native redraw and isolated RTV3 host paint over white; public SVG and direct PDF; not device or Drawing output",
+  "note_sha256": "38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a",
+  "source_sha256": "ee19044b6cff590f4fd2ec3af21e7846da8800a1957524c6a499b33067189974",
+  "native_receipt_sha256": "7947a8e85547f767764b122ba035a6202ee3610827b9c3f5658d775960790ee8",
+  "native_rgba_sha256": "ec2eacf41192b9858a326dce1eb2146a44d63b6bcfec3201aabbd89ccfadf259",
+  "native_stamp_count": 499,
+  "input_samples": 641,
+  "export_sha256": {
+    "public": {
+      "svg": "cdb79ae3ebb78f274606d86b7214e86e4af3c16f806e920cf8c73a8912fe67ec",
+      "pdf": "2149fef725ee749287280c2338490890403689bd79c417c46c92771dccac02cb"
+    },
+    "generic": {
+      "svg": "38b809d4e6600b5a9d2edbc49a1a9f8dd468baff653ada343105941a7f318242",
+      "pdf": "b05bd19fa681d8f3523db59c63e6e425b91e309a21c722d14904efb20566d74a"
+    }
+  },
+  "rgb_l1": {
+    "public": {
+      "resvg": 43642,
+      "mupdf": 60617,
+      "pdfium": 95757
+    },
+    "generic": {
+      "resvg": 2654134,
+      "mupdf": 2643096,
+      "pdfium": 2650040
+    }
+  },
+  "script_sha256": {
+    "capture.py": "2fd92bec4e1fb4ad22745c521a8605226c5445b94696fec91b07fdb814230536",
+    "verify_source.py": "d04fb60e6ef3f795aedfe10f15dfe3e93911157f80fa21b5c4c924fdda24f6a2",
+    "export.rs": "a990c4c5864f805f86d87c4f89ccfbf12e560f314c06206972f1b9c1e6896111",
+    "compare.py": "db2c1815303de2913569d5fbf26c2521175b5856b6a50ad149deeba508436069"
+  },
+  "original_private_source_sha256": "40da857ca6db6f97801638e241c7265a19e8539fe239bd1fdc6f95d66b46c869",
+  "clean_source_commit": "d0f7e8906e21a8e2f2fad0223677f6741a1f1f67"
+}
