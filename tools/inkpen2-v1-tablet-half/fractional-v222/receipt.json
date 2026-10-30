@@ -1,0 +1,158 @@
+{
+  "scope": "Synthetic native ObjectStroke, 1440x2560 RTV1 host Mesa; odd 63x47 viewport; not device or saved-note evidence",
+  "input_sha256": "2096e58a774c7480e2cc17541d811b16d2c072a7d392b55218312a92b2a110a4",
+  "native_adapter_sha256": "0e1ba1017053e53959a262d81fb11bae1634e07c2e5482a50034e3d26f78a874",
+  "capture": {
+    "profile": [
+      1440,
+      2560
+    ],
+    "selected_version": "1",
+    "geometry_hex": "000000000000000056550540c5e7243f2d6a3a3e175d244061e7e33fb2d0003ffb862540d03a2440a8a6393fdfb0264088ab5f402bd87c3fc3da2740ef2292409f32a53fa70429401f01b9401024d13f8b2e2a407360de407e5f02400d742a40129efd403fa021408fb92a40ff5c0b414a54464011ff2a401bda14419e7b704093442b408b6e1b415edc9040158a2b40e8cb1e41aa53ad4097cf2b4085ad1e419ee3cc4019152c4063131b413d8cef409b5a2c407e4f144180cc09411da02c40a88e0b4140c51741911029406e160041d5a122410581254090d3e540b5f8294179f121406da5c7401d812e41ed611e4026faa440ab77304161d21a40a73a884074423041d54217403f3a534090ab2e4149b31340083411406cb52b41bd231040a0a29a3f4893274131940c40625db13ea98a2341a50409409f540ebf10c31e411975054067e2bfbf7e3c19418de5014077e81ec0f1f6124102acfc3f",
+    "geometry_sha256": "208503e3402599edaf40346507bbe8a402aef719595619e74a6967ac15d4b15c",
+    "output_size": [
+      63,
+      47
+    ],
+    "draw_matrix": [
+      0.5,
+      0,
+      0,
+      0,
+      0,
+      0.5,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      16.25,
+      17.375,
+      0,
+      1
+    ],
+    "rgba_sha256": "45d84eed45b19d146852694624c1ed886ef6aec8f6ce35c866f239230d61ff29",
+    "framebuffer": {
+      "complete": true,
+      "attachment_type": 5890,
+      "texture_level": {
+        "width": 63,
+        "height": 47,
+        "internal_format": 32856
+      },
+      "draw_fbo": 2
+    },
+    "gl_error_after_draw": 0,
+    "gl_errors_recorded": [],
+    "viewport_calls": [
+      [
+        0,
+        0,
+        63,
+        47
+      ]
+    ]
+  },
+  "comparisons": {
+    "candidate": {
+      "svg_sha256": "4802b64db897d89467e319bd4501568a4fabf5df6ffd6efa4042eb2dba8e6e34",
+      "pdf_sha256": "80ae47beb28d2e88142898dedddbbbc13a6b5e26322b413959805fa8dc610499",
+      "metrics": {
+        "direct": {
+          "resvg": {
+            "whole_rgb_l1": 16,
+            "ink_rgb_l1": 16,
+            "ink_pixels": 39
+          },
+          "mupdf": {
+            "whole_rgb_l1": 5929,
+            "ink_rgb_l1": 85,
+            "ink_pixels": 39
+          },
+          "pdfium": {
+            "whole_rgb_l1": 67,
+            "ink_rgb_l1": 67,
+            "ink_pixels": 39
+          }
+        },
+        "flipped": {
+          "resvg": {
+            "whole_rgb_l1": 23548,
+            "ink_rgb_l1": 11776,
+            "ink_pixels": 39
+          },
+          "mupdf": {
+            "whole_rgb_l1": 29359,
+            "ink_rgb_l1": 11785,
+            "ink_pixels": 39
+          },
+          "pdfium": {
+            "whole_rgb_l1": 23571,
+            "ink_rgb_l1": 11785,
+            "ink_pixels": 39
+          }
+        }
+      }
+    },
+    "ordinary": {
+      "svg_sha256": "7a4d60cba05bd08a26239b62f4661f17e3909d097a432174fbebba04265401b5",
+      "pdf_sha256": "79969f20592ae213b09081d76f3db500e81eedfa5ec8807f005956ec205001ad",
+      "metrics": {
+        "direct": {
+          "resvg": {
+            "whole_rgb_l1": 1957,
+            "ink_rgb_l1": 1957,
+            "ink_pixels": 39
+          },
+          "mupdf": {
+            "whole_rgb_l1": 10250,
+            "ink_rgb_l1": 4110,
+            "ink_pixels": 39
+          },
+          "pdfium": {
+            "whole_rgb_l1": 4460,
+            "ink_rgb_l1": 3952,
+            "ink_pixels": 39
+          }
+        },
+        "flipped": {
+          "resvg": {
+            "whole_rgb_l1": 25433,
+            "ink_rgb_l1": 11989,
+            "ink_pixels": 39
+          },
+          "mupdf": {
+            "whole_rgb_l1": 29836,
+            "ink_rgb_l1": 12421,
+            "ink_pixels": 39
+          },
+          "pdfium": {
+            "whole_rgb_l1": 24444,
+            "ink_rgb_l1": 12436,
+            "ink_pixels": 39
+          }
+        }
+      }
+    }
+  },
+  "readers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0",
+    "pillow": "12.1.1"
+  },
+  "source": {
+    "git_head": "0e3f6b3594a8f30429c313cc082e025689c07490",
+    "dirty_render_rs_sha256": "581e292e81e19635d323eba698bbcdb027f807b91a42390760ae62b9fb0ceb65",
+    "patched_render_rs_sha256": "9535226340877dd2a5f83fef308b8f5116e63c21871d29965578012c9af20695",
+    "export_test_patch_sha256": "ad57afe95c6b078a5340d8ca1c4b6a9591c9ebb89c2be7f505a4a5dedb3f3d0d"
+  },
+  "clean_replay": {
+    "git_head": "a4460e0a7f624d001e17b3b557adda1e61af2669",
+    "render_rs_sha256": "c7cc46b8dbe2889777e2337494158bc33e4d8c1e21c144f9f7a6a4b4572c02b3",
+    "patched_render_rs_sha256": "edd9702f1ec05e3c102d5acf2f10e00ccb8ed9ff957c6e2446bade7cd50ce1a2",
+    "comparison_script_sha256": "696c5b646db7ecf868012a145c58248c45270ac159cf3fc09ac2dcc71afc960d"
+  }
+}
