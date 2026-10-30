@@ -1,0 +1,44 @@
+{
+  "scope": "Synthetic tool 3 size 20 alternate 32-point host Mesa Drawing, fractional 2x transform; not device or saved-page parity. PDFium uses an unshifted grid.",
+  "native_frame_sha256": "628f229cf2b84fbb70df98fdb7d7b6d0bebb4c2837885274c9e4e95badc2b786",
+  "native_vector_sha256": "e876f52167209105faab53114524c49b6ad64688542e5912eb9c346de02be41d",
+  "capture_sha256": "e477114ac8701007c2b603d8141dd8948606e816a0b3e9b055f01228aea7e196",
+  "test_binary_sha256": "57825b3c880947ef36e0f479dd3b33c07db62cd0ff7737f00e7633f627803610",
+  "export_sha256": {
+    "generic.svg": "93c1383bfd42a5aadb74e58bff0e1ad76c6fb2c94caff070075d26597bc6eab7",
+    "one.svg": "f6221c494d6e1aff4fae469dbd4694f6cf8e6d23593b06b8e9b7598cebc56d1c",
+    "two.svg": "594db571e3cc1be9b251067f749c40166c2c0fd76525bfd1bdb43735fb826f6f",
+    "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+    "generic.pdf": "8f908a191a35b670b86d06354052381e1648818ebffc6867876acb694fa4fd0a",
+    "one.pdf": "bf43b29361fa9301f3f9ab81c0bcf6e3d9924dbb2b88d5f596875c25c23016de",
+    "two.pdf": "d489f119ddf91536fa41d95454778ecc0fa561463677e5861bc562388594636b"
+  },
+  "results": {
+    "resvg_alpha_absolute_error": {
+      "generic": 1171549,
+      "one": 23536,
+      "two": 6923
+    },
+    "mupdf_matched_paper_rgb_absolute_error": {
+      "generic": 1286408,
+      "one": 46911,
+      "two": 41789
+    },
+    "pdfium_unshifted_matched_paper_rgb_absolute_error": {
+      "generic": 1286622,
+      "one": 82540,
+      "two": 76231
+    }
+  },
+  "limitations": "Native transitive adapter dependencies are not fully pinned. PDFium uses an unshifted grid. No production change follows from this control.",
+  "clean_source_commit": "5cc39d4cc3e84d99a88da398c1404ec23deb8331",
+  "clean_rebuild": "git archive of clean_source_commit; exact vector assertion passed, all seven output files byte-identical to earlier dirty-tree exports",
+  "readers": {
+    "resvg": "0.45.1",
+    "PyMuPDF": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "PDFium": "150.0.7869.0"
+  },
+  "native_json_sha256": "9607e6cccee333d1300524fa99182ed3916e9f7c48456386265b6067862aff2f",
+  "capture_replay_script_sha256": "2f49331d6fefe0f7c7960a688d9ad321a418251547c8e7976bfdfcaedaf97cf1"
+}
