@@ -1,0 +1,9 @@
+# Destination factory integer-option control
+
+First follow the [v219 runtime preparation](../pencil2-page-v219/README.md). The pinned native libraries, Unicorn, ARM binutils, Python and fixed checkout path remain local prerequisites; host Mesa/EGL/GLES dependencies are unpinned. This is not a clean-checkout reproduction.
+
+Run `python3 tools/pencil2-worker-v263/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v263/probe.py`. This is the v262 capture with only the destination factory's integer argument changed from 0 to 1. The Graphics `CreateBitmap` overload at RVA `0xc04ac` converts that integer to `integer == 0` at `0xc0520`–`0xc0524`, passing the result as a constructor boolean. On the tested host this change leaves both factory allocations R8/RED and the destination copy readback matches the source exactly, with the same checks as v262. It excludes this one option as a cause of the R8 destination in this synthetic setup; it does not identify the format selector or establish production page behavior. The v262 limitations apply.
+
+The v255 wrapper redirects its factory and message files to its own temporary directory; this wrapper also redirects its error file to an owned temporary directory. Both directories are removed on exit.
+
+As in v262, exit 72 deliberately stops the nested capture immediately after the copy and bypasses the v255 wrapper’s post-run factory/message, before-and-after snapshot, GL-error, changed-byte and receipt-comparison assertions. The v263 wrapper separately checks the source against the retained v255 fixture, Run/Update/Draw entry order, destination ownership chain, R8 allocations, framebuffer completeness, final GL error, copied hash and exact source/copy equality. The final GL error does not exclude errors consumed by intervening calls. These checks do not complete the inherited capture or validate the production queue/destruction lifecycle.
