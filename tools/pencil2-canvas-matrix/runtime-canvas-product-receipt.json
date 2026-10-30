@@ -1,0 +1,77 @@
+{
+  "script_sha256": "524b0f4b660a21661322ad37ace21931791aa0e30863509760e77e767be97d55",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Explicit host handoff after synthetic Pencil2 list dispatch. Fabricated canvas and screen bitmap with native writable accessor, projection thunk, projection getter, canvas getter and product helper; host supplies model through virtual adapter. Not automatic page execution, renderer handoff or device evidence.",
+  "rectangle": [
+    3,
+    5,
+    195,
+    197
+  ],
+  "orientation": 0,
+  "list_addpoint_calls": 84,
+  "cases": [
+    {
+      "model": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ],
+      "product": [
+        0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9375,
+        -0.90625,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "model": [
+        1.25,
+        0.5,
+        0,
+        -0.25,
+        2,
+        0,
+        7,
+        -3,
+        1
+      ],
+      "product": [
+        0.01302083395421505,
+        -0.0052083334885537624,
+        0.0,
+        0.0,
+        -0.0026041667442768812,
+        -0.02083333395421505,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9270833134651184,
+        1.03125,
+        0.0,
+        1.0
+      ]
+    }
+  ]
+}
