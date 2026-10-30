@@ -437,7 +437,7 @@ fn nine_point_profiles_admit_bounded_sizes() {
 }
 
 #[test]
-fn long_profile_is_limited_to_unit_scale_and_supported_sizes() {
+fn long_profiles_are_limited_to_supported_sizes() {
     let points = [
         [0., 0.],
         [7., 3.],
@@ -453,12 +453,20 @@ fn long_profile_is_limited_to_unit_scale_and_supported_sizes() {
     ];
     for n in [10, 11] {
         let mut stroke = source(&points[..n], &vec![0.5; n]);
-        for size in [0.5, 1.5, 2.0] {
+        for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01] {
             stroke.pen_width = size;
             stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
             assert_eq!(
                 crate::ink::montblanc::prepare(&stroke).is_some(),
-                size == 1.5
+                (0.5..=2.0).contains(&size)
+            );
+            let doc = document(stroke.clone());
+            let generic = render_document_svg(&doc, &RenderOptions::default())[0]
+                .svg
+                .clone();
+            assert_eq!(
+                render_document_svg(&doc, &options())[0].svg != generic,
+                (0.5..=2.0).contains(&size)
             );
         }
         stroke.pen_width = 1.5;
@@ -472,7 +480,23 @@ fn long_profile_is_limited_to_unit_scale_and_supported_sizes() {
             montblanc_two_pixels_per_page_unit: true,
             ..Default::default()
         };
-        assert_eq!(render_document_svg(&doc, &two)[0].svg, generic);
+        assert_ne!(render_document_svg(&doc, &two)[0].svg, generic);
+        let conflict = RenderOptions {
+            montblanc_profile: Some(MontblancRenderProfile::HostUnitScale),
+            montblanc_two_pixels_per_page_unit: true,
+            ..Default::default()
+        };
+        assert_eq!(render_document_svg(&doc, &conflict)[0].svg, generic);
+        for size in [0.49, 0.5, 1.0, 2.0, 2.01] {
+            let mut rejected = source(&points[..n], &vec![0.5; n]);
+            rejected.pen_width = size;
+            rejected.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            let rejected = document(rejected);
+            assert_eq!(
+                render_document_svg(&rejected, &two)[0].svg,
+                render_document_svg(&rejected, &RenderOptions::default())[0].svg
+            );
+        }
     }
 }
 

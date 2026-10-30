@@ -1,0 +1,434 @@
+{
+  "renderers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "source_sha256": {
+    "crates/sdocx/src/ink/montblanc.rs": "497d9cf7dd23467e92dddab3ec36f0d9cc064cffc03164cb7072edc97ec1dcd5",
+    "crates/sdocx/src/ink/montblanc_many.rs": "ce5d26d59a7dcb25158af4edc4b68941c8f9d24f30935b9d53ae68cd21de1ac5",
+    "tools/montblanc/narrow-probe/capture.py": "ccde11c5e968718d52ee7eb763f4b03e964cfd0660c5739b86def5b6b22a9e97",
+    "crates/sdocx/src/render.rs": "ed0e8ace7ca268759f453410c7ddda6d1fc176be9557a51ac8346972c775de90",
+    "tools/montblanc/long-2x/compare.py": "6a877c46037f1eb05082f925efcdcf76500cba378e03d042462e6071e0c81d22",
+    "tools/montblanc/long-2x/streams.json": "0cdb9219bef6cf733ea199d2de9248cb7e604356204245e554df7cc3a297e4e6",
+    "tools/montblanc/many-point-public/src/main.rs": "36fe5e68aa3400cba10ad12ff16e62fa75a62e48c48d6eef0250594d1170bdc8",
+    "tools/montblanc/many-point-public/Cargo.toml": "7f5e57c6314ae41bce76444fe3f0bf180af198f1669328b54ef2c8ff94f92a39",
+    "tools/montblanc/many-point-public/Cargo.lock": "7a24b97c07212d4e79a8d569143e0a0c5289f12d7e7463c64d96c3cf79d1afc0",
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a"
+  },
+  "scope": "Synthetic Drawing and host Mesa with partially pinned native dependencies; public SVG resvg and direct PDF MuPDF and PDFium; no device or saved-note claim. Metrics are native support, output support, intersection, union, and union RGB absolute error.",
+  "cases": {
+    "zigzag-1.5-2": {
+      "input": {
+        "points": [
+          [
+            2,
+            2
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            15,
+            2
+          ],
+          [
+            21,
+            10
+          ],
+          [
+            27,
+            3
+          ],
+          [
+            34,
+            11
+          ],
+          [
+            40,
+            4
+          ],
+          [
+            46,
+            12
+          ],
+          [
+            53,
+            5
+          ],
+          [
+            59,
+            13
+          ]
+        ],
+        "pressure": [
+          0.3,
+          0.8,
+          0.2,
+          0.9,
+          0.5,
+          0.1,
+          0.7,
+          0.4,
+          1,
+          0.6
+        ],
+        "pen_size": 1.5
+      },
+      "scale": 2,
+      "frame_sha256": "08b1f5dec17a61b9e3dc425afcc87f068b4432fd3515024f6c278402e9e05c10",
+      "reference_rgb": {
+        "sha256": "dd25aba43cd65abb1c667c1d33e11cc68a3158241200c558ab59ec8b53c3df2a",
+        "bytes": 196608
+      },
+      "stream_sha256": "8c32f270dbe44bdbd78cae843e06a2a7f08cdd53d41dd1965c84779c9a2f6d7b",
+      "input_pins": {
+        "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+        "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+        "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+      },
+      "host_gl_sha256": {
+        "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+        "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+      },
+      "matrix_f32": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        128.0,
+        128.0,
+        0,
+        1
+      ],
+      "metrics": {
+        "baseline": {
+          "artifacts": {
+            "svg_document": {
+              "sha256": "8029cc6c7a294427f062613f1bb978bda849568f396b325d142619f4ac64e004",
+              "bytes": 1177
+            },
+            "pdf_document": {
+              "sha256": "7de181b4548df9202fb86399a01689805269c959d30578eb997e7185c0280a5b",
+              "bytes": 1885
+            },
+            "svg_png": {
+              "sha256": "19b0f52f54f620e21e39355ddd0586b401dbc6bd86d587f22f6cca351349c852",
+              "bytes": 4540
+            },
+            "svg_rgb": {
+              "sha256": "578f7b269dfde73eb5b717dd396049ac982ce85f5f11df5d79524d9ec7c077cc",
+              "bytes": 196608
+            },
+            "mupdf_rgb": {
+              "sha256": "c34862ab97262be6003aa4d7e6a4b1a84824f832306231f39a6bade25a712008",
+              "bytes": 196608
+            },
+            "pdfium_rgb": {
+              "sha256": "c57fd59ec98cab34b08fef00450f90268a661f47c01a1fd4ec55e0e2132c6ab9",
+              "bytes": 196608
+            }
+          },
+          "svg": [
+            1314,
+            284,
+            121,
+            1477,
+            463289
+          ],
+          "pdf": [
+            1314,
+            366,
+            166,
+            1514,
+            462019
+          ],
+          "pdfium": [
+            1314,
+            398,
+            181,
+            1531,
+            468294
+          ],
+          "svg_bytes": 1177,
+          "pdf_bytes": 1885
+        },
+        "candidate": {
+          "artifacts": {
+            "svg_document": {
+              "sha256": "74ec5ebb8117ddf0924cd9f86988dc02546ad162a08fd19c08e1c873285f3599",
+              "bytes": 587639
+            },
+            "pdf_document": {
+              "sha256": "951564abd17d7dbb4e3b68180044d2b32666674df6d0c62dfade229044b304bd",
+              "bytes": 128416
+            },
+            "svg_png": {
+              "sha256": "eef3d67e30c4c4b097fda444b881fa5faac8e5171251b56910583e8cb52292a1",
+              "bytes": 6025
+            },
+            "svg_rgb": {
+              "sha256": "c40a059d449de58e5fa2296a342663cb920f6f3a7daafc3b2a1401757375fdde",
+              "bytes": 196608
+            },
+            "mupdf_rgb": {
+              "sha256": "56c25af6340a56b7f29e3887a0df733261c160eb0771f8db3a31a9a522706c10",
+              "bytes": 196608
+            },
+            "pdfium_rgb": {
+              "sha256": "908d1c57bec2d2eb82858d05c16a6347891715273827300956ed5587d8d4c1f0",
+              "bytes": 196608
+            }
+          },
+          "svg": [
+            1314,
+            1456,
+            1314,
+            1456,
+            59479
+          ],
+          "pdf": [
+            1314,
+            1471,
+            1314,
+            1471,
+            48644
+          ],
+          "pdfium": [
+            1314,
+            1465,
+            1314,
+            1465,
+            47877
+          ],
+          "svg_bytes": 587639,
+          "pdf_bytes": 128416
+        }
+      }
+    },
+    "loop-1.5-2": {
+      "input": {
+        "points": [
+          [
+            5,
+            4
+          ],
+          [
+            12,
+            3
+          ],
+          [
+            19,
+            7
+          ],
+          [
+            20,
+            14
+          ],
+          [
+            14,
+            19
+          ],
+          [
+            6,
+            18
+          ],
+          [
+            1,
+            12
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            10,
+            1
+          ],
+          [
+            17,
+            3
+          ],
+          [
+            21,
+            9
+          ]
+        ],
+        "pressure": [
+          0.7,
+          0.2,
+          0.9,
+          0.4,
+          0.1,
+          0.8,
+          0.3,
+          1,
+          0.6,
+          0.5,
+          0.2
+        ],
+        "pen_size": 1.5
+      },
+      "scale": 2,
+      "frame_sha256": "e215f2a5af5795594c254afc493b49c7b63157e1d4322b2254dc14a1226528aa",
+      "reference_rgb": {
+        "sha256": "6844bc01945bc4c0f6afc1d0fb998caf9c170b01e41a924074a3ada2db24ee89",
+        "bytes": 196608
+      },
+      "stream_sha256": "323d8e38684b2018f0b0051821bcaea84faa38ec02cb2b0b31ff4e337362a65b",
+      "input_pins": {
+        "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+        "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+        "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+      },
+      "host_gl_sha256": {
+        "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+        "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+      },
+      "matrix_f32": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        128.0,
+        128.0,
+        0,
+        1
+      ],
+      "metrics": {
+        "baseline": {
+          "artifacts": {
+            "svg_document": {
+              "sha256": "2079a288ae1fc939b6b434d735c2049a8ad5ee0064391fa642088287d09fcf24",
+              "bytes": 1282
+            },
+            "pdf_document": {
+              "sha256": "e13dc2ee921a646403be41173bb90b5d4885681f09b5e6c5587514f3c704c2fa",
+              "bytes": 1889
+            },
+            "svg_png": {
+              "sha256": "27de688d0bbca28914f63cd6a153aba594d2a13ddfe903181b1a9fc39d5db43c",
+              "bytes": 4143
+            },
+            "svg_rgb": {
+              "sha256": "7804de0d2433519f7c80cce7ea88e778a8a8526a69e2d0e0bc8a86cac67ce51a",
+              "bytes": 196608
+            },
+            "mupdf_rgb": {
+              "sha256": "3b9f4c024a039ee23f3a5efb1802d7b705f7da6ccdc8580264541016e0e594e4",
+              "bytes": 196608
+            },
+            "pdfium_rgb": {
+              "sha256": "352492af18f83bb19543c5056e6ff244913d1fe85075596646cadca6e01c1f7d",
+              "bytes": 196608
+            }
+          },
+          "svg": [
+            1076,
+            281,
+            254,
+            1103,
+            366335
+          ],
+          "pdf": [
+            1076,
+            299,
+            271,
+            1104,
+            360970
+          ],
+          "pdfium": [
+            1076,
+            329,
+            297,
+            1108,
+            354915
+          ],
+          "svg_bytes": 1282,
+          "pdf_bytes": 1889
+        },
+        "candidate": {
+          "artifacts": {
+            "svg_document": {
+              "sha256": "4dfbcc394182ba87cc0b617e223cdde85deca55619739dd749af1d7da26e6f7b",
+              "bytes": 611203
+            },
+            "pdf_document": {
+              "sha256": "324ad07e7380d0b6d574d53cbda2c6415506b492764edd12ba4522dab4ad7114",
+              "bytes": 142764
+            },
+            "svg_png": {
+              "sha256": "65d8b4b18238930c22b6e6a90a1227c0115d39b549fbaa087a977883de7f0a69",
+              "bytes": 5803
+            },
+            "svg_rgb": {
+              "sha256": "fcbeaa816a5c13f417333a19f9d1be4d7a52b5b5d9287862431b9f377254ffe6",
+              "bytes": 196608
+            },
+            "mupdf_rgb": {
+              "sha256": "9e36b1d0d707d0b868b217d3a53f16167eb3b1d3f04652b93e41dbd9717b6dc5",
+              "bytes": 196608
+            },
+            "pdfium_rgb": {
+              "sha256": "da38fcabd8fe766e31c95c175baef46202aba870d8bcc6dd156610f9ccf51ee1",
+              "bytes": 196608
+            }
+          },
+          "svg": [
+            1076,
+            1182,
+            1076,
+            1182,
+            44674
+          ],
+          "pdf": [
+            1076,
+            1192,
+            1076,
+            1192,
+            35067
+          ],
+          "pdfium": [
+            1076,
+            1184,
+            1076,
+            1184,
+            34792
+          ],
+          "svg_bytes": 611203,
+          "pdf_bytes": 142764
+        }
+      }
+    }
+  },
+  "complete": true
+}

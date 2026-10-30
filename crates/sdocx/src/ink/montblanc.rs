@@ -1054,7 +1054,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         6..=7 => many_point::many_point(input),
         8 if size >= 0.5 => many_point::many_point(input),
         9 => many_point::many_point(input),
-        10..=11 if size == 1.5 => many_point::many_point(input),
+        10..=11 if size >= 0.5 => many_point::many_point(input),
         _ => return None,
     }
     .ok()?;

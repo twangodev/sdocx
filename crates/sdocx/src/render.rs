@@ -461,9 +461,9 @@ pub struct RenderOptions {
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
     /// Assert a fresh drawable and two output pixels per page unit for Montblanc.
-    /// Three- to five-point inputs use the same admission bounds as unit scale.
-    /// Combining this with a Montblanc
-    /// profile, or using unsupported inputs, falls back to generic paint.
+    /// For 10–11 points, only size 1.5 is admitted; other size and metadata bounds match unit scale.
+    /// Combining this with a Montblanc profile, or using unsupported inputs,
+    /// falls back to generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_two_pixels_per_page_unit: bool,
     /// Opt into the experimental saved Marker centerline approximation.
@@ -4687,7 +4687,9 @@ fn render_stroke(
             && !montblanc_two_pixels_per_page_unit)
             || (montblanc_profile.is_none() && montblanc_two_pixels_per_page_unit))
         && viewport.iter().all(|d| *d > 0)
-        && (!montblanc_two_pixels_per_page_unit || stroke.points.len() <= 9)
+        && (!montblanc_two_pixels_per_page_unit
+            || !(10..=11).contains(&stroke.points.len())
+            || stroke.pen_width == 1.5)
         && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
         && montblanc_candidate::render(
             svg,

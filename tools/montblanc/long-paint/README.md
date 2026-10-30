@@ -6,4 +6,4 @@ Two additional size-1.5 controls compare Drawing and host Mesa frames with publi
 
 To reproduce, create two fresh empty directories and set `MB_CAPTURE_WORK` to the first and `MB_EXPORT_WORK` to the second. Run `compare.py capture` with the first as `MB_EXPORT_WORK`, then run `compare.py rebuild-verify` with both variables set. It requires the local native runtime and adapters described in `../many-point-paint/README.md`, offline Cargo dependencies, resvg, Pillow, PyMuPDF and pypdfium2. The runtime is only partially pinned; the compact archive retains frames and streams. Never point the script at a directory containing unrelated files. `long-independent-streams.py` captures and verifies the independent callback controls.
 
-The opt-in unit-scale route admits only 10–11 points at size 1.5; 2× output remains on fallback for these lengths. Separate holdout paint controls are documented in `../long-holdout/README.md`.
+The opt-in unit-scale route admits 10–11 points at sizes 0.5–2, while the 2× route admits these lengths only at size 1.5; see `../long-2x/README.md` for the 2× controls. Separate holdout paint controls are documented in `../long-holdout/README.md`.
