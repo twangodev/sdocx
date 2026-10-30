@@ -511,3 +511,54 @@ fn vector_progress_preserves_svg_and_repeated_page_pdf_bytes() {
         assert_eq!(events.last().unwrap().total, None);
     }
 }
+
+#[cfg(all(feature = "pdf", feature = "serde"))]
+#[test]
+fn malformed_pencil2_keeps_mixed_nested_scene_order_in_svg_and_direct_pdf() {
+    let mut pencil = stroke(BLUE, [[60.0, 10.0], [60.0, 90.0]]);
+    let PageObjectContent::Stroke(source) = &mut pencil.content else {
+        unreachable!()
+    };
+    let mut style = serde_json::to_value(sdocx::StrokeStyle::default()).unwrap();
+    style["pen_size"] = serde_json::json!(source.pen_width);
+    style["color_argb"] = serde_json::json!(0xff0000ffu32);
+    source.rendering = Some(serde_json::from_value(serde_json::json!({
+        "metadata": null,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Pencil2",
+        "advanced_settings": "14;", "tool_type_raw": 2,
+        "properties": {"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false},
+        "style": style
+    })).unwrap());
+    // The default renderer uses generic paint for this malformed Pencil2 source.
+    let document = document(vec![
+        stroke(RED, [[10.0, 50.0], [110.0, 50.0]]),
+        container(vec![shape(bounds(40.0, 30.0, 80.0, 70.0), 0.0), pencil]),
+    ]);
+    let page = &render_modes(&document)[0];
+    let image = pixels(&page.svg);
+    assert_pixel(&image, 20, 50, [255, 0, 0, 255]);
+    assert_pixel(&image, 45, 50, [0, 255, 0, 255]);
+    assert_pixel(&image, 60, 50, [0, 0, 255, 255]);
+    let pdf = lopdf::Document::load_mem(
+        &sdocx::render_document_pdf(
+            &document,
+            &RenderOptions::default(),
+            &sdocx::PdfOptions::default(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let page_id = pdf.get_pages()[&1];
+    let resources = dictionary(
+        &pdf,
+        pdf.get_dictionary(page_id)
+            .unwrap()
+            .get(b"Resources")
+            .unwrap(),
+    );
+    let paints = pdf_paints(&pdf, &pdf.get_page_content(page_id).unwrap(), resources)
+        .into_iter()
+        .filter(|color| matches!(color, [255, 0, 0] | [0, 255, 0] | [0, 0, 255]))
+        .collect::<Vec<_>>();
+    assert_eq!(paints, [[255, 0, 0], [0, 255, 0], [0, 0, 255]]);
+}
