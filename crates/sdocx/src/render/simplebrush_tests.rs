@@ -409,6 +409,8 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             None,
             false,
             None,
+            None,
+            &std::cell::Cell::new(usize::MAX),
             remaining,
             &std::cell::Cell::new(usize::MAX),
             None,

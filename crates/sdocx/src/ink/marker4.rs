@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{Point, Stroke};
 
-pub(super) struct Ink {
+pub(crate) struct Ink {
     pub points: Vec<Point>,
     pub sample_ends: Vec<usize>,
     pub stamp: RectStamp,
@@ -15,8 +15,7 @@ pub(super) struct Ink {
 }
 
 /// Experimental host-controlled V7 finger geometry, not document dispatch.
-#[cfg(all(test, feature = "serde"))]
-pub(super) fn prepare_v7_finger(s: &Stroke) -> Option<Ink> {
+pub(crate) fn prepare_v7_finger(s: &Stroke) -> Option<Ink> {
     let rendering = s.rendering.as_ref()?;
     if rendering.advanced_settings.as_deref() != Some("7;")
         || rendering.tool_type_raw != 0
@@ -46,6 +45,54 @@ pub(super) fn prepare_v7_finger(s: &Stroke) -> Option<Ink> {
     let radius = (size.clamp(0.4, 800.) * 0.5).max(1.);
     ink.stamp.width = f64::from(radius + 0.5) * 1.54;
     ink.stamp.height = f64::from(radius + 0.5) * 2.;
+    Some(ink)
+}
+
+pub(crate) fn prepare_v7_finger_bounded(
+    s: &Stroke,
+    remaining: &std::cell::Cell<usize>,
+) -> Option<Ink> {
+    let rendering = s.rendering.as_ref()?;
+    let argb = rendering.style.color_argb?;
+    let color = s.color?;
+    if color.r != (argb >> 16) as u8 || color.g != (argb >> 8) as u8 || color.b != argb as u8 {
+        return None;
+    }
+    if !matches!(
+        rendering.pen_name.as_deref(),
+        Some(
+            "com.samsung.android.sdk.pen.pen.preload.Marker4"
+                | "com.samsung.android.sdk.pen.pen.preload.StraightHighlighter"
+        )
+    ) || !rendering
+        .style
+        .pen_size
+        .is_some_and(|size| (4.0..=35.0).contains(&size))
+        || rendering.properties.replay_only
+        || rendering.properties.eraser
+        || rendering.properties.alpha_lock
+        || rendering.properties.fixed_opacity
+        || rendering.properties.rainbow_effect
+        || rendering.properties.straighten
+        || rendering.properties.fixed_width
+        || rendering.properties.reveal_mode
+        || rendering.properties.generated
+        || rendering.style.stroke_type_raw.is_some_and(|v| v != 0)
+        || rendering.style.color_type_raw.is_some_and(|v| v != 0)
+        || rendering.style.line_type_raw.is_some_and(|v| v != 0)
+        || rendering.style.gradient_colors_argb.is_some()
+        || s.points.len() > 1024
+        || s.points
+            .windows(2)
+            .map(|p| (p[1].x - p[0].x).hypot(p[1].y - p[0].y))
+            .sum::<f64>()
+            > 4000.
+    {
+        return None;
+    }
+    let ink = prepare_v7_finger(s)?;
+    let left = remaining.get().checked_sub(ink.points.len())?;
+    remaining.set(left);
     Some(ink)
 }
 
@@ -212,6 +259,58 @@ mod tests {
 
     fn reference() -> Reference {
         serde_json::from_str(include_str!("../../../../conformance/marker4-v7.json")).unwrap()
+    }
+
+    #[test]
+    fn v7_finger_budget_is_atomic_and_bounded() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../tools/marker4_v7/public-finger/wide-extra/geometry.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"][0];
+        let mut stroke = reference().stroke;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 0;
+        rendering.style.pen_size = Some(4.01);
+        for sample in case["samples"].as_array().unwrap() {
+            stroke.points.push(Point {
+                x: sample[0].as_f64().unwrap(),
+                y: sample[1].as_f64().unwrap(),
+            });
+            stroke.pressures.push(sample[2].as_f64().unwrap());
+            stroke.tilts.push(sample[3].as_f64().unwrap());
+            stroke.timestamps.push(stroke.timestamps.len() as i64 * 8);
+        }
+        stroke.color = Some(crate::Color {
+            r: 0x33,
+            g: 0x96,
+            b: 0xff,
+        });
+        let count = prepare_v7_finger(&stroke).unwrap().points.len();
+        assert!(count > 0);
+        let remaining = std::cell::Cell::new(count - 1);
+        assert!(prepare_v7_finger_bounded(&stroke, &remaining).is_none());
+        assert_eq!(remaining.get(), count - 1);
+        remaining.set(count);
+        assert!(prepare_v7_finger_bounded(&stroke, &remaining).is_some());
+        assert_eq!(remaining.get(), 0);
+        let mut alias = stroke.clone();
+        alias.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.StraightHighlighter".into());
+        remaining.set(count);
+        let alias_ink = prepare_v7_finger_bounded(&alias, &remaining).unwrap();
+        let original_ink = prepare_v7_finger(&stroke).unwrap();
+        assert_eq!(alias_ink.points, original_ink.points);
+        assert_eq!(alias_ink.sample_ends, original_ink.sample_ends);
+        assert_eq!(remaining.get(), 0);
+        remaining.set(0);
+        assert!(prepare_v7_finger_bounded(&stroke, &remaining).is_none());
+        assert_eq!(remaining.get(), 0);
+        let mut too_many = stroke.clone();
+        too_many.points.resize(1025, Point { x: 1., y: 1. });
+        remaining.set(usize::MAX);
+        assert!(prepare_v7_finger_bounded(&too_many, &remaining).is_none());
+        assert_eq!(remaining.get(), usize::MAX);
     }
 
     #[test]
@@ -606,7 +705,7 @@ mod tests {
     #[test]
     fn v8_finger_sampler_matches_native_v7_finger_geometry() {
         let controls: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../conformance/marker4-v7-finger-native.json"
+            "../../../../tools/marker4_v7/public-finger/wide-extra/geometry.json"
         ))
         .unwrap();
         for case in controls["cases"].as_array().unwrap() {

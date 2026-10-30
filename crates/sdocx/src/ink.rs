@@ -46,7 +46,7 @@ pub(crate) fn magicpen_source_contour_path(records: &[[u32; 3]], scale: u32) -> 
 }
 mod marker2;
 pub(crate) mod marker3;
-mod marker4;
+pub(crate) mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
 pub(crate) mod legacy_marker_mesh;
 #[cfg(test)]

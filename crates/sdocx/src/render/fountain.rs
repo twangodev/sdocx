@@ -2864,6 +2864,8 @@ mod tests {
                 None,
                 false,
                 None,
+                None,
+                &std::cell::Cell::new(usize::MAX),
                 &std::cell::Cell::new(32_768),
                 &std::cell::Cell::new(32_768),
                 None,

@@ -417,6 +417,12 @@ pub struct RenderOptions {
     /// Opt into the experimental saved Marker centerline approximation.
     #[cfg_attr(feature = "serde", serde(default))]
     pub legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    /// Opt into experimental fresh Marker4 V7 finger paint at an asserted axis-aligned
+    /// output scale of 1, 2, or 4 pixels per page unit. The scale selects the same approximation;
+    /// it does not transform the output. Stroke color must match saved ARGB RGB.
+    /// Unsupported inputs use generic paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub marker4_v7_finger_output_scale: Option<u32>,
     /// Opt into experimental bounded Marker vector paint with explicit native screen dimensions.
     #[cfg(feature = "pdf")]
     #[cfg_attr(feature = "serde", serde(default))]
@@ -929,6 +935,7 @@ impl DocumentTextCache {
             options.montblanc_profile,
             options.montblanc_two_pixels_per_page_unit,
             options.legacy_marker_centerline_profile,
+            options.marker4_v7_finger_output_scale,
             #[cfg(feature = "pdf")]
             options.legacy_marker_vector_profile,
             slice,
@@ -1444,6 +1451,7 @@ fn render_page_contents_svg(
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    marker4_v7_finger_output_scale: Option<u32>,
     #[cfg(feature = "pdf")] legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
@@ -1524,6 +1532,8 @@ fn render_page_contents_svg(
         montblanc_profile,
         montblanc_two_pixels_per_page_unit,
         legacy_marker_centerline_profile,
+        marker4_v7_finger_output_scale,
+        marker4_v7_remaining_stamps: Cell::new(32768),
         #[cfg(feature = "pdf")]
         legacy_marker_vector_profile,
         #[cfg(feature = "pdf")]
@@ -1586,11 +1596,13 @@ struct CompositionContext<'a> {
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    marker4_v7_finger_output_scale: Option<u32>,
     #[cfg(feature = "pdf")]
     legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")]
     legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
+    marker4_v7_remaining_stamps: Cell<usize>,
     simplebrush_remaining_stamps: Cell<usize>,
     simplebrush_long_remaining_stamps: Cell<usize>,
     montblanc_remaining_patches: Cell<usize>,
@@ -1693,6 +1705,8 @@ fn render_object(
                 context.montblanc_profile,
                 context.montblanc_two_pixels_per_page_unit,
                 context.legacy_marker_centerline_profile,
+                context.marker4_v7_finger_output_scale,
+                &context.marker4_v7_remaining_stamps,
                 if context.simplebrush_two_pixels_per_page_unit
                     && context.simplebrush_profile.is_none()
                     && stroke.points.len() > 128
@@ -4409,6 +4423,8 @@ fn render_stroke(
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
+    marker4_v7_finger_output_scale: Option<u32>,
+    marker4_v7_remaining_stamps: &Cell<usize>,
     simplebrush_remaining_stamps: &Cell<usize>,
     montblanc_remaining_patches: &Cell<usize>,
     slice: Option<PageSlice>,
@@ -4736,6 +4752,20 @@ fn render_stroke(
             .is_some_and(|radii| !radii.is_empty() && radii.iter().all(|&radius| radius == 0.0))
     {
         return;
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && slice.is_none()
+        && matches!(marker4_v7_finger_output_scale, Some(1 | 2 | 4))
+        && let Some(ink) =
+            crate::ink::marker4::prepare_v7_finger_bounded(stroke, marker4_v7_remaining_stamps)
+    {
+        paint.points = Cow::Owned(ink.points);
+        paint.sample_ends = Some(ink.sample_ends);
+        paint.rect_stamp = Some(ink.stamp);
+        paint.dot_radii = None;
+        paint.segment_widths = None;
+        paint.opacity = ink.opacity;
     }
     if native_allowed
         && replay_index.is_none()
