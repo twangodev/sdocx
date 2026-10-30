@@ -1,0 +1,213 @@
+{
+  "scope": "ARM64 native ObjectStroke and Drawing on synthetic queue, host Mesa framebuffer; explicit native Update and Draw; no device parity",
+  "capture_sha256": "2d1c9d84f91da93b6c0ddd78f177f3baddd9a3d2c691e136ce0f141d12deb5c6",
+  "base_sha256": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+  "patch_sha256": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+  "first_sha256": "5f77780a8a1a7157bd68f7cfce20e24314537c3eda3ad9921f9497cb372e2915",
+  "first_gl_error": 0,
+  "second": {
+    "advanced_setting": "14;",
+    "drawable": "0x10037230",
+    "drawing_result": 1,
+    "first_object": "0x1002ed20",
+    "first_rt": "0x10038210",
+    "geometry_bytes": 4592,
+    "geometry_sha256": "ab8c231108800d1a9437783f27d12c57e59c4d81a00538268343f662a1c64389",
+    "handoff_events": [
+      {
+        "after": [
+          268975920,
+          268690848,
+          0,
+          0
+        ],
+        "arg1": "0x10083f30",
+        "arg2": "0x0",
+        "before": [
+          0,
+          268690848,
+          0,
+          0
+        ],
+        "method": "SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)",
+        "phase": "second_draw_object_stroke",
+        "receiver": "0x10038210"
+      },
+      {
+        "after": [
+          0,
+          268975920,
+          0,
+          0
+        ],
+        "arg1": "0x10083f30",
+        "arg2": "0x0",
+        "before": [
+          0,
+          268690848,
+          0,
+          0
+        ],
+        "method": "SPen::PenDrawableRT::SendDataToGPU(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)",
+        "phase": "second_draw_object_stroke",
+        "receiver": "0x10038210"
+      }
+    ],
+    "handoff_start": 4,
+    "impl": "0x10081950",
+    "model_getters": {
+      "color_argb": 3234607940,
+      "curve_enabled": 1,
+      "fixed_width_bits": "00000000",
+      "fixed_width_enabled": 0,
+      "label": "second_before_draw",
+      "line_type": 0,
+      "point_count": 4,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "00002041",
+      "size_level": 0,
+      "stroke_type": 0,
+      "tool_type": 2
+    },
+    "object": "0x10081850",
+    "outcome": "returned",
+    "pen": "0x10036bd0",
+    "queue_events": [
+      {
+        "lr": "0x505dc28",
+        "phase": "second_draw_object_stroke",
+        "run": "0x505f6e4",
+        "task": "0x10083960",
+        "vtable": "0x50bc718"
+      },
+      {
+        "lr": "0x505dcd4",
+        "phase": "second_draw_object_stroke",
+        "run": "0x505f70c",
+        "task": "0x10083990",
+        "vtable": "0x50bc748"
+      },
+      {
+        "lr": "0x5072b08",
+        "phase": "second_draw_object_stroke",
+        "run": "0x5075494",
+        "task": "0x10083f50",
+        "vtable": "0x50bb810"
+      },
+      {
+        "lr": "0x505cb4c",
+        "phase": "second_draw_object_stroke",
+        "run": "0x505f690",
+        "task": "0x100880e0",
+        "vtable": "0x50bce88"
+      },
+      {
+        "event": "destructor_queue_return",
+        "phase": "second_draw_object_stroke",
+        "queue": "0x1002fa40"
+      },
+      {
+        "lr": "0x10504d4",
+        "phase": "second_draw_object_stroke",
+        "run": "0x10506b4",
+        "task": "0x10089380",
+        "vtable": "0x10774f8"
+      },
+      {
+        "lr": "0x105059c",
+        "phase": "second_draw_object_stroke",
+        "run": "0x104676c",
+        "task": "0x100893c0",
+        "vtable": "0x10774c8"
+      },
+      {
+        "event": "deferred",
+        "phase": "second_draw_object_stroke",
+        "run": "0x104676c",
+        "task": "0x100893c0",
+        "vtable": "0x10774c8"
+      },
+      {
+        "lr": "0x1045990",
+        "phase": "second_draw_object_stroke",
+        "run": "0x1045e6c",
+        "task": "0x10089450",
+        "vtable": "0x1077528"
+      },
+      {
+        "event": "deferred",
+        "phase": "second_draw_object_stroke",
+        "run": "0x1045e6c",
+        "task": "0x10089450",
+        "vtable": "0x1077528"
+      },
+      {
+        "lr": "0x505eb30",
+        "phase": "second_draw_object_stroke",
+        "run": "0x505f8c8",
+        "task": "0x10089470",
+        "vtable": "0x50bc0a8"
+      }
+    ],
+    "queue_start": 22,
+    "rt": "0x10038210",
+    "same_rt": true,
+    "source_arrays": {
+      "orientations": {
+        "count": 4,
+        "data_hex": "00000000000000000000000000000000",
+        "element_size": 4
+      },
+      "points": {
+        "count": 4,
+        "data_hex": "000000000000004000002041000000400000a041000080400000f04100004041",
+        "element_size": 8
+      },
+      "pressures": {
+        "count": 4,
+        "data_hex": "6666663f3333333f0000003f9a99993e",
+        "element_size": 4
+      },
+      "tilts": {
+        "count": 4,
+        "data_hex": "cdcccc3ecdcccc3ecdcccc3ecdcccc3e",
+        "element_size": 4
+      },
+      "timestamps": {
+        "count": 4,
+        "data_hex": "0a000000140000001e00000028000000",
+        "element_size": 4
+      }
+    },
+    "stage": "draw_returned",
+    "update_gl_error": 0
+  },
+  "second_sha256": "e757137fc3cc95fba39804bf66bc60953460e485a178b49c42196db1a4462389",
+  "second_gl_error": 0,
+  "uniforms": [
+    [
+      "glUniform2fv",
+      4,
+      1,
+      [
+        6.0,
+        9.0
+      ]
+    ],
+    [
+      "glUniform2fv",
+      4,
+      1,
+      [
+        12.0,
+        16.000001907348633
+      ]
+    ]
+  ],
+  "outer_outcome": null,
+  "outer_error": null,
+  "exit_code": 0
+}
