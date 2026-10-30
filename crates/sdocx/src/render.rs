@@ -14126,7 +14126,7 @@ mod tests {
         let literal = crate::ink::airbrush::saved_v2_from_stroke(&unsupported).unwrap();
         assert_eq!(literal.rows, sampled.rows);
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
-        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
+        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_some());
         let mut other = document.clone();
         other.pages[0]
             .strokes_mut()
@@ -14815,6 +14815,146 @@ mod tests {
             flipped,
             "public V2 SVG versus native host frame"
         );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn saved_v1_tool_matrix_public_exports() {
+        use base64::Engine;
+        use std::io::Read;
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tools/pen-capture/airbrush_v1_matrix_receipt.json"
+        ))
+        .unwrap();
+        for path in ["zigzag", "reverse"] {
+            for tool in [0, 2, 3] {
+                let case = &receipt["cases"][format!("{path}-{tool}")];
+                let mut bytes = Vec::new();
+                let z = base64::engine::general_purpose::STANDARD
+                    .decode(case["frame"]["data_base64"].as_str().unwrap())
+                    .unwrap();
+                flate2::read::ZlibDecoder::new(z.as_slice())
+                    .read_to_end(&mut bytes)
+                    .unwrap();
+                let native: Vec<u8> = bytes
+                    .as_chunks::<{ 256 * 4 }>()
+                    .0
+                    .iter()
+                    .rev()
+                    .flatten()
+                    .copied()
+                    .collect();
+                let mut document = public_airbrush_v2_document();
+                let stroke = document.pages[0].strokes_mut().next().unwrap();
+                stroke.points = (0..5)
+                    .map(|i| {
+                        let i = i as f64;
+                        if path == "zigzag" {
+                            Point {
+                                x: 128.453125 + i * 4.,
+                                y: 128.515625 + (i as i32 % 2) as f64 * 7.,
+                            }
+                        } else {
+                            Point {
+                                x: 128.453125 - i * 2.5,
+                                y: 128.515625 - i * 1.25,
+                            }
+                        }
+                    })
+                    .collect();
+                stroke.pressures = vec![0.3; 5];
+                stroke.tilts = vec![0.12; 5];
+                stroke.orientations = vec![0.2; 5];
+                stroke.timestamps = vec![300, 315, 330, 345, 360];
+                let size = if path == "zigzag" { 8.75 } else { 2.25 };
+                stroke.pen_width = size;
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.advanced_settings = None;
+                rendering.tool_type_raw = tool;
+                rendering.style.pen_size = Some(size);
+                rendering.style.color_argb = Some(if path == "zigzag" {
+                    0x8044ee11
+                } else {
+                    0xffdf2255
+                });
+                let sampled = crate::ink::airbrush::saved_from_stroke(stroke, true).unwrap();
+                let actual = sampled
+                    .rows
+                    .iter()
+                    .flatten()
+                    .flat_map(|lane| lane.to_le_bytes())
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>();
+                assert_eq!(
+                    actual,
+                    case["vector_hex"].as_str().unwrap(),
+                    "{path}-{tool} native geometry"
+                );
+                let layout = layout_document(&document);
+                for (name, profile) in [
+                    ("candidate", Some(super::AirBrushRenderProfile::SavedV1)),
+                    ("generic", None),
+                ] {
+                    let options = RenderOptions {
+                        airbrush_profile: profile,
+                        ..RenderOptions::default()
+                    };
+                    let request =
+                        super::PageSceneRequest::sliced(&layout.pages[0], 0, 256, false).unwrap();
+                    let scene = super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &document,
+                            &[request],
+                            &options,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0);
+                    let tree = resvg::usvg::Tree::from_str(
+                        &scene.page.svg,
+                        &resvg::usvg::Options::default(),
+                    )
+                    .unwrap();
+                    let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+                    resvg::render(
+                        &tree,
+                        resvg::tiny_skia::Transform::identity(),
+                        &mut pixmap.as_mut(),
+                    );
+                    let error: u64 = pixmap
+                        .data()
+                        .iter()
+                        .zip(&native)
+                        .map(|(&a, &b)| a.abs_diff(b) as u64)
+                        .sum();
+                    if name == "candidate" {
+                        assert_eq!(error, 0, "{path}-{tool} SVG versus native");
+                    } else {
+                        let expected = match (path, tool) {
+                            ("zigzag", 2) => 32093,
+                            ("zigzag", _) => 20838,
+                            ("reverse", 2) => 874,
+                            _ => 1658,
+                        };
+                        assert_eq!(error, expected, "{path}-{tool} generic SVG error");
+                    }
+                    if let Some(directory) = std::env::var_os("SDOCX_AIRBRUSH_MATRIX_DIR") {
+                        let pdf = crate::pdf::render_scenes_pdf_with_progress(
+                            std::slice::from_ref(&scene),
+                            &crate::PdfOptions::default(),
+                            &mut |_| {},
+                        )
+                        .unwrap();
+                        std::fs::write(
+                            std::path::Path::new(&directory)
+                                .join(format!("{path}-{tool}-{name}.pdf")),
+                            pdf,
+                        )
+                        .unwrap();
+                    }
+                }
+            }
+        }
     }
 
     #[cfg(feature = "pdf")]

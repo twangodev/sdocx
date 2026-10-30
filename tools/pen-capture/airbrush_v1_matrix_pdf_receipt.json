@@ -1,0 +1,66 @@
+{
+  "pymupdf_version": "1.28.2",
+  "scope": "Host Mesa versus transparent direct PDF raster at 96 dpi; not device or cross-reader parity.",
+  "results": {
+    "reverse-0": {
+      "candidate": {
+        "sum_absolute_channel_error": 2524,
+        "max_channel_error": 104
+      },
+      "generic": {
+        "sum_absolute_channel_error": 1746,
+        "max_channel_error": 95
+      }
+    },
+    "reverse-2": {
+      "candidate": {
+        "sum_absolute_channel_error": 2524,
+        "max_channel_error": 104
+      },
+      "generic": {
+        "sum_absolute_channel_error": 818,
+        "max_channel_error": 39
+      }
+    },
+    "reverse-3": {
+      "candidate": {
+        "sum_absolute_channel_error": 2524,
+        "max_channel_error": 104
+      },
+      "generic": {
+        "sum_absolute_channel_error": 1746,
+        "max_channel_error": 95
+      }
+    },
+    "zigzag-0": {
+      "candidate": {
+        "sum_absolute_channel_error": 6241,
+        "max_channel_error": 41
+      },
+      "generic": {
+        "sum_absolute_channel_error": 19669,
+        "max_channel_error": 255
+      }
+    },
+    "zigzag-2": {
+      "candidate": {
+        "sum_absolute_channel_error": 6241,
+        "max_channel_error": 41
+      },
+      "generic": {
+        "sum_absolute_channel_error": 29935,
+        "max_channel_error": 255
+      }
+    },
+    "zigzag-3": {
+      "candidate": {
+        "sum_absolute_channel_error": 6241,
+        "max_channel_error": 41
+      },
+      "generic": {
+        "sum_absolute_channel_error": 19669,
+        "max_channel_error": 255
+      }
+    }
+  }
+}

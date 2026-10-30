@@ -429,11 +429,11 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
             Some("") | Some("2;")
         )
     }) || !rendering.properties.compressed
-        || !(rendering.tool_type_raw == 2 || (!v1 && matches!(rendering.tool_type_raw, 0 | 1 | 3)))
+        || !(matches!(rendering.tool_type_raw, 0 | 2 | 3) || (!v1 && rendering.tool_type_raw == 1))
     {
         return None;
     }
-    let source_argb = super::saved_airbrush_argb_with_extra_tools(stroke, !v1)?;
+    let source_argb = super::saved_airbrush_argb_with_extra_tools(stroke, true)?;
     let raw_size = rendering.style.pen_size?;
     if !raw_size.is_finite() {
         return None;
@@ -484,7 +484,8 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
             history: &points[..count - 1],
             endpoint: *points.last()?,
             size,
-            tool_type: i32::from(rendering.tool_type_raw),
+            // V1 Drawing controls for tools 0, 2 and 3 share this stream.
+            tool_type: 2,
             source: 0,
             runtime: Runtime { counter_seed: 0 },
         })?
@@ -828,6 +829,7 @@ mod tests {
             history: &[point],
             endpoint: point,
             size: fixture["input"]["size"].as_f64().unwrap() as f32,
+            // V1 Drawing controls for tools 0, 2 and 3 share this stream.
             tool_type: 2,
             source: 0,
             runtime: Runtime { counter_seed: 0 },
@@ -1047,6 +1049,7 @@ mod tests {
             history,
             endpoint,
             size,
+            // V1 Drawing controls for tools 0, 2 and 3 share this stream.
             tool_type: 2,
             source: 0,
             runtime: Runtime { counter_seed: 0 },

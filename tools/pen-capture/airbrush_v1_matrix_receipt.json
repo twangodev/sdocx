@@ -1,0 +1,389 @@
+{
+  "scope": "Synthetic Model/Drawing host-Mesa controls; not saved-note or device parity.",
+  "cases": {
+    "reverse-0": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300e8fb420088fe4200e8f6420008fc4200e8f1420088f94200e8ec420008f742",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803f1d6b00438e7f004371972e3f003a3bbf72500043397200435b607fbf88dc8e3d00240043005c004309f3463f251b213f8ecbff42e33c004371830ebe35827dbf8f2bff42e3140043e8d512bff3b3513f0068fe4200c8ff42e2677a3fc0e654be5af7fd42ac8fff424e6f5bbf8fd903bff288fd427958ff4263208d3e3d15763fcb1cfd426522ff428871e83efb1864bfe2b2fc4271edfe42b28f70bf431daf3e384bfc429cb9fe423aa66b3fd20dc83ecee5fb42e786fe42bd3fd0be20de69bfa382fb425255fe42d3b0a6be830d723fb821fb42dd24fe42e108623f7d5ef0be0cc3fa4286f5fd42ea4677bfef8384bea066fa424fc7fd42d5a8073fa719593f720cfa42399afd420c63433ef04b7bbf84b4f942426efd42cc1b4fbf0379163fd65ef9426b43fd4280177e3f0b97f93d660bf942b319fd42ba8d24bf7d1b44bf35baf8421bf1fc42735d56bd30a67f3f456bf842a2c9fc429626383f34d531bf4918f84225a0fc4205f67fbf1af58e3cc39df742e162fc42b43e3e3f2f4c2b3f7b29f742bd28fc42b27eb2bd9e067fbf72bbf642b9f1fb42f49b1dbf1abb493fa753f642d3bdfb4221d97c3fbf3020be1af2f5420d8dfb42c03b54bf5a270fbfcb96f542665ffb42575a663e4670793fbb41f542de34fb420000003fd7b35dbfe9f2f442740dfb4273d074bf5cb1953e55aaf4422be9fa426917663f0272e03e0068f44200c8fa42d07bb7be2aff6ebf6626f44233a7fa4212ccbfbeff5b6d3f9ae1f342cd84fa42ca03683f6b61d8be9a99f342cd60fa42617873bfdc379ebe664ef342333bfa422339f83e08e75f3f0000f3420014fa42c5ba773e476578bf66aef24233ebf94202b356bfa16d0b3f9a59f242cdc0f9425c1c7c3fd7d0313e9a01f242cd94f94263101abf80734cbf66a6f1423367f9423f12d6bdff987e3f0048f1420038f942b734413f68f327bf66e6f0423307f94216d87fbfa0ef0ebd9a81f042cdd4f842f304353ff404353f9a19f042cda0f84287ef0ebd16d87fbf66aeef42336bf84269f327bfb634413f0040ef420034f842ff987e3f3312d6bd66ceee4233fbf7427f734cbf64101abf9a59ee42cdc0f742d1d0313e5d1c7c3f9ae1ed42cd84f742a26d0b3f01b356bf6666ed423347f742476578bfc0ba773e",
+      "vector_sha256": "bb2ed832b8f0b23dc08f03312664ed1e40325c2b063fe71f82a8d45e5cd21569",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "37e26dcdb4a66137184f6c9998bc9a0240209209e3c260820149a53dd057e9dc",
+        "nonzero_pixels": 26,
+        "nonzero_channels": [
+          26,
+          20,
+          26,
+          26
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt1bFKw1AAQNH3krykmqRaKRQrKghR0G4OdmvFwSI6KIhjwVUnV3/er4gBPecL7nZDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgBCaWLRdGl9umuPXoVuA37GflQf39dHztu0+b0azdR5iPnQT0K9pXs1u6/nDS3u6fapP3lLI0tBNQL+KkBWr3cPNx2TxfZaaiyLEYugmoF8pZuVyNF2973Vfi2pynUL0e/gnzsvx1d3O/LEKWTV0CwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8cPwckL8A==",
+        "compressed_bytes": 418,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "reverse-2": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 2
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300e8fb420088fe4200e8f6420008fc4200e8f1420088f94200e8ec420008f742",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803f1d6b00438e7f004371972e3f003a3bbf72500043397200435b607fbf88dc8e3d00240043005c004309f3463f251b213f8ecbff42e33c004371830ebe35827dbf8f2bff42e3140043e8d512bff3b3513f0068fe4200c8ff42e2677a3fc0e654be5af7fd42ac8fff424e6f5bbf8fd903bff288fd427958ff4263208d3e3d15763fcb1cfd426522ff428871e83efb1864bfe2b2fc4271edfe42b28f70bf431daf3e384bfc429cb9fe423aa66b3fd20dc83ecee5fb42e786fe42bd3fd0be20de69bfa382fb425255fe42d3b0a6be830d723fb821fb42dd24fe42e108623f7d5ef0be0cc3fa4286f5fd42ea4677bfef8384bea066fa424fc7fd42d5a8073fa719593f720cfa42399afd420c63433ef04b7bbf84b4f942426efd42cc1b4fbf0379163fd65ef9426b43fd4280177e3f0b97f93d660bf942b319fd42ba8d24bf7d1b44bf35baf8421bf1fc42735d56bd30a67f3f456bf842a2c9fc429626383f34d531bf4918f84225a0fc4205f67fbf1af58e3cc39df742e162fc42b43e3e3f2f4c2b3f7b29f742bd28fc42b27eb2bd9e067fbf72bbf642b9f1fb42f49b1dbf1abb493fa753f642d3bdfb4221d97c3fbf3020be1af2f5420d8dfb42c03b54bf5a270fbfcb96f542665ffb42575a663e4670793fbb41f542de34fb420000003fd7b35dbfe9f2f442740dfb4273d074bf5cb1953e55aaf4422be9fa426917663f0272e03e0068f44200c8fa42d07bb7be2aff6ebf6626f44233a7fa4212ccbfbeff5b6d3f9ae1f342cd84fa42ca03683f6b61d8be9a99f342cd60fa42617873bfdc379ebe664ef342333bfa422339f83e08e75f3f0000f3420014fa42c5ba773e476578bf66aef24233ebf94202b356bfa16d0b3f9a59f242cdc0f9425c1c7c3fd7d0313e9a01f242cd94f94263101abf80734cbf66a6f1423367f9423f12d6bdff987e3f0048f1420038f942b734413f68f327bf66e6f0423307f94216d87fbfa0ef0ebd9a81f042cdd4f842f304353ff404353f9a19f042cda0f84287ef0ebd16d87fbf66aeef42336bf84269f327bfb634413f0040ef420034f842ff987e3f3312d6bd66ceee4233fbf7427f734cbf64101abf9a59ee42cdc0f742d1d0313e5d1c7c3f9ae1ed42cd84f742a26d0b3f01b356bf6666ed423347f742476578bfc0ba773e",
+      "vector_sha256": "bb2ed832b8f0b23dc08f03312664ed1e40325c2b063fe71f82a8d45e5cd21569",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "37e26dcdb4a66137184f6c9998bc9a0240209209e3c260820149a53dd057e9dc",
+        "nonzero_pixels": 26,
+        "nonzero_channels": [
+          26,
+          20,
+          26,
+          26
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt1bFKw1AAQNH3krykmqRaKRQrKghR0G4OdmvFwSI6KIhjwVUnV3/er4gBPecL7nZDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgBCaWLRdGl9umuPXoVuA37GflQf39dHztu0+b0azdR5iPnQT0K9pXs1u6/nDS3u6fapP3lLI0tBNQL+KkBWr3cPNx2TxfZaaiyLEYugmoF8pZuVyNF2973Vfi2pynUL0e/gnzsvx1d3O/LEKWTV0CwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8cPwckL8A==",
+        "compressed_bytes": 418,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "reverse-3": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0xffdf2255",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 2.25,
+        "size_level": 30,
+        "tool_type": 3
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300e8fb420088fe4200e8f6420008fc4200e8f1420088f94200e8ec420008f742",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803f1d6b00438e7f004371972e3f003a3bbf72500043397200435b607fbf88dc8e3d00240043005c004309f3463f251b213f8ecbff42e33c004371830ebe35827dbf8f2bff42e3140043e8d512bff3b3513f0068fe4200c8ff42e2677a3fc0e654be5af7fd42ac8fff424e6f5bbf8fd903bff288fd427958ff4263208d3e3d15763fcb1cfd426522ff428871e83efb1864bfe2b2fc4271edfe42b28f70bf431daf3e384bfc429cb9fe423aa66b3fd20dc83ecee5fb42e786fe42bd3fd0be20de69bfa382fb425255fe42d3b0a6be830d723fb821fb42dd24fe42e108623f7d5ef0be0cc3fa4286f5fd42ea4677bfef8384bea066fa424fc7fd42d5a8073fa719593f720cfa42399afd420c63433ef04b7bbf84b4f942426efd42cc1b4fbf0379163fd65ef9426b43fd4280177e3f0b97f93d660bf942b319fd42ba8d24bf7d1b44bf35baf8421bf1fc42735d56bd30a67f3f456bf842a2c9fc429626383f34d531bf4918f84225a0fc4205f67fbf1af58e3cc39df742e162fc42b43e3e3f2f4c2b3f7b29f742bd28fc42b27eb2bd9e067fbf72bbf642b9f1fb42f49b1dbf1abb493fa753f642d3bdfb4221d97c3fbf3020be1af2f5420d8dfb42c03b54bf5a270fbfcb96f542665ffb42575a663e4670793fbb41f542de34fb420000003fd7b35dbfe9f2f442740dfb4273d074bf5cb1953e55aaf4422be9fa426917663f0272e03e0068f44200c8fa42d07bb7be2aff6ebf6626f44233a7fa4212ccbfbeff5b6d3f9ae1f342cd84fa42ca03683f6b61d8be9a99f342cd60fa42617873bfdc379ebe664ef342333bfa422339f83e08e75f3f0000f3420014fa42c5ba773e476578bf66aef24233ebf94202b356bfa16d0b3f9a59f242cdc0f9425c1c7c3fd7d0313e9a01f242cd94f94263101abf80734cbf66a6f1423367f9423f12d6bdff987e3f0048f1420038f942b734413f68f327bf66e6f0423307f94216d87fbfa0ef0ebd9a81f042cdd4f842f304353ff404353f9a19f042cda0f84287ef0ebd16d87fbf66aeef42336bf84269f327bfb634413f0040ef420034f842ff987e3f3312d6bd66ceee4233fbf7427f734cbf64101abf9a59ee42cdc0f742d1d0313e5d1c7c3f9ae1ed42cd84f742a26d0b3f01b356bf6666ed423347f742476578bfc0ba773e",
+      "vector_sha256": "bb2ed832b8f0b23dc08f03312664ed1e40325c2b063fe71f82a8d45e5cd21569",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "37e26dcdb4a66137184f6c9998bc9a0240209209e3c260820149a53dd057e9dc",
+        "nonzero_pixels": 26,
+        "nonzero_channels": [
+          26,
+          20,
+          26,
+          26
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt1bFKw1AAQNH3krykmqRaKRQrKghR0G4OdmvFwSI6KIhjwVUnV3/er4gBPecL7nZDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgBCaWLRdGl9umuPXoVuA37GflQf39dHztu0+b0azdR5iPnQT0K9pXs1u6/nDS3u6fapP3lLI0tBNQL+KkBWr3cPNx2TxfZaaiyLEYugmoF8pZuVyNF2973Vfi2pynUL0e/gnzsvx1d3O/LEKWTV0CwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8cPwckL8A==",
+        "compressed_bytes": 418,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "zigzag-0": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 0
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "00740043008400430074044300840743007408430084004300740c43008407430074104300840043",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803feac500435a13014371972e3f003a3bbf502c01438cc601435b607fbf88dc8e3d56870143d665024309f3463f251b213f90f40143fe24034371830ebe35827dbf0074024300040443e8d512bff3b3513f486b0343f17b0343e2677a3fc0e654be87540443700c03434e6f5bbf8fd903bfbd2f05437fb5024363208d3e3d15763febfc05431d7702438871e83efb1864bf10bc064349510243b28f70bf431daf3e2c6d0743054402433aa66b3fd20dc83e2c5d0843535e0243bd3fd0be20de69bf1a300943beb10243d3b0a6be830d723f60e209434c3e0343e108623f7d5ef0be00740a4300040443ea4677bfef8384beeb090b4313c70443d5a8073fa719593f0fb70b432a2605430c63433ef04b7bbf3b8d0c43bf140543cc1b4fbf0379163fcc470d4341ac044380177e3f0b97f93dbfe50d434c210443ba8d24bf7d1b44bf318d0e437b640343735d56bd30a67f3f87020f4350ca02439626383f34d531bf9b790f43a21d024305f67fbf1af58e3cc3f40f43875b0143b43e3e3f2f4c2b3f",
+      "vector_sha256": "3a08bbc1b0ae20d6c910e580ec2f00648cd251882e21c9ca891a4433ecd4d0fd",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d49bff27dc8401c97d059397d4863b4e07f0fc0230a1cfe0e2a675dcebba36bc",
+        "nonzero_pixels": 194,
+        "nonzero_channels": [
+          178,
+          194,
+          106,
+          194
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2mtPHDcUBmB77Nll78suJECgAUIKCZcECAQoBALhS/7/D+qYkgqpldKoUgnV86xWexutNB9eH/vYIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAfyz+8YhVqGIrtO4+AU/fgyyXfP/l5/JdCqmeDbN5EAYzi3EpdWOvvDcOwNMW61BXTU2vZsJMHoVR+fxnrpvX8n3VDu32i7jcXoov6kmYzJT38/FZufZuPgA8OSX3qRu6VSd0uqvVenupWq6HYfhtLMhNza/HYdzdSJuj/fRhsJW2Z8/yp/FhfdJ9Wa21Fqql8h+xmR889r0APyY3We+uplf9zfR2+C4d9Jp8t1erte5G3hq8qbb7G/H1cD8fDZvsjy/zzfSi/jx3Vd9MLvLVYC/t91+nre56fGUtAE9Ik9VS21Mv9vu/Vlu9Jv+zn1o349P6Ynpbf509qS9mT9Nv/WY8mF7VX5qafzE+zB8nH9LxpLlmclXfTi7q6+Fu2muXfkA/9GMO+bFvC/i+qlm35yazZQ7f36zezF3W16Oj+mz+Ot+OjtPp6CAdTU5bl804cD46TE39r48Hb9PucLvanVkP6+OTfD48yMeDnfy+t5V36mfV87v8mwPATy816/3SyxvspL3Jx/psfN76PP3U+lLyPXqfDvu71d7oXT4YH+WT3lraKGNEqfN5EqetxbDYXg7LZewY7FR77YW4mO97CH+3fwD8XEq/rvT3Sr+vWffvlx5AWc93Vqv1b32/zkr8pbOSVlvP40JrGqb1XJy/2xu43wusp3Gu8zKu1s31ZR3x2PcE/DOlTudBHLaaDM8sx5VWk+08DuM0DMPUC7265L3JddXU9bv9vXLu50GPv8wfUid28yiOy2t5Pub9AD+m5Lr07Urtru7P9D3M+Pf29FI5F9Cs+e/OAJSnuT88Hfe9unK2p/o3Z3j0/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+134HRU8ubQ==",
+        "compressed_bytes": 931,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "zigzag-2": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 2
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "00740043008400430074044300840743007408430084004300740c43008407430074104300840043",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803feac500435a13014371972e3f003a3bbf502c01438cc601435b607fbf88dc8e3d56870143d665024309f3463f251b213f90f40143fe24034371830ebe35827dbf0074024300040443e8d512bff3b3513f486b0343f17b0343e2677a3fc0e654be87540443700c03434e6f5bbf8fd903bfbd2f05437fb5024363208d3e3d15763febfc05431d7702438871e83efb1864bf10bc064349510243b28f70bf431daf3e2c6d0743054402433aa66b3fd20dc83e2c5d0843535e0243bd3fd0be20de69bf1a300943beb10243d3b0a6be830d723f60e209434c3e0343e108623f7d5ef0be00740a4300040443ea4677bfef8384beeb090b4313c70443d5a8073fa719593f0fb70b432a2605430c63433ef04b7bbf3b8d0c43bf140543cc1b4fbf0379163fcc470d4341ac044380177e3f0b97f93dbfe50d434c210443ba8d24bf7d1b44bf318d0e437b640343735d56bd30a67f3f87020f4350ca02439626383f34d531bf9b790f43a21d024305f67fbf1af58e3cc3f40f43875b0143b43e3e3f2f4c2b3f",
+      "vector_sha256": "3a08bbc1b0ae20d6c910e580ec2f00648cd251882e21c9ca891a4433ecd4d0fd",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d49bff27dc8401c97d059397d4863b4e07f0fc0230a1cfe0e2a675dcebba36bc",
+        "nonzero_pixels": 194,
+        "nonzero_channels": [
+          178,
+          194,
+          106,
+          194
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2mtPHDcUBmB77Nll78suJECgAUIKCZcECAQoBALhS/7/D+qYkgqpldKoUgnV86xWexutNB9eH/vYIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAfyz+8YhVqGIrtO4+AU/fgyyXfP/l5/JdCqmeDbN5EAYzi3EpdWOvvDcOwNMW61BXTU2vZsJMHoVR+fxnrpvX8n3VDu32i7jcXoov6kmYzJT38/FZufZuPgA8OSX3qRu6VSd0uqvVenupWq6HYfhtLMhNza/HYdzdSJuj/fRhsJW2Z8/yp/FhfdJ9Wa21Fqql8h+xmR889r0APyY3We+uplf9zfR2+C4d9Jp8t1erte5G3hq8qbb7G/H1cD8fDZvsjy/zzfSi/jx3Vd9MLvLVYC/t91+nre56fGUtAE9Ik9VS21Mv9vu/Vlu9Jv+zn1o349P6Ynpbf509qS9mT9Nv/WY8mF7VX5qafzE+zB8nH9LxpLlmclXfTi7q6+Fu2muXfkA/9GMO+bFvC/i+qlm35yazZQ7f36zezF3W16Oj+mz+Ot+OjtPp6CAdTU5bl804cD46TE39r48Hb9PucLvanVkP6+OTfD48yMeDnfy+t5V36mfV87v8mwPATy816/3SyxvspL3Jx/psfN76PP3U+lLyPXqfDvu71d7oXT4YH+WT3lraKGNEqfN5EqetxbDYXg7LZewY7FR77YW4mO97CH+3fwD8XEq/rvT3Sr+vWffvlx5AWc93Vqv1b32/zkr8pbOSVlvP40JrGqb1XJy/2xu43wusp3Gu8zKu1s31ZR3x2PcE/DOlTudBHLaaDM8sx5VWk+08DuM0DMPUC7265L3JddXU9bv9vXLu50GPv8wfUid28yiOy2t5Pub9AD+m5Lr07Urtru7P9D3M+Pf29FI5F9Cs+e/OAJSnuT88Hfe9unK2p/o3Z3j0/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+134HRU8ubQ==",
+        "compressed_bytes": 931,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "zigzag-3": {
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0x8044ee11",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 8.75,
+        "size_level": 30,
+        "tool_type": 3
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "00740043008400430074044300840743007408430084004300740c43008407430074104300840043",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803feac500435a13014371972e3f003a3bbf502c01438cc601435b607fbf88dc8e3d56870143d665024309f3463f251b213f90f40143fe24034371830ebe35827dbf0074024300040443e8d512bff3b3513f486b0343f17b0343e2677a3fc0e654be87540443700c03434e6f5bbf8fd903bfbd2f05437fb5024363208d3e3d15763febfc05431d7702438871e83efb1864bf10bc064349510243b28f70bf431daf3e2c6d0743054402433aa66b3fd20dc83e2c5d0843535e0243bd3fd0be20de69bf1a300943beb10243d3b0a6be830d723f60e209434c3e0343e108623f7d5ef0be00740a4300040443ea4677bfef8384beeb090b4313c70443d5a8073fa719593f0fb70b432a2605430c63433ef04b7bbf3b8d0c43bf140543cc1b4fbf0379163fcc470d4341ac044380177e3f0b97f93dbfe50d434c210443ba8d24bf7d1b44bf318d0e437b640343735d56bd30a67f3f87020f4350ca02439626383f34d531bf9b790f43a21d024305f67fbf1af58e3cc3f40f43875b0143b43e3e3f2f4c2b3f",
+      "vector_sha256": "3a08bbc1b0ae20d6c910e580ec2f00648cd251882e21c9ca891a4433ecd4d0fd",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d49bff27dc8401c97d059397d4863b4e07f0fc0230a1cfe0e2a675dcebba36bc",
+        "nonzero_pixels": 194,
+        "nonzero_channels": [
+          178,
+          194,
+          106,
+          194
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2mtPHDcUBmB77Nll78suJECgAUIKCZcECAQoBALhS/7/D+qYkgqpldKoUgnV86xWexutNB9eH/vYIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAfyz+8YhVqGIrtO4+AU/fgyyXfP/l5/JdCqmeDbN5EAYzi3EpdWOvvDcOwNMW61BXTU2vZsJMHoVR+fxnrpvX8n3VDu32i7jcXoov6kmYzJT38/FZufZuPgA8OSX3qRu6VSd0uqvVenupWq6HYfhtLMhNza/HYdzdSJuj/fRhsJW2Z8/yp/FhfdJ9Wa21Fqql8h+xmR889r0APyY3We+uplf9zfR2+C4d9Jp8t1erte5G3hq8qbb7G/H1cD8fDZvsjy/zzfSi/jx3Vd9MLvLVYC/t91+nre56fGUtAE9Ik9VS21Mv9vu/Vlu9Jv+zn1o349P6Ynpbf509qS9mT9Nv/WY8mF7VX5qafzE+zB8nH9LxpLlmclXfTi7q6+Fu2muXfkA/9GMO+bFvC/i+qlm35yazZQ7f36zezF3W16Oj+mz+Ot+OjtPp6CAdTU5bl804cD46TE39r48Hb9PucLvanVkP6+OTfD48yMeDnfy+t5V36mfV87v8mwPATy816/3SyxvspL3Jx/psfN76PP3U+lLyPXqfDvu71d7oXT4YH+WT3lraKGNEqfN5EqetxbDYXg7LZewY7FR77YW4mO97CH+3fwD8XEq/rvT3Sr+vWffvlx5AWc93Vqv1b32/zkr8pbOSVlvP40JrGqb1XJy/2xu43wusp3Gu8zKu1s31ZR3x2PcE/DOlTudBHLaaDM8sx5VWk+08DuM0DMPUC7265L3JddXU9bv9vXLu50GPv8wfUid28yiOy2t5Pub9AD+m5Lr07Urtru7P9D3M+Pf29FI5F9Cs+e/OAJSnuT88Hfe9unK2p/o3Z3j0/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+134HRU8ubQ==",
+        "compressed_bytes": 931,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    }
+  }
+}
