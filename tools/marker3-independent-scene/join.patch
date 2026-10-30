@@ -1,0 +1,48 @@
+--- join.py
++++ dual-join.py
+@@ -5,15 +5,21 @@
+ sys.path.insert(0,str(ROOT/'tmp/conformance-cleanup/native-capture-a241793/conformance'))
+ # Execute the actual selected V5 Drawing path and retain its emulator/objects.
+ sys.argv=['caller','--write-fixture','--case','marker3_linked_saved1','--advanced-setting','5']
+-spec=importlib.util.spec_from_file_location('m3caller',Path('/tmp/marker3-dual-proto/phase2-tool1/caller.py')); m=importlib.util.module_from_spec(spec)
++spec=importlib.util.spec_from_file_location('m3caller',Path('/tmp/marker3-dual-proto/phase2-tool1/dual-caller.py')); m=importlib.util.module_from_spec(spec)
+ with contextlib.redirect_stdout(io.StringIO()):spec.loader.exec_module(m)
+ p=m.p; rt=m.selected_rt
+-draw_rows=[r for r in m.captured_callbacks if r['phase']=='draw_object_stroke']; saved_rows=draw_rows
++print('SECOND_INPUT',json.dumps({'points':m.points,'pressure':m.input_case['pressure'],'timestamps':m.input_case['timestamps'],'size':m.input_case['size'],'tool_type':m.input_case['tool_type'],'color_argb':m.source_color,'advanced_setting':m.args.advanced_setting}))
++draw_rows=[r for r in m.first_callbacks if r['phase']=='draw_object_stroke']; saved_rows=draw_rows
++second_rows=[r for r in m.captured_callbacks[len(m.first_callbacks):] if r['phase']=='draw_object_stroke']; second_vecobj=int(second_rows[-1]['vector_object'],16); second_rt=m.second_rt
++print('SECOND',hex(second_rt),hex(second_vecobj),len(second_rows))
++second_begin,second_end,_=struct.unpack('<3Q',p.u.mem_read(second_vecobj,24)); second_data=bytes(p.u.mem_read(second_begin,second_end-second_begin))
++print('VECTOR2',second_data.hex())
+ assert len(draw_rows)==len(saved_rows)>0 and len({r['vector_object'] for r in draw_rows})==len({r['vector_object'] for r in saved_rows})==1
+ vecobj=int(draw_rows[-1]['vector_object'],16); saved_vecobj=int(saved_rows[-1]['vector_object'],16)
+ vec_begin,vec_end,vec_cap=struct.unpack('<3Q',p.u.mem_read(vecobj,24)); vector_data=bytes(p.u.mem_read(vec_begin,vec_end-vec_begin)); assert len(vector_data)==8*len(draw_rows)
+-assert vector_data==bytes.fromhex(m.captured_final_vectors['draw_object_stroke']['vector_bytes'])==bytes.fromhex(m.captured_final_vectors['saved_redraw']['vector_bytes'])
+-print('CALLER',m.selected_drawable,hex(rt),'V5',m.selected_drawable_version,'Drawing-vector',hex(vecobj),'separate-saved-redraw-vector',hex(saved_vecobj),len(vector_data),hashlib.sha256(vector_data).hexdigest(),'slots',p.u.mem_read(rt+80,16).hex())
++print('VECTOR1',vector_data.hex())
++assert second_rt != rt and second_vecobj != vecobj
++print('CALLER',m.selected_drawable,hex(rt),'V5',m.selected_drawable_version,'Drawing-vector',hex(vecobj),'drawing-vector-again',hex(saved_vecobj),len(vector_data),hashlib.sha256(vector_data).hexdigest(),'slots',p.u.mem_read(rt+80,16).hex())
+ # Bring the paint oracle's GL callback methods into this emulator without running its separate RT pipeline.
+ import ctypes as C,zlib,airbrush_texture_native as at,inkpen_paint_native as ip,fountain_native as fn
+ ARGS=types.SimpleNamespace(width=256,height=256)
+@@ -150,6 +156,11 @@
+ canvas=p.alloc(512);p.call('SPen::SPCanvasImpl::SPCanvasImpl(SPen::IGLMsgQueue*, SPen::ISPBitmap*, bool)',[canvas,queue,outbmp,1],limit=5_000_000)
+ p.call('SPen::SPCanvasImpl::GetBitmap()',[canvas]);bitmap=p.x(0);p.call('SPen::SPTextureBitmap::GetSubBitmap(int)',[bitmap,0]);bitmap=p.x(0)
+ print('OUTPUT CANVAS',hex(outbmp),hex(canvas),hex(bitmap),'gl',len(p.gl_calls),'managed',managed_events)
++p.call('SPen::Marker3StrokeDrawableRTV1::Init()', [second_rt], limit=5000000)
++p.call('SPen::Marker3StrokeDrawableRTV1::CreatePenCanvas(int, int, SPen::IGLMsgQueue*)',[second_rt,256,256,queue],limit=5_000_000)
++assert not p.get(second_rt+80,'Q')[0] and not p.get(second_rt+88,'Q')[0]
++p.put(second_rt+88,'Q',second_vecobj)
++p.call('SPen::Marker3StrokeDrawableRTV1::Update(bool)',[second_rt,0],limit=5_000_000)
+ # Reattach only the identical vector object retained from the selected Drawing RT's AddPoint callbacks.
+ pre80=p.get(rt+80,'Q')[0];pre88=p.get(rt+88,'Q')[0]
+ if pre80 or pre88:raise RuntimeError(f'unexpected native RT slots before same-object bridge: {pre80:#x},{pre88:#x}')
+@@ -160,6 +171,7 @@
+ # Identity canvas matrix; source points are native RT callback coordinates in the fixed 256x256 profile.
+ mat=p.alloc(64);p.put(mat,'16f',2,0,0,0,0,2,0,0,0,0,1,0,0,0,0,1)
+ p.call('SPen::Marker3StrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,bitmap,mat],limit=5_000_000)
++p.call('SPen::Marker3StrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[second_rt,bitmap,mat],limit=5_000_000)
+ p.gles.gl.glFinish(); pixels=C.create_string_buffer(256*256*4);read=C.CFUNCTYPE(None,C.c_int,C.c_int,C.c_int,C.c_int,C.c_uint,C.c_uint,C.c_void_p)(p.gles.gl.glReadPixels);read(0,0,256,256,0x1908,0x1401,pixels)
+ errs=p.gles.f['glGetError']()
+ if errs or any(row['error'] for row in gl_error_checks): raise RuntimeError(f'nonzero GL errors: final={errs} checks={gl_error_checks}')

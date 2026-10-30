@@ -1,0 +1,12 @@
+--- dual-join.py
++++ dual-reverse.py
+@@ -170,8 +170,8 @@
+ print('UPDATE OK','vector',hex(vecobj),'data',len(vector_data),hashlib.sha256(vector_data).hexdigest(),'fields',[(o,p.u.mem_read(rt+o,8).hex()) for o in (72,80,88,120,200,208,216)],'gl',len(p.gl_calls),'buffer',[(c['call'],c.get('size'),c.get('dataSha256')) for c in p.gl_calls if c['call']=='glBufferData'])
+ # Identity canvas matrix; source points are native RT callback coordinates in the fixed 256x256 profile.
+ mat=p.alloc(64);p.put(mat,'16f',2,0,0,0,0,2,0,0,0,0,1,0,0,0,0,1)
++p.call('SPen::Marker3StrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[second_rt,bitmap,mat],limit=5_000_000)
+ p.call('SPen::Marker3StrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt,bitmap,mat],limit=5_000_000)
+-p.call('SPen::Marker3StrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[second_rt,bitmap,mat],limit=5_000_000)
+ p.gles.gl.glFinish(); pixels=C.create_string_buffer(256*256*4);read=C.CFUNCTYPE(None,C.c_int,C.c_int,C.c_int,C.c_int,C.c_uint,C.c_uint,C.c_void_p)(p.gles.gl.glReadPixels);read(0,0,256,256,0x1908,0x1401,pixels)
+ errs=p.gles.f['glGetError']()
+ if errs or any(row['error'] for row in gl_error_checks): raise RuntimeError(f'nonzero GL errors: final={errs} checks={gl_error_checks}')
