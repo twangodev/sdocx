@@ -1,0 +1,60 @@
+{
+  "pymupdf": "1.28.2",
+  "pdfium": "150.0.7869.0",
+  "results": {
+    "curve-1": {
+      "candidate": {
+        "sha256": "2ca086fc1416f42d961674fb87efe211de510a1e12bd397892759cf044694025",
+        "mupdf_rgba_error": 3825,
+        "pdfium_alpha_white_rgb_error": [
+          1417,
+          1575
+        ]
+      },
+      "generic": {
+        "sha256": "63f70bd2aeb7d0a00a0784b9f2b8e828fc6d4d61d9ab1a546c8e436c3ad9f225",
+        "mupdf_rgba_error": 5591,
+        "pdfium_alpha_white_rgb_error": [
+          2456,
+          9022
+        ]
+      }
+    },
+    "turn-1": {
+      "candidate": {
+        "sha256": "4deec9fcc3a0e4b4a7dbf6bf3069b9409dcb5e6e3aa23e14fba453d2c7c7efc2",
+        "mupdf_rgba_error": 3664,
+        "pdfium_alpha_white_rgb_error": [
+          1297,
+          1854
+        ]
+      },
+      "generic": {
+        "sha256": "97131442e786eb0173dc55c90118aba3d4ab8cfa864f8417fe3e469df9bf70cb",
+        "mupdf_rgba_error": 12902,
+        "pdfium_alpha_white_rgb_error": [
+          9072,
+          24970
+        ]
+      }
+    },
+    "vertical-1": {
+      "candidate": {
+        "sha256": "26d0cac3e80d149dcf15483e449abbf204d2bf5b8050caa539b6335716124e70",
+        "mupdf_rgba_error": 4948,
+        "pdfium_alpha_white_rgb_error": [
+          2877,
+          7250
+        ]
+      },
+      "generic": {
+        "sha256": "28e9f5620ba9feefb492efdcdcc260abae06e061c70cb3924301823b43adf81b",
+        "mupdf_rgba_error": 16675,
+        "pdfium_alpha_white_rgb_error": [
+          12893,
+          34710
+        ]
+      }
+    }
+  }
+}

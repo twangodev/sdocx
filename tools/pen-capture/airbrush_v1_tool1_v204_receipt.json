@@ -1,0 +1,211 @@
+{
+  "scope": "Synthetic V1 tool 1 Model/Drawing controls on host Mesa. No saved note or device parity.",
+  "cases": {
+    "curve-1": {
+      "capture_sha256": "73347017a55c09f449d3d460d1a11fc26c43f3b56985dcba7cb09585b9c3f052",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0xff44aaee",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 3.1440000534057617,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "007400430084004300740343000401430074064300840243007409430004054300740c4300840843",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803f5c8300438f86004371972e3f003a3bbf71b100433e8e00435b607fbf88dc8e3d3dfe00430a9b004309f3463f251b213fc2690143f6ac004371830ebe35827dbf00f4014300c40043e8d512bff3b3513f80250243c0cd0043e2677a3fc0e654be005a024300db00434e6f5bbf8fd903bf80910243c0eb004363208d3e3d15763f00cc0243000001438871e83efb1864bf80090343c0170143b28f70bf431daf3e004a0343003301433aa66b3fd20dc83e808d0343c0510143bd3fd0be20de69bf00d4034300740143d3b0a6be830d723f801d0443c0990143e108623f7d5ef0be006a044300c30143ea4677bfef8384be80b90443c0ef0143d5a8073fa719593f000c0543002002430c63433ef04b7bbf80610543c0530243cc1b4fbf0379163f00ba0543008b024380177e3f0b97f93d80150643c0c50243ba8d24bf7d1b44bf0074064300040343735d56bd30a67f3fe4ac0643742a03439626383f34d531bfc8e50643f551034305f67fbf1af58e3caa1e0743857a0343b43e3e3f2f4c2b3f8e57074322a40343b27eb2bd9e067fbf72900743cdce0343f49b1dbf1abb493f56c9074385fa034321d97c3fbf3020be380208434b270443c03b54bf5a270fbf1c3b08431e550443575a663e4670793f00740843008404430000003fd7b35dbfe4ac0843efb3044373d074bf5cb1953ec8e50843ece404436917663f0272e03eaa1e0943f6160543d07bb7be2aff6ebf8e5709430f4a054312ccbfbeff5b6d3f72900943357e0543ca03683f6b61d8be56c9094368b30543617873bfdc379ebe38020a43a9e905432339f83e08e75f3f1c3b0a43f9200643c5ba773e476578bf00740a435559064302b356bfa16d0b3fe4ac0a43c09206435c1c7c3fd7d0313ec8e50a4338cd064363101abf80734cbfaa1e0b43be0807433f12d6bdff987e3f8e570b4351450743b734413f68f327bf72900b43f282074316d87fbfa0ef0ebd56c90b43a1c10743f304353ff404353f38020c435e01084387ef0ebd16d87fbf1c3b0c432842084369f327bfb634413f",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "d92ff7bce74eed6571a05f861382778c52c13f48120ffb761274d413927789f2",
+        "nonzero_pixels": 52,
+        "nonzero_channels": [
+          48,
+          52,
+          52,
+          52
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt2c9OE1EUwOHOML10qLRSSkdaoYN1gdpggkSMiIjGKIpoAkaT6oawMP5ZaNj67sJDTK/R73uC3+bk5p5TqwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBfIE3T2AnAdCUzWda6ubmd94ZrtSRJYvcAU3Lx5jdX1u/0X559a48278fOAaZnfvX2uDz6cb6w8eTZTMjz2D1A9bIwN1dsvX432J+cLm29epuGRiN2E1C9sNC7trjx9Pny7snkSjm+a/bhP3Dx1w95u10efv914+T8d7M7LJN6CLGzgGqF+cXu1fUHO8X20XHv3sGbZjFci90EVONyl9fo9Ad5fzQa7H86XTn88rN4/OFz59bOXpK488O/LGu0WsWj95Plh8cfr784+9oZ7+6FVncpdhdQvbQ+O5sXq+XlzCdZvR67BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgPj+ALytHD0=",
+        "compressed_bytes": 545,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "turn-1": {
+      "capture_sha256": "e46990f337c4f9d1177cb025e4a267e1885fe71d206f400be23c98ba327c244a",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0x883377bb",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 6.5,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "0074004300840043007405430084034300740a430084064300740043008409430074054300840c43",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803ffd130143fee3004371972e3f003a3bbf70900143a92e01435b607fbf88dc8e3d70300243a98e014309f3463f251b213f00f402430004024371830ebe35827dbffd900343cb790243e8d512bff3b3513f87f9034352ff0243e2677a3fc0e654be9f2d0443959403434e6f5bbf8fd903bff42f0443fa25044363208d3e3d15763f3b1004434eaf04438871e83efb1864bf00d1034315420543b28f70bf431daf3e4172034350de05433aa66b3fd20dc83e00f4024300840643bd3fd0be20de69bfb1860243781e0743d3b0a6be830d723f39400243f0b80743e108623f7d5ef0be9620024366530843ea4677bfef8384beca270243deed0843d5a8073fa719593f49550243108709430c63433ef04b7bbf138d024356f40943cc1b4fbf0379163f4fd802439e610a4380177e3f0b97f93df9360343e4ce0a43ba8d24bf7d1b44bf14a903432c3c0b43735d56bd30a67f3f9d2e044372a90b439626383f34d531bf96c70443b8160c4305f67fbf1af58e3c",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "dcf4a67e3c5569fa76e15754596c321c0e0224a4a78da52a549523c23bac66cd",
+        "nonzero_pixels": 111,
+        "nonzero_channels": [
+          91,
+          102,
+          111,
+          111
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt28tu00AUBuB4fE/sJA5pyK23UEJpIdzEpQgqgZBgx/u/DTaseIAQ1H6f5I1X/2bGZ84Z93oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L+Ioj8PcJ9EIc3SajJPB80siuIkCkl66EzA/oUkHyT95mF/9uhlXs9O8tFi0+0Hh84F7FkU4hDn/XKy3larpx8Gy6v3STma9toa4NDRgP0KeT0pm9Xj4Xr3ebx596Ocnl734rTohVj9D3daCCEZ1PXq6mN1+urLaPP6ezacn/VCmh86GbBf7eLPiunJ5ejs1bfm4uZnfby7DelgeOhcwL/Q7gDleJaNl5v6+PltMTl/llZH6+71oZMB+9fN+vJmdVHONi+q+fZNMVlvQ1ZU7gHAPRBFbQ0wPCqPzp/Xq6ubbLTcxNlgZP4H90MIeVlM15fD5e5Ttd7dFs1qG4VMDxDutCjq6v+Q9uukfLCoFk/e1cvrm3w8Pw9JMTh0OmBP2ro/LupJUo6Psmq66u7/jE5ffC1mJ9fZ+OGmPRWo/+GO6s73Ic6KfDQ/q493nweLy/d5s97+nv9H3d1//T+4q6J27Sd53RTN8qJaPH7b1vyb9rt/HrL+sOsIHDofsEdt/R+SvOzOAN38L+l6/nGi5wf3Rtf/6/7/ydz3BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgL78AMVkbXw==",
+        "compressed_bytes": 712,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    },
+    "vertical-1": {
+      "capture_sha256": "b5feefc4af9911ddb22aad96a245d29e6c0872e0ff8475a2c3726bb61b6721e6",
+      "model_state": {
+        "advanced_before_setter": null,
+        "advanced_mode": "unset",
+        "advanced_setting": null,
+        "color_argb_u32": "0xff112233",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.AirBrushPen",
+        "size": 12.0,
+        "size_level": 30,
+        "tool_type": 1
+      },
+      "source_arrays": {
+        "orientations": {
+          "count": 5,
+          "data_hex": "cdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3ecdcc4c3e",
+          "element_size": 4
+        },
+        "points": {
+          "count": 5,
+          "data_hex": "0074004300840043007400430084044300740043008408430074004300840c430074004300841043",
+          "element_size": 8
+        },
+        "pressures": {
+          "count": 5,
+          "data_hex": "9a99993e9a99993e9a99993e9a99993e9a99993e",
+          "element_size": 4
+        },
+        "tilts": {
+          "count": 5,
+          "data_hex": "8fc2f53d8fc2f53d8fc2f53d8fc2f53d8fc2f53d",
+          "element_size": 4
+        },
+        "timestamps": {
+          "count": 5,
+          "data_hex": "2c0100003b0100004a0100005901000068010000",
+          "element_size": 4
+        }
+      },
+      "vector_hex": "0074004300840043000000000000803f007400430084024371972e3f003a3bbf00740043476503435b607fbf88dc8e3d00740043856f044309f3463f251b213f00740043b8a2054371830ebe35827dbf00740043e1fe0643e8d512bff3b3513f0074004300840843e2677a3fc0e654be0074004356d909434e6f5bbf8fd903bf00740043aa2e0b4363208d3e3d15763f0074004300840c438871e83efb1864bf0074004356d90d43b28f70bf431daf3e00740043aa2e0f433aa66b3fd20dc83e",
+      "frame": {
+        "status": "ok",
+        "phase": "after_Drawing_return",
+        "width": 256,
+        "height": 256,
+        "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "row_pitch_bytes": 1024,
+        "row_origin": "GL lower-left",
+        "byte_length": 262144,
+        "sha256": "5ae6ad6f6bd102176afcba9014d3289a3232cbece5a9a5eed2d0e36b69f0e9d0",
+        "nonzero_pixels": 280,
+        "nonzero_channels": [
+          179,
+          226,
+          236,
+          280
+        ],
+        "data_encoding": "zlib+base64",
+        "data_base64": "eJzt3VuLHEUUAOCu6q6+znTP3hMTDSQxeNcEzUMUL+slETSSKKIoiuIF1IAI/n+rZzfiow+LK833QU/PDvVQL6fOqe6q2qIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP+9cPIZqvxRnv4Wz687wH8k/CPu5+9NvscQy7F4PC4ASxZCiF0RYpuHgin/mYp5DJh/K+axAViguL1CqLexHuMUqvpSmdobIVb7sUwXTusBYFm2tX6u86dQzrFeX8z3o9h0z8XUXK+a7sUyNddOWm7rAWA5wjbvx3I3x/vVsu5erNrhjdSO75RNfzPXANdz/j/INcFwOh/wLACWZJv/q51t7DfDK2m1+Tx1m4+rtr9dtsOdPA7cCmW6ND8XKMQ/LMk2/+f8vs6x/1pq18f1uP9js9r7shqmB6mf7lX1cCuEcsrx3xTiH5Yk5Njvc41/Mcf/zXrYfJT68W4zHv1e99P9uh8/qNrVnVi319X/sEAxTjm+b+Rcf7eZDn5tVrtftuuD7+vV5kE1rI5j6p7J9f/l3FD9D8sS89x/tyirg5znX0/ddFwPu18048Fv7bj/U9PvfFr16zu5zVFhLRAsTwhDLOunyrq7WXar45z7f07D5mEzHf7a5logtePbIVRjbtedd1eBMxbiOqT6SurWb9b95uM07H7WThf+yPOAr8u2vx3r7oV5HdDj1ufaV+BsldXO/P6/6scP0jDda9b737XTwS/1audB1Y3HdTfdm9cD5nGiP++uAmeqLPL8P1TpSmpXOf+PHzXr3W+aaf9Ru9r5qt0cPQpN93xRpSdCMP+HhYlFjGNVDy/nXP9ePe5904yHP3XT4Z/1aveLXAM8zHOAWzG1T89rBAr7gWFJylz774WyupD68ZP5/V87r/9Z7//QbA7/qIedT8t2dTvH/435OUEh/8OS5LI+HeXcvpPvT+Yx4MN2OnyUx4Ff5rV/2/V/3fr9eYzILdvz7ixwpnL9X07z+7/Ure/Ww+ZBWu1+1q4OH1XD+G6u/z/Puf+Z3G7eG7w+784CZ2re978KKT0ZU3OtrIeXUju+X6/3vi271etlM7waq/rqNvdH8Q+LE0KV5/97VeqeLev+lbof71fd8FbqxvfKpn913hdczO8J5n1CwJI8PvOzyWPAQY71G1WO+Rz3L8equVY1w635PJCTswE9+4OFOY3/2OU6/6mY6it5DJiv+dyPi/PcP1bpcgjlUIh/WKSwPfNzu7+vClW6lMeCy3FeF3Sy5yf+fS4wsETh9Irbsz7nvT7zM7+T780//h8AsFyn6/tC6bxPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+rb8AIeI5VQ==",
+        "compressed_bytes": 1186,
+        "gl_errors_before": [],
+        "gl_errors_after": []
+      }
+    }
+  },
+  "svg_rgba_abs_error": {
+    "curve-1": {
+      "candidate": 12,
+      "generic": 5431
+    },
+    "turn-1": {
+      "candidate": 0,
+      "generic": 13310
+    },
+    "vertical-1": {
+      "candidate": 4,
+      "generic": 17423
+    }
+  }
+}
