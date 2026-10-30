@@ -1,0 +1,7 @@
+# Factory attachment format intervention
+
+Run `python3 tools/pencil2-worker-v256/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v256/probe.py`. This copies the v255 synthetic native message probe and changes only the host GL allocation for the factory's null-data R8 request to RGBA8. The guest still requests R8, so this is an intervention, not native factory behavior. Guest libraries and harness inputs are pinned as in v255. Temporary output is checked against the retained compressed RGBA8 frame and receipt without overwriting them.
+
+On this host the initial R8 readback is `(0,0,0,255)` at every pixel; the RGBA8 intervention initially reads `(0,0,0,0)`. The RGBA8 Draw-skipping control stays zero. The drawn RGBA8 frame has 72, 76, 87 and 87 nonzero red, green, blue and alpha pixels respectively. Against the R8 draw's red channel, 20 pixels increase by one, five decrease by one, and one increases by two. The allocation starts with null data, so these initial values are observations of this host run, not a portable initialization guarantee.
+
+The R8 color attachment is therefore not a transparent RGBA image; using its readback alpha as coverage would be wrong. The altered RGBA8 frame is suitable for a controlled format comparison but is not proof of normal factory output, Rust/export parity, saved-page behavior or device fidelity. The rest of the synthetic harness and GL-error qualifications in v255 apply.
