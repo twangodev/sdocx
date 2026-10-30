@@ -1,0 +1,388 @@
+{
+  "scope": "Synthetic ARM64 Drawing queue intervention and host Mesa; 192x192 bitmap. Matrices and point bits captured at native execution; actual glUniform2fv argument bytes compared with the model. Not device or saved-note parity.",
+  "reproductions": 2,
+  "matches_original_cases_and_interventions": true,
+  "original_receipt_sha256": "7594dc595416fe8913c016b77ae71b9d3b71cf487a93fea38003e06edaadd398",
+  "run": {
+    "scope": "Synthetic ARM64 Drawing queue intervention and host Mesa; 192x192 bitmap. Matrices and point bits captured at native execution; actual glUniform2fv argument bytes compared with the model. Not device or saved-note parity.",
+    "cases": {
+      "fractional_first_a": {
+        "input_points": [
+          3.25,
+          -4.5,
+          13.0,
+          5.0,
+          23.0,
+          7.0,
+          33.0,
+          15.0
+        ],
+        "input_draw_matrix_column_major": [
+          1.0,
+          0.25,
+          0.0,
+          0.0,
+          0.5,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          12.0,
+          12.0,
+          0.0,
+          1.0
+        ],
+        "events": [
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000c04000001041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "000000000000000001"
+          },
+          {
+            "bits": "0000c04000001041",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "00005040000090c0"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f0000803e00000000000000000000003f0000803f000000000000000000000000000000000000803f000000000000404100004041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "00005040000090c001"
+          },
+          {
+            "bits": "0200504102000541",
+            "kind": "uniform"
+          },
+          {
+            "bits": "0200504102000541",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "0000e8c000009040"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000404200001042000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "0000e8c00000904001"
+          },
+          {
+            "bits": "0000234200002242",
+            "kind": "uniform"
+          }
+        ],
+        "comparisons": [
+          {
+            "transition": "initial",
+            "expected_bits": "0000c04000001041",
+            "uniform_bits": "0000c04000001041"
+          },
+          {
+            "transition": "new_stroke",
+            "expected_bits": "0200504102000541",
+            "uniform_bits": "0200504102000541"
+          },
+          {
+            "transition": "repeat",
+            "expected_bits": "0200504102000541",
+            "uniform_bits": "0200504102000541"
+          },
+          {
+            "transition": "dirty",
+            "expected_bits": "0000234200002242",
+            "uniform_bits": "0000234200002242"
+          }
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "fractional_first_b": {
+        "input_points": [
+          3.25,
+          -4.5,
+          30.0,
+          -20.0,
+          -15.0,
+          22.0,
+          50.0,
+          30.0
+        ],
+        "input_draw_matrix_column_major": [
+          1.0,
+          0.25,
+          0.0,
+          0.0,
+          0.5,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          12.0,
+          12.0,
+          0.0,
+          1.0
+        ],
+        "events": [
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000c04000001041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "000000000000000001"
+          },
+          {
+            "bits": "0000c04000001041",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "00005040000090c0"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f0000803e00000000000000000000003f0000803f000000000000000000000000000000000000803f000000000000404100004041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "00005040000090c001"
+          },
+          {
+            "bits": "0200504102000541",
+            "kind": "uniform"
+          },
+          {
+            "bits": "0200504102000541",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "0000e8c000009040"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000404200001042000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "0000e8c00000904001"
+          },
+          {
+            "bits": "0000234200002242",
+            "kind": "uniform"
+          }
+        ],
+        "comparisons": [
+          {
+            "transition": "initial",
+            "expected_bits": "0000c04000001041",
+            "uniform_bits": "0000c04000001041"
+          },
+          {
+            "transition": "new_stroke",
+            "expected_bits": "0200504102000541",
+            "uniform_bits": "0200504102000541"
+          },
+          {
+            "transition": "repeat",
+            "expected_bits": "0200504102000541",
+            "uniform_bits": "0200504102000541"
+          },
+          {
+            "transition": "dirty",
+            "expected_bits": "0000234200002242",
+            "uniform_bits": "0000234200002242"
+          }
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "different_first": {
+        "input_points": [
+          -8.5,
+          6.25,
+          30.0,
+          -20.0,
+          -15.0,
+          22.0,
+          50.0,
+          30.0
+        ],
+        "input_draw_matrix_column_major": [
+          1.0,
+          0.25,
+          0.0,
+          0.0,
+          0.5,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          12.0,
+          12.0,
+          0.0,
+          1.0
+        ],
+        "events": [
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "kind": "set",
+            "point": "0000000000000000"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000c04000001041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "000000000000000001"
+          },
+          {
+            "bits": "0000c04000001041",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "000008c10000c840"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f0000803e00000000000000000000003f0000803f000000000000000000000000000000000000803f000000000000404100004041000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "000008c10000c84001"
+          },
+          {
+            "bits": "0400d44000008141",
+            "kind": "uniform"
+          },
+          {
+            "bits": "0400d44000008141",
+            "kind": "uniform"
+          },
+          {
+            "kind": "set",
+            "point": "0000e8c000009040"
+          },
+          {
+            "b": "abaa2a3c00000000000000000000000000000000abaa2a3c00000000000000000000000000000000000100b800000000000080bf000080bf000000800000803f",
+            "d": "0000803f000000000000000000000000000000000000803f000000000000000000000000000000000000803f000000000000404200001042000000000000803f",
+            "kind": "matrix"
+          },
+          {
+            "kind": "transform",
+            "state": "0000e8c00000904001"
+          },
+          {
+            "bits": "0000234200002242",
+            "kind": "uniform"
+          }
+        ],
+        "comparisons": [
+          {
+            "transition": "initial",
+            "expected_bits": "0000c04000001041",
+            "uniform_bits": "0000c04000001041"
+          },
+          {
+            "transition": "new_stroke",
+            "expected_bits": "0400d44000008141",
+            "uniform_bits": "0400d44000008141"
+          },
+          {
+            "transition": "repeat",
+            "expected_bits": "0400d44000008141",
+            "uniform_bits": "0400d44000008141"
+          },
+          {
+            "transition": "dirty",
+            "expected_bits": "0000234200002242",
+            "uniform_bits": "0000234200002242"
+          }
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "runtime": {
+      "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+      "platform": "Linux-6.12.113+deb13-amd64-x86_64-with-glibc2.41",
+      "unicorn": "2.1.4"
+    },
+    "interventions": {
+      "repeat": "change draw matrix to translation (48,36) without setting start point",
+      "dirty": "explicitly call SetStartPoint(-7.25,4.5), then Draw using the repeated matrix"
+    },
+    "script_sha256": "e2fd3c1bbd8791d46e9d353bd6db0b55b13f1f912b2b15ed16d6dbfbc5989864",
+    "binary_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+    "dependencies": {
+      "tools/pencil2-drawing-capture-closure/sources/first_point_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+      "tools/pencil2-drawing-capture-closure/sources/first_point_independent_capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+      "tools/pencil2-drawing-capture-closure/sources/first_point_capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+      "tools/pencil2-drawing-capture-closure/sources/v12_capture_candidate.py": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+      "tools/pencil2-drawing-capture-closure/sources/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "external/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+    },
+    "limitations": "Finite selected cases only. Mesa and libm versions and transitive runtime dependencies are not pinned. Assertions must be enabled; do not run with python -O. Other exceptional inputs and runtimes are not covered."
+  }
+}

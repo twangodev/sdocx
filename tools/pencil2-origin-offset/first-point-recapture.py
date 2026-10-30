@@ -1,0 +1,181 @@
+"""Compare the bitwise model with uniforms from full synthetic native draws."""
+import argparse
+import ctypes
+import platform
+import sys
+import hashlib
+import importlib.metadata
+import json
+import os
+from pathlib import Path
+import struct
+import subprocess
+import tempfile
+import gzip
+import importlib.util
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--native-dir', type=Path, required=True)
+parser.add_argument('--runtime-dir', type=Path, required=True)
+parser.add_argument('--receipt', type=Path, required=True, help='new receipt path; existing files are never replaced')
+args = parser.parse_args()
+if not __debug__:
+    parser.error('assertions are required; do not run with python -O')
+for name, expected in [('libSPenPencil2.so', '3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f'), ('libSPenRenderer.so', 'f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed')]:
+    if hashlib.sha256((args.native_dir / name).read_bytes()).hexdigest() != expected:
+        parser.error(f'native library hash mismatch: {name}')
+if args.receipt.exists():
+    parser.error('receipt already exists')
+
+def replace_once(source, old, new):
+    assert source.count(old) == 1, f'expected one replacement anchor: {old!r}'
+    return source.replace(old, new, 1)
+
+root = Path(__file__).resolve().parents[2]
+archive_dir = root / 'tools/pencil2-drawing-capture-closure'
+base = archive_dir / 'sources/first_point_translated_probe.py'
+independent = archive_dir / 'sources/first_point_independent_capture.py'
+patch = archive_dir / 'sources/first_point_capture.patch'
+for path, expected in [(base, '675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861'), (independent, '974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7'), (patch, 'b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83')]:
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+        raise SystemExit(f'archive hash mismatch: {path}')
+libm = ctypes.CDLL('libm.so.6')
+fma = libm.fmaf
+fma.argtypes = [ctypes.c_float] * 3
+fma.restype = ctypes.c_float
+f = lambda x: ctypes.c_float(x).value
+
+def model(b, d, point, dimensions):
+    m = []
+    for j in range(4):
+        for i in range(4):
+            a = f(b[4+i] * d[4*j+1])
+            a = fma(b[i], d[0] if j == 3 and i == 2 else d[4*j], a)
+            a = fma(b[8+i], d[4*j+2], a)
+            m.append(fma(b[12+i], d[4*j+3], a))
+    vec = []
+    for i in range(4):
+        a = f(m[4+i] * point[1])
+        a = fma(m[i], point[0], a)
+        a = fma(m[8+i], 0, a)
+        vec.append(fma(m[12+i], 1, a))
+    return struct.pack('<2f', *(f(f(f(f(vec[i] / vec[3]) + 1) * .5) * dim) for i, dim in enumerate(dimensions))).hex()
+
+cases = {
+ 'fractional_first_a': ('3.25,-4.5,13,5,23,7,33,15', '1,0.25,0,0,0.5,1,0,0,0,0,1,0,12,12,0,1'),
+ 'fractional_first_b': ('3.25,-4.5,30,-20,-15,22,50,30', '1,0.25,0,0,0.5,1,0,0,0,0,1,0,12,12,0,1'),
+ 'different_first': ('-8.5,6.25,30,-20,-15,22,50,30', '1,0.25,0,0,0.5,1,0,0,0,0,1,0,12,12,0,1'),
+}
+results = {}
+with tempfile.TemporaryDirectory(dir='/tmp', prefix='pencil-offset-lifecycle-') as directory:
+    tmp = Path(directory)
+    workspace = tmp / 'workspace'
+    spec = importlib.util.spec_from_file_location('archive', archive_dir / 'restore.py')
+    archive = importlib.util.module_from_spec(spec); spec.loader.exec_module(archive)
+    for source, destination, expected in archive.FILES:
+        src = archive_dir / 'sources' / source if not source.startswith('../') else root / 'tools' / source[3:]
+        data = src.read_bytes()
+        if source.endswith('.gz'): data = gzip.decompress(data)
+        if hashlib.sha256(data).hexdigest() != expected: raise SystemExit(f'archive hash mismatch: {src}')
+        dest = workspace / destination; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_bytes(data)
+    helper_path = archive_dir / 'sources/inkpen_paint_native.py'
+    helper_data = helper_path.read_bytes()
+    if hashlib.sha256(helper_data).hexdigest() != 'a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae': raise SystemExit('GLES helper hash mismatch')
+    conf = workspace / archive.CONF
+    (conf / 'inkpen_paint_native.py').write_bytes(helper_data)
+    scratch = workspace / 'scratch'; (scratch / 'apk-analysis-native').mkdir(parents=True)
+    (scratch / 'apk-analysis-native/arm64-v8a').symlink_to(args.native_dir.resolve(), target_is_directory=True)
+    (scratch / 'apk-analysis-runtime').symlink_to(args.runtime_dir.resolve(), target_is_directory=True)
+    (conf.parent / 'scratch').symlink_to(scratch, target_is_directory=True)
+    patch_dest = workspace / 'tools/pencil2-mixed-drawing/capture.patch'; patch_dest.parent.mkdir(parents=True); patch_dest.write_bytes(patch.read_bytes())
+    (workspace / 'tools/pencil2-public-replay').mkdir(parents=True)
+    probe = tmp / 'probe.py'
+    code = base.read_text()
+    old_root = '/home/jding/RustroverProjects/sdocx'
+    if code.count(old_root) != 5: raise SystemExit('unexpected adapter path count')
+    marker = '    return code\n\nm.adapt_source = adapt'
+    instrumentation = '''    code = replace_once(code, "event_order=[]\\nhandoff_events=[]", """event_order=[]
+offset_events=[]
+matrix_due=[False]
+def offset_hook(u,a,z,d):
+ if a == 0x5098a88:
+  offset_events.append({'kind':'set','point':struct.pack('<II',u.reg_read(R.UC_ARM64_REG_S0),u.reg_read(R.UC_ARM64_REG_S1)).hex()})
+ if a == 0x5099938:
+  offset_events.append({'kind':'transform','state':bytes(u.mem_read(u.reg_read(R.UC_ARM64_REG_X0)+240,9)).hex()})
+ if a == 0x50996fc:
+  matrix_due[0]=True
+ if a == 0x5094674 and matrix_due[0]:
+  matrix_due[0]=False
+  offset_events.append({'kind':'matrix','b':bytes(u.mem_read(u.reg_read(R.UC_ARM64_REG_X21),64)).hex(),'d':bytes(u.mem_read(u.reg_read(R.UC_ARM64_REG_X20),64)).hex()})
+p.u.hook_add(UC_HOOK_CODE,offset_hook)
+handoff_events=[]""")
+    code = replace_once(code, "data=C.create_string_buffer(raw);ip.cfunc(p.mesa.gl,'glUniform2fv'", "offset_events.append({'kind':'uniform','bits':raw.hex()});data=C.create_string_buffer(raw);ip.cfunc(p.mesa.gl,'glUniform2fv'")
+    code = replace_once(code, " result['native_target_probe']=target", " target['offset_events']=offset_events\\n result['native_target_probe']=target")
+'''
+    assert code.count(marker) == 1
+    helper = "def replace_once(source, old, new):\n assert source.count(old) == 1, repr(old)\n return source.replace(old, new, 1)\n"
+    probe.write_text(helper + code.replace(marker, instrumentation + marker))
+    for name, (points, matrix) in cases.items():
+        out = tmp / name
+        out.mkdir()
+        source = replace_once(independent.read_text(), "    code = probe.read_text().replace(", f"    code = probe.read_text().replace({old_root!r}, {str(workspace)!r}).replace(")
+        source = replace_once(source, '\nroot = Path(__file__).resolve().parents[2]\n', f'\nroot = Path({str(workspace)!r})\n')
+        source = replace_once(source, 'here = Path(__file__).resolve().parent', f'here = Path({str(out)!r})')
+        source = replace_once(source, "root / 'tools/pencil2-public-replay/drawing_native_target_translated_probe.py'", f'Path({str(probe)!r})')
+        assert source.count('0,2,10,2,20,4,30,12') == 1
+        source = replace_once(source, '0,2,10,2,20,4,30,12', points)
+        source = replace_once(source, "'outer_outcome':target.get('outcome')", "'offset_events':target.get('offset_events'), 'outer_outcome':target.get('outcome')")
+        old = "p.put(matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,12,12,0,1)"
+        source = replace_once(source, '    probe.write_text(code)', f'    code = replace_once(code, {old!r}, {("p.put(matrix,'16f'," + matrix + ")")!r})\n    probe.write_text(code)')
+        old = "   target['independent_second']['stage']='draw_returned'"
+        new = old + '''
+   p.put(matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,48,36,0,1)
+   p.call('SPen::Pencil2StrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt2,bitmap,matrix],limit=8000000)
+   target['independent_second']['repeat_error']=f['glGetError']()
+   p.f(0, -7.25); p.f(1, 4.5)
+   p.call('SPen::Pencil2StrokeDrawableRTV4::SetStartPoint(float, float)',[rt2])
+   p.call('SPen::Pencil2StrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[rt2,bitmap,matrix],limit=8000000)
+   target['independent_second']['dirty_error']=f['glGetError']()
+'''
+        assert source.count(old) == 1
+        script = tmp / (name + '.py')
+        script.write_text(helper + source.replace(old, new))
+        run = subprocess.run(['python3', str(script)], cwd=root, env=os.environ.copy(), capture_output=True, text=True)
+        if run.returncode:
+            raise RuntimeError(f'{name}: {run.stdout[-3000:]} {run.stderr[-3000:]}')
+        observed = json.loads((out / 'receipt.json').read_text())
+        assert observed['outer_outcome'] is None and observed['outer_error'] is None
+        assert observed['second']['same_rt'] and observed['second']['stage'] == 'draw_returned'
+        assert observed['first_gl_error'] == observed['second_gl_error'] == 0
+        assert all(observed['second'][k] == 0 for k in ('repeat_error', 'dirty_error'))
+        events = observed['offset_events']
+        assert [e['kind'] for e in events] == ['set','set','matrix','transform','uniform','set','matrix','transform','uniform','uniform','set','matrix','transform','uniform']
+        assert all(e['state'][-2:] == '01' for e in events if e['kind'] == 'transform')
+        sets = [e['point'] for e in events if e['kind'] == 'set']
+        assert sets[2] == struct.pack('<2f', *map(float, points.split(',')[:2])).hex()
+        assert sets[3] == struct.pack('<2f', -7.25, 4.5).hex()
+        matrices = [e['d'] for e in events if e['kind'] == 'matrix']
+        assert matrices[1] == struct.pack('<16f', *map(float, matrix.split(','))).hex()
+        current = None
+        pending = None
+        rows = []
+        for event in events:
+            if event['kind'] == 'set':
+                pending = struct.unpack('<2f', bytes.fromhex(event['point']))
+            elif event['kind'] == 'matrix':
+                assert pending is not None
+                b = struct.unpack('<16f', bytes.fromhex(event['b']))
+                d = struct.unpack('<16f', bytes.fromhex(event['d']))
+                current = model(b, d, pending, (192, 192))
+                pending = None
+            elif event['kind'] == 'uniform':
+                assert current == event['bits'], (name, current, event)
+                rows.append({'transition': ('initial', 'new_stroke', 'repeat', 'dirty')[len(rows)], 'expected_bits':current, 'uniform_bits':event['bits']})
+        assert len(rows) == 4 and pending is None
+        results[name] = {'input_points': list(map(float, points.split(','))), 'input_draw_matrix_column_major': list(map(float, matrix.split(','))), 'events':events, 'comparisons':rows, 'gl_errors':[observed['first_gl_error'], observed['second_gl_error'], observed['second']['repeat_error'], observed['second']['dirty_error']]}
+assert results['fractional_first_a']['comparisons'][1]['uniform_bits'] == results['fractional_first_b']['comparisons'][1]['uniform_bits']
+assert results['fractional_first_a']['comparisons'][1]['uniform_bits'] != results['different_first']['comparisons'][1]['uniform_bits']
+receipt = {'scope':'Synthetic ARM64 Drawing queue intervention and host Mesa; 192x192 bitmap. Matrices and point bits captured at native execution; actual glUniform2fv argument bytes compared with the model. Not device or saved-note parity.', 'cases':results, 'runtime': {'python': sys.version, 'platform': platform.platform(), 'unicorn': importlib.metadata.PathDistribution(args.runtime_dir / 'python/unicorn-2.1.4.dist-info').version}, 'interventions': {'repeat': 'change draw matrix to translation (48,36) without setting start point', 'dirty': 'explicitly call SetStartPoint(-7.25,4.5), then Draw using the repeated matrix'}, 'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), 'binary_sha256':hashlib.sha256((args.native_dir / 'libSPenPencil2.so').read_bytes()).hexdigest(), 'dependencies': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in [base, independent, patch, archive_dir / 'sources/v12_capture_candidate.py', helper_path]} | {'external/libSPenRenderer.so': hashlib.sha256((args.native_dir / 'libSPenRenderer.so').read_bytes()).hexdigest()}, 'limitations':'Finite selected cases only. Mesa and libm versions and transitive runtime dependencies are not pinned. Assertions must be enabled; do not run with python -O. Other exceptional inputs and runtimes are not covered.'}
+with args.receipt.open('x') as output:
+    output.write(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps({k: v['comparisons'] for k,v in results.items()}, indent=2))

@@ -50,3 +50,24 @@ vary with the temporary paths. Host EGL/GLES and Mesa are not fully pinned;
 pixel equality is evidence for this host run, not a portability guarantee.
 The synthetic input, callback queue intervention, host adapters, identity draw
 matrix and transparent background do not establish device or saved-note parity.
+
+## First-point recapture
+
+The archived `first_point_*` sources retain the translated Drawing adapter,
+independent-object adapter and patch at the hashes recorded in the original
+first-point receipt. The control constructs the same historical layout in a
+new disposable tree and checks the archive hashes; the ARM64 libraries and
+runtime remain external inputs:
+
+```sh
+python3 tools/pencil2-origin-offset/first-point-recapture.py \
+  --native-dir /absolute/path/to/arm64-v8a \
+  --runtime-dir /absolute/path/to/apk-analysis-runtime \
+  --receipt /tmp/first-point-recapture.json
+```
+
+The output path must not exist. Assertions must be enabled. This is a finite
+synthetic queue intervention using native ARM64 emulation and host Mesa; it
+does not establish device or saved-note parity. Mesa, libm and transitive host
+runtime dependencies are not fully pinned. The original verified receipt is
+preserved alongside the new closure reproduction receipt.

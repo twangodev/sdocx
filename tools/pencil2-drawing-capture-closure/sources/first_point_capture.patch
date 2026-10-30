@@ -1,0 +1,25 @@
+--- base
++++ capture
+@@ -470,16 +470,19 @@
+   target.update({'framebuffer':'returned','framebuffer_after':hex(p.get(bitmap+88,'Q')[0])})
+   target['stage']='activation'
+   p.call('SPen::SPSubBitmapRT::ActivateFrameBufferRT(bool)',[bitmap,0],limit=5000000)
+-  f=p.mesa.f;f['glViewport'](0,0,192,192);f['glClearColor'](0,0,0,0);f['glClear'](0x4000)
++  f=p.mesa.f;f['glViewport'](0,0,192,192);f['glClearColor'](0.25,0.5,0.75,1);f['glClear'](0x4000)
+   binding=C.c_int();ip.cfunc(p.mesa.gl,'glGetIntegerv',None,[C.c_uint,C.POINTER(C.c_int)])(0x8ca6,C.byref(binding));target['active_framebuffer']=binding.value
+   pre=C.create_string_buffer(192*192*4);f['glReadPixels'](0,0,192,192,0x1908,0x1401,pre);target['prior_sha256']=hashlib.sha256(pre.raw).hexdigest();target['prior_nonzero_bytes']=sum(v!=0 for v in pre.raw)
+   attachment=C.c_int();ip.cfunc(p.mesa.gl,'glGetFramebufferAttachmentParameteriv',None,[C.c_uint,C.c_uint,C.c_uint,C.POINTER(C.c_int)])(0x8d40,0x8ce0,0x8cd1,C.byref(attachment));target['attachment_texture']=attachment.value
+   target['stage']='draw'
+-  matrix=p.alloc(64);p.put(matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,32,32,0,1)
++  matrix=p.alloc(64);p.put(matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,6,9,0,1)
++  p.call('SPen::Pencil2StrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[selected_rt,bitmap,matrix],limit=8000000)
++  first=C.create_string_buffer(192*192*4);f['glReadPixels'](0,0,192,192,0x1908,0x1401,first);(root / 'tmp/pencil2-mixed-v73/first.zlib').write_bytes(zlib.compress(first.raw,9));target['first_sha256']=hashlib.sha256(first.raw).hexdigest();target['first_error']=f['glGetError']()
++  p.put(matrix,'16f',1,0,0,0,0,1,0,0,0,0,1,0,12,12,0,1)
+   p.call('SPen::Pencil2StrokeDrawableRTV4::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)',[selected_rt,bitmap,matrix],limit=8000000)
+   pixels=C.create_string_buffer(192*192*4);f['glReadPixels'](0,0,192,192,0x1908,0x1401,pixels)
+   ip.cfunc(p.mesa.gl,'glGetIntegerv',None,[C.c_uint,C.POINTER(C.c_int)])(0x8ca6,C.byref(binding));target['readback_framebuffer']=binding.value
+-  raw=pixels.raw;Path('/home/jding/RustroverProjects/sdocx/tools/pencil2-public-replay/drawing-native-target-translated.rgba.zlib').write_bytes(zlib.compress(raw,9));target['row_origin']='bottom';target.update({'draw':'returned','matrix':[1,0,0,0,0,1,0,0,0,0,1,0,32,32,0,1],'readback_sha256':hashlib.sha256(raw).hexdigest(),'nonzero_bytes':sum(v!=0 for v in raw),'gl_error':f['glGetError']()})
++  raw=pixels.raw;(root / 'tmp/pencil2-mixed-v73/second.zlib').write_bytes(zlib.compress(raw,9));target['row_origin']='bottom';target.update({'draw':'returned','matrices':[[1,0,0,0,0,1,0,0,0,0,1,0,6,9,0,1],[1,0,0,0,0,1,0,0,0,0,1,0,12,12,0,1]],'readback_sha256':hashlib.sha256(raw).hexdigest(),'nonzero_bytes':sum(v!=0 for v in raw),'draw_gl_error':f['glGetError']()})
+ 
+  except Exception as error:
+   target.update({'outcome':'exception','error':repr(error),'pc':hex(p.u.reg_read(R.UC_ARM64_REG_PC)),'lr':hex(p.u.reg_read(R.UC_ARM64_REG_LR)),'registers':{f'x{i}':hex(p.x(i)) for i in range(9)}})
