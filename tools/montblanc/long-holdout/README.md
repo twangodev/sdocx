@@ -1,0 +1,5 @@
+# Long Montblanc holdout controls
+
+These 10- and 11-point paths were chosen after the replay-window hypothesis. Their full native callback streams match the Rust sampler bit-for-bit. With the unit-scale size-1.5 profile, SVG RGB L1 changes from 110369 to 16577 and 98717 to 14779; direct PDF MuPDF changes from 109630 to 12881 and 97253 to 11408; PDFium changes from 110187 to 12649 and 96176 to 11299. See the receipt for input arrays, hashes and support metrics. This is synthetic native Drawing and host Mesa, not native PDF export or device output.
+
+Use two fresh empty directories, one for captures and one for exports. Run `compare.py capture` with `MB_EXPORT_WORK` set to the capture directory. Then set `MB_CAPTURE_WORK` to that directory and `MB_EXPORT_WORK` to the export directory and run `compare.py rebuild-verify`. Requirements and runtime limitations match `../long-paint/README.md`. The compact archive retains native frames and streams; the script requires complete recaptures to verify.

@@ -27,7 +27,7 @@ impl Curve {
 
 pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     let n = input.points.len();
-    if !(6..=9).contains(&n) {
+    if !(6..=14).contains(&n) {
         return Err(Error::PointCount);
     }
     if input.pressure.len() != n {
@@ -163,10 +163,14 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
             .map(|(_, count, _, _, _, _, redraw)| (*count, *redraw)),
     )?;
     let mut records = Vec::with_capacity(total);
+    // This seven-point history window matches the captured redraw controls.
     for replay in [false, true] {
         for (seg_index, (q, count, initial_width, target_width, alpha_start, alpha_step, redraw)) in
             segments.iter().enumerate()
         {
+            if replay && seg_index < accepted.len().saturating_sub(7) / 2 {
+                continue;
+            }
             if replay && !redraw {
                 break;
             }
@@ -390,6 +394,71 @@ fn nine_point_investigative_native_stream() {
         })
         .unwrap();
         let expected = case["result"]["stream"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (i, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+            let symbol = expected[0].as_str().unwrap();
+            let call = if symbol.contains("::AddStartPoint(") {
+                RtCall::Start
+            } else if symbol.contains("::AddEndPoint(") {
+                RtCall::End
+            } else if symbol.contains("::AddPoint(") {
+                RtCall::Point
+            } else {
+                panic!("unexpected symbol {symbol}")
+            };
+            assert_eq!(actual.call, call, "record {i}");
+            for (lane, word) in expected[1].as_array().unwrap().iter().enumerate() {
+                let s = word.as_str().unwrap();
+                let bits = u32::from_le_bytes(std::array::from_fn(|j| {
+                    u8::from_str_radix(&s[j * 2..j * 2 + 2], 16).unwrap()
+                }));
+                assert_eq!(actual.lanes[lane].to_bits(), bits, "record {i} lane {lane}");
+            }
+        }
+    }
+}
+
+#[test]
+fn long_independent_native_stream() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-long-independent-streams.json"
+    ))
+    .unwrap();
+    let paint: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/long-paint/streams.json"
+    ))
+    .unwrap();
+    let holdout: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/long-holdout/streams.json"
+    ))
+    .unwrap();
+    for case in receipt["cases"]
+        .as_object()
+        .unwrap()
+        .values()
+        .chain(paint.as_object().unwrap().values())
+        .chain(holdout.as_object().unwrap().values())
+    {
+        let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
+        let points: Vec<[f32; 2]> = case["input"]["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [number(&p[0]), number(&p[1])])
+            .collect();
+        let pressure: Vec<f32> = case["input"]["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(number)
+            .collect();
+        let actual = many_point(Input {
+            points: &points,
+            pressure: &pressure,
+            pen_size: number(&case["input"]["pen_size"]),
+        })
+        .unwrap();
+        let expected = case["stream"].as_array().unwrap();
         assert_eq!(actual.len(), expected.len());
         for (i, (actual, expected)) in actual.iter().zip(expected).enumerate() {
             let symbol = expected[0].as_str().unwrap();

@@ -134,6 +134,10 @@ fn unsupported_inputs_keep_generic_output() {
     s.pressures.push(0.5);
     s.points.push(Point { x: 220., y: 130. });
     s.pressures.push(0.5);
+    s.points.push(Point { x: 230., y: 130. });
+    s.pressures.push(0.5);
+    s.points.push(Point { x: 240., y: 130. });
+    s.pressures.push(0.5);
     cases.push(s);
     let mut s = base.clone();
     s.points[1].x = 1_000_001.;
@@ -429,6 +433,46 @@ fn nine_point_profiles_admit_bounded_sizes() {
         ] {
             assert_ne!(render_document_svg(&doc, &profile)[0].svg, fallback);
         }
+    }
+}
+
+#[test]
+fn long_profile_is_limited_to_unit_scale_and_supported_sizes() {
+    let points = [
+        [0., 0.],
+        [7., 3.],
+        [14., -2.],
+        [21., 4.],
+        [28., -1.],
+        [35., 3.],
+        [42., -4.],
+        [49., 2.],
+        [56., -3.],
+        [63., 4.],
+        [70., -2.],
+    ];
+    for n in [10, 11] {
+        let mut stroke = source(&points[..n], &vec![0.5; n]);
+        for size in [0.5, 1.5, 2.0] {
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            assert_eq!(
+                crate::ink::montblanc::prepare(&stroke).is_some(),
+                size == 1.5
+            );
+        }
+        stroke.pen_width = 1.5;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(1.5);
+        let doc = document(stroke);
+        let generic = render_document_svg(&doc, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        assert_ne!(render_document_svg(&doc, &options())[0].svg, generic);
+        let two = RenderOptions {
+            montblanc_two_pixels_per_page_unit: true,
+            ..Default::default()
+        };
+        assert_eq!(render_document_svg(&doc, &two)[0].svg, generic);
     }
 }
 

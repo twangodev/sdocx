@@ -1,0 +1,9 @@
+# Long Montblanc controls
+
+Four independent synthetic saved Drawing streams contain 10, 11, 12 and 14 points, with turns, reversals, varying pressure and rejected short moves. Their full callbacks match Rust bit-for-bit. The seven-accepted-point replay window is a behavior-matching hypothesis for these controls, not an identified native implementation. The separately retained paint streams also match Rust.
+
+Two additional size-1.5 controls compare Drawing and host Mesa frames with public SVG via resvg and direct PDF via MuPDF and PDFium. The receipt records full hashes and support/RGB metrics. For the 10-point and 11-point controls respectively, SVG RGB error falls from 115560 to 17047 and 94574 to 12857; MuPDF from 115242 to 13139 and 94091 to 10502; PDFium from 116867 to 12899 and 99841 to 10210. This is host rendering, not native PDF export, saved-note or device parity. SVG files grow to about 600–655 KB, and PDF to 176–190 KB in these controls.
+
+To reproduce, create two fresh empty directories and set `MB_CAPTURE_WORK` to the first and `MB_EXPORT_WORK` to the second. Run `compare.py capture` with the first as `MB_EXPORT_WORK`, then run `compare.py rebuild-verify` with both variables set. It requires the local native runtime and adapters described in `../many-point-paint/README.md`, offline Cargo dependencies, resvg, Pillow, PyMuPDF and pypdfium2. The runtime is only partially pinned; the compact archive retains frames and streams. Never point the script at a directory containing unrelated files. `long-independent-streams.py` captures and verifies the independent callback controls.
+
+The opt-in unit-scale route admits only 10–11 points at size 1.5; 2× output remains on fallback for these lengths. Separate holdout paint controls are documented in `../long-holdout/README.md`.
