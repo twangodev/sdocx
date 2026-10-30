@@ -1,4 +1,4 @@
-//! Explicit WaterColor destination-resolution canvas using captured host arithmetic.
+//! Explicit destination-resolution ink canvas using captured host arithmetic.
 
 use crate::ink::watercolor;
 use crate::{RenderedPage, Stroke};
@@ -67,6 +67,33 @@ pub enum InkRasterError {
     #[cfg(feature = "pdf")]
     #[error("native ink raster PDF export failed: {0}")]
     Pdf(#[from] crate::PdfError),
+}
+
+/// Caller-supplied texture in GL upload row order. Only its red channel is sampled.
+#[derive(Clone, Copy, Debug)]
+pub struct BrushPenTexture<'a> {
+    pub width: usize,
+    pub height: usize,
+    pub rgba: &'a [u8],
+}
+
+/// Explicit native V1 uniforms for the conditional host-Mesa paint model.
+/// The projection maps stroke coordinates to clip coordinates. Grain parameters
+/// are in bottom-origin framebuffer pixels; textures use GL upload row order.
+/// This projection supersedes the canvas origin and pixels-per-unit settings.
+/// `rgb` supplies normalized color; serialized stroke color alpha is ignored by
+/// this captured shader. Stamp pressure and texture coverage determine alpha.
+#[derive(Clone, Copy, Debug)]
+pub struct BrushPenPaintContext<'a> {
+    pub screen_width: i32,
+    pub screen_height: i32,
+    pub projection: [f32; 16],
+    pub rgb: [f32; 3],
+    pub grain_period: [f32; 2],
+    pub grain_offset: [f32; 2],
+    pub num_tiles: f32,
+    pub atlas: BrushPenTexture<'a>,
+    pub grain: BrushPenTexture<'a>,
 }
 
 /// Destination pixels in top-origin premultiplied RGBA8 order.
@@ -154,6 +181,85 @@ impl InkRasterCanvas {
         self.pixels = pixels;
         Ok(())
     }
+    /// Paint a sampled GLV10 stroke using caller-supplied native textures and
+    /// uniforms. This conditional Mesa host model does not infer device context.
+    /// Invalid inputs and exhausted work leave the canvas unchanged.
+    /// Sampling uses its own one-million-sample limit before the canvas checks
+    /// its remaining paint budget; that budget does not bound sampler work.
+    pub fn paint_brushpen_glv10_host(
+        &mut self,
+        stroke: &Stroke,
+        context: BrushPenPaintContext<'_>,
+    ) -> Result<(), InkRasterError> {
+        use crate::ink::brushpen::paint::{self, Context, Error, Rgba8};
+        if self.remaining_submissions == 0 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        let records =
+            crate::sample_brushpen_glv10_host(stroke, context.screen_width, context.screen_height)
+                .ok_or(InkRasterError::UnsupportedStroke(
+                    "unsupported BrushPen GLV10 source or display",
+                ))?;
+        // A full-frame scan per record is a conservative upper bound on paint work.
+        let work = records
+            .len()
+            .checked_mul(self.pixels.len())
+            .and_then(|n| n.checked_add(self.pixels.len()))
+            .ok_or(InkRasterError::WorkLimit)?;
+        let remaining = self
+            .remaining_work
+            .checked_sub(work)
+            .ok_or(InkRasterError::WorkLimit)?;
+        let mut bytes = Vec::new();
+        bytes
+            .try_reserve_exact(self.pixels.len() * 4)
+            .map_err(|_| InkRasterError::Allocation)?;
+        for row in self.pixels.chunks_exact(self.context.width as usize).rev() {
+            for pixel in row {
+                bytes.extend_from_slice(pixel);
+            }
+        }
+        fn texture(t: BrushPenTexture<'_>) -> Rgba8<'_> {
+            Rgba8 {
+                width: t.width,
+                height: t.height,
+                bytes: t.rgba,
+            }
+        }
+        paint::paint(
+            &records,
+            texture(context.atlas),
+            texture(context.grain),
+            Context {
+                width: self.context.width as usize,
+                height: self.context.height as usize,
+                projection: context.projection,
+                rgb: context.rgb,
+                grain_period: context.grain_period,
+                grain_offset: context.grain_offset,
+                num_tiles: context.num_tiles,
+            },
+            &mut bytes,
+        )
+        .map_err(|error| match error {
+            Error::Texture | Error::Context => InkRasterError::InvalidContext,
+            Error::Record => InkRasterError::InvalidStroke("unrepresentable BrushPen stamp"),
+        })?;
+        for (row, source) in self
+            .pixels
+            .chunks_exact_mut(self.context.width as usize)
+            .rev()
+            .zip(bytes.chunks_exact(self.context.width as usize * 4))
+        {
+            for (pixel, rgba) in row.iter_mut().zip(source.as_chunks::<4>().0) {
+                pixel.copy_from_slice(rgba);
+            }
+        }
+        self.remaining_work = remaining;
+        self.remaining_submissions -= 1;
+        Ok(())
+    }
+
     /// Encode straight-alpha PNG for display at the destination's intrinsic size.
     pub fn to_png(&self) -> Result<Vec<u8>, InkRasterError> {
         let rgba: Vec<_> = self

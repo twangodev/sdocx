@@ -3,7 +3,7 @@ use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
 #[allow(dead_code)]
 pub(crate) mod airbrush;
-mod brushpen;
+pub(crate) mod brushpen;
 pub use brushpen::sample_brushpen_glv10_host;
 pub(crate) mod calligraphy;
 pub(crate) mod chinesebrush_glv123;

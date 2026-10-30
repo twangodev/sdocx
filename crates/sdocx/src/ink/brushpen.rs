@@ -9,8 +9,8 @@
 //! joins this sampler to one manually configured native caller profile and a
 //! conditional host-Mesa frame; it is not a production dispatch route.
 
-#[cfg(all(test, feature = "serde"))]
-mod paint;
+#[cfg(any(feature = "render", all(test, feature = "serde")))]
+pub(crate) mod paint;
 
 use super::path::{P, Quad};
 

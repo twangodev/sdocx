@@ -1,9 +1,9 @@
 //! Conditional host-Mesa BrushPen V1 paint model joined to a captured native caller.
-//! The test-only sampler regenerates the narrow manual caller profile before paint;
-//! this is not production dispatch or Android-device pixel parity.
+//! The public canvas supplies explicit textures and uniforms to this host model;
+//! normal document dispatch and Android-device pixel parity are outside its scope.
 
 #[derive(Clone, Copy)]
-struct Rgba8<'a> {
+pub(crate) struct Rgba8<'a> {
     pub width: usize,
     pub height: usize,
     /// RGBA8 bytes in upload order; row zero is the GL texture's first row.
@@ -11,7 +11,7 @@ struct Rgba8<'a> {
 }
 
 #[derive(Clone, Copy)]
-struct Context {
+pub(crate) struct Context {
     pub width: usize,
     pub height: usize,
     /// Exact column-major uniform submitted to the native V1 program.
@@ -23,7 +23,7 @@ struct Context {
 }
 
 #[derive(Debug)]
-enum Error {
+pub(crate) enum Error {
     Texture,
     Context,
     Record,
@@ -42,7 +42,7 @@ struct ScreenQuad {
 
 /// Paint captured 11-float RTV1 records into a transparent bottom-left RGBA8 target.
 /// This reproduces one specific host-Mesa sampler profile, not portable GLES behavior.
-fn paint(
+pub(crate) fn paint(
     records: &[[f32; 11]],
     atlas: Rgba8<'_>,
     grain: Rgba8<'_>,
@@ -69,7 +69,10 @@ fn paint(
         || context.projection[15] != 1.0
         || !determinant.is_finite()
         || determinant == 0.0
-        || context.rgb.iter().any(|v| !v.is_finite())
+        || context
+            .rgb
+            .iter()
+            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
         || context
             .grain_period
             .iter()
@@ -319,7 +322,7 @@ fn clamp01(x: f32) -> f32 {
     x.clamp(0.0, 1.0)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 mod tests {
     use super::*;
     use flate2::read::ZlibDecoder;
@@ -1342,6 +1345,157 @@ mod tests {
         ZlibDecoder::new(&include_bytes!("../../../../../conformance/brushpen-second-native/frame-rgba8.zlib")[..]).read_to_end(&mut native).unwrap();
         assert_eq!(sha256(&native), fixture["paint"]["full_rgba_sha256"]);
         assert_eq!(painted, native);
+        #[cfg(feature = "render")]
+        {
+            let mut background = [32, 160, 96, 255].repeat(321 * 228);
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width: 321,
+                    height: 228,
+                    projection: values("location", 0).try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+                    grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut background,
+            )
+            .unwrap();
+            let mut native_background = Vec::new();
+            ZlibDecoder::new(
+                &include_bytes!(
+                    "../../../../../conformance/brushpen-second-native/nonwhite-frame.rgba.zlib"
+                )[..],
+            )
+            .read_to_end(&mut native_background)
+            .unwrap();
+            assert_eq!(
+                sha256(&native_background),
+                "061b7b9e2124f690c14ee2067f04b607c4f0f09578249c47c8e8cc3b714e8f70"
+            );
+            assert_eq!(background.len(), native_background.len());
+            assert_eq!(background, native_background);
+            let mut canvas = crate::InkRasterCanvas::new(
+                crate::InkRasterContext {
+                    width: 321,
+                    height: 228,
+                    pixels_per_unit: 1,
+                    origin: crate::InkRasterOrigin::TopLeft,
+                },
+                [32, 160, 96, 255],
+            )
+            .unwrap();
+            canvas
+                .paint_brushpen_glv10_host(
+                    &stroke,
+                    crate::BrushPenPaintContext {
+                        screen_width: 1920,
+                        screen_height: 1080,
+                        projection: values("location", 0).try_into().unwrap(),
+                        rgb: color[..3].try_into().unwrap(),
+                        grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+                        grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                        num_tiles: 3.0,
+                        atlas: crate::BrushPenTexture {
+                            width: 144,
+                            height: 144,
+                            rgba: &atlas_rgba,
+                        },
+                        grain: crate::BrushPenTexture {
+                            width: 321,
+                            height: 228,
+                            rgba: &grain_rgba,
+                        },
+                    },
+                )
+                .unwrap();
+            let prior = canvas.pixels().to_vec();
+            let invalid = canvas.paint_brushpen_glv10_host(
+                &stroke,
+                crate::BrushPenPaintContext {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    projection: values("location", 0).try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: [0.0; 2],
+                    grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+                    num_tiles: 3.0,
+                    atlas: crate::BrushPenTexture {
+                        width: 144,
+                        height: 144,
+                        rgba: &atlas_rgba,
+                    },
+                    grain: crate::BrushPenTexture {
+                        width: 321,
+                        height: 228,
+                        rgba: &grain_rgba,
+                    },
+                },
+            );
+            assert!(matches!(
+                invalid,
+                Err(crate::InkRasterError::InvalidContext)
+            ));
+            assert_eq!(canvas.pixels(), prior);
+            let actual: Vec<u8> = canvas
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            assert_eq!(actual, native_background);
+            let png = canvas.to_png().unwrap();
+            let image = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
+            assert_eq!(
+                image.data(),
+                prior.iter().flatten().copied().collect::<Vec<_>>()
+            );
+            let page = canvas.rendered_page(0).unwrap();
+            #[cfg(feature = "pdf")]
+            if let Some(directory) = std::env::var_os("SDOCX_BRUSHPEN_CANVAS_EXPORT") {
+                let directory = std::path::PathBuf::from(directory);
+                std::fs::create_dir_all(&directory).unwrap();
+                let mut options = crate::PdfOptions::default();
+                options.dpi = 72.0;
+                std::fs::write(
+                    directory.join("direct.pdf"),
+                    canvas.to_pdf(&options).unwrap(),
+                )
+                .unwrap();
+                std::fs::write(
+                    directory.join("svg.pdf"),
+                    crate::render_svg_pages_pdf(std::slice::from_ref(&page), &options).unwrap(),
+                )
+                .unwrap();
+            }
+
+            let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+            let mut image = resvg::tiny_skia::Pixmap::new(321, 228).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut image.as_mut(),
+            );
+            assert_eq!(
+                image.data(),
+                prior.iter().flatten().copied().collect::<Vec<_>>()
+            );
+        }
         let transform_receipt: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-second-native/comparison.json"
         ))

@@ -1,0 +1,36 @@
+{
+  "scope": "One explicit BrushPen host-Mesa canvas control on opaque nonwhite; no device or arbitrary input parity.",
+  "native_bottom_rgba_sha256": "061b7b9e2124f690c14ee2067f04b607c4f0f09578249c47c8e8cc3b714e8f70",
+  "versions": {
+    "PyMuPDF": "1.28.2",
+    "pypdfium2": "5.9.0"
+  },
+  "cases": {
+    "direct": {
+      "pdf_sha256": "87ca226b9bda31f5146ce138da536c550c4cc04e1d9cc236212671ed084b4b6e",
+      "mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "svg": {
+      "pdf_sha256": "3b5c3ebf6f9d1b016b10f1ab0cba666fe7e29ee115345fa4d1599969e4fd2dfa",
+      "mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    }
+  }
+}
