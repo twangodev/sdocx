@@ -108,6 +108,14 @@ impl Quad {
     }
 
     fn parameter(&self, d: f32) -> f32 {
+        // SmPath::getPosTan clamps finite distance before looking up its segment.
+        let d = if d < 0.0 {
+            0.0
+        } else if d > self.length {
+            self.length
+        } else {
+            d
+        };
         let i = self
             .segments
             .partition_point(|&(end, _)| end < d)
@@ -154,5 +162,46 @@ impl Quad {
         self.p[0]
             .lerp(self.p[1], t)
             .lerp(self.p[1].lerp(self.p[2], t), t)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{P, Quad};
+
+    #[test]
+    fn distance_is_clamped_for_position_and_tangent() {
+        let curve = Quad::new(
+            P { x: 1.0, y: 2.0 },
+            P { x: 20.0, y: 40.0 },
+            P { x: 45.0, y: 3.0 },
+        );
+        assert!(curve.segments.len() > 1);
+        let next = f32::from_bits(curve.length.to_bits() + 1);
+        for (distance, boundary) in [
+            (-1.0, 0.0),
+            (next, curve.length),
+            (curve.length + 1.0, curve.length),
+        ] {
+            assert_eq!(
+                curve.parameter(distance).to_bits(),
+                curve.parameter(boundary).to_bits()
+            );
+            for (a, b) in [
+                (curve.at(distance), curve.at(boundary)),
+                (curve.tangent(distance), curve.tangent(boundary)),
+                (
+                    curve.normalized_tangent(distance),
+                    curve.normalized_tangent(boundary),
+                ),
+            ] {
+                assert_eq!(
+                    (a.x.to_bits(), a.y.to_bits()),
+                    (b.x.to_bits(), b.y.to_bits())
+                );
+            }
+        }
+        assert!(curve.parameter(curve.length * 0.5) > curve.parameter(0.0));
+        assert!(curve.parameter(curve.length * 0.5) < curve.parameter(curve.length));
     }
 }

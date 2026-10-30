@@ -2548,6 +2548,40 @@ fn tool1_two_pixel_public_dispatch_and_boundaries() {
 }
 
 #[test]
+fn visible_128_point_native_geometry_matches_captured_stream() {
+    let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+    let mut points: Vec<[f32; 2]> = (0..128)
+        .map(|i| {
+            [
+                25.0 + (i % 64) as f32,
+                35.0 + (i / 64) as f32 * 18.0 + heights[i % 8] as f32,
+            ]
+        })
+        .collect();
+    let mut pressures: Vec<f32> = (0..128).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+    points.reverse();
+    pressures.reverse();
+    let actual = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+        points: &points,
+        pressures: &pressures,
+        size: 3.0,
+        tool_type: 0,
+        curve_enabled: true,
+        max_samples: 32_768,
+    })
+    .unwrap();
+    let bytes: Vec<u8> = actual
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(
+        bytes,
+        include_bytes!("../../../../conformance/simplebrush-visible-128/tool0-geometry.bin")
+    );
+}
+
+#[test]
 fn one_pixel_long_native_geometry_matches_captured_streams() {
     for (count, size, reverse, expected) in [
         (
